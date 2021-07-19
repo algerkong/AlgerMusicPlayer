@@ -23,64 +23,9 @@ let menus = ref([
     },
     {
         href: '/',
-        icon: "icon-homefill",
-        text: "hello"
-    },
-    {
-        href: '/main',
-        icon: "icon-peoplefill",
-        text: "hello"
-    },
-    {
-        href: '/',
-        icon: "icon-homefill",
-        text: "hello"
-    },
-    {
-        href: '/main',
-        icon: "icon-peoplefill",
-        text: "hello"
-    },
-    {
-        href: '/',
-        icon: "icon-homefill",
-        text: "hello"
-    },
-    {
-        href: '/main',
-        icon: "icon-peoplefill",
-        text: "hello"
-    },
-    {
-        href: '/',
-        icon: "icon-homefill",
-        text: "hello"
-    },
-    {
-        href: '/main',
-        icon: "icon-peoplefill",
-        text: "hello"
-    },
-    {
-        href: '/',
         icon: "icon-videofill",
         text: "hello"
     },
-    {
-        href: '/',
-        icon: "icon-videofill",
-        text: "hello"
-    },
-    {
-        href: '/',
-        icon: "icon-videofill",
-        text: "hello"
-    },
-    {
-        href: '/',
-        icon: "icon-videofill",
-        text: "hello"
-    }
 ])
 </script>
 
@@ -88,7 +33,7 @@ let menus = ref([
 .layout-page {
     width: 100vw;
     height: 100vh;
-    @apply flex justify-center items-center;
+    @apply flex justify-center items-center overflow-hidden;
 }
 
 .layout-main {
@@ -96,10 +41,10 @@ let menus = ref([
     height: 800px;
     width: 1400px;
     .menu {
-        width: 70px;
+        width: 90px;
     }
     .main {
-        @apply p-4;
+        @apply pt-6 pr-6 pb-6;
         flex: 1;
     }
 }

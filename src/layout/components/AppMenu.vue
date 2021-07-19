@@ -53,7 +53,7 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .app-menu {
-  @apply flex-col items-center justify-center p-4;
+  @apply flex-col items-center justify-center p-6;
   max-width: 100px;
 }
 .app-menu-item-link,
