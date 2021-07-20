@@ -46,8 +46,16 @@
         </div>
         <div class="recommend-music">
           <div class="title">本周最热音乐</div>
-          <n-layout class="bg-black">
-            <img v-for="item in recommendMusic?.result" :src="item.picUrl" width="100" height="100" />
+          <n-layout class=" recommend-music-list " >
+            <n-space vertical>
+              <!-- 推荐音乐列表 -->
+              <div>
+               <img v-for="item in recommendMusic?.result" :src="item.picUrl" width="100" height="50" />
+              <div>
+
+              </div>
+              </div>
+            </n-space>
           </n-layout>
         </div>
       </div>
@@ -151,6 +159,11 @@ onMounted(() => {
   }
 
   .recommend-music {
+    @apply flex-1 mr-96;
+    &-list{
+      @apply rounded-3xl p-6 w-full border border-gray-700;
+      background-color: #0D0D0D;
+    }
   }
 }
 </style>
