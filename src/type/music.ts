@@ -1,10 +1,10 @@
 export interface IRecommendMusic {
   code: number;
   category: number;
-  result: Result[];
+  result: SongResult[];
 }
 
-interface Result {
+export interface SongResult {
   id: number;
   type: number;
   name: string;
@@ -153,4 +153,44 @@ interface Artist {
   trans: string;
   musicSize: number;
   topicPerson: number;
+}
+
+export interface IPlayMusicUrl {
+  data: Datum[];
+  code: number;
+}
+
+interface Datum {
+  id: number;
+  url: string;
+  br: number;
+  size: number;
+  md5: string;
+  code: number;
+  expi: number;
+  type: string;
+  gain: number;
+  fee: number;
+  uf?: any;
+  payed: number;
+  flag: number;
+  canExtend: boolean;
+  freeTrialInfo?: any;
+  level: string;
+  encodeType: string;
+  freeTrialPrivilege: FreeTrialPrivilege;
+  freeTimeTrialPrivilege: FreeTimeTrialPrivilege;
+  urlSource: number;
+}
+
+interface FreeTimeTrialPrivilege {
+  resConsumable: boolean;
+  userConsumable: boolean;
+  type: number;
+  remainTime: number;
+}
+
+interface FreeTrialPrivilege {
+  resConsumable: boolean;
+  userConsumable: boolean;
 }

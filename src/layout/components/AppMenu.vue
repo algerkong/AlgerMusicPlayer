@@ -21,6 +21,13 @@
 
 <script lang="ts" setup>
 import { onMounted, ref } from "@vue/runtime-core";
+import type { PropType } from "vue";
+
+interface AppMenuItem {
+  href: string;
+  icon: string;
+  text: string;
+}
 
 const props = defineProps({
   isText: {
@@ -36,7 +43,7 @@ const props = defineProps({
     default: '#aaa'
   },
   menus: {
-    type: Array,
+    type: Array as PropType<AppMenuItem[]>,
     default: []
   }
 })

@@ -1,6 +1,6 @@
 <template>
   <n-layout class="h-full bg-black" :native-scrollbar="false">
-    <div class="main-page">
+    <div class="main-page pb-20">
       <!-- 推荐歌手 -->
       <div class="recommend-singer">
         <div class="recommend-singer-list">
@@ -33,28 +33,46 @@
             <template v-for="(item,index) in playlistCategory?.sub" :key="item.name">
               <span
                 class="play-list-type-item animate__animated animate__bounceIn animate__repeat-1"
-                :style="getPlaylistTypeStyle(index <= 8 ? index : index - 8)"
-                v-if="isShowAllPlaylistCategory || index <= 8"
+                :style="getPlaylistTypeStyle(index <= 13 ? index : index - 13)"
+                v-if="isShowAllPlaylistCategory || index <= 13"
               >{{ item.name }}</span>
             </template>
             <div
               class="play-list-type-showall animate__animated animate__bounceIn animate__repeat-1"
-              :style="getPlaylistTypeStyle(!isShowAllPlaylistCategory ? 25 : playlistCategory?.sub.length + 30)"
+              :style="getPlaylistTypeStyle(!isShowAllPlaylistCategory ? 25 : playlistCategory?.sub.length || 100 + 30)"
               @click="isShowAllPlaylistCategory = !isShowAllPlaylistCategory"
             >{{ !isShowAllPlaylistCategory ? '显示全部' : '隐藏一些' }}</div>
           </n-layout>
         </div>
         <div class="recommend-music">
           <div class="title">本周最热音乐</div>
-          <n-layout class=" recommend-music-list " >
-            <n-space vertical>
+          <n-layout class="recommend-music-list">
+            <n-space vertical size="large">
               <!-- 推荐音乐列表 -->
-              <div>
-               <img v-for="item in recommendMusic?.result" :src="item.picUrl" width="100" height="50" />
-              <div>
-
-              </div>
-              </div>
+              <template v-for="item in recommendMusic?.result" :key="item.id">
+                <div class="recommend-music-list-item">
+                  <img :src="item.picUrl" class="recommend-music-list-item-img" />
+                  <div class="recommend-music-list-item-content">
+                    <div class="recommend-music-list-item-content-title">
+                      <n-ellipsis class="text-ellipsis" line-clamp="1">{{ item.song.name }}</n-ellipsis>
+                    </div>
+                    <div class="recommend-music-list-item-content-name">
+                      <n-ellipsis
+                        class="text-ellipsis"
+                        line-clamp="1"
+                      >{{ item.song.artists[0].name }}</n-ellipsis>
+                    </div>
+                  </div>
+                  <div class="recommend-music-list-item-operating">
+                    <div class="recommend-music-list-item-operating-like">
+                      <i class="iconfont icon-likefill"></i>
+                    </div>
+                    <div class="recommend-music-list-item-operating-play" @click="playMusic(item)">
+                      <i class="iconfont icon-playfill"></i>
+                    </div>
+                  </div>
+                </div>
+              </template>
             </n-space>
           </n-layout>
         </div>
@@ -65,64 +83,68 @@
 
 <script lang="ts" setup>
 import { onMounted, ref } from "vue";
-import { getHotSinger, getPlaylistCategory, getRecommendMusic } from "@/api/home"
+import {
+  getHotSinger,
+  getPlaylistCategory,
+  getRecommendMusic,
+} from "@/api/home";
 import type { IHotSinger } from "@/type/singer";
 import type { IPlayListSort } from "@/type/playlist";
-import type { IRecommendMusic } from "@/type/music";
+import type { IRecommendMusic, SongResult } from "@/type/music";
+import { useStore } from "vuex";
 
 // 歌手信息
-const hotSingerData = ref<IHotSinger>()
+const hotSingerData = ref<IHotSinger>();
 // 歌单分类
-const playlistCategory = ref<IPlayListSort>()
+const playlistCategory = ref<IPlayListSort>();
 // 是否显示全部歌单分类
-const isShowAllPlaylistCategory = ref<boolean>(false)
+const isShowAllPlaylistCategory = ref<boolean>(false);
 // 推荐歌曲
-const recommendMusic = ref<IRecommendMusic>()
-
+const recommendMusic = ref<IRecommendMusic>();
 
 // 设置歌手背景图片
 const getStyle = (item: any) => {
-  return {
-    "background-image": "url(" + item.picUrl + ")"
-  }
-}
+  return "background-image:" + "url(" + item.picUrl + ")";
+};
 // 设置歌单分类样式
 const getPlaylistTypeStyle = (index: number) => {
-  return {
-    "animation-delay": index * 25 + "ms"
-  }
-}
+  return "animation-delay:" + index * 25 + "ms";
+};
 //加载推荐歌手
 const loadSingerList = async () => {
-  const { data } = await getHotSinger({ offset: 0, limit: 5 })
-  hotSingerData.value = data
-}
+  const { data } = await getHotSinger({ offset: 0, limit: 5 });
+  hotSingerData.value = data;
+};
 // 加载歌单分类
 const loadPlaylistCategory = async () => {
-  const { data } = await getPlaylistCategory()
-  playlistCategory.value = data
-}
+  const { data } = await getPlaylistCategory();
+  playlistCategory.value = data;
+};
 // 加载推荐歌曲
 const loadRecommendMusic = async () => {
-  const { data } = await getRecommendMusic({ limit: 6 })
-  recommendMusic.value = data
+  const { data } = await getRecommendMusic({ limit: 6 });
+  recommendMusic.value = data;
+};
+
+
+const store = useStore()
+const playMusic = (item: SongResult) => {
+  store.commit('setPlay', item)
+  store.commit('setIsPlay', true)
 }
 
 // 页面初始化
 onMounted(() => {
-  loadSingerList()
-  loadPlaylistCategory()
-  loadRecommendMusic()
-})
-
-
-
+  loadSingerList();
+  loadPlaylistCategory();
+  loadRecommendMusic();
+});
 </script>
 
 <style lang="scss" scoped>
 .recommend-singer {
   &-list {
-    @apply flex mt-5;
+    @apply flex;
     height: 350px;
   }
   &-item {
@@ -134,7 +156,7 @@ onMounted(() => {
     &-info {
       @apply flex items-center p-2;
       &-play {
-        @apply w-12 h-12 bg-green-500 rounded-full flex justify-center items-center;
+        @apply w-12 h-12 bg-green-500 rounded-full flex justify-center items-center hover:bg-green-600 cursor-pointer;
       }
     }
   }
@@ -159,10 +181,46 @@ onMounted(() => {
   }
 
   .recommend-music {
+    .text-ellipsis {
+      width: 100%;
+    }
     @apply flex-1 mr-96;
-    &-list{
+    &-list {
       @apply rounded-3xl p-6 w-full border border-gray-700;
-      background-color: #0D0D0D;
+      background-color: #0d0d0d;
+
+      &-item {
+        @apply flex items-center;
+        &-img {
+          @apply w-14 h-14 rounded-xl mr-4;
+        }
+        &-content {
+          @apply flex-1;
+          &-title {
+            @apply text-lg;
+          }
+          &-name {
+            @apply text-sm mt-1;
+            @apply text-gray-400;
+          }
+        }
+        &-operating {
+          @apply flex items-center pl-4 rounded-full border border-gray-700;
+          background-color: #1a1a1a;
+          .iconfont {
+            @apply text-2xl;
+          }
+          .icon-likefill {
+            @apply text-xl text-gray-300 hover:text-red-600 transition;
+          }
+          &-like {
+            @apply mr-2 cursor-pointer;
+          }
+          &-play {
+            @apply bg-green-500 cursor-pointer rounded-full w-10 h-10 flex justify-center items-center hover:bg-green-600 transition;
+          }
+        }
+      }
     }
   }
 }
