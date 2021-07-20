@@ -4,12 +4,12 @@
     <div class="app-menu">
       <div class="app-menu-header">
         <div class="app-menu-logo">
-          <img src="@/assets/logo.png" class="w-10 h-10" alt="logo" />
+          <img src="@/assets/logo.png" class="w-9 h-9 mt-2" alt="logo" />
         </div>
       </div>
       <div class="app-menu-list">
         <div class="app-menu-item" v-for="(item,index) in menus" :key="index">
-          <router-link class="app-menu-item-link mb-4 mt-4" :to="item.href">
+          <router-link class="app-menu-item-link" :to="item.href">
             <i class="iconfont app-menu-item-icon" :style="iconStyle" :class="item.icon"></i>
             <span v-if="isText" class="app-menu-item-text ml-3">{{ item.text }}</span>
           </router-link>
@@ -29,15 +29,15 @@ const props = defineProps({
   },
   size: {
     type: String,
-    default: '30px'
+    default: '26px'
   },
   color: {
     type: String,
-    default: '#fff'
+    default: '#aaa'
   },
   menus: {
     type: Array,
-    default: () => []
+    default: []
   }
 })
 
@@ -61,7 +61,13 @@ onMounted(() => {
   @apply flex items-center justify-center;
 }
 
-img {
-  color: #fff;
+.app-menu-item-link {
+  @apply mb-6 mt-6;
+}
+
+.app-menu-item-icon:hover {
+  color: #fff !important;
+  transform: scale(1.05);
+  transition: 0.2s ease-in-out;
 }
 </style>

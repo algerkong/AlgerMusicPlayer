@@ -8,6 +8,7 @@
   "dependencies": {
     "@tailwindcss/postcss7-compat": "^2.2.4",
     "autoprefixer": "^9.8.6",
+    "axios": "^0.21.1",
     "postcss": "^7.0.36",
     "sass": "^1.35.2",
     "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.2.4",
