@@ -17,7 +17,11 @@
             <div class="recommend-music-list-item-operating-like">
                 <i class="iconfont icon-likefill"></i>
             </div>
-            <div class="recommend-music-list-item-operating-play" @click="playMusic(item)">
+            <div
+                class="recommend-music-list-item-operating-play bg-black"
+                :class="isPlaying ? 'bg-green-600' : ''"
+                @click="playMusicEvent(item)"
+            >
                 <i class="iconfont icon-playfill"></i>
             </div>
         </div>
@@ -28,6 +32,7 @@
 import { setAnimationDelay, setAnimationClass } from "@/utils";
 import { useStore } from "vuex";
 import type { SongResult } from "@/type/music";
+import { computed, } from "vue";
 import type { PropType } from "vue";
 
 
@@ -42,8 +47,21 @@ const props = defineProps({
     }
 })
 
+
 const store = useStore();
-const playMusic = (item: SongResult) => {
+
+const playMusic = computed(() => store.state.playMusic);
+
+
+// 判断是否为正在播放的音乐
+const isPlaying = computed(() => {
+    console.log(1231223, playMusic.value.id, props.item.id);
+
+    return playMusic.value.id == props.item.id;
+})
+
+// 播放音乐 设置音乐详情 打开音乐底栏
+const playMusicEvent = (item: SongResult) => {
     store.commit("setPlay", item);
     store.commit("setIsPlay", true);
 };
@@ -84,7 +102,7 @@ const playMusic = (item: SongResult) => {
             @apply mr-2 cursor-pointer;
         }
         &-play {
-            @apply bg-black cursor-pointer border border-gray-500 rounded-full w-10 h-10 flex justify-center items-center hover:bg-green-600 transition;
+            @apply cursor-pointer border border-gray-500 rounded-full w-10 h-10 flex justify-center items-center hover:bg-green-600 transition;
         }
     }
 }

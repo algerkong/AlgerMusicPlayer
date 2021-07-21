@@ -20,6 +20,7 @@ let state = {
       text: "hello",
     },
   ],
+  play: false,
   isPlay: false,
   playMusic: {} as SongResult,
   playMusicUrl: "",
@@ -29,12 +30,16 @@ let mutations = {
   setMenus(state: any, menus: any[]) {
     state.menus = menus;
   },
-  setPlay(state: any, playMusic: SongResult) {
+  async setPlay(state: any, playMusic: SongResult) {
     state.playMusic = playMusic;
-    state.playMusicUrl = getSongUrl(playMusic.id);
+    state.playMusicUrl = await getSongUrl(playMusic.id);
+    state.play = true;
   },
   setIsPlay(state: any, isPlay: boolean) {
     state.isPlay = isPlay;
+  },
+  setPlayMusic(state: any, play: boolean) {
+    state.play = play;
   },
 };
 
