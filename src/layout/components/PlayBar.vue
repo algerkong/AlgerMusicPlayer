@@ -19,71 +19,108 @@
                 <i class="iconfont icon-prev"></i>
             </div>
             <div class="music-buttons-play" @click="playMusicEvent">
-                <i class="iconfont icon" :class="playMusicUrl ? 'icon-stop' : 'icon-play'"></i>
+                <i class="iconfont icon" :class="play ? 'icon-stop' : 'icon-play'"></i>
             </div>
             <div>
                 <i class="iconfont icon-next"></i>
             </div>
         </div>
         <div class="music-time">
-            <n-time :time="86400000" :to="86400000" format="mm:ss" />
-            <n-slider v-model:value="value" :step="0.1" />
-            <n-time :time="time" format="mm:ss" />
+            <div class="time">{{ getNowTime }}</div>
+            <n-slider v-model:value="timeSlider" :step="0.05">
+                <template #tooltip>
+                    <div>1231</div>
+                </template>
+            </n-slider>
+            <div class="time">{{ getAllTime }}</div>
         </div>
         <!-- 播放音乐 -->
-        <div ref="aaaaaaa">123123</div>
-        <audio ref="audio" :src="playMusicUrl" autoplay></audio>
+        <audio ref="audio" :src="playMusicUrl" :autoplay="play"></audio>
         <n-button @click="playMusicEvent">playMusicEvent</n-button>
     </div>
 </template>
 
 <script lang="ts" setup>
 import type { SongResult } from "@/type/music";
-import { computed, getCurrentInstance, onMounted, ref, watch } from "vue";
+import { secondToMinute } from "@/utils";
+import { computed, onBeforeUpdate, onMounted, ref, watch } from "vue";
 import { useStore } from 'vuex';
 
 const store = useStore();
 
+// 播放的音乐信息
 const playMusic = computed(() => store.state.playMusic as SongResult)
-const isPlay = computed(() => store.state.isPlay as boolean)
+// 是否播放
+const play = computed(() => store.state.play as boolean)
+// 播放链接
 const playMusicUrl = computed(() => store.state.playMusicUrl as string)
-
-
-console.log(playMusicUrl.value);
-console.log(isPlay);
 
 // 获取音乐播放Dom
 const audio = ref<any>(null)
-const aaaaaaa = ref(null)
-
-
 
 onMounted(() => {
-    console.log(audio);
-    console.log(aaaaaaa);
-
-    watch(() => isPlay.value, (value, oldValue) => {
-        console.log(value);
+    // 监听音乐是否播放
+    watch(() => play.value, (value, oldValue) => {
         if (value) {
-            audio.play()
+            audio.value.play()
+            onAudio(audio.value)
         } else {
-            audio.pause()
+            audio.value.pause()
         }
     })
+
+    // 抬起键盘按钮监听
+    document.onkeyup = (e) => {
+        switch (e.code) {
+            case 'Space':
+                playMusicEvent()
+        }
+    }
+    // 按下键盘按钮监听
+    document.onkeydown = (e) => {
+        switch (e.code) {
+            case 'Space':
+                return false
+
+        }
+    }
 })
 
+const nowTime = ref(0)
+const allTime = ref(0)
+// 计算属性  获取当前播放时间的进度
+const timeSlider = computed({
+    get: () => nowTime.value / allTime.value * 100,
+    set: (value) => {
+        audio.value.currentTime = value * allTime.value / 100
+    }
+})
+// 获取当前播放时间
+const getNowTime = computed(() => {
+    return secondToMinute(nowTime.value)
+})
 
+// 获取总时间
+const getAllTime = computed(() => {
+    return secondToMinute(allTime.value)
+})
 
-const time = new Date()
+// 监听音乐播放 获取时间
+const onAudio = (audio: any) => {
+    audio.addEventListener("timeupdate", function () {//监听音频播放的实时时间事件
+        //用秒数来显示当前播放进度
+        nowTime.value = audio.currentTime
+        allTime.value = audio.duration
+    })
+}
 
-const value = ref(0)
-
-
-
-
-
+// 播放暂停按钮事件
 const playMusicEvent = async () => {
-
+    if (play.value) {
+        store.commit("setPlayMusic", false);
+    } else {
+        store.commit("setPlayMusic", true);
+    }
 }
 
 </script>
@@ -134,5 +171,8 @@ const playMusicEvent = async () => {
 
 .music-time {
     @apply flex flex-1;
+    .time {
+        @apply mx-4;
+    }
 }
 </style>
