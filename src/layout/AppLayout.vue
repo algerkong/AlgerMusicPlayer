@@ -12,16 +12,23 @@
                 </div>
             </div>
             <!-- 底部音乐播放 -->
-            <play-bar />
+            <play-bar v-if="isPlay" />
         </div>
     </div>
 </template>
 
 <script lang="ts" setup>
+import type { SongResult } from '@/type/music';
+import { computed } from 'vue';
 import { useStore } from 'vuex';
 import { AppMenu, PlayBar, SearchBar } from './components';
+
 const store = useStore();
+
+const playMusic = computed(() => store.state.playMusic as SongResult)
+const isPlay = computed(() => store.state.isPlay as boolean)
 const menus = store.state.menus;
+
 </script>
 
 <style lang="scss" scoped>

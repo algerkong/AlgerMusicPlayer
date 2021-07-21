@@ -1,5 +1,6 @@
 import { createStore } from "vuex";
 import { SongResult } from "@/type/music";
+import { getMusicUrl } from "@/api/music";
 
 let state = {
   menus: [
@@ -21,6 +22,7 @@ let state = {
   ],
   isPlay: false,
   playMusic: {} as SongResult,
+  playMusicUrl: "",
 };
 
 let mutations = {
@@ -28,15 +30,19 @@ let mutations = {
     state.menus = menus;
   },
   setPlay(state: any, playMusic: SongResult) {
-    console.log(playMusic);
-
     state.playMusic = playMusic;
+    state.playMusicUrl = getSongUrl(playMusic.id);
   },
   setIsPlay(state: any, isPlay: boolean) {
-    console.log(isPlay);
-
     state.isPlay = isPlay;
   },
+};
+
+const getSongUrl = async (id: number) => {
+  const { data } = await getMusicUrl(id);
+  console.log(data.data[0].url);
+
+  return data.data[0].url;
 };
 
 const store = createStore({
