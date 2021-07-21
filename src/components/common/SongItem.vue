@@ -10,7 +10,12 @@
                 <n-ellipsis class="text-ellipsis" line-clamp="1">{{ item.song.name }}</n-ellipsis>
             </div>
             <div class="recommend-music-list-item-content-name">
-                <n-ellipsis class="text-ellipsis" line-clamp="1">{{ item.song.artists[0].name }}</n-ellipsis>
+                <n-ellipsis class="text-ellipsis" line-clamp="1">
+                    <span
+                        v-for="(artists,index) in item.song.artists"
+                        :key="index"
+                    >{{ artists.name }}{{ index < item.song.artists.length - 1 ? ' / ' : '' }}</span>
+                </n-ellipsis>
             </div>
         </div>
         <div class="recommend-music-list-item-operating">
