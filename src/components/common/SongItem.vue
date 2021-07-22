@@ -60,8 +60,6 @@ const playMusic = computed(() => store.state.playMusic);
 
 // 判断是否为正在播放的音乐
 const isPlaying = computed(() => {
-    console.log(1231223, playMusic.value.id, props.item.id);
-
     return playMusic.value.id == props.item.id;
 })
 

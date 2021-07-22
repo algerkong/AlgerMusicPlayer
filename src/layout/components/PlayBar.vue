@@ -27,22 +27,24 @@
         </div>
         <div class="music-time">
             <div class="time">{{ getNowTime }}</div>
-            <n-slider v-model:value="timeSlider" :step="0.05">
-                <template #tooltip>
-                    <div>1231</div>
-                </template>
-            </n-slider>
+            <n-slider v-model:value="timeSlider" :step="0.05" :tooltip="false"></n-slider>
             <div class="time">{{ getAllTime }}</div>
+        </div>
+        <div class="audio-volume">
+            <div>
+                <i class="iconfont icon-notificationfill"></i>
+            </div>
+            <n-slider v-model:value="volumeSlider" :step="0.01" :tooltip="false"></n-slider>
         </div>
         <!-- 播放音乐 -->
         <audio ref="audio" :src="playMusicUrl" :autoplay="play"></audio>
-        <n-button @click="playMusicEvent">playMusicEvent</n-button>
     </div>
 </template>
 
 <script lang="ts" setup>
 import type { SongResult } from "@/type/music";
 import { secondToMinute } from "@/utils";
+import { c } from "naive-ui";
 import { computed, onBeforeUpdate, onMounted, ref, watch } from "vue";
 import { useStore } from 'vuex';
 
@@ -95,6 +97,15 @@ const timeSlider = computed({
         audio.value.currentTime = value * allTime.value / 100
     }
 })
+
+// 音量条
+const audioVolume = ref(1)
+const volumeSlider = computed({
+    get: () => audioVolume.value * 100,
+    set: (value) => {
+        audio.value.volume = value / 100
+    }
+})
 // 获取当前播放时间
 const getNowTime = computed(() => {
     return secondToMinute(nowTime.value)
@@ -108,9 +119,13 @@ const getAllTime = computed(() => {
 // 监听音乐播放 获取时间
 const onAudio = (audio: any) => {
     audio.addEventListener("timeupdate", function () {//监听音频播放的实时时间事件
-        //用秒数来显示当前播放进度
+        // 获取当前播放时间
         nowTime.value = audio.currentTime
+        // 获取总时间
         allTime.value = audio.duration
+        // 获取音量
+        audioVolume.value = audio.volume
+
     })
 }
 
@@ -170,9 +185,17 @@ const playMusicEvent = async () => {
 }
 
 .music-time {
-    @apply flex flex-1;
+    @apply flex flex-1 items-center;
     .time {
-        @apply mx-4;
+        @apply mx-4 mt-1;
+    }
+}
+
+.audio-volume {
+    width: 180px;
+    @apply flex items-center mx-4;
+    .iconfont {
+        @apply text-2xl hover:text-green-500 transition cursor-pointer mr-4;
     }
 }
 </style>
