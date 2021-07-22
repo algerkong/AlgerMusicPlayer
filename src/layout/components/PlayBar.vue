@@ -36,6 +36,10 @@
             </div>
             <n-slider v-model:value="volumeSlider" :step="0.01" :tooltip="false"></n-slider>
         </div>
+        <div class="audio-button">
+            <i class="iconfont icon-likefill"></i>
+            <i class="iconfont icon-full"></i>
+        </div>
         <!-- 播放音乐 -->
         <audio ref="audio" :src="playMusicUrl" :autoplay="play"></audio>
     </div>
@@ -192,10 +196,17 @@ const playMusicEvent = async () => {
 }
 
 .audio-volume {
-    width: 180px;
+    width: 140px;
     @apply flex items-center mx-4;
     .iconfont {
         @apply text-2xl hover:text-green-500 transition cursor-pointer mr-4;
+    }
+}
+
+.audio-button {
+    @apply flex items-center mx-4;
+    .iconfont {
+        @apply text-2xl hover:text-green-500 transition cursor-pointer m-4;
     }
 }
 </style>
