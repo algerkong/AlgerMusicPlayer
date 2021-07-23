@@ -1,6 +1,6 @@
 <template>
     <div class="recommend-music">
-        <div class="title animate__animated animate__fadeInLeft">本周最热音乐</div>
+        <div class="title" :class="setAnimationClass('animate__fadeInLeft')">本周最热音乐</div>
         <div
             class="recommend-music-list"
             :class="setAnimationClass('animate__bounceInUp')"
@@ -40,10 +40,11 @@ onMounted(() => {
     @apply text-lg font-bold mb-4;
 }
 .recommend-music {
+    @apply flex-auto;
+    // width: 530px;
     .text-ellipsis {
         width: 100%;
     }
-    @apply flex-1 mr-96;
     &-list {
         @apply rounded-3xl p-2 w-full border border-gray-700;
         background-color: #0d0d0d;

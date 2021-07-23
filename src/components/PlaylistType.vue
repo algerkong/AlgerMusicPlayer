@@ -1,7 +1,7 @@
 <template>
     <!-- 歌单分类列表 -->
     <div class="play-list-type">
-        <div class="title animate__animated animate__fadeInLeft">歌单分类</div>
+        <div class="title" :class="setAnimationClass('animate__fadeInLeft')">歌单分类</div>
         <n-layout class="bg-black">
             <template v-for="(item, index) in playlistCategory?.sub" :key="item.name">
                 <span

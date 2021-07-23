@@ -3,6 +3,7 @@ import { IHotSinger } from "@/type/singer";
 import { ISearchKeyword } from "@/type/search";
 import { IPlayListSort } from "@/type/playlist";
 import { IRecommendMusic } from "@/type/music";
+import { IAlbumNew } from "@/type/album";
 
 interface IHotSingerParams {
   offset: number;
@@ -31,4 +32,9 @@ export const getPlaylistCategory = () => {
 // 获取推荐音乐
 export const getRecommendMusic = (params: IRecommendMusicParams) => {
   return request.get<IRecommendMusic>("/personalized/newsong", { params });
+};
+
+// 获取最新专辑推荐
+export const getNewAlbum = () => {
+  return request.get<IAlbumNew>("/album/newest");
 };

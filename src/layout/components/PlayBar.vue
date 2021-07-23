@@ -1,5 +1,5 @@
 <template>
-    <div class="music-play-bar">
+    <div class="music-play-bar" :class="setAnimationClass('animate__bounceInUp')">
         <img class="play-bar-img" :src="playMusic.picUrl" />
         <div class="music-content">
             <div class="music-content-title">
@@ -48,9 +48,9 @@
 <script lang="ts" setup>
 import type { SongResult } from "@/type/music";
 import { secondToMinute } from "@/utils";
-import { c } from "naive-ui";
-import { computed, onBeforeUpdate, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useStore } from 'vuex';
+import { setAnimationClass } from "@/utils";
 
 const store = useStore();
 
@@ -99,6 +99,8 @@ const timeSlider = computed({
     get: () => nowTime.value / allTime.value * 100,
     set: (value) => {
         audio.value.currentTime = value * allTime.value / 100
+        audio.value.play()
+        store.commit("setPlayMusic", true);
     }
 })
 
@@ -127,6 +129,10 @@ const onAudio = (audio: any) => {
         nowTime.value = audio.currentTime
         // 获取总时间
         allTime.value = audio.duration
+
+        if (audio.currentTime >= audio.duration) {
+            store.commit("setPlayMusic", false);
+        }
         // 获取音量
         audioVolume.value = audio.volume
 

@@ -9,7 +9,10 @@
                 :style="setAnimationDelay(index, 100)"
                 :key="item.id"
             >
-                <div :style="setBackgroundImg(item.picUrl)" class="recommend-singer-item-bg"></div>
+                <div
+                    :style="setBackgroundImg(item.picUrl + '?param=500y500')"
+                    class="recommend-singer-item-bg"
+                ></div>
                 <div
                     class="recommend-singer-item-count p-2 text-base text-gray-200 z-10"
                 >{{ item.musicSize }}首</div>

@@ -8,6 +8,8 @@
         <playlist-type />
         <!-- 本周最热音乐 -->
         <recommend-songlist />
+        <!-- 推荐最新专辑 -->
+        <recommend-album />
       </div>
     </div>
   </n-layout>
@@ -17,6 +19,7 @@
 import RecommendSinger from "@/components/RecommendSinger.vue";
 import PlaylistType from "@/components/PlaylistType.vue";
 import RecommendSonglist from "@/components/RecommendSonglist.vue";
+import RecommendAlbum from "@/components/RecommendAlbum.vue";
 
 </script>
 
