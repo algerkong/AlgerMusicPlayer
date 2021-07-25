@@ -4,7 +4,7 @@
         :class="setAnimationClass('animate__bounceInUp')"
         :style="setAnimationDelay(index, 200)"
     >
-        <img :src="item.picUrl" class="recommend-music-list-item-img" />
+        <img :src="item.picUrl + '?param=200y200'" class="recommend-music-list-item-img" />
         <div class="recommend-music-list-item-content">
             <div class="recommend-music-list-item-content-title">
                 <n-ellipsis class="text-ellipsis" line-clamp="1">{{ item.song.name }}</n-ellipsis>

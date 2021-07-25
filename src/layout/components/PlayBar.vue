@@ -1,6 +1,29 @@
 <template>
+    <div id="drawer-target" :class="musicFullClass">
+        <div class="music-img">
+            <img class="img" :src="playMusic.picUrl + '?param=300y300'" />
+        </div>
+        <div class="music-content">
+            <div class="music-content-name">{{ playMusic.song.name }}</div>
+            <div class="music-content-singer">
+                <span
+                    v-for="(item,index) in playMusic.song.artists"
+                    :key="index"
+                >{{ item.name }}{{ index < playMusic.song.artists.length - 1 ? ' / ' : '' }}</span>
+            </div>
+            <n-layout class="music-lrc" :native-scrollbar="false">
+                <template v-for="(item,index) in lrcArray" :key="index">
+                    <div
+                        class="music-lrc-text"
+                        :class="{ 'now-text': isCurrentLrc(index) }"
+                    >{{ item.text }}</div>
+                </template>
+            </n-layout>
+        </div>
+    </div>
+
     <div class="music-play-bar" :class="setAnimationClass('animate__bounceInUp')">
-        <img class="play-bar-img" :src="playMusic.picUrl" />
+        <img class="play-bar-img" :src="playMusic.picUrl + '?param=200y200'" />
         <div class="music-content">
             <div class="music-content-title">
                 <n-ellipsis class="text-ellipsis" line-clamp="1">{{ playMusic.song.name }}</n-ellipsis>
@@ -38,7 +61,7 @@
         </div>
         <div class="audio-button">
             <i class="iconfont icon-likefill"></i>
-            <i class="iconfont icon-full"></i>
+            <i class="iconfont icon-full" @click="setMusicFull"></i>
         </div>
         <!-- 播放音乐 -->
         <audio ref="audio" :src="playMusicUrl" :autoplay="play"></audio>
@@ -47,10 +70,12 @@
 
 <script lang="ts" setup>
 import type { SongResult } from "@/type/music";
+import type { ILyric } from "@/type/lyric";
 import { secondToMinute } from "@/utils";
 import { computed, onMounted, ref, watch } from "vue";
 import { useStore } from 'vuex';
 import { setAnimationClass } from "@/utils";
+import { getMusicLrc } from "@/api/music"
 
 const store = useStore();
 
@@ -82,6 +107,7 @@ onMounted(() => {
                 playMusicEvent()
         }
     }
+
     // 按下键盘按钮监听
     document.onkeydown = (e) => {
         switch (e.code) {
@@ -126,7 +152,7 @@ const getAllTime = computed(() => {
 const onAudio = (audio: any) => {
     audio.addEventListener("timeupdate", function () {//监听音频播放的实时时间事件
         // 获取当前播放时间
-        nowTime.value = audio.currentTime
+        nowTime.value = Math.floor(audio.currentTime)
         // 获取总时间
         allTime.value = audio.duration
 
@@ -148,9 +174,120 @@ const playMusicEvent = async () => {
     }
 }
 
+const musicFull = ref(false)
+
+// 设置musicFull
+const setMusicFull = () => {
+    musicFull.value = !musicFull.value
+    if (musicFull.value) {
+        loadLrc()
+    }
+}
+
+const musicFullClass = computed(() => {
+    if (musicFull.value) {
+        return setAnimationClass('animate__zoomInUp')
+    } else {
+        return setAnimationClass('animate__fadeOutDown')
+    }
+})
+
+const lrcData = ref<ILyric>()
+const lrcArray = ref<Array<Object>>()
+const lrcTimeArray = ref<any>()
+// 加载歌词
+const loadLrc = async () => {
+    const { data } = await getMusicLrc(playMusic.value.id)
+    lrcData.value = data
+    console.log(data);
+
+    try {
+        let musicText = data.lrc.lyric
+
+        console.log(musicText);
+        //歌词时间
+        let timeArray = musicText.match(/(\d{2}):(\d{2})(\.(\d*))?/g)
+        let timeArrayNum = []
+        timeArray?.forEach(function (item, index) {
+            if (item.length < 9) {
+                item = item + "0"
+            }
+            timeArrayNum.push(parseInt(item.split(':')[0]) * 60 + parseFloat(item.split(':')[1]));
+        })
+        lrcTimeArray.value = timeArrayNum
+        console.log(lrcTimeArray.value)
+        //歌词
+        musicText = musicText.replace(/(\[(\d{2}):(\d{2})(\.(\d*))?\])/g, '').split('\n')
+        let count = musicText.length - lrcTimeArray.length;
+        if (count) {
+            musicText = musicText.slice(count - 1)
+        }
+        console.log(musicText)
+        let text = []
+
+        try {
+            let trMusicText = data.tlyric.lyric
+            trMusicText = trMusicText.replace(/(\[(\d{2}):(\d{2})(\.(\d*))?\])/g, '').split('\n')
+            for (let i = 0; i < musicText.length - 1; i++) {
+                text.push({
+                    text: musicText[i],
+                    trText: trMusicText[i]
+                })
+            }
+            lrcArray.value = text
+            console.log(text)
+
+        } catch (err) {
+            text = null
+        }
+    } catch (err) {
+        console.log(err)
+    }
+}
+
+// 是否是当前正在播放的歌词
+const isCurrentLrc = computed((index) => {
+    return !(nowTime.value <= lrcTimeArray.value[index] || nowTime.value >= lrcTimeArray.value[index + 1])
+})
+onMounted(() => {
+})
+
 </script>
 
 <style lang="scss" scoped>
+#drawer-target {
+    @apply top-0 left-0 absolute w-full h-full overflow-hidden rounded px-24 pt-24 pb-48 flex items-center;
+    background-color: #333333;
+    animation-duration: 500ms;
+    .music-img {
+        @apply flex-1;
+        .img {
+            @apply rounded-xl;
+        }
+    }
+
+    .music-content {
+        @apply flex flex-col justify-center items-center;
+        &-name {
+            @apply font-bold text-3xl py-2;
+        }
+        &-singer {
+            @apply text-base py-2;
+        }
+    }
+    .music-lrc {
+        background-color: #333333;
+        width: 800px;
+        height: 550px;
+        &-text {
+            @apply text-center text-white text-lg py-2;
+        }
+
+        .now-text {
+            @apply font-bold;
+        }
+    }
+}
 .text-ellipsis {
     width: 100%;
 }
@@ -158,22 +295,22 @@ const playMusicEvent = async () => {
 .music-play-bar {
     @apply h-20 w-full absolute bottom-0 left-0 flex items-center rounded-t-2xl overflow-hidden box-border px-6 py-2;
     background-color: #212121;
+
+    .music-content {
+        width: 200px;
+        @apply ml-4;
+        &-title {
+            @apply text-base text-white;
+        }
+        &-name {
+            @apply text-xs mt-1;
+            @apply text-gray-400;
+        }
+    }
 }
 
 .play-bar-img {
     @apply w-14 h-14 rounded-2xl;
-}
-
-.music-content {
-    width: 200px;
-    @apply ml-4;
-    &-title {
-        @apply text-base text-white;
-    }
-    &-name {
-        @apply text-xs mt-1;
-        @apply text-gray-400;
-    }
 }
 
 .music-buttons {

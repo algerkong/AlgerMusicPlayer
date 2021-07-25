@@ -25,7 +25,6 @@ import { AppMenu, PlayBar, SearchBar } from './components';
 
 const store = useStore();
 
-const playMusic = computed(() => store.state.playMusic as SongResult)
 const isPlay = computed(() => store.state.isPlay as boolean)
 const menus = store.state.menus;
 
