@@ -10,7 +10,7 @@ let state = {
       text: "hello",
     },
     {
-      href: "/main",
+      href: "/search",
       icon: "icon-peoplefill",
       text: "hello",
     },

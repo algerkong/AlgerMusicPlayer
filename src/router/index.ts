@@ -6,6 +6,11 @@ const layoutRouter = [
     name: "home",
     component: () => import("@/views/home/index.vue"),
   },
+  {
+    path: "/search",
+    name: "search",
+    component: () => import("@/views/search/index.vue"),
+  },
 ];
 
 const routes = [

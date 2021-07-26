@@ -1,5 +1,5 @@
 <template>
-    <div id="drawer-target" :class="musicFullClass">
+    <div id="drawer-target" :class="musicFullClass" v-if="musicFull">
         <div class="music-img">
             <img class="img" :src="playMusic.picUrl + '?param=300y300'" />
         </div>
@@ -193,8 +193,13 @@ const musicFullClass = computed(() => {
 })
 
 const lrcData = ref<ILyric>()
-const lrcArray = ref<Array<Object>>()
-const lrcTimeArray = ref<any>()
+
+interface ILrcData {
+    text: string;
+    trText: string;
+}
+const lrcArray = ref<Array<ILrcData>>()
+const lrcTimeArray = ref<Array<Number>>([])
 // 加载歌词
 const loadLrc = async () => {
     const { data } = await getMusicLrc(playMusic.value.id)
@@ -207,7 +212,7 @@ const loadLrc = async () => {
         console.log(musicText);
         //歌词时间
         let timeArray = musicText.match(/(\d{2}):(\d{2})(\.(\d*))?/g)
-        let timeArrayNum = []
+        let timeArrayNum: Array<Number> = []
         timeArray?.forEach(function (item, index) {
             if (item.length < 9) {
                 item = item + "0"
@@ -217,28 +222,24 @@ const loadLrc = async () => {
         lrcTimeArray.value = timeArrayNum
         console.log(lrcTimeArray.value)
         //歌词
-        musicText = musicText.replace(/(\[(\d{2}):(\d{2})(\.(\d*))?\])/g, '').split('\n')
-        let count = musicText.length - lrcTimeArray.length;
-        if (count) {
-            musicText = musicText.slice(count - 1)
-        }
-        console.log(musicText)
+        let musicTextArray = musicText.replace(/(\[(\d{2}):(\d{2})(\.(\d*))?\])/g, '').split('\n')
+        console.log(musicTextArray)
         let text = []
 
         try {
             let trMusicText = data.tlyric.lyric
-            trMusicText = trMusicText.replace(/(\[(\d{2}):(\d{2})(\.(\d*))?\])/g, '').split('\n')
-            for (let i = 0; i < musicText.length - 1; i++) {
+            let trMusicTextArray = trMusicText.replace(/(\[(\d{2}):(\d{2})(\.(\d*))?\])/g, '').split('\n')
+            for (let i = 0; i < musicTextArray.length - 1; i++) {
                 text.push({
-                    text: musicText[i],
-                    trText: trMusicText[i]
+                    text: musicTextArray[i],
+                    trText: trMusicTextArray[i]
                 })
             }
             lrcArray.value = text
             console.log(text)
 
         } catch (err) {
-            text = null
+            text = []
         }
     } catch (err) {
         console.log(err)

@@ -1,6 +1,6 @@
 import request from "@/utils/request";
 import { IHotSinger } from "@/type/singer";
-import { ISearchKeyword } from "@/type/search";
+import { ISearchKeyword, IHotSearch } from "@/type/search";
 import { IPlayListSort } from "@/type/playlist";
 import { IRecommendMusic } from "@/type/music";
 import { IAlbumNew } from "@/type/album";
@@ -22,6 +22,11 @@ export const getHotSinger = (params: IHotSingerParams) => {
 // 获取搜索推荐词
 export const getSearchKeyword = () => {
   return request.get<ISearchKeyword>("/search/default");
+};
+
+// 获取热门搜索
+export const getHotSearch = () => {
+  return request.get<IHotSearch>("/search/hot/detail");
 };
 
 // 获取歌单分类
