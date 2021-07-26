@@ -186,7 +186,7 @@ const setMusicFull = () => {
 
 const musicFullClass = computed(() => {
     if (musicFull.value) {
-        return setAnimationClass('animate__zoomInUp')
+        return setAnimationClass('animate__fadeInUp')
     } else {
         return setAnimationClass('animate__fadeOutDown')
     }
@@ -246,9 +246,9 @@ const loadLrc = async () => {
 }
 
 // 是否是当前正在播放的歌词
-const isCurrentLrc = computed((index) => {
+const isCurrentLrc = (index: any) => {
     return !(nowTime.value <= lrcTimeArray.value[index] || nowTime.value >= lrcTimeArray.value[index + 1])
-})
+}
 onMounted(() => {
 })
 
@@ -258,7 +258,7 @@ onMounted(() => {
 #drawer-target {
     @apply top-0 left-0 absolute w-full h-full overflow-hidden rounded px-24 pt-24 pb-48 flex items-center;
     background-color: #333333;
-    animation-duration: 500ms;
+    animation-duration: 300ms;
     .music-img {
         @apply flex-1;
         .img {
@@ -284,7 +284,8 @@ onMounted(() => {
         }
 
         .now-text {
-            @apply font-bold;
+            @apply font-bold text-xl text-red-500;
+            transition: all 0.3s ease-out;
         }
     }
 }
