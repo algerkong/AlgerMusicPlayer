@@ -17,7 +17,17 @@
                 </template>
             </n-layout>
         </div>
-        <div>{{ searchDetail }}</div>
+        <div>
+            <!-- 搜索到的歌曲列表 -->
+            <div class="search-song-list">
+                <template v-for="(item,index) in searchDetail?.result.song.songs">
+                    <div class="search-song-item">
+                        <img :src="item.al.picUrl + '?param=100y100'" alt />
+                        <div>{{ item.name }}</div>
+                    </div>
+                </template>
+            </div>
+        </div>
     </div>
 </template>
 
