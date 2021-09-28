@@ -1,5 +1,6 @@
 <template>
-    <div id="drawer-target" :class="musicFullClass" v-if="musicFull">
+    <!-- 展开全屏 -->
+    <div id="drawer-target" :class="musicFullClass" v-show="musicFull">
         <div class="music-img">
             <img class="img" :src="playMusic.picUrl + '?param=300y300'" />
         </div>
@@ -11,17 +12,25 @@
                     :key="index"
                 >{{ item.name }}{{ index < playMusic.song.artists.length - 1 ? ' / ' : '' }}</span>
             </div>
-            <n-layout class="music-lrc" :native-scrollbar="false">
+            <n-layout
+                class="music-lrc"
+                style="height: 550px;"
+                ref="lrcSider"
+                :native-scrollbar="false"
+                @mouseover="mouseOverLayout"
+                @mouseleave="mouseLeaveLayout"
+            >
                 <template v-for="(item,index) in lrcArray" :key="index">
                     <div
                         class="music-lrc-text"
                         :class="{ 'now-text': isCurrentLrc(index) }"
+                        @click="setAudioTime(index)"
                     >{{ item.text }}</div>
                 </template>
             </n-layout>
         </div>
     </div>
-
+    <!-- 底部播放栏 -->
     <div class="music-play-bar" :class="setAnimationClass('animate__bounceInUp')">
         <img class="play-bar-img" :src="playMusic.picUrl + '?param=200y200'" @click="setMusicFull" />
         <div class="music-content">
@@ -148,6 +157,27 @@ const getAllTime = computed(() => {
     return secondToMinute(allTime.value)
 })
 
+// 获取歌词滚动dom
+const lrcSider = ref<any>(null)
+// 当前播放的是哪一句歌词
+const newLrcIndex = ref(0)
+const isMouse = ref(false)
+// 歌词滚动方法
+const lrcScroll = () => {
+    if (musicFull.value && !isMouse.value) {
+        let top = newLrcIndex.value * 50 - 225;
+        lrcSider.value.scrollTo({ top: top, behavior: 'smooth' })
+    }
+}
+const mouseOverLayout = () => {
+    isMouse.value = true
+}
+const mouseLeaveLayout = () => {
+    setTimeout(() => {
+        isMouse.value = false
+    }, 3000);
+}
+
 // 监听音乐播放 获取时间
 const onAudio = (audio: any) => {
     audio.addEventListener("timeupdate", function () {//监听音频播放的实时时间事件
@@ -161,6 +191,8 @@ const onAudio = (audio: any) => {
         }
         // 获取音量
         audioVolume.value = audio.volume
+
+        lrcScroll()
 
     })
 }
@@ -204,12 +236,10 @@ const lrcTimeArray = ref<Array<Number>>([])
 const loadLrc = async () => {
     const { data } = await getMusicLrc(playMusic.value.id)
     lrcData.value = data
-    console.log(data);
 
     try {
-        let musicText = data.lrc.lyric
 
-        console.log(musicText);
+        let musicText = data.lrc.lyric
         //歌词时间
         let timeArray = musicText.match(/(\d{2}):(\d{2})(\.(\d*))?/g)
         let timeArrayNum: Array<Number> = []
@@ -220,10 +250,8 @@ const loadLrc = async () => {
             timeArrayNum.push(parseInt(item.split(':')[0]) * 60 + parseFloat(item.split(':')[1]));
         })
         lrcTimeArray.value = timeArrayNum
-        console.log(lrcTimeArray.value)
         //歌词
         let musicTextArray = musicText.replace(/(\[(\d{2}):(\d{2})(\.(\d*))?\])/g, '').split('\n')
-        console.log(musicTextArray)
         let text = []
 
         try {
@@ -236,7 +264,6 @@ const loadLrc = async () => {
                 })
             }
             lrcArray.value = text
-            console.log(text)
 
         } catch (err) {
             text = []
@@ -248,10 +275,18 @@ const loadLrc = async () => {
 
 // 是否是当前正在播放的歌词
 const isCurrentLrc = (index: any) => {
-    return !(nowTime.value <= lrcTimeArray.value[index] || nowTime.value >= lrcTimeArray.value[index + 1])
+    let isTrue = !(nowTime.value <= lrcTimeArray.value[index] || nowTime.value >= lrcTimeArray.value[index + 1])
+    if (isTrue) {
+        newLrcIndex.value = index
+
+    }
+    return isTrue
 }
-onMounted(() => {
-})
+// 设置当前播放时间
+const setAudioTime = (index: any) => {
+    audio.value.currentTime = lrcTimeArray.value[index]
+    audio.value.play()
+}
 
 </script>
 
@@ -281,12 +316,16 @@ onMounted(() => {
         width: 800px;
         height: 550px;
         &-text {
-            @apply text-center text-white text-lg py-2;
+            @apply text-white text-lg flex justify-center items-center cursor-pointer;
+            height: 50px;
+            transition: all 0.2s ease-out;
+            &:hover {
+                @apply font-bold text-xl text-red-500;
+            }
         }
 
         .now-text {
             @apply font-bold text-xl text-red-500;
-            transition: all 0.3s ease-out;
         }
     }
 }
