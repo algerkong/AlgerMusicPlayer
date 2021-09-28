@@ -8,7 +8,12 @@
         >
             <!-- 推荐音乐列表 -->
             <template v-for="(item, index) in recommendMusic?.result" :key="item.id">
-                <song-item :item="item" :index="index" />
+                <div
+                    :class="setAnimationClass('animate__bounceInUp')"
+                    :style="setAnimationDelay(index, 100)"
+                >
+                    <song-item :item="item" />
+                </div>
             </template>
         </div>
     </div>
@@ -18,7 +23,7 @@
 import { onMounted, ref } from "vue";
 import { getRecommendMusic } from "@/api/home";
 import type { IRecommendMusic } from "@/type/music";
-import { setAnimationClass } from "@/utils";
+import { setAnimationClass, setAnimationDelay } from "@/utils";
 import SongItem from "./common/SongItem.vue";
 // 推荐歌曲
 const recommendMusic = ref<IRecommendMusic>();

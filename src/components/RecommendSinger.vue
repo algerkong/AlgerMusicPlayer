@@ -17,7 +17,7 @@
                     class="recommend-singer-item-count p-2 text-base text-gray-200 z-10"
                 >{{ item.musicSize }}首</div>
                 <div class="recommend-singer-item-info z-10">
-                    <div class="recommend-singer-item-info-play">
+                    <div class="recommend-singer-item-info-play" @click="toSearchSinger(item.name)">
                         <i class="iconfont icon-playfill text-xl"></i>
                     </div>
                     <div class="ml-4">
@@ -35,6 +35,7 @@ import { setBackgroundImg, setAnimationDelay, setAnimationClass } from "@/utils"
 import { onMounted, ref } from "vue";
 import { getHotSinger } from "@/api/home";
 import type { IHotSinger } from "@/type/singer";
+import router from "@/router";
 
 // 歌手信息
 const hotSingerData = ref<IHotSinger>();
@@ -48,6 +49,17 @@ const loadSingerList = async () => {
 onMounted(() => {
     loadSingerList();
 });
+
+
+const toSearchSinger = (keyword: string) => {
+    router.push({
+        path: "/search",
+        query: {
+            keyword: keyword,
+        },
+    });
+};
+
 </script>
 
 <style lang="scss" scoped>

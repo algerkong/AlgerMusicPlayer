@@ -23,7 +23,7 @@
     </div>
 
     <div class="music-play-bar" :class="setAnimationClass('animate__bounceInUp')">
-        <img class="play-bar-img" :src="playMusic.picUrl + '?param=200y200'" />
+        <img class="play-bar-img" :src="playMusic.picUrl + '?param=200y200'" @click="setMusicFull" />
         <div class="music-content">
             <div class="music-content-title">
                 <n-ellipsis class="text-ellipsis" line-clamp="1">{{ playMusic.song.name }}</n-ellipsis>

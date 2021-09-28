@@ -8,7 +8,11 @@
                     <!-- 搜索栏 -->
                     <search-bar />
                     <!-- 主页面路由 -->
-                    <router-view class="main-content"></router-view>
+                    <n-layout class="main-content bg-black" :native-scrollbar="false">
+                        <keep-alive>
+                            <router-view class="main-page"></router-view>
+                        </keep-alive>
+                    </n-layout>
                 </div>
             </div>
             <!-- 底部音乐播放 -->
@@ -48,9 +52,13 @@ const menus = store.state.menus;
     }
     .main {
         @apply pt-6 pr-6 flex-1 box-border;
-        .main-content {
+        &-content {
             @apply rounded-2xl;
-            height: 810px;
+            height: 834px;
+        }
+        &-page {
+            padding: 20px 0;
+            padding-bottom: 80px;
         }
     }
 }

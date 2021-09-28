@@ -1,9 +1,5 @@
 <template>
-    <div
-        class="recommend-music-list-item"
-        :class="setAnimationClass('animate__bounceInUp')"
-        :style="setAnimationDelay(index, 200)"
-    >
+    <div class="recommend-music-list-item">
         <img :src="item.picUrl + '?param=200y200'" class="recommend-music-list-item-img" />
         <div class="recommend-music-list-item-content">
             <div class="recommend-music-list-item-content-title">
@@ -12,9 +8,9 @@
             <div class="recommend-music-list-item-content-name">
                 <n-ellipsis class="text-ellipsis" line-clamp="1">
                     <span
-                        v-for="(artists,index) in item.song.artists"
-                        :key="index"
-                    >{{ artists.name }}{{ index < item.song.artists.length - 1 ? ' / ' : '' }}</span>
+                        v-for="(artists,artistsindex) in item.song.artists"
+                        :key="artistsindex"
+                    >{{ artists.name }}{{ artistsindex < item.song.artists.length - 1 ? ' / ' : '' }}</span>
                 </n-ellipsis>
             </div>
         </div>
@@ -34,20 +30,14 @@
 </template>
 
 <script lang="ts" setup>
-import { setAnimationDelay, setAnimationClass } from "@/utils";
 import { useStore } from "vuex";
 import type { SongResult } from "@/type/music";
 import { computed, } from "vue";
-import type { PropType } from "vue";
 
 
 const props = defineProps({
     item: {
-        type: Object as PropType<SongResult>,
-        required: true
-    },
-    index: {
-        type: Number,
+        type: Object,
         required: true
     }
 })
