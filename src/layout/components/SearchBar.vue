@@ -49,9 +49,11 @@ const store = useStore();
 
 // 推荐热搜词
 const hotSearchKeyword = ref("搜索点什么吧...")
+const hotSearchValue = ref("")
 const loadHotSearchKeyword = async () => {
     const { data } = await getSearchKeyword();
     hotSearchKeyword.value = data.data.showKeyword
+    hotSearchValue.value = data.data.realkeyword
 }
 const loadPage = async () => {
     const { data } = await getUserDetail()
@@ -77,7 +79,7 @@ const search = () => {
 
     let value = searchValue.value
     if (value == "") {
-        searchValue.value = hotSearchKeyword.value
+        searchValue.value = hotSearchValue.value
     } else {
         router.push({
             path: "/search",
