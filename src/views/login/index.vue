@@ -54,7 +54,9 @@ const timerIsQr = (key: string) => {
 <template>
   <div class="login-page">
     <div class="login-title">扫码登陆</div>
-    <img class="qr-img" :src="qrUrl" />
+    <div class="qr">
+      <img class="qr-img" :src="qrUrl" />
+    </div>
     <div class="text">使用网易云APP扫码登录</div>
   </div>
 </template>
@@ -70,5 +72,8 @@ const timerIsQr = (key: string) => {
 
 .text {
   @apply mt-4 text-green-500 text-xs;
+}
+
+.qr {
 }
 </style>
