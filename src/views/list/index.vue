@@ -22,7 +22,6 @@ const selectRecommendItem = async (item: IRecommendItem) => {
   showMusic.value = true
   recommendItem.value = item
   listDetail.value = data
-  console.log(data);
 
 }
 const closeMusic = () => {
@@ -96,7 +95,7 @@ const formatDetail = computed(() => (detail: any) => {
         <div
           v-for="(item, index) in listDetail?.playlist.tracks"
           :key="item.id"
-          :class="setAnimationClass('animate__bounceInRight')"
+          :class="setAnimationClass('animate__bounceInUp')"
           :style="setAnimationDelay(index, 100)"
         >
           <SongItem :item="formatDetail(item)" />
@@ -121,6 +120,7 @@ const formatDetail = computed(() => (detail: any) => {
 
   &-list {
     @apply flex flex-wrap;
+    padding-bottom: 100px;
   }
   &-item {
     width: 200px;

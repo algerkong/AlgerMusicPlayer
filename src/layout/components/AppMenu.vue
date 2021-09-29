@@ -52,8 +52,6 @@ const props = defineProps({
 const route = useRoute();
 const path = ref(route.path);
 watch(() => route.path, async newParams => {
-  console.log(newParams);
-
   path.value = newParams
 })
 

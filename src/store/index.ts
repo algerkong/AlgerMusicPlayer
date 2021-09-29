@@ -8,6 +8,7 @@ let state = {
   isPlay: false,
   playMusic: {} as SongResult,
   playMusicUrl: "",
+  user: null as any,
 };
 
 let mutations = {

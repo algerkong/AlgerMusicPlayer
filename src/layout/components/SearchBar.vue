@@ -15,39 +15,59 @@
             </n-input>
         </div>
         <div class="user-box">
-            <n-popselect v-model:value="value" :options="options" trigger="click" size="small">
+            <n-dropdown trigger="hover" @select="selectItem" :options="options">
                 <i class="iconfont icon-xiasanjiaoxing"></i>
-            </n-popselect>
+            </n-dropdown>
             <n-avatar
-                class="ml-2"
+                class="ml-2 cursor-pointer"
+                circle
+                size="large"
+                :src="store.state.user.avatarUrl"
+                v-if="store.state.user"
+            />
+            <n-avatar
+                class="ml-2 cursor-pointer"
                 circle
                 size="large"
                 src="https://picsum.photos/200/300?random=1"
-            />
+                @click="toLogin()"
+                v-else
+            >登录</n-avatar>
         </div>
     </div>
 </template>
 
 <script lang="ts" setup>
 import { getSearchKeyword, getHotSearch } from '@/api/home';
+import { getUserDetail } from '@/api/login';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { useStore } from 'vuex';
 
 const router = useRouter()
+const store = useStore();
+
 // 推荐热搜词
 const hotSearchKeyword = ref("搜索点什么吧...")
 const loadHotSearchKeyword = async () => {
     const { data } = await getSearchKeyword();
     hotSearchKeyword.value = data.data.showKeyword
 }
+const loadPage = async () => {
+    const { data } = await getUserDetail()
+    store.state.user = data.profile
+}
 
-
+const toLogin = () => {
+    router.push('/login')
+}
 
 
 
 // 页面初始化
 onMounted(() => {
     loadHotSearchKeyword()
+    loadPage()
 })
 
 
@@ -72,17 +92,26 @@ const value = 'Drive My Car'
 const options = [
     {
         label: 'Girl',
-        value: 'Girl'
+        key: 'Girl'
     },
     {
         label: 'In My Life',
-        value: 'In My Life'
+        key: 'In My Life'
     },
     {
-        label: 'Wait',
-        value: 'Wait'
+        label: '退出登录',
+        key: 'logout'
     }
 ]
+
+const selectItem = (key: any) => {
+    // switch 判断
+    switch (key) {
+        case 'logout':
+            store.state.user = null
+            break;
+    }
+}
 
 </script>
 
