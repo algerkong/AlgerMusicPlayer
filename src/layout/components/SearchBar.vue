@@ -39,7 +39,7 @@
 
 <script lang="ts" setup>
 import { getSearchKeyword, getHotSearch } from '@/api/home';
-import { getUserDetail } from '@/api/login';
+import { getUserDetail, logout } from '@/api/login';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
@@ -108,7 +108,10 @@ const selectItem = (key: any) => {
     // switch 判断
     switch (key) {
         case 'logout':
-            store.state.user = null
+            logout().then(() => {
+                store.state.user = null
+                localStorage.clear()
+            })
             break;
     }
 }

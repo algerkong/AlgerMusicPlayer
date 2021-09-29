@@ -24,3 +24,8 @@ export function getLoginStatus() {
 export function getUserDetail() {
   return request.get("/user/account");
 }
+
+// /logout
+export function logout() {
+  return request.get("/logout");
+}

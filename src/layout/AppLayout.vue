@@ -9,12 +9,14 @@
                     <search-bar />
                     <!-- 主页面路由 -->
                     <n-layout class="main-content bg-black" :native-scrollbar="false">
-                        <router-view class="main-page" v-slot="{ Component }">
-                            <keep-alive>
-                                <component :is="Component" v-if="$route.meta.keepAlive" />
-                            </keep-alive>
-                            <component :is="Component" v-if="!$route.meta.keepAlive" />
-                        </router-view>
+                        <n-message-provider>
+                            <router-view class="main-page" v-slot="{ Component }">
+                                <keep-alive>
+                                    <component :is="Component" v-if="$route.meta.keepAlive" />
+                                </keep-alive>
+                                <component :is="Component" v-if="!$route.meta.keepAlive" />
+                            </router-view>
+                        </n-message-provider>
                     </n-layout>
                 </div>
             </div>
