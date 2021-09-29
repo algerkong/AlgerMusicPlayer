@@ -54,7 +54,7 @@ const isPlaying = computed(() => {
 })
 
 // 播放音乐 设置音乐详情 打开音乐底栏
-const playMusicEvent = (item: SongResult) => {
+const playMusicEvent = (item: any) => {
     store.commit("setPlay", item);
     store.commit("setIsPlay", true);
 };

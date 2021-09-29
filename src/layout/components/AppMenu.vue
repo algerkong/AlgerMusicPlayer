@@ -8,10 +8,14 @@
         </div>
       </div>
       <div class="app-menu-list">
-        <div class="app-menu-item" v-for="(item,index) in menus" :key="index">
-          <router-link class="app-menu-item-link" :to="item.href">
-            <i class="iconfont app-menu-item-icon" :style="iconStyle" :class="item.icon"></i>
-            <span v-if="isText" class="app-menu-item-text ml-3">{{ item.text }}</span>
+        <div class="app-menu-item" v-for="(item,index) in menus">
+          <router-link class="app-menu-item-link" :to="item.path">
+            <i
+              class="iconfont app-menu-item-icon"
+              :style="iconStyle(index)"
+              :class="item.mate.icon"
+            ></i>
+            <span v-if="isText" class="app-menu-item-text ml-3">{{ item.mate.title }}</span>
           </router-link>
         </div>
       </div>
@@ -20,15 +24,8 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from "@vue/runtime-core";
-import type { PropType } from "vue";
-
-interface AppMenuItem {
-  href: string;
-  icon: string;
-  text: string;
-}
-
+import { computed, onMounted, ref, watch } from "@vue/runtime-core";
+import { useRoute } from "vue-router";
 const props = defineProps({
   isText: {
     type: Boolean,
@@ -42,20 +39,32 @@ const props = defineProps({
     type: String,
     default: '#aaa'
   },
+  selectColor: {
+    type: String,
+    default: '#10B981'
+  },
   menus: {
-    type: Array as PropType<AppMenuItem[]>,
+    type: Array as any,
     default: []
   }
 })
 
-let iconStyle = ref({})
-onMounted(() => {
-  // 初始化
-  iconStyle.value = {
-    fontSize: props.size,
-    color: props.color
-  }
+const route = useRoute();
+const path = ref(route.path);
+watch(() => route.path, async newParams => {
+  console.log(newParams);
+
+  path.value = newParams
 })
+
+const iconStyle = (index: any) => {
+  let style = {
+    fontSize: props.size,
+    color: path.value === props.menus[index].path ? props.selectColor : props.color
+  }
+  return style
+}
+
 </script>
 
 <style lang="scss" scoped>
@@ -73,7 +82,7 @@ onMounted(() => {
 }
 
 .app-menu-item-icon:hover {
-  color: #fff !important;
+  color: #10b981 !important;
   transform: scale(1.05);
   transition: 0.2s ease-in-out;
 }

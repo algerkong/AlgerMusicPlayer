@@ -1,5 +1,5 @@
 <template>
-  <div class="main-page pb-20">
+  <div class="main-page">
     <!-- 推荐歌手 -->
     <recommend-singer />
     <div class="main-content">
@@ -19,9 +19,12 @@ import PlaylistType from "@/components/PlaylistType.vue";
 import RecommendSonglist from "@/components/RecommendSonglist.vue";
 import RecommendAlbum from "@/components/RecommendAlbum.vue";
 
-                                                                </script>
+</script>
 
 <style lang="scss" scoped>
+.main-page {
+  @apply mt-4 pb-32;
+}
 .main-content {
   @apply mt-6 flex;
 }

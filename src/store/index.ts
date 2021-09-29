@@ -1,25 +1,9 @@
 import { createStore } from "vuex";
 import { SongResult } from "@/type/music";
 import { getMusicUrl } from "@/api/music";
-
+import homeRouter from "@/router/home";
 let state = {
-  menus: [
-    {
-      href: "/",
-      icon: "icon-homefill",
-      text: "hello",
-    },
-    {
-      href: "/search",
-      icon: "icon-peoplefill",
-      text: "hello",
-    },
-    {
-      href: "/",
-      icon: "icon-videofill",
-      text: "hello",
-    },
-  ],
+  menus: homeRouter,
   play: false,
   isPlay: false,
   playMusic: {} as SongResult,
