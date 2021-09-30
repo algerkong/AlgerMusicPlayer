@@ -1,10 +1,15 @@
 <template>
     <div class="search-page">
-        <div class="hot-search" :class="setAnimationClass('animate__fadeInDown')">
+        <n-layout
+            class="hot-search"
+            :class="setAnimationClass('animate__fadeInDown')"
+            :native-scrollbar="false"
+        >
+            <div class="title">热搜列表</div>
             <template v-for="(item, index) in hotSearchData?.data">
                 <div
                     :class="setAnimationClass('animate__bounceInLeft')"
-                    :style="setAnimationDelay(index, 100)"
+                    :style="setAnimationDelay(index, 10)"
                     class="hot-search-item"
                     @click.stop="clickHotKeyword(item.searchWord)"
                 >
@@ -15,9 +20,14 @@
                     {{ item.searchWord }}
                 </div>
             </template>
-        </div>
+        </n-layout>
         <!-- 搜索到的歌曲列表 -->
-        <div class="search-list">
+        <n-layout
+            class="search-list"
+            :class="setAnimationClass('animate__fadeInUp')"
+            :native-scrollbar="false"
+        >
+            <div class="title">{{ hotKeyword }}</div>
             <template v-if="searchDetail">
                 <div
                     v-for="(item, index) in searchDetail?.result.song.songs"
@@ -28,7 +38,7 @@
                     <SongItem :item="item" />
                 </div>
             </template>
-        </div>
+        </n-layout>
     </div>
 </template>
 
@@ -59,7 +69,9 @@ onMounted(() => {
     loadHotSearch();
 });
 
+const hotKeyword = ref(route.query.keyword || "搜索列表");
 const clickHotKeyword = (keyword: string) => {
+    hotKeyword.value = keyword;
     router.push({
         path: "/search",
         query: {
@@ -92,7 +104,6 @@ loadSearch(route.query.keyword);
 watch(
     () => route.query,
     async newParams => {
-        console.log(newParams);
         loadSearch(newParams.keyword);
     }
 )
@@ -108,6 +119,8 @@ watch(
 }
 .hot-search {
     @apply mt-3 mr-4 rounded-xl  flex-1 overflow-hidden;
+    height: 740px;
+    background-color: #0d0d0d;
     animation-duration: 0.2s;
     min-width: 400px;
     &-item {
@@ -122,6 +135,12 @@ watch(
 }
 
 .search-list {
-    @apply mt-3 flex-1;
+    @apply mt-3 flex-1 rounded-xl;
+    height: 740px;
+    background-color: #0d0d0d;
+}
+
+.title {
+    @apply text-gray-200 text-xl font-bold my-2 mx-4;
 }
 </style>

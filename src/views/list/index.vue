@@ -22,7 +22,6 @@ const selectRecommendItem = async (item: IRecommendItem) => {
   showMusic.value = true
   recommendItem.value = item
   listDetail.value = data
-
 }
 const closeMusic = () => {
   showMusic.value = false

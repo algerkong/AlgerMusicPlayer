@@ -29,6 +29,16 @@ const layoutRouter = [
     },
     component: () => import("@/views/list/index.vue"),
   },
+  {
+    path: "/user",
+    name: "user",
+    mate: {
+      title: "用户",
+      keepAlive: true,
+      icon: "icon-Profile",
+    },
+    component: () => import("@/views/user/index.vue"),
+  },
 ];
 
 export default layoutRouter;

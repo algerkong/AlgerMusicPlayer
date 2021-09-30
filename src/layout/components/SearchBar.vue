@@ -55,9 +55,13 @@ const loadHotSearchKeyword = async () => {
     hotSearchKeyword.value = data.data.showKeyword
     hotSearchValue.value = data.data.realkeyword
 }
+
+store.state.user = JSON.parse(localStorage.getItem('user') || '{}')
+
 const loadPage = async () => {
     const { data } = await getUserDetail()
     store.state.user = data.profile
+    localStorage.setItem('user', JSON.stringify(data.profile))
 }
 
 const toLogin = () => {
