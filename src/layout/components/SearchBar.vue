@@ -101,8 +101,8 @@ const options = [
         key: 'Girl'
     },
     {
-        label: 'In My Life',
-        key: 'In My Life'
+        label: 'login',
+        key: 'login'
     },
     {
         label: '退出登录',
@@ -118,6 +118,9 @@ const selectItem = (key: any) => {
                 store.state.user = null
                 localStorage.clear()
             })
+            break;
+        case 'login':
+            router.push("/login")
             break;
     }
 }
