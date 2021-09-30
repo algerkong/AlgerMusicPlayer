@@ -61,6 +61,7 @@ const formatDetail = computed(() => (detail: any) => {
 })
 
 
+
 </script>
 
 <template>

@@ -118,7 +118,7 @@ const loginPhone = async () => {
   height: 550px;
   @apply rounded-2xl rounded-b-none bg-cover bg-no-repeat relative overflow-hidden;
   background-image: url(https://z3.ax1x.com/2021/09/30/4IMyUx.jpg);
-  background-color: #000;
+  background-color: #383838;
   box-shadow: inset 0px 0px 20px 5px #0000005e;
 
   .bg {
