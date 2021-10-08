@@ -9,6 +9,7 @@
                     :class="setAnimationClass('animate__bounceIn')"
                     :style="setAnimationDelay(index <= 13 ? index : index - 13)"
                     v-if="isShowAllPlaylistCategory || index <= 13"
+                    @click="handleClickPlaylistType(item.name)"
                 >{{ item.name }}</span>
             </template>
             <div
@@ -32,6 +33,7 @@ import { onMounted, ref } from "vue";
 import { getPlaylistCategory } from "@/api/home";
 import type { IPlayListSort } from "@/type/playlist";
 import { setAnimationDelay, setAnimationClass } from "@/utils";
+import { useRoute, useRouter } from "vue-router";
 // 歌单分类
 const playlistCategory = ref<IPlayListSort>();
 // 是否显示全部歌单分类
@@ -43,6 +45,15 @@ const loadPlaylistCategory = async () => {
     playlistCategory.value = data;
 };
 
+const router = useRouter();
+const handleClickPlaylistType = (type: any) => {
+    router.push({
+        path: "/list",
+        query: {
+            type: type,
+        }
+    });
+};
 // 页面初始化
 onMounted(() => {
     loadPlaylistCategory();

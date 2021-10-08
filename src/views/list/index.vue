@@ -1,19 +1,16 @@
 <script lang="ts" setup>
-import { getRecommendList, getListDetail } from '@/api/list'
-import { computed, onMounted, ref } from 'vue';
+import { getRecommendList, getListDetail, getListByTag, getListByCat } from '@/api/list'
+import { computed, onMounted, ref, watch } from 'vue';
 import type { IRecommendList, IRecommendItem } from "@/type/list";
 import type { IListDetail } from "@/type/listDetail";
 import { setAnimationClass, setAnimationDelay } from "@/utils";
 import SongItem from "@/components/common/SongItem.vue";
+import { useRoute, useRouter } from 'vue-router';
 
 
 
-const recommendList = ref<IRecommendList>()
+const recommendList = ref()
 const showMusic = ref(false)
-onMounted(async () => {
-  const { data } = await getRecommendList()
-  recommendList.value = data
-})
 
 const recommendItem = ref<IRecommendItem>()
 const listDetail = ref<IListDetail>()
@@ -26,6 +23,39 @@ const selectRecommendItem = async (item: IRecommendItem) => {
 const closeMusic = () => {
   showMusic.value = false
 }
+
+const route = useRoute();
+const listTitle = ref(route.query.type || "歌单列表");
+
+const loadList = async (type: any) => {
+  const params = {
+    cat: type || '',
+    limit: 30,
+    offset: 0
+  }
+  const { data } = await getListByCat(params);
+  recommendList.value = data.playlists
+}
+
+if (route.query.type) {
+  loadList(route.query.type)
+} else {
+  getRecommendList().then((res: { data: { result: any; }; }) => {
+    recommendList.value = res.data.result
+  })
+}
+
+watch(
+  () => route.query,
+  async newParams => {
+    const params = {
+      tag: newParams.type || '',
+      limit: 30,
+      before: 0
+    }
+    loadList(newParams.type);
+  }
+)
 
 const musicFullClass = computed(() => {
   if (recommendItem.value) {
@@ -66,18 +96,22 @@ const formatDetail = computed(() => (detail: any) => {
 
 <template>
   <div class="list-page">
+    <!-- 歌单列表 -->
     <n-layout class="recommend" :native-scrollbar="false" @click="showMusic = false">
-      <div class="recommend-title" :class="setAnimationClass('animate__bounceInLeft')">歌单推荐</div>
-      <div class="recommend-list">
+      <div
+        class="recommend-title"
+        :class="setAnimationClass('animate__bounceInLeft')"
+      >{{ listTitle }}</div>
+      <div class="recommend-list" v-if="recommendList">
         <div
           class="recommend-item"
-          v-for="(item,index) in recommendList?.result"
+          v-for="(item,index) in recommendList"
           :class="setAnimationClass('animate__bounceIn')"
           :style="setAnimationDelay(index, 30)"
           @click.stop="selectRecommendItem(item)"
         >
           <div class="recommend-item-img">
-            <img :src="item.picUrl + '?param=200y200'" alt />
+            <img :src="(item.picUrl || item.coverImgUrl) + '?param=200y200'" />
             <div class="top">
               <div class="play-count">{{ formatNumber(item.playCount) }}</div>
               <i class="iconfont icon-videofill"></i>
@@ -91,6 +125,7 @@ const formatDetail = computed(() => (detail: any) => {
     <div class="music-page" v-show="showMusic" :class="musicFullClass">
       <i class="iconfont icon-icon_error music-close" @click="closeMusic()"></i>
       <div class="music-title">{{ recommendItem?.name }}</div>
+      <!-- 歌单歌曲列表 -->
       <n-layout class="music-list" :native-scrollbar="false">
         <div
           v-for="(item, index) in listDetail?.playlist.tracks"

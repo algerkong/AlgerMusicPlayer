@@ -187,7 +187,8 @@ const onAudio = (audio: any) => {
         allTime.value = audio.duration
 
         if (audio.currentTime >= audio.duration) {
-            store.commit("setPlayMusic", false);
+            // store.commit("setPlayMusic", false);
+            audio.play()
         }
         // 获取音量
         audioVolume.value = audio.volume

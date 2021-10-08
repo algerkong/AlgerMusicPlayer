@@ -5,6 +5,7 @@ import { getUserDetail, getUserPlaylist } from "@/api/user";
 import type { IUserDetail } from "@/type/user";
 import { ref } from "vue";
 import { setAnimationClass, setAnimationDelay } from "@/utils";
+import MPop from "@/components/common/MPop.vue";
 
 const store = useStore()
 const router = useRouter()
@@ -67,6 +68,10 @@ loadPage()
         </div>
       </div>
     </div>
+
+    <MPop :show-pop="true">
+      <div>aaaaaaaaaaaaaaaaaa</div>
+    </MPop>
   </div>
 </template>
 
