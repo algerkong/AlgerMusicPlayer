@@ -26,6 +26,7 @@ const musicFullClass = computed(() => {
 <template>
   <div class="pop-page" v-show="props.showPop" :class="musicFullClass">
     <i class="iconfont icon-icon_error close" v-if="props.showClose" @click="close()"></i>
+    <img src="http://code.myalger.top/2000*2000.jpg,f054f0,0f2255" />
     <slot></slot>
   </div>
 </template>
@@ -33,7 +34,8 @@ const musicFullClass = computed(() => {
 <style lang="scss" scoped>
 .pop-page {
   height: 800px;
-  @apply relative;
+  @apply absolute top-4 left-0 w-full;
+  background-color: #000000f0;
   .close {
     @apply absolute top-4 right-4 cursor-pointer text-white text-3xl;
   }
