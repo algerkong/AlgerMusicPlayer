@@ -69,9 +69,9 @@ loadPage()
       </div>
     </div>
 
-    <MPop :show-pop="true">
+    <!-- <MPop :show-pop="true">
       <div>aaaaaaaaaaaaaaaaaa</div>
-    </MPop>
+    </MPop> -->
   </div>
 </template>
 

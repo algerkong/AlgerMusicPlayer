@@ -43,6 +43,7 @@ import { getUserDetail, logout } from '@/api/login';
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
+import request from '@/utils/request_mt'
 
 const router = useRouter()
 const store = useStore();
@@ -97,11 +98,19 @@ const search = () => {
 const value = 'Drive My Car'
 const options = [
     {
-        label: 'Girl',
-        key: 'Girl'
+        label: '打卡',
+        key: 'card'
     },
     {
-        label: 'login',
+        label: '听歌升级',
+        key: 'card_music'
+    },
+    {
+        label: '歌曲次数',
+        key: 'listen'
+    },
+    {
+        label: '登录',
         key: 'login'
     },
     {
@@ -110,9 +119,27 @@ const options = [
     }
 ]
 
-const selectItem = (key: any) => {
+const selectItem = async (key: any) => {
     // switch 判断
     switch (key) {
+        case 'card':
+            await request.get('/?do=sign')
+                .then(res => {
+                    console.log(res)
+                })
+            break;
+        case 'card_music':
+            await request.get('/?do=daka')
+                .then(res => {
+                    console.log(res)
+                })
+            break;
+        case 'listen':
+            await request.get('/?do=listen&id=1885175990&time=300')
+                .then(res => {
+                    console.log(res)
+                })
+            break;
         case 'logout':
             logout().then(() => {
                 store.state.user = null
