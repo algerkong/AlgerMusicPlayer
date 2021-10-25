@@ -30,7 +30,13 @@
 import type { SongResult } from '@/type/music';
 import { computed } from 'vue';
 import { useStore } from 'vuex';
-import { AppMenu, PlayBar, SearchBar } from './components';
+// import { AppMenu, PlayBar, SearchBar } from './components';
+import {defineAsyncComponent} from 'vue';
+const AppMenu = defineAsyncComponent(() => import('./components/AppMenu.vue'));
+const PlayBar = defineAsyncComponent(() => import('./components/PlayBar.vue'));
+const SearchBar = defineAsyncComponent(() => import('./components/SearchBar.vue'));
+
+
 
 const store = useStore();
 

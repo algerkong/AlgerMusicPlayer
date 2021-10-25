@@ -14,10 +14,15 @@
 </template>
 
 <script lang="ts" setup>
-import RecommendSinger from "@/components/RecommendSinger.vue";
-import PlaylistType from "@/components/PlaylistType.vue";
-import RecommendSonglist from "@/components/RecommendSonglist.vue";
-import RecommendAlbum from "@/components/RecommendAlbum.vue";
+import {defineAsyncComponent} from 'vue';
+// import RecommendSinger from "@/components/RecommendSinger.vue";
+// import PlaylistType from "@/components/PlaylistType.vue";
+// import RecommendSonglist from "@/components/RecommendSonglist.vue";
+// import RecommendAlbum from "@/components/RecommendAlbum.vue";
+const RecommendSinger = defineAsyncComponent(() => import("@/components/RecommendSinger.vue"));
+const PlaylistType = defineAsyncComponent(() => import("@/components/PlaylistType.vue"));
+const RecommendSonglist = defineAsyncComponent(() => import("@/components/RecommendSonglist.vue"));
+const RecommendAlbum = defineAsyncComponent(() => import("@/components/RecommendAlbum.vue"));
 
 </script>
 
