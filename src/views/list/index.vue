@@ -131,7 +131,7 @@ const formatDetail = computed(() => (detail: any) => {
           v-for="(item, index) in listDetail?.playlist.tracks"
           :key="item.id"
           :class="setAnimationClass('animate__bounceInUp')"
-          :style="setAnimationDelay(index, 100)"
+          :style="setAnimationDelay(index, 50)"
         >
           <SongItem :item="formatDetail(item)" />
         </div>
