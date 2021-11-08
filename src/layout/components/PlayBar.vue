@@ -69,8 +69,24 @@
             <n-slider v-model:value="volumeSlider" :step="0.01" :tooltip="false"></n-slider>
         </div>
         <div class="audio-button">
-            <i class="iconfont icon-likefill"></i>
-            <i class="iconfont icon-full" @click="setMusicFull"></i>
+            <n-tooltip trigger="hover">
+                <template #trigger>
+                    <i class="iconfont icon-likefill"></i>
+                </template>
+                喜欢
+            </n-tooltip>
+            <n-tooltip trigger="hover">
+                <template #trigger>
+                    <i class="iconfont icon-Play" @click="parsingMusic"></i>
+                </template>
+                解析播放
+            </n-tooltip>
+            <n-tooltip trigger="hover">
+                <template #trigger>
+                    <i class="iconfont icon-full" @click="setMusicFull"></i>
+                </template>
+                歌词
+            </n-tooltip>
         </div>
         <!-- 播放音乐 -->
         <audio ref="audio" :src="playMusicUrl" :autoplay="play"></audio>
@@ -84,7 +100,8 @@ import { secondToMinute } from "@/utils";
 import { computed, onMounted, ref, watch } from "vue";
 import { useStore } from 'vuex';
 import { setAnimationClass } from "@/utils";
-import { getMusicLrc } from "@/api/music"
+import { getMusicLrc, getParsingMusicUrl } from "@/api/music"
+
 
 const store = useStore();
 
@@ -215,6 +232,12 @@ const setMusicFull = () => {
     if (musicFull.value) {
         loadLrc()
     }
+}
+
+// 解析音乐
+const parsingMusic = async () => {
+    const { data } = await getParsingMusicUrl(playMusic.value.id)
+    store.state.playMusicUrl = data.data.url
 }
 
 const musicFullClass = computed(() => {
