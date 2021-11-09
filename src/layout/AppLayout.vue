@@ -55,7 +55,7 @@ const menus = store.state.menus;
 }
 
 .layout-main {
-    @apply bg-black rounded-lg mb-10 text-white shadow-xl flex-col relative;
+    @apply bg-black rounded-lg  text-white shadow-xl flex-col relative;
     height: 900px;
     width: 1500px;
     overflow: hidden;
