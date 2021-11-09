@@ -133,26 +133,34 @@ const musicFullClass = computed(() => {
         </div>
       </n-layout>
     </div>
-
-    <div class="music-page" v-show="isShowList" :class="musicFullClass">
-      <i class="iconfont icon-icon_error music-close" @click="isShowList = false"></i>
-      <div class="music-title">{{ list?.name }}</div>
-      <!-- 歌单歌曲列表 -->
-      <n-layout class="music-list" :native-scrollbar="false">
-        <div
-          v-for="(item, index) in list?.tracks"
-          :key="item.id"
-          :class="setAnimationClass('animate__bounceInUp')"
-          :style="setAnimationDelay(index, 100)"
-        >
-          <SongItem :item="formatDetail(item)" />
-        </div>
-      </n-layout>
-    </div>
+    <transition name="musicPage">
+      <div class="music-page" v-if="isShowList">
+        <i class="iconfont icon-icon_error music-close" @click="isShowList = false"></i>
+        <div class="music-title">{{ list?.name }}</div>
+        <!-- 歌单歌曲列表 -->
+        <n-layout class="music-list" :native-scrollbar="false">
+          <div
+            v-for="(item, index) in list?.tracks"
+            :key="item.id"
+            :class="setAnimationClass('animate__bounceInUp')"
+            :style="setAnimationDelay(index, 100)"
+          >
+            <SongItem :item="formatDetail(item)" />
+          </div>
+        </n-layout>
+      </div>
+    </transition>
   </div>
 </template>
 
 <style lang="scss" scoped>
+.musicPage-enter-active {
+  animation: fadeInUp 0.8s ease-in-out;
+}
+
+.musicPage-leave-active {
+  animation: fadeOutDown 0.8s ease-in-out;
+}
 .user-page {
   @apply flex;
   .left {

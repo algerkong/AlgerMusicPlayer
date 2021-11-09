@@ -1,35 +1,37 @@
 <template>
     <!-- 展开全屏 -->
-    <div id="drawer-target" :class="musicFullClass" v-show="musicFull">
-        <div class="music-img">
-            <img class="img" :src="playMusic.picUrl + '?param=300y300'" />
-        </div>
-        <div class="music-content">
-            <div class="music-content-name">{{ playMusic.song.name }}</div>
-            <div class="music-content-singer">
-                <span
-                    v-for="(item,index) in playMusic.song.artists"
-                    :key="index"
-                >{{ item.name }}{{ index < playMusic.song.artists.length - 1 ? ' / ' : '' }}</span>
+    <transition name="musicPage">
+        <div id="drawer-target" v-show="musicFull">
+            <div class="music-img">
+                <img class="img" :src="playMusic.picUrl + '?param=300y300'" />
             </div>
-            <n-layout
-                class="music-lrc"
-                style="height: 550px;"
-                ref="lrcSider"
-                :native-scrollbar="false"
-                @mouseover="mouseOverLayout"
-                @mouseleave="mouseLeaveLayout"
-            >
-                <template v-for="(item,index) in lrcArray" :key="index">
-                    <div
-                        class="music-lrc-text"
-                        :class="{ 'now-text': isCurrentLrc(index) }"
-                        @click="setAudioTime(index)"
-                    >{{ item.text }}</div>
-                </template>
-            </n-layout>
+            <div class="music-content">
+                <div class="music-content-name">{{ playMusic.song.name }}</div>
+                <div class="music-content-singer">
+                    <span
+                        v-for="(item,index) in playMusic.song.artists"
+                        :key="index"
+                    >{{ item.name }}{{ index < playMusic.song.artists.length - 1 ? ' / ' : '' }}</span>
+                </div>
+                <n-layout
+                    class="music-lrc"
+                    style="height: 550px;"
+                    ref="lrcSider"
+                    :native-scrollbar="false"
+                    @mouseover="mouseOverLayout"
+                    @mouseleave="mouseLeaveLayout"
+                >
+                    <template v-for="(item,index) in lrcArray" :key="index">
+                        <div
+                            class="music-lrc-text"
+                            :class="{ 'now-text': isCurrentLrc(index) }"
+                            @click="setAudioTime(index)"
+                        >{{ item.text }}</div>
+                    </template>
+                </n-layout>
+            </div>
         </div>
-    </div>
+    </transition>
     <!-- 底部播放栏 -->
     <div class="music-play-bar" :class="setAnimationClass('animate__bounceInUp')">
         <img class="play-bar-img" :src="playMusic.picUrl + '?param=200y200'" @click="setMusicFull" />
@@ -123,6 +125,12 @@ onMounted(() => {
             onAudio(audio.value)
         } else {
             audio.value.pause()
+        }
+    })
+
+    watch(() => playMusicUrl.value, (value, oldValue) => {
+        if (!value) {
+            parsingMusic()
         }
     })
 
@@ -240,13 +248,6 @@ const parsingMusic = async () => {
     store.state.playMusicUrl = data.data.url
 }
 
-const musicFullClass = computed(() => {
-    if (musicFull.value) {
-        return setAnimationClass('animate__fadeInUp')
-    } else {
-        return setAnimationClass('animate__fadeOutDown')
-    }
-})
 
 const lrcData = ref<ILyric>()
 
@@ -315,6 +316,12 @@ const setAudioTime = (index: any) => {
 </script>
 
 <style lang="scss" scoped>
+.musicPage-enter-active {
+    animation: fadeInUp 0.8s ease-in-out;
+}
+.musicPage-leave-active {
+    animation: fadeOutDown 0.8s ease-in-out;
+}
 #drawer-target {
     @apply top-0 left-0 absolute w-full h-full overflow-hidden rounded px-24 pt-24 pb-48 flex items-center;
     background-color: #333333;

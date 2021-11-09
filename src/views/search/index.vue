@@ -26,11 +26,12 @@
             class="search-list"
             :class="setAnimationClass('animate__fadeInUp')"
             :native-scrollbar="false"
+            @scroll="searchScrolling"
         >
             <div class="title">{{ hotKeyword }}</div>
             <template v-if="searchDetail">
                 <div
-                    v-for="(item, index) in searchDetail?.result.song.songs"
+                    v-for="(item, index) in searchDetail?.result.songs"
                     :key="item.id"
                     :class="setAnimationClass('animate__bounceInRight')"
                     :style="setAnimationDelay(index, 100)"
@@ -55,7 +56,7 @@ import SongItem from "@/components/common/SongItem.vue";
 
 const route = useRoute();
 const router = useRouter();
-const searchDetail = ref<ISearchDetail>();
+const searchDetail = ref<any>();
 
 // 热搜列表
 const hotSearchData = ref<IHotSearch>();
@@ -63,6 +64,10 @@ const loadHotSearch = async () => {
     const { data } = await getHotSearch();
     hotSearchData.value = data;
 };
+
+function searchScrolling(e: any) {
+    console.log(e);
+}
 
 
 onMounted(() => {
@@ -88,14 +93,15 @@ const loadSearch = async (keyword: any) => {
     searchDetail.value = undefined;
     if (!keyword) return;
     const { data } = await getSearch(keyword);
-    const songs = data.result.song.songs;
+
+    const songs = data.result.songs;
+
     // songs map 替换属性
     songs.map((item: any) => {
         item.picUrl = item.al.picUrl;
         item.song = item;
         item.artists = item.ar;
     });
-    data.result.song.songs = songs;
     searchDetail.value = data;
 };
 

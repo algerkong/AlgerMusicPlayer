@@ -7,8 +7,8 @@
                 <span
                     class="play-list-type-item"
                     :class="setAnimationClass('animate__bounceIn')"
-                    :style="setAnimationDelay(index <= 13 ? index : index - 13)"
-                    v-if="isShowAllPlaylistCategory || index <= 13"
+                    :style="setAnimationDelay(index <= 19 ? index : index - 19)"
+                    v-show="isShowAllPlaylistCategory || index <= 19"
                     @click="handleClickPlaylistType(item.name)"
                 >{{ item.name }}</span>
             </template>

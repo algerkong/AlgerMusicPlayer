@@ -1,6 +1,6 @@
-import { createRouter, createWebHistory } from "vue-router";
-import AppLayout from "@/layout/AppLayout.vue";
-import homeRouter from "@/router/home";
+import { createRouter, createWebHistory, createMemoryHistory } from "vue-router"
+import AppLayout from "@/layout/AppLayout.vue"
+import homeRouter from "@/router/home"
 
 let loginRouter = {
   path: "/login",
@@ -11,7 +11,7 @@ let loginRouter = {
     icon: "icon-Home",
   },
   component: () => import("@/views/login/index.vue"),
-};
+}
 
 const routes = [
   {
@@ -19,9 +19,9 @@ const routes = [
     component: AppLayout,
     children: [...homeRouter, loginRouter],
   },
-];
+]
 
 export default createRouter({
   routes: routes,
-  history: createWebHistory(),
-});
+  history: createMemoryHistory(),
+})

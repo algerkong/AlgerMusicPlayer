@@ -14,10 +14,9 @@
                                 <!-- <keep-alive>
                                     <component :is="Component" v-if="$route.meta.keepAlive" />
                                 </keep-alive>
-                                <component :is="Component" v-if="!$route.meta.keepAlive" /> -->
-                                 <keep-alive>
-                                    <component :is="Component"/>
-                                </keep-alive>
+                                <component :is="Component" v-if="!$route.meta.keepAlive" />-->
+
+                                <component :is="Component" />
                             </router-view>
                         </n-message-provider>
                     </n-layout>
@@ -34,7 +33,7 @@ import type { SongResult } from '@/type/music';
 import { computed } from 'vue';
 import { useStore } from 'vuex';
 // import { AppMenu, PlayBar, SearchBar } from './components';
-import {defineAsyncComponent} from 'vue';
+import { defineAsyncComponent } from 'vue';
 const AppMenu = defineAsyncComponent(() => import('./components/AppMenu.vue'));
 const PlayBar = defineAsyncComponent(() => import('./components/PlayBar.vue'));
 const SearchBar = defineAsyncComponent(() => import('./components/SearchBar.vue'));
