@@ -8,28 +8,28 @@ export default defineConfig({
   plugins: [vue(), VueDevTools()],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "src"),
+      '@': path.resolve(__dirname, 'src'),
     },
   },
   server: {
-    host: "0.0.0.0", //允许本机
+    host: '0.0.0.0', //允许本机
     proxy: {
       // string shorthand
-      "/mt": {
-        target: "http://mt.myalger.top",
+      '/mt': {
+        target: 'http://mt.myalger.top',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/mt/, ""),
+        rewrite: (path) => path.replace(/^\/mt/, ''),
       },
       // with options
-      "/api": {
-        target: "http://123.56.226.179:3000",
+      '/api': {
+        target: 'http://110.42.251.190:9898',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ""),
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
-      "/music": {
-        target: "http://myalger.top:4000",
+      '/music': {
+        target: 'http://myalger.top:4000',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/music/, ""),
+        rewrite: (path) => path.replace(/^\/music/, ''),
       },
     },
   },

@@ -6,9 +6,10 @@ import type { IListDetail } from "@/type/listDetail";
 import { setAnimationClass, setAnimationDelay } from "@/utils";
 import SongItem from "@/components/common/SongItem.vue";
 import { useRoute, useRouter } from 'vue-router';
+import { useStore } from 'vuex';
 
 
-
+const store = useStore();
 const recommendList = ref()
 const showMusic = ref(false)
 
@@ -91,6 +92,13 @@ const formatDetail = computed(() => (detail: any) => {
 })
 
 
+const handlePlay = (item: any) => {
+  const list = listDetail.value?.playlist.tracks || []
+  console.log('list',list)
+  console.log('item',item)
+  const musicIndex = (list.findIndex((music: any) => music.id == item.id) || 0)
+  store.commit('setPlayList', list.slice(musicIndex))
+}
 
 </script>
 
@@ -134,7 +142,7 @@ const formatDetail = computed(() => (detail: any) => {
             :class="setAnimationClass('animate__bounceInUp')"
             :style="setAnimationDelay(index, 50)"
           >
-            <SongItem :item="formatDetail(item)" />
+            <SongItem :item="formatDetail(item)" @play="handlePlay" />
           </div>
         </n-layout>
       </div>

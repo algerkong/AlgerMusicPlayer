@@ -69,6 +69,12 @@ const musicFullClass = computed(() => {
   }
 })
 
+const handlePlay = (item: any) => {
+  const tracks = list.value?.tracks || []
+  const musicIndex = (tracks.findIndex((music: any) => music.id == item.id) || 0)
+  store.commit('setPlayList', tracks.slice(musicIndex))
+}
+
 
 </script>
 
@@ -145,7 +151,7 @@ const musicFullClass = computed(() => {
             :class="setAnimationClass('animate__bounceInUp')"
             :style="setAnimationDelay(index, 100)"
           >
-            <SongItem :item="formatDetail(item)" />
+            <SongItem :item="formatDetail(item)" @play="handlePlay"/>
           </div>
         </n-layout>
       </div>

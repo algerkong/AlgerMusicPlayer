@@ -10,6 +10,7 @@
     "@vue/runtime-core": "^3.3.4",
     "autoprefixer": "^9.8.6",
     "axios": "^0.21.1",
+    "lodash": "^4.17.21",
     "postcss": "^7.0.36",
     "sass": "^1.35.2",
     "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.2.4",
