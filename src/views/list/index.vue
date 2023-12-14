@@ -152,7 +152,7 @@ const handlePlay = (item: any) => {
 
 <style lang="scss" scoped>
 .list-page {
-  position: relative;
+  @apply relative h-full;
 }
 
 .musicPage-enter-active {
@@ -164,15 +164,13 @@ const handlePlay = (item: any) => {
 }
 
 .recommend {
-  width: 100%;
-  height: 800px;
-  background-color: #000000;
+  @apply w-full h-full;
   &-title {
     @apply text-lg font-bold text-white py-4;
   }
 
   &-list {
-    @apply flex flex-wrap;
+    @apply flex flex-wrap justify-between;
     padding-bottom: 100px;
   }
   &-item {
@@ -220,10 +218,10 @@ const handlePlay = (item: any) => {
 .music {
   &-page {
     width: 100%;
-    height: 734px;
+    height: 70%;
     position: absolute;
     background-color: #000000f0;
-    top: 100px;
+    bottom: 0;
     left: 0;
     border-radius: 30px 30px 0 0;
     animation-duration: 300ms;

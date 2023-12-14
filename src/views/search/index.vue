@@ -34,7 +34,7 @@
                     v-for="(item, index) in searchDetail?.result.songs"
                     :key="item.id"
                     :class="setAnimationClass('animate__bounceInRight')"
-                    :style="setAnimationDelay(index, 100)"
+                    :style="setAnimationDelay(index, 50)"
                 >
                     <SongItem :item="item" />
                 </div>
@@ -116,19 +116,15 @@ watch(
 </script>
 
 <style lang="scss" scoped>
-.search {
-    height: 750px;
-    background-color: #333;
-}
 .search-page {
-    @apply flex;
+    @apply flex h-full;
 }
 .hot-search {
     @apply mt-3 mr-4 rounded-xl  flex-1 overflow-hidden;
-    height: 740px;
     background-color: #0d0d0d;
     animation-duration: 0.2s;
     min-width: 400px;
+    height: 100%;
     &-item {
         @apply px-4 py-3 text-lg hover:bg-gray-700 rounded-xl cursor-pointer;
         &-count {
@@ -142,8 +138,8 @@ watch(
 
 .search-list {
     @apply mt-3 flex-1 rounded-xl;
-    height: 740px;
     background-color: #0d0d0d;
+    height: 100%;
 }
 
 .title {

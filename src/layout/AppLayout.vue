@@ -8,7 +8,7 @@
                     <!-- 搜索栏 -->
                     <search-bar />
                     <!-- 主页面路由 -->
-                    <n-layout class="main-content bg-black" :native-scrollbar="false">
+                    <div class="main-content bg-black" :native-scrollbar="false">
                         <n-message-provider>
                             <router-view class="main-page" v-slot="{ Component }">
                                 <!-- <keep-alive>
@@ -19,7 +19,7 @@
                                 <component :is="Component" />
                             </router-view>
                         </n-message-provider>
-                    </n-layout>
+                    </div>
                 </div>
             </div>
             <!-- 底部音乐播放 -->
@@ -56,18 +56,19 @@ const menus = store.state.menus;
 
 .layout-main {
     @apply bg-black rounded-lg  text-white shadow-xl flex-col relative;
-    height: 900px;
-    width: 1500px;
+    height: 100%;
+    width: 100%;
     overflow: hidden;
-    min-width: 1500px;
     .menu {
         width: 90px;
     }
     .main {
         @apply pt-6 pr-6 flex-1 box-border;
+        height: 100vh;
         &-content {
             @apply rounded-2xl;
-            height: 834px;
+            height: calc(100vh - 60px);
+            margin-bottom: 90px;
         }
         &-page {
             margin: 20px 0;
