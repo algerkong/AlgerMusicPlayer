@@ -1,5 +1,5 @@
 <template>
-  <div class="main-page">
+  <n-layout class="main-page" :native-scrollbar="false">
     <!-- 推荐歌手 -->
     <recommend-singer />
     <div class="main-content">
@@ -10,11 +10,11 @@
       <!-- 推荐最新专辑 -->
       <recommend-album />
     </div>
-  </div>
+  </n-layout>
 </template>
 
 <script lang="ts" setup>
-import {defineAsyncComponent} from 'vue';
+import { defineAsyncComponent } from 'vue';
 // import RecommendSinger from "@/components/RecommendSinger.vue";
 // import PlaylistType from "@/components/PlaylistType.vue";
 // import RecommendSonglist from "@/components/RecommendSonglist.vue";
@@ -48,8 +48,9 @@ const RecommendAlbum = defineAsyncComponent(() => import("@/components/Recommend
 
 <style lang="scss" scoped>
 .main-page {
-  @apply mt-4 pb-32;
+  @apply mt-4 h-full;
 }
+
 .main-content {
   @apply mt-6 flex;
 }

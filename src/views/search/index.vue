@@ -6,6 +6,7 @@
             :native-scrollbar="false"
         >
             <div class="title">热搜列表</div>
+           <div class="hot-search-list">
             <template v-for="(item, index) in hotSearchData?.data">
                 <div
                     :class="setAnimationClass('animate__bounceInLeft')"
@@ -20,6 +21,7 @@
                     {{ item.searchWord }}
                 </div>
             </template>
+           </div>
         </n-layout>
         <!-- 搜索到的歌曲列表 -->
         <n-layout
@@ -29,7 +31,8 @@
             @scroll="searchScrolling"
         >
             <div class="title">{{ hotKeyword }}</div>
-            <template v-if="searchDetail">
+            <div class="search-list-box">
+              <template v-if="searchDetail">
                 <div
                     v-for="(item, index) in searchDetail?.result.songs"
                     :key="item.id"
@@ -39,6 +42,7 @@
                     <SongItem :item="item" />
                 </div>
             </template>
+            </div>
         </n-layout>
     </div>
 </template>
@@ -125,6 +129,9 @@ watch(
     animation-duration: 0.2s;
     min-width: 400px;
     height: 100%;
+    &-list{
+      @apply pb-28;
+    }
     &-item {
         @apply px-4 py-3 text-lg hover:bg-gray-700 rounded-xl cursor-pointer;
         &-count {
@@ -140,6 +147,9 @@ watch(
     @apply mt-3 flex-1 rounded-xl;
     background-color: #0d0d0d;
     height: 100%;
+    &-box{
+      @apply pb-28;
+    }
 }
 
 .title {

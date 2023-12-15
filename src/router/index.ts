@@ -23,5 +23,5 @@ const routes = [
 
 export default createRouter({
   routes: routes,
-  history: createMemoryHistory(),
+  history: createWebHistory(),
 })

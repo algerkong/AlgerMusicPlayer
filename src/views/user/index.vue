@@ -4,7 +4,7 @@ import { useRouter } from "vue-router";
 import { getUserDetail, getUserPlaylist, getUserRecord } from "@/api/user";
 import type { IUserDetail } from "@/type/user";
 import { computed, ref } from "vue";
-import { setAnimationClass, setAnimationDelay } from "@/utils";
+import { setAnimationClass, setAnimationDelay, getImgUrl } from "@/utils";
 import { getListDetail } from '@/api/list'
 import SongItem from "@/components/common/SongItem.vue";
 
@@ -115,7 +115,12 @@ const handlePlay = (item: any) => {
             :key="index"
             @click="showPlaylist(item.id)"
           >
-            <img class="play-list-item-img" :src="item.coverImgUrl" />
+            <n-image
+              :src="getImgUrl( item.coverImgUrl, '')"
+              class="play-list-item-img"
+              lazy
+              preview-disabled
+            />
             <div class="play-list-item-info">
               <div class="play-list-item-name">{{ item.name }}</div>
               <div class="play-list-item-count">{{ item.trackCount }}首，播放{{ item.playCount }}次</div>

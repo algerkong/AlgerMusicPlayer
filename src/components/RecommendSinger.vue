@@ -10,7 +10,7 @@
                 :key="item.id"
             >
                 <div
-                    :style="setBackgroundImg(item.picUrl + '?param=500y500')"
+                    :style="setBackgroundImg(getImgUrl(item.picUrl,'300y300'))"
                     class="recommend-singer-item-bg"
                 ></div>
                 <div
@@ -31,7 +31,7 @@
 </template>
 
 <script lang="ts" setup>
-import { setBackgroundImg, setAnimationDelay, setAnimationClass } from "@/utils";
+import { setBackgroundImg, setAnimationDelay, setAnimationClass,getImgUrl } from "@/utils";
 import { onMounted, ref } from "vue";
 import { getHotSinger } from "@/api/home";
 import type { IHotSinger } from "@/type/singer";

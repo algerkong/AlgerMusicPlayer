@@ -3,7 +3,7 @@ import { getRecommendList, getListDetail, getListByTag, getListByCat } from '@/a
 import { computed, onMounted, ref, watch } from 'vue';
 import type { IRecommendList, IRecommendItem } from "@/type/list";
 import type { IListDetail } from "@/type/listDetail";
-import { setAnimationClass, setAnimationDelay } from "@/utils";
+import { setAnimationClass, setAnimationDelay, getImgUrl } from "@/utils";
 import SongItem from "@/components/common/SongItem.vue";
 import { useRoute, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
@@ -16,8 +16,8 @@ const showMusic = ref(false)
 const recommendItem = ref<IRecommendItem>()
 const listDetail = ref<IListDetail>()
 const selectRecommendItem = async (item: IRecommendItem) => {
-  const { data } = await getListDetail(item.id)
   showMusic.value = true
+  const { data } = await getListDetail(item.id)
   recommendItem.value = item
   listDetail.value = data
 }
@@ -119,7 +119,12 @@ const handlePlay = (item: any) => {
           @click.stop="selectRecommendItem(item)"
         >
           <div class="recommend-item-img">
-            <img :src="(item.picUrl || item.coverImgUrl) + '?param=200y200'" />
+            <n-image
+              class="recommend-item-img-img"
+              :src="getImgUrl( (item.picUrl || item.coverImgUrl), '200y200')"
+              lazy
+              preview-disabled
+            />
             <div class="top">
               <div class="play-count">{{ formatNumber(item.playCount) }}</div>
               <i class="iconfont icon-videofill"></i>
@@ -170,18 +175,16 @@ const handlePlay = (item: any) => {
   }
 
   &-list {
-    @apply flex flex-wrap justify-between;
-    padding-bottom: 100px;
+    @apply grid gap-6 pb-28;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
   &-item {
-    width: 200px;
-    @apply mr-6 mb-4;
     &-img {
       @apply rounded-xl overflow-hidden relative;
       &:hover img {
         @apply hover:scale-110 transition-all duration-300 ease-in-out;
       }
-      img {
+      &-img {
         width: 200px;
         height: 200px;
       }
@@ -217,14 +220,15 @@ const handlePlay = (item: any) => {
 
 .music {
   &-page {
-    width: 100%;
-    height: 70%;
-    position: absolute;
-    background-color: #000000f0;
-    bottom: 0;
-    left: 0;
-    border-radius: 30px 30px 0 0;
-    animation-duration: 300ms;
+    // width: 100%;
+    // height: 70%;
+    // position: absolute;
+    // background-color: #000000f0;
+    // bottom: 0;
+    // left: 0;
+    // border-radius: 30px 30px 0 0;
+    // animation-duration: 300ms;
+    @apply w-full h-5/6 absolute bottom-0 left-0 bg-black rounded-t-3xl flex flex-col transition-all;
   }
   &-title {
     @apply text-lg font-bold text-white p-4;

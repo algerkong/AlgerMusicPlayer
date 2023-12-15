@@ -4,3 +4,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+img{
+  @apply bg-gray-900;
+}
+
+.n-image img {
+  width: 100%;
+}

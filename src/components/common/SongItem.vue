@@ -1,8 +1,10 @@
 <template>
   <div class="recommend-music-list-item">
-    <img
-      :src="item.picUrl + '?param=200y200'"
+    <n-image
+      :src="getImgUrl( item.picUrl, '200y200')"
       class="recommend-music-list-item-img"
+      lazy
+      preview-disabled
     />
     <div class="recommend-music-list-item-content">
       <div class="recommend-music-list-item-content-title">
@@ -43,6 +45,7 @@
 import { useStore } from 'vuex'
 import type { SongResult } from '@/type/music'
 import { computed } from 'vue'
+import { getImgUrl } from '@/utils'
 
 const props = defineProps({
   item: {

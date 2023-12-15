@@ -1,8 +1,13 @@
 
 <template>
-  <div id="drawer-target" v-show="isFull">
+  <div id="drawer-target" v-show="isFull" :style="{backgroundImage:`url(${getImgUrl( playMusic?.picUrl, '300y300')})`}">
     <div class="music-img">
-      <img class="img" :src="playMusic?.picUrl + '?param=300y300'" />
+      <n-image
+        :src="getImgUrl( playMusic?.picUrl, '300y300')"
+        class="img" 
+        lazy
+        preview-disabled
+      />
     </div>
     <div class="music-content">
       <div class="music-content-name">{{ playMusic?.song.name }}</div>
@@ -37,6 +42,7 @@ import type { SongResult } from "@/type/music";
 import type { ILyric } from "@/type/lyric";
 import { getMusicLrc } from "@/api/music"
 import { useStore } from 'vuex';
+import { getImgUrl } from '@/utils'
 
 const store = useStore();
 const props = defineProps({
@@ -150,7 +156,8 @@ const mouseLeaveLayout = () => {
 <style lang="scss" scoped>
 #drawer-target {
   @apply top-0 left-0 absolute w-full h-full overflow-hidden rounded px-24 pt-24 pb-48 flex items-center;
-  background-color: #333333;
+  // background-color: #333333;
+  backdrop-filter: saturate(180%) blur(20px);
   animation-duration: 300ms;
   .music-img {
     @apply flex-1;

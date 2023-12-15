@@ -2,8 +2,14 @@
   <!-- 展开全屏 -->
   <transition name="musicPage">
     <div id="drawer-target" v-show="musicFull">
+      <div class="drawer-target-back" :style="{backgroundImage:`url(${getImgUrl( playMusic?.picUrl, '300y300')})`}"></div>
       <div class="music-img">
-        <img class="img" :src="playMusic.picUrl + '?param=300y300'" />
+        <n-image
+          :src="getImgUrl( playMusic?.picUrl, '300y300')"
+          class="img" 
+          lazy
+          preview-disabled
+        />
       </div>
       <div class="music-content">
         <div class="music-content-name">{{ playMusic.song.name }}</div>
@@ -24,7 +30,13 @@
   </transition>
   <!-- 底部播放栏 -->
   <div class="music-play-bar" :class="setAnimationClass('animate__bounceInUp')">
-    <img class="play-bar-img" :src="playMusic.picUrl + '?param=200y200'" @click="setMusicFull" />
+    <n-image
+          :src="getImgUrl( playMusic?.picUrl, '300y300')"
+          class="play-bar-img" 
+          lazy
+          preview-disabled
+          @click="setMusicFull"
+        />
     <div class="music-content">
       <div class="music-content-title">
         <n-ellipsis class="text-ellipsis" line-clamp="1">{{
@@ -88,7 +100,7 @@
 <script lang="ts" setup>
 import type { SongResult } from '@/type/music'
 import type { ILyric } from '@/type/lyric'
-import { secondToMinute } from '@/utils'
+import { secondToMinute, getImgUrl} from '@/utils'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import { setAnimationClass } from '@/utils'
@@ -363,15 +375,29 @@ const setAudioTime = (index: any) => {
   animation: fadeOutDown 0.8s ease-in-out;
 }
 
+.drawer-target-back{
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  left: 0;
+  opacity: 0.8;
+  filter: blur(143px) brightness(80%);
+  background-size: 100%;
+}
+
 #drawer-target {
   @apply top-0 left-0 absolute w-full h-full overflow-hidden rounded px-24 pt-24 pb-48 flex items-center;
-  background-color: #333333;
+  backdrop-filter: saturate(180%) blur(50px);
+
+  // background-color: #333333;
   animation-duration: 300ms;
 
   .music-img {
-    @apply flex-1;
+    @apply flex-1 flex justify-center mr-24;
 
     .img {
+      width: 450px;
       @apply rounded-xl;
     }
   }
@@ -389,7 +415,7 @@ const setAudioTime = (index: any) => {
   }
 
   .music-lrc {
-    background-color: #333333;
+    background-color: inherit;
     width: 800px;
     height: 550px;
 

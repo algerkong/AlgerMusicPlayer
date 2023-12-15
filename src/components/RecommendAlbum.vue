@@ -9,9 +9,11 @@
                     :class="setAnimationClass('animate__backInUp')"
                     :style="setAnimationDelay(index, 100)"
                 >
-                    <img
+                    <n-image
                         class="recommend-album-list-item-img"
-                        :src="item.blurPicUrl + '?param=200y200'"
+                        :src="getImgUrl( item.blurPicUrl, '200y200')"
+                        lazy
+                        preview-disabled
                     />
                     <div class="recommend-album-list-item-content">{{ item.name }}</div>
                 </div>
@@ -24,7 +26,7 @@
 import { getNewAlbum } from "@/api/home"
 import { ref, onMounted } from "vue";
 import type { IAlbumNew } from "@/type/album"
-import { setAnimationClass, setAnimationDelay } from "@/utils";
+import { setAnimationClass, setAnimationDelay, getImgUrl } from "@/utils";
 
 
 const albumData = ref<IAlbumNew>()
