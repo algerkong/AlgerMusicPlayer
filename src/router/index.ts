@@ -1,21 +1,21 @@
-import { createRouter, createWebHistory, createMemoryHistory } from "vue-router"
-import AppLayout from "@/layout/AppLayout.vue"
-import homeRouter from "@/router/home"
+import { createRouter, createWebHashHistory } from 'vue-router'
+import AppLayout from '@/layout/AppLayout.vue'
+import homeRouter from '@/router/home'
 
 let loginRouter = {
-  path: "/login",
-  name: "login",
+  path: '/login',
+  name: 'login',
   mate: {
     keepAlive: true,
-    title: "登录",
-    icon: "icon-Home",
+    title: '登录',
+    icon: 'icon-Home',
   },
-  component: () => import("@/views/login/index.vue"),
+  component: () => import('@/views/login/index.vue'),
 }
 
 const routes = [
   {
-    path: "/",
+    path: '/',
     component: AppLayout,
     children: [...homeRouter, loginRouter],
   },
@@ -23,5 +23,5 @@ const routes = [
 
 export default createRouter({
   routes: routes,
-  history: createWebHistory(),
+  history: createWebHashHistory(),
 })
