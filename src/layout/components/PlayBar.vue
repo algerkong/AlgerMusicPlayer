@@ -1,8 +1,7 @@
 <template>
   <!-- 展开全屏 -->
   <transition name="musicPage">
-    <div id="drawer-target" v-show="musicFull">
-      <!-- <div class="drawer-target-back" :style="{backgroundImage:`url(${getImgUrl( playMusic?.picUrl, '300y300')})`}"></div> -->
+      <div id="drawer-target" v-show="musicFull">
       <div class="music-img">
         <n-image :src="getImgUrl( playMusic?.picUrl, '300y300')" class="img" lazy preview-disabled />
       </div>
@@ -201,67 +200,11 @@ onMounted(() => {
         return false;
     }
   };
-
-  nextTick(() => {
-    const img = document.querySelector(".play-bar-img img") as HTMLImageElement;
-    img.onload = () => {
-      // const colorList = new Array(3).fill('').map(() => getImgColor(img.src) + randomPercent()).sort(() => Math.random() - 0.5)
-      // const colorStr = colorList.join(',')
-      // const playBar = document.querySelector('.music-play-bar') as HTMLElement
-      // playBar.style.background = `linear-gradient(90deg, ${colorStr})`
-      // 随机角度
-      const angle = Math.floor(Math.random() * 360) + "deg";
-      const drawerTarget = document.querySelector(
-        "#drawer-target"
-      ) as HTMLElement;
-      drawerTarget.style.background = `linear-gradient(${angle}, ${getImgColor(
-        img.src
-      )})`;
-      // 背景色散开 不要线性 也不是圆形、
-      // drawerTarget.style.background = `radial-gradient(circle, ${colorStr})`
-      /* 
-      background-image: linear-gradient( 58.2deg,  rgba(40,91,212,0.73) -3%, rgba(171,53,163,0.45) 49.3%, rgba(255,204,112,0.37) 97.7% );
-       */
-    };
-  });
 });
 
 const randomPercent = () => {
   const percent = Math.floor(Math.random() * 201) - 100;
   return ` ${percent}%`;
-};
-
-// 获取图片的主要颜色生成css渐变色
-const getImgColor = (url: string) => {
-  const img = document.querySelector(".play-bar-img img") as HTMLImageElement;
-  // 设置跨域
-  img.crossOrigin = "Anonymous";
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  canvas.width = img.width;
-  canvas.height = img.height;
-  ctx?.drawImage(img, 0, 0, img.width, img.height);
-  const data = ctx?.getImageData(0, 0, img.width, img.height).data;
-  const colorArr = [];
-  for (let i = 0; i < data!.length; i += 4) {
-    const r = data![i];
-    const g = data![i + 1];
-    const b = data![i + 2];
-    const a = data![i + 3];
-    if (a > 0 && r < 200 && g < 200 && b < 200) {
-      colorArr.push([r, g, b]);
-    }
-  }
-
-  const color = colorArr[Math.floor(Math.random() * colorArr.length)];
-  const colorStr = `rgb(${color[0]},${color[1]},${color[2]})`;
-  const colorList = new Array(3)
-    .fill("")
-    .map(() => colorArr[Math.floor(Math.random() * colorArr.length)])
-    .sort((item) => item.reduce((a, b) => a + b))
-    .map((item) => `rgb(${item[0]},${item[1]},${item[2]})` + randomPercent())
-    .join(",");
-  return colorList;
 };
 
 const nowTime = ref(0);
@@ -448,22 +391,10 @@ const setAudioTime = (index: any) => {
   animation: fadeOutDown 0.4s ease-in-out;
 }
 
-.drawer-target-back {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-  left: 0;
-  opacity: 0.8;
-  // filter: blur(143px) brightness(80%);
-  background-size: 100%;
-}
-
 #drawer-target {
   @apply top-0 left-0 absolute w-full h-full overflow-hidden rounded px-24 pt-24 pb-48 flex items-center;
-  // backdrop-filter: saturate(180%) blur(50px);
-
-  // background-color: #333333;
+  backdrop-filter: saturate(180%) blur(50px);
+  background-color: rgba(51, 51, 51, 0.747);
   animation-duration: 300ms;
 
   .music-img {
