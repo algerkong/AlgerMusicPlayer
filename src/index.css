@@ -5,10 +5,7 @@
 @tailwind components;
 @tailwind utilities;
 
-img{
-  @apply bg-gray-900;
-}
-
 .n-image img {
+  @apply bg-gray-900;
   width: 100%;
 }

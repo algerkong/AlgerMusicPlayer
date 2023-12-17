@@ -1,41 +1,10 @@
 <template>
   <!-- 展开全屏 -->
-  <transition name="musicPage">
-      <div id="drawer-target" v-show="musicFull">
-      <div class="music-img">
-        <n-image :src="getImgUrl( playMusic?.picUrl, '300y300')" class="img" lazy preview-disabled />
-      </div>
-      <div class="music-content">
-        <div class="music-content-name">{{ playMusic.song.name }}</div>
-        <div class="music-content-singer">
-          <span v-for="(item, index) in playMusic.song.artists" :key="index">
-            {{ item.name
-            }}{{ index < playMusic.song.artists.length - 1 ? ' / ' : '' }}
-          </span>
-        </div>
-        <n-layout
-          class="music-lrc"
-          style="height: 550px"
-          ref="lrcSider"
-          :native-scrollbar="false"
-          @mouseover="mouseOverLayout"
-          @mouseleave="mouseLeaveLayout"
-        >
-          <template v-for="(item, index) in lrcArray" :key="index">
-            <div
-              class="music-lrc-text"
-              :class="{ 'now-text': isCurrentLrc(index) }"
-              @click="setAudioTime(index)"
-            >{{ item.text }}</div>
-          </template>
-        </n-layout>
-      </div>
-    </div>
-  </transition>
+  <music-full ref="MusicFullRef" v-model:musicFull="musicFull" :audio="(audio as HTMLAudioElement)" />
   <!-- 底部播放栏 -->
   <div class="music-play-bar" :class="setAnimationClass('animate__bounceInUp')">
     <n-image
-      :src="getImgUrl( playMusic?.picUrl, '300y300')"
+      :src="getImgUrl(playMusic?.picUrl, '300y300')"
       class="play-bar-img"
       lazy
       preview-disabled
@@ -44,9 +13,7 @@
     <div class="music-content">
       <div class="music-content-title">
         <n-ellipsis class="text-ellipsis" line-clamp="1">
-          {{
-          playMusic.name
-          }}
+          {{ playMusic.name }}
         </n-ellipsis>
       </div>
       <div class="music-content-name">
@@ -71,14 +38,22 @@
     </div>
     <div class="music-time">
       <div class="time">{{ getNowTime }}</div>
-      <n-slider v-model:value="timeSlider" :step="0.05" :tooltip="false"></n-slider>
+      <n-slider
+        v-model:value="timeSlider"
+        :step="0.05"
+        :tooltip="false"
+      ></n-slider>
       <div class="time">{{ getAllTime }}</div>
     </div>
     <div class="audio-volume">
       <div>
         <i class="iconfont icon-notificationfill"></i>
       </div>
-      <n-slider v-model:value="volumeSlider" :step="0.01" :tooltip="false"></n-slider>
+      <n-slider
+        v-model:value="volumeSlider"
+        :step="0.01"
+        :tooltip="false"
+      ></n-slider>
     </div>
     <div class="audio-button">
       <n-tooltip trigger="hover">
@@ -106,40 +81,43 @@
 </template>
 
 <script lang="ts" setup>
-import type { SongResult } from "@/type/music";
-import type { ILyric } from "@/type/lyric";
-import { secondToMinute, getImgUrl } from "@/utils";
-import { computed, nextTick, onMounted, ref, watch } from "vue";
-import { useStore } from "vuex";
-import { setAnimationClass } from "@/utils";
-import { getMusicLrc, getParsingMusicUrl } from "@/api/music";
-import axios from "axios";
+import type { SongResult } from '@/type/music'
+import { secondToMinute, getImgUrl } from '@/utils'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useStore } from 'vuex'
+import { setAnimationClass } from '@/utils'
+import { getParsingMusicUrl } from '@/api/music'
+import {
+  loadLrc,
+  nowTime,
+  allTime,
+} from '@/hooks/MusicHook'
+import MusicFull from './MusicFull.vue'
 
-const store = useStore();
-const audio = ref<any>(null);
+const store = useStore()
 
 // 播放的音乐信息
-const playMusic = computed(() => store.state.playMusic as SongResult);
+const playMusic = computed(() => store.state.playMusic as SongResult)
 // 是否播放
-const play = computed(() => store.state.play as boolean);
+const play = computed(() => store.state.play as boolean)
 // 播放链接
 const ProxyUrl =
-  import.meta.env.VITE_API_PROXY + "" || "http://110.42.251.190:9856";
-const playMusicUrl = ref("");
+  import.meta.env.VITE_API_PROXY + '' || 'http://110.42.251.190:9856'
+const playMusicUrl = ref('')
 watch(
   () => store.state.playMusicUrl,
   async (value, oldValue) => {
-    const isUrlHasMc = location.href.includes("mc.");
+    const isUrlHasMc = location.href.includes('mc.')
     if (value && isUrlHasMc) {
-      let playMusicUrl1 = value as string;
+      let playMusicUrl1 = value as string
       if (!ProxyUrl) {
-        playMusicUrl.value = playMusicUrl1;
-        return;
+        playMusicUrl.value = playMusicUrl1
+        return
       }
-      const url = new URL(playMusicUrl1);
-      const pathname = url.pathname;
-      const subdomain = url.origin.split(".")[0].split("//")[1];
-      playMusicUrl1 = `${ProxyUrl}/mc?m=${subdomain}&url=${pathname}`;
+      const url = new URL(playMusicUrl1)
+      const pathname = url.pathname
+      const subdomain = url.origin.split('.')[0].split('//')[1]
+      playMusicUrl1 = `${ProxyUrl}/mc?m=${subdomain}&url=${pathname}`
       // console.log('playMusicUrl1', playMusicUrl1)
       // // 获取音频文件
       // const { data } = await axios.get(playMusicUrl1, {
@@ -148,238 +126,163 @@ watch(
       // const musicUrl = URL.createObjectURL(data)
       // console.log('musicUrl', musicUrl)
       // playMusicUrl.value = musicUrl
-      playMusicUrl.value = playMusicUrl1;
-      console.log("playMusicUrl1", playMusicUrl1);
+      playMusicUrl.value = playMusicUrl1
+      console.log('playMusicUrl1', playMusicUrl1)
       setTimeout(() => {
-        onAudio(audio.value);
-        store.commit("setPlayMusic", true);
-      }, 100);
+        onAudio()
+        store.commit('setPlayMusic', true)
+      }, 100)
     } else {
-      playMusicUrl.value = value;
+      playMusicUrl.value = value
     }
+    loadLrc(playMusic.value.id)
   },
   { immediate: true }
-);
+)
 // 获取音乐播放Dom
+
+
 
 onMounted(() => {
   // 监听音乐是否播放
   watch(
     () => play.value,
     (value, oldValue) => {
-      if (value) {
-        audio.value.play();
-        onAudio(audio.value);
+      if (value && audio.value) {
+        audioPlay()
+        onAudio()
       } else {
-        audio.value.pause();
+        audioPause()
       }
     }
-  );
+  )
 
   watch(
     () => playMusicUrl.value,
     (value, oldValue) => {
       if (!value) {
-        parsingMusic();
+        parsingMusic()
       }
     }
-  );
+  )
 
   // 抬起键盘按钮监听
   document.onkeyup = (e) => {
     switch (e.code) {
-      case "Space":
-        playMusicEvent();
+      case 'Space':
+        playMusicEvent()
     }
-  };
+  }
 
   // 按下键盘按钮监听
   document.onkeydown = (e) => {
     switch (e.code) {
-      case "Space":
-        return false;
+      case 'Space':
+        return false
     }
-  };
-});
+  }
+})
 
-const randomPercent = () => {
-  const percent = Math.floor(Math.random() * 201) - 100;
-  return ` ${percent}%`;
-};
+const audio = ref<HTMLAudioElement | null>(null)
 
-const nowTime = ref(0);
-const allTime = ref(0);
+
+const audioPlay = () => {
+  if (audio.value) {
+    audio.value.play()
+  }
+}
+
+const audioPause = () => {
+  if (audio.value) {
+    audio.value.pause()
+  }
+}
+
+
 // 计算属性  获取当前播放时间的进度
 const timeSlider = computed({
   get: () => (nowTime.value / allTime.value) * 100,
   set: (value) => {
-    audio.value.currentTime = (value * allTime.value) / 100;
-    audio.value.play();
-    store.commit("setPlayMusic", true);
+    if (!audio.value) return
+    audio.value.currentTime = (value * allTime.value) / 100
+    audioPlay()
+    store.commit('setPlayMusic', true)
   },
-});
+})
 
 // 音量条
-const audioVolume = ref(1);
+const audioVolume = ref(1)
 const volumeSlider = computed({
   get: () => audioVolume.value * 100,
   set: (value) => {
-    audio.value.volume = value / 100;
+    if(!audio.value) return
+    audio.value.volume = value / 100
   },
-});
+})
 // 获取当前播放时间
 const getNowTime = computed(() => {
-  return secondToMinute(nowTime.value);
-});
+  return secondToMinute(nowTime.value)
+})
 
 // 获取总时间
 const getAllTime = computed(() => {
-  return secondToMinute(allTime.value);
-});
-
-// 获取歌词滚动dom
-const lrcSider = ref<any>(null);
-// 当前播放的是哪一句歌词
-const newLrcIndex = ref(0);
-const isMouse = ref(false);
-// 歌词滚动方法
-const lrcScroll = () => {
-  if (musicFull.value && !isMouse.value) {
-    let top = newLrcIndex.value * 50 - 225;
-    lrcSider.value.scrollTo({ top: top, behavior: "smooth" });
-  }
-};
-const mouseOverLayout = () => {
-  isMouse.value = true;
-};
-const mouseLeaveLayout = () => {
-  setTimeout(() => {
-    isMouse.value = false;
-  }, 3000);
-};
+  return secondToMinute(allTime.value)
+})
 
 // 监听音乐播放 获取时间
-const onAudio = (audio: HTMLAudioElement) => {
-  audio.removeEventListener("timeupdate", handleGetAudioTime);
-  audio.removeEventListener("ended", handleEnded);
-  audio.addEventListener("timeupdate", handleGetAudioTime);
-  audio.addEventListener("ended", handleEnded);
-};
+const onAudio = () => {
+  if(audio.value){
+    audio.value.removeEventListener('timeupdate', handleGetAudioTime)
+    audio.value.removeEventListener('ended', handleEnded)
+    audio.value.addEventListener('timeupdate', handleGetAudioTime)
+    audio.value.addEventListener('ended', handleEnded)
+  }
+}
 
 function handleEnded() {
-  store.commit("nextPlay");
+  store.commit('nextPlay')
 }
 
 function handlePrev() {
-  store.commit("prevPlay");
+  store.commit('prevPlay')
 }
+
+const MusicFullRef = ref<any>(null)
 
 function handleGetAudioTime(this: any) {
   // 监听音频播放的实时时间事件
-  const audio = this as HTMLAudioElement;
+  const audio = this as HTMLAudioElement
   // 获取当前播放时间
-  nowTime.value = Math.floor(audio.currentTime);
+  nowTime.value = Math.floor(audio.currentTime)
   // 获取总时间
-  allTime.value = audio.duration;
+  allTime.value = audio.duration
   // 获取音量
-  audioVolume.value = audio.volume;
-  lrcScroll();
+  audioVolume.value = audio.volume
+  MusicFullRef.value?.lrcScroll()
 }
 
 // 播放暂停按钮事件
 const playMusicEvent = async () => {
   if (play.value) {
-    store.commit("setPlayMusic", false);
+    store.commit('setPlayMusic', false)
   } else {
-    store.commit("setPlayMusic", true);
+    store.commit('setPlayMusic', true)
   }
-};
+}
 
-const musicFull = ref(false);
+const musicFull = ref(false)
 
 // 设置musicFull
 const setMusicFull = () => {
-  musicFull.value = !musicFull.value;
-  if (musicFull.value) {
-    loadLrc();
-  }
-};
+  musicFull.value = !musicFull.value
+}
 
 // 解析音乐
 const parsingMusic = async () => {
-  const { data } = await getParsingMusicUrl(playMusic.value.id);
-  store.state.playMusicUrl = data.data.url;
-};
-
-const lrcData = ref<ILyric>();
-
-interface ILrcData {
-  text: string;
-  trText: string;
+  const { data } = await getParsingMusicUrl(playMusic.value.id)
+  store.state.playMusicUrl = data.data.url
 }
-const lrcArray = ref<Array<ILrcData>>();
-const lrcTimeArray = ref<Array<Number>>([]);
-// 加载歌词
-const loadLrc = async () => {
-  const { data } = await getMusicLrc(playMusic.value.id);
-  lrcData.value = data;
 
-  try {
-    let musicText = data.lrc.lyric;
-    //歌词时间
-    let timeArray = musicText.match(/(\d{2}):(\d{2})(\.(\d*))?/g);
-    let timeArrayNum: Array<Number> = [];
-    timeArray?.forEach(function (item, index) {
-      if (item.length < 9) {
-        item = item + "0";
-      }
-      timeArrayNum.push(
-        parseInt(item.split(":")[0]) * 60 + parseFloat(item.split(":")[1])
-      );
-    });
-    lrcTimeArray.value = timeArrayNum;
-    //歌词
-    let musicTextArray = musicText
-      .replace(/(\[(\d{2}):(\d{2})(\.(\d*))?\])/g, "")
-      .split("\n");
-    let text = [];
-
-    try {
-      let trMusicText = data.tlyric.lyric;
-      let trMusicTextArray = trMusicText
-        .replace(/(\[(\d{2}):(\d{2})(\.(\d*))?\])/g, "")
-        .split("\n");
-      for (let i = 0; i < musicTextArray.length - 1; i++) {
-        text.push({
-          text: musicTextArray[i],
-          trText: trMusicTextArray[i],
-        });
-      }
-      lrcArray.value = text;
-    } catch (err) {
-      text = [];
-    }
-  } catch (err) {
-    console.log(err);
-  }
-};
-
-// 是否是当前正在播放的歌词
-const isCurrentLrc = (index: any) => {
-  let isTrue = !(
-    nowTime.value <= lrcTimeArray.value[index] ||
-    nowTime.value >= lrcTimeArray.value[index + 1]
-  );
-  if (isTrue) {
-    newLrcIndex.value = index;
-  }
-  return isTrue;
-};
-// 设置当前播放时间
-const setAudioTime = (index: any) => {
-  audio.value.currentTime = lrcTimeArray.value[index];
-  audio.value.play();
-};
 </script>
 
 <style lang="scss" scoped>
@@ -391,62 +294,15 @@ const setAudioTime = (index: any) => {
   animation: fadeOutDown 0.4s ease-in-out;
 }
 
-#drawer-target {
-  @apply top-0 left-0 absolute w-full h-full overflow-hidden rounded px-24 pt-24 pb-48 flex items-center;
-  backdrop-filter: saturate(180%) blur(50px);
-  background-color: rgba(51, 51, 51, 0.747);
-  animation-duration: 300ms;
-
-  .music-img {
-    @apply flex-1 flex justify-center mr-24;
-
-    .img {
-      width: 450px;
-      height: 450px;
-      @apply rounded-xl;
-    }
-  }
-
-  .music-content {
-    @apply flex flex-col justify-center items-center;
-
-    &-name {
-      @apply font-bold text-3xl py-2;
-    }
-
-    &-singer {
-      @apply text-base py-2;
-    }
-  }
-
-  .music-lrc {
-    background-color: inherit;
-    width: 800px;
-    height: 550px;
-
-    &-text {
-      @apply text-white text-lg flex justify-center items-center cursor-pointer;
-      height: 50px;
-      transition: all 0.2s ease-out;
-
-      &:hover {
-        @apply font-bold text-xl text-red-500;
-      }
-    }
-
-    .now-text {
-      @apply font-bold text-xl text-red-500;
-    }
-  }
-}
-
 .text-ellipsis {
   width: 100%;
 }
 
 .music-play-bar {
   @apply h-20 w-full absolute bottom-0 left-0 flex items-center rounded-t-2xl overflow-hidden box-border px-6 py-2;
-  background-color: #212121;
+  z-index: 99999999;
+  backdrop-filter: blur(20px);
+  background-color: rgba(0, 0, 0, 0.747);
 
   .music-content {
     width: 200px;
