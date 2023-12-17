@@ -1,5 +1,5 @@
 <template>
-   <n-drawer :show="musicFull" height="100vh" placement="bottom" drawer-class="music-drawer">
+   <n-drawer :show="musicFull" height="100vh" placement="bottom" :drawer-style="{backgroundColor:'transparent'}">
     <div id="drawer-target">
       <div class="music-img">
         <n-image
@@ -105,10 +105,6 @@ defineExpose({
 </script>
 
 <style scoped lang="scss">
-.music-drawer {
-  @apply bg-transparent;
-  box-shadow: none;
-}
 #drawer-target {
   @apply top-0 left-0 absolute w-full h-full overflow-hidden rounded px-24 pt-24 pb-48 flex items-center;
   backdrop-filter: blur(20px);
