@@ -28,11 +28,11 @@ export const secondToMinute = (s: number) => {
 }
 
 export const getIsMc = () => {
-  return !!location.href.includes('mc.')
+  return true
 }
 
 export const getImgUrl = computed(() => (url: string, size: string) => {
   const bdUrl = 'https://image.baidu.com/search/down?url='
   const imgUrl = encodeURIComponent(`${url}?param=${size}`)
-  return getIsMc() ? `${bdUrl}${imgUrl}` : `${url}?param=${size}`
+  return `${bdUrl}${imgUrl}`
 })

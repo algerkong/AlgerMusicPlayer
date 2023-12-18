@@ -117,8 +117,8 @@ defineExpose({
     @apply flex-1 flex justify-center mr-24;
 
     .img {
-      width: 450px;
-      height: 450px;
+      width: 350px;
+      height: 350px;
       @apply rounded-xl;
     }
   }
@@ -137,7 +137,8 @@ defineExpose({
 
   .music-lrc {
     background-color: inherit;
-    width: 800px;
+    min-width: 400px;
+    max-width: 800px;
     height: 550px;
 
     &-text {

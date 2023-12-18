@@ -1,6 +1,7 @@
 <template>
     <div class="layout-page">
         <div class="layout-main">
+            <title-bar />
             <div class="flex">
                 <!-- 侧边菜单栏 -->
                 <app-menu class="menu" :menus="menus" />
@@ -37,7 +38,7 @@ import { defineAsyncComponent } from 'vue';
 const AppMenu = defineAsyncComponent(() => import('./components/AppMenu.vue'));
 const PlayBar = defineAsyncComponent(() => import('./components/PlayBar.vue'));
 const SearchBar = defineAsyncComponent(() => import('./components/SearchBar.vue'));
-
+const TitleBar = defineAsyncComponent(() => import('./components/TitleBar.vue'));
 
 
 const store = useStore();
@@ -63,7 +64,7 @@ const menus = store.state.menus;
         width: 90px;
     }
     .main {
-        @apply pt-6 pr-6 flex-1 box-border;
+        @apply pr-6 flex-1 box-border;
         height: 100vh;
         &-content {
             @apply rounded-2xl;
