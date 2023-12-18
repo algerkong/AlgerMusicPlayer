@@ -3,7 +3,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "serve": "vite preview"
+    "serve": "vite preview",
+    "es": "vite && electron .",
+    "eb": "vite build && electron-builder"
   },
   "dependencies": {
     "@tailwindcss/postcss7-compat": "^2.2.4",
@@ -23,6 +25,8 @@
     "@vicons/antd": "^0.10.0",
     "@vitejs/plugin-vue": "^4.2.3",
     "@vue/compiler-sfc": "^3.3.4",
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
     "naive-ui": "^2.34.4",
     "typescript": "^4.3.2",
     "vfonts": "^0.1.0",

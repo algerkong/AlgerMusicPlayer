@@ -13,6 +13,8 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0', //允许本机
+    // 指定端口
+    port: 4678,
     proxy: {
       // string shorthand
       '/mt': {
