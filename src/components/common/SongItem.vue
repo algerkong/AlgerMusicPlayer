@@ -1,7 +1,7 @@
 <template>
   <div class="recommend-music-list-item">
     <n-image
-      :src="getImgUrl( item.picUrl, '200y200')"
+      :src="getImgUrl( item.picUrl, '40y40')"
       class="recommend-music-list-item-img"
       lazy
       preview-disabled

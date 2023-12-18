@@ -33,5 +33,6 @@ export const getIsMc = () => {
 
 export const getImgUrl = computed(() => (url: string, size: string) => {
   const bdUrl = 'https://image.baidu.com/search/down?url='
-  return getIsMc() ? `${bdUrl}${url}?param${size}` : `${url}?param${size}`
+  const imgUrl = encodeURIComponent(`${url}?param=${size}`)
+  return getIsMc() ? `${bdUrl}${imgUrl}` : `${url}?param=${size}`
 })

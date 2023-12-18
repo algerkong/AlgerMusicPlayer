@@ -1,8 +1,14 @@
 <template>
-   <n-drawer :show="musicFull" height="100vh" placement="bottom" :drawer-style="{backgroundColor:'transparent'}">
+  <n-drawer
+    :show="musicFull"
+    height="100vh"
+    placement="bottom"
+    :drawer-style="{ backgroundColor: 'transparent' }"
+  >
     <div id="drawer-target">
       <div class="music-img">
         <n-image
+          ref="PicImgRef"
           :src="getImgUrl(playMusic?.picUrl, '300y300')"
           class="img"
           lazy
@@ -29,7 +35,7 @@
             <div
               class="music-lrc-text"
               :class="{ 'now-text': isCurrentLrc(index, nowTime) }"
-              @click="setAudioTime(index,audio)"
+              @click="setAudioTime(index, audio)"
             >
               {{ item.text }}
             </div>
@@ -41,7 +47,7 @@
         <n-button @click="addCorrectionTime(0.2)">+0.2</n-button>
       </div>
     </div>
-   </n-drawer>
+  </n-drawer>
 </template>
 
 <script setup lang="ts">
@@ -57,7 +63,6 @@ import {
   reduceCorrectionTime,
   setAudioTime,
   nowTime,
-  allTime,
 } from '@/hooks/MusicHook'
 
 const store = useStore()
@@ -74,7 +79,6 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:musicFull'])
-
 
 // 播放的音乐信息
 const playMusic = computed(() => store.state.playMusic as SongResult)
@@ -98,10 +102,8 @@ const mouseLeaveLayout = () => {
 }
 
 defineExpose({
-  lrcScroll
+  lrcScroll,
 })
-
-
 </script>
 
 <style scoped lang="scss">

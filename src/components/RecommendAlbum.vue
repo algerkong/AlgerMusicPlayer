@@ -52,13 +52,13 @@ onMounted(() => {
         &-item {
             @apply rounded-xl overflow-hidden relative;
             &-img {
-                @apply rounded-xl transition;
+                @apply rounded-xl transition w-full h-full;
             }
             &:hover img {
                 filter: brightness(50%);
             }
             &-content {
-                @apply w-full h-full opacity-0 transition absolute z-10 top-0 left-0 p-4 text-xl;
+                @apply w-full h-full opacity-0 transition absolute z-10 top-0 left-0 p-4 text-xl bg-opacity-60 bg-black;
             }
             &-content:hover {
                 opacity: 1;

@@ -28,7 +28,6 @@
             class="search-list"
             :class="setAnimationClass('animate__fadeInUp')"
             :native-scrollbar="false"
-            @scroll="searchScrolling"
         >
             <div class="title">{{ hotKeyword }}</div>
             <div class="search-list-box">
@@ -68,10 +67,6 @@ const loadHotSearch = async () => {
     const { data } = await getHotSearch();
     hotSearchData.value = data;
 };
-
-function searchScrolling(e: any) {
-    console.log(e);
-}
 
 
 onMounted(() => {
