@@ -8,18 +8,20 @@ function createWindow() {
     frame: false,
     webPreferences: {
       nodeIntegration: true,
-      preload: path.join(__dirname, '/utils/preload.js'),
+      preload: path.join(__dirname, '/electron/preload.js'),
     },
   })
   win.setMinimumSize(1280, 900);
-  win.loadURL('http://localhost:4678/')
-  win.webContents.openDevTools({ mode: 'detach' })
+
+  if (process.env.NODE_ENV === 'dev') {
+    win.loadURL('http://localhost:4678/')
+    win.webContents.openDevTools({ mode: 'detach' })
+  } else {
+    win.loadURL(`file://${__dirname}/dist/index.html`)
+  }
 }
 
-
 app.whenReady().then(createWindow)
-
-
 
 ipcMain.on('minimize-window', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender)

@@ -1,7 +1,7 @@
 {
   "name": "alger-music",
-  "version": "0.0.0",
-  "main": "./app/main.js",
+  "version": "1.0.0",
+  "main": "app.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -9,7 +9,7 @@
     "es": "vite && electron .",
     "eb": "vite build && electron-builder",
     "start": "electron .",
-    "e:b": "electron-builder"
+    "e:b": "electron-builder --config ./electron.config.json"
   },
   "dependencies": {
     "@tailwindcss/postcss7-compat": "^2.2.4",

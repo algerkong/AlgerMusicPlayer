@@ -2,30 +2,11 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
 import VueDevTools from 'vite-plugin-vue-devtools'
-// const { vitePluginElectronBuilder } = require('vite-plugin-electron-builder')
-import vitePluginElectronBuilder from 'vite-plugin-electron-builder'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [
-    vue(),
-    VueDevTools(),
-    vitePluginElectronBuilder({
-      mainProcessFile: 'app/main.js',
-      preloadDir: 'app/utils',
-      builderOptions: {
-        appId: 'com.alger.music',
-        directories: {
-          output: 'dist_electron',
-        },
-        files: ['dist/**/*', 'node_modules/**/*', 'package.json'],
-        win: {
-          icon: 'public/icon.ico',
-          target: 'nsis',
-        },
-      },
-    }),
-  ],
+  plugins: [vue(), VueDevTools()],
+  base: './',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),

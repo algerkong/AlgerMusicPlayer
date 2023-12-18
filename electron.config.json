@@ -1,0 +1,18 @@
+{
+  "appId": "com.alger.music",
+  "productName": "AlgerMusic",
+  "directories": {
+    "output": "dist_electron"
+  },
+  "files": ["dist/**/*", "package.json", "app.js", "electron/**/*"],
+  "win": {
+    "icon": "public/icon.png",
+    "target": "nsis",
+    "extraFiles": [
+      {
+        "from": "installer/installer.nsh",
+        "to": "$INSTDIR"
+      }
+    ]
+  }
+}

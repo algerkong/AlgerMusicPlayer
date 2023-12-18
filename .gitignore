@@ -3,6 +3,8 @@ node_modules
 dist
 dist-ssr
 *.local
+dist_electron
 
 pnpm-lock.yaml
+package-lock.json
 dist.zip
