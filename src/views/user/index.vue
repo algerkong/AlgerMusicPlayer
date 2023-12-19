@@ -89,7 +89,7 @@ const handlePlay = (item: any) => {
       <div class="page">
         <div class="user-name">{{ user.nickname }}</div>
         <div class="user-info">
-          <n-avatar round :size="50" :src="user.avatarUrl" />
+          <n-avatar round :size="50" :src="getImgUrl(user.avatarUrl)" />
           <div class="user-info-list">
             <div class="user-info-item">
               <div class="label">{{ userDetail.profile.followeds }}</div>

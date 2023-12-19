@@ -2,7 +2,7 @@
     <!-- 歌单分类列表 -->
     <div class="play-list-type">
         <div class="title" :class="setAnimationClass('animate__fadeInLeft')">歌单分类</div>
-        <n-layout>
+        <div>
             <template v-for="(item, index) in playlistCategory?.sub" :key="item.name">
                 <span
                     class="play-list-type-item"
@@ -24,7 +24,7 @@
                 "
                 @click="isShowAllPlaylistCategory = !isShowAllPlaylistCategory"
             >{{ !isShowAllPlaylistCategory ? "显示全部" : "隐藏一些" }}</div>
-        </n-layout>
+        </div>
     </div>
 </template>
 

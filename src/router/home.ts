@@ -1,54 +1,54 @@
 const layoutRouter = [
   {
-    path: "/",
-    name: "home",
+    path: '/',
+    name: 'home',
     mate: {
       keepAlive: true,
-      title: "首页",
-      icon: "icon-Home",
+      title: '首页',
+      icon: 'icon-Home',
     },
-    component: () => import("@/views/home/index.vue"),
+    component: () => import('@/views/home/index.vue'),
   },
   {
-    path: "/search",
-    name: "search",
+    path: '/search',
+    name: 'search',
     mate: {
-      title: "搜索",
+      title: '搜索',
       keepAlive: true,
-      icon: "icon-Search",
+      icon: 'icon-Search',
     },
-    component: () => import("@/views/search/index.vue"),
+    component: () => import('@/views/search/index.vue'),
   },
   {
-    path: "/list",
-    name: "list",
+    path: '/list',
+    name: 'list',
     mate: {
-      title: "歌单",
+      title: '歌单',
       keepAlive: true,
-      icon: "icon-Paper",
+      icon: 'icon-Paper',
     },
-    component: () => import("@/views/list/index.vue"),
+    component: () => import('@/views/list/index.vue'),
   },
   {
-    path: "/user",
-    name: "user",
+    path: '/user',
+    name: 'user',
     mate: {
-      title: "用户",
+      title: '用户',
       keepAlive: true,
-      icon: "icon-Profile",
+      icon: 'icon-Profile',
     },
-    component: () => import("@/views/user/index.vue"),
+    component: () => import('@/views/user/index.vue'),
   },
-  {
-    path: "/test",
-    name: "test",
-    mate: {
-      title: "用户",
-      keepAlive: true,
-      icon: "icon-Profile",
-    },
-    component: () => import("@/views/test/test.vue"),
-  },
-];
+  // {
+  //   path: "/test",
+  //   name: "test",
+  //   mate: {
+  //     title: "用户",
+  //     keepAlive: true,
+  //     icon: "icon-Profile",
+  //   },
+  //   component: () => import("@/views/test/test.vue"),
+  // },
+]
 
 export default layoutRouter;

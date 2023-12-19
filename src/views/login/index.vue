@@ -46,6 +46,9 @@ const timerIsQr = (key: string) => {
         console.log(res);
       })
       clearInterval(timer)
+      setTimeout(() => {
+        router.push('/user')
+      }, 1000);
     }
   }, 5000);
 }
@@ -67,7 +70,7 @@ const loginPhone = async () => {
     store.state.user = data.profile
     localStorage.setItem('token', data.cookie)
     setTimeout(() => {
-      router.push('/')
+      router.push('/user')
     }, 1000);
   }
 }

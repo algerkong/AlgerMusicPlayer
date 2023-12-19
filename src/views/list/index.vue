@@ -105,7 +105,7 @@ const handlePlay = (item: any) => {
 <template>
   <div class="list-page">
     <!-- 歌单列表 -->
-    <n-layout class="recommend" :native-scrollbar="false" @click="showMusic = false">
+    <n-scrollbar class="recommend" @click="showMusic = false" :size="100">
       <div
         class="recommend-title"
         :class="setAnimationClass('animate__bounceInLeft')"
@@ -133,7 +133,7 @@ const handlePlay = (item: any) => {
           <div class="recommend-item-title">{{ item.name }}</div>
         </div>
       </div>
-    </n-layout>
+    </n-scrollbar>
 
     <transition name="musicPage">
       <div class="music-page" v-if="showMusic">
@@ -157,7 +157,7 @@ const handlePlay = (item: any) => {
 
 <style lang="scss" scoped>
 .list-page {
-  @apply relative h-full;
+  @apply relative h-full w-full pt-4;
 }
 
 .musicPage-enter-active {
@@ -169,13 +169,13 @@ const handlePlay = (item: any) => {
 }
 
 .recommend {
-  @apply w-full h-full;
+  @apply w-full h-full bg-none;
   &-title {
-    @apply text-lg font-bold text-white py-4;
+    @apply text-lg font-bold text-white pb-4;
   }
 
   &-list {
-    @apply grid gap-6 pb-28;
+    @apply grid gap-6 pb-28 pr-3;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
   &-item {

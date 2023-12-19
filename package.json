@@ -7,9 +7,9 @@
     "build": "vite build",
     "serve": "vite preview",
     "es": "vite && electron .",
-    "eb": "vite build && electron-builder",
-    "start": "electron .",
-    "e:b": "electron-builder --config ./electron.config.json"
+    "start": "set NODE_ENV=production && electron .",
+    "e:b": "electron-builder --config ./electron.config.json",
+    "eb": "vite build && e:b"
   },
   "dependencies": {
     "@tailwindcss/postcss7-compat": "^2.2.4",
@@ -35,7 +35,6 @@
     "typescript": "^4.3.2",
     "vfonts": "^0.1.0",
     "vite": "^4.4.7",
-    "vite-plugin-electron-builder": "^0.1.0",
     "vite-plugin-vue-devtools": "1.0.0-beta.5",
     "vue-tsc": "^0.0.24"
   }

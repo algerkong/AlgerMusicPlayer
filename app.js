@@ -14,8 +14,8 @@ function createWindow() {
   win.setMinimumSize(1280, 900);
 
   if (process.env.NODE_ENV === 'dev') {
-    win.loadURL('http://localhost:4678/')
     win.webContents.openDevTools({ mode: 'detach' })
+    win.loadURL('http://localhost:4678/')
   } else {
     win.loadURL(`file://${__dirname}/dist/index.html`)
   }

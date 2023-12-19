@@ -137,8 +137,7 @@ defineExpose({
 
   .music-lrc {
     background-color: inherit;
-    min-width: 400px;
-    max-width: 800px;
+    width: 500px;
     height: 550px;
 
     &-text {

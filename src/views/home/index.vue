@@ -1,16 +1,18 @@
 <template>
-  <n-layout class="main-page" :native-scrollbar="false">
-    <!-- 推荐歌手 -->
-    <recommend-singer />
-    <div class="main-content">
-      <!-- 歌单分类列表 -->
-      <playlist-type />
-      <!-- 本周最热音乐 -->
-      <recommend-songlist />
-      <!-- 推荐最新专辑 -->
-      <recommend-album />
-    </div>
-  </n-layout>
+  <div class="main-page">
+    <n-scrollbar>
+      <!-- 推荐歌手 -->
+      <recommend-singer />
+      <div class="main-content">
+        <!-- 歌单分类列表 -->
+        <playlist-type />
+        <!-- 本周最热音乐 -->
+        <recommend-songlist />
+        <!-- 推荐最新专辑 -->
+        <recommend-album />
+      </div>
+    </n-scrollbar>
+  </div>
 </template>
 
 <script lang="ts" setup>
@@ -22,11 +24,10 @@ const RecommendAlbum = defineAsyncComponent(() => import("@/components/Recommend
 </script>
 
 <style lang="scss" scoped>
-.main-page {
-  @apply mt-4 h-full;
+.main-page{
+  @apply pt-4 h-full w-full;
 }
-
 .main-content {
-  @apply mt-6 flex;
+  @apply mt-6 flex pb-28;
 }
 </style>
