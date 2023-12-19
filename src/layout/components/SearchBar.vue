@@ -22,7 +22,7 @@
                 class="ml-2 cursor-pointer"
                 circle
                 size="large"
-                :src="store.state.user.avatarUrl"
+                :src="getImgUrl(store.state.user.avatarUrl)"
                 v-if="store.state.user"
             />
             <n-avatar
@@ -44,6 +44,7 @@ import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import request from '@/utils/request_mt'
+import { getImgUrl } from '@/utils';
 
 const router = useRouter()
 const store = useStore();
