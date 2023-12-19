@@ -84,7 +84,7 @@ const handlePlay = (item: any) => {
       class="left"
       v-if="userDetail"
       :class="setAnimationClass('animate__fadeInLeft')"
-      :style="{ backgroundImage: `url(${user.backgroundUrl})` }"
+      :style="{ backgroundImage: `url(${getImgUrl(user.backgroundUrl)})` }"
     >
       <div class="page">
         <div class="user-name">{{ user.nickname }}</div>
