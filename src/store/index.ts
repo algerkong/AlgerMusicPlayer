@@ -1,7 +1,8 @@
 import { createStore } from "vuex";
 import { SongResult } from "@/type/music";
-import { getMusicUrl } from "@/api/music";
-import homeRouter from "@/router/home";
+import { getMusicUrl, getParsingMusicUrl } from '@/api/music'
+import homeRouter from '@/router/home'
+import { getMusicProxyUrl } from '@/hooks/MusicHook'
 
 interface State {
   menus: any[]
@@ -56,15 +57,22 @@ const mutations = {
 }
 
 const getSongUrl = async (id: number) => {
-  const { data } = await getMusicUrl(id);
-  console.log(data.data[0].url);
-
-  return data.data[0].url;
-};
+  const { data } = await getMusicUrl(id)
+  try {
+    if (data.data[0].freeTrialInfo) {
+      const res = await getParsingMusicUrl(id)
+      return res.data.data.url
+    }
+  } catch (error) {
+    console.error('error', error)
+  }
+  return data.data[0].url
+}
 
 const updatePlayMusic = async (state: State) => {
   state.playMusic = state.playList[state.playListIndex]
-  state.playMusicUrl = await getSongUrl(state.playMusic.id)
+  const playMusicUrl = await getSongUrl(state.playMusic.id)
+  state.playMusicUrl = getMusicProxyUrl(playMusicUrl)
   state.play = true
 }
 

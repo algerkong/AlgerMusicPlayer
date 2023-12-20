@@ -30,7 +30,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
       '/music': {
-        target: 'http://myalger.top:4000',
+        target: 'http://110.42.251.190:4100',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/music/, ''),
       },

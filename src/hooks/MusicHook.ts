@@ -1,5 +1,6 @@
 import { getMusicLrc } from '@/api/music'
 import { ILyric } from '@/type/lyric'
+import { getIsMc } from '@/utils'
 import { ref } from 'vue'
 
 interface ILrcData {
@@ -89,6 +90,17 @@ const setAudioTime = (index: any, audio: HTMLAudioElement) => {
   audio.play()
 }
 
+const ProxyUrl =
+  import.meta.env.VITE_API_PROXY + '' || 'http://110.42.251.190:9856'
+
+const getMusicProxyUrl = (url: string) => {
+  if (!getIsMc()) {
+    return url
+  }
+  const PUrl = url.split('').join('+')
+  return `${ProxyUrl}/mc?url=${PUrl}`
+}
+
 export {
   lrcData,
   lrcArray,
@@ -101,4 +113,5 @@ export {
   setAudioTime,
   nowTime,
   allTime,
+  getMusicProxyUrl,
 }

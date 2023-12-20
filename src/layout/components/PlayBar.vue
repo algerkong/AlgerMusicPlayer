@@ -62,12 +62,12 @@
         </template>
         喜欢
       </n-tooltip>
-      <n-tooltip trigger="hover">
+      <!-- <n-tooltip trigger="hover">
         <template #trigger>
           <i class="iconfont icon-Play" @click="parsingMusic"></i>
         </template>
         解析播放
-      </n-tooltip>
+      </n-tooltip> -->
       <n-tooltip trigger="hover">
         <template #trigger>
           <i class="iconfont icon-full" @click="setMusicFull"></i>
@@ -90,7 +90,7 @@ import { getParsingMusicUrl } from '@/api/music'
 import {
   loadLrc,
   nowTime,
-  allTime,
+  allTime
 } from '@/hooks/MusicHook'
 import MusicFull from './MusicFull.vue'
 
@@ -101,40 +101,10 @@ const playMusic = computed(() => store.state.playMusic as SongResult)
 // 是否播放
 const play = computed(() => store.state.play as boolean)
 // 播放链接
-const ProxyUrl =
-  import.meta.env.VITE_API_PROXY + '' || 'http://110.42.251.190:9856'
-const playMusicUrl = ref('')
+const playMusicUrl = computed(() => store.state.playMusicUrl as string)
 watch(
   () => store.state.playMusicUrl,
-  async (value, oldValue) => {
-    const isUrlHasMc = getIsMc()
-    if (value && isUrlHasMc) {
-      let playMusicUrl1 = value as string
-      if (!ProxyUrl) {
-        playMusicUrl.value = playMusicUrl1
-        return
-      }
-      const url = new URL(playMusicUrl1)
-      const pathname = url.pathname
-      const subdomain = url.origin.split('.')[0].split('//')[1]
-      playMusicUrl1 = `${ProxyUrl}/mc?m=${subdomain}&url=${pathname}`
-      // console.log('playMusicUrl1', playMusicUrl1)
-      // // 获取音频文件
-      // const { data } = await axios.get(playMusicUrl1, {
-      //   responseType: 'blob'
-      // })
-      // const musicUrl = URL.createObjectURL(data)
-      // console.log('musicUrl', musicUrl)
-      // playMusicUrl.value = musicUrl
-      playMusicUrl.value = playMusicUrl1
-      console.log('playMusicUrl1', playMusicUrl1)
-      setTimeout(() => {
-        onAudio()
-        store.commit('setPlayMusic', true)
-      }, 100)
-    } else {
-      playMusicUrl.value = value
-    }
+  () => {
     loadLrc(playMusic.value.id)
   },
   { immediate: true }
@@ -156,16 +126,6 @@ onMounted(() => {
       }
     }
   )
-
-  watch(
-    () => playMusicUrl.value,
-    (value, oldValue) => {
-      if (!value) {
-        parsingMusic()
-      }
-    }
-  )
-
   // 抬起键盘按钮监听
   document.onkeyup = (e) => {
     switch (e.code) {
