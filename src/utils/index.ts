@@ -30,6 +30,17 @@ export const secondToMinute = (s: number) => {
 export const getIsMc = () => {
   return true
 }
+const ProxyUrl =
+  import.meta.env.VITE_API_PROXY + '' || 'http://110.42.251.190:9856'
+
+export const getMusicProxyUrl = (url: string) => {
+  if (!getIsMc()) {
+    return url
+  }
+  const PUrl = url.split('').join('+')
+  return `${ProxyUrl}/mc?url=${PUrl}`
+}
+
 
 export const getImgUrl = computed(() => (url: string, size: string = '') => {
   const bdUrl = 'https://image.baidu.com/search/down?url='

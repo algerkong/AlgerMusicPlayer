@@ -237,12 +237,6 @@ const setMusicFull = () => {
   musicFull.value = !musicFull.value
 }
 
-// 解析音乐
-const parsingMusic = async () => {
-  const { data } = await getParsingMusicUrl(playMusic.value.id)
-  store.state.playMusicUrl = data.data.url
-}
-
 </script>
 
 <style lang="scss" scoped>
