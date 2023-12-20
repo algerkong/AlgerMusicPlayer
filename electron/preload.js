@@ -5,4 +5,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   maximize: () => ipcRenderer.send('maximize-window'),
   close: () => ipcRenderer.send('close-window'),
   dragStart: (data) => ipcRenderer.send('drag-start', data),
+  miniTray: () => ipcRenderer.send('mini-tray'),
 })

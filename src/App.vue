@@ -1,7 +1,9 @@
 <template>
   <div class="app">
     <n-config-provider :theme="darkTheme">
-      <router-view></router-view>
+      <n-dialog-provider>
+        <router-view></router-view>
+      </n-dialog-provider>
     </n-config-provider>
   </div>
 </template>

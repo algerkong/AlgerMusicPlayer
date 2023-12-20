@@ -7,7 +7,7 @@
     "build": "vite build",
     "serve": "vite preview",
     "es": "vite && electron .",
-    "start": "set NODE_ENV=production && electron .",
+    "start": "set NODE_ENV=development&&electron .",
     "e:b": "electron-builder --config ./electron.config.json",
     "eb": "vite build && e:b"
   },

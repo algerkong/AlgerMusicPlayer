@@ -16,6 +16,9 @@
 </template>
 
 <script setup lang="ts">
+import { useDialog } from 'naive-ui'
+
+const dialog = useDialog()
 
 const minimize = () => {
   window.electronAPI.minimize()
@@ -26,7 +29,18 @@ const maximize = () => {
 }
 
 const close = () => {
-  window.electronAPI.close()
+  dialog.warning({
+    title: '提示',
+    content: '确定要退出吗？',
+    positiveText: '最小化',
+    negativeText: '关闭',
+    onPositiveClick: () => {
+      window.electronAPI.miniTray()
+    },
+    onNegativeClick: () => {
+      window.electronAPI.close()
+    }
+  })
 }
 
 const drag = (event: HTMLElement) => {
