@@ -1,6 +1,6 @@
 <template>
   <!-- 展开全屏 -->
-  <music-full ref="MusicFullRef" v-model:musicFull="musicFull" :audio="(audio as HTMLAudioElement)" />
+  <music-full ref="MusicFullRef" v-model:musicFull="musicFull" :audio="(audio.value as HTMLAudioElement)" />
   <!-- 底部播放栏 -->
   <div class="music-play-bar" :class="setAnimationClass('animate__bounceInUp')">
     <n-image
@@ -76,7 +76,7 @@
       </n-tooltip>
     </div>
     <!-- 播放音乐 -->
-    <audio ref="audio" :src="playMusicUrl" :autoplay="play"></audio>
+    
   </div>
 </template>
 
@@ -99,8 +99,11 @@ const store = useStore()
 const playMusic = computed(() => store.state.playMusic as SongResult)
 // 是否播放
 const play = computed(() => store.state.play as boolean)
-// 播放链接
-const playMusicUrl = computed(() => store.state.playMusicUrl as string)
+
+const audio = {
+  value: document.querySelector('#MusicAudio') as HTMLAudioElement
+}
+
 watch(
   () => store.state.playMusicUrl,
   () => {
@@ -142,7 +145,6 @@ onMounted(() => {
   }
 })
 
-const audio = ref<HTMLAudioElement | null>(null)
 
 
 const audioPlay = () => {
