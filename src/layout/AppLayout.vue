@@ -68,7 +68,7 @@ const menus = store.state.menus;
         height: 100vh;
         &-content {
             @apply rounded-2xl pb-28 box-border;
-            height: calc(100vh - 60px);
+            height: 100vh;
         }
         &-page {
             margin: 20px 0;

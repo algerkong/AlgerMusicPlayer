@@ -9,6 +9,7 @@ import { getListDetail } from '@/api/list'
 import SongItem from "@/components/common/SongItem.vue";
 import MusicList from "@/components/MusicList.vue";
 import type { Playlist } from '@/type/listDetail';
+import PlayBottom from "@/components/common/PlayBottom.vue";
 
 
 const store = useStore()
@@ -99,40 +100,46 @@ const handlePlay = (item: any) => {
 
         <div class="play-list" :class="setAnimationClass('animate__fadeInLeft')">
           <div class="play-list-title">创建的歌单</div>
-          <div
-            class="play-list-item"
-            v-for="(item,index) in playList"
-            :key="index"
-            @click="showPlaylist(item.id)"
-          >
-            <n-image
-              :src="getImgUrl( item.coverImgUrl, '')"
-              class="play-list-item-img"
-              lazy
-              preview-disabled
-            />
-            <div class="play-list-item-info">
-              <div class="play-list-item-name">{{ item.name }}</div>
-              <div class="play-list-item-count">{{ item.trackCount }}首，播放{{ item.playCount }}次</div>
+          <n-scrollbar>
+            <div
+              class="play-list-item"
+              v-for="(item,index) in playList"
+              :key="index"
+              @click="showPlaylist(item.id)"
+            >
+              <n-image
+                :src="getImgUrl( item.coverImgUrl, '')"
+                class="play-list-item-img"
+                lazy
+                preview-disabled
+              />
+              <div class="play-list-item-info">
+                <div class="play-list-item-name">{{ item.name }}</div>
+                <div class="play-list-item-count">{{ item.trackCount }}首，播放{{ item.playCount }}次</div>
+              </div>
             </div>
-          </div>
+            <PlayBottom/>
+          </n-scrollbar>
         </div>
       </div>
     </div>
     <div class="right" :class="setAnimationClass('animate__fadeInRight')">
-      <n-layout class="record-list" :native-scrollbar="false">
-        <div class="title">听歌排行</div>
-        <div
-          class="record-item"
-          v-for="(item, index) in recordList"
-          :key="item.song.id"
-          :class="setAnimationClass('animate__bounceInUp')"
-          :style="setAnimationDelay(index, 50)"
-        >
-          <SongItem class="song-item" :item="formatDetail(item.song)" @play="handlePlay"/>
-          <div class="play-count">{{ item.playCount }}次</div>
-        </div>
-      </n-layout>
+      <div class="title">听歌排行</div>
+      <div class="record-list">
+        <n-scrollbar>
+          <div
+            class="record-item"
+            v-for="(item, index) in recordList"
+            :key="item.song.id"
+            :class="setAnimationClass('animate__bounceInUp')"
+            :style="setAnimationDelay(index, 50)"
+          >
+            <SongItem class="song-item" :item="formatDetail(item.song)" @play="handlePlay"/>
+            <div class="play-count">{{ item.playCount }}次</div>
+          </div>
+          <PlayBottom/>
+        </n-scrollbar>
+      </div>
     </div>
     <MusicList v-if="list" v-model:show="isShowList" :music-list="list" />
   </div>
@@ -152,9 +159,9 @@ const handlePlay = (item: any) => {
     max-width: 600px;
     background-color: #0d0d0d;
     background-size: 100%;
-    @apply flex-1 rounded-2xl  overflow-hidden relative bg-no-repeat;
+    @apply flex-1 rounded-2xl  overflow-hidden relative bg-no-repeat h-full;
     .page {
-      @apply p-4  w-full z-10;
+      @apply p-4  w-full z-10 flex flex-col h-full;
       background-color: #0d0d0d66;
     }
     .user-name {
@@ -199,7 +206,7 @@ const handlePlay = (item: any) => {
 }
 
 .play-list {
-  @apply mt-4 py-4 px-2 rounded-xl;
+  @apply mt-4 py-4 px-2 rounded-xl flex-1 overflow-hidden;
   background-color: #000000;
   &-title {
     @apply text-lg text-white opacity-70;

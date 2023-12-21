@@ -38,7 +38,7 @@
                     :class="setAnimationClass('animate__bounceInRight')"
                     :style="setAnimationDelay(index, 50)"
                 >
-                    <SongItem :item="item" />
+                    <SongItem :item="item" @play="handlePlay"/>
                 </div>
             </template>
             </div>
@@ -52,10 +52,9 @@ import type { IHotSearch } from "@/type/search";
 import { getHotSearch } from "@/api/home";
 import { useRoute, useRouter } from "vue-router";
 import { setAnimationClass, setAnimationDelay } from "@/utils";
-import type { ISearchDetail } from "@/type/search";
 import { onMounted, ref, watch } from "vue";
 import SongItem from "@/components/common/SongItem.vue";
-
+import { useStore } from "vuex";
 
 const route = useRoute();
 const router = useRouter();
@@ -85,10 +84,8 @@ const clickHotKeyword = (keyword: string) => {
     // isHotSearchList.value = false;
 };
 
-
-
-
 const loadSearch = async (keyword: any) => {
+    hotKeyword.value = keyword;
     searchDetail.value = undefined;
     if (!keyword) return;
     const { data } = await getSearch(keyword);
@@ -112,6 +109,14 @@ watch(
         loadSearch(newParams.keyword);
     }
 )
+
+const store = useStore()
+
+const handlePlay = (item: any) => {
+  const tracks = searchDetail.value?.result.songs || []
+  const musicIndex = (tracks.findIndex((music: any) => music.id == item.id) || 0)
+  store.commit('setPlayList', tracks.slice(musicIndex))
+}
 </script>
 
 <style lang="scss" scoped>

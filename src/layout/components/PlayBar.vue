@@ -82,11 +82,10 @@
 
 <script lang="ts" setup>
 import type { SongResult } from '@/type/music'
-import { secondToMinute, getImgUrl, getIsMc } from '@/utils'
+import { secondToMinute, getImgUrl } from '@/utils'
 import { computed, onMounted, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import { setAnimationClass } from '@/utils'
-import { getParsingMusicUrl } from '@/api/music'
 import {
   loadLrc,
   nowTime,

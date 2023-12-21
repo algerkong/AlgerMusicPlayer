@@ -46,10 +46,18 @@ const mutations = {
     state.playList = playList
   },
   async nextPlay(state: State) {
+    if (state.playList.length === 0) {
+      state.play = true
+      return
+    }
     state.playListIndex = (state.playListIndex + 1) % state.playList.length
     await updatePlayMusic(state)
   },
   async prevPlay(state: State) {
+    if (state.playList.length === 0) {
+      state.play = true
+      return
+    }
     state.playListIndex =
       (state.playListIndex - 1 + state.playList.length) % state.playList.length
     await updatePlayMusic(state)
