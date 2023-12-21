@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Tray, Menu, globalShortcut } = require('electron')
+const { app, BrowserWindow, ipcMain, Tray, Menu, globalShortcut, nativeImage } = require('electron')
 const path = require('path')
 
 let mainWin = null
@@ -20,31 +20,36 @@ function createWindow() {
   } else {
     win.loadURL(`file://${__dirname}/dist/index.html`)
   }
-  const tray = new Tray(path.join(__dirname, 'public/icon.png'))
-  tray.setTitle('Alger Music')
-  tray.setToolTip('Alger Music')
-  tray.setContextMenu(
-    Menu.buildFromTemplate([
-      {
-        label: '显示',
-        click: () => {
-          win.show()
-        },
-      },
-      {
-        label: '退出',
-        click: () => {
-          win.destroy()
-        },
-      },
-    ])
-  )
-  tray.click = () => {
-    win.show()
-  }
+  const image = nativeImage.createFromPath(path.join(__dirname, 'public/icon.png'))
+  const tray = new Tray(image)
 
-  // 快捷键显示 隐藏
-  
+  // 创建一个上下文菜单
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: '显示',
+      click: () => {
+        win.show()
+      },
+    },
+    {
+      label: '退出',
+      click: () => {
+        win.destroy()
+      },
+    },
+  ])
+
+  // 设置系统托盘图标的上下文菜单
+  tray.setContextMenu(contextMenu)
+
+  // 当系统托盘图标被点击时，切换窗口的显示/隐藏
+  tray.on('click', () => {
+    if (win.isVisible()) {
+      win.hide()
+    } else {
+      win.show()
+    }
+  })
 }
 
 app.whenReady().then(createWindow)
