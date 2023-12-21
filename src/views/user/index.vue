@@ -7,13 +7,12 @@ import { computed, ref } from "vue";
 import { setAnimationClass, setAnimationDelay, getImgUrl } from "@/utils";
 import { getListDetail } from '@/api/list'
 import SongItem from "@/components/common/SongItem.vue";
-
+import MusicList from "@/components/MusicList.vue";
+import type { Playlist } from '@/type/listDetail';
 
 
 const store = useStore()
 const router = useRouter()
-
-
 const userDetail = ref<IUserDetail>()
 const playList = ref<any[]>([])
 const recordList = ref()
@@ -40,7 +39,7 @@ loadPage()
 
 
 const isShowList = ref(false)
-const list = ref()
+const list = ref<Playlist>()
 // 展示歌单
 const showPlaylist = async (id: number) => {
   const { data } = await getListDetail(id)
@@ -61,20 +60,11 @@ const formatDetail = computed(() => (detail: any) => {
   return detail
 })
 
-const musicFullClass = computed(() => {
-  if (isShowList.value) {
-    return setAnimationClass('animate__fadeInUp')
-  } else {
-    return setAnimationClass('animate__fadeOutDown')
-  }
-})
-
 const handlePlay = (item: any) => {
-  const tracks = list.value?.tracks || []
+  const tracks = recordList.value || []
   const musicIndex = (tracks.findIndex((music: any) => music.id == item.id) || 0)
   store.commit('setPlayList', tracks.slice(musicIndex))
 }
-
 
 </script>
 
@@ -139,28 +129,12 @@ const handlePlay = (item: any) => {
           :class="setAnimationClass('animate__bounceInUp')"
           :style="setAnimationDelay(index, 50)"
         >
-          <SongItem class="song-item" :item="formatDetail(item.song)" />
+          <SongItem class="song-item" :item="formatDetail(item.song)" @play="handlePlay"/>
           <div class="play-count">{{ item.playCount }}次</div>
         </div>
       </n-layout>
     </div>
-    <transition name="musicPage">
-      <div class="music-page" v-if="isShowList">
-        <i class="iconfont icon-icon_error music-close" @click="isShowList = false"></i>
-        <div class="music-title">{{ list?.name }}</div>
-        <!-- 歌单歌曲列表 -->
-        <n-layout class="music-list" :native-scrollbar="false">
-          <div
-            v-for="(item, index) in list?.tracks"
-            :key="item.id"
-            :class="setAnimationClass('animate__bounceInUp')"
-            :style="setAnimationDelay(index, 100)"
-          >
-            <SongItem :item="formatDetail(item)" @play="handlePlay"/>
-          </div>
-        </n-layout>
-      </div>
-    </transition>
+    <MusicList v-if="list" v-model:show="isShowList" :music-list="list" />
   </div>
 </template>
 
@@ -173,7 +147,7 @@ const handlePlay = (item: any) => {
   animation: fadeOutDown 0.8s ease-in-out;
 }
 .user-page {
-  @apply flex;
+  @apply flex h-full;
   .left {
     max-width: 600px;
     background-color: #0d0d0d;
@@ -204,9 +178,8 @@ const handlePlay = (item: any) => {
   .right {
     @apply flex-1 ml-4;
     .record-list {
-      height: 750px;
       background-color: #0d0d0d;
-      @apply rounded-2xl;
+      @apply rounded-2xl h-full;
       .record-item {
         @apply flex items-center px-4;
       }
@@ -247,28 +220,4 @@ const handlePlay = (item: any) => {
   }
 }
 
-.music {
-  &-page {
-    width: 100%;
-    height: 734px;
-    position: absolute;
-    background-color: #000000f0;
-    top: 100px;
-    left: 0;
-    border-radius: 30px 30px 0 0;
-    animation-duration: 300ms;
-  }
-  &-title {
-    @apply text-lg font-bold text-white p-4;
-  }
-
-  &-close {
-    @apply absolute top-4 right-4 cursor-pointer text-white text-3xl;
-  }
-
-  &-list {
-    height: 594px;
-    background-color: #00000000;
-  }
-}
 </style>

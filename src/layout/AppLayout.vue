@@ -67,9 +67,8 @@ const menus = store.state.menus;
         @apply pr-6 flex-1 box-border;
         height: 100vh;
         &-content {
-            @apply rounded-2xl;
+            @apply rounded-2xl pb-28 box-border;
             height: calc(100vh - 60px);
-            margin-bottom: 90px;
         }
         &-page {
             margin: 20px 0;

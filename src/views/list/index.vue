@@ -1,15 +1,13 @@
 <script lang="ts" setup>
-import { getRecommendList, getListDetail, getListByTag, getListByCat } from '@/api/list'
-import { computed, onMounted, ref, watch } from 'vue';
-import type { IRecommendList, IRecommendItem } from "@/type/list";
+import { getRecommendList, getListDetail, getListByCat } from '@/api/list'
+import { ref, watch } from 'vue';
+import type { IRecommendItem } from "@/type/list";
 import type { IListDetail } from "@/type/listDetail";
 import { setAnimationClass, setAnimationDelay, getImgUrl } from "@/utils";
-import SongItem from "@/components/common/SongItem.vue";
-import { useRoute, useRouter } from 'vue-router';
-import { useStore } from 'vuex';
+import { useRoute } from 'vue-router';
+import MusicList from "@/components/MusicList.vue";
+import PlayBottom from '@/components/common/PlayBottom.vue';
 
-
-const store = useStore();
 const recommendList = ref()
 const showMusic = ref(false)
 
@@ -20,9 +18,6 @@ const selectRecommendItem = async (item: IRecommendItem) => {
   const { data } = await getListDetail(item.id)
   recommendItem.value = item
   listDetail.value = data
-}
-const closeMusic = () => {
-  showMusic.value = false
 }
 
 const route = useRoute();
@@ -58,15 +53,6 @@ watch(
   }
 )
 
-const musicFullClass = computed(() => {
-  if (recommendItem.value) {
-    return setAnimationClass('animate__fadeInUp')
-  } else {
-    return setAnimationClass('animate__fadeOutDown')
-  }
-})
-
-
 // 格式化数字 千,万, 百万, 千万,亿
 const formatNumber = (num: any) => {
   num = num * 1
@@ -78,38 +64,16 @@ const formatNumber = (num: any) => {
   }
   return (num / 100000000).toFixed(1) + '亿'
 }
-
-const formatDetail = computed(() => (detail: any) => {
-  let song = {
-    artists: detail.ar,
-    name: detail.al.name,
-    id: detail.al.id,
-  }
-
-  detail.song = song
-  detail.picUrl = detail.al.picUrl
-  return detail
-})
-
-
-const handlePlay = (item: any) => {
-  const list = listDetail.value?.playlist.tracks || []
-  console.log('list',list)
-  console.log('item',item)
-  const musicIndex = (list.findIndex((music: any) => music.id == item.id) || 0)
-  store.commit('setPlayList', list.slice(musicIndex))
-}
-
 </script>
 
 <template>
   <div class="list-page">
-    <!-- 歌单列表 -->
-    <n-scrollbar class="recommend" @click="showMusic = false" :size="100">
-      <div
+    <div
         class="recommend-title"
         :class="setAnimationClass('animate__bounceInLeft')"
       >{{ listTitle }}</div>
+    <!-- 歌单列表 -->
+    <n-scrollbar class="recommend" @click="showMusic = false" :size="100">
       <div class="recommend-list" v-if="recommendList">
         <div
           class="recommend-item"
@@ -133,39 +97,15 @@ const handlePlay = (item: any) => {
           <div class="recommend-item-title">{{ item.name }}</div>
         </div>
       </div>
+      <PlayBottom/>
     </n-scrollbar>
-
-    <transition name="musicPage">
-      <div class="music-page" v-if="showMusic">
-        <i class="iconfont icon-icon_error music-close" @click="closeMusic()"></i>
-        <div class="music-title">{{ recommendItem?.name }}</div>
-        <!-- 歌单歌曲列表 -->
-        <n-layout class="music-list" :native-scrollbar="false">
-          <div
-            v-for="(item, index) in listDetail?.playlist.tracks"
-            :key="item.id"
-            :class="setAnimationClass('animate__bounceInUp')"
-            :style="setAnimationDelay(index, 50)"
-          >
-            <SongItem :item="formatDetail(item)" @play="handlePlay" />
-          </div>
-        </n-layout>
-      </div>
-    </transition>
+    <MusicList v-if="listDetail?.playlist" v-model:show="showMusic" :music-list="listDetail?.playlist" />
   </div>
 </template>
 
 <style lang="scss" scoped>
 .list-page {
   @apply relative h-full w-full pt-4;
-}
-
-.musicPage-enter-active {
-  animation: fadeInUp 0.8s ease-in-out;
-}
-
-.musicPage-leave-active {
-  animation: fadeOutDown 0.8s ease-in-out;
 }
 
 .recommend {
@@ -218,29 +158,4 @@ const handlePlay = (item: any) => {
   }
 }
 
-.music {
-  &-page {
-    // width: 100%;
-    // height: 70%;
-    // position: absolute;
-    // background-color: #000000f0;
-    // bottom: 0;
-    // left: 0;
-    // border-radius: 30px 30px 0 0;
-    // animation-duration: 300ms;
-    @apply w-full h-5/6 absolute bottom-0 left-0 bg-black rounded-t-3xl flex flex-col transition-all;
-  }
-  &-title {
-    @apply text-lg font-bold text-white p-4;
-  }
-
-  &-close {
-    @apply absolute top-4 right-4 cursor-pointer text-white text-3xl;
-  }
-
-  &-list {
-    height: 594px;
-    background-color: #00000000;
-  }
-}
 </style>
