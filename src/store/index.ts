@@ -1,5 +1,5 @@
-import { createStore } from "vuex";
-import { SongResult } from "@/type/music";
+import { createStore } from 'vuex'
+import { SongResult } from '@/type/music'
 import { getMusicUrl, getParsingMusicUrl } from '@/api/music'
 import homeRouter from '@/router/home'
 import { getMusicProxyUrl } from '@/utils'
@@ -67,7 +67,7 @@ const getSongUrl = async (id: number) => {
   } catch (error) {
     console.error('error', error)
   }
-  url = data.data[0].url
+  url = url ? url : data.data[0].url
   return getMusicProxyUrl(url)
 }
 
@@ -77,10 +77,9 @@ const updatePlayMusic = async (state: State) => {
   state.play = true
 }
 
-
 const store = createStore({
   state: state,
   mutations: mutations,
-});
+})
 
-export default store;
+export default store

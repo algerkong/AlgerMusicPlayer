@@ -196,6 +196,13 @@ const onAudio = () => {
     audio.value.removeEventListener('ended', handleEnded)
     audio.value.addEventListener('timeupdate', handleGetAudioTime)
     audio.value.addEventListener('ended', handleEnded)
+    // 监听音乐播放暂停
+    audio.value.addEventListener('pause', () => {
+      store.commit('setPlayMusic', false)
+    })
+    audio.value.addEventListener('play', () => {
+      store.commit('setPlayMusic', true)
+    })
   }
 }
 
@@ -259,7 +266,7 @@ const setMusicFull = () => {
   background-color: rgba(0, 0, 0, 0.747);
 
   .music-content {
-    width: 200px;
+    width: 140px;
     @apply ml-4;
 
     &-title {
