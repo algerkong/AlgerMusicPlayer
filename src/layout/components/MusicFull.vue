@@ -6,6 +6,7 @@
     :drawer-style="{ backgroundColor: 'transparent' }"
   >
     <div id="drawer-target">
+      <div class="drawer-back" :style="{backgroundImage:`url(${getImgUrl(playMusic?.picUrl, '300y300')})`}"></div>
       <div class="music-img">
         <n-image
           ref="PicImgRef"
@@ -107,6 +108,26 @@ defineExpose({
 </script>
 
 <style scoped lang="scss">
+
+@keyframes round {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+.drawer-back{
+  @apply absolute bg-cover bg-center opacity-70;
+  filter: blur(80px) brightness(80%);
+  z-index: -1;
+  width: 200%;
+  height: 200%;
+  top: -50%;
+  left: -50%;
+  animation: round 20s linear infinite;
+}
+
 #drawer-target {
   @apply top-0 left-0 absolute w-full h-full overflow-hidden rounded px-24 pt-24 pb-48 flex items-center;
   backdrop-filter: blur(20px);
