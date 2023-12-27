@@ -7,6 +7,7 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    AlbumsItem: typeof import('./src/components/common/AlbumsItem.vue')['default']
     MPop: typeof import('./src/components/common/MPop.vue')['default']
     MusicList: typeof import('./src/components/MusicList.vue')['default']
     NAvatar: typeof import('naive-ui')['NAvatar']
@@ -22,15 +23,18 @@ declare module 'vue' {
     NMessageProvider: typeof import('naive-ui')['NMessageProvider']
     NPopover: typeof import('naive-ui')['NPopover']
     NScrollbar: typeof import('naive-ui')['NScrollbar']
+    NSelect: typeof import('naive-ui')['NSelect']
     NSlider: typeof import('naive-ui')['NSlider']
     NTooltip: typeof import('naive-ui')['NTooltip']
     PlayBottom: typeof import('./src/components/common/PlayBottom.vue')['default']
+    PlayListsItem: typeof import('./src/components/common/PlayListsItem.vue')['default']
     PlaylistType: typeof import('./src/components/PlaylistType.vue')['default']
     RecommendAlbum: typeof import('./src/components/RecommendAlbum.vue')['default']
     RecommendSinger: typeof import('./src/components/RecommendSinger.vue')['default']
     RecommendSonglist: typeof import('./src/components/RecommendSonglist.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    SearchItem: typeof import('./src/components/common/SearchItem.vue')['default']
     SongItem: typeof import('./src/components/common/SongItem.vue')['default']
   }
 }

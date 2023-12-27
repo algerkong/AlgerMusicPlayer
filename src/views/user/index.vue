@@ -35,6 +35,8 @@ const loadPage = async () => {
   recordList.value = recordData.allData
 }
 
+loadPage()
+
 watch(() => router.currentRoute.value, (to) => {
   if (to.path === "/user") {
     loadPage()

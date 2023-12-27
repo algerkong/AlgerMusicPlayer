@@ -12,6 +12,14 @@
                 <template #prefix>
                     <i class="iconfont icon-search"></i>
                 </template>
+                <template #suffix>
+                  <div class="w-20 px-3 flex justify-between items-center">
+                    <div>{{ searchTypeOptions.find(item => item.key === searchType)?.label }}</div>
+                    <n-dropdown trigger="hover" @select="selectSearchType" :options="searchTypeOptions">
+                      <i class="iconfont icon-xiasanjiaoxing"></i>
+                    </n-dropdown>
+                  </div>
+                </template>
             </n-input>
         </div>
         <div class="user-box">
@@ -80,6 +88,7 @@ onMounted(() => {
 
 // 搜索词
 const searchValue = ref("")
+const searchType = ref(1)
 const search = () => {
 
     let value = searchValue.value
@@ -89,11 +98,61 @@ const search = () => {
         router.push({
             path: "/search",
             query: {
-                keyword: value
+                keyword: value,
+                type: searchType.value
             }
         })
     }
 }
+
+const selectSearchType = (key: any) => {
+    searchType.value = key
+}
+
+const SEARCH_TYPES = [
+    {
+        label: '单曲',
+        key: 1
+    },
+    {
+        label: '专辑',
+        key: 10
+    },
+    {
+        label: '歌手',
+        key: 100
+    },
+    {
+        label: '歌单',
+        key: 1000
+    },
+    {
+        label: '用户',
+        key: 1002
+    },
+    {
+        label: 'MV',
+        key: 1004
+    },
+    {
+        label: '歌词',
+        key: 1006
+    },
+    {
+        label: '电台',
+        key: 1009
+    },
+    {
+        label: '视频',
+        key: 1014
+    },
+    {
+        label: '综合',
+        key: 1018
+    }
+]
+
+const searchTypeOptions = ref(SEARCH_TYPES)
 
 const value = 'Drive My Car'
 const options = [

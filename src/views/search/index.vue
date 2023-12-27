@@ -33,13 +33,26 @@
             <div class="search-list-box">
               <template v-if="searchDetail">
                 <div
-                    v-for="(item, index) in searchDetail?.result.songs"
+                    v-for="(item, index) in searchDetail?.songs"
                     :key="item.id"
                     :class="setAnimationClass('animate__bounceInRight')"
                     :style="setAnimationDelay(index, 50)"
                 >
                     <SongItem :item="item" @play="handlePlay"/>
                 </div>
+                <template v-for="(list, key) in searchDetail">
+                  <template v-if="key !== 'songs'">
+                    <div
+                      v-for="(item, index) in list"
+                      :key="item.id"
+                      :class="setAnimationClass('animate__bounceInRight')"
+                      :style="setAnimationDelay(index, 50)"
+                    >
+                        <SearchItem :item="item"/>
+                    </div>
+                  </template>
+                </template>
+               
             </template>
             </div>
         </n-layout>
@@ -55,10 +68,12 @@ import { setAnimationClass, setAnimationDelay } from "@/utils";
 import { onMounted, ref, watch } from "vue";
 import SongItem from "@/components/common/SongItem.vue";
 import { useStore } from "vuex";
+import { useDateFormat } from '@vueuse/core'
 
 const route = useRoute();
 const router = useRouter();
 const searchDetail = ref<any>();
+const searchType = ref(Number(route.query.type) || 1);
 
 // 热搜列表
 const hotSearchData = ref<IHotSearch>();
@@ -79,18 +94,21 @@ const clickHotKeyword = (keyword: string) => {
         path: "/search",
         query: {
             keyword: keyword,
+            type: 1
         },
     });
     // isHotSearchList.value = false;
 };
 
-const loadSearch = async (keyword: any) => {
-    hotKeyword.value = keyword;
+const dateFormat = (time:any) => useDateFormat(time, 'YYYY.MM.DD').value
+const loadSearch = async (keywords: any) => {
+    hotKeyword.value = keywords;
     searchDetail.value = undefined;
-    if (!keyword) return;
-    const { data } = await getSearch(keyword);
+    if (!keywords) return;
+    const { data } = await getSearch({keywords, type:searchType.value});
 
-    const songs = data.result.songs;
+    const songs = data.result.songs || [];
+    const albums = data.result.albums || [];
 
     // songs map 替换属性
     songs.map((item: any) => {
@@ -98,7 +116,14 @@ const loadSearch = async (keyword: any) => {
         item.song = item;
         item.artists = item.ar;
     });
-    searchDetail.value = data;
+    albums.map((item: any) => {
+        item.desc = `${item.artist.name } ${ item.company } ${dateFormat(item.publishTime)}`;
+    });
+    searchDetail.value = {
+      songs,
+      albums
+    }
+    console.log('searchDetail',searchDetail.value)
 };
 
 loadSearch(route.query.keyword);
@@ -106,6 +131,7 @@ loadSearch(route.query.keyword);
 watch(
     () => route.query,
     async newParams => {
+        searchType.value = Number(newParams.type || 1)
         loadSearch(newParams.keyword);
     }
 )
