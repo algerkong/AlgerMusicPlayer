@@ -12,12 +12,12 @@
                     <div class="main-content bg-black" :native-scrollbar="false">
                         <n-message-provider>
                             <router-view class="main-page" v-slot="{ Component }">
-                                <!-- <keep-alive>
-                                    <component :is="Component" v-if="$route.meta.keepAlive" />
+                                <keep-alive>
+                                    <component :is="Component" />
                                 </keep-alive>
-                                <component :is="Component" v-if="!$route.meta.keepAlive" />-->
+                                <!-- <component :is="Component" v-if="!$route.meta.keepAlive" />
 
-                                <component :is="Component" />
+                                <component :is="Component" /> -->
                             </router-view>
                         </n-message-provider>
                     </div>

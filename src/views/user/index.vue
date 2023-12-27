@@ -33,11 +33,13 @@ const loadPage = async () => {
 
   const { data: recordData } = await getUserRecord(user.userId)
   recordList.value = recordData.allData
-
-
 }
-loadPage()
 
+watch(() => router.currentRoute.value, (to) => {
+  if (to.path === "/user") {
+    loadPage()
+  }
+})
 
 const isShowList = ref(false)
 const list = ref<Playlist>()

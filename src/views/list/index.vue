@@ -43,12 +43,14 @@ if (route.query.type) {
 watch(
   () => route.query,
   async newParams => {
-    const params = {
-      tag: newParams.type || '',
-      limit: 30,
-      before: 0
+    if(newParams.type){
+      const params = {
+        tag: newParams.type || '',
+        limit: 30,
+        before: 0
+      }
+      loadList(newParams.type);
     }
-    loadList(newParams.type);
   }
 )
 
