@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import { getRecommendList, getListDetail, getListByCat } from '@/api/list'
-import { ref, watch } from 'vue';
 import type { IRecommendItem } from "@/type/list";
 import type { IListDetail } from "@/type/listDetail";
 import { setAnimationClass, setAnimationDelay, getImgUrl } from "@/utils";
@@ -125,8 +124,7 @@ const formatNumber = (num: any) => {
         @apply hover:scale-110 transition-all duration-300 ease-in-out;
       }
       &-img {
-        width: 200px;
-        height: 200px;
+        @apply h-full w-full rounded-xl overflow-hidden;
       }
       .top {
         @apply absolute w-full h-full top-0 left-0 flex justify-center items-center transition-all duration-300 ease-in-out cursor-pointer;

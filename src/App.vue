@@ -11,7 +11,6 @@
 
 <script lang="ts" setup>
 import { darkTheme } from 'naive-ui'
-import { ref, computed } from 'vue'
 import { useStore } from 'vuex'
 
 const audio = ref<HTMLAudioElement | null>(null)

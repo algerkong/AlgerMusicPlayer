@@ -4,8 +4,8 @@ const path = require('path')
 let mainWin = null
 function createWindow() {
   mainWin = new BrowserWindow({
-    width: 1280,
-    height: 900,
+    width: 1200,
+    height: 780,
     frame: false,
     webPreferences: {
       nodeIntegration: true,
@@ -13,7 +13,7 @@ function createWindow() {
     },
   })
   const win = mainWin
-  win.setMinimumSize(1280, 900)
+  win.setMinimumSize(1200, 780)
   if (process.env.NODE_ENV === 'development') {
     win.webContents.openDevTools({ mode: 'detach' })
     win.loadURL('http://localhost:4678/')

@@ -1,5 +1,3 @@
-import { computed } from 'vue'
-
 // 设置歌手背景图片
 export const setBackgroundImg = (url: String) => {
   return 'background-image:' + 'url(' + url + ')'
@@ -40,7 +38,6 @@ export const getMusicProxyUrl = (url: string) => {
   const PUrl = url.split('').join('+')
   return `${ProxyUrl}/mc?url=${PUrl}`
 }
-
 
 export const getImgUrl = computed(() => (url: string, size: string = '') => {
   const bdUrl = 'https://image.baidu.com/search/down?url='

@@ -66,7 +66,7 @@ const toSearchSinger = (keyword: string) => {
 .recommend-singer {
     &-list {
         @apply flex;
-        height: 350px;
+        height: 280px;
     }
     &-item {
         @apply flex-1 h-full rounded-3xl p-5 mr-5 flex flex-col justify-between;

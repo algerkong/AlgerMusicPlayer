@@ -1,7 +1,6 @@
 import { getMusicLrc } from '@/api/music'
 import { ILyric } from '@/type/lyric'
 import { getIsMc } from '@/utils'
-import { ref } from 'vue'
 
 interface ILrcData {
   text: string

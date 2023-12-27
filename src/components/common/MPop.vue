@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
 import { setAnimationClass, setAnimationDelay } from "@/utils";
 
 const props = defineProps({
@@ -25,7 +24,7 @@ const musicFullClass = computed(() => {
 
 <template>
   <div class="pop-page" v-show="props.showPop" :class="musicFullClass">
-    <i class="iconfont icon-icon_error close" v-if="props.showClose" @click="close()"></i>
+    <i class="iconfont icon-icon_error close" v-if="props.showClose"></i>
     <img src="http://code.myalger.top/2000*2000.jpg,f054f0,0f2255" />
     <slot></slot>
   </div>

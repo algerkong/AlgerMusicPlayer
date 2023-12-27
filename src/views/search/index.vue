@@ -115,7 +115,7 @@ const store = useStore()
 const handlePlay = (item: any) => {
   const tracks = searchDetail.value?.result.songs || []
   const musicIndex = (tracks.findIndex((music: any) => music.id == item.id) || 0)
-  store.commit('setPlayList', tracks.slice(musicIndex))
+  store.commit('setPlayList', tracks)
 }
 </script>
 

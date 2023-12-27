@@ -1,6 +1,6 @@
 {
   "name": "alger-music",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "这是一个用于音乐播放的应用程序。",
   "author": "Alger <algerkc@qq.com>",
   "main": "app.js",
@@ -24,7 +24,8 @@
     "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.2.4",
     "vue": "^3.3.4",
     "vue-router": "^4.2.4",
-    "vuex": "^4.1.0"
+    "vuex": "^4.1.0",
+    "naive-ui": "^2.34.4"
   },
   "devDependencies": {
     "@sicons/antd": "^0.10.0",
@@ -33,11 +34,12 @@
     "@vue/compiler-sfc": "^3.3.4",
     "electron": "^28.0.0",
     "electron-builder": "^24.9.1",
-    "naive-ui": "^2.34.4",
     "typescript": "^4.3.2",
     "vfonts": "^0.1.0",
     "vite": "^4.4.7",
     "vite-plugin-vue-devtools": "1.0.0-beta.5",
-    "vue-tsc": "^0.0.24"
+    "vue-tsc": "^0.0.24",
+    "unplugin-auto-import": "^0.17.2",
+    "unplugin-vue-components": "^0.26.0"
   }
 }

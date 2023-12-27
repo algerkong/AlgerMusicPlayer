@@ -16,7 +16,6 @@
 </template>
 
 <script lang="ts" setup>
-import { defineAsyncComponent } from 'vue';
 const RecommendSinger = defineAsyncComponent(() => import("@/components/RecommendSinger.vue"));
 const PlaylistType = defineAsyncComponent(() => import("@/components/PlaylistType.vue"));
 const RecommendSonglist = defineAsyncComponent(() => import("@/components/RecommendSonglist.vue"));

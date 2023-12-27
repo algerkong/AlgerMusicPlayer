@@ -18,7 +18,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useStore } from 'vuex'
 import { Playlist } from '@/type/listDetail';
 import { setAnimationClass, setAnimationDelay } from "@/utils";
@@ -48,7 +47,7 @@ const formatDetail = computed(() => (detail: any) => {
 const handlePlay = (item: any) => {
   const tracks = props.musicList?.tracks || []
   const musicIndex = (tracks.findIndex((music: any) => music.id == item.id) || 0)
-  store.commit('setPlayList', tracks.slice(musicIndex))
+  store.commit('setPlayList', tracks)
 }
 
 const close = () => {

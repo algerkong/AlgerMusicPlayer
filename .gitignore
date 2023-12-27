@@ -4,6 +4,7 @@ dist
 dist-ssr
 *.local
 dist_electron
+.idea
 
 pnpm-lock.yaml
 package-lock.json

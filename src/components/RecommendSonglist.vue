@@ -22,7 +22,6 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue'
 import { getRecommendMusic } from '@/api/home'
 import type { IRecommendMusic } from '@/type/music'
 import { setAnimationClass, setAnimationDelay } from '@/utils'
@@ -46,7 +45,7 @@ onMounted(() => {
 
 const handlePlay = (item: any) => {
   const musicIndex = (recommendMusic.value?.result.findIndex((music: any) => music.id == item.id) || 0) + 1
-  store.commit('setPlayList', recommendMusic.value?.result.slice(musicIndex))
+  store.commit('setPlayList', recommendMusic.value?.result)
 }
 </script>
 

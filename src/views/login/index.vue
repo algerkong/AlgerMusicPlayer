@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import { getQrKey, createQr, checkQr, getLoginStatus } from '@/api/login'
 import { onMounted } from '@vue/runtime-core';
-import { ref } from 'vue';
 import { getUserDetail, loginByCellphone } from '@/api/login';
 import { useStore } from 'vuex';
 import { useMessage } from 'naive-ui'
@@ -105,7 +104,7 @@ const loginPhone = async () => {
 
 <style lang="scss" scoped>
 .login-page {
-  @apply p-4 flex flex-col items-center justify-center p-20;
+  @apply flex flex-col items-center justify-center p-20;
 }
 
 .login-title {

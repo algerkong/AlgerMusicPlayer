@@ -9,6 +9,11 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
+    "types": [
+      "naive-ui/volar",
+      "./auto-imports.d.ts",
+      "./components.d.ts"
+    ],
     "lib": [
       "esnext",
       "dom"
