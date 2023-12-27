@@ -19,15 +19,15 @@
       </div>
     </n-scrollbar>
 
-    <n-drawer :show="showMv" height="100vh" placement="bottom">
+    <n-drawer :show="showMv" height="100vh" placement="bottom" :z-index="999999999">
       <div class="mv-detail">
+        <video :src="playMvUrl" controls autoplay></video>
         <div class="mv-detail-title">
           <div class="title">{{ playMvItem?.name }}</div>
           <button @click="close">
             <i class="iconfont icon-xiasanjiaoxing"></i>
           </button>
         </div>
-        <video :src="playMvUrl" controls autoplay></video>
       </div>
     </n-drawer>
   </div>
@@ -129,11 +129,10 @@ const close = () => {
   @apply w-full h-full bg-black relative;
 
   &-title {
-    @apply absolute w-full top-12 left-0 flex justify-between z-50 h-10 px-4 py-2 text-lg items-center;
-    background: linear-gradient(0, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.8) 100%);
-
+    @apply absolute w-full left-0 flex justify-between h-16 px-6 py-2 text-xl font-bold items-center z-50 transition-all duration-300 ease-in-out -top-24;
+    background: linear-gradient(0, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 1) 100%);
     button .icon-xiasanjiaoxing {
-      @apply text-2xl;
+      @apply text-3xl;
     }
 
     button:hover {
@@ -143,5 +142,12 @@ const close = () => {
 
   video {
     @apply w-full h-full;
+  }
+  video:hover + .mv-detail-title {
+    @apply top-0;
+  }
+
+  .mv-detail-title:hover {
+    @apply top-0;
   }
 }</style>
