@@ -30,6 +30,16 @@ const layoutRouter = [
     component: () => import('@/views/list/index.vue'),
   },
   {
+    path: '/mv',
+    name: 'mv',
+    mate: {
+      title: 'MV',
+      keepAlive: true,
+      icon: 'icon-recordfill',
+    },
+    component: () => import('@/views/mv/index.vue'),
+  },
+  {
     path: '/user',
     name: 'user',
     mate: {

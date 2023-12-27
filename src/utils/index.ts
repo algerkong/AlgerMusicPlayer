@@ -25,6 +25,18 @@ export const secondToMinute = (s: number) => {
   return minuteStr + ':' + secondStr
 }
 
+// 格式化数字 千,万, 百万, 千万,亿
+export const formatNumber = (num: any) => {
+  num = num * 1
+  if (num < 10000) {
+    return num
+  }
+  if (num < 100000000) {
+    return (num / 10000).toFixed(1) + '万'
+  }
+  return (num / 100000000).toFixed(1) + '亿'
+}
+
 export const getIsMc = () => {
   return true
 }

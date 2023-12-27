@@ -2,7 +2,7 @@
 import { getRecommendList, getListDetail, getListByCat } from '@/api/list'
 import type { IRecommendItem } from "@/type/list";
 import type { IListDetail } from "@/type/listDetail";
-import { setAnimationClass, setAnimationDelay, getImgUrl } from "@/utils";
+import { setAnimationClass, setAnimationDelay, getImgUrl, formatNumber } from "@/utils";
 import { useRoute } from 'vue-router';
 import MusicList from "@/components/MusicList.vue";
 import PlayBottom from '@/components/common/PlayBottom.vue';
@@ -52,17 +52,8 @@ watch(
   }
 )
 
-// 格式化数字 千,万, 百万, 千万,亿
-const formatNumber = (num: any) => {
-  num = num * 1
-  if (num < 10000) {
-    return num
-  }
-  if (num < 100000000) {
-    return (num / 10000).toFixed(1) + '万'
-  }
-  return (num / 100000000).toFixed(1) + '亿'
-}
+
+
 </script>
 
 <template>
@@ -115,7 +106,7 @@ const formatNumber = (num: any) => {
 
   &-list {
     @apply grid gap-6 pb-28 pr-3;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   }
   &-item {
     &-img {
