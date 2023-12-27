@@ -2,7 +2,7 @@
     <div class="search-box flex">
         <div class="search-box-input flex-1">
             <n-input
-                size="large"
+                size="medium"
                 round
                 v-model:value="searchValue"
                 :placeholder="hotSearchKeyword"
@@ -21,14 +21,14 @@
             <n-avatar
                 class="ml-2 cursor-pointer"
                 circle
-                size="large"
+                size="medium"
                 :src="getImgUrl(store.state.user.avatarUrl)"
                 v-if="store.state.user"
             />
             <n-avatar
                 class="ml-2 cursor-pointer"
                 circle
-                size="large"
+                size="medium"
                 src="https://picsum.photos/200/300?random=1"
                 @click="toLogin()"
                 v-else
@@ -40,7 +40,6 @@
 <script lang="ts" setup>
 import { getSearchKeyword, getHotSearch } from '@/api/home';
 import { getUserDetail, logout } from '@/api/login';
-import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import request from '@/utils/request_mt'
@@ -157,7 +156,7 @@ const selectItem = async (key: any) => {
 
 <style lang="scss" scoped>
 .user-box {
-    @apply ml-6 flex text-lg justify-center items-center rounded-full pl-3 border border-gray-600;
+    @apply ml-4 flex text-lg justify-center items-center rounded-full pl-3 border border-gray-600;
     background: #1a1a1a;
 }
 

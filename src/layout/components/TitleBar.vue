@@ -51,7 +51,7 @@ const drag = (event: HTMLElement) => {
 <style scoped lang="scss">
 #title-bar {
   -webkit-app-region: drag;
-  @apply flex justify-between text-white px-6 py-3 select-none relative;
+  @apply flex justify-between text-white px-6 py-2 select-none relative;
   z-index: 9999999;
 }
 

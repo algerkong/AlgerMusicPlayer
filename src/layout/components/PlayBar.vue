@@ -56,24 +56,42 @@
       ></n-slider>
     </div>
     <div class="audio-button">
-      <n-tooltip trigger="hover">
+      <!-- <n-tooltip trigger="hover" :z-index="9999999">
         <template #trigger>
           <i class="iconfont icon-likefill"></i>
         </template>
         喜欢
-      </n-tooltip>
-      <!-- <n-tooltip trigger="hover">
+      </n-tooltip> -->
+      <!-- <n-tooltip trigger="hover" :z-index="9999999">
         <template #trigger>
           <i class="iconfont icon-Play" @click="parsingMusic"></i>
         </template>
         解析播放
       </n-tooltip> -->
-      <n-tooltip trigger="hover">
+      <!-- <n-tooltip trigger="hover" :z-index="9999999">
         <template #trigger>
           <i class="iconfont icon-full" @click="setMusicFull"></i>
         </template>
         歌词
-      </n-tooltip>
+      </n-tooltip> -->
+      <n-popover trigger="click" :z-index="99999999" content-class="music-play" raw :show-arrow="false" :delay="200">
+        <template #trigger>
+          <n-tooltip trigger="manual" :z-index="9999999">
+            <template #trigger>
+              <i class="iconfont icon-list"></i>
+            </template>
+            播放列表
+          </n-tooltip>
+        </template>
+        <div class="music-play-list">
+          <div class="music-play-list-back"></div>
+          <n-scrollbar>
+            <div class="music-play-list-content">
+              <song-item v-for="(item, index) in playList" :key="item.id" :item="item" mini></song-item>
+            </div>
+          </n-scrollbar>
+        </div>
+      </n-popover>
     </div>
     <!-- 播放音乐 -->
     
@@ -83,7 +101,6 @@
 <script lang="ts" setup>
 import type { SongResult } from '@/type/music'
 import { secondToMinute, getImgUrl } from '@/utils'
-import { computed, onMounted, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import { setAnimationClass } from '@/utils'
 import {
@@ -92,6 +109,7 @@ import {
   allTime
 } from '@/hooks/MusicHook'
 import MusicFull from './MusicFull.vue'
+import SongItem from '@/components/common/SongItem.vue'
 
 const store = useStore()
 
@@ -99,6 +117,8 @@ const store = useStore()
 const playMusic = computed(() => store.state.playMusic as SongResult)
 // 是否播放
 const play = computed(() => store.state.play as boolean)
+
+const playList = computed(() => store.state.playList as SongResult[])
 
 const audio = {
   value: document.querySelector('#MusicAudio') as HTMLAudioElement
@@ -248,13 +268,6 @@ const setMusicFull = () => {
 </script>
 
 <style lang="scss" scoped>
-.musicPage-enter-active {
-  animation: fadeInUp 0.4s ease-in-out;
-}
-
-.musicPage-leave-active {
-  animation: fadeOutDown 0.4s ease-in-out;
-}
 
 .text-ellipsis {
   width: 100%;
@@ -262,11 +275,10 @@ const setMusicFull = () => {
 
 .music-play-bar {
   @apply h-20 w-full absolute bottom-0 left-0 flex items-center rounded-t-2xl overflow-hidden box-border px-6 py-2;
-  z-index: 99999999;
+  z-index: 9999;
   backdrop-filter: blur(20px);
-  background-color: rgba(0, 0, 0, 0.747);
-
-  .music-content {
+  box-shadow: 0px 0px 8px 0px rgba(203, 203, 203, 0.238);
+  background-color: rgba(0, 0, 0, 0.747);  .music-content {
     width: 140px;
     @apply ml-4;
 
@@ -330,6 +342,21 @@ const setMusicFull = () => {
 
   .iconfont {
     @apply text-2xl hover:text-green-500 transition cursor-pointer m-4;
+  }
+}
+
+.music-play{
+  
+  &-list{
+    height: 50vh;
+    @apply relative rounded-3xl overflow-hidden;
+    &-back{
+      backdrop-filter: blur(20px);
+      @apply absolute top-0 left-0 w-full h-full bg-gray-800 bg-opacity-75;
+    }
+    &-content{
+      padding: 10px;
+    }
   }
 }
 </style>

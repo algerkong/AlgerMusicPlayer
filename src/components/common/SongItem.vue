@@ -1,18 +1,18 @@
 <template>
-  <div class="recommend-music-list-item">
+  <div class="song-item" :class="{'song-mini': mini}">
     <n-image
       :src="getImgUrl( item.picUrl, '40y40')"
-      class="recommend-music-list-item-img"
+      class="song-item-img"
       lazy
       preview-disabled
     />
-    <div class="recommend-music-list-item-content">
-      <div class="recommend-music-list-item-content-title">
+    <div class="song-item-content">
+      <div class="song-item-content-title">
         <n-ellipsis class="text-ellipsis" line-clamp="1">{{
           item.name
         }}</n-ellipsis>
       </div>
-      <div class="recommend-music-list-item-content-name">
+      <div class="song-item-content-name">
         <n-ellipsis class="text-ellipsis" line-clamp="1">
           <span
             v-for="(artists, artistsindex) in item.song.artists"
@@ -25,12 +25,12 @@
         </n-ellipsis>
       </div>
     </div>
-    <div class="recommend-music-list-item-operating">
-      <div class="recommend-music-list-item-operating-like">
+    <div class="song-item-operating">
+      <div class="song-item-operating-like">
         <i class="iconfont icon-likefill"></i>
       </div>
       <div
-        class="recommend-music-list-item-operating-play bg-black"
+        class="song-item-operating-play bg-black"
         :class="isPlaying ? 'bg-green-600' : ''"
         @click="playMusicEvent(item)"
       >
@@ -44,14 +44,13 @@
 <script lang="ts" setup>
 import { useStore } from 'vuex'
 import type { SongResult } from '@/type/music'
-import { computed } from 'vue'
 import { getImgUrl } from '@/utils'
 
-const props = defineProps({
-  item: {
-    type: Object,
-    required: true,
-  },
+const props = withDefaults(defineProps<{
+  item: SongResult
+  mini?: boolean
+}>(), {
+  mini: false
 })
 
 const store = useStore()
@@ -77,10 +76,16 @@ const playMusicEvent = (item: any) => {
 </script>
 
 <style lang="scss" scoped>
+
+// 配置文字不可选中
 .text-ellipsis {
   width: 100%;
 }
-.recommend-music-list-item {
+.song-item {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
   @apply rounded-3xl p-3 flex items-center hover:bg-gray-800 transition;
   &-img {
     @apply w-12 h-12 rounded-2xl mr-4;
@@ -96,7 +101,7 @@ const playMusicEvent = (item: any) => {
     }
   }
   &-operating {
-    @apply flex items-center pl-4 rounded-full border border-gray-700;
+    @apply flex items-center pl-4 rounded-full border border-gray-700 ml-4;
     background-color: #0d0d0d;
     .iconfont {
       @apply text-xl;
@@ -110,6 +115,37 @@ const playMusicEvent = (item: any) => {
     }
     &-play {
       @apply cursor-pointer border border-gray-500 rounded-full w-10 h-10 flex justify-center items-center hover:bg-green-600 transition;
+    }
+  }
+}
+
+.song-mini{
+  @apply p-2 rounded-2xl;
+  .song-item{
+    @apply p-0;
+    &-img{
+      @apply w-10 h-10 mr-2;
+    }
+    &-content{
+      @apply flex-1;
+      &-title{
+        @apply text-sm;
+      }
+      &-name{
+        @apply text-xs;
+      }
+    }
+    &-operating{
+      @apply pl-2;
+      .iconfont{
+        @apply text-base;
+      }
+      &-like{
+        @apply mr-1;
+      }
+      &-play{
+        @apply w-8 h-8;
+      }
     }
   }
 }

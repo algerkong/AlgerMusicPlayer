@@ -4,7 +4,7 @@
     <div class="app-menu">
       <div class="app-menu-header">
         <div class="app-menu-logo">
-          <img src="@/assets/logo.png" class="w-9 h-9 mt-2" alt="logo" />
+          <img src="/icon.png" class="w-9 h-9" alt="logo" />
         </div>
       </div>
       <div class="app-menu-list">
@@ -24,7 +24,6 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch } from "@vue/runtime-core";
 import { useRoute } from "vue-router";
 const props = defineProps({
   isText: {
@@ -67,7 +66,7 @@ const iconStyle = (index: any) => {
 
 <style lang="scss" scoped>
 .app-menu {
-  @apply flex-col items-center justify-center p-6;
+  @apply flex-col items-center justify-center px-6;
   max-width: 100px;
 }
 .app-menu-item-link,

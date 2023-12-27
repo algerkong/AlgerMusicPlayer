@@ -6,7 +6,7 @@
     :drawer-style="{ backgroundColor: 'transparent' }"
   >
     <div id="drawer-target">
-      <div class="drawer-back" :style="{backgroundImage:`url(${getImgUrl(playMusic?.picUrl, '300y300')})`}"></div>
+      <div class="drawer-back" :class="{'paused': !isPlaying}" :style="{backgroundImage:`url(${getImgUrl(playMusic?.picUrl, '300y300')})`}"></div>
       <div class="music-img">
         <n-image
           ref="PicImgRef"
@@ -26,7 +26,7 @@
         </div>
         <n-layout
           class="music-lrc"
-          style="height: 550px"
+          style="height: 55vh"
           ref="lrcSider"
           :native-scrollbar="false"
           @mouseover="mouseOverLayout"
@@ -43,9 +43,10 @@
           </template>
         </n-layout>
         <!-- 时间矫正 -->
-        <div class="music-content-time"></div>
-        <n-button @click="reduceCorrectionTime(0.2)">-0.2</n-button>
-        <n-button @click="addCorrectionTime(0.2)">+0.2</n-button>
+        <div class="music-content-time">
+          <n-button @click="reduceCorrectionTime(0.2)">-</n-button>
+          <n-button @click="addCorrectionTime(0.2)">+</n-button>
+        </div>
       </div>
     </div>
   </n-drawer>
@@ -54,7 +55,6 @@
 <script setup lang="ts">
 import type { SongResult } from '@/type/music'
 import { getImgUrl } from '@/utils'
-import { computed, ref } from 'vue'
 import { useStore } from 'vuex'
 import {
   lrcArray,
@@ -83,6 +83,7 @@ const emit = defineEmits(['update:musicFull'])
 
 // 播放的音乐信息
 const playMusic = computed(() => store.state.playMusic as SongResult)
+const isPlaying = computed(() => store.state.play as boolean)
 // 获取歌词滚动dom
 const lrcSider = ref<any>(null)
 const isMouse = ref(false)
@@ -128,6 +129,10 @@ defineExpose({
   animation: round 20s linear infinite;
 }
 
+.drawer-back.paused {
+  animation-play-state: paused;
+}
+
 #drawer-target {
   @apply top-0 left-0 absolute w-full h-full overflow-hidden rounded px-24 pt-24 pb-48 flex items-center;
   backdrop-filter: blur(20px);
@@ -154,6 +159,11 @@ defineExpose({
     &-singer {
       @apply text-base py-2;
     }
+  }
+
+  .music-content-time{
+    display: none;
+      @apply flex justify-center items-center;
   }
 
   .music-lrc {
