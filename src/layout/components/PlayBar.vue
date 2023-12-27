@@ -131,41 +131,6 @@ watch(
   },
   { immediate: true }
 )
-// 获取音乐播放Dom
-
-
-
-onMounted(() => {
-  // 监听音乐是否播放
-  watch(
-    () => play.value,
-    (value, oldValue) => {
-      if (value && audio.value) {
-        audioPlay()
-        onAudio()
-      } else {
-        audioPause()
-      }
-    }
-  )
-  // 抬起键盘按钮监听
-  document.onkeyup = (e) => {
-    switch (e.code) {
-      case 'Space':
-        playMusicEvent()
-    }
-  }
-
-  // 按下键盘按钮监听
-  document.onkeydown = (e) => {
-    switch (e.code) {
-      case 'Space':
-        return false
-    }
-  }
-})
-
-
 
 const audioPlay = () => {
   if (audio.value) {
@@ -178,7 +143,6 @@ const audioPause = () => {
     audio.value.pause()
   }
 }
-
 
 // 计算属性  获取当前播放时间的进度
 const timeSlider = computed({
@@ -226,6 +190,8 @@ const onAudio = () => {
     })
   }
 }
+
+onAudio()
 
 function handleEnded() {
   store.commit('nextPlay')

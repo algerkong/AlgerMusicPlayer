@@ -54,6 +54,7 @@ onMounted(async () => {
 
 const handleShowMv = async (item: IMvItem) => {
   store.commit('setIsPlay', false)
+  store.commit('setPlayMusic', false)
   showMv.value = true
   const res = await getMvUrl(item.id)
   playMvItem.value = item;
@@ -75,7 +76,7 @@ const close = () => {
 
   &-content {
     @apply grid gap-6 pb-28 pr-3;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(13%, 1fr));
   }
 
   .mv-item {

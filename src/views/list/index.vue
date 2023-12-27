@@ -106,7 +106,7 @@ watch(
 
   &-list {
     @apply grid gap-6 pb-28 pr-3;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(13%, 1fr));
   }
   &-item {
     &-img {

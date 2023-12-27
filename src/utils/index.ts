@@ -38,7 +38,7 @@ export const formatNumber = (num: any) => {
 }
 
 export const getIsMc = () => {
-  return true
+  return false
 }
 const ProxyUrl =
   import.meta.env.VITE_API_PROXY + '' || 'http://110.42.251.190:9856'

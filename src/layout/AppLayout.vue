@@ -42,7 +42,59 @@ const store = useStore();
 
 const isPlay = computed(() => store.state.isPlay as boolean)
 const menus = store.state.menus;
+const play = computed(() => store.state.play as boolean)
 
+const audio = {
+  value: document.querySelector('#MusicAudio') as HTMLAudioElement
+}
+
+onMounted(() => {
+  // 监听音乐是否播放
+  watch(
+    () => play.value,
+    value => {
+      if (value && audio.value) {
+        audioPlay()
+      } else {
+        audioPause()
+      }
+    }
+  )
+
+  document.onkeyup = (e) => {
+    switch (e.code) {
+      case 'Space':
+        playMusicEvent()
+    }
+  }
+  // 按下键盘按钮监听
+  document.onkeydown = (e) => {
+    switch (e.code) {
+      case 'Space':
+        return false
+    }
+  }
+})
+
+const audioPlay = () => {
+  if (audio.value) {
+    audio.value.play()
+  }
+}
+
+const audioPause = () => {
+  if (audio.value) {
+    audio.value.pause()
+  }
+}
+
+const playMusicEvent = async () => {
+  if (play.value) {
+    store.commit('setPlayMusic', false)
+  } else {
+    store.commit('setPlayMusic', true)
+  }
+}
 </script>
 
 <style lang="scss" scoped>
