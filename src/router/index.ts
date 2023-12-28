@@ -2,7 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router'
 import AppLayout from '@/layout/AppLayout.vue'
 import homeRouter from '@/router/home'
 
-let loginRouter = {
+const loginRouter = {
   path: '/login',
   name: 'login',
   mate: {
@@ -13,11 +13,22 @@ let loginRouter = {
   component: () => import('@/views/login/index.vue'),
 }
 
+const setRouter = {
+  path: '/set',
+  name: 'set',
+  mate: {
+    keepAlive: true,
+    title: '设置',
+    icon: 'icon-Home',
+  },
+  component: () => import('@/views/set/index.vue'),
+}
+
 const routes = [
   {
     path: '/',
     component: AppLayout,
-    children: [...homeRouter, loginRouter],
+    children: [...homeRouter, loginRouter, setRouter],
   },
 ]
 

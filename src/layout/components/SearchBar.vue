@@ -175,6 +175,10 @@ const options = [
     {
         label: '退出登录',
         key: 'logout'
+    },
+    {
+      label: '设置',
+      key: 'set'
     }
 ]
 
@@ -207,6 +211,9 @@ const selectItem = async (key: any) => {
             break;
         case 'login':
             router.push("/login")
+            break;
+        case 'set':
+            router.push("/set")
             break;
     }
 }

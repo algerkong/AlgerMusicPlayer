@@ -36,8 +36,14 @@ export const formatNumber = (num: any) => {
   }
   return (num / 100000000).toFixed(1) + '亿'
 }
-
+const windowData = window as any
 export const getIsMc = () => {
+  if (!windowData.electron) {
+    return false
+  }
+  if (windowData.electron.ipcRenderer.getStoreValue('set').isProxy) {
+    return true
+  }
   return false
 }
 const ProxyUrl =

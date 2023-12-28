@@ -19,6 +19,7 @@
     "@vueuse/core": "^10.7.1",
     "autoprefixer": "^9.8.6",
     "axios": "^0.21.1",
+    "electron-store": "^8.1.0",
     "lodash": "^4.17.21",
     "naive-ui": "^2.34.4",
     "postcss": "^7.0.36",

@@ -1,5 +1,7 @@
 const { app, BrowserWindow, ipcMain, Tray, Menu, globalShortcut, nativeImage } = require('electron')
 const path = require('path')
+const Store = require('electron-store');
+const setJson = require('./electron/set.json')
 
 let mainWin = null
 function createWindow() {
@@ -50,6 +52,13 @@ function createWindow() {
       win.show()
     }
   })
+
+  const set = store.get('set')
+  // store.set('set', setJson)
+
+  if (!set) {
+    store.set('set', setJson)
+  }
 }
 
 app.whenReady().then(createWindow)
@@ -103,4 +112,22 @@ ipcMain.on('drag-start', (event, data) => {
 ipcMain.on('mini-tray', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender)
   win.hide()
+})
+
+// 重启
+ipcMain.on('restart', () => {
+  app.relaunch()
+  app.exit(0)
+})
+
+const store = new Store();
+
+// 定义ipcRenderer监听事件
+ipcMain.on('setStore', (_, key, value) => {
+  store.set(key, value)
+})
+
+ipcMain.on('getStore', (_, key) => {
+  let value = store.get(key)
+  _.returnValue = value || ""
 })

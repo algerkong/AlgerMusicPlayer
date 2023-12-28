@@ -13,6 +13,7 @@ interface State {
   user: any
   playList: SongResult[]
   playListIndex: number
+  setData: any
 }
 
 const state: State = {
@@ -24,7 +25,10 @@ const state: State = {
   user: null,
   playList: [],
   playListIndex: 0,
+  setData: null,
 }
+
+const windowData = window as any
 
 const mutations = {
   setMenus(state: State, menus: any[]) {
@@ -61,6 +65,13 @@ const mutations = {
     state.playListIndex =
       (state.playListIndex - 1 + state.playList.length) % state.playList.length
     await updatePlayMusic(state)
+  },
+  async setSetData(state: State, setData: any) {
+    state.setData = setData
+    windowData.electron.ipcRenderer.setStoreValue(
+      'set',
+      JSON.parse(JSON.stringify(setData))
+    )
   },
 }
 

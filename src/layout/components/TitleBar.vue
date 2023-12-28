@@ -1,5 +1,5 @@
 <template>
-  <div id="title-bar" @mousedown="drag">
+  <div id="title-bar" @mousedown="drag" v-if="isElectron">
     <div id="title">Alger Music</div>
     <div id="buttons">
       <button @click="minimize">
@@ -19,13 +19,18 @@
 import { useDialog } from 'naive-ui'
 
 const dialog = useDialog()
+const windowData = window as any
+
+const isElectron = computed(() => {
+  return !!windowData.electronAPI.minimize
+})
 
 const minimize = () => {
-  window.electronAPI.minimize()
+  windowData.electronAPI.minimize()
 }
 
 const maximize = () => {
-  window.electronAPI.maximize()
+  windowData.electronAPI.maximize()
 }
 
 const close = () => {
@@ -35,16 +40,16 @@ const close = () => {
     positiveText: '最小化',
     negativeText: '关闭',
     onPositiveClick: () => {
-      window.electronAPI.miniTray()
+      windowData.electronAPI.miniTray()
     },
     onNegativeClick: () => {
-      window.electronAPI.close()
+      windowData.electronAPI.close()
     }
   })
 }
 
-const drag = (event: HTMLElement) => {
-  window.electronAPI.dragStart(event)
+const drag = (event: MouseEvent) => {
+  windowData.electronAPI.dragStart(event)
 }
 </script>
 

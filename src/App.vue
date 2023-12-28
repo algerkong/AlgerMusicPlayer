@@ -11,15 +11,20 @@
 
 <script lang="ts" setup>
 import { darkTheme } from 'naive-ui'
-import { useStore } from 'vuex'
+import store from '@/store'
 
 const audio = ref<HTMLAudioElement | null>(null)
 
-const store = useStore()
 const playMusicUrl = computed(() => store.state.playMusicUrl as string)
 // 是否播放
 const play = computed(() => store.state.play as boolean)
-
+const windowData = window as any
+onMounted(()=>{
+  if(windowData.electron){
+    const setData = windowData.electron.ipcRenderer.getStoreValue('set');
+    store.commit('setSetData', setData)
+  }
+})
 </script>
 
 <style lang="scss" scoped >
