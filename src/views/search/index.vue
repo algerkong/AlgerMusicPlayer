@@ -139,7 +139,7 @@ watch(
 const store = useStore()
 
 const handlePlay = (item: any) => {
-  const tracks = searchDetail.value?.result.songs || []
+  const tracks = searchDetail.value?.songs || []
   const musicIndex = (tracks.findIndex((music: any) => music.id == item.id) || 0)
   store.commit('setPlayList', tracks)
 }
