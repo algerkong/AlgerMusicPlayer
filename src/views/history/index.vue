@@ -6,6 +6,9 @@
         <div class="history-item" v-for="(item, index) in musicList" :key="item.id"
           :class="setAnimationClass('animate__bounceIn')" :style="setAnimationDelay(index, 30)">
           <song-item class="history-item-content" :item="item" />
+          <div class="history-item-count">
+            {{ item.count }}
+          </div>
           <div class="history-item-delete">
             <i class="iconfont icon-close" @click="delMusic(item)"></i>
           </div>
@@ -35,6 +38,9 @@ const {delMusic, musicList} = useMusicHistory();
       @apply flex items-center justify-between;
       &-content{
         @apply flex-1;
+      }
+      &-count{
+        @apply px-4 text-lg;
       }
       &-delete{
         @apply cursor-pointer rounded-full border-2 border-gray-400 w-8 h-8 flex justify-center items-center;
