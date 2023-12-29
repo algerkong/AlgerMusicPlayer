@@ -72,19 +72,25 @@ const close = () => {
 
 <style scoped lang="scss">
 .mv-list {
-  @apply relative h-full w-full pt-4;
+  @apply relative h-full w-full pt-2;
+
+  &-title {
+    @apply text-xl font-bold;
+  }
 
   &-content {
-    @apply grid gap-6 pb-28 pr-3;
-    grid-template-columns: repeat(auto-fill, minmax(13%, 1fr));
+    @apply grid gap-6 pb-28 pr-3 mt-2;
+    grid-template-columns: repeat(auto-fill, minmax(14%, 1fr));
   }
 
   .mv-item {
+    @apply p-2 rounded-lg;
+    background-color: #454545;
     &-img {
-      @apply rounded-xl overflow-hidden relative;
+      @apply rounded-lg overflow-hidden relative;
 
       &:hover img {
-        @apply hover:scale-110 transition-all duration-300 ease-in-out;
+        @apply hover:scale-110 transition-all duration-300 ease-in-out object-top;
       }
 
       &-img {
@@ -93,11 +99,11 @@ const close = () => {
 
       .top {
         @apply absolute w-full h-full top-0 left-0 flex justify-center items-center transition-all duration-300 ease-in-out cursor-pointer;
-        background-color: #00000088;
+        background-color: #0000009b;
         opacity: 0;
 
         i {
-          font-size: 50px;
+          font-size: 40px;
           transition: all 0.5s ease-in-out;
           opacity: 0;
         }
@@ -107,7 +113,7 @@ const close = () => {
         }
 
         &:hover i {
-          @apply transform scale-150 opacity-100;
+          @apply transform scale-150 opacity-80;
         }
 
         .play-count {

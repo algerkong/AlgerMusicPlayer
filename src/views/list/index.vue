@@ -97,7 +97,7 @@ watch(
 
 <style lang="scss" scoped>
 .list-page {
-  @apply relative h-full w-full pt-4;
+  @apply relative h-full w-full pt-2;
 }
 
 .recommend {

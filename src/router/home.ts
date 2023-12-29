@@ -40,6 +40,16 @@ const layoutRouter = [
     component: () => import('@/views/mv/index.vue'),
   },
   {
+    path: '/history',
+    name: 'history',
+    mate: {
+      title: '历史',
+      keepAlive: true,
+      icon: 'icon-a-TicketStar',
+    },
+    component: () => import('@/views/history/index.vue'),
+  },
+  {
     path: '/user',
     name: 'user',
     mate: {

@@ -45,6 +45,7 @@
 import { useStore } from 'vuex'
 import type { SongResult } from '@/type/music'
 import { getImgUrl } from '@/utils'
+import { useMusicHistory } from '@/hooks/MusicHistoryHook'
 
 const props = withDefaults(defineProps<{
   item: SongResult
@@ -66,12 +67,15 @@ const isPlaying = computed(() => {
 
 const emits = defineEmits(['play'])
 
+const musicHistory = useMusicHistory()
+
 // 播放音乐 设置音乐详情 打开音乐底栏
 const playMusicEvent = (item: any) => {
   store.commit('setPlay', item)
   store.commit('setIsPlay', true)
   store.state.playListIndex = 0 
   emits('play', item)
+  musicHistory.addMusic(item)
 }
 </script>
 
