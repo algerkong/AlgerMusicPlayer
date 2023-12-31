@@ -123,7 +123,6 @@ const loadSearch = async (keywords: any) => {
       songs,
       albums
     }
-    console.log('searchDetail',searchDetail.value)
 };
 
 loadSearch(route.query.keyword);

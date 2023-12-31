@@ -8,6 +8,7 @@
                     class="recommend-album-list-item"
                     :class="setAnimationClass('animate__backInUp')"
                     :style="setAnimationDelay(index, 100)"
+                    @click="handleClick(item)"
                 >
                     <n-image
                         class="recommend-album-list-item-img"
@@ -19,6 +20,7 @@
                 </div>
             </template>
         </div>
+       <MusicList v-model:show="showMusic" :name="albumName" :song-list="songList" />
     </div>
 </template>
 
@@ -27,12 +29,27 @@ import { getNewAlbum } from "@/api/home"
 import { ref, onMounted } from "vue";
 import type { IAlbumNew } from "@/type/album"
 import { setAnimationClass, setAnimationDelay, getImgUrl } from "@/utils";
+import { getAlbum } from "@/api/list";
 
 
 const albumData = ref<IAlbumNew>()
 const loadAlbumList = async () => {
     const { data } = await getNewAlbum();
     albumData.value = data
+}
+
+const showMusic = ref(false)
+const songList = ref([])
+const albumName = ref('')
+
+const handleClick = async (item:any) => {
+  albumName.value = item.name
+  showMusic.value = true
+   const res = await getAlbum(item.id)
+    songList.value = res.data.songs.map((song:any)=>{
+      song.al.picUrl = song.al.picUrl || item.picUrl
+      return song
+    })
 }
 
 onMounted(() => {

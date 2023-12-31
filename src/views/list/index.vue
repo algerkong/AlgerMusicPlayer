@@ -91,7 +91,7 @@ watch(
       </div>
       <PlayBottom/>
     </n-scrollbar>
-    <MusicList v-if="listDetail?.playlist" v-model:show="showMusic" :music-list="listDetail?.playlist" />
+    <MusicList v-if="listDetail?.playlist" v-model:show="showMusic" :name="listDetail?.playlist.name" :song-list="listDetail?.playlist.tracks" />
   </div>
 </template>
 

@@ -35,3 +35,8 @@ export function getRecommendList(limit: number = 30) {
 export function getListDetail(id: number | string) {
   return request.get<IListDetail>("/playlist/detail", { params: { id } });
 }
+
+// 获取专辑内容
+export function getAlbum(id: number | string) {
+  return request.get("/album", { params: { id } });
+}

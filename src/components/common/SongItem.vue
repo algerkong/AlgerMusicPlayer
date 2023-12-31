@@ -1,6 +1,7 @@
 <template>
   <div class="song-item" :class="{'song-mini': mini}">
     <n-image
+      v-if="item.picUrl "
       :src="getImgUrl( item.picUrl, '40y40')"
       class="song-item-img"
       lazy

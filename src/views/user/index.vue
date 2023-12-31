@@ -145,7 +145,7 @@ const handlePlay = (item: any) => {
         </n-scrollbar>
       </div>
     </div>
-    <MusicList v-if="list" v-model:show="isShowList" :music-list="list" />
+    <MusicList v-if="list" v-model:show="isShowList" :name="list.name" :song-list="list.tracks" />
   </div>
 </template>
 

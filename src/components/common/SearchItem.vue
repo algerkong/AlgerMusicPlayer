@@ -1,5 +1,5 @@
 <template>
-  <div class="search-item">
+  <div class="search-item" @click="handleClick">
     <div class="search-item-img">
       <n-image
         :src="getImgUrl(item.picUrl, 'album')"
@@ -11,19 +11,39 @@
       <div class="search-item-name">{{ item.name }}</div>
       <div class="search-item-artist">{{ item.desc}}</div>
     </div>
+
+    <MusicList v-model:show="showMusic" :name="item.name" :song-list="songList" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { getImgUrl } from '@/utils'
 import type {Album}  from '@/type/album'
+import { getAlbum } from '@/api/list';
 const props = defineProps<{
   item: {
     picUrl: string
     name: string
     desc: string
+    type: string
+    [key: string]: any
   }
 }>()
+
+const songList = ref([])
+
+const showMusic = ref(false)
+
+const handleClick = async () => {
+  showMusic.value = true
+  if(props.item.type === '专辑'){
+   const res = await getAlbum(props.item.id)
+    songList.value = res.data.songs.map((song:any)=>{
+      song.al.picUrl = song.al.picUrl || props.item.picUrl
+      return song
+    })
+  }
+}
 
 </script>
 

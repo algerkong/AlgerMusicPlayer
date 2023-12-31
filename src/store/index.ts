@@ -79,7 +79,7 @@ const getSongUrl = async (id: number) => {
   const { data } = await getMusicUrl(id)
   let url = ''
   try {
-    if (data.data[0].freeTrialInfo) {
+    if (data.data[0].freeTrialInfo || !data.data[0].url) {
       const res = await getParsingMusicUrl(id)
       url = res.data.data.url
     }

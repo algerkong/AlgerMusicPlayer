@@ -57,7 +57,7 @@ const loadLrc = async (playMusicId: number): Promise<void> => {
 }
 
 // 歌词矫正时间Correction time
-const correctionTime = ref(0)
+const correctionTime = ref(0.4)
 
 // 增加矫正时间
 const addCorrectionTime = (time: number) => {

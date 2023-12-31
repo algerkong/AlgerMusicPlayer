@@ -2,11 +2,11 @@
   <n-drawer :show="show" height="70vh" placement="bottom" :drawer-style="{ backgroundColor: 'transparent' }">
     <div class="music-page">
       <i class="iconfont icon-icon_error music-close" @click="close"></i>
-      <div class="music-title">{{ musicList?.name }}</div>
+      <div class="music-title">{{ name }}</div>
       <!-- 歌单歌曲列表 -->
       <div class="music-list">
         <n-scrollbar >
-          <div v-for="(item, index) in musicList?.tracks" :key="item.id" :class="setAnimationClass('animate__bounceInUp')"
+          <div v-for="(item, index) in songList" :key="item.id" :class="setAnimationClass('animate__bounceInUp')"
             :style="setAnimationDelay(index, 100)">
             <SongItem :item="formatDetail(item)" @play="handlePlay" />
           </div>
@@ -28,7 +28,8 @@ const store = useStore()
 
 const props = defineProps<{
   show: boolean;
-  musicList: Playlist;
+  name: string;
+  songList: any[]
 }>()
 const emit = defineEmits(['update:show'])
 
@@ -45,7 +46,7 @@ const formatDetail = computed(() => (detail: any) => {
 })
 
 const handlePlay = (item: any) => {
-  const tracks = props.musicList?.tracks || []
+  const tracks = props.songList || []
   const musicIndex = (tracks.findIndex((music: any) => music.id == item.id) || 0)
   store.commit('setPlayList', tracks)
 }
