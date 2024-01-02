@@ -47,7 +47,6 @@ const formatDetail = computed(() => (detail: any) => {
 
 const handlePlay = (item: any) => {
   const tracks = props.songList || []
-  const musicIndex = (tracks.findIndex((music: any) => music.id == item.id) || 0)
   store.commit('setPlayList', tracks)
 }
 

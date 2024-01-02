@@ -44,7 +44,6 @@ onMounted(() => {
 })
 
 const handlePlay = (item: any) => {
-  const musicIndex = (recommendMusic.value?.result.findIndex((music: any) => music.id == item.id) || 0) + 1
   store.commit('setPlayList', recommendMusic.value?.result)
 }
 </script>

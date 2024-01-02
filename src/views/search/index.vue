@@ -41,7 +41,7 @@
                     <SongItem :item="item" @play="handlePlay"/>
                 </div>
                 <template v-for="(list, key) in searchDetail">
-                  <template v-if="key !== 'songs'">
+                  <template v-if="key.toString() !== 'songs'">
                     <div
                       v-for="(item, index) in list"
                       :key="item.id"
@@ -139,7 +139,6 @@ const store = useStore()
 
 const handlePlay = (item: any) => {
   const tracks = searchDetail.value?.songs || []
-  const musicIndex = (tracks.findIndex((music: any) => music.id == item.id) || 0)
   store.commit('setPlayList', tracks)
 }
 </script>
