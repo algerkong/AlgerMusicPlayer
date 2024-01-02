@@ -3,6 +3,7 @@ import { SongResult } from '@/type/music'
 import { getMusicUrl, getParsingMusicUrl } from '@/api/music'
 import homeRouter from '@/router/home'
 import { getMusicProxyUrl } from '@/utils'
+import { useMusicHistory } from '@/hooks/MusicHistoryHook'
 
 interface State {
   menus: any[]
@@ -30,6 +31,8 @@ const state: State = {
 
 const windowData = window as any
 
+const musicHistory = useMusicHistory()
+
 const mutations = {
   setMenus(state: State, menus: any[]) {
     state.menus = menus
@@ -38,6 +41,7 @@ const mutations = {
     state.playMusic = playMusic
     state.playMusicUrl = await getSongUrl(playMusic.id)
     state.play = true
+    musicHistory.addMusic(playMusic)
   },
   setIsPlay(state: State, isPlay: boolean) {
     state.isPlay = isPlay
@@ -94,6 +98,7 @@ const updatePlayMusic = async (state: State) => {
   state.playMusic = state.playList[state.playListIndex]
   state.playMusicUrl = await getSongUrl(state.playMusic.id)
   state.play = true
+  musicHistory.addMusic(state.playMusic)
 }
 
 const store = createStore({

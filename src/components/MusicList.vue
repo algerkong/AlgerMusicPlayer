@@ -1,5 +1,5 @@
 <template>
-  <n-drawer :show="show" height="70vh" placement="bottom" :drawer-style="{ backgroundColor: 'transparent' }">
+  <n-drawer v-model:show="show" height="70vh" placement="bottom" :drawer-style="{ backgroundColor: 'transparent' }">
     <div class="music-page">
       <i class="iconfont icon-icon_error music-close" @click="close"></i>
       <div class="music-title">{{ name }}</div>
@@ -19,7 +19,6 @@
 
 <script setup lang="ts">
 import { useStore } from 'vuex'
-import { Playlist } from '@/type/listDetail';
 import { setAnimationClass, setAnimationDelay } from "@/utils";
 import SongItem from "@/components/common/SongItem.vue";
 import PlayBottom from './common/PlayBottom.vue';
