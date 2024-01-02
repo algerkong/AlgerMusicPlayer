@@ -97,7 +97,7 @@ watch(
 
 <style lang="scss" scoped>
 .list-page {
-  @apply relative h-full w-full pt-2;
+  @apply relative h-full w-full;
 }
 
 .recommend {
@@ -107,7 +107,7 @@ watch(
   }
 
   &-list {
-    @apply grid gap-6 pb-28 pr-3;
+    @apply grid gap-6 pb-28;
     grid-template-columns: repeat(auto-fill, minmax(13%, 1fr));
   }
   &-item {

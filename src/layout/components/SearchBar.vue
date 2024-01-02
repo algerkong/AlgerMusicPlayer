@@ -225,7 +225,9 @@ const selectItem = async (key: any) => {
     @apply ml-4 flex text-lg justify-center items-center rounded-full pl-3 border border-gray-600;
     background: #1a1a1a;
 }
-
+.search-box{
+    @apply pb-4 pr-4;
+}
 .search-box-input {
     @apply relative;
 }

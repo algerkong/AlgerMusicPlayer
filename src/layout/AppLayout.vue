@@ -1,23 +1,31 @@
 <template>
     <div class="layout-page">
         <div class="layout-main">
-            <title-bar />
-            <div class="flex">
+            <title-bar v-if="isElectron" />
+            <div class="layout-main-page" :class="isElectron ? '' : 'pt-6'">
                 <!-- 侧边菜单栏 -->
                 <app-menu class="menu" :menus="menus" />
                 <div class="main">
                     <!-- 搜索栏 -->
                     <search-bar />
                     <!-- 主页面路由 -->
-                    <div class="main-content bg-black" :native-scrollbar="false">
+                    <div class="main-content bg-black pb-" :native-scrollbar="false" :class="isPlay ? 'pb-20' : ''">
                         <n-message-provider>
-                            <router-view class="main-page" v-slot="{ Component }">
-                                <keep-alive>
-                                    <component :is="Component" />
+                            <router-view class="main-page" v-slot="{ Component }" :class="route.meta.noScroll? 'pr-3' : ''">
+                              <template v-if="route.meta.noScroll">
+                                <keep-alive v-if="!route.meta.noKeepAlive">
+                                  <component :is="Component" />
                                 </keep-alive>
-                                <!-- <component :is="Component" v-if="!$route.meta.keepAlive" />
-
-                                <component :is="Component" /> -->
+                                <component v-else :is="Component"/>
+                              </template>
+                              <template v-else>
+                                <n-scrollbar>
+                                  <keep-alive v-if="!route.meta.noKeepAlive">
+                                      <component :is="Component" />
+                                  </keep-alive>
+                                  <component v-else :is="Component"/>
+                                </n-scrollbar>
+                              </template>
                             </router-view>
                         </n-message-provider>
                     </div>
@@ -30,7 +38,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { SongResult } from '@/type/music';
+import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 const AppMenu = defineAsyncComponent(() => import('./components/AppMenu.vue'));
 const PlayBar = defineAsyncComponent(() => import('./components/PlayBar.vue'));
@@ -44,9 +52,16 @@ const isPlay = computed(() => store.state.isPlay as boolean)
 const menus = store.state.menus;
 const play = computed(() => store.state.play as boolean)
 
+const route = useRoute()
+
 const audio = {
   value: document.querySelector('#MusicAudio') as HTMLAudioElement
 }
+
+const windowData = window as any
+const isElectron = computed(() => {
+  return !!windowData.electronAPI
+})
 
 onMounted(() => {
   // 监听音乐是否播放
@@ -105,23 +120,25 @@ const playMusicEvent = async () => {
 }
 
 .layout-main {
-    @apply bg-black rounded-lg  text-white shadow-xl flex-col relative;
+    @apply bg-black  text-white shadow-xl flex flex-col relative;
     height: 100%;
     width: 100%;
     overflow: hidden;
+    &-page{
+      @apply flex flex-1 overflow-hidden;
+    }
     .menu {
         width: 90px;
     }
     .main {
-        @apply pr-6 flex-1 box-border;
-        height: 100vh;
+        @apply flex-1 box-border flex flex-col;
+        height: 100%;
         &-content {
-            @apply rounded-2xl pb-28 box-border;
-            height: 100vh;
+            @apply box-border flex-1 overflow-hidden;
         }
-        &-page {
-            margin: 20px 0;
-        }
+    }
+    :deep(.n-scrollbar-content){
+      @apply pr-3;
     }
 }
 </style>

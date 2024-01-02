@@ -13,9 +13,9 @@
             <i
               class="iconfont app-menu-item-icon"
               :style="iconStyle(index)"
-              :class="item.mate.icon"
+              :class="item.meta.icon"
             ></i>
-            <span v-if="isText" class="app-menu-item-text ml-3">{{ item.mate.title }}</span>
+            <span v-if="isText" class="app-menu-item-text ml-3">{{ item.meta.title }}</span>
           </router-link>
         </div>
       </div>

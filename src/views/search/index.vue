@@ -148,7 +148,7 @@ const handlePlay = (item: any) => {
     @apply flex h-full;
 }
 .hot-search {
-    @apply mt-3 mr-4 rounded-xl  flex-1 overflow-hidden;
+    @apply mr-4 rounded-xl  flex-1 overflow-hidden;
     background-color: #0d0d0d;
     animation-duration: 0.2s;
     min-width: 400px;
@@ -168,7 +168,7 @@ const handlePlay = (item: any) => {
 }
 
 .search-list {
-    @apply mt-3 flex-1 rounded-xl;
+    @apply flex-1 rounded-xl;
     background-color: #0d0d0d;
     height: 100%;
     &-box{

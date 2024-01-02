@@ -104,7 +104,7 @@ const loginPhone = async () => {
 
 <style lang="scss" scoped>
 .login-page {
-  @apply flex flex-col items-center justify-center p-20;
+  @apply flex flex-col items-center justify-center p-20 pt-20;
 }
 
 .login-title {

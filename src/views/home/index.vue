@@ -1,6 +1,5 @@
 <template>
   <div class="main-page">
-    <n-scrollbar>
       <!-- 推荐歌手 -->
       <recommend-singer />
       <div class="main-content">
@@ -11,7 +10,6 @@
         <!-- 推荐最新专辑 -->
         <recommend-album />
       </div>
-    </n-scrollbar>
   </div>
 </template>
 
@@ -24,7 +22,7 @@ const RecommendAlbum = defineAsyncComponent(() => import("@/components/Recommend
 
 <style lang="scss" scoped>
 .main-page{
-  @apply pt-4 h-full w-full;
+  @apply h-full w-full;
 }
 .main-content {
   @apply mt-6 flex pb-28;

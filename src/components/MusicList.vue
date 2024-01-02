@@ -1,5 +1,5 @@
 <template>
-  <n-drawer v-model:show="show" height="70vh" placement="bottom" :drawer-style="{ backgroundColor: 'transparent' }">
+  <n-drawer :show="show" height="70vh" placement="bottom" :drawer-style="{ backgroundColor: 'transparent' }">
     <div class="music-page">
       <i class="iconfont icon-icon_error music-close" @click="close"></i>
       <div class="music-title">{{ name }}</div>

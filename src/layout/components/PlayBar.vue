@@ -242,8 +242,7 @@ const setMusicFull = () => {
 .music-play-bar {
   @apply h-20 w-full absolute bottom-0 left-0 flex items-center rounded-t-2xl overflow-hidden box-border px-6 py-2;
   z-index: 9999;
-  backdrop-filter: blur(20px);
-  box-shadow: 0px 0px 8px 0px rgba(203, 203, 203, 0.238);
+  box-shadow: 0px 0px 10px 2px rgba(203, 203, 203, 0.034);
   background-color: rgba(0, 0, 0, 0.747);  .music-content {
     width: 140px;
     @apply ml-4;

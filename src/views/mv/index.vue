@@ -72,14 +72,14 @@ const close = () => {
 
 <style scoped lang="scss">
 .mv-list {
-  @apply relative h-full w-full pt-2;
+  @apply relative h-full w-full;
 
   &-title {
     @apply text-xl font-bold;
   }
 
   &-content {
-    @apply grid gap-6 pb-28 pr-3 mt-2;
+    @apply grid gap-6 pb-4 mt-2;
     grid-template-columns: repeat(auto-fill, minmax(14%, 1fr));
   }
 

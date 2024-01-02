@@ -1,5 +1,5 @@
 <template>
-  <div id="title-bar" @mousedown="drag" v-if="isElectron">
+  <div id="title-bar" @mousedown="drag">
     <div id="title">Alger Music</div>
     <div id="buttons">
       <button @click="minimize">
@@ -20,10 +20,6 @@ import { useDialog } from 'naive-ui'
 
 const dialog = useDialog()
 const windowData = window as any
-
-const isElectron = computed(() => {
-  return !!windowData.electronAPI.minimize
-})
 
 const minimize = () => {
   windowData.electronAPI.minimize()

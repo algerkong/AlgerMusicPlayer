@@ -2,8 +2,7 @@ const layoutRouter = [
   {
     path: '/',
     name: 'home',
-    mate: {
-      keepAlive: true,
+    meta: {
       title: '首页',
       icon: 'icon-Home',
     },
@@ -12,9 +11,10 @@ const layoutRouter = [
   {
     path: '/search',
     name: 'search',
-    mate: {
+    meta: {
       title: '搜索',
-      keepAlive: true,
+      noScroll: true,
+      noKeepAlive: true,
       icon: 'icon-Search',
     },
     component: () => import('@/views/search/index.vue'),
@@ -22,9 +22,8 @@ const layoutRouter = [
   {
     path: '/list',
     name: 'list',
-    mate: {
+    meta: {
       title: '歌单',
-      keepAlive: true,
       icon: 'icon-Paper',
     },
     component: () => import('@/views/list/index.vue'),
@@ -32,9 +31,8 @@ const layoutRouter = [
   {
     path: '/mv',
     name: 'mv',
-    mate: {
+    meta: {
       title: 'MV',
-      keepAlive: true,
       icon: 'icon-recordfill',
     },
     component: () => import('@/views/mv/index.vue'),
@@ -42,9 +40,8 @@ const layoutRouter = [
   {
     path: '/history',
     name: 'history',
-    mate: {
+    meta: {
       title: '历史',
-      keepAlive: true,
       icon: 'icon-a-TicketStar',
     },
     component: () => import('@/views/history/index.vue'),
@@ -52,23 +49,12 @@ const layoutRouter = [
   {
     path: '/user',
     name: 'user',
-    mate: {
+    meta: {
       title: '用户',
-      keepAlive: true,
+      noKeepAlive: true,
       icon: 'icon-Profile',
     },
     component: () => import('@/views/user/index.vue'),
   },
-  // {
-  //   path: "/test",
-  //   name: "test",
-  //   mate: {
-  //     title: "用户",
-  //     keepAlive: true,
-  //     icon: "icon-Profile",
-  //   },
-  //   component: () => import("@/views/test/test.vue"),
-  // },
 ]
-
 export default layoutRouter;

@@ -149,13 +149,6 @@ const handlePlay = (item: any) => {
 </template>
 
 <style lang="scss" scoped>
-.musicPage-enter-active {
-  animation: fadeInUp 0.8s ease-in-out;
-}
-
-.musicPage-leave-active {
-  animation: fadeOutDown 0.8s ease-in-out;
-}
 .user-page {
   @apply flex h-full;
   .left {
