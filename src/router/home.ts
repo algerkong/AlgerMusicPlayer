@@ -53,6 +53,7 @@ const layoutRouter = [
       title: '用户',
       noKeepAlive: true,
       icon: 'icon-Profile',
+      noScroll: true,
     },
     component: () => import('@/views/user/index.vue'),
   },

@@ -6,6 +6,6 @@
 @tailwind utilities;
 
 .n-image img {
-  @apply bg-gray-900;
+  background-color: #111111;
   width: 100%;
 }

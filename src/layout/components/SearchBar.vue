@@ -23,7 +23,7 @@
             </n-input>
         </div>
         <div class="user-box">
-            <n-dropdown trigger="hover" @select="selectItem" :options="options">
+            <n-dropdown trigger="hover" @select="selectItem" :options="userSetOptions">
                 <i class="iconfont icon-xiasanjiaoxing"></i>
             </n-dropdown>
             <n-avatar
@@ -33,28 +33,24 @@
                 :src="getImgUrl(store.state.user.avatarUrl)"
                 v-if="store.state.user"
             />
-            <n-avatar
-                class="ml-2 cursor-pointer"
-                circle
-                size="medium"
-                src="https://picsum.photos/200/300?random=1"
-                @click="toLogin()"
-                v-else
-            >登录</n-avatar>
+            <div class="mx-2 rounded-full cursor-pointer text-sm" v-else @click="toLogin">登录</div>
         </div>
     </div>
 </template>
 
 <script lang="ts" setup>
-import { getSearchKeyword, getHotSearch } from '@/api/home';
+import { getSearchKeyword } from '@/api/home';
 import { getUserDetail, logout } from '@/api/login';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import request from '@/utils/request_mt'
 import { getImgUrl } from '@/utils';
+import {USER_SET_OPTIONS, SEARCH_TYPES} from '@/const/bar-const'
 
 const router = useRouter()
 const store = useStore();
+const userSetOptions = ref(USER_SET_OPTIONS)
+
 
 // 推荐热搜词
 const hotSearchKeyword = ref("搜索点什么吧...")
@@ -65,9 +61,17 @@ const loadHotSearchKeyword = async () => {
     hotSearchValue.value = data.data.realkeyword
 }
 
-store.state.user = JSON.parse(localStorage.getItem('user') || '{}')
+watchEffect(() => {
+    const user = localStorage.getItem('user')
+    store.state.user = user ? JSON.parse(user) : null
+    if(!user){
+      userSetOptions.value = USER_SET_OPTIONS.filter(item => item.key !== 'logout')
+    }
+})
 
 const loadPage = async () => {
+    const token = localStorage.getItem("token")
+    if (!token) return
     const { data } = await getUserDetail()
     store.state.user = data.profile
     localStorage.setItem('user', JSON.stringify(data.profile))
@@ -76,8 +80,6 @@ const loadPage = async () => {
 const toLogin = () => {
     router.push('/login')
 }
-
-
 
 // 页面初始化
 onMounted(() => {
@@ -90,7 +92,6 @@ onMounted(() => {
 const searchValue = ref("")
 const searchType = ref(1)
 const search = () => {
-
     let value = searchValue.value
     if (value == "") {
         searchValue.value = hotSearchValue.value
@@ -109,78 +110,8 @@ const selectSearchType = (key: any) => {
     searchType.value = key
 }
 
-const SEARCH_TYPES = [
-    {
-        label: '单曲',
-        key: 1
-    },
-    {
-        label: '专辑',
-        key: 10
-    },
-    {
-        label: '歌手',
-        key: 100
-    },
-    {
-        label: '歌单',
-        key: 1000
-    },
-    {
-        label: '用户',
-        key: 1002
-    },
-    {
-        label: 'MV',
-        key: 1004
-    },
-    {
-        label: '歌词',
-        key: 1006
-    },
-    {
-        label: '电台',
-        key: 1009
-    },
-    {
-        label: '视频',
-        key: 1014
-    },
-    {
-        label: '综合',
-        key: 1018
-    }
-]
 
 const searchTypeOptions = ref(SEARCH_TYPES)
-
-const value = 'Drive My Car'
-const options = [
-    {
-        label: '打卡',
-        key: 'card'
-    },
-    {
-        label: '听歌升级',
-        key: 'card_music'
-    },
-    {
-        label: '歌曲次数',
-        key: 'listen'
-    },
-    {
-        label: '登录',
-        key: 'login'
-    },
-    {
-        label: '退出登录',
-        key: 'logout'
-    },
-    {
-      label: '设置',
-      key: 'set'
-    }
-]
 
 const selectItem = async (key: any) => {
     // switch 判断

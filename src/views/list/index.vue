@@ -78,6 +78,8 @@ watch(
             <n-image
               class="recommend-item-img-img"
               :src="getImgUrl( (item.picUrl || item.coverImgUrl), '200y200')"
+              width="200"
+              height="200"
               lazy
               preview-disabled
             />

@@ -8,7 +8,7 @@
         <div class="mv-item" v-for="(item, index) in mvList" :key="item.id"
           :class="setAnimationClass('animate__bounceIn')" :style="setAnimationDelay(index, 30)">
           <div class="mv-item-img" @click="handleShowMv(item)">
-            <n-image class="mv-item-img-img" :src="getImgUrl((item.cover), '200y200')" lazy preview-disabled />
+            <n-image class="mv-item-img-img" :src="getImgUrl((item.cover), '200y112')" lazy preview-disabled width="200" height="112" />
             <div class="top">
               <div class="play-count">{{ formatNumber(item.playCount) }}</div>
               <i class="iconfont icon-videofill"></i>
@@ -85,16 +85,17 @@ const close = () => {
 
   .mv-item {
     @apply p-2 rounded-lg;
-    background-color: #454545;
+    background-color: #1f1f1f;
     &-img {
       @apply rounded-lg overflow-hidden relative;
+      line-height: 0;
 
       &:hover img {
         @apply hover:scale-110 transition-all duration-300 ease-in-out object-top;
       }
 
       &-img {
-        @apply h-full w-full rounded-xl overflow-hidden;
+        @apply w-full rounded-lg overflow-hidden;
       }
 
       .top {
@@ -118,7 +119,7 @@ const close = () => {
 
         .play-count {
           position: absolute;
-          top: 10px;
+          top: 20px;
           left: 10px;
           font-size: 14px;
         }

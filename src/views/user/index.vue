@@ -17,7 +17,7 @@ const router = useRouter()
 const userDetail = ref<IUserDetail>()
 const playList = ref<any[]>([])
 const recordList = ref()
-const user = store.state.user
+let user = store.state.user
 
 const loadPage = async () => {
   if (!user) {
@@ -35,13 +35,13 @@ const loadPage = async () => {
   recordList.value = recordData.allData
 }
 
-loadPage()
-
-watch(() => router.currentRoute.value, (to) => {
-  if (to.path === "/user") {
+watchEffect(() => {
+    const localUser = localStorage.getItem('user')
+    store.state.user = localUser ? JSON.parse(localUser) : null
+    user = store.state.user
     loadPage()
-  }
 })
+
 
 const isShowList = ref(false)
 const list = ref<Playlist>()
@@ -83,7 +83,7 @@ const handlePlay = (item: any) => {
       <div class="page">
         <div class="user-name">{{ user.nickname }}</div>
         <div class="user-info">
-          <n-avatar round :size="50" :src="getImgUrl(user.avatarUrl)" />
+          <n-avatar round :size="50" :src="getImgUrl(user.avatarUrl,'50y50')" />
           <div class="user-info-list">
             <div class="user-info-item">
               <div class="label">{{ userDetail.profile.followeds }}</div>
@@ -111,7 +111,7 @@ const handlePlay = (item: any) => {
               @click="showPlaylist(item.id)"
             >
               <n-image
-                :src="getImgUrl( item.coverImgUrl, '')"
+                :src="getImgUrl( item.coverImgUrl, '50y50')"
                 class="play-list-item-img"
                 lazy
                 preview-disabled
