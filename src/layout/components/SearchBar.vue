@@ -64,10 +64,18 @@ const loadHotSearchKeyword = async () => {
 watchEffect(() => {
     const user = localStorage.getItem('user')
     store.state.user = user ? JSON.parse(user) : null
-    if(!user){
-      userSetOptions.value = USER_SET_OPTIONS.filter(item => item.key !== 'logout')
-    }
 })
+
+watch(
+    () => store.state.user,
+    (newVal) => {
+        if (newVal) {
+            userSetOptions.value = USER_SET_OPTIONS
+        }else{
+            userSetOptions.value = USER_SET_OPTIONS.filter(item => item.key !== 'logout')
+        }
+    }
+)
 
 const loadPage = async () => {
     const token = localStorage.getItem("token")
