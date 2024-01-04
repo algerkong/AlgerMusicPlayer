@@ -61,22 +61,6 @@ const loadHotSearchKeyword = async () => {
     hotSearchValue.value = data.data.realkeyword
 }
 
-watchEffect(() => {
-    const user = localStorage.getItem('user')
-    store.state.user = user ? JSON.parse(user) : null
-})
-
-watch(
-    () => store.state.user,
-    (newVal) => {
-        if (newVal) {
-            userSetOptions.value = USER_SET_OPTIONS
-        }else{
-            userSetOptions.value = USER_SET_OPTIONS.filter(item => item.key !== 'logout')
-        }
-    }
-)
-
 const loadPage = async () => {
     const token = localStorage.getItem("token")
     if (!token) return
@@ -84,6 +68,17 @@ const loadPage = async () => {
     store.state.user = data.profile
     localStorage.setItem('user', JSON.stringify(data.profile))
 }
+
+
+watchEffect(() => {
+    loadPage()
+    if (store.state.user) {
+        userSetOptions.value = USER_SET_OPTIONS
+    } else {
+        userSetOptions.value = USER_SET_OPTIONS.filter(item => item.key !== 'logout')
+    }
+})
+
 
 const toLogin = () => {
     router.push('/login')
