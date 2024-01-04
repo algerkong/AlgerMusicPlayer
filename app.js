@@ -61,6 +61,12 @@ function createWindow() {
   }
 }
 
+// 限制只能启动一个应用
+const gotTheLock = app.requestSingleInstanceLock()
+if (!gotTheLock) {
+  app.quit()
+}
+
 app.whenReady().then(createWindow)
 
 app.on('ready',()=>{
