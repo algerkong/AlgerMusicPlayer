@@ -71,7 +71,6 @@ const emits = defineEmits(['play'])
 const playMusicEvent = (item: any) => {
   store.commit('setPlay', item)
   store.commit('setIsPlay', true)
-  store.state.playListIndex = 0 
   emits('play', item)
 }
 </script>

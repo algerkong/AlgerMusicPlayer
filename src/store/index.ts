@@ -50,7 +50,9 @@ const mutations = {
     state.play = play
   },
   setPlayList(state: State, playList: SongResult[]) {
-    state.playListIndex = 0
+    state.playListIndex = playList.findIndex(
+      (item) => item.id === state.playMusic.id
+    )
     state.playList = playList
   },
   async nextPlay(state: State) {
