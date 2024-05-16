@@ -1,4 +1,5 @@
 const { BrowserWindow } = require('electron');
+const path = require('path');
 
 let lyricWindow = null;
 
@@ -21,7 +22,8 @@ const loadLyricWindow = (ipcMain) => {
       lyricWindow.webContents.openDevTools({ mode: 'detach' });
       lyricWindow.loadURL('http://localhost:4678/#/lyric');
     } else {
-      lyricWindow.loadURL(`file://${__dirname}/dist/index.html/#/lyric`);
+      const distPath = path.resolve(__dirname, '../dist');
+      lyricWindow.loadURL(`file://${distPath}/index.html#/lyric`);
     }
 
     lyricWindow.show();

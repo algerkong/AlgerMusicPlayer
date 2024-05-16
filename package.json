@@ -10,6 +10,7 @@
     "serve": "vite preview",
     "es": "vite && electron .",
     "start": "set NODE_ENV=development&&electron .",
+    "sp": "electron .",
     "e:b": "electron-builder --config ./electron.config.json",
     "eb": "vite build && e:b",
     "lint": "eslint --ext .vue,.js,.jsx,.ts,.tsx ./ --max-warnings 0"
