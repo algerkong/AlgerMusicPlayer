@@ -57,5 +57,5 @@ const layoutRouter = [
     },
     component: () => import('@/views/user/index.vue'),
   },
-]
+];
 export default layoutRouter;

@@ -540,7 +540,7 @@ interface Song2 {
 }
 
 interface KsongInfos {
-  "347230": _347230;
+  '347230': _347230;
 }
 
 interface _347230 {

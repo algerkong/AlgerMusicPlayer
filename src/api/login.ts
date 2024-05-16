@@ -1,46 +1,46 @@
-import request from "@/utils/request";
+import request from '@/utils/request';
 
 // 创建二维码key
 //  /login/qr/key
 export function getQrKey() {
-  return request.get("/login/qr/key");
+  return request.get('/login/qr/key');
 }
 
 // 创建二维码
 // /login/qr/create
 export function createQr(key: any) {
-  return request.get("/login/qr/create", { params: { key: key, qrimg: true } });
+  return request.get('/login/qr/create', { params: { key, qrimg: true } });
 }
 
 // 获取二维码状态
 //  /login/qr/check
 export function checkQr(key: any) {
-  return request.get("/login/qr/check", { params: { key: key } });
+  return request.get('/login/qr/check', { params: { key } });
 }
 
 // 获取登录状态
 // /login/status
 export function getLoginStatus() {
-  return request.get("/login/status");
+  return request.get('/login/status');
 }
 
 // 获取用户信息
 // /user/account
 export function getUserDetail() {
-  return request.get("/user/account");
+  return request.get('/user/account');
 }
 
 // 退出登录
 // /logout
 export function logout() {
-  return request.get("/logout");
+  return request.get('/logout');
 }
 
 // 手机号登录
 // /login/cellphone
 export function loginByCellphone(phone: any, password: any) {
-  return request.post("/login/cellphone", {
-    phone: phone,
-    password: password,
+  return request.post('/login/cellphone', {
+    phone,
+    password,
   });
 }

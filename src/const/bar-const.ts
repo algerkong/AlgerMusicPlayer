@@ -19,7 +19,7 @@ export const USER_SET_OPTIONS = [
     label: '设置',
     key: 'set',
   },
-]
+];
 
 export const SEARCH_TYPES = [
   {
@@ -62,4 +62,4 @@ export const SEARCH_TYPES = [
     label: '综合',
     key: 1018,
   },
-]
+];

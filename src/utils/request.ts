@@ -1,8 +1,9 @@
-import axios from "axios";
-let baseURL = import.meta.env.VITE_API + "";
+import axios from 'axios';
+
+const baseURL = `${import.meta.env.VITE_API}`;
 
 const request = axios.create({
-  baseURL: baseURL,
+  baseURL,
   timeout: 10000,
 });
 
@@ -11,12 +12,12 @@ request.interceptors.request.use(
   (config) => {
     // 在请求发送之前做一些处理
     // 在get请求params中添加timestamp
-    if (config.method === "get") {
+    if (config.method === 'get') {
       config.params = {
         ...config.params,
         timestamp: Date.now(),
       };
-      let token = localStorage.getItem("token");
+      const token = localStorage.getItem('token');
       if (token) {
         config.params.cookie = token;
       }
@@ -27,7 +28,7 @@ request.interceptors.request.use(
   (error) => {
     // 当请求异常时做一些处理
     return Promise.reject(error);
-  }
+  },
 );
 
 export default request;

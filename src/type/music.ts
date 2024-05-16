@@ -5,16 +5,16 @@ export interface IRecommendMusic {
 }
 
 export interface SongResult {
-  id: number
-  type: number
-  name: string
-  copywriter?: any
-  picUrl: string
-  canDislike: boolean
-  trackNumberUpdateTime?: any
-  song: Song
-  alg: string
-  count?: number
+  id: number;
+  type: number;
+  name: string;
+  copywriter?: any;
+  picUrl: string;
+  canDislike: boolean;
+  trackNumberUpdateTime?: any;
+  song: Song;
+  alg: string;
+  count?: number;
 }
 
 interface Song {

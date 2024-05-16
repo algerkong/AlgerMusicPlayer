@@ -5,7 +5,7 @@
         <div class="set-item-title">代理</div>
         <div class="set-item-content">无法听音乐时打开</div>
       </div>
-      <n-switch v-model:value="setData.isProxy"/>
+      <n-switch v-model:value="setData.isProxy" />
     </div>
     <div class="set-item">
       <div>
@@ -30,34 +30,35 @@
 </template>
 
 <script setup lang="ts">
-import store from '@/store'
 import { useRouter } from 'vue-router';
 
-const setData = ref(store.state.setData)
-const router = useRouter()
+import store from '@/store';
+
+const setData = ref(store.state.setData);
+const router = useRouter();
 
 const handelCancel = () => {
-  router.back()
-}
+  router.back();
+};
 
-const windowData = window as any
+const windowData = window as any;
 
 const handleSave = () => {
-  store.commit('setSetData', setData.value)
-  windowData.electronAPI.restart()
-}
+  store.commit('setSetData', setData.value);
+  windowData.electronAPI.restart();
+};
 </script>
 
 <style scoped lang="scss">
-.set-page{
+.set-page {
   @apply flex flex-col justify-center items-center pt-8;
 }
-.set-item{
+.set-item {
   @apply w-3/5  flex justify-between items-center mb-4;
-  .set-item-title{
+  .set-item-title {
     @apply text-gray-200 text-base;
   }
-  .set-item-content{
+  .set-item-content {
     @apply text-gray-400 text-sm;
   }
 }

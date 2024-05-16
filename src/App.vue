@@ -10,24 +10,23 @@
 </template>
 
 <script lang="ts" setup>
-import { darkTheme } from 'naive-ui'
-import store from '@/store'
+import { darkTheme } from 'naive-ui';
 
-const audio = ref<HTMLAudioElement | null>(null)
+import store from '@/store';
 
-const playMusicUrl = computed(() => store.state.playMusicUrl as string)
+const playMusicUrl = computed(() => store.state.playMusicUrl as string);
 // 是否播放
-const play = computed(() => store.state.play as boolean)
-const windowData = window as any
-onMounted(()=>{
-  if(windowData.electron){
+const play = computed(() => store.state.play as boolean);
+const windowData = window as any;
+onMounted(() => {
+  if (windowData.electron) {
     const setData = windowData.electron.ipcRenderer.getStoreValue('set');
-    store.commit('setSetData', setData)
+    store.commit('setSetData', setData);
   }
-})
+});
 </script>
 
-<style lang="scss" scoped >
+<style lang="scss" scoped>
 div {
   box-sizing: border-box;
 }

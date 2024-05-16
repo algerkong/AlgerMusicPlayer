@@ -5,10 +5,22 @@
     </div>
     <n-scrollbar :size="100">
       <div class="mv-list-content" :class="setAnimationClass('animate__bounceInLeft')">
-        <div class="mv-item" v-for="(item, index) in mvList" :key="item.id"
-          :class="setAnimationClass('animate__bounceIn')" :style="setAnimationDelay(index, 30)">
+        <div
+          v-for="(item, index) in mvList"
+          :key="item.id"
+          class="mv-item"
+          :class="setAnimationClass('animate__bounceIn')"
+          :style="setAnimationDelay(index, 30)"
+        >
           <div class="mv-item-img" @click="handleShowMv(item)">
-            <n-image class="mv-item-img-img" :src="getImgUrl((item.cover), '200y112')" lazy preview-disabled width="200" height="112" />
+            <n-image
+              class="mv-item-img-img"
+              :src="getImgUrl(item.cover, '200y112')"
+              lazy
+              preview-disabled
+              width="200"
+              height="112"
+            />
             <div class="top">
               <div class="play-count">{{ formatNumber(item.playCount) }}</div>
               <i class="iconfont icon-videofill"></i>
@@ -35,39 +47,39 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue';
-import { getTopMv, getMvUrl } from '@/api/mv';
-import { IMvItem } from '@/type/mv';
-import { setAnimationClass, setAnimationDelay, getImgUrl, formatNumber } from "@/utils";
 import { useStore } from 'vuex';
 
-const showMv = ref(false)
-const mvList = ref<Array<IMvItem>>([])
-const playMvItem = ref<IMvItem>()
-const playMvUrl = ref<string>()
-const store = useStore()
+import { getMvUrl, getTopMv } from '@/api/mv';
+import { IMvItem } from '@/type/mv';
+import { formatNumber, getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
+
+const showMv = ref(false);
+const mvList = ref<Array<IMvItem>>([]);
+const playMvItem = ref<IMvItem>();
+const playMvUrl = ref<string>();
+const store = useStore();
 
 onMounted(async () => {
-  const res = await getTopMv(30)
-  mvList.value = res.data.data
-  console.log('mvList.value', mvList.value)
-})
+  const res = await getTopMv(30);
+  mvList.value = res.data.data;
+  console.log('mvList.value', mvList.value);
+});
 
 const handleShowMv = async (item: IMvItem) => {
-  store.commit('setIsPlay', false)
-  store.commit('setPlayMusic', false)
-  showMv.value = true
-  const res = await getMvUrl(item.id)
+  store.commit('setIsPlay', false);
+  store.commit('setPlayMusic', false);
+  showMv.value = true;
+  const res = await getMvUrl(item.id);
   playMvItem.value = item;
-  playMvUrl.value = res.data.data.url
-}
+  playMvUrl.value = res.data.data.url;
+};
 
 const close = () => {
-  showMv.value = false
+  showMv.value = false;
   if (store.state.playMusicUrl) {
-    store.commit('setIsPlay', true)
+    store.commit('setIsPlay', true);
   }
-}
-
+};
 </script>
 
 <style scoped lang="scss">
@@ -157,4 +169,5 @@ const close = () => {
   .mv-detail-title:hover {
     @apply top-0;
   }
-}</style>
+}
+</style>

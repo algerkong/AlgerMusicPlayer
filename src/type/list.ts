@@ -7,42 +7,42 @@ export interface IList {
 }
 
 export interface Playlist {
-  name: string
-  id: number
-  trackNumberUpdateTime: number
-  status: number
-  userId: number
-  createTime: number
-  updateTime: number
-  subscribedCount: number
-  trackCount: number
-  cloudTrackCount: number
-  coverImgUrl: string
-  coverImgId: number
-  description: string
-  tags: string[]
-  playCount: number
-  trackUpdateTime: number
-  specialType: number
-  totalDuration: number
-  creator: Creator
-  tracks?: any
-  subscribers: Subscriber[]
-  subscribed: boolean
-  commentThreadId: string
-  newImported: boolean
-  adType: number
-  highQuality: boolean
-  privacy: number
-  ordered: boolean
-  anonimous: boolean
-  coverStatus: number
-  recommendInfo?: any
-  shareCount: number
-  coverImgId_str?: string
-  commentCount: number
-  copywriter: string
-  tag: string
+  name: string;
+  id: number;
+  trackNumberUpdateTime: number;
+  status: number;
+  userId: number;
+  createTime: number;
+  updateTime: number;
+  subscribedCount: number;
+  trackCount: number;
+  cloudTrackCount: number;
+  coverImgUrl: string;
+  coverImgId: number;
+  description: string;
+  tags: string[];
+  playCount: number;
+  trackUpdateTime: number;
+  specialType: number;
+  totalDuration: number;
+  creator: Creator;
+  tracks?: any;
+  subscribers: Subscriber[];
+  subscribed: boolean;
+  commentThreadId: string;
+  newImported: boolean;
+  adType: number;
+  highQuality: boolean;
+  privacy: number;
+  ordered: boolean;
+  anonimous: boolean;
+  coverStatus: number;
+  recommendInfo?: any;
+  shareCount: number;
+  coverImgId_str?: string;
+  commentCount: number;
+  copywriter: string;
+  tag: string;
 }
 
 interface Subscriber {
@@ -120,8 +120,8 @@ interface AvatarDetail {
 }
 
 interface Expert {
-  "2": string;
-  "1"?: string;
+  '2': string;
+  '1'?: string;
 }
 
 // 推荐歌单

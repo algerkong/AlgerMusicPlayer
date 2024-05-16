@@ -5,12 +5,16 @@
       <div class="music-title">{{ name }}</div>
       <!-- 歌单歌曲列表 -->
       <div class="music-list">
-        <n-scrollbar >
-          <div v-for="(item, index) in songList" :key="item.id" :class="setAnimationClass('animate__bounceInUp')"
-            :style="setAnimationDelay(index, 100)">
-            <SongItem :item="formatDetail(item)" @play="handlePlay" />
+        <n-scrollbar>
+          <div
+            v-for="(item, index) in songList"
+            :key="item.id"
+            :class="setAnimationClass('animate__bounceInUp')"
+            :style="setAnimationDelay(index, 100)"
+          >
+            <song-item :item="formatDetail(item)" @play="handlePlay" />
           </div>
-          <PlayBottom/>
+          <play-bottom />
         </n-scrollbar>
       </div>
     </div>
@@ -18,40 +22,42 @@
 </template>
 
 <script setup lang="ts">
-import { useStore } from 'vuex'
-import { setAnimationClass, setAnimationDelay } from "@/utils";
-import SongItem from "@/components/common/SongItem.vue";
+import { useStore } from 'vuex';
+
+import SongItem from '@/components/common/SongItem.vue';
+import { setAnimationClass, setAnimationDelay } from '@/utils';
+
 import PlayBottom from './common/PlayBottom.vue';
 
-const store = useStore()
+const store = useStore();
 
 const props = defineProps<{
   show: boolean;
   name: string;
-  songList: any[]
-}>()
-const emit = defineEmits(['update:show'])
+  songList: any[];
+}>();
+const emit = defineEmits(['update:show']);
 
 const formatDetail = computed(() => (detail: any) => {
-  let song = {
+  const song = {
     artists: detail.ar,
     name: detail.al.name,
     id: detail.al.id,
-  }
+  };
 
-  detail.song = song
-  detail.picUrl = detail.al.picUrl
-  return detail
-})
+  detail.song = song;
+  detail.picUrl = detail.al.picUrl;
+  return detail;
+});
 
-const handlePlay = (item: any) => {
-  const tracks = props.songList || []
-  store.commit('setPlayList', tracks)
-}
+const handlePlay = () => {
+  const tracks = props.songList || [];
+  store.commit('setPlayList', tracks);
+};
 
 const close = () => {
-  emit('update:show', false)
-}
+  emit('update:show', false);
+};
 </script>
 
 <style scoped lang="scss">

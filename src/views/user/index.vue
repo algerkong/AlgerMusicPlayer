@@ -1,89 +1,87 @@
 <script lang="ts" setup>
-import { useStore } from "vuex";
-import { useRouter } from "vue-router";
-import { getUserDetail, getUserPlaylist, getUserRecord } from "@/api/user";
-import type { IUserDetail } from "@/type/user";
-import { computed, ref } from "vue";
-import { setAnimationClass, setAnimationDelay, getImgUrl } from "@/utils";
-import { getListDetail } from '@/api/list'
-import SongItem from "@/components/common/SongItem.vue";
-import MusicList from "@/components/MusicList.vue";
+import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useStore } from 'vuex';
+
+import { getListDetail } from '@/api/list';
+import { getUserDetail, getUserPlaylist, getUserRecord } from '@/api/user';
+import PlayBottom from '@/components/common/PlayBottom.vue';
+import SongItem from '@/components/common/SongItem.vue';
+import MusicList from '@/components/MusicList.vue';
 import type { Playlist } from '@/type/listDetail';
-import PlayBottom from "@/components/common/PlayBottom.vue";
+import type { IUserDetail } from '@/type/user';
+import { getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
 
-
-const store = useStore()
-const router = useRouter()
-const userDetail = ref<IUserDetail>()
-const playList = ref<any[]>([])
-const recordList = ref()
-let user = store.state.user
+const store = useStore();
+const router = useRouter();
+const userDetail = ref<IUserDetail>();
+const playList = ref<any[]>([]);
+const recordList = ref();
+let { user } = store.state;
 
 const loadPage = async () => {
   if (!user) {
-    router.push("/login")
-    return
+    router.push('/login');
+    return;
   }
 
-  const { data: userData } = await getUserDetail(user.userId)
-  userDetail.value = userData
+  const { data: userData } = await getUserDetail(user.userId);
+  userDetail.value = userData;
 
-  const { data: playlistData } = await getUserPlaylist(user.userId)
-  playList.value = playlistData.playlist
+  const { data: playlistData } = await getUserPlaylist(user.userId);
+  playList.value = playlistData.playlist;
 
-  const { data: recordData } = await getUserRecord(user.userId)
-  recordList.value = recordData.allData
-}
+  const { data: recordData } = await getUserRecord(user.userId);
+  recordList.value = recordData.allData;
+};
 
 watchEffect(() => {
-    const localUser = localStorage.getItem('user')
-    store.state.user = localUser ? JSON.parse(localUser) : null
-    user = store.state.user
-    loadPage()
-})
+  const localUser = localStorage.getItem('user');
+  store.state.user = localUser ? JSON.parse(localUser) : null;
+  user = store.state.user;
+  loadPage();
+});
 
-
-const isShowList = ref(false)
-const list = ref<Playlist>()
+const isShowList = ref(false);
+const list = ref<Playlist>();
 // 展示歌单
 const showPlaylist = async (id: number) => {
-  const { data } = await getListDetail(id)
-  isShowList.value = true
-  list.value = data.playlist
-}
+  const { data } = await getListDetail(id);
+  isShowList.value = true;
+  list.value = data.playlist;
+};
 
 // 格式化歌曲列表项
 const formatDetail = computed(() => (detail: any) => {
-  let song = {
+  const song = {
     artists: detail.ar,
     name: detail.al.name,
     id: detail.al.id,
-  }
+  };
 
-  detail.song = song
-  detail.picUrl = detail.al.picUrl
-  return detail
-})
+  detail.song = song;
+  detail.picUrl = detail.al.picUrl;
+  return detail;
+});
 
-const handlePlay = (item: any) => {
-  const tracks = recordList.value || []
-  store.commit('setPlayList', tracks)
-}
-
+const handlePlay = () => {
+  const tracks = recordList.value || [];
+  store.commit('setPlayList', tracks);
+};
 </script>
 
 <template>
   <div class="user-page" @click.stop="isShowList = false">
     <div
-      class="left"
       v-if="userDetail"
+      class="left"
       :class="setAnimationClass('animate__fadeInLeft')"
       :style="{ backgroundImage: `url(${getImgUrl(user.backgroundUrl)})` }"
     >
       <div class="page">
         <div class="user-name">{{ user.nickname }}</div>
         <div class="user-info">
-          <n-avatar round :size="50" :src="getImgUrl(user.avatarUrl,'50y50')" />
+          <n-avatar round :size="50" :src="getImgUrl(user.avatarUrl, '50y50')" />
           <div class="user-info-list">
             <div class="user-info-item">
               <div class="label">{{ userDetail.profile.followeds }}</div>
@@ -104,24 +102,14 @@ const handlePlay = (item: any) => {
         <div class="play-list" :class="setAnimationClass('animate__fadeInLeft')">
           <div class="play-list-title">创建的歌单</div>
           <n-scrollbar>
-            <div
-              class="play-list-item"
-              v-for="(item,index) in playList"
-              :key="index"
-              @click="showPlaylist(item.id)"
-            >
-              <n-image
-                :src="getImgUrl( item.coverImgUrl, '50y50')"
-                class="play-list-item-img"
-                lazy
-                preview-disabled
-              />
+            <div v-for="(item, index) in playList" :key="index" class="play-list-item" @click="showPlaylist(item.id)">
+              <n-image :src="getImgUrl(item.coverImgUrl, '50y50')" class="play-list-item-img" lazy preview-disabled />
               <div class="play-list-item-info">
                 <div class="play-list-item-name">{{ item.name }}</div>
                 <div class="play-list-item-count">{{ item.trackCount }}首，播放{{ item.playCount }}次</div>
               </div>
             </div>
-            <PlayBottom/>
+            <play-bottom />
           </n-scrollbar>
         </div>
       </div>
@@ -131,20 +119,20 @@ const handlePlay = (item: any) => {
       <div class="record-list">
         <n-scrollbar>
           <div
-            class="record-item"
             v-for="(item, index) in recordList"
             :key="item.song.id"
+            class="record-item"
             :class="setAnimationClass('animate__bounceInUp')"
             :style="setAnimationDelay(index, 50)"
           >
-            <SongItem class="song-item" :item="formatDetail(item.song)" @play="handlePlay"/>
+            <song-item class="song-item" :item="formatDetail(item.song)" @play="handlePlay" />
             <div class="play-count">{{ item.playCount }}次</div>
           </div>
-          <PlayBottom/>
+          <play-bottom />
         </n-scrollbar>
       </div>
     </div>
-    <MusicList v-if="list" v-model:show="isShowList" :name="list.name" :song-list="list.tracks" />
+    <music-list v-if="list" v-model:show="isShowList" :name="list.name" :song-list="list.tracks" />
   </div>
 </template>
 
@@ -222,5 +210,4 @@ const handlePlay = (item: any) => {
     }
   }
 }
-
 </style>

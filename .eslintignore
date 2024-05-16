@@ -1,0 +1,13 @@
+snapshot*
+dist
+lib
+es
+esm
+node_modules
+static
+cypress
+script/test/cypress
+_site
+temp*
+static/
+!.prettierrc.js

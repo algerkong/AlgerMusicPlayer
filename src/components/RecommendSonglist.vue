@@ -1,19 +1,10 @@
 <template>
   <div class="recommend-music">
-    <div class="title" :class="setAnimationClass('animate__fadeInLeft')">
-      本周最热音乐
-    </div>
-    <div
-      class="recommend-music-list"
-      :class="setAnimationClass('animate__bounceInUp')"
-      v-show="recommendMusic?.result"
-    >
+    <div class="title" :class="setAnimationClass('animate__fadeInLeft')">本周最热音乐</div>
+    <div v-show="recommendMusic?.result" class="recommend-music-list" :class="setAnimationClass('animate__bounceInUp')">
       <!-- 推荐音乐列表 -->
       <template v-for="(item, index) in recommendMusic?.result" :key="item.id">
-        <div
-          :class="setAnimationClass('animate__bounceInUp')"
-          :style="setAnimationDelay(index, 100)"
-        >
+        <div :class="setAnimationClass('animate__bounceInUp')" :style="setAnimationDelay(index, 100)">
           <song-item :item="item" @play="handlePlay" />
         </div>
       </template>
@@ -22,30 +13,32 @@
 </template>
 
 <script lang="ts" setup>
-import { getRecommendMusic } from '@/api/home'
-import type { IRecommendMusic } from '@/type/music'
-import { setAnimationClass, setAnimationDelay } from '@/utils'
-import SongItem from './common/SongItem.vue'
-import { useStore } from 'vuex'
+import { useStore } from 'vuex';
+
+import { getRecommendMusic } from '@/api/home';
+import type { IRecommendMusic } from '@/type/music';
+import { setAnimationClass, setAnimationDelay } from '@/utils';
+
+import SongItem from './common/SongItem.vue';
 
 const store = useStore();
 // 推荐歌曲
-const recommendMusic = ref<IRecommendMusic>()
+const recommendMusic = ref<IRecommendMusic>();
 
 // 加载推荐歌曲
 const loadRecommendMusic = async () => {
-  const { data } = await getRecommendMusic({ limit: 10 })
-  recommendMusic.value = data
-}
+  const { data } = await getRecommendMusic({ limit: 10 });
+  recommendMusic.value = data;
+};
 
 // 页面初始化
 onMounted(() => {
-  loadRecommendMusic()
-})
+  loadRecommendMusic();
+});
 
-const handlePlay = (item: any) => {
-  store.commit('setPlayList', recommendMusic.value?.result)
-}
+const handlePlay = () => {
+  store.commit('setPlayList', recommendMusic.value?.result);
+};
 </script>
 
 <style lang="scss" scoped>

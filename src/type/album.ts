@@ -4,30 +4,30 @@ export interface IAlbumNew {
 }
 
 export interface Album {
-  name: string
-  id: number
-  type: string
-  size: number
-  picId: number
-  blurPicUrl: string
-  companyId: number
-  pic: number
-  picUrl: string
-  publishTime: number
-  description: string
-  tags: string
-  company: string
-  briefDesc: string
-  artist: Artist
-  songs?: any
-  alias: string[]
-  status: number
-  copyrightId: number
-  commentThreadId: string
-  artists: Artist2[]
-  paid: boolean
-  onSale: boolean
-  picId_str: string
+  name: string;
+  id: number;
+  type: string;
+  size: number;
+  picId: number;
+  blurPicUrl: string;
+  companyId: number;
+  pic: number;
+  picUrl: string;
+  publishTime: number;
+  description: string;
+  tags: string;
+  company: string;
+  briefDesc: string;
+  artist: Artist;
+  songs?: any;
+  alias: string[];
+  status: number;
+  copyrightId: number;
+  commentThreadId: string;
+  artists: Artist2[];
+  paid: boolean;
+  onSale: boolean;
+  picId_str: string;
 }
 
 interface Artist2 {

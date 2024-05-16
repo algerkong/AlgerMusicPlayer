@@ -1,6 +1,6 @@
-import { IData } from '@/type'
-import { IMvItem, IMvUrlData } from '@/type/mv'
-import request from '@/utils/request'
+import { IData } from '@/type';
+import { IMvItem, IMvUrlData } from '@/type/mv';
+import request from '@/utils/request';
 
 // 获取 mv 排行
 export const getTopMv = (limit: number) => {
@@ -8,8 +8,8 @@ export const getTopMv = (limit: number) => {
     params: {
       limit,
     },
-  })
-}
+  });
+};
 
 // 获取 mv 数据
 export const getMvDetail = (mvid: string) => {
@@ -17,8 +17,8 @@ export const getMvDetail = (mvid: string) => {
     params: {
       mvid,
     },
-  })
-}
+  });
+};
 
 // 获取 mv 地址
 export const getMvUrl = (id: Number) => {
@@ -26,5 +26,5 @@ export const getMvUrl = (id: Number) => {
     params: {
       id,
     },
-  })
-}
+  });
+};

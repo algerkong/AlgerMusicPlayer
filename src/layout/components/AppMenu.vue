@@ -8,13 +8,9 @@
         </div>
       </div>
       <div class="app-menu-list">
-        <div class="app-menu-item" v-for="(item,index) in menus">
+        <div v-for="(item, index) in menus" :key="item.path" class="app-menu-item">
           <router-link class="app-menu-item-link" :to="item.path">
-            <i
-              class="iconfont app-menu-item-icon"
-              :style="iconStyle(index)"
-              :class="item.meta.icon"
-            ></i>
+            <i class="iconfont app-menu-item-icon" :style="iconStyle(index)" :class="item.meta.icon"></i>
             <span v-if="isText" class="app-menu-item-text ml-3">{{ item.meta.title }}</span>
           </router-link>
         </div>
@@ -24,44 +20,47 @@
 </template>
 
 <script lang="ts" setup>
-import { useRoute } from "vue-router";
+import { useRoute } from 'vue-router';
+
 const props = defineProps({
   isText: {
     type: Boolean,
-    default: false
+    default: false,
   },
   size: {
     type: String,
-    default: '26px'
+    default: '26px',
   },
   color: {
     type: String,
-    default: '#aaa'
+    default: '#aaa',
   },
   selectColor: {
     type: String,
-    default: '#10B981'
+    default: '#10B981',
   },
   menus: {
     type: Array as any,
-    default: []
-  }
-})
+    default: () => [],
+  },
+});
 
 const route = useRoute();
 const path = ref(route.path);
-watch(() => route.path, async newParams => {
-  path.value = newParams
-})
+watch(
+  () => route.path,
+  async (newParams) => {
+    path.value = newParams;
+  },
+);
 
 const iconStyle = (index: any) => {
-  let style = {
+  const style = {
     fontSize: props.size,
-    color: path.value === props.menus[index].path ? props.selectColor : props.color
-  }
-  return style
-}
-
+    color: path.value === props.menus[index].path ? props.selectColor : props.color,
+  };
+  return style;
+};
 </script>
 
 <style lang="scss" scoped>

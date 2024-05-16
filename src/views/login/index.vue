@@ -1,79 +1,74 @@
 <script lang="ts" setup>
-import { getQrKey, createQr, checkQr, getLoginStatus } from '@/api/login'
-import { onMounted } from '@vue/runtime-core';
-import { getUserDetail, loginByCellphone } from '@/api/login';
-import { useStore } from 'vuex';
-import { useMessage } from 'naive-ui'
-import { setAnimationClass, setAnimationDelay } from "@/utils";
+import { useMessage } from 'naive-ui';
+import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { useStore } from 'vuex';
 
+import { checkQr, createQr, getLoginStatus, getQrKey, getUserDetail, loginByCellphone } from '@/api/login';
+import { setAnimationClass } from '@/utils';
 
-const message = useMessage()
+const message = useMessage();
 const store = useStore();
-const router = useRouter()
+const router = useRouter();
 
-const qrUrl = ref<string>()
+const qrUrl = ref<string>();
 onMounted(() => {
-  loadLogin()
-})
+  loadLogin();
+});
 
 const loadLogin = async () => {
-  const qrKey = await getQrKey()
-  const key = qrKey.data.data.unikey
-  const { data } = await createQr(key)
-  qrUrl.value = data.data.qrimg
-  timerIsQr(key)
-}
-
-
+  const qrKey = await getQrKey();
+  const key = qrKey.data.data.unikey;
+  const { data } = await createQr(key);
+  qrUrl.value = data.data.qrimg;
+  timerIsQr(key);
+};
 
 const timerIsQr = (key: string) => {
   const timer = setInterval(async () => {
-    const { data } = await checkQr(key)
+    const { data } = await checkQr(key);
 
     if (data.code === 800) {
-      clearInterval(timer)
+      clearInterval(timer);
     }
     if (data.code === 803) {
       // 将token存入localStorage
-      localStorage.setItem('token', data.cookie)
-      const user = await getUserDetail()
-      store.state.user = user.data.profile
-      message.success('登录成功')
+      localStorage.setItem('token', data.cookie);
+      const user = await getUserDetail();
+      store.state.user = user.data.profile;
+      message.success('登录成功');
 
-      await getLoginStatus().then(res => {
+      await getLoginStatus().then((res) => {
         console.log(res);
-      })
-      clearInterval(timer)
+      });
+      clearInterval(timer);
       setTimeout(() => {
-        router.push('/user')
+        router.push('/user');
       }, 1000);
     }
   }, 5000);
-}
-
+};
 
 // 是否扫码登陆
-const isQr = ref(true)
+const isQr = ref(true);
 const chooseQr = () => {
-  isQr.value = !isQr.value
-}
+  isQr.value = !isQr.value;
+};
 
 // 手机号登录
-const phone = ref('')
-const password = ref('')
+const phone = ref('');
+const password = ref('');
 const loginPhone = async () => {
-  const { data } = await loginByCellphone(phone.value, password.value)
+  const { data } = await loginByCellphone(phone.value, password.value);
   if (data.code === 200) {
-    message.success('登录成功')
-    store.state.user = data.profile
-    localStorage.setItem('token', data.cookie)
+    message.success('登录成功');
+    store.state.user = data.profile;
+    localStorage.setItem('token', data.cookie);
     setTimeout(() => {
-      router.push('/user')
+      router.push('/user');
     }, 1000);
   }
-}
-
+};
 </script>
 
 <template>
@@ -81,12 +76,12 @@ const loginPhone = async () => {
     <div class="phone-login">
       <div class="bg"></div>
       <div class="content">
-        <div class="phone" v-if="isQr" :class="setAnimationClass('animate__fadeInUp')">
+        <div v-if="isQr" class="phone" :class="setAnimationClass('animate__fadeInUp')">
           <div class="login-title">扫码登陆</div>
           <img class="qr-img" :src="qrUrl" />
           <div class="text">使用网易云APP扫码登录</div>
         </div>
-        <div class="phone" v-else :class="setAnimationClass('animate__fadeInUp')">
+        <div v-else class="phone" :class="setAnimationClass('animate__fadeInUp')">
           <div class="login-title">手机号登录</div>
           <div class="phone-page">
             <input v-model="phone" class="phone-input" type="text" placeholder="手机号" />

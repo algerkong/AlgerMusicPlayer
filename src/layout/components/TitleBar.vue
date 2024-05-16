@@ -5,9 +5,6 @@
       <button @click="minimize">
         <i class="iconfont icon-minisize"></i>
       </button>
-      <!-- <button @click="maximize">
-        <i class="iconfont icon-maxsize"></i>
-      </button> -->
       <button @click="close">
         <i class="iconfont icon-close"></i>
       </button>
@@ -16,18 +13,14 @@
 </template>
 
 <script setup lang="ts">
-import { useDialog } from 'naive-ui'
+import { useDialog } from 'naive-ui';
 
-const dialog = useDialog()
-const windowData = window as any
+const dialog = useDialog();
+const windowData = window as any;
 
 const minimize = () => {
-  windowData.electronAPI.minimize()
-}
-
-const maximize = () => {
-  windowData.electronAPI.maximize()
-}
+  windowData.electronAPI.minimize();
+};
 
 const close = () => {
   dialog.warning({
@@ -36,17 +29,17 @@ const close = () => {
     positiveText: '最小化',
     negativeText: '关闭',
     onPositiveClick: () => {
-      windowData.electronAPI.miniTray()
+      windowData.electronAPI.miniTray();
     },
     onNegativeClick: () => {
-      windowData.electronAPI.close()
-    }
-  })
-}
+      windowData.electronAPI.close();
+    },
+  });
+};
 
 const drag = (event: MouseEvent) => {
-  windowData.electronAPI.dragStart(event)
-}
+  windowData.electronAPI.dragStart(event);
+};
 </script>
 
 <style scoped lang="scss">

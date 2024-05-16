@@ -1,7 +1,8 @@
-import axios from "axios";
-let baseURL = import.meta.env.VITE_API_MT + "";
+import axios from 'axios';
+
+const baseURL = `${import.meta.env.VITE_API_MT}`;
 const request = axios.create({
-  baseURL: baseURL,
+  baseURL,
   timeout: 10000,
 });
 
@@ -13,7 +14,7 @@ request.interceptors.request.use(
   (error) => {
     // 当请求异常时做一些处理
     return Promise.reject(error);
-  }
+  },
 );
 
 export default request;

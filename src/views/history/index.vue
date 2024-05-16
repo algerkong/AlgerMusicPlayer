@@ -1,10 +1,16 @@
 <template>
   <div class="history-page">
     <div class="title">播放历史</div>
+    <n-button @click="openLyric">打开歌词</n-button>
     <n-scrollbar :size="100">
       <div class="history-list-content" :class="setAnimationClass('animate__bounceInLeft')">
-        <div class="history-item" v-for="(item, index) in musicList" :key="item.id"
-          :class="setAnimationClass('animate__bounceIn')" :style="setAnimationDelay(index, 30)">
+        <div
+          v-for="(item, index) in musicList"
+          :key="item.id"
+          class="history-item"
+          :class="setAnimationClass('animate__bounceIn')"
+          :style="setAnimationDelay(index, 30)"
+        >
           <song-item class="history-item-content" :item="item" />
           <div class="history-item-count">
             {{ item.count }}
@@ -19,30 +25,30 @@
 </template>
 
 <script setup lang="ts">
-import { useMusicHistory } from '@/hooks/MusicHistoryHook'
-import { setAnimationClass, setAnimationDelay } from "@/utils";
+import { useMusicHistory } from '@/hooks/MusicHistoryHook';
+import { setAnimationClass, setAnimationDelay } from '@/utils';
 
-const {delMusic, musicList} = useMusicHistory();
+const { delMusic, musicList } = useMusicHistory();
 </script>
 
 <style scoped lang="scss">
-.history-page{
+.history-page {
   @apply h-full w-full pt-2;
-  .title{
+  .title {
     @apply text-xl font-bold;
   }
 
-  .history-list-content{
+  .history-list-content {
     @apply px-4 mt-2;
-    .history-item{
+    .history-item {
       @apply flex items-center justify-between;
-      &-content{
+      &-content {
         @apply flex-1;
       }
-      &-count{
+      &-count {
         @apply px-4 text-lg;
       }
-      &-delete{
+      &-delete {
         @apply cursor-pointer rounded-full border-2 border-gray-400 w-8 h-8 flex justify-center items-center;
       }
     }

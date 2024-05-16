@@ -1,75 +1,66 @@
 <script lang="ts" setup>
-import { getRecommendList, getListDetail, getListByCat } from '@/api/list'
-import type { IRecommendItem } from "@/type/list";
-import type { IListDetail } from "@/type/listDetail";
-import { setAnimationClass, setAnimationDelay, getImgUrl, formatNumber } from "@/utils";
 import { useRoute } from 'vue-router';
-import MusicList from "@/components/MusicList.vue";
+
+import { getListByCat, getListDetail, getRecommendList } from '@/api/list';
 import PlayBottom from '@/components/common/PlayBottom.vue';
+import MusicList from '@/components/MusicList.vue';
+import type { IRecommendItem } from '@/type/list';
+import type { IListDetail } from '@/type/listDetail';
+import { formatNumber, getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
 
-const recommendList = ref()
-const showMusic = ref(false)
+const recommendList = ref();
+const showMusic = ref(false);
 
-const recommendItem = ref<IRecommendItem>()
-const listDetail = ref<IListDetail>()
+const recommendItem = ref<IRecommendItem>();
+const listDetail = ref<IListDetail>();
 const selectRecommendItem = async (item: IRecommendItem) => {
-  showMusic.value = true
-  const { data } = await getListDetail(item.id)
-  recommendItem.value = item
-  listDetail.value = data
-}
+  showMusic.value = true;
+  const { data } = await getListDetail(item.id);
+  recommendItem.value = item;
+  listDetail.value = data;
+};
 
 const route = useRoute();
-const listTitle = ref(route.query.type || "歌单列表");
+const listTitle = ref(route.query.type || '歌单列表');
 
 const loadList = async (type: any) => {
   const params = {
     cat: type || '',
     limit: 30,
-    offset: 0
-  }
+    offset: 0,
+  };
   const { data } = await getListByCat(params);
-  recommendList.value = data.playlists
-}
+  recommendList.value = data.playlists;
+};
 
 if (route.query.type) {
-  loadList(route.query.type)
+  loadList(route.query.type);
 } else {
-  getRecommendList().then((res: { data: { result: any; }; }) => {
-    recommendList.value = res.data.result
-  })
+  getRecommendList().then((res: { data: { result: any } }) => {
+    recommendList.value = res.data.result;
+  });
 }
 
 watch(
   () => route.query,
-  async newParams => {
-    if(newParams.type){
-      const params = {
-        tag: newParams.type || '',
-        limit: 30,
-        before: 0
-      }
+  async (newParams) => {
+    if (newParams.type) {
       loadList(newParams.type);
     }
-  }
-)
-
-
-
+  },
+);
 </script>
 
 <template>
   <div class="list-page">
-    <div
-        class="recommend-title"
-        :class="setAnimationClass('animate__bounceInLeft')"
-      >{{ listTitle }}</div>
+    <div class="recommend-title" :class="setAnimationClass('animate__bounceInLeft')">{{ listTitle }}</div>
     <!-- 歌单列表 -->
-    <n-scrollbar class="recommend" @click="showMusic = false" :size="100">
-      <div class="recommend-list" v-if="recommendList">
+    <n-scrollbar class="recommend" :size="100" @click="showMusic = false">
+      <div v-if="recommendList" class="recommend-list">
         <div
+          v-for="(item, index) in recommendList"
+          :key="item.id"
           class="recommend-item"
-          v-for="(item,index) in recommendList"
           :class="setAnimationClass('animate__bounceIn')"
           :style="setAnimationDelay(index, 30)"
           @click.stop="selectRecommendItem(item)"
@@ -77,7 +68,7 @@ watch(
           <div class="recommend-item-img">
             <n-image
               class="recommend-item-img-img"
-              :src="getImgUrl( (item.picUrl || item.coverImgUrl), '200y200')"
+              :src="getImgUrl(item.picUrl || item.coverImgUrl, '200y200')"
               width="200"
               height="200"
               lazy
@@ -91,9 +82,14 @@ watch(
           <div class="recommend-item-title">{{ item.name }}</div>
         </div>
       </div>
-      <PlayBottom/>
+      <play-bottom />
     </n-scrollbar>
-    <MusicList v-if="listDetail?.playlist" v-model:show="showMusic" :name="listDetail?.playlist.name" :song-list="listDetail?.playlist.tracks" />
+    <music-list
+      v-if="listDetail?.playlist"
+      v-model:show="showMusic"
+      :name="listDetail?.playlist.name"
+      :song-list="listDetail?.playlist.tracks"
+    />
   </div>
 </template>
 
@@ -150,5 +146,4 @@ watch(
     }
   }
 }
-
 </style>

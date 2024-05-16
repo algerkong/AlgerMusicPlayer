@@ -1,33 +1,25 @@
 <template>
-  <n-drawer
-    :show="musicFull"
-    height="100vh"
-    placement="bottom"
-    :drawer-style="{ backgroundColor: 'transparent' }"
-  >
+  <n-drawer :show="musicFull" height="100vh" placement="bottom" :drawer-style="{ backgroundColor: 'transparent' }">
     <div id="drawer-target">
-      <div class="drawer-back" :class="{'paused': !isPlaying}" :style="{backgroundImage:`url(${getImgUrl(playMusic?.picUrl, '300y300')})`}"></div>
+      <div
+        class="drawer-back"
+        :class="{ paused: !isPlaying }"
+        :style="{ backgroundImage: `url(${getImgUrl(playMusic?.picUrl, '300y300')})` }"
+      ></div>
       <div class="music-img">
-        <n-image
-          ref="PicImgRef"
-          :src="getImgUrl(playMusic?.picUrl, '300y300')"
-          class="img"
-          lazy
-          preview-disabled
-        />
+        <n-image ref="PicImgRef" :src="getImgUrl(playMusic?.picUrl, '300y300')" class="img" lazy preview-disabled />
       </div>
       <div class="music-content">
         <div class="music-content-name">{{ playMusic.song.name }}</div>
         <div class="music-content-singer">
           <span v-for="(item, index) in playMusic.song.artists" :key="index">
-            {{ item.name
-            }}{{ index < playMusic.song.artists.length - 1 ? ' / ' : '' }}
+            {{ item.name }}{{ index < playMusic.song.artists.length - 1 ? ' / ' : '' }}
           </span>
         </div>
         <n-layout
+          ref="lrcSider"
           class="music-lrc"
           style="height: 55vh"
-          ref="lrcSider"
           :native-scrollbar="false"
           @mouseover="mouseOverLayout"
           @mouseleave="mouseLeaveLayout"
@@ -38,7 +30,8 @@
               :class="{ 'now-text': isCurrentLrc(index, nowTime) }"
               @click="setAudioTime(index, audio)"
             >
-              {{ item.text }}
+              <div>{{ item.text }}</div>
+              <div class="music-lrc-text-tr">{{ item.trText }}</div>
             </div>
           </template>
         </n-layout>
@@ -53,20 +46,21 @@
 </template>
 
 <script setup lang="ts">
-import type { SongResult } from '@/type/music'
-import { getImgUrl } from '@/utils'
-import { useStore } from 'vuex'
+import { useStore } from 'vuex';
+
 import {
+  addCorrectionTime,
+  isCurrentLrc,
   lrcArray,
   newLrcIndex,
-  isCurrentLrc,
-  addCorrectionTime,
+  nowTime,
   reduceCorrectionTime,
   setAudioTime,
-  nowTime,
-} from '@/hooks/MusicHook'
+} from '@/hooks/MusicHook';
+import type { SongResult } from '@/type/music';
+import { getImgUrl } from '@/utils';
 
-const store = useStore()
+const store = useStore();
 
 const props = defineProps({
   musicFull: {
@@ -77,39 +71,36 @@ const props = defineProps({
     type: HTMLAudioElement,
     default: null,
   },
-})
-
-const emit = defineEmits(['update:musicFull'])
+});
 
 // 播放的音乐信息
-const playMusic = computed(() => store.state.playMusic as SongResult)
-const isPlaying = computed(() => store.state.play as boolean)
+const playMusic = computed(() => store.state.playMusic as SongResult);
+const isPlaying = computed(() => store.state.play as boolean);
 // 获取歌词滚动dom
-const lrcSider = ref<any>(null)
-const isMouse = ref(false)
+const lrcSider = ref<any>(null);
+const isMouse = ref(false);
 // 歌词滚动方法
 const lrcScroll = () => {
   if (props.musicFull && !isMouse.value) {
-    let top = newLrcIndex.value * 50 - 225
-    lrcSider.value.scrollTo({ top: top, behavior: 'smooth' })
+    const top = newLrcIndex.value * 60 - 225;
+    lrcSider.value.scrollTo({ top, behavior: 'smooth' });
   }
-}
+};
 const mouseOverLayout = () => {
-  isMouse.value = true
-}
+  isMouse.value = true;
+};
 const mouseLeaveLayout = () => {
   setTimeout(() => {
-    isMouse.value = false
-  }, 3000)
-}
+    isMouse.value = false;
+  }, 3000);
+};
 
 defineExpose({
   lrcScroll,
-})
+});
 </script>
 
 <style scoped lang="scss">
-
 @keyframes round {
   0% {
     transform: rotate(0deg);
@@ -118,7 +109,7 @@ defineExpose({
     transform: rotate(360deg);
   }
 }
-.drawer-back{
+.drawer-back {
   @apply absolute bg-cover bg-center opacity-70;
   filter: blur(80px) brightness(80%);
   z-index: -1;
@@ -161,28 +152,30 @@ defineExpose({
     }
   }
 
-  .music-content-time{
+  .music-content-time {
     display: none;
-      @apply flex justify-center items-center;
+    @apply flex justify-center items-center;
   }
 
   .music-lrc {
     background-color: inherit;
     width: 500px;
     height: 550px;
-
+    .now-text {
+      @apply text-red-500;
+    }
     &-text {
-      @apply text-white text-lg flex justify-center items-center cursor-pointer;
-      height: 50px;
+      @apply text-white text-lg flex flex-col justify-center items-center cursor-pointer font-bold;
+      height: 60px;
       transition: all 0.2s ease-out;
 
       &:hover {
-        @apply font-bold text-xl text-red-500;
+        @apply font-bold text-red-500;
       }
-    }
 
-    .now-text {
-      @apply font-bold text-xl text-red-500;
+      &-tr {
+        @apply text-sm  font-normal;
+      }
     }
   }
 }
