@@ -1,7 +1,6 @@
 <template>
   <div class="history-page">
     <div class="title">播放历史</div>
-    <n-button @click="openLyric">打开歌词</n-button>
     <n-scrollbar :size="100">
       <div class="history-list-content" :class="setAnimationClass('animate__bounceInLeft')">
         <div
