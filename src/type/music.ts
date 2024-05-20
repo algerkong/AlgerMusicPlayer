@@ -15,6 +15,7 @@ export interface SongResult {
   song: Song;
   alg: string;
   count?: number;
+  playLoading?: boolean;
 }
 
 interface Song {

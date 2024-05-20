@@ -39,6 +39,7 @@ function createWindow() {
       label: '退出',
       click: () => {
         win.destroy();
+        app.quit();
       },
     },
   ]);

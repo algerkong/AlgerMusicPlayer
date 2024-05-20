@@ -16,6 +16,7 @@ interface State {
   playList: SongResult[];
   playListIndex: number;
   setData: any;
+  lyric: any;
 }
 
 const state: State = {
@@ -28,6 +29,7 @@ const state: State = {
   playList: [],
   playListIndex: 0,
   setData: null,
+  lyric: {},
 };
 
 const windowData = window as any;
@@ -39,10 +41,11 @@ const mutations = {
     state.menus = menus;
   },
   async setPlay(state: State, playMusic: SongResult) {
-    state.playMusic = playMusic;
+    state.playMusic = { ...playMusic, playLoading: true };
     state.playMusicUrl = await getSongUrl(playMusic.id);
     state.play = true;
     musicHistory.addMusic(playMusic);
+    state.playMusic.playLoading = false;
   },
   setIsPlay(state: State, isPlay: boolean) {
     state.isPlay = isPlay;

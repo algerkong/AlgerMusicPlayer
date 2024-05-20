@@ -133,7 +133,7 @@ export const getLrcTimeRange = (index: any) => {
   return { currentTime, nextTime };
 };
 
-export const sendLyricToWin = (isPlay: boolean) => {
+export const sendLyricToWin = (isPlay: boolean = true) => {
   try {
     // 设置lyricWinData 获取 当前播放的两句歌词 和歌词时间
     let lyricWinData = null;
@@ -166,4 +166,5 @@ export const sendLyricToWin = (isPlay: boolean) => {
 export const openLyric = () => {
   const windowData = window as any;
   windowData.electronAPI.openLyric();
+  sendLyricToWin();
 };

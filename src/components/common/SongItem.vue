@@ -18,8 +18,8 @@
         <i class="iconfont icon-likefill"></i>
       </div>
       <div
-        class="song-item-operating-play bg-black"
-        :class="isPlaying ? 'bg-green-600' : ''"
+        class="song-item-operating-play bg-black animate__animated"
+        :class="{ 'bg-green-600': isPlaying, animate__flipInY: playLoading }"
         @click="playMusicEvent(item)"
       >
         <i v-if="isPlaying && play" class="iconfont icon-stop"></i>
@@ -51,6 +51,8 @@ const play = computed(() => store.state.play as boolean);
 
 const playMusic = computed(() => store.state.playMusic);
 
+const playLoading = computed(() => playMusic.value.id === props.item.id && playMusic.value.playLoading);
+
 // 判断是否为正在播放的音乐
 const isPlaying = computed(() => {
   return playMusic.value.id === props.item.id;
@@ -59,8 +61,11 @@ const isPlaying = computed(() => {
 const emits = defineEmits(['play']);
 
 // 播放音乐 设置音乐详情 打开音乐底栏
-const playMusicEvent = (item: any) => {
-  store.commit('setPlay', item);
+const playMusicEvent = async (item: any) => {
+  if (playMusic.value.id === item.id) {
+    return;
+  }
+  await store.commit('setPlay', item);
   store.commit('setIsPlay', true);
   emits('play', item);
 };
@@ -105,6 +110,7 @@ const playMusicEvent = (item: any) => {
     }
     &-play {
       @apply cursor-pointer border border-gray-500 rounded-full w-10 h-10 flex justify-center items-center hover:bg-green-600 transition;
+      animation-iteration-count: infinite;
     }
   }
 }
