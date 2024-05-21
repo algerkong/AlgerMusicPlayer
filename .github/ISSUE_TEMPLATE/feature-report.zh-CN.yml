@@ -1,15 +1,14 @@
 name: 反馈新功能
 description: 通过 github 模板进行新功能反馈。
-title: "[组件名称] 描述问题的标题"
+title: "描述问题的标题"
 body:
   - type: markdown
     attributes:
       value: |
         # 欢迎你的参与
-        tdesign-vue-next 的 Issue 列表接受 bug 报告或是新功能请求。也可加入官方社区：<img width="80px" src="https://user-images.githubusercontent.com/15634204/157386871-bf84c2ea-a02f-4c1c-b6fd-577450cdbcf7.png" />
 
         在发布一个 Issue 前，请确保：
-        - 在 [常见问题](https://tdesign.tencent.com/about/faq)、[更新日志](https://github.com/Tencent/tdesign-vue-next/blob/main/CHANGELOG.md) 和 [旧Issue列表](https://github.com/Tencent/tdesign-vue-next/issues?q=is%3Aissue) 中搜索过你的问题。（你的问题可能已有人提出，也可能已在最新版本中被修正）
+        - 在 Issue 中搜索过你的问题。（你的问题可能已有人提出，也可能已在最新版本中被修正）
         - 如果你发现一个已经关闭的旧 Issue 在最新版本中仍然存在，不要在旧 Issue 下面留言，请建一个新的 issue。
 
   - type: textarea
