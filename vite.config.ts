@@ -5,11 +5,12 @@ import AutoImport from 'unplugin-auto-import/vite';
 import { NaiveUiResolver } from 'unplugin-vue-components/resolvers';
 import Components from 'unplugin-vue-components/vite';
 import { defineConfig } from 'vite';
+import viteCompression from 'vite-plugin-compression';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [
     vue(),
+    viteCompression(),
     // VueDevTools(),
     AutoImport({
       imports: [
