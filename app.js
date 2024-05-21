@@ -111,6 +111,7 @@ ipcMain.on('maximize-window', (event) => {
 ipcMain.on('close-window', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   win.destroy();
+  app.quit();
 });
 
 ipcMain.on('drag-start', (event) => {
