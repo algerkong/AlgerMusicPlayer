@@ -1,0 +1,70 @@
+name: 反馈 Bug
+description: 通过 github 模板进行 Bug 反馈。
+title: "[组件名称] 描述问题的标题"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # 欢迎你的参与
+        Issue 列表接受 bug 报告或是新功能请求。
+
+        在发布一个 Issue 前，请确保：
+        - 在Issue中搜索过你的问题。（你的问题可能已有人提出，也可能已在最新版本中被修正）
+        - 如果你发现一个已经关闭的旧 Issue 在最新版本中仍然存在，不要在旧 Issue 下面留言，请建一个新的 issue。
+
+  - type: input
+    id: reproduce
+    attributes:
+      label: 重现链接
+      description: 请提供尽可能精简的 CodePen、CodeSandbox 或 GitHub 仓库的链接。请不要填无关链接，否则你的 Issue 将被关闭。
+      placeholder: 请填写
+
+  - type: textarea
+    id: reproduceSteps
+    attributes:
+      label: 重现步骤
+      description: 请清晰的描述重现该 Issue 的步骤，这能帮助我们快速定位问题。没有清晰重现步骤将不会被修复，标有 'need reproduction' 的 Issue 在 7 天内不提供相关步骤，将被关闭。
+      placeholder: 请填写
+
+  - type: textarea
+    id: expect
+    attributes:
+      label: 期望结果
+      placeholder: 请填写
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际结果
+      placeholder: 请填写
+
+  - type: input
+    id: frameworkVersion
+    attributes:
+      label: 框架版本
+      placeholder: Vue(3.3.0)
+
+  - type: input
+    id: browsersVersion
+    attributes:
+      label: 浏览器版本
+      placeholder: Chrome(8.213.231.123)
+
+  - type: input
+    id: systemVersion
+    attributes:
+      label: 系统版本
+      placeholder: MacOS(11.2.3)
+
+  - type: input
+    id: nodeVersion
+    attributes:
+      label: Node版本
+      placeholder: 请填写
+
+  - type: textarea
+    id: remarks
+    attributes:
+      label: 补充说明
+      description: 可以是遇到这个 bug 的业务场景、上下文等信息。
+      placeholder: 请填写
