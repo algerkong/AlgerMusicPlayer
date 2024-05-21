@@ -184,7 +184,7 @@ function handlePrev() {
 
 const MusicFullRef = ref<any>(null);
 
-function handleGetAudioTime(this: any) {
+function handleGetAudioTime(this: HTMLAudioElement) {
   // 监听音频播放的实时时间事件
   const audio = this as HTMLAudioElement;
   // 获取当前播放时间

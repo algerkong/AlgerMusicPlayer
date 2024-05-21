@@ -61,7 +61,7 @@ const isPlaying = computed(() => {
 const emits = defineEmits(['play']);
 
 // 播放音乐 设置音乐详情 打开音乐底栏
-const playMusicEvent = async (item: any) => {
+const playMusicEvent = async (item: SongResult) => {
   if (playMusic.value.id === item.id) {
     return;
   }

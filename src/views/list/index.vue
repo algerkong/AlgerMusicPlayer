@@ -23,7 +23,7 @@ const selectRecommendItem = async (item: IRecommendItem) => {
 const route = useRoute();
 const listTitle = ref(route.query.type || '歌单列表');
 
-const loadList = async (type: any) => {
+const loadList = async (type: string) => {
   const params = {
     cat: type || '',
     limit: 30,
@@ -34,7 +34,7 @@ const loadList = async (type: any) => {
 };
 
 if (route.query.type) {
-  loadList(route.query.type);
+  loadList(route.query.type as string);
 } else {
   getRecommendList().then((res: { data: { result: any } }) => {
     recommendList.value = res.data.result;
@@ -45,7 +45,7 @@ watch(
   () => route.query,
   async (newParams) => {
     if (newParams.type) {
-      loadList(newParams.type);
+      loadList(newParams.type as string);
     }
   },
 );

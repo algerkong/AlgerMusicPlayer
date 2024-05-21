@@ -44,7 +44,7 @@ const loadPlaylistCategory = async () => {
 };
 
 const router = useRouter();
-const handleClickPlaylistType = (type: any) => {
+const handleClickPlaylistType = (type: string) => {
   router.push({
     path: '/list',
     query: {

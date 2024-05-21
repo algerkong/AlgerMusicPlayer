@@ -54,7 +54,7 @@ watch(
   },
 );
 
-const iconStyle = (index: any) => {
+const iconStyle = (index: number) => {
   const style = {
     fontSize: props.size,
     color: path.value === props.menus[index].path ? props.selectColor : props.color,

@@ -16,7 +16,7 @@ export const useMusicHistory = () => {
     }
   };
 
-  const delMusic = (music: any) => {
+  const delMusic = (music: SongResult) => {
     const index = musicHistory.value.findIndex((item) => item.id === music.id);
     if (index !== -1) {
       musicHistory.value.splice(index, 1);

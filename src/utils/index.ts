@@ -24,8 +24,8 @@ export const secondToMinute = (s: number) => {
 };
 
 // 格式化数字 千,万, 百万, 千万,亿
-export const formatNumber = (num: any) => {
-  num *= 1;
+export const formatNumber = (num: string | number) => {
+  num = Number(num);
   if (num < 10000) {
     return num;
   }

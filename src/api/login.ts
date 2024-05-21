@@ -38,7 +38,7 @@ export function logout() {
 
 // 手机号登录
 // /login/cellphone
-export function loginByCellphone(phone: any, password: any) {
+export function loginByCellphone(phone: string, password: string) {
   return request.post('/login/cellphone', {
     phone,
     password,

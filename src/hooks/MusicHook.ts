@@ -82,7 +82,7 @@ export const reduceCorrectionTime = (time: number) => {
   correctionTime.value -= time;
 };
 
-export const isCurrentLrc = (index: any, time: number) => {
+export const isCurrentLrc = (index: number, time: number) => {
   const currentTime = Number(lrcTimeArray.value[index]);
   const nextTime = Number(lrcTimeArray.value[index + 1]);
   const nowTime = time + correctionTime.value;
@@ -108,13 +108,13 @@ export const getLrcIndex = (time: number) => {
 };
 
 // 设置当前播放时间
-export const setAudioTime = (index: any, audio: HTMLAudioElement) => {
+export const setAudioTime = (index: number, audio: HTMLAudioElement) => {
   audio.currentTime = lrcTimeArray.value[index] as number;
   audio.play();
 };
 
 // 计算这个歌词的播放时间
-const getLrcTime = (index: any) => {
+const getLrcTime = (index: number) => {
   return Number(lrcTimeArray.value[index]);
 };
 
@@ -127,7 +127,7 @@ export const getCurrentLrc = () => {
 };
 
 // 获取一句歌词播放时间是 几秒到几秒
-export const getLrcTimeRange = (index: any) => {
+export const getLrcTimeRange = (index: number) => {
   const currentTime = Number(lrcTimeArray.value[index]);
   const nextTime = Number(lrcTimeArray.value[index + 1]);
   return { currentTime, nextTime };
