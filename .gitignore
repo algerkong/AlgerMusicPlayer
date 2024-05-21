@@ -1,11 +1,16 @@
 node_modules
 .DS_Store
+
 dist
 dist-ssr
 *.local
 dist_electron
 .idea
 
+# lock
+yarn.lock
 pnpm-lock.yaml
 package-lock.json
 dist.zip
+
+.vscode
