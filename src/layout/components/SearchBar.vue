@@ -46,7 +46,6 @@ import { getSearchKeyword } from '@/api/home';
 import { getUserDetail, logout } from '@/api/login';
 import { SEARCH_TYPES, USER_SET_OPTIONS } from '@/const/bar-const';
 import { getImgUrl } from '@/utils';
-import request from '@/utils/request_mt';
 
 const router = useRouter();
 const store = useStore();
@@ -106,30 +105,15 @@ const search = () => {
   }
 };
 
-const selectSearchType = (key: any) => {
+const selectSearchType = (key: number) => {
   searchType.value = key;
 };
 
 const searchTypeOptions = ref(SEARCH_TYPES);
 
-const selectItem = async (key: any) => {
+const selectItem = async (key: string) => {
   // switch 判断
   switch (key) {
-    case 'card':
-      await request.get('/?do=sign').then((res) => {
-        console.log(res);
-      });
-      break;
-    case 'card_music':
-      await request.get('/?do=daka').then((res) => {
-        console.log(res);
-      });
-      break;
-    case 'listen':
-      await request.get('/?do=listen&id=1885175990&time=300').then((res) => {
-        console.log(res);
-      });
-      break;
     case 'logout':
       logout().then(() => {
         store.state.user = null;

@@ -7,6 +7,27 @@
 - 播放历史
 - 歌单 mv 搜索 专辑等功能
 
+## 项目运行
+```bash
+  # 安装依赖
+  npm install
+
+  # 运行项目 web
+  npm run dev
+
+  # 运行项目 electron
+  npm run start
+
+  # 打包项目 web
+  npm run build
+
+  # 打包项目 electron
+  npm run win ... 
+  # 具体看 package.json
+```
+
+
+
 ## 软件截图
 ![首页](./docs/img/image.png)
 ![歌单](./docs/img/image-1.png)

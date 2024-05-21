@@ -1,10 +1,10 @@
-import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import path from 'path'
+import vue from '@vitejs/plugin-vue';
+import path from 'path';
 // import VueDevTools from 'vite-plugin-vue-devtools'
-import AutoImport from 'unplugin-auto-import/vite'
-import Components from 'unplugin-vue-components/vite'
-import { NaiveUiResolver } from 'unplugin-vue-components/resolvers'
+import AutoImport from 'unplugin-auto-import/vite';
+import { NaiveUiResolver } from 'unplugin-vue-components/resolvers';
+import Components from 'unplugin-vue-components/vite';
+import { defineConfig } from 'vite';
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -15,12 +15,7 @@ export default defineConfig({
       imports: [
         'vue',
         {
-          'naive-ui': [
-            'useDialog',
-            'useMessage',
-            'useNotification',
-            'useLoadingBar',
-          ],
+          'naive-ui': ['useDialog', 'useMessage', 'useNotification', 'useLoadingBar'],
         },
       ],
     }),
@@ -35,16 +30,10 @@ export default defineConfig({
     },
   },
   server: {
-    host: '0.0.0.0', //允许本机
+    host: '0.0.0.0',
     // 指定端口
     port: 4678,
     proxy: {
-      // string shorthand
-      '/mt': {
-        target: 'http://mt.myalger.top',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/mt/, ''),
-      },
       // with options
       '/api': {
         target: 'http://110.42.251.190:9898',
@@ -69,4 +58,4 @@ export default defineConfig({
       },
     },
   },
-})
+});
