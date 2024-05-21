@@ -1,0 +1,31 @@
+{
+  "appId": "com.alger.music",
+  "productName": "AlgerMusic",
+  "artifactName": "${productName}_${version}_Setup_x86.${ext}",
+  "directories": {
+    "output": "dist_electron/win-x86"
+  },
+  "files": ["dist/**/*", "package.json", "app.js", "electron/**/*"],
+  "win": {
+    "icon": "public/icon.png",
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["ia32"]
+      }
+    ],
+    "extraFiles": [
+      {
+        "from": "installer/installer.nsh",
+        "to": "$INSTDIR"
+      }
+    ]
+  },
+  "nsis": {
+    "oneClick": false,
+    "language": "2052",
+    "allowToChangeInstallationDirectory": true,
+    "differentialPackage": true,
+    "shortcutName": "Alger Music"
+  }
+}
