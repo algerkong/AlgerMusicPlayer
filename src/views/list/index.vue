@@ -48,6 +48,7 @@ watch(
   () => route.query,
   async (newParams) => {
     if (newParams.type) {
+      recommendList.value = null;
       loadList(newParams.type as string);
     }
   },

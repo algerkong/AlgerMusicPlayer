@@ -21,29 +21,31 @@ const router = useRouter();
 const userDetail = ref<IUserDetail>();
 const playList = ref<any[]>([]);
 const recordList = ref();
-let { user } = store.state;
+
+const user = computed(() => store.state.user);
 
 const loadPage = async () => {
-  if (!user) {
+  if (!user.value) {
     router.push('/login');
     return;
   }
 
-  const { data: userData } = await getUserDetail(user.userId);
+  const { data: userData } = await getUserDetail(user.value.userId);
   userDetail.value = userData;
 
-  const { data: playlistData } = await getUserPlaylist(user.userId);
+  const { data: playlistData } = await getUserPlaylist(user.value.userId);
   playList.value = playlistData.playlist;
 
-  const { data: recordData } = await getUserRecord(user.userId);
+  const { data: recordData } = await getUserRecord(user.value.userId);
   recordList.value = recordData.allData;
 };
 
-onMounted(() => {
-  const localUser = localStorage.getItem('user');
-  store.state.user = localUser ? JSON.parse(localUser) : null;
-  user = store.state.user;
-  loadPage();
+onActivated(() => {
+  if (!user.value) {
+    router.push('/login');
+  } else {
+    loadPage();
+  }
 });
 
 const isShowList = ref(false);

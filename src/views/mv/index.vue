@@ -66,7 +66,6 @@ const store = useStore();
 onMounted(async () => {
   const res = await getTopMv(30);
   mvList.value = res.data.data;
-  console.log('mvList.value', mvList.value);
 });
 
 const handleShowMv = async (item: IMvItem) => {
