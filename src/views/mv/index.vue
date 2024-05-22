@@ -53,6 +53,10 @@ import { getMvUrl, getTopMv } from '@/api/mv';
 import { IMvItem } from '@/type/mv';
 import { formatNumber, getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
 
+defineOptions({
+  name: 'Mv',
+});
+
 const showMv = ref(false);
 const mvList = ref<Array<IMvItem>>([]);
 const playMvItem = ref<IMvItem>();
@@ -91,7 +95,7 @@ const close = () => {
   }
 
   &-content {
-    @apply grid gap-6 pb-4 mt-2;
+    @apply grid gap-6 pb-28 mt-2;
     grid-template-columns: repeat(auto-fill, minmax(14%, 1fr));
   }
 

@@ -1,16 +1,18 @@
 <template>
-  <div class="main-page">
-    <!-- 推荐歌手 -->
-    <recommend-singer />
-    <div class="main-content">
-      <!-- 歌单分类列表 -->
-      <playlist-type />
-      <!-- 本周最热音乐 -->
-      <recommend-songlist />
-      <!-- 推荐最新专辑 -->
-      <recommend-album />
+  <n-scrollbar :size="100">
+    <div class="main-page">
+      <!-- 推荐歌手 -->
+      <recommend-singer />
+      <div class="main-content">
+        <!-- 歌单分类列表 -->
+        <playlist-type />
+        <!-- 本周最热音乐 -->
+        <recommend-songlist />
+        <!-- 推荐最新专辑 -->
+        <recommend-album />
+      </div>
     </div>
-  </div>
+  </n-scrollbar>
 </template>
 
 <script lang="ts" setup>
@@ -18,6 +20,9 @@ const RecommendSinger = defineAsyncComponent(() => import('@/components/Recommen
 const PlaylistType = defineAsyncComponent(() => import('@/components/PlaylistType.vue'));
 const RecommendSonglist = defineAsyncComponent(() => import('@/components/RecommendSonglist.vue'));
 const RecommendAlbum = defineAsyncComponent(() => import('@/components/RecommendAlbum.vue'));
+defineOptions({
+  name: 'Home',
+});
 </script>
 
 <style lang="scss" scoped>
@@ -25,6 +30,6 @@ const RecommendAlbum = defineAsyncComponent(() => import('@/components/Recommend
   @apply h-full w-full;
 }
 .main-content {
-  @apply mt-6 flex pb-28;
+  @apply mt-6 flex mb-28;
 }
 </style>

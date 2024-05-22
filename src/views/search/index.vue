@@ -19,30 +19,32 @@
     <!-- 搜索到的歌曲列表 -->
     <n-layout class="search-list" :class="setAnimationClass('animate__fadeInUp')" :native-scrollbar="false">
       <div class="title">{{ hotKeyword }}</div>
-      <div class="search-list-box">
-        <template v-if="searchDetail">
-          <div
-            v-for="(item, index) in searchDetail?.songs"
-            :key="item.id"
-            :class="setAnimationClass('animate__bounceInRight')"
-            :style="setAnimationDelay(index, 50)"
-          >
-            <song-item :item="item" @play="handlePlay" />
-          </div>
-          <template v-for="(list, key) in searchDetail">
-            <template v-if="key.toString() !== 'songs'">
-              <div
-                v-for="(item, index) in list"
-                :key="item.id"
-                :class="setAnimationClass('animate__bounceInRight')"
-                :style="setAnimationDelay(index, 50)"
-              >
-                <SearchItem :item="item" />
-              </div>
+      <n-spin :show="searchDetailLoading">
+        <div class="search-list-box">
+          <template v-if="searchDetail">
+            <div
+              v-for="(item, index) in searchDetail?.songs"
+              :key="item.id"
+              :class="setAnimationClass('animate__bounceInRight')"
+              :style="setAnimationDelay(index, 50)"
+            >
+              <song-item :item="item" @play="handlePlay" />
+            </div>
+            <template v-for="(list, key) in searchDetail">
+              <template v-if="key.toString() !== 'songs'">
+                <div
+                  v-for="(item, index) in list"
+                  :key="item.id"
+                  :class="setAnimationClass('animate__bounceInRight')"
+                  :style="setAnimationDelay(index, 50)"
+                >
+                  <SearchItem :item="item" />
+                </div>
+              </template>
             </template>
           </template>
-        </template>
-      </div>
+        </div>
+      </n-spin>
     </n-layout>
   </div>
 </template>
@@ -59,10 +61,15 @@ import SongItem from '@/components/common/SongItem.vue';
 import type { IHotSearch } from '@/type/search';
 import { setAnimationClass, setAnimationDelay } from '@/utils';
 
+defineOptions({
+  name: 'Search',
+});
+
 const route = useRoute();
 const router = useRouter();
 const searchDetail = ref<any>();
 const searchType = ref(Number(route.query.type) || 1);
+const searchDetailLoading = ref(false);
 
 // 热搜列表
 const hotSearchData = ref<IHotSearch>();
@@ -93,6 +100,8 @@ const loadSearch = async (keywords: any) => {
   hotKeyword.value = keywords;
   searchDetail.value = undefined;
   if (!keywords) return;
+
+  searchDetailLoading.value = true;
   const { data } = await getSearch({ keywords, type: searchType.value });
 
   const songs = data.result.songs || [];
@@ -111,6 +120,8 @@ const loadSearch = async (keywords: any) => {
     songs,
     albums,
   };
+
+  searchDetailLoading.value = false;
 };
 
 loadSearch(route.query.keyword);

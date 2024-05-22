@@ -10,7 +10,7 @@
             v-for="(item, index) in songList"
             :key="item.id"
             :class="setAnimationClass('animate__bounceInUp')"
-            :style="setAnimationDelay(index, 100)"
+            :style="setAnimationDelay(index, 50)"
           >
             <song-item :item="formatDetail(item)" @play="handlePlay" />
           </div>

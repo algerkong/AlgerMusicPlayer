@@ -54,7 +54,7 @@ export const getMusicProxyUrl = (url: string) => {
   return `${ProxyUrl}/mc?url=${PUrl}`;
 };
 
-export const getImgUrl = computed(() => (url: string, size: string = '') => {
+export const getImgUrl = computed(() => (url: string | undefined, size: string = '') => {
   const bdUrl = 'https://image.baidu.com/search/down?url=';
   const imgUrl = encodeURIComponent(`${url}?param=${size}`);
   return `${bdUrl}${imgUrl}`;

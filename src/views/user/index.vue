@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { onBeforeRouteUpdate, useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 
 import { getListDetail } from '@/api/list';
@@ -11,6 +11,10 @@ import MusicList from '@/components/MusicList.vue';
 import type { Playlist } from '@/type/listDetail';
 import type { IUserDetail } from '@/type/user';
 import { getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
+
+defineOptions({
+  name: 'User',
+});
 
 const store = useStore();
 const router = useRouter();
@@ -35,7 +39,7 @@ const loadPage = async () => {
   recordList.value = recordData.allData;
 };
 
-watchEffect(() => {
+onMounted(() => {
   const localUser = localStorage.getItem('user');
   store.state.user = localUser ? JSON.parse(localUser) : null;
   user = store.state.user;
@@ -100,7 +104,7 @@ const handlePlay = () => {
         <div class="uesr-signature">{{ userDetail.profile.signature }}</div>
 
         <div class="play-list" :class="setAnimationClass('animate__fadeInLeft')">
-          <div class="play-list-title">创建的歌单</div>
+          <div class="  ">创建的歌单</div>
           <n-scrollbar>
             <div v-for="(item, index) in playList" :key="index" class="play-list-item" @click="showPlaylist(item.id)">
               <n-image :src="getImgUrl(item.coverImgUrl, '50y50')" class="play-list-item-img" lazy preview-disabled />
@@ -167,10 +171,11 @@ const handlePlay = () => {
   }
 
   .right {
-    @apply flex-1 ml-4;
+    @apply flex-1 ml-4 overflow-hidden h-full;
     .record-list {
       background-color: #0d0d0d;
-      @apply rounded-2xl h-full;
+      @apply rounded-2xl;
+      height: calc(100% - 3.75rem);
       .record-item {
         @apply flex items-center px-4;
       }

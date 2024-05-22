@@ -2,11 +2,14 @@
 import { useRoute } from 'vue-router';
 
 import { getListByCat, getListDetail, getRecommendList } from '@/api/list';
-import PlayBottom from '@/components/common/PlayBottom.vue';
 import MusicList from '@/components/MusicList.vue';
 import type { IRecommendItem } from '@/type/list';
 import type { IListDetail } from '@/type/listDetail';
 import { formatNumber, getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
+
+defineOptions({
+  name: 'List',
+});
 
 const recommendList = ref();
 const showMusic = ref(false);
@@ -82,7 +85,6 @@ watch(
           <div class="recommend-item-title">{{ item.name }}</div>
         </div>
       </div>
-      <play-bottom />
     </n-scrollbar>
     <music-list
       v-if="listDetail?.playlist"

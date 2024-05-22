@@ -9,26 +9,16 @@
           <!-- 搜索栏 -->
           <search-bar />
           <!-- 主页面路由 -->
-          <div class="main-content bg-black pb-" :native-scrollbar="false" :class="isPlay ? 'pb-20' : ''">
+          <div class="main-content bg-black" :native-scrollbar="false">
             <n-message-provider>
               <router-view v-slot="{ Component }" class="main-page" :class="route.meta.noScroll ? 'pr-3' : ''">
-                <template v-if="route.meta.noScroll">
-                  <keep-alive v-if="!route.meta.noKeepAlive">
-                    <component :is="Component" />
-                  </keep-alive>
-                  <component :is="Component" v-else />
-                </template>
-                <template v-else>
-                  <n-scrollbar>
-                    <keep-alive v-if="!route.meta.noKeepAlive">
-                      <component :is="Component" />
-                    </keep-alive>
-                    <component :is="Component" v-else />
-                  </n-scrollbar>
-                </template>
+                <keep-alive :include="keepAliveInclude">
+                  <component :is="Component" />
+                </keep-alive>
               </router-view>
             </n-message-provider>
           </div>
+          <play-bottom height="5rem" />
         </div>
       </div>
       <!-- 底部音乐播放 -->
@@ -40,6 +30,21 @@
 <script lang="ts" setup>
 import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
+
+import PlayBottom from '@/components/common/PlayBottom.vue';
+import homeRouter from '@/router/home';
+
+const keepAliveInclude = computed(() =>
+  homeRouter
+    .filter((item) => {
+      return item.meta.keepAlive;
+    })
+    .map((item) => {
+      // return item.name;
+      // 首字母大写
+      return item.name.charAt(0).toUpperCase() + item.name.slice(1);
+    }),
+);
 
 const AppMenu = defineAsyncComponent(() => import('./components/AppMenu.vue'));
 const PlayBar = defineAsyncComponent(() => import('./components/PlayBar.vue'));

@@ -68,8 +68,9 @@ const loadPage = async () => {
   localStorage.setItem('user', JSON.stringify(data.profile));
 };
 
+loadPage();
+
 watchEffect(() => {
-  loadPage();
   if (store.state.user) {
     userSetOptions.value = USER_SET_OPTIONS;
   } else {
@@ -118,6 +119,7 @@ const selectItem = async (key: string) => {
       logout().then(() => {
         store.state.user = null;
         localStorage.clear();
+        router.push('/login');
       });
       break;
     case 'login':

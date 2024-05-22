@@ -27,6 +27,10 @@
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';
 import { setAnimationClass, setAnimationDelay } from '@/utils';
 
+defineOptions({
+  name: 'History',
+});
+
 const { delMusic, musicList } = useMusicHistory();
 </script>
 
@@ -38,7 +42,7 @@ const { delMusic, musicList } = useMusicHistory();
   }
 
   .history-list-content {
-    @apply px-4 mt-2;
+    @apply px-4 mt-2 pb-28;
     .history-item {
       @apply flex items-center justify-between;
       &-content {

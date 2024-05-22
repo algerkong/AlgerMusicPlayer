@@ -9,3 +9,7 @@
   background-color: #111111;
   width: 100%;
 }
+
+.text-el {
+  @apply overflow-ellipsis overflow-hidden whitespace-nowrap;
+}

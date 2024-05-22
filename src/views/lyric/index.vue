@@ -48,6 +48,10 @@
 <script setup lang="ts">
 import { useIpcRenderer } from '@vueuse/electron';
 
+defineOptions({
+  name: 'Lyric',
+});
+
 const ipcRenderer = useIpcRenderer();
 
 const lyricData = ref({
@@ -74,7 +78,7 @@ const lyricSetting = ref({
     ? JSON.parse(localStorage.getItem('lyricData') || '')
     : {
         isTop: false,
-        theme: 'light',
+        theme: 'dark',
         isLock: false,
       }),
 });

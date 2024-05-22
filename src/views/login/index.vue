@@ -4,8 +4,12 @@ import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 
-import { checkQr, createQr, getLoginStatus, getQrKey, getUserDetail, loginByCellphone } from '@/api/login';
+import { checkQr, createQr, getQrKey, getUserDetail, loginByCellphone } from '@/api/login';
 import { setAnimationClass } from '@/utils';
+
+defineOptions({
+  name: 'Login',
+});
 
 const message = useMessage();
 const store = useStore();
@@ -16,37 +20,53 @@ onMounted(() => {
   loadLogin();
 });
 
+const timerRef = ref(null);
+
 const loadLogin = async () => {
-  const qrKey = await getQrKey();
-  const key = qrKey.data.data.unikey;
-  const { data } = await createQr(key);
-  qrUrl.value = data.data.qrimg;
-  timerIsQr(key);
+  try {
+    const qrKey = await getQrKey();
+    const key = qrKey.data.data.unikey;
+    const { data } = await createQr(key);
+    qrUrl.value = data.data.qrimg;
+
+    const timer = timerIsQr(key);
+    // 添加对定时器的引用，以便在出现错误时可以清除
+    timerRef.value = timer as any;
+  } catch (error) {
+    console.error('加载登录信息时出错:', error);
+  }
 };
+
+// 使用 ref 来保存定时器，便于在任何地方清除它
 
 const timerIsQr = (key: string) => {
   const timer = setInterval(async () => {
-    const { data } = await checkQr(key);
+    try {
+      const { data } = await checkQr(key);
 
-    if (data.code === 800) {
-      clearInterval(timer);
-    }
-    if (data.code === 803) {
-      // 将token存入localStorage
-      localStorage.setItem('token', data.cookie);
-      const user = await getUserDetail();
-      store.state.user = user.data.profile;
-      message.success('登录成功');
+      if (data.code === 800) {
+        clearInterval(timer);
+        timerRef.value = null;
+      }
+      if (data.code === 803) {
+        localStorage.setItem('token', data.cookie);
+        const user = await getUserDetail();
+        store.state.user = user.data.profile;
+        message.success('登录成功');
 
-      await getLoginStatus().then((res) => {
-        console.log(res);
-      });
-      clearInterval(timer);
-      setTimeout(() => {
+        clearInterval(timer);
+        timerRef.value = null;
         router.push('/user');
-      }, 1000);
+      }
+    } catch (error) {
+      console.error('检查二维码状态时出错:', error);
+      // 在出现错误时清除定时器
+      clearInterval(timer);
+      timerRef.value = null;
     }
-  }, 5000);
+  }, 2000);
+
+  return timer;
 };
 
 // 是否扫码登陆

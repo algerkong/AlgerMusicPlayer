@@ -34,6 +34,10 @@ import { useRouter } from 'vue-router';
 
 import store from '@/store';
 
+defineOptions({
+  name: 'Setting',
+});
+
 const setData = ref(store.state.setData);
 const router = useRouter();
 

@@ -1,4 +1,6 @@
+import { IData } from '@/type';
 import { IAlbumNew } from '@/type/album';
+import { IDayRecommend } from '@/type/day_recommend';
 import { IRecommendMusic } from '@/type/music';
 import { IPlayListSort } from '@/type/playlist';
 import { IHotSearch, ISearchKeyword } from '@/type/search';
@@ -37,6 +39,11 @@ export const getPlaylistCategory = () => {
 // 获取推荐音乐
 export const getRecommendMusic = (params: IRecommendMusicParams) => {
   return request.get<IRecommendMusic>('/personalized/newsong', { params });
+};
+
+// 获取每日推荐
+export const getDayRecommend = () => {
+  return request.get<IData<IDayRecommend>>('/recommend/songs');
 };
 
 // 获取最新专辑推荐

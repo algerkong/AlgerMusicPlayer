@@ -5,6 +5,7 @@ const layoutRouter = [
     meta: {
       title: '首页',
       icon: 'icon-Home',
+      keepAlive: true,
     },
     component: () => import('@/views/home/index.vue'),
   },
@@ -14,8 +15,8 @@ const layoutRouter = [
     meta: {
       title: '搜索',
       noScroll: true,
-      noKeepAlive: true,
       icon: 'icon-Search',
+      keepAlive: true,
     },
     component: () => import('@/views/search/index.vue'),
   },
@@ -25,6 +26,7 @@ const layoutRouter = [
     meta: {
       title: '歌单',
       icon: 'icon-Paper',
+      keepAlive: true,
     },
     component: () => import('@/views/list/index.vue'),
   },
@@ -34,6 +36,7 @@ const layoutRouter = [
     meta: {
       title: 'MV',
       icon: 'icon-recordfill',
+      keepAlive: true,
     },
     component: () => import('@/views/mv/index.vue'),
   },
@@ -43,6 +46,7 @@ const layoutRouter = [
     meta: {
       title: '历史',
       icon: 'icon-a-TicketStar',
+      keepAlive: true,
     },
     component: () => import('@/views/history/index.vue'),
   },
@@ -51,8 +55,8 @@ const layoutRouter = [
     name: 'user',
     meta: {
       title: '用户',
-      noKeepAlive: true,
       icon: 'icon-Profile',
+      keepAlive: true,
       noScroll: true,
     },
     component: () => import('@/views/user/index.vue'),
