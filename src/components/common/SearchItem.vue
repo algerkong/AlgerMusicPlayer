@@ -1,19 +1,27 @@
 <template>
   <div class="search-item" @click="handleClick">
     <div class="search-item-img">
-      <n-image :src="getImgUrl(item.picUrl, 'album')" lazy preview-disabled />
+      <n-image :src="getImgUrl(item.picUrl, '200y200')" lazy preview-disabled />
     </div>
     <div class="search-item-info">
       <div class="search-item-name">{{ item.name }}</div>
       <div class="search-item-artist">{{ item.desc }}</div>
     </div>
 
-    <MusicList v-model:show="showMusic" :name="item.name" :song-list="songList" />
+    <MusicList
+      v-if="['专辑', 'playlist'].includes(item.type)"
+      v-model:show="showPop"
+      :name="item.name"
+      :song-list="songList"
+    />
+
+    <PlayVideo v-if="item.type === 'mv'" v-model:show="showPop" :title="item.name" :url="url" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { getAlbum } from '@/api/list';
+import { getAlbum, getListDetail } from '@/api/list';
+import { getMvUrl } from '@/api/mv';
 import { getImgUrl } from '@/utils';
 
 const props = defineProps<{
@@ -26,25 +34,39 @@ const props = defineProps<{
   };
 }>();
 
-const songList = ref([]);
+const url = ref('');
 
-const showMusic = ref(false);
+const songList = ref<any[]>([]);
+
+const showPop = ref(false);
 
 const handleClick = async () => {
-  showMusic.value = true;
   if (props.item.type === '专辑') {
+    showPop.value = true;
     const res = await getAlbum(props.item.id);
     songList.value = res.data.songs.map((song: any) => {
       song.al.picUrl = song.al.picUrl || props.item.picUrl;
       return song;
     });
   }
+
+  if (props.item.type === 'playlist') {
+    showPop.value = true;
+    const res = await getListDetail(props.item.id);
+    songList.value = res.data.playlist.tracks;
+  }
+
+  if (props.item.type === 'mv') {
+    const res = await getMvUrl(props.item.id);
+    url.value = res.data.data.url;
+    showPop.value = true;
+  }
 };
 </script>
 
 <style scoped lang="scss">
 .search-item {
-  @apply rounded-3xl p-3 flex items-center hover:bg-gray-800 transition;
+  @apply rounded-3xl p-3 flex items-center hover:bg-gray-800 transition cursor-pointer;
   margin: 0 10px;
   .search-item-img {
     @apply w-12 h-12 mr-4 rounded-2xl overflow-hidden;

@@ -29,6 +29,7 @@ declare module 'vue' {
     PlayBottom: typeof import('./src/components/common/PlayBottom.vue')['default']
     PlayListsItem: typeof import('./src/components/common/PlayListsItem.vue')['default']
     PlaylistType: typeof import('./src/components/PlaylistType.vue')['default']
+    PlayVideo: typeof import('./src/components/common/PlayVideo.vue')['default']
     RecommendAlbum: typeof import('./src/components/RecommendAlbum.vue')['default']
     RecommendSinger: typeof import('./src/components/RecommendSinger.vue')['default']
     RecommendSonglist: typeof import('./src/components/RecommendSonglist.vue')['default']

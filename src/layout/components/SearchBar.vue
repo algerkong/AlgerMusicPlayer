@@ -95,15 +95,16 @@ const search = () => {
   const { value } = searchValue;
   if (value === '') {
     searchValue.value = hotSearchValue.value;
-  } else {
-    router.push({
-      path: '/search',
-      query: {
-        keyword: value,
-        type: searchType.value,
-      },
-    });
+    return;
   }
+
+  router.push({
+    path: '/search',
+    query: {
+      keyword: value,
+      type: searchType.value,
+    },
+  });
 };
 
 const selectSearchType = (key: number) => {

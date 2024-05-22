@@ -106,6 +106,21 @@ const loadSearch = async (keywords: any) => {
 
   const songs = data.result.songs || [];
   const albums = data.result.albums || [];
+  const mvs = (data.result.mvs || []).map((item: any) => ({
+    ...item,
+    picUrl: item.cover,
+    playCount: item.playCount,
+    desc: item.artists.map((artist: any) => artist.name).join('/'),
+    type: 'mv',
+  }));
+
+  const playlists = (data.result.playlists || []).map((item: any) => ({
+    ...item,
+    picUrl: item.coverImgUrl,
+    playCount: item.playCount,
+    desc: item.creator.nickname,
+    type: 'playlist',
+  }));
 
   // songs map 替换属性
   songs.forEach((item: any) => {
@@ -119,6 +134,8 @@ const loadSearch = async (keywords: any) => {
   searchDetail.value = {
     songs,
     albums,
+    mvs,
+    playlists,
   };
 
   searchDetailLoading.value = false;
