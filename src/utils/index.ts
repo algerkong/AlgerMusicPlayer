@@ -1,3 +1,7 @@
+import { computed } from 'vue';
+
+import store from '@/store';
+
 // 设置歌手背景图片
 export const setBackgroundImg = (url: String) => {
   return `background-image:url(${url})`;
@@ -58,4 +62,16 @@ export const getImgUrl = computed(() => (url: string | undefined, size: string =
   const bdUrl = 'https://image.baidu.com/search/down?url=';
   const imgUrl = encodeURIComponent(`${url}?param=${size}`);
   return `${bdUrl}${imgUrl}`;
+});
+
+export const isMobile = computed(() => {
+  const flag = navigator.userAgent.match(
+    /(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i,
+  );
+
+  store.state.isMobile = !!flag;
+
+  // 给html标签 添加mobile
+  if (flag) document.documentElement.classList.add('mobile');
+  return !!flag;
 });

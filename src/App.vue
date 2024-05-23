@@ -1,5 +1,5 @@
 <template>
-  <div class="app">
+  <div class="app" :class="isMobile ? 'mobile' : ''">
     <audio id="MusicAudio" ref="audioRef" :src="playMusicUrl" :autoplay="play"></audio>
     <n-config-provider :theme="darkTheme">
       <n-dialog-provider>
@@ -15,6 +15,8 @@
 import { darkTheme } from 'naive-ui';
 
 import store from '@/store';
+
+import { isMobile } from './utils';
 
 const playMusicUrl = computed(() => store.state.playMusicUrl as string);
 // 是否播放
@@ -34,5 +36,15 @@ div {
 }
 .app {
   user-select: none;
+}
+
+.mobile {
+  .text-base {
+    font-size: 14px !important;
+  }
+}
+
+.html:has(.mobile) {
+  font-size: 14px;
 }
 </style>

@@ -25,13 +25,13 @@
       </div>
     </div>
     <div class="music-buttons">
-      <div @click="handlePrev">
+      <div class="music-buttons-prev" @click="handlePrev">
         <i class="iconfont icon-prev"></i>
       </div>
       <div class="music-buttons-play" @click="playMusicEvent">
         <i class="iconfont icon" :class="play ? 'icon-stop' : 'icon-play'"></i>
       </div>
-      <div @click="handleEnded">
+      <div class="music-buttons-next" @click="handleEnded">
         <i class="iconfont icon-next"></i>
       </div>
     </div>
@@ -59,7 +59,7 @@
         </template>
         解析播放
       </n-tooltip> -->
-      <n-tooltip trigger="hover" :z-index="9999999">
+      <n-tooltip class="music-lyric" trigger="hover" :z-index="9999999">
         <template #trigger>
           <i class="iconfont ri-netease-cloud-music-line" @click="openLyric"></i>
         </template>
@@ -303,6 +303,38 @@ const setMusicFull = () => {
     &-content {
       padding: 10px;
     }
+  }
+}
+
+.mobile {
+  .music-play-bar {
+    @apply px-4;
+    bottom: 70px;
+  }
+  .music-time {
+    display: none;
+  }
+  .ri-netease-cloud-music-line {
+    display: none;
+  }
+  .audio-volume {
+    display: none;
+  }
+  .audio-button {
+    @apply mx-0;
+  }
+  .music-buttons {
+    @apply m-0;
+    &-prev,
+    &-next {
+      display: none;
+    }
+    &-play {
+      @apply m-0;
+    }
+  }
+  .music-content {
+    flex: 1;
   }
 }
 </style>

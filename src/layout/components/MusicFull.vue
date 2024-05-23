@@ -179,4 +179,16 @@ defineExpose({
     }
   }
 }
+
+.mobile {
+  #drawer-target {
+    @apply flex-col p-4 pt-8;
+    .music-img {
+      display: none;
+    }
+    .music-lrc {
+      height: calc(100vh - 260px) !important;
+    }
+  }
+}
 </style>

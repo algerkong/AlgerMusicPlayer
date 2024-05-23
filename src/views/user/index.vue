@@ -10,7 +10,7 @@ import SongItem from '@/components/common/SongItem.vue';
 import MusicList from '@/components/MusicList.vue';
 import type { Playlist } from '@/type/listDetail';
 import type { IUserDetail } from '@/type/user';
-import { getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
+import { getImgUrl, isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
 
 defineOptions({
   name: 'User',
@@ -120,7 +120,7 @@ const handlePlay = () => {
         </div>
       </div>
     </div>
-    <div class="right" :class="setAnimationClass('animate__fadeInRight')">
+    <div v-if="!isMobile" class="right" :class="setAnimationClass('animate__fadeInRight')">
       <div class="title">听歌排行</div>
       <div class="record-list">
         <n-scrollbar>
@@ -215,6 +215,12 @@ const handlePlay = () => {
     &-name {
       @apply text-white;
     }
+  }
+}
+
+.mobile {
+  .user-page {
+    @apply px-4;
   }
 }
 </style>

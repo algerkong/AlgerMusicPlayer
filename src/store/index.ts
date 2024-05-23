@@ -17,6 +17,7 @@ interface State {
   playListIndex: number;
   setData: any;
   lyric: any;
+  isMobile: boolean;
 }
 
 const state: State = {
@@ -30,6 +31,7 @@ const state: State = {
   playListIndex: 0,
   setData: null,
   lyric: {},
+  isMobile: false,
 };
 
 const windowData = window as any;

@@ -4,14 +4,18 @@
       <title-bar v-if="isElectron" />
       <div class="layout-main-page" :class="isElectron ? '' : 'pt-6'">
         <!-- 侧边菜单栏 -->
-        <app-menu class="menu" :menus="menus" />
+        <app-menu v-if="!isMobile" class="menu" :menus="menus" />
         <div class="main">
           <!-- 搜索栏 -->
           <search-bar />
           <!-- 主页面路由 -->
           <div class="main-content bg-black" :native-scrollbar="false">
             <n-message-provider>
-              <router-view v-slot="{ Component }" class="main-page" :class="route.meta.noScroll ? 'pr-3' : ''">
+              <router-view
+                v-slot="{ Component }"
+                class="main-page"
+                :class="route.meta.noScroll && !isMobile ? 'pr-3' : ''"
+              >
                 <keep-alive :include="keepAliveInclude">
                   <component :is="Component" />
                 </keep-alive>
@@ -19,6 +23,7 @@
             </n-message-provider>
           </div>
           <play-bottom height="5rem" />
+          <app-menu v-if="isMobile" class="menu" :menus="menus" />
         </div>
       </div>
       <!-- 底部音乐播放 -->
@@ -33,6 +38,7 @@ import { useStore } from 'vuex';
 
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import homeRouter from '@/router/home';
+import { isMobile } from '@/utils';
 
 const keepAliveInclude = computed(() =>
   homeRouter
@@ -135,18 +141,23 @@ const playMusicEvent = async () => {
   &-page {
     @apply flex flex-1 overflow-hidden;
   }
-  .menu {
-    width: 90px;
-  }
   .main {
-    @apply flex-1 box-border flex flex-col;
+    @apply flex-1 box-border flex flex-col overflow-hidden;
     height: 100%;
     &-content {
       @apply box-border flex-1 overflow-hidden;
     }
   }
-  :deep(.n-scrollbar-content) {
-    @apply pr-3;
+  // :deep(.n-scrollbar-content) {
+  //   @apply pr-3;
+  // }
+}
+
+.mobile {
+  .layout-main {
+    &-page {
+      @apply pt-4;
+    }
   }
 }
 </style>

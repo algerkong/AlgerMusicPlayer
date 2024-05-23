@@ -14,9 +14,11 @@ defineOptions({
 const recommendList = ref();
 const showMusic = ref(false);
 
-const recommendItem = ref<IRecommendItem>();
-const listDetail = ref<IListDetail>();
+const recommendItem = ref<IRecommendItem | null>();
+const listDetail = ref<IListDetail | null>();
 const selectRecommendItem = async (item: IRecommendItem) => {
+  recommendItem.value = null;
+  listDetail.value = null;
   showMusic.value = true;
   const { data } = await getListDetail(item.id);
   recommendItem.value = item;
@@ -98,7 +100,7 @@ watch(
 
 <style lang="scss" scoped>
 .list-page {
-  @apply relative h-full w-full;
+  @apply relative h-full w-full px-4;
 }
 
 .recommend {
@@ -147,6 +149,12 @@ watch(
     &-title {
       @apply p-2 text-sm text-white truncate;
     }
+  }
+}
+
+.mobile {
+  .recommend-list {
+    grid-template-columns: repeat(auto-fill, minmax(25%, 1fr));
   }
 }
 </style>

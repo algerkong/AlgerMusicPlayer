@@ -74,4 +74,10 @@ onMounted(() => {
     @apply block text-center;
   }
 }
+
+.mobile {
+  .play-list-type {
+    @apply mx-0 w-full;
+  }
+}
 </style>

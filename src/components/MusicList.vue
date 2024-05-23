@@ -1,8 +1,13 @@
 <template>
-  <n-drawer :show="show" height="70vh" placement="bottom" :drawer-style="{ backgroundColor: 'transparent' }">
+  <n-drawer
+    :show="show"
+    :height="isMobile ? '100vh' : '70vh'"
+    placement="bottom"
+    :drawer-style="{ backgroundColor: 'transparent' }"
+  >
     <div class="music-page">
       <i class="iconfont icon-icon_error music-close" @click="close"></i>
-      <div class="music-title">{{ name }}</div>
+      <div class="music-title text-el">{{ name }}</div>
       <!-- 歌单歌曲列表 -->
       <div class="music-list">
         <n-scrollbar>
@@ -25,7 +30,7 @@
 import { useStore } from 'vuex';
 
 import SongItem from '@/components/common/SongItem.vue';
-import { setAnimationClass, setAnimationDelay } from '@/utils';
+import { isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
 
 import PlayBottom from './common/PlayBottom.vue';
 
@@ -76,6 +81,12 @@ const close = () => {
 
   &-list {
     height: calc(100% - 60px);
+  }
+}
+
+.mobile {
+  .music-page {
+    @apply px-4;
   }
 }
 </style>

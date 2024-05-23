@@ -38,7 +38,7 @@ const { delMusic, musicList } = useMusicHistory();
 .history-page {
   @apply h-full w-full pt-2;
   .title {
-    @apply text-xl font-bold;
+    @apply pl-4 text-xl font-bold;
   }
 
   .history-list-content {

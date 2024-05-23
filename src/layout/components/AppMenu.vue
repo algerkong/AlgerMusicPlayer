@@ -82,4 +82,25 @@ const iconStyle = (index: number) => {
   transform: scale(1.05);
   transition: 0.2s ease-in-out;
 }
+
+.mobile {
+  .app-menu {
+    max-width: 100%;
+    width: 100vw;
+    position: relative;
+    z-index: 999999;
+    background-color: #000;
+    &-header {
+      display: none;
+    }
+    &-list {
+      @apply flex justify-between;
+    }
+    &-item {
+      &-link {
+        @apply my-4;
+      }
+    }
+  }
+}
 </style>

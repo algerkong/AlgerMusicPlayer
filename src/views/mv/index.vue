@@ -87,7 +87,7 @@ const close = () => {
 
 <style scoped lang="scss">
 .mv-list {
-  @apply relative h-full w-full;
+  @apply relative h-full w-full px-4;
 
   &-title {
     @apply text-xl font-bold;
@@ -171,6 +171,12 @@ const close = () => {
 
   .mv-detail-title:hover {
     @apply top-0;
+  }
+}
+
+.mobile {
+  .mv-list-content {
+    grid-template-columns: repeat(auto-fill, minmax(30%, 1fr));
   }
 }
 </style>

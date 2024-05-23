@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 
 import { checkQr, createQr, getQrKey, getUserDetail, loginByCellphone } from '@/api/login';
-import { setAnimationClass } from '@/utils';
+import { isMobile, setAnimationClass } from '@/utils';
 
 defineOptions({
   name: 'Login',
@@ -71,7 +71,7 @@ const timerIsQr = (key: string) => {
 };
 
 // 是否扫码登陆
-const isQr = ref(true);
+const isQr = ref(!isMobile.value);
 const chooseQr = () => {
   isQr.value = !isQr.value;
 };

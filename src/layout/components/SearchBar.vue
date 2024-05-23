@@ -145,4 +145,10 @@ const selectItem = async (key: string) => {
 .search-box-input {
   @apply relative;
 }
+
+.mobile {
+  .search-box {
+    @apply pl-4;
+  }
+}
 </style>

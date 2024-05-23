@@ -1,6 +1,11 @@
 <template>
   <div class="search-page">
-    <n-layout class="hot-search" :class="setAnimationClass('animate__fadeInDown')" :native-scrollbar="false">
+    <n-layout
+      v-if="isMobile ? !searchDetail : true"
+      class="hot-search"
+      :class="setAnimationClass('animate__fadeInDown')"
+      :native-scrollbar="false"
+    >
       <div class="title">热搜列表</div>
       <div class="hot-search-list">
         <template v-for="(item, index) in hotSearchData?.data" :key="index">
@@ -17,7 +22,12 @@
       </div>
     </n-layout>
     <!-- 搜索到的歌曲列表 -->
-    <n-layout class="search-list" :class="setAnimationClass('animate__fadeInUp')" :native-scrollbar="false">
+    <n-layout
+      v-if="isMobile ? searchDetail : true"
+      class="search-list"
+      :class="setAnimationClass('animate__fadeInUp')"
+      :native-scrollbar="false"
+    >
       <div class="title">{{ hotKeyword }}</div>
       <n-spin :show="searchDetailLoading">
         <div class="search-list-box">
@@ -59,7 +69,7 @@ import { getHotSearch } from '@/api/home';
 import { getSearch } from '@/api/search';
 import SongItem from '@/components/common/SongItem.vue';
 import type { IHotSearch } from '@/type/search';
-import { setAnimationClass, setAnimationDelay } from '@/utils';
+import { isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
 
 defineOptions({
   name: 'Search',
@@ -194,5 +204,11 @@ const handlePlay = () => {
 
 .title {
   @apply text-gray-200 text-xl font-bold my-2 mx-4;
+}
+
+.mobile {
+  .hot-search {
+    @apply mr-0 w-full;
+  }
 }
 </style>
