@@ -1,4 +1,4 @@
-# 一个基于 electron typescript vue3 的桌面音乐播放器
+# 一个基于 electron typescript vue3 的桌面音乐播放器 适配 web端 桌面端 web移动端
 主要功能如下
 
 - 音乐推荐
