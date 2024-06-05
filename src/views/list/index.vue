@@ -20,8 +20,8 @@ const selectRecommendItem = async (item: IRecommendItem) => {
   recommendItem.value = null;
   listDetail.value = null;
   showMusic.value = true;
-  const { data } = await getListDetail(item.id);
   recommendItem.value = item;
+  const { data } = await getListDetail(item.id);
   listDetail.value = data;
 };
 
@@ -90,10 +90,9 @@ watch(
       </div>
     </n-scrollbar>
     <music-list
-      v-if="listDetail?.playlist"
       v-model:show="showMusic"
-      :name="listDetail?.playlist.name"
-      :song-list="listDetail?.playlist.tracks"
+      :name="recommendItem?.name || ''"
+      :song-list="listDetail?.playlist.tracks || []"
     />
   </div>
 </template>

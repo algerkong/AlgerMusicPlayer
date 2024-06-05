@@ -9,16 +9,20 @@
       <i class="iconfont icon-icon_error music-close" @click="close"></i>
       <div class="music-title text-el">{{ name }}</div>
       <!-- 歌单歌曲列表 -->
-      <div class="music-list">
+      <div :show="loading" class="music-list">
         <n-scrollbar>
-          <div
-            v-for="(item, index) in songList"
-            :key="item.id"
-            :class="setAnimationClass('animate__bounceInUp')"
-            :style="setAnimationDelay(index, 50)"
-          >
-            <song-item :item="formatDetail(item)" @play="handlePlay" />
-          </div>
+          <n-spin :show="loading">
+            <div class="music-list-content">
+              <div
+                v-for="(item, index) in songList"
+                :key="item.id"
+                :class="setAnimationClass('animate__bounceInUp')"
+                :style="setAnimationDelay(index, 50)"
+              >
+                <song-item :item="formatDetail(item)" @play="handlePlay" />
+              </div>
+            </div>
+          </n-spin>
           <play-bottom />
         </n-scrollbar>
       </div>
@@ -34,6 +38,8 @@ import { isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
 
 import PlayBottom from './common/PlayBottom.vue';
 
+const loading = ref(true);
+
 const store = useStore();
 
 const props = defineProps<{
@@ -42,6 +48,14 @@ const props = defineProps<{
   songList: any[];
 }>();
 const emit = defineEmits(['update:show']);
+
+watch(
+  () => props.songList,
+  (val) => {
+    loading.value = !(val && val.length);
+  },
+  { immediate: true },
+);
 
 const formatDetail = computed(() => (detail: any) => {
   const song = {
@@ -81,6 +95,9 @@ const close = () => {
 
   &-list {
     height: calc(100% - 60px);
+    &-content {
+      min-height: 400px;
+    }
   }
 }
 

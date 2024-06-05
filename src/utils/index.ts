@@ -60,8 +60,11 @@ export const getMusicProxyUrl = (url: string) => {
 
 export const getImgUrl = computed(() => (url: string | undefined, size: string = '') => {
   const bdUrl = 'https://image.baidu.com/search/down?url=';
-  const imgUrl = encodeURIComponent(`${url}?param=${size}`);
-  return `${bdUrl}${imgUrl}`;
+  const imgUrl = `${url}?param=${size}`;
+  if (!getIsMc()) {
+    return imgUrl;
+  }
+  return `${bdUrl}${encodeURIComponent(imgUrl)}`;
 });
 
 export const isMobile = computed(() => {

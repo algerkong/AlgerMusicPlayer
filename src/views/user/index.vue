@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
-import { onBeforeRouteUpdate, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 
 import { getListDetail } from '@/api/list';
@@ -36,8 +36,9 @@ const loadPage = async () => {
   const { data: playlistData } = await getUserPlaylist(user.value.userId);
   playList.value = playlistData.playlist;
 
-  const { data: recordData } = await getUserRecord(user.value.userId);
-  recordList.value = recordData.allData;
+  getUserRecord(user.value.userId).then(({ data: recordData }) => {
+    recordList.value = recordData.allData;
+  });
 };
 
 onActivated(() => {
@@ -52,8 +53,9 @@ const isShowList = ref(false);
 const list = ref<Playlist>();
 // 展示歌单
 const showPlaylist = async (id: number) => {
-  const { data } = await getListDetail(id);
   isShowList.value = true;
+  list.value = {};
+  const { data } = await getListDetail(id);
   list.value = data.playlist;
 };
 
@@ -77,7 +79,7 @@ const handlePlay = () => {
 </script>
 
 <template>
-  <div class="user-page" @click.stop="isShowList = false">
+  <div class="user-page">
     <div
       v-if="userDetail"
       class="left"
@@ -138,7 +140,7 @@ const handlePlay = () => {
         </n-scrollbar>
       </div>
     </div>
-    <music-list v-if="list" v-model:show="isShowList" :name="list.name" :song-list="list.tracks" />
+    <music-list v-model:show="isShowList" :name="list?.name || ''" :song-list="list?.tracks || []" />
   </div>
 </template>
 
