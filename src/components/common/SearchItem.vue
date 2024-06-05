@@ -1,11 +1,14 @@
 <template>
-  <div class="search-item" @click="handleClick">
+  <div class="search-item" :class="item.type" @click="handleClick">
     <div class="search-item-img">
-      <n-image :src="getImgUrl(item.picUrl, '200y200')" lazy preview-disabled />
+      <n-image :src="getImgUrl(item.picUrl, '320y180')" lazy preview-disabled />
+      <div v-if="item.type === 'mv'" class="play">
+        <i class="iconfont icon icon-play"></i>
+      </div>
     </div>
     <div class="search-item-info">
-      <div class="search-item-name">{{ item.name }}</div>
-      <div class="search-item-artist">{{ item.desc }}</div>
+      <p class="search-item-name">{{ item.name }}</p>
+      <p class="search-item-artist">{{ item.desc }}</p>
     </div>
 
     <MusicList
@@ -72,11 +75,31 @@ const handleClick = async () => {
     @apply w-12 h-12 mr-4 rounded-2xl overflow-hidden;
   }
   .search-item-info {
+    @apply flex-1 overflow-hidden;
     &-name {
       @apply text-white text-sm text-center;
     }
     &-artist {
       @apply text-gray-400 text-xs text-center;
+    }
+  }
+}
+
+.mv {
+  .search-item-img {
+    width: 160px;
+    height: 90px;
+    @apply rounded-lg relative;
+    &:hover {
+      .play {
+        @apply opacity-60;
+      }
+    }
+  }
+  .play {
+    @apply absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity;
+    .icon {
+      @apply text-white text-5xl;
     }
   }
 }
