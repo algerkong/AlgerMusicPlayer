@@ -31,7 +31,7 @@
     "axios": "^0.21.1",
     "electron": "^30.0.0",
     "electron-builder": "^24.13.0",
-    "eslint": "^8.56.0",
+    "eslint": "^9.6.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-import": "^2.29.1",
