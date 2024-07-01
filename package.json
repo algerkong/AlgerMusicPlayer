@@ -46,7 +46,7 @@
     "remixicon": "^4.2.0",
     "sass": "^1.35.2",
     "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.2.4",
-    "typescript": "^4.3.2",
+    "typescript": "^5.5.2",
     "unplugin-auto-import": "^0.17.2",
     "unplugin-vue-components": "^0.26.0",
     "vfonts": "^0.1.0",
