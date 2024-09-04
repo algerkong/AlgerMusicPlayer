@@ -29,32 +29,30 @@
       :native-scrollbar="false"
     >
       <div class="title">{{ hotKeyword }}</div>
-      <n-spin :show="searchDetailLoading">
-        <div class="search-list-box">
-          <template v-if="searchDetail">
-            <div
-              v-for="(item, index) in searchDetail?.songs"
-              :key="item.id"
-              :class="setAnimationClass('animate__bounceInRight')"
-              :style="setAnimationDelay(index, 50)"
-            >
-              <song-item :item="item" @play="handlePlay" />
-            </div>
-            <template v-for="(list, key) in searchDetail">
-              <template v-if="key.toString() !== 'songs'">
-                <div
-                  v-for="(item, index) in list"
-                  :key="item.id"
-                  :class="setAnimationClass('animate__bounceInRight')"
-                  :style="setAnimationDelay(index, 50)"
-                >
-                  <SearchItem :item="item" />
-                </div>
-              </template>
+      <div v-loading="searchDetailLoading" class="search-list-box">
+        <template v-if="searchDetail">
+          <div
+            v-for="(item, index) in searchDetail?.songs"
+            :key="item.id"
+            :class="setAnimationClass('animate__bounceInRight')"
+            :style="setAnimationDelay(index, 50)"
+          >
+            <song-item :item="item" @play="handlePlay" />
+          </div>
+          <template v-for="(list, key) in searchDetail">
+            <template v-if="key.toString() !== 'songs'">
+              <div
+                v-for="(item, index) in list"
+                :key="item.id"
+                :class="setAnimationClass('animate__bounceInRight')"
+                :style="setAnimationDelay(index, 50)"
+              >
+                <SearchItem :item="item" />
+              </div>
             </template>
           </template>
-        </div>
-      </n-spin>
+        </template>
+      </div>
     </n-layout>
   </div>
 </template>

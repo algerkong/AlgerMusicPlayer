@@ -1,7 +1,12 @@
 <template>
   <div class="recommend-music">
     <div class="title" :class="setAnimationClass('animate__fadeInLeft')">本周最热音乐</div>
-    <div v-show="recommendMusic?.result" class="recommend-music-list" :class="setAnimationClass('animate__bounceInUp')">
+    <div
+      v-show="recommendMusic?.result"
+      v-loading="loading"
+      class="recommend-music-list"
+      :class="setAnimationClass('animate__bounceInUp')"
+    >
       <!-- 推荐音乐列表 -->
       <template v-for="(item, index) in recommendMusic?.result" :key="item.id">
         <div :class="setAnimationClass('animate__bounceInUp')" :style="setAnimationDelay(index, 100)">
@@ -24,11 +29,14 @@ import SongItem from './common/SongItem.vue';
 const store = useStore();
 // 推荐歌曲
 const recommendMusic = ref<IRecommendMusic>();
+const loading = ref(false);
 
 // 加载推荐歌曲
 const loadRecommendMusic = async () => {
+  loading.value = true;
   const { data } = await getRecommendMusic({ limit: 10 });
   recommendMusic.value = data;
+  loading.value = false;
 };
 
 // 页面初始化

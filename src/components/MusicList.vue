@@ -9,20 +9,18 @@
       <i class="iconfont icon-icon_error music-close" @click="close"></i>
       <div class="music-title text-el">{{ name }}</div>
       <!-- 歌单歌曲列表 -->
-      <div :show="loading" class="music-list">
+      <div class="music-list">
         <n-scrollbar>
-          <n-spin :show="loading">
-            <div class="music-list-content">
-              <div
-                v-for="(item, index) in songList"
-                :key="item.id"
-                :class="setAnimationClass('animate__bounceInUp')"
-                :style="setAnimationDelay(index, 50)"
-              >
-                <song-item :item="formatDetail(item)" @play="handlePlay" />
-              </div>
+          <div v-loading="loading || !songList.length" class="music-list-content">
+            <div
+              v-for="(item, index) in songList"
+              :key="item.id"
+              :class="setAnimationClass('animate__bounceInLeft')"
+              :style="setAnimationDelay(index, 50)"
+            >
+              <song-item :item="formatDetail(item)" @play="handlePlay" />
             </div>
-          </n-spin>
+          </div>
           <play-bottom />
         </n-scrollbar>
       </div>
@@ -38,24 +36,15 @@ import { isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
 
 import PlayBottom from './common/PlayBottom.vue';
 
-const loading = ref(true);
-
 const store = useStore();
 
-const props = defineProps<{
+const { songList, loading = false } = defineProps<{
   show: boolean;
   name: string;
   songList: any[];
+  loading?: boolean;
 }>();
-const emit = defineEmits(['update:show']);
-
-watch(
-  () => props.songList,
-  (val) => {
-    loading.value = !(val && val.length);
-  },
-  { immediate: true },
-);
+const emit = defineEmits(['update:show', 'update:loading']);
 
 const formatDetail = computed(() => (detail: any) => {
   const song = {
@@ -70,7 +59,7 @@ const formatDetail = computed(() => (detail: any) => {
 });
 
 const handlePlay = () => {
-  const tracks = props.songList || [];
+  const tracks = songList || [];
   store.commit('setPlayList', tracks);
 };
 

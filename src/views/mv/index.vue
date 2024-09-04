@@ -4,7 +4,7 @@
       <h2>推荐MV</h2>
     </div>
     <n-scrollbar :size="100">
-      <div class="mv-list-content" :class="setAnimationClass('animate__bounceInLeft')">
+      <div v-loading="loading" class="mv-list-content" :class="setAnimationClass('animate__bounceInLeft')">
         <div
           v-for="(item, index) in mvList"
           :key="item.id"
@@ -32,7 +32,7 @@
     </n-scrollbar>
 
     <n-drawer :show="showMv" height="100vh" placement="bottom" :z-index="999999999">
-      <div class="mv-detail">
+      <div v-loading="mvLoading" class="mv-detail">
         <video :src="playMvUrl" controls autoplay></video>
         <div class="mv-detail-title">
           <div class="title">{{ playMvItem?.name }}</div>
@@ -62,19 +62,25 @@ const mvList = ref<Array<IMvItem>>([]);
 const playMvItem = ref<IMvItem>();
 const playMvUrl = ref<string>();
 const store = useStore();
+const loading = ref(false);
 
 onMounted(async () => {
+  loading.value = true;
   const res = await getTopMv(30);
   mvList.value = res.data.data;
+  loading.value = false;
 });
 
+const mvLoading = ref(false);
 const handleShowMv = async (item: IMvItem) => {
+  mvLoading.value = true;
   store.commit('setIsPlay', false);
   store.commit('setPlayMusic', false);
   showMv.value = true;
   const res = await getMvUrl(item.id);
   playMvItem.value = item;
   playMvUrl.value = res.data.data.url;
+  mvLoading.value = false;
 };
 
 const close = () => {

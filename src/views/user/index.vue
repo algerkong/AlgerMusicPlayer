@@ -21,6 +21,7 @@ const router = useRouter();
 const userDetail = ref<IUserDetail>();
 const playList = ref<any[]>([]);
 const recordList = ref();
+const infoLoading = ref(false);
 
 const user = computed(() => store.state.user);
 
@@ -29,6 +30,7 @@ const loadPage = async () => {
     router.push('/login');
     return;
   }
+  infoLoading.value = true;
 
   const { data: userData } = await getUserDetail(user.value.userId);
   userDetail.value = userData;
@@ -36,9 +38,12 @@ const loadPage = async () => {
   const { data: playlistData } = await getUserPlaylist(user.value.userId);
   playList.value = playlistData.playlist;
 
-  getUserRecord(user.value.userId).then(({ data: recordData }) => {
-    recordList.value = recordData.allData;
-  });
+  // getUserRecord(user.value.userId).then(({ data: recordData }) => {
+  //   recordList.value = recordData.allData;
+  // });
+  const { data: recordData } = await getUserRecord(user.value.userId);
+  recordList.value = recordData.allData;
+  infoLoading.value = false;
 };
 
 onActivated(() => {
@@ -109,7 +114,7 @@ const handlePlay = () => {
 
         <div class="play-list" :class="setAnimationClass('animate__fadeInLeft')">
           <div class="  ">创建的歌单</div>
-          <n-scrollbar>
+          <n-scrollbar v-loading="infoLoading">
             <div v-for="(item, index) in playList" :key="index" class="play-list-item" @click="showPlaylist(item.id)">
               <n-image :src="getImgUrl(item.coverImgUrl, '50y50')" class="play-list-item-img" lazy preview-disabled />
               <div class="play-list-item-info">
@@ -125,7 +130,7 @@ const handlePlay = () => {
     <div v-if="!isMobile" class="right" :class="setAnimationClass('animate__fadeInRight')">
       <div class="title">听歌排行</div>
       <div class="record-list">
-        <n-scrollbar>
+        <n-scrollbar v-loading="infoLoading">
           <div
             v-for="(item, index) in recordList"
             :key="item.song.id"

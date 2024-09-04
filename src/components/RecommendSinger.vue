@@ -4,6 +4,7 @@
     <div class="recommend-singer">
       <div class="recommend-singer-list">
         <div
+          v-if="dayRecommendData"
           class="recommend-singer-item relative"
           :class="setAnimationClass('animate__backInRight')"
           :style="setAnimationDelay(0, 100)"
@@ -27,7 +28,7 @@
           </div>
         </div>
         <div
-          v-for="(item, index) in hotSingerData?.artists.slice(0, 4)"
+          v-for="(item, index) in hotSingerData?.artists"
           :key="item.id"
           class="recommend-singer-item relative"
           :class="setAnimationClass('animate__backInRight')"
@@ -59,12 +60,15 @@
 
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue';
+import { useStore } from 'vuex';
 
 import { getDayRecommend, getHotSinger } from '@/api/home';
 import router from '@/router';
 import { IDayRecommend } from '@/type/day_recommend';
 import type { IHotSinger } from '@/type/singer';
 import { getImgUrl, setAnimationClass, setAnimationDelay, setBackgroundImg } from '@/utils';
+
+const store = useStore();
 
 // 歌手信息
 const hotSingerData = ref<IHotSinger>();
@@ -82,18 +86,24 @@ const showMusic = ref(false);
 // };
 // 页面初始化
 onMounted(async () => {
+  await loadData();
+});
+
+const loadData = async () => {
   try {
     const [{ data: singerData }, { data: dayRecommend }] = await Promise.all([
       getHotSinger({ offset: 0, limit: 5 }),
       getDayRecommend(),
     ]);
-
+    if (dayRecommend.data) {
+      singerData.artists = singerData.artists.slice(0, 4);
+    }
     hotSingerData.value = singerData;
     dayRecommendData.value = dayRecommend.data;
   } catch (error) {
     console.error('error', error);
   }
-});
+};
 
 const toSearchSinger = (keyword: string) => {
   router.push({
@@ -103,6 +113,13 @@ const toSearchSinger = (keyword: string) => {
     },
   });
 };
+
+// 监听登录状态
+watchEffect(() => {
+  if (store.state.user) {
+    loadData();
+  }
+});
 </script>
 
 <style lang="scss" scoped>

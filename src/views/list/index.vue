@@ -16,19 +16,24 @@ const showMusic = ref(false);
 
 const recommendItem = ref<IRecommendItem | null>();
 const listDetail = ref<IListDetail | null>();
+const listLoading = ref(true);
 const selectRecommendItem = async (item: IRecommendItem) => {
+  listLoading.value = true;
   recommendItem.value = null;
   listDetail.value = null;
   showMusic.value = true;
   recommendItem.value = item;
   const { data } = await getListDetail(item.id);
   listDetail.value = data;
+  listLoading.value = false;
 };
 
 const route = useRoute();
 const listTitle = ref(route.query.type || '歌单列表');
 
+const loading = ref(false);
 const loadList = async (type: string) => {
+  loading.value = true;
   const params = {
     cat: type || '',
     limit: 30,
@@ -36,6 +41,7 @@ const loadList = async (type: string) => {
   };
   const { data } = await getListByCat(params);
   recommendList.value = data.playlists;
+  loading.value = false;
 };
 
 if (route.query.type) {
@@ -51,6 +57,7 @@ watch(
   async (newParams) => {
     if (newParams.type) {
       recommendList.value = null;
+      listTitle.value = newParams.type || '歌单列表';
       loadList(newParams.type as string);
     }
   },
@@ -62,7 +69,7 @@ watch(
     <div class="recommend-title" :class="setAnimationClass('animate__bounceInLeft')">{{ listTitle }}</div>
     <!-- 歌单列表 -->
     <n-scrollbar class="recommend" :size="100" @click="showMusic = false">
-      <div v-if="recommendList" class="recommend-list">
+      <div v-loading="loading" class="recommend-list">
         <div
           v-for="(item, index) in recommendList"
           :key="item.id"
@@ -91,6 +98,7 @@ watch(
     </n-scrollbar>
     <music-list
       v-model:show="showMusic"
+      v-model:loading="listLoading"
       :name="recommendItem?.name || ''"
       :song-list="listDetail?.playlist.tracks || []"
     />

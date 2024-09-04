@@ -70,6 +70,14 @@ const timerIsQr = (key: string) => {
   return timer;
 };
 
+// 离开页面时
+onBeforeUnmount(() => {
+  if (timerRef.value) {
+    clearInterval(timerRef.value);
+    timerRef.value = null;
+  }
+});
+
 // 是否扫码登陆
 const isQr = ref(!isMobile.value);
 const chooseQr = () => {
