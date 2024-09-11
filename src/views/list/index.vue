@@ -101,6 +101,7 @@ watch(
       v-model:loading="listLoading"
       :name="recommendItem?.name || ''"
       :song-list="listDetail?.playlist.tracks || []"
+      :list-info="listDetail?.playlist"
     />
   </div>
 </template>

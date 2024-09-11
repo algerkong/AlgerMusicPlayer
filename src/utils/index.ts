@@ -28,16 +28,21 @@ export const secondToMinute = (s: number) => {
 };
 
 // 格式化数字 千,万, 百万, 千万,亿
+const units = [
+  { value: 1e8, symbol: '亿' },
+  { value: 1e4, symbol: '万' },
+];
+
 export const formatNumber = (num: string | number) => {
   num = Number(num);
-  if (num < 10000) {
-    return num;
+  for (let i = 0; i < units.length; i++) {
+    if (num >= units[i].value) {
+      return `${(num / units[i].value).toFixed(1)}${units[i].symbol}`;
+    }
   }
-  if (num < 100000000) {
-    return `${(num / 10000).toFixed(1)}万`;
-  }
-  return `${(num / 100000000).toFixed(1)}亿`;
+  return num.toString();
 };
+
 const windowData = window as any;
 export const getIsMc = () => {
   if (!windowData.electron) {
