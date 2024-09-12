@@ -1,8 +1,11 @@
 <template>
   <!-- 展开全屏 -->
-  <music-full ref="MusicFullRef" v-model:musicFull="musicFull" :audio="audio.value as HTMLAudioElement" />
+  <music-full ref="MusicFullRef" v-model:music-full="musicFull" :audio="audio.value as HTMLAudioElement" />
   <!-- 底部播放栏 -->
-  <div class="music-play-bar" :class="setAnimationClass('animate__bounceInUp')">
+  <div
+    class="music-play-bar"
+    :class="setAnimationClass('animate__bounceInUp') + ' ' + (musicFull ? 'play-bar-opcity' : '')"
+  >
     <n-image
       :src="getImgUrl(playMusic?.picUrl, '300y300')"
       class="play-bar-img"
@@ -223,7 +226,7 @@ const setMusicFull = () => {
   @apply h-20 w-full absolute bottom-0 left-0 flex items-center rounded-t-2xl overflow-hidden box-border px-6 py-2;
   z-index: 9999;
   box-shadow: 0px 0px 10px 2px rgba(203, 203, 203, 0.034);
-  background-color: rgba(0, 0, 0, 0.747);
+  background-color: #212121;
   animation-duration: 0.5s !important;
   .music-content {
     width: 140px;
@@ -238,6 +241,10 @@ const setMusicFull = () => {
       @apply text-gray-400;
     }
   }
+}
+
+.play-bar-opcity {
+  background-color: rgba(0, 0, 0, 0.218);
 }
 
 .play-bar-img {
