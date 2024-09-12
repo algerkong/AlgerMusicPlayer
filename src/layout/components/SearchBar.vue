@@ -14,7 +14,7 @@
         </template>
         <template #suffix>
           <div class="w-20 px-3 flex justify-between items-center">
-            <div>{{ searchTypeOptions.find((item) => item.key === searchType)?.label }}</div>
+            <div>{{ searchTypeOptions.find((item) => item.key === store.state.searchType)?.label }}</div>
             <n-dropdown trigger="hover" :options="searchTypeOptions" @select="selectSearchType">
               <i class="iconfont icon-xiasanjiaoxing"></i>
             </n-dropdown>
@@ -90,7 +90,6 @@ onMounted(() => {
 
 // 搜索词
 const searchValue = ref('');
-const searchType = ref(1);
 const search = () => {
   const { value } = searchValue;
   if (value === '') {
@@ -98,17 +97,21 @@ const search = () => {
     return;
   }
 
+  if (router.currentRoute.value.path === '/search') {
+    store.state.searchValue = value;
+    return;
+  }
+
   router.push({
     path: '/search',
     query: {
       keyword: value,
-      type: searchType.value,
     },
   });
 };
 
 const selectSearchType = (key: number) => {
-  searchType.value = key;
+  store.state.searchType = key;
 };
 
 const searchTypeOptions = ref(SEARCH_TYPES);

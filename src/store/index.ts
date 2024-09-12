@@ -18,6 +18,8 @@ interface State {
   setData: any;
   lyric: any;
   isMobile: boolean;
+  searchValue: string;
+  searchType: number;
 }
 
 const state: State = {
@@ -32,6 +34,8 @@ const state: State = {
   setData: null,
   lyric: {},
   isMobile: false,
+  searchValue: '',
+  searchType: 1,
 };
 
 const windowData = window as any;

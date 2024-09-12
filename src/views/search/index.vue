@@ -13,7 +13,7 @@
             :class="setAnimationClass('animate__bounceInLeft')"
             :style="setAnimationDelay(index, 10)"
             class="hot-search-item"
-            @click.stop="clickHotKeyword(item.searchWord)"
+            @click.stop="loadSearch(item.searchWord, 1)"
           >
             <span class="hot-search-item-count" :class="{ 'hot-search-item-count-3': index < 3 }">{{ index + 1 }}</span>
             {{ item.searchWord }}
@@ -60,7 +60,7 @@
 <script lang="ts" setup>
 import { useDateFormat } from '@vueuse/core';
 import { onMounted, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 
 import { getHotSearch } from '@/api/home';
@@ -74,9 +74,10 @@ defineOptions({
 });
 
 const route = useRoute();
-const router = useRouter();
+const store = useStore();
+
 const searchDetail = ref<any>();
-const searchType = ref(Number(route.query.type) || 1);
+const searchType = computed(() => store.state.searchType as number);
 const searchDetailLoading = ref(false);
 
 // 热搜列表
@@ -88,29 +89,26 @@ const loadHotSearch = async () => {
 
 onMounted(() => {
   loadHotSearch();
+  loadSearch(route.query.keyword);
 });
 
 const hotKeyword = ref(route.query.keyword || '搜索列表');
-const clickHotKeyword = (keyword: string) => {
-  hotKeyword.value = keyword;
-  router.push({
-    path: '/search',
-    query: {
-      keyword,
-      type: 1,
-    },
-  });
-  // isHotSearchList.value = false;
-};
+
+watch(
+  () => store.state.searchValue,
+  (value) => {
+    loadSearch(value);
+  },
+);
 
 const dateFormat = (time: any) => useDateFormat(time, 'YYYY.MM.DD').value;
-const loadSearch = async (keywords: any) => {
+const loadSearch = async (keywords: any, type: any = null) => {
   hotKeyword.value = keywords;
   searchDetail.value = undefined;
   if (!keywords) return;
 
   searchDetailLoading.value = true;
-  const { data } = await getSearch({ keywords, type: searchType.value });
+  const { data } = await getSearch({ keywords, type: type || searchType.value });
 
   const songs = data.result.songs || [];
   const albums = data.result.albums || [];
@@ -148,17 +146,14 @@ const loadSearch = async (keywords: any) => {
   searchDetailLoading.value = false;
 };
 
-loadSearch(route.query.keyword);
-
 watch(
-  () => route.query,
-  async (newParams) => {
-    searchType.value = Number(newParams.type || 1);
-    loadSearch(newParams.keyword);
+  () => route.path,
+  async (path) => {
+    if (path === '/search') {
+      store.state.searchValue = route.query.keyword;
+    }
   },
 );
-
-const store = useStore();
 
 const handlePlay = () => {
   const tracks = searchDetail.value?.songs || [];
