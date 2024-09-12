@@ -1,5 +1,5 @@
 <template>
-  <n-drawer :show="musicFull" height="100vh" placement="bottom" :drawer-style="{ backgroundColor: 'transparent' }">
+  <n-drawer :show="musicFull" height="100vh" placement="bottom" :style="{ backgroundColor: 'transparent' }">
     <div id="drawer-target">
       <div
         class="drawer-back"
@@ -10,10 +10,10 @@
         <n-image ref="PicImgRef" :src="getImgUrl(playMusic?.picUrl, '300y300')" class="img" lazy preview-disabled />
       </div>
       <div class="music-content">
-        <div class="music-content-name">{{ playMusic.song.name }}</div>
+        <div class="music-content-name">{{ playMusic.name }}</div>
         <div class="music-content-singer">
-          <span v-for="(item, index) in playMusic.song.artists" :key="index">
-            {{ item.name }}{{ index < playMusic.song.artists.length - 1 ? ' / ' : '' }}
+          <span v-for="(item, index) in playMusic.artists" :key="index">
+            {{ item.name }}{{ index < playMusic.artists.length - 1 ? ' / ' : '' }}
           </span>
         </div>
         <n-layout
@@ -57,7 +57,7 @@ import {
   reduceCorrectionTime,
   setAudioTime,
 } from '@/hooks/MusicHook';
-import type { SongResult } from '@/type/music';
+import type { Song } from '@/type/music';
 import { getImgUrl } from '@/utils';
 
 const store = useStore();
@@ -74,7 +74,7 @@ const props = defineProps({
 });
 
 // 播放的音乐信息
-const playMusic = computed(() => store.state.playMusic as SongResult);
+const playMusic = computed(() => store.state.playMusic as Song);
 const isPlaying = computed(() => store.state.play as boolean);
 // 获取歌词滚动dom
 const lrcSider = ref<any>(null);

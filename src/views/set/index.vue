@@ -49,7 +49,9 @@ const windowData = window as any;
 
 const handleSave = () => {
   store.commit('setSetData', setData.value);
-  windowData.electronAPI.restart();
+  if (windowData.electronAPI) {
+    windowData.electronAPI.restart();
+  }
 };
 </script>
 

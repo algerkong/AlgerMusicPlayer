@@ -3,9 +3,7 @@
     <audio id="MusicAudio" ref="audioRef" :src="playMusicUrl" :autoplay="play"></audio>
     <n-config-provider :theme="darkTheme">
       <n-dialog-provider>
-        <keep-alive>
-          <router-view></router-view>
-        </keep-alive>
+        <router-view></router-view>
       </n-dialog-provider>
     </n-config-provider>
   </div>

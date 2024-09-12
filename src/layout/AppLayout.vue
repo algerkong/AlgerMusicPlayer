@@ -37,6 +37,7 @@ import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 
 import PlayBottom from '@/components/common/PlayBottom.vue';
+import { isElectron } from '@/hooks/MusicHook';
 import homeRouter from '@/router/home';
 import { isMobile } from '@/utils';
 
@@ -69,11 +70,6 @@ const audio = {
   value: document.querySelector('#MusicAudio') as HTMLAudioElement,
 };
 
-const windowData = window as any;
-const isElectron = computed(() => {
-  return !!windowData.electronAPI;
-});
-
 onMounted(() => {
   // 监听音乐是否播放
   watch(
@@ -92,14 +88,6 @@ onMounted(() => {
       case 'Space':
         playMusicEvent();
         break;
-      default:
-    }
-  };
-  // 按下键盘按钮监听
-  document.onkeydown = (e) => {
-    switch (e.code) {
-      case 'Space':
-        return false;
       default:
     }
   };

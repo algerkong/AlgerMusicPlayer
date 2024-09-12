@@ -1,12 +1,12 @@
 // musicHistoryHooks
 import { useLocalStorage } from '@vueuse/core';
 
-import type { SongResult } from '@/type/music';
+import type { Song } from '@/type/music';
 
 export const useMusicHistory = () => {
-  const musicHistory = useLocalStorage<SongResult[]>('musicHistory', []);
+  const musicHistory = useLocalStorage<Song[]>('musicHistory', []);
 
-  const addMusic = (music: SongResult) => {
+  const addMusic = (music: Song) => {
     const index = musicHistory.value.findIndex((item) => item.id === music.id);
     if (index !== -1) {
       musicHistory.value[index].count = (musicHistory.value[index].count || 0) + 1;
@@ -16,7 +16,7 @@ export const useMusicHistory = () => {
     }
   };
 
-  const delMusic = (music: SongResult) => {
+  const delMusic = (music: Song) => {
     const index = musicHistory.value.findIndex((item) => item.id === music.id);
     if (index !== -1) {
       musicHistory.value.splice(index, 1);

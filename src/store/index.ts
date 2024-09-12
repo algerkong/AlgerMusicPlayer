@@ -3,17 +3,17 @@ import { createStore } from 'vuex';
 import { getMusicUrl, getParsingMusicUrl } from '@/api/music';
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';
 import homeRouter from '@/router/home';
-import { SongResult } from '@/type/music';
+import type { Song } from '@/type/music';
 import { getMusicProxyUrl } from '@/utils';
 
 interface State {
   menus: any[];
   play: boolean;
   isPlay: boolean;
-  playMusic: SongResult;
+  playMusic: Song;
   playMusicUrl: string;
   user: any;
-  playList: SongResult[];
+  playList: Song[];
   playListIndex: number;
   setData: any;
   lyric: any;
@@ -24,7 +24,7 @@ const state: State = {
   menus: homeRouter,
   play: false,
   isPlay: false,
-  playMusic: {} as SongResult,
+  playMusic: {} as Song,
   playMusicUrl: '',
   user: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') as string) : null,
   playList: [],
@@ -42,7 +42,7 @@ const mutations = {
   setMenus(state: State, menus: any[]) {
     state.menus = menus;
   },
-  async setPlay(state: State, playMusic: SongResult) {
+  async setPlay(state: State, playMusic: Song) {
     state.playMusic = { ...playMusic, playLoading: true };
     state.playMusicUrl = await getSongUrl(playMusic.id);
     state.play = true;
@@ -55,7 +55,7 @@ const mutations = {
   setPlayMusic(state: State, play: boolean) {
     state.play = play;
   },
-  setPlayList(state: State, playList: SongResult[]) {
+  setPlayList(state: State, playList: Song[]) {
     state.playListIndex = playList.findIndex((item) => item.id === state.playMusic.id);
     state.playList = playList;
   },

@@ -133,7 +133,6 @@ const loadSearch = async (keywords: any) => {
   // songs map 替换属性
   songs.forEach((item: any) => {
     item.picUrl = item.al.picUrl;
-    item.song = item;
     item.artists = item.ar;
   });
   albums.forEach((item: any) => {

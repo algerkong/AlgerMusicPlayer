@@ -50,7 +50,6 @@ const handleClick = async () => {
   if (props.item.type === '专辑') {
     showPop.value = true;
     const res = await getAlbum(props.item.id);
-    console.log('res.data', res.data);
     songList.value = res.data.songs.map((song: any) => {
       song.al.picUrl = song.al.picUrl || props.item.picUrl;
       return song;

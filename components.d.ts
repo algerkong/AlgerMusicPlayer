@@ -25,6 +25,7 @@ declare module 'vue' {
     NSlider: typeof import('naive-ui')['NSlider']
     NSwitch: typeof import('naive-ui')['NSwitch']
     NTooltip: typeof import('naive-ui')['NTooltip']
+    NVirtualList: typeof import('naive-ui')['NVirtualList']
     PlayBottom: typeof import('./src/components/common/PlayBottom.vue')['default']
     PlayListsItem: typeof import('./src/components/common/PlayListsItem.vue')['default']
     PlaylistType: typeof import('./src/components/PlaylistType.vue')['default']

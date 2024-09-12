@@ -1,6 +1,12 @@
 import { getMusicLrc } from '@/api/music';
 import { ILyric } from '@/type/lyric';
 
+const windowData = window as any;
+
+export const isElectron = computed(() => {
+  return !!windowData.electronAPI;
+});
+
 interface ILrcData {
   text: string;
   trText: string;
@@ -135,6 +141,9 @@ export const getLrcTimeRange = (index: number) => {
 
 export const sendLyricToWin = (isPlay: boolean = true) => {
   try {
+    if (!isElectron.value) {
+      return;
+    }
     // 设置lyricWinData 获取 当前播放的两句歌词 和歌词时间
     let lyricWinData = null;
     if (lrcArray.value.length > 0) {
@@ -154,8 +163,6 @@ export const sendLyricToWin = (isPlay: boolean = true) => {
         startCurrentTime: getLrcTime(nowIndex),
         isPlay,
       };
-
-      const windowData = window as any;
       windowData.electronAPI.sendLyric(JSON.stringify(lyricWinData));
     }
   } catch (error) {
@@ -164,7 +171,9 @@ export const sendLyricToWin = (isPlay: boolean = true) => {
 };
 
 export const openLyric = () => {
-  const windowData = window as any;
+  if (!isElectron.value) {
+    return;
+  }
   windowData.electronAPI.openLyric();
   sendLyricToWin();
 };

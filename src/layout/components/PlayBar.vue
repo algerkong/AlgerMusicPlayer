@@ -1,10 +1,10 @@
 <template>
   <!-- 展开全屏 -->
-  <music-full ref="MusicFullRef" v-model:music-full="musicFull" :audio="audio.value as HTMLAudioElement" />
+  <music-full ref="MusicFullRef" v-model:music-full="musicFullVisible" :audio="audio.value as HTMLAudioElement" />
   <!-- 底部播放栏 -->
   <div
     class="music-play-bar"
-    :class="setAnimationClass('animate__bounceInUp') + ' ' + (musicFull ? 'play-bar-opcity' : '')"
+    :class="setAnimationClass('animate__bounceInUp') + ' ' + (musicFullVisible ? 'play-bar-opcity' : '')"
   >
     <n-image
       :src="getImgUrl(playMusic?.picUrl, '300y300')"
@@ -21,8 +21,8 @@
       </div>
       <div class="music-content-name">
         <n-ellipsis class="text-ellipsis" line-clamp="1">
-          <span v-for="(item, index) in playMusic.song.artists" :key="index">
-            {{ item.name }}{{ index < playMusic.song.artists.length - 1 ? ' / ' : '' }}
+          <span v-for="(item, index) in playMusic.artists" :key="index">
+            {{ item.name }}{{ index < playMusic.artists.length - 1 ? ' / ' : '' }}
           </span>
         </n-ellipsis>
       </div>
@@ -62,7 +62,7 @@
         </template>
         解析播放
       </n-tooltip> -->
-      <n-tooltip class="music-lyric" trigger="hover" :z-index="9999999">
+      <n-tooltip v-if="isElectron" class="music-lyric" trigger="hover" :z-index="9999999">
         <template #trigger>
           <i class="iconfont ri-netease-cloud-music-line" @click="openLyric"></i>
         </template>
@@ -79,11 +79,11 @@
         </template>
         <div class="music-play-list">
           <div class="music-play-list-back"></div>
-          <n-scrollbar>
+          <n-virtual-list :item-size="75" item-resizable>
             <div class="music-play-list-content">
               <song-item v-for="item in playList" :key="item.id" :item="item" mini></song-item>
             </div>
-          </n-scrollbar>
+          </n-virtual-list>
         </div>
       </n-popover>
     </div>
@@ -95,8 +95,8 @@
 import { useStore } from 'vuex';
 
 import SongItem from '@/components/common/SongItem.vue';
-import { allTime, loadLrc, nowTime, openLyric, sendLyricToWin } from '@/hooks/MusicHook';
-import type { SongResult } from '@/type/music';
+import { allTime, isElectron, loadLrc, nowTime, openLyric, sendLyricToWin } from '@/hooks/MusicHook';
+import type { Song } from '@/type/music';
 import { getImgUrl, secondToMinute, setAnimationClass } from '@/utils';
 
 import MusicFull from './MusicFull.vue';
@@ -104,11 +104,11 @@ import MusicFull from './MusicFull.vue';
 const store = useStore();
 
 // 播放的音乐信息
-const playMusic = computed(() => store.state.playMusic as SongResult);
+const playMusic = computed(() => store.state.playMusic as Song);
 // 是否播放
 const play = computed(() => store.state.play as boolean);
 
-const playList = computed(() => store.state.playList as SongResult[]);
+const playList = computed(() => store.state.playList as Song[]);
 
 const audio = {
   value: document.querySelector('#MusicAudio') as HTMLAudioElement,
@@ -197,7 +197,9 @@ function handleGetAudioTime(this: HTMLAudioElement) {
   // 获取音量
   audioVolume.value = audio.volume;
   sendLyricToWin(store.state.isPlay);
-  MusicFullRef.value?.lrcScroll();
+  if (musicFullVisible.value) {
+    MusicFullRef.value?.lrcScroll();
+  }
 }
 
 // 播放暂停按钮事件
@@ -209,11 +211,11 @@ const playMusicEvent = async () => {
   }
 };
 
-const musicFull = ref(false);
+const musicFullVisible = ref(false);
 
 // 设置musicFull
 const setMusicFull = () => {
-  musicFull.value = !musicFull.value;
+  musicFullVisible.value = !musicFullVisible.value;
 };
 </script>
 

@@ -3,7 +3,7 @@
     :show="show"
     :height="isMobile ? '100vh' : '70vh'"
     placement="bottom"
-    :drawer-style="{ backgroundColor: 'transparent' }"
+    :style="{ backgroundColor: 'transparent' }"
   >
     <div class="music-page">
       <div class="music-close">

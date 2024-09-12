@@ -1,7 +1,7 @@
 export interface IRecommendMusic {
   code: number;
   category: number;
-  result: SongResult[];
+  result: Song[];
 }
 
 export interface SongResult {
@@ -18,7 +18,7 @@ export interface SongResult {
   playLoading?: boolean;
 }
 
-interface Song {
+export interface Song {
   name: string;
   id: number;
   position: number;
@@ -64,6 +64,9 @@ interface Song {
   lMusic: BMusic;
   exclusive: boolean;
   privilege: Privilege;
+  count?: number;
+  playLoading?: boolean;
+  picUrl?: string;
 }
 
 interface Privilege {
