@@ -16,6 +16,7 @@
       v-model:show="showPop"
       :name="item.name"
       :song-list="songList"
+      :list-info="listInfo"
     />
 
     <PlayVideo v-if="item.type === 'mv'" v-model:show="showPop" :title="item.name" :url="url" />
@@ -42,11 +43,14 @@ const url = ref('');
 const songList = ref<any[]>([]);
 
 const showPop = ref(false);
+const listInfo = ref<any>(null);
 
 const handleClick = async () => {
+  listInfo.value = null;
   if (props.item.type === '专辑') {
     showPop.value = true;
     const res = await getAlbum(props.item.id);
+    console.log('res.data', res.data);
     songList.value = res.data.songs.map((song: any) => {
       song.al.picUrl = song.al.picUrl || props.item.picUrl;
       return song;
@@ -57,6 +61,7 @@ const handleClick = async () => {
     showPop.value = true;
     const res = await getListDetail(props.item.id);
     songList.value = res.data.playlist.tracks;
+    listInfo.value = res.data.playlist;
   }
 
   if (props.item.type === 'mv') {
