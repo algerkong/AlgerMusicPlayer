@@ -38,11 +38,12 @@ const loadPage = async () => {
   const { data: playlistData } = await getUserPlaylist(user.value.userId);
   playList.value = playlistData.playlist;
 
-  // getUserRecord(user.value.userId).then(({ data: recordData }) => {
-  //   recordList.value = recordData.allData;
-  // });
   const { data: recordData } = await getUserRecord(user.value.userId);
-  recordList.value = recordData.allData;
+  recordList.value = recordData.allData.map((item: any) => ({
+    ...item,
+    ...item.song,
+    picUrl: item.song.al.picUrl,
+  }));
   infoLoading.value = false;
 };
 
@@ -63,19 +64,6 @@ const showPlaylist = async (id: number) => {
   const { data } = await getListDetail(id);
   list.value = data.playlist;
 };
-
-// 格式化歌曲列表项
-const formatDetail = computed(() => (detail: any) => {
-  const song = {
-    artists: detail.ar,
-    name: detail.al.name,
-    id: detail.al.id,
-  };
-
-  detail.song = song;
-  detail.picUrl = detail.al.picUrl;
-  return detail;
-});
 
 const handlePlay = () => {
   const tracks = recordList.value || [];
@@ -113,8 +101,8 @@ const handlePlay = () => {
         <div class="uesr-signature">{{ userDetail.profile.signature }}</div>
 
         <div class="play-list" :class="setAnimationClass('animate__fadeInLeft')">
-          <div class="  ">创建的歌单</div>
-          <n-scrollbar v-loading="infoLoading">
+          <div class="title">创建的歌单</div>
+          <n-scrollbar>
             <div v-for="(item, index) in playList" :key="index" class="play-list-item" @click="showPlaylist(item.id)">
               <n-image :src="getImgUrl(item.coverImgUrl, '50y50')" class="play-list-item-img" lazy preview-disabled />
               <div class="play-list-item-info">
@@ -127,18 +115,18 @@ const handlePlay = () => {
         </div>
       </div>
     </div>
-    <div v-if="!isMobile" class="right" :class="setAnimationClass('animate__fadeInRight')">
+    <div v-if="!isMobile" v-loading="infoLoading" class="right" :class="setAnimationClass('animate__fadeInRight')">
       <div class="title">听歌排行</div>
       <div class="record-list">
-        <n-scrollbar v-loading="infoLoading">
+        <n-scrollbar>
           <div
             v-for="(item, index) in recordList"
-            :key="item.song.id"
+            :key="item.id"
             class="record-item"
             :class="setAnimationClass('animate__bounceInUp')"
-            :style="setAnimationDelay(index, 50)"
+            :style="setAnimationDelay(index, 25)"
           >
-            <song-item class="song-item" :item="formatDetail(item.song)" @play="handlePlay" />
+            <song-item class="song-item" :item="item" @play="handlePlay" />
             <div class="play-count">{{ item.playCount }}次</div>
           </div>
           <play-bottom />

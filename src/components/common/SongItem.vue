@@ -63,6 +63,11 @@ const emits = defineEmits(['play']);
 // 播放音乐 设置音乐详情 打开音乐底栏
 const playMusicEvent = async (item: SongResult) => {
   if (playMusic.value.id === item.id) {
+    if (play.value) {
+      store.commit('setPlayMusic', false);
+    } else {
+      store.commit('setPlayMusic', true);
+    }
     return;
   }
   await store.commit('setPlay', item);
