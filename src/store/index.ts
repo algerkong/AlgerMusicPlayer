@@ -52,6 +52,7 @@ const mutations = {
     state.play = true;
     musicHistory.addMusic(playMusic);
     state.playMusic.playLoading = false;
+    state.playListIndex = state.playList.findIndex((item) => item.id === playMusic.id);
   },
   setIsPlay(state: State, isPlay: boolean) {
     state.isPlay = isPlay;
