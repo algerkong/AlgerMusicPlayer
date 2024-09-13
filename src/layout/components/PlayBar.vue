@@ -79,10 +79,12 @@
         </template>
         <div class="music-play-list">
           <div class="music-play-list-back"></div>
-          <n-virtual-list :item-size="75" item-resizable>
-            <div class="music-play-list-content">
-              <song-item v-for="item in playList" :key="item.id" :item="item" mini></song-item>
-            </div>
+          <n-virtual-list :item-size="57" item-resizable :items="playList">
+            <template #default="{ item }">
+              <div class="music-play-list-content">
+                <song-item :key="item.id" :item="item" mini></song-item>
+              </div>
+            </template>
           </n-virtual-list>
         </div>
       </n-popover>
@@ -304,13 +306,14 @@ const setMusicFull = () => {
 .music-play {
   &-list {
     height: 50vh;
-    @apply relative rounded-3xl overflow-hidden;
+    width: 300px;
+    @apply relative rounded-3xl overflow-hidden py-2;
     &-back {
       backdrop-filter: blur(20px);
       @apply absolute top-0 left-0 w-full h-full bg-gray-800 bg-opacity-75;
     }
     &-content {
-      padding: 10px;
+      @apply mx-2;
     }
   }
 }
@@ -345,5 +348,9 @@ const setMusicFull = () => {
   .music-content {
     flex: 1;
   }
+}
+
+:deep(.n-popover) {
+  box-shadow: none;
 }
 </style>
