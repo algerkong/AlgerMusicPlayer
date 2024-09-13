@@ -7,8 +7,8 @@
       </div>
       <div class="song-item-content-name">
         <n-ellipsis class="text-ellipsis" line-clamp="1">
-          <span v-for="(artists, artistsindex) in item.artists" :key="artistsindex"
-            >{{ artists.name }}{{ artistsindex < item.artists.length - 1 ? ' / ' : '' }}</span
+          <span v-for="(artists, artistsindex) in item.ar || item.song.artists" :key="artistsindex"
+            >{{ artists.name }}{{ artistsindex < (item.ar || item.song.artists).length - 1 ? ' / ' : '' }}</span
           >
         </n-ellipsis>
       </div>
@@ -32,12 +32,12 @@
 <script lang="ts" setup>
 import { useStore } from 'vuex';
 
-import type { Song } from '@/type/music';
+import type { SongResult } from '@/type/music';
 import { getImgUrl } from '@/utils';
 
 const props = withDefaults(
   defineProps<{
-    item: Song;
+    item: SongResult;
     mini?: boolean;
   }>(),
   {
@@ -61,7 +61,7 @@ const isPlaying = computed(() => {
 const emits = defineEmits(['play']);
 
 // 播放音乐 设置音乐详情 打开音乐底栏
-const playMusicEvent = async (item: Song) => {
+const playMusicEvent = async (item: SongResult) => {
   if (playMusic.value.id === item.id) {
     return;
   }

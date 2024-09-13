@@ -3,7 +3,10 @@
     :show="show"
     :height="isMobile ? '100vh' : '70vh'"
     placement="bottom"
+    block-scroll
+    mask-closable
     :style="{ backgroundColor: 'transparent' }"
+    @mask-click="close"
   >
     <div class="music-page">
       <div class="music-close">
@@ -93,7 +96,16 @@ const formatDetail = computed(() => (detail: any) => {
 
 const handlePlay = () => {
   const tracks = songList || [];
-  store.commit('setPlayList', tracks);
+  store.commit(
+    'setPlayList',
+    tracks.map((item) => ({
+      ...item,
+      picUrl: item.al.picUrl,
+      song: {
+        artists: item.ar,
+      },
+    })),
+  );
 };
 
 const close = () => {
@@ -111,7 +123,6 @@ const loadMoreSongs = async () => {
     const reslist = await getMusicDetail(trackIds);
     // displayedSongs.value = displayedSongs.value.concat(reslist.data.songs);
     displayedSongs.value = JSON.parse(JSON.stringify([...displayedSongs.value, ...reslist.data.songs]));
-    console.log('displayedSongs.value', displayedSongs.value);
     page.value++;
   } catch (error) {
     console.error('error', error);

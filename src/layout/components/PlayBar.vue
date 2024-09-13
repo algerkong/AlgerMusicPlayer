@@ -21,8 +21,8 @@
       </div>
       <div class="music-content-name">
         <n-ellipsis class="text-ellipsis" line-clamp="1">
-          <span v-for="(item, index) in playMusic.artists" :key="index">
-            {{ item.name }}{{ index < playMusic.artists.length - 1 ? ' / ' : '' }}
+          <span v-for="(item, index) in playMusic.song.artists" :key="index">
+            {{ item.name }}{{ index < playMusic.song.artists.length - 1 ? ' / ' : '' }}
           </span>
         </n-ellipsis>
       </div>
@@ -98,7 +98,7 @@ import { useStore } from 'vuex';
 
 import SongItem from '@/components/common/SongItem.vue';
 import { allTime, isElectron, loadLrc, nowTime, openLyric, sendLyricToWin } from '@/hooks/MusicHook';
-import type { Song } from '@/type/music';
+import type { SongResult } from '@/type/music';
 import { getImgUrl, secondToMinute, setAnimationClass } from '@/utils';
 
 import MusicFull from './MusicFull.vue';
@@ -106,11 +106,11 @@ import MusicFull from './MusicFull.vue';
 const store = useStore();
 
 // 播放的音乐信息
-const playMusic = computed(() => store.state.playMusic as Song);
+const playMusic = computed(() => store.state.playMusic as SongResult);
 // 是否播放
 const play = computed(() => store.state.play as boolean);
 
-const playList = computed(() => store.state.playList as Song[]);
+const playList = computed(() => store.state.playList as SongResult[]);
 
 const audio = {
   value: document.querySelector('#MusicAudio') as HTMLAudioElement,

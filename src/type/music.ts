@@ -1,7 +1,7 @@
 export interface IRecommendMusic {
   code: number;
   category: number;
-  result: Song[];
+  result: SongResult[];
 }
 
 export interface SongResult {
@@ -16,6 +16,8 @@ export interface SongResult {
   alg: string;
   count?: number;
   playLoading?: boolean;
+  ar?: Artist[];
+  al?: Album;
 }
 
 export interface Song {
