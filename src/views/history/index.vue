@@ -10,7 +10,7 @@
           :class="setAnimationClass('animate__bounceIn')"
           :style="setAnimationDelay(index, 30)"
         >
-          <song-item class="history-item-content" :item="item" />
+          <song-item class="history-item-content" :item="item" @play="handlePlay" />
           <div class="history-item-count">
             {{ item.count }}
           </div>
@@ -24,6 +24,8 @@
 </template>
 
 <script setup lang="ts">
+import { useStore } from 'vuex';
+
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';
 import { setAnimationClass, setAnimationDelay } from '@/utils';
 
@@ -31,7 +33,12 @@ defineOptions({
   name: 'History',
 });
 
+const store = useStore();
 const { delMusic, musicList } = useMusicHistory();
+
+const handlePlay = () => {
+  store.commit('setPlayList', musicList.value);
+};
 </script>
 
 <style scoped lang="scss">
