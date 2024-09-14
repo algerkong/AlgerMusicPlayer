@@ -63,14 +63,14 @@ export const getMusicProxyUrl = (url: string) => {
   return `${ProxyUrl}/mc?url=${PUrl}`;
 };
 
-export const getImgUrl = computed(() => (url: string | undefined, size: string = '') => {
+export const getImgUrl = (url: string | undefined, size: string = '') => {
   const bdUrl = 'https://image.baidu.com/search/down?url=';
   const imgUrl = `${url}?param=${size}`;
   if (!getIsMc()) {
     return imgUrl;
   }
   return `${bdUrl}${encodeURIComponent(imgUrl)}`;
-});
+};
 
 export const isMobile = computed(() => {
   const flag = navigator.userAgent.match(

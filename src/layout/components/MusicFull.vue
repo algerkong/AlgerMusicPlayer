@@ -1,11 +1,7 @@
 <template>
   <n-drawer :show="musicFull" height="100vh" placement="bottom" :style="{ backgroundColor: 'transparent' }">
     <div id="drawer-target">
-      <div
-        class="drawer-back"
-        :class="{ paused: !isPlaying }"
-        :style="{ backgroundImage: `url(${getImgUrl(playMusic?.picUrl, '300y300')})` }"
-      ></div>
+      <div class="drawer-back" :style="{ background: background }"></div>
       <div class="music-img">
         <n-image ref="PicImgRef" :src="getImgUrl(playMusic?.picUrl, '300y300')" class="img" lazy preview-disabled />
       </div>
@@ -62,6 +58,13 @@ import { getImgUrl } from '@/utils';
 
 const store = useStore();
 
+// 播放的音乐信息
+const playMusic = computed(() => store.state.playMusic as SongResult);
+// const isPlaying = computed(() => store.state.play as boolean);
+// 获取歌词滚动dom
+const lrcSider = ref<any>(null);
+const isMouse = ref(false);
+
 const props = defineProps({
   musicFull: {
     type: Boolean,
@@ -71,14 +74,12 @@ const props = defineProps({
     type: HTMLAudioElement,
     default: null,
   },
+  background: {
+    type: String,
+    default: '',
+  },
 });
 
-// 播放的音乐信息
-const playMusic = computed(() => store.state.playMusic as SongResult);
-const isPlaying = computed(() => store.state.play as boolean);
-// 获取歌词滚动dom
-const lrcSider = ref<any>(null);
-const isMouse = ref(false);
 // 歌词滚动方法
 const lrcScroll = () => {
   if (props.musicFull && !isMouse.value) {
@@ -110,14 +111,16 @@ defineExpose({
   }
 }
 .drawer-back {
-  @apply absolute bg-cover bg-center opacity-70;
-  filter: blur(80px) brightness(80%);
+  @apply absolute bg-cover bg-center;
+  filter: brightness(80%);
   z-index: -1;
   width: 200%;
   height: 200%;
   top: -50%;
   left: -50%;
-  animation: round 20s linear infinite;
+  // animation: round 20s linear infinite;
+  // will-change: transform;
+  // transform: translateZ(0);
 }
 
 .drawer-back.paused {
@@ -162,7 +165,7 @@ defineExpose({
     width: 500px;
     height: 550px;
     .now-text {
-      @apply text-red-500;
+      @apply text-green-500;
     }
     &-text {
       @apply text-white text-lg flex flex-col justify-center items-center cursor-pointer font-bold;
@@ -170,7 +173,7 @@ defineExpose({
       transition: all 0.2s ease-out;
 
       &:hover {
-        @apply font-bold text-red-500;
+        @apply font-bold text-green-500;
       }
 
       &-tr {

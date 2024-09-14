@@ -1,6 +1,11 @@
 <template>
   <!-- 展开全屏 -->
-  <music-full ref="MusicFullRef" v-model:music-full="musicFullVisible" :audio="audio.value as HTMLAudioElement" />
+  <music-full
+    ref="MusicFullRef"
+    v-model:music-full="musicFullVisible"
+    :audio="audio.value as HTMLAudioElement"
+    :background="background"
+  />
   <!-- 底部播放栏 -->
   <div
     class="music-play-bar"
@@ -100,6 +105,7 @@ import SongItem from '@/components/common/SongItem.vue';
 import { allTime, isElectron, loadLrc, nowTime, openLyric, sendLyricToWin } from '@/hooks/MusicHook';
 import type { SongResult } from '@/type/music';
 import { getImgUrl, secondToMinute, setAnimationClass } from '@/utils';
+import { getImageLinearBackground } from '@/utils/linearColor';
 
 import MusicFull from './MusicFull.vue';
 
@@ -115,13 +121,15 @@ const playList = computed(() => store.state.playList as SongResult[]);
 const audio = {
   value: document.querySelector('#MusicAudio') as HTMLAudioElement,
 };
+const background = ref('#000');
 
 watch(
-  () => store.state.playMusicUrl,
-  () => {
+  () => store.state.playMusic,
+  async () => {
     loadLrc(playMusic.value.id);
+    background.value = await getImageLinearBackground(getImgUrl(playMusic.value?.picUrl, '300y300'));
   },
-  { immediate: true },
+  { immediate: true, deep: true },
 );
 
 const audioPlay = () => {
@@ -273,8 +281,8 @@ const setMusicFull = () => {
   }
 
   &-play {
-    @apply flex justify-center items-center w-12 h-12 rounded-full mx-4 hover:bg-green-500 transition;
     background: #383838;
+    @apply flex justify-center items-center w-12 h-12 rounded-full mx-4 hover:bg-green-500 transition bg-opacity-40;
   }
 }
 
