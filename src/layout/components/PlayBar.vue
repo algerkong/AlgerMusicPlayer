@@ -73,7 +73,15 @@
         </template>
         歌词
       </n-tooltip>
-      <n-popover trigger="click" :z-index="99999999" content-class="music-play" raw :show-arrow="false" :delay="200">
+      <n-popover
+        trigger="click"
+        :z-index="99999999"
+        content-class="music-play"
+        raw
+        :show-arrow="false"
+        :delay="200"
+        @update-show="scrollToPlayList"
+      >
         <template #trigger>
           <n-tooltip trigger="manual" :z-index="9999999">
             <template #trigger>
@@ -84,7 +92,7 @@
         </template>
         <div class="music-play-list">
           <div class="music-play-list-back"></div>
-          <n-virtual-list :item-size="57" item-resizable :items="playList">
+          <n-virtual-list ref="palyListRef" :item-size="62" item-resizable :items="playList">
             <template #default="{ item }">
               <div class="music-play-list-content">
                 <song-item :key="item.id" :item="item" mini></song-item>
@@ -99,13 +107,13 @@
 </template>
 
 <script lang="ts" setup>
+import { useTemplateRef } from 'vue';
 import { useStore } from 'vuex';
 
 import SongItem from '@/components/common/SongItem.vue';
 import { allTime, isElectron, loadLrc, nowTime, openLyric, sendLyricToWin } from '@/hooks/MusicHook';
 import type { SongResult } from '@/type/music';
 import { getImgUrl, secondToMinute, setAnimationClass } from '@/utils';
-import { getImageLinearBackground } from '@/utils/linearColor';
 
 import MusicFull from './MusicFull.vue';
 
@@ -226,6 +234,15 @@ const musicFullVisible = ref(false);
 // 设置musicFull
 const setMusicFull = () => {
   musicFullVisible.value = !musicFullVisible.value;
+};
+
+const palyListRef = useTemplateRef('palyListRef');
+
+const scrollToPlayList = (val: boolean) => {
+  if (!val) return;
+  setTimeout(() => {
+    palyListRef.value?.scrollTo({ top: store.state.playListIndex * 62 });
+  }, 50);
 };
 </script>
 

@@ -75,6 +75,9 @@ const emits = defineEmits(['play']);
 const songImageRef = useTemplateRef('songImg');
 
 const imageLoad = async () => {
+  if (!songImageRef.value) {
+    return;
+  }
   const background = await getImageBackground((songImageRef.value as any).imageRef as unknown as HTMLImageElement);
   // eslint-disable-next-line vue/no-mutating-props
   props.item.backgroundColor = background;
