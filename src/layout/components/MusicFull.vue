@@ -112,7 +112,7 @@ defineExpose({
 }
 .drawer-back {
   @apply absolute bg-cover bg-center;
-  filter: brightness(80%);
+  // filter: brightness(80%);
   z-index: -1;
   width: 200%;
   height: 200%;

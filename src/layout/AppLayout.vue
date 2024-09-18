@@ -1,6 +1,6 @@
 <template>
   <div class="layout-page">
-    <div class="layout-main">
+    <div class="layout-main" :style="{ background: backgroundColor }">
       <title-bar v-if="isElectron" />
       <div class="layout-main-page" :class="isElectron ? '' : 'pt-6'">
         <!-- 侧边菜单栏 -->
@@ -9,7 +9,7 @@
           <!-- 搜索栏 -->
           <search-bar />
           <!-- 主页面路由 -->
-          <div class="main-content bg-black" :native-scrollbar="false">
+          <div class="main-content" :native-scrollbar="false">
             <n-message-provider>
               <router-view
                 v-slot="{ Component }"
@@ -70,6 +70,18 @@ const audio = {
   value: document.querySelector('#MusicAudio') as HTMLAudioElement,
 };
 
+const backgroundColor = ref('#000');
+// watch(
+//   () => store.state.playMusic,
+//   () => {
+//     backgroundColor.value = store.state.playMusic.backgroundColor;
+//     console.log('backgroundColor.value', backgroundColor.value);
+//   },
+//   {
+//     immediate: true,
+//     deep: true,
+//   },
+// );
 onMounted(() => {
   // 监听音乐是否播放
   watch(
@@ -118,11 +130,11 @@ const playMusicEvent = async () => {
 .layout-page {
   width: 100vw;
   height: 100vh;
-  @apply flex justify-center items-center overflow-hidden;
+  @apply flex justify-center items-center overflow-hidden bg-black;
 }
 
 .layout-main {
-  @apply bg-black  text-white shadow-xl flex flex-col relative;
+  @apply text-white shadow-xl flex flex-col relative transition-all;
   height: 100%;
   width: 100%;
   overflow: hidden;

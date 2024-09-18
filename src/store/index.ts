@@ -4,7 +4,8 @@ import { getMusicUrl, getParsingMusicUrl } from '@/api/music';
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';
 import homeRouter from '@/router/home';
 import type { SongResult } from '@/type/music';
-import { getMusicProxyUrl } from '@/utils';
+import { getImgUrl, getMusicProxyUrl } from '@/utils';
+import { getImageLinearBackground } from '@/utils/linearColor';
 
 interface State {
   menus: any[];
@@ -47,12 +48,7 @@ const mutations = {
     state.menus = menus;
   },
   async setPlay(state: State, playMusic: SongResult) {
-    state.playMusic = { ...playMusic, playLoading: true };
-    state.playMusicUrl = await getSongUrl(playMusic.id);
-    state.play = true;
-    musicHistory.addMusic(playMusic);
-    state.playMusic.playLoading = false;
-    state.playListIndex = state.playList.findIndex((item) => item.id === playMusic.id);
+    await getSongDetail(state, playMusic);
   },
   setIsPlay(state: State, isPlay: boolean) {
     state.isPlay = isPlay;
@@ -69,16 +65,16 @@ const mutations = {
       state.play = true;
       return;
     }
-    state.playListIndex = (state.playListIndex + 1) % state.playList.length;
-    await updatePlayMusic(state);
+    const playListIndex = (state.playListIndex + 1) % state.playList.length;
+    await getSongDetail(state, state.playList[playListIndex]);
   },
   async prevPlay(state: State) {
     if (state.playList.length === 0) {
       state.play = true;
       return;
     }
-    state.playListIndex = (state.playListIndex - 1 + state.playList.length) % state.playList.length;
-    await updatePlayMusic(state);
+    const playListIndex = (state.playListIndex - 1 + state.playList.length) % state.playList.length;
+    await getSongDetail(state, state.playList[playListIndex]);
   },
   async setSetData(state: State, setData: any) {
     state.setData = setData;
@@ -106,6 +102,20 @@ const updatePlayMusic = async (state: State) => {
   state.playMusicUrl = await getSongUrl(state.playMusic.id);
   state.play = true;
   musicHistory.addMusic(state.playMusic);
+};
+
+const getSongDetail = async (state: State, playMusic: SongResult) => {
+  state.playMusic.playLoading = true;
+  state.playMusicUrl = await getSongUrl(playMusic.id);
+  const backgroundColor = playMusic.backgroundColor
+    ? playMusic.backgroundColor
+    : await getImageLinearBackground(getImgUrl(playMusic?.picUrl, '30y30'));
+  state.playMusic = { ...playMusic, backgroundColor };
+  // state.playMusic = { ...playMusic };
+  state.play = true;
+  musicHistory.addMusic(playMusic);
+  state.playListIndex = state.playList.findIndex((item) => item.id === playMusic.id);
+  state.playMusic.playLoading = false;
 };
 
 const store = createStore({

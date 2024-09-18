@@ -1,6 +1,16 @@
 <template>
   <div class="song-item" :class="{ 'song-mini': mini }">
-    <n-image v-if="item.picUrl" :src="getImgUrl(item.picUrl, '40y40')" class="song-item-img" lazy preview-disabled />
+    <n-image
+      v-if="item.picUrl"
+      ref="songImg"
+      :src="getImgUrl(item.picUrl, '40y40')"
+      class="song-item-img"
+      preview-disabled
+      :img-props="{
+        crossorigin: 'anonymous',
+      }"
+      @load="imageLoad"
+    />
     <div class="song-item-content">
       <div class="song-item-content-title">
         <n-ellipsis class="text-ellipsis" line-clamp="1">{{ item.name }}</n-ellipsis>
@@ -30,10 +40,12 @@
 </template>
 
 <script lang="ts" setup>
+import { useTemplateRef } from 'vue';
 import { useStore } from 'vuex';
 
 import type { SongResult } from '@/type/music';
 import { getImgUrl } from '@/utils';
+import { getImageBackground } from '@/utils/linearColor';
 
 const props = withDefaults(
   defineProps<{
@@ -59,6 +71,14 @@ const isPlaying = computed(() => {
 });
 
 const emits = defineEmits(['play']);
+
+const songImageRef = useTemplateRef('songImg');
+
+const imageLoad = async () => {
+  const background = await getImageBackground((songImageRef.value as any).imageRef as unknown as HTMLImageElement);
+  // eslint-disable-next-line vue/no-mutating-props
+  props.item.backgroundColor = background;
+};
 
 // 播放音乐 设置音乐详情 打开音乐底栏
 const playMusicEvent = async (item: SongResult) => {

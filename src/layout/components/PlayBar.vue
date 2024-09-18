@@ -127,7 +127,7 @@ watch(
   () => store.state.playMusic,
   async () => {
     loadLrc(playMusic.value.id);
-    background.value = await getImageLinearBackground(getImgUrl(playMusic.value?.picUrl, '300y300'));
+    background.value = playMusic.value.backgroundColor as string;
   },
   { immediate: true, deep: true },
 );

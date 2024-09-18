@@ -1,6 +1,40 @@
 export const getImageLinearBackground = async (imageSrc: string): Promise<string> => {
-  const primaryColor = await getImagePrimaryColor(imageSrc);
-  return generateGradientBackground(primaryColor);
+  try {
+    const primaryColor = await getImagePrimaryColor(imageSrc);
+    return generateGradientBackground(primaryColor);
+  } catch (error) {
+    console.error('error', error);
+    return '';
+  }
+};
+
+export const getImageBackground = async (img: HTMLImageElement): Promise<string> => {
+  try {
+    const primaryColor = await getImageColor(img);
+    return generateGradientBackground(primaryColor);
+  } catch (error) {
+    console.error('error', error);
+    return '';
+  }
+};
+
+const getImageColor = (img: HTMLImageElement): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      reject(new Error('无法获取canvas上下文'));
+      return;
+    }
+
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const color = getAverageColor(imageData.data);
+    resolve(`rgb(${color.join(',')})`);
+  });
 };
 
 const getImagePrimaryColor = (imageSrc: string): Promise<string> => {
@@ -49,7 +83,7 @@ const generateGradientBackground = (color: string): string => {
   const [h, s, l] = rgbToHsl(r, g, b);
 
   // 增加亮度和暗度的差异
-  const lightL = Math.min(l + 0.8, 0.95);
+  const lightL = Math.min(l + 0.5, 0.95);
   const darkL = Math.max(l - 0.5, 0.05);
   const midL = (lightL + darkL) / 2;
 

@@ -18,6 +18,7 @@ export interface SongResult {
   playLoading?: boolean;
   ar?: Artist[];
   al?: Album;
+  backgroundColor?: string;
 }
 
 export interface Song {
