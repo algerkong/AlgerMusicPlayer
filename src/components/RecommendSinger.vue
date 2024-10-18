@@ -74,32 +74,32 @@ const store = useStore();
 const hotSingerData = ref<IHotSinger>();
 const dayRecommendData = ref<IDayRecommend>();
 const showMusic = ref(false);
-// // 加载推荐歌手
-// const loadSingerList = async () => {
-//   const { data } = await getHotSinger({ offset: 0, limit: 5 });
-//   hotSingerData.value = data;
-// };
 
-// const loadDayRecommend = async () => {
-//   const { data } = await getDayRecommend();
-//   dayRecommendData.value = data.data;
-// };
-// 页面初始化
 onMounted(async () => {
   await loadData();
 });
 
 const loadData = async () => {
   try {
-    const [{ data: singerData }, { data: dayRecommend }] = await Promise.all([
-      getHotSinger({ offset: 0, limit: 5 }),
-      getDayRecommend(),
-    ]);
-    if (dayRecommend.data) {
-      singerData.artists = singerData.artists.slice(0, 4);
+    // 第一个请求：获取热门歌手
+    const { data: singerData } = await getHotSinger({ offset: 0, limit: 5 });
+
+    // 第二个请求：获取每日推荐
+    try {
+      const {
+        data: { data: dayRecommend },
+      } = await getDayRecommend();
+      console.log('dayRecommend', dayRecommend);
+      // 处理数据
+      if (dayRecommend) {
+        singerData.artists = singerData.artists.slice(0, 4);
+      }
+      dayRecommendData.value = dayRecommend;
+    } catch (error) {
+      console.error('error', error);
     }
+
     hotSingerData.value = singerData;
-    dayRecommendData.value = dayRecommend.data;
   } catch (error) {
     console.error('error', error);
   }

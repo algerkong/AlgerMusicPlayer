@@ -33,7 +33,7 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     // 指定端口
-    port: 7788,
+    port: 4488,
     proxy: {
       // with options
       '/api': {

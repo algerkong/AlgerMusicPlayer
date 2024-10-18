@@ -80,6 +80,7 @@
         raw
         :show-arrow="false"
         :delay="200"
+        arrow-wrapper-style=" border-radius:1.5rem"
         @update-show="scrollToPlayList"
       >
         <template #trigger>
@@ -111,7 +112,7 @@ import { useTemplateRef } from 'vue';
 import { useStore } from 'vuex';
 
 import SongItem from '@/components/common/SongItem.vue';
-import { allTime, isElectron, loadLrc, nowTime, openLyric, sendLyricToWin } from '@/hooks/MusicHook';
+import { allTime, getCurrentLrc, isElectron, nowTime, openLyric, sendLyricToWin } from '@/hooks/MusicHook';
 import type { SongResult } from '@/type/music';
 import { getImgUrl, secondToMinute, setAnimationClass } from '@/utils';
 
@@ -134,7 +135,6 @@ const background = ref('#000');
 watch(
   () => store.state.playMusic,
   async () => {
-    loadLrc(playMusic.value.id);
     background.value = playMusic.value.backgroundColor as string;
   },
   { immediate: true, deep: true },
@@ -209,15 +209,16 @@ function handleGetAudioTime(this: HTMLAudioElement) {
   // 监听音频播放的实时时间事件
   const audio = this as HTMLAudioElement;
   // 获取当前播放时间
-  nowTime.value = Math.floor(audio.currentTime);
+  nowTime.value = audio.currentTime;
+  getCurrentLrc();
   // 获取总时间
   allTime.value = audio.duration;
   // 获取音量
   audioVolume.value = audio.volume;
   sendLyricToWin(store.state.isPlay);
-  if (musicFullVisible.value) {
-    MusicFullRef.value?.lrcScroll();
-  }
+  // if (musicFullVisible.value) {
+  //   MusicFullRef.value?.lrcScroll();
+  // }
 }
 
 // 播放暂停按钮事件
@@ -273,7 +274,8 @@ const scrollToPlayList = (val: boolean) => {
 }
 
 .play-bar-opcity {
-  background-color: rgba(0, 0, 0, 0.218);
+  @apply bg-transparent;
+  box-shadow: 0 0 20px 5px #0000001d;
 }
 
 .play-bar-img {
@@ -373,9 +375,5 @@ const scrollToPlayList = (val: boolean) => {
   .music-content {
     flex: 1;
   }
-}
-
-:deep(.n-popover) {
-  box-shadow: none;
 }
 </style>

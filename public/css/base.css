@@ -1,3 +1,7 @@
 body{
   background-color: #000;
 }
+
+.n-popover:has(.music-play){
+  border-radius: 1.5rem !important;
+}

@@ -1,69 +1,72 @@
 <template>
-  <n-drawer :show="musicFull" height="100vh" placement="bottom" :style="{ backgroundColor: 'transparent' }">
+  <n-drawer :show="musicFull" height="100vh" placement="bottom" :style="{ background: background }">
     <div id="drawer-target">
-      <div class="drawer-back" :style="{ background: background }"></div>
+      <div class="drawer-back"></div>
       <div class="music-img">
         <n-image ref="PicImgRef" :src="getImgUrl(playMusic?.picUrl, '300y300')" class="img" lazy preview-disabled />
+        <div>
+          <div class="music-content-name">{{ playMusic.name }}</div>
+          <div class="music-content-singer">
+            <span v-for="(item, index) in playMusic.song.artists" :key="index">
+              {{ item.name }}{{ index < playMusic.song.artists.length - 1 ? ' / ' : '' }}
+            </span>
+          </div>
+        </div>
       </div>
       <div class="music-content">
-        <div class="music-content-name">{{ playMusic.name }}</div>
-        <div class="music-content-singer">
-          <span v-for="(item, index) in playMusic.song.artists" :key="index">
-            {{ item.name }}{{ index < playMusic.song.artists.length - 1 ? ' / ' : '' }}
-          </span>
-        </div>
         <n-layout
           ref="lrcSider"
           class="music-lrc"
-          style="height: 55vh"
+          style="height: 60vh"
           :native-scrollbar="false"
           @mouseover="mouseOverLayout"
           @mouseleave="mouseLeaveLayout"
         >
-          <template v-for="(item, index) in lrcArray" :key="index">
+          <div ref="lrcContainer">
             <div
+              v-for="(item, index) in lrcArray"
+              :id="`music-lrc-text-${index}`"
+              :key="index"
               class="music-lrc-text"
-              :class="{ 'now-text': isCurrentLrc(index, nowTime) }"
+              :class="{ 'now-text': index === nowIndex }"
               @click="setAudioTime(index, audio)"
             >
-              <div>{{ item.text }}</div>
+              <span :style="getLrcStyle(index)">{{ item.text }}</span>
               <div class="music-lrc-text-tr">{{ item.trText }}</div>
             </div>
-          </template>
+          </div>
         </n-layout>
         <!-- 时间矫正 -->
-        <div class="music-content-time">
+        <!-- <div class="music-content-time">
           <n-button @click="reduceCorrectionTime(0.2)">-</n-button>
           <n-button @click="addCorrectionTime(0.2)">+</n-button>
-        </div>
+        </div> -->
       </div>
     </div>
   </n-drawer>
 </template>
 
 <script setup lang="ts">
-import { useStore } from 'vuex';
+import { useDebounceFn } from '@vueuse/core';
 
 import {
   addCorrectionTime,
-  isCurrentLrc,
   lrcArray,
-  newLrcIndex,
-  nowTime,
+  nowIndex,
+  playMusic,
   reduceCorrectionTime,
   setAudioTime,
+  useLyricProgress,
 } from '@/hooks/MusicHook';
-import type { SongResult } from '@/type/music';
 import { getImgUrl } from '@/utils';
 
-const store = useStore();
+const { getLrcStyle } = useLyricProgress();
 
-// 播放的音乐信息
-const playMusic = computed(() => store.state.playMusic as SongResult);
 // const isPlaying = computed(() => store.state.play as boolean);
 // 获取歌词滚动dom
 const lrcSider = ref<any>(null);
 const isMouse = ref(false);
+const lrcContainer = ref<HTMLElement | null>(null);
 
 const props = defineProps({
   musicFull: {
@@ -81,20 +84,43 @@ const props = defineProps({
 });
 
 // 歌词滚动方法
-const lrcScroll = () => {
-  if (props.musicFull && !isMouse.value) {
-    const top = newLrcIndex.value * 60 - 225;
-    lrcSider.value.scrollTo({ top, behavior: 'smooth' });
+const lrcScroll = (behavior = 'smooth') => {
+  const nowEl = document.querySelector(`#music-lrc-text-${nowIndex.value}`);
+  if (props.musicFull && !isMouse.value && nowEl && lrcContainer.value) {
+    const containerRect = lrcContainer.value.getBoundingClientRect();
+    const nowElRect = nowEl.getBoundingClientRect();
+    const relativeTop = nowElRect.top - containerRect.top;
+    const scrollTop = relativeTop - lrcSider.value.$el.getBoundingClientRect().height / 2;
+    lrcSider.value.scrollTo({ top: scrollTop, behavior });
   }
 };
+
+const debouncedLrcScroll = useDebounceFn(lrcScroll, 200);
+
 const mouseOverLayout = () => {
   isMouse.value = true;
 };
 const mouseLeaveLayout = () => {
   setTimeout(() => {
     isMouse.value = false;
-  }, 3000);
+    lrcScroll();
+  }, 2000);
 };
+
+watch(nowIndex, () => {
+  debouncedLrcScroll();
+});
+
+watch(
+  () => props.musicFull,
+  () => {
+    if (props.musicFull) {
+      nextTick(() => {
+        lrcScroll('instant');
+      });
+    }
+  },
+);
 
 defineExpose({
   lrcScroll,
@@ -112,15 +138,11 @@ defineExpose({
 }
 .drawer-back {
   @apply absolute bg-cover bg-center;
-  // filter: brightness(80%);
   z-index: -1;
   width: 200%;
   height: 200%;
   top: -50%;
   left: -50%;
-  // animation: round 20s linear infinite;
-  // will-change: transform;
-  // transform: translateZ(0);
 }
 
 .drawer-back.paused {
@@ -128,30 +150,28 @@ defineExpose({
 }
 
 #drawer-target {
-  @apply top-0 left-0 absolute w-full h-full overflow-hidden rounded px-24 pt-24 pb-48 flex items-center;
+  @apply top-0 left-0 absolute overflow-hidden rounded px-24 flex items-center justify-center w-full h-full pb-8;
   backdrop-filter: blur(20px);
-  background-color: rgba(0, 0, 0, 0.747);
   animation-duration: 300ms;
 
   .music-img {
-    @apply flex-1 flex justify-center mr-24;
-
+    @apply flex-1 flex justify-center mr-16 flex-col;
+    max-width: 360px;
+    max-height: 360px;
     .img {
-      width: 350px;
-      height: 350px;
-      @apply rounded-xl;
+      @apply rounded-xl w-full h-full  shadow-2xl;
     }
   }
 
   .music-content {
-    @apply flex flex-col justify-center items-center;
+    @apply flex flex-col justify-center items-center relative;
 
     &-name {
-      @apply font-bold text-3xl py-2;
+      @apply font-bold text-xl pb-1 pt-4;
     }
 
     &-singer {
-      @apply text-base py-2;
+      @apply text-base;
     }
   }
 
@@ -159,25 +179,25 @@ defineExpose({
     display: none;
     @apply flex justify-center items-center;
   }
-
   .music-lrc {
     background-color: inherit;
     width: 500px;
     height: 550px;
-    .now-text {
-      @apply text-green-500;
-    }
     &-text {
-      @apply text-white text-lg flex flex-col justify-center items-center cursor-pointer font-bold;
-      height: 60px;
-      transition: all 0.2s ease-out;
-
+      @apply text-2xl cursor-pointer font-bold px-2 py-4;
+      color: #ffffff8a;
+      // transition: all 0.5s ease;
+      span {
+        padding-right: 100px;
+      }
       &:hover {
-        @apply font-bold text-green-500;
+        @apply font-bold opacity-100 rounded-xl;
+        background-color: #ffffff26;
+        color: #fff;
       }
 
       &-tr {
-        @apply text-sm  font-normal;
+        @apply font-normal;
       }
     }
   }

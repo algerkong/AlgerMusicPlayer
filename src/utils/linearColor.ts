@@ -1,20 +1,37 @@
-export const getImageLinearBackground = async (imageSrc: string): Promise<string> => {
+interface IColor {
+  backgroundColor: string;
+  primaryColor: string;
+}
+
+export const getImageLinearBackground = async (imageSrc: string): Promise<IColor> => {
   try {
     const primaryColor = await getImagePrimaryColor(imageSrc);
-    return generateGradientBackground(primaryColor);
+    return {
+      backgroundColor: generateGradientBackground(primaryColor),
+      primaryColor,
+    };
   } catch (error) {
     console.error('error', error);
-    return '';
+    return {
+      backgroundColor: '',
+      primaryColor: '',
+    };
   }
 };
 
-export const getImageBackground = async (img: HTMLImageElement): Promise<string> => {
+export const getImageBackground = async (img: HTMLImageElement): Promise<IColor> => {
   try {
     const primaryColor = await getImageColor(img);
-    return generateGradientBackground(primaryColor);
+    return {
+      backgroundColor: generateGradientBackground(primaryColor),
+      primaryColor,
+    };
   } catch (error) {
     console.error('error', error);
-    return '';
+    return {
+      backgroundColor: '',
+      primaryColor: '',
+    };
   }
 };
 
@@ -83,8 +100,8 @@ const generateGradientBackground = (color: string): string => {
   const [h, s, l] = rgbToHsl(r, g, b);
 
   // 增加亮度和暗度的差异
-  const lightL = Math.min(l + 0.5, 0.95);
-  const darkL = Math.max(l - 0.5, 0.05);
+  const lightL = Math.min(l + 0.2, 0.95);
+  const darkL = Math.max(l - 0.3, 0.05);
   const midL = (lightL + darkL) / 2;
 
   // 调整饱和度以增强效果

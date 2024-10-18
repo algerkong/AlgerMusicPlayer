@@ -78,9 +78,11 @@ const imageLoad = async () => {
   if (!songImageRef.value) {
     return;
   }
-  const background = await getImageBackground((songImageRef.value as any).imageRef as unknown as HTMLImageElement);
+  const { backgroundColor } = await getImageBackground(
+    (songImageRef.value as any).imageRef as unknown as HTMLImageElement,
+  );
   // eslint-disable-next-line vue/no-mutating-props
-  props.item.backgroundColor = background;
+  props.item.backgroundColor = backgroundColor;
 };
 
 // 播放音乐 设置音乐详情 打开音乐底栏

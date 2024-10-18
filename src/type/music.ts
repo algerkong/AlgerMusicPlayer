@@ -3,6 +3,14 @@ export interface IRecommendMusic {
   category: number;
   result: SongResult[];
 }
+export interface ILyricText {
+  text: string;
+  trText: string;
+}
+export interface ILyric {
+  lrcTimeArray: number[];
+  lrcArray: ILyricText[];
+}
 
 export interface SongResult {
   id: number;
@@ -19,6 +27,9 @@ export interface SongResult {
   ar?: Artist[];
   al?: Album;
   backgroundColor?: string;
+  primaryColor?: string;
+  playMusicUrl?: string;
+  lyric?: ILyric;
 }
 
 export interface Song {

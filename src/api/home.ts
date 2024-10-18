@@ -43,7 +43,7 @@ export const getRecommendMusic = (params: IRecommendMusicParams) => {
 
 // 获取每日推荐
 export const getDayRecommend = () => {
-  return request.get<IData<IDayRecommend>>('/recommend/songs');
+  return request.get<IData<IData<IDayRecommend>>>('/recommend/songs');
 };
 
 // 获取最新专辑推荐
