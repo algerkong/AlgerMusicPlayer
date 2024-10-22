@@ -9,10 +9,16 @@
     </div>
     <div class="set-item">
       <div>
+        <div class="set-item-title">减轻动画效果</div>
+      </div>
+      <n-switch v-model:value="setData.noAnimate" />
+    </div>
+    <div class="set-item">
+      <div>
         <div class="set-item-title">版本</div>
         <div class="set-item-content">当前已是最新版本</div>
       </div>
-      <div>{{ setData.version }}</div>
+      <div>{{ config.version }}</div>
     </div>
     <div class="set-item">
       <div>
@@ -32,6 +38,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 
+import config from '@/../package.json';
 import store from '@/store';
 
 defineOptions({

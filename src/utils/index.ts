@@ -8,6 +8,9 @@ export const setBackgroundImg = (url: String) => {
 };
 // 设置动画类型
 export const setAnimationClass = (type: String) => {
+  if (store.state.setData && store.state.setData.noAnimate) {
+    return '';
+  }
   return `animate__animated ${type}`;
 };
 // 设置动画延时
@@ -51,7 +54,8 @@ export const getIsMc = () => {
   if (windowData.electron.ipcRenderer.getStoreValue('set').isProxy) {
     return true;
   }
-  if(window.location.origin.includes('localhost')){}
+  if (window.location.origin.includes('localhost')) {
+  }
   return false;
 };
 const ProxyUrl = import.meta.env.VITE_API_PROXY || 'http://110.42.251.190:9856';
