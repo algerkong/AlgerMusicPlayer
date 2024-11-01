@@ -44,6 +44,8 @@ export const useMusicListHook = () => {
     state.playMusic = updatedPlayMusic;
     state.playMusicUrl = updatedPlayMusic.playMusicUrl;
     state.play = true;
+    // 设置网页标题
+    document.title = `${updatedPlayMusic.name} - ${updatedPlayMusic?.song?.artists?.reduce((prev, curr) => `${prev}${curr.name}/`, '')}`;
     loadLrcAsync(state, updatedPlayMusic.id);
     musicHistory.addMusic(state.playMusic);
     const playListIndex = state.playList.findIndex((item: SongResult) => item.id === playMusic.id);
