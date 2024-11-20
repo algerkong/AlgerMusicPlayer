@@ -12,7 +12,8 @@
     "lint": "eslint --ext .vue,.js,.jsx,.ts,.tsx ./ --max-warnings 0",
     "b:win:x64": "electron-builder --config ./build/win64.json",
     "b:win:x86": "electron-builder --config ./build/win32.json",
-    "b:win:arm": "electron-builder --config ./build/winarm64.json"
+    "b:win:arm": "electron-builder --config ./build/winarm64.json",
+    "b:mac": "electron-builder --config ./build/mac.json"
   },
   "dependencies": {
     "electron-store": "^8.1.0"
