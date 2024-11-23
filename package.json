@@ -1,6 +1,6 @@
 {
   "name": "alger-music",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "这是一个用于音乐播放的应用程序。",
   "author": "Alger <algerkc@qq.com>",
   "main": "app.js",
