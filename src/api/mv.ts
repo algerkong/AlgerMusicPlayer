@@ -3,10 +3,13 @@ import { IMvItem, IMvUrlData } from '@/type/mv';
 import request from '@/utils/request';
 
 // 获取 mv 排行
-export const getTopMv = (limit: number) => {
-  return request.get<IData<Array<IMvItem>>>('/top/mv', {
+export const getTopMv = (limit = 30, offset = 0) => {
+  return request({
+    url: '/mv/all',
+    method: 'get',
     params: {
       limit,
+      offset,
     },
   });
 };

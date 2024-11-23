@@ -24,7 +24,9 @@ function createWindow() {
   } else {
     win.loadURL(`file://${__dirname}/dist/index.html`);
   }
-  const image = nativeImage.createFromPath(path.join(__dirname, 'public/icon_16x16.png')).resize({ width: 16, height: 16 });
+  const image = nativeImage
+    .createFromPath(path.join(__dirname, 'public/icon_16x16.png'))
+    .resize({ width: 16, height: 16 });
   const tray = new Tray(image);
 
   // 创建一个上下文菜单

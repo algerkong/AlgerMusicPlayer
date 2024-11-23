@@ -1,5 +1,10 @@
 <template>
-  <n-drawer :show="musicFull" height="100vh" placement="bottom" :style="{ background: background }">
+  <n-drawer
+    :show="musicFull"
+    height="100vh"
+    placement="bottom"
+    :style="{ background: currentBackground || background }"
+  >
     <div id="drawer-target">
       <div class="drawer-back"></div>
       <div class="music-img">
@@ -48,25 +53,22 @@
 
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core';
+import { onBeforeUnmount, ref, watch } from 'vue';
 
-import {
-  addCorrectionTime,
-  lrcArray,
-  nowIndex,
-  playMusic,
-  reduceCorrectionTime,
-  setAudioTime,
-  useLyricProgress,
-} from '@/hooks/MusicHook';
+import { lrcArray, nowIndex, playMusic, setAudioTime, useLyricProgress } from '@/hooks/MusicHook';
 import { getImgUrl } from '@/utils';
+import { animateGradient, getHoverBackgroundColor, getTextColors } from '@/utils/linearColor';
 
-const { getLrcStyle } = useLyricProgress();
-
-// const isPlaying = computed(() => store.state.play as boolean);
-// 获取歌词滚动dom
+// 定义 refs
 const lrcSider = ref<any>(null);
 const isMouse = ref(false);
 const lrcContainer = ref<HTMLElement | null>(null);
+const currentBackground = ref('');
+const animationFrame = ref<number | null>(null);
+const isDark = ref(false);
+
+// 初始化 textColors
+const textColors = ref(getTextColors());
 
 const props = defineProps({
   musicFull: {
@@ -121,6 +123,73 @@ watch(
     }
   },
 );
+
+// 监听背景变化
+watch(
+  () => props.background,
+  (newBg) => {
+    if (!newBg) {
+      textColors.value = getTextColors();
+      document.documentElement.style.setProperty('--hover-bg-color', getHoverBackgroundColor(false));
+      document.documentElement.style.setProperty('--text-color-primary', textColors.value.primary);
+      document.documentElement.style.setProperty('--text-color-active', textColors.value.active);
+      return;
+    }
+
+    if (currentBackground.value) {
+      if (animationFrame.value) {
+        cancelAnimationFrame(animationFrame.value);
+      }
+      animationFrame.value = animateGradient(currentBackground.value, newBg, (gradient) => {
+        currentBackground.value = gradient;
+      });
+    } else {
+      currentBackground.value = newBg;
+    }
+
+    textColors.value = getTextColors(newBg);
+    isDark.value = textColors.value.active === '#000000';
+
+    document.documentElement.style.setProperty('--hover-bg-color', getHoverBackgroundColor(isDark.value));
+    document.documentElement.style.setProperty('--text-color-primary', textColors.value.primary);
+    document.documentElement.style.setProperty('--text-color-active', textColors.value.active);
+  },
+  { immediate: true },
+);
+
+// 修改 useLyricProgress 的使用方式
+const { getLrcStyle: originalLrcStyle } = useLyricProgress();
+
+// 修改 getLrcStyle 函数
+const getLrcStyle = (index: number) => {
+  const colors = textColors.value || getTextColors;
+  const originalStyle = originalLrcStyle(index);
+
+  if (index === nowIndex.value) {
+    // 当前播放的歌词，使用渐变效果
+    return {
+      ...originalStyle,
+      backgroundImage: originalStyle.backgroundImage
+        ?.replace(/#ffffff/g, colors.active)
+        .replace(/#ffffff8a/g, `${colors.primary}`),
+      backgroundClip: 'text',
+      WebkitBackgroundClip: 'text',
+      color: 'transparent',
+    };
+  }
+
+  // 非当前播放的歌词，使用普通颜色
+  return {
+    color: colors.primary,
+  };
+};
+
+// 组件卸载时清理动画
+onBeforeUnmount(() => {
+  if (animationFrame.value) {
+    cancelAnimationFrame(animationFrame.value);
+  }
+});
 
 defineExpose({
   lrcScroll,
@@ -185,19 +254,29 @@ defineExpose({
     height: 550px;
     &-text {
       @apply text-2xl cursor-pointer font-bold px-2 py-4;
-      color: #ffffff8a;
-      // transition: all 0.5s ease;
+      transition: all 0.3s ease;
+      background-color: transparent;
+
       span {
         padding-right: 100px;
+        display: inline-block;
+        background-clip: text !important;
+        -webkit-background-clip: text !important;
       }
+
       &:hover {
         @apply font-bold opacity-100 rounded-xl;
-        background-color: #ffffff26;
-        color: #fff;
+        background-color: var(--hover-bg-color);
+
+        span {
+          color: var(--text-color-active) !important;
+        }
       }
 
       &-tr {
         @apply font-normal;
+        opacity: 0.7;
+        color: var(--text-color-primary);
       }
     }
   }
@@ -213,5 +292,9 @@ defineExpose({
       height: calc(100vh - 260px) !important;
     }
   }
+}
+
+.music-drawer {
+  transition: none; // 移除之前的过渡效果，现在使用 JS 动画
 }
 </style>

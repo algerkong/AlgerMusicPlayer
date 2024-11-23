@@ -43,12 +43,12 @@
         <i class="iconfont icon-next"></i>
       </div>
     </div>
-    <div class="music-time">
+    <div class="music-time custom-slider">
       <div class="time">{{ getNowTime }}</div>
       <n-slider v-model:value="timeSlider" :step="0.05" :tooltip="false"></n-slider>
       <div class="time">{{ getAllTime }}</div>
     </div>
-    <div class="audio-volume">
+    <div class="audio-volume custom-slider">
       <div>
         <i class="iconfont icon-notificationfill"></i>
       </div>
@@ -267,8 +267,7 @@ const scrollToPlayList = (val: boolean) => {
     }
 
     &-name {
-      @apply text-xs mt-1;
-      @apply text-gray-400;
+      @apply text-xs mt-1 text-gray-100;
     }
   }
 }
@@ -375,5 +374,38 @@ const scrollToPlayList = (val: boolean) => {
   .music-content {
     flex: 1;
   }
+}
+
+// 添加自定义 slider 样式
+.custom-slider {
+  :deep(.n-slider) {
+    --n-rail-height: 4px;
+    --n-rail-color: rgba(255, 255, 255, 0.2);
+    --n-fill-color: var(--primary-color);
+    --n-handle-size: 12px;
+    --n-handle-color: var(--primary-color);
+
+    &:hover {
+      --n-rail-height: 6px;
+      --n-handle-size: 14px;
+    }
+
+    .n-slider-rail {
+      @apply overflow-hidden;
+    }
+
+    .n-slider-handle {
+      @apply transition-opacity duration-200;
+      opacity: 0;
+    }
+
+    &:hover .n-slider-handle {
+      opacity: 1;
+    }
+  }
+}
+
+:root {
+  --primary-color: #18a058;
 }
 </style>

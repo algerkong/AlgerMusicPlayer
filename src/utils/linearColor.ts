@@ -181,3 +181,91 @@ function hslToRgb(h: number, s: number, l: number): [number, number, number] {
 
   return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
 }
+
+// 添加新的接口
+interface ITextColors {
+  primary: string;
+  active: string;
+}
+
+// 添加新的函数
+export const calculateBrightness = (r: number, g: number, b: number): number => {
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+};
+
+export const parseGradient = (gradientStr: string) => {
+  const matches = gradientStr.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/g);
+  if (!matches) return [];
+  return matches.map((rgb) => {
+    const [r, g, b] = rgb.match(/\d+/g)!.map(Number);
+    return { r, g, b };
+  });
+};
+
+export const interpolateRGB = (start: number, end: number, progress: number) => {
+  return Math.round(start + (end - start) * progress);
+};
+
+export const createGradientString = (colors: { r: number; g: number; b: number }[], percentages = [0, 50, 100]) => {
+  return `linear-gradient(to bottom, ${colors
+    .map((color, i) => `rgb(${color.r}, ${color.g}, ${color.b}) ${percentages[i]}%`)
+    .join(', ')})`;
+};
+
+export const getTextColors = (gradient: string = ''): ITextColors => {
+  const defaultColors = {
+    primary: 'rgba(255, 255, 255, 0.54)',
+    active: '#ffffff',
+  };
+
+  if (!gradient) return defaultColors;
+
+  const colors = parseGradient(gradient);
+  if (!colors.length) return defaultColors;
+
+  const mainColor = colors[1] || colors[0];
+  const brightness = calculateBrightness(mainColor.r, mainColor.g, mainColor.b);
+  const isDark = brightness > 0.6;
+
+  return {
+    primary: isDark ? 'rgba(0, 0, 0, 0.54)' : 'rgba(255, 255, 255, 0.54)',
+    active: isDark ? '#000000' : '#ffffff',
+  };
+};
+
+export const getHoverBackgroundColor = (isDark: boolean): string => {
+  return isDark ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)';
+};
+
+export const animateGradient = (
+  oldGradient: string,
+  newGradient: string,
+  onUpdate: (gradient: string) => void,
+  duration = 1000,
+) => {
+  const startColors = parseGradient(oldGradient);
+  const endColors = parseGradient(newGradient);
+  if (startColors.length !== endColors.length) return null;
+
+  const startTime = performance.now();
+
+  const animate = (currentTime: number) => {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+
+    const currentColors = startColors.map((startColor, i) => ({
+      r: interpolateRGB(startColor.r, endColors[i].r, progress),
+      g: interpolateRGB(startColor.g, endColors[i].g, progress),
+      b: interpolateRGB(startColor.b, endColors[i].b, progress),
+    }));
+
+    onUpdate(createGradientString(currentColors));
+
+    if (progress < 1) {
+      return requestAnimationFrame(animate);
+    }
+    return null;
+  };
+
+  return requestAnimationFrame(animate);
+};

@@ -9,6 +9,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     MPop: typeof import('./src/components/common/MPop.vue')['default']
     MusicList: typeof import('./src/components/MusicList.vue')['default']
+    MvPlayer: typeof import('./src/components/MvPlayer.vue')['default']
     NAvatar: typeof import('naive-ui')['NAvatar']
     NButton: typeof import('naive-ui')['NButton']
     NConfigProvider: typeof import('naive-ui')['NConfigProvider']
@@ -23,6 +24,7 @@ declare module 'vue' {
     NPopover: typeof import('naive-ui')['NPopover']
     NScrollbar: typeof import('naive-ui')['NScrollbar']
     NSlider: typeof import('naive-ui')['NSlider']
+    NSpin: typeof import('naive-ui')['NSpin']
     NSwitch: typeof import('naive-ui')['NSwitch']
     NTooltip: typeof import('naive-ui')['NTooltip']
     NVirtualList: typeof import('naive-ui')['NVirtualList']
