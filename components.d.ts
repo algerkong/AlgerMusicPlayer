@@ -7,6 +7,7 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    InstallAppModal: typeof import('./src/components/common/InstallAppModal.vue')['default']
     MPop: typeof import('./src/components/common/MPop.vue')['default']
     MusicList: typeof import('./src/components/MusicList.vue')['default']
     MvPlayer: typeof import('./src/components/MvPlayer.vue')['default']
@@ -21,6 +22,7 @@ declare module 'vue' {
     NInput: typeof import('naive-ui')['NInput']
     NLayout: typeof import('naive-ui')['NLayout']
     NMessageProvider: typeof import('naive-ui')['NMessageProvider']
+    NModal: typeof import('naive-ui')['NModal']
     NPopover: typeof import('naive-ui')['NPopover']
     NScrollbar: typeof import('naive-ui')['NScrollbar']
     NSlider: typeof import('naive-ui')['NSlider']

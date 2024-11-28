@@ -10,8 +10,8 @@
           :class="setAnimationClass('animate__bounceIn')"
           :style="setAnimationDelay(index, 30)"
         >
-          <song-item class="history-item-content" :item="item" @play="handlePlay" />
-          <div class="history-item-count">
+          <song-item class="history-item-content" :item="item" list @play="handlePlay" />
+          <div class="history-item-count min-w-[60px]">
             {{ item.count }}
           </div>
           <div class="history-item-delete">
@@ -56,7 +56,7 @@ const handlePlay = () => {
         @apply flex-1;
       }
       &-count {
-        @apply px-4 text-lg;
+        @apply px-4 text-lg text-center;
       }
       &-delete {
         @apply cursor-pointer rounded-full border-2 border-gray-400 w-8 h-8 flex justify-center items-center;

@@ -23,9 +23,6 @@ const getSongUrl = async (id: number) => {
 };
 
 const getSongDetail = async (playMusic: SongResult) => {
-  if (playMusic.playMusicUrl) {
-    return playMusic;
-  }
   playMusic.playLoading = true;
   const playMusicUrl = await getSongUrl(playMusic.id);
   const { backgroundColor, primaryColor } =

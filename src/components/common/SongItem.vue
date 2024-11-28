@@ -1,5 +1,5 @@
 <template>
-  <div class="song-item" :class="{ 'song-mini': mini }">
+  <div class="song-item" :class="{ 'song-mini': mini, 'song-list': list }">
     <n-image
       v-if="item.picUrl"
       ref="songImg"
@@ -12,18 +12,29 @@
       @load="imageLoad"
     />
     <div class="song-item-content">
-      <div class="song-item-content-title">
-        <n-ellipsis class="text-ellipsis" line-clamp="1">{{ item.name }}</n-ellipsis>
-      </div>
-      <div class="song-item-content-name">
-        <n-ellipsis class="text-ellipsis" line-clamp="1">
+      <div v-if="list" class="song-item-content-wrapper">
+        <n-ellipsis class="song-item-content-title text-ellipsis" line-clamp="1">{{ item.name }}</n-ellipsis>
+        <div class="song-item-content-divider">-</div>
+        <n-ellipsis class="song-item-content-name text-ellipsis" line-clamp="1">
           <span v-for="(artists, artistsindex) in item.ar || item.song.artists" :key="artistsindex"
             >{{ artists.name }}{{ artistsindex < (item.ar || item.song.artists).length - 1 ? ' / ' : '' }}</span
           >
         </n-ellipsis>
       </div>
+      <template v-else>
+        <div class="song-item-content-title">
+          <n-ellipsis class="text-ellipsis" line-clamp="1">{{ item.name }}</n-ellipsis>
+        </div>
+        <div class="song-item-content-name">
+          <n-ellipsis class="text-ellipsis" line-clamp="1">
+            <span v-for="(artists, artistsindex) in item.ar || item.song.artists" :key="artistsindex"
+              >{{ artists.name }}{{ artistsindex < (item.ar || item.song.artists).length - 1 ? ' / ' : '' }}</span
+            >
+          </n-ellipsis>
+        </div>
+      </template>
     </div>
-    <div class="song-item-operating">
+    <div class="song-item-operating" :class="{ 'song-item-operating-list': list }">
       <div class="song-item-operating-like">
         <i class="iconfont icon-likefill"></i>
       </div>
@@ -51,9 +62,11 @@ const props = withDefaults(
   defineProps<{
     item: SongResult;
     mini?: boolean;
+    list?: boolean;
   }>(),
   {
     mini: false,
+    list: false,
   },
 );
 
@@ -171,6 +184,43 @@ const playMusicEvent = async (item: SongResult) => {
       }
       &-play {
         @apply w-8 h-8;
+      }
+    }
+  }
+}
+
+.song-list {
+  @apply p-2 rounded-lg hover:bg-gray-800/50 border border-gray-800/50 mb-2;
+  .song-item-img {
+    @apply w-10 h-10 rounded-lg mr-3;
+  }
+  .song-item-content {
+    @apply flex items-center flex-1;
+    &-wrapper {
+      @apply flex items-center flex-1 text-sm;
+    }
+    &-title {
+      @apply text-white flex-shrink-0 max-w-[45%];
+    }
+    &-divider {
+      @apply mx-2 text-gray-400;
+    }
+    &-name {
+      @apply text-gray-400 flex-1 min-w-0;
+    }
+  }
+  .song-item-operating {
+    @apply flex items-center gap-2;
+    &-like {
+      @apply cursor-pointer hover:scale-110 transition-transform;
+      .iconfont {
+        @apply text-base text-gray-400 hover:text-red-500;
+      }
+    }
+    &-play {
+      @apply w-7 h-7 cursor-pointer hover:scale-110 transition-transform;
+      .iconfont {
+        @apply text-base;
       }
     }
   }

@@ -1,24 +1,22 @@
 <template>
-  <div class="app" :class="isMobile ? 'mobile' : ''">
-    <audio id="MusicAudio" ref="audioRef" :src="playMusicUrl" :autoplay="play"></audio>
+  <div class="app-container" :class="{ mobile: isMobile }">
     <n-config-provider :theme="darkTheme">
       <n-dialog-provider>
         <router-view></router-view>
       </n-dialog-provider>
+      <install-app-modal></install-app-modal>
     </n-config-provider>
   </div>
 </template>
 
-<script lang="ts" setup>
+<script setup lang="ts">
 import { darkTheme } from 'naive-ui';
 
+import InstallAppModal from '@/components/common/InstallAppModal.vue';
 import store from '@/store';
 
 import { isMobile } from './utils';
 
-const playMusicUrl = computed(() => store.state.playMusicUrl as string);
-// 是否播放
-const play = computed(() => store.state.play as boolean);
 const windowData = window as any;
 onMounted(() => {
   if (windowData.electron) {
@@ -29,10 +27,8 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-div {
-  box-sizing: border-box;
-}
-.app {
+.app-container {
+  @apply h-full w-full;
   user-select: none;
 }
 

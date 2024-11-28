@@ -13,7 +13,8 @@
     "b:win:x64": "cross-env NODE_ENV=production electron-builder --config ./build/win64.json",
     "b:win:x86": "cross-env NODE_ENV=production electron-builder --config ./build/win32.json",
     "b:win:arm": "cross-env NODE_ENV=production electron-builder --config ./build/winarm64.json",
-    "b:mac": "cross-env NODE_ENV=production electron-builder --config ./build/mac.json"
+    "b:mac": "cross-env NODE_ENV=production electron-builder --config ./build/mac.json",
+    "b:win": "cross-env NODE_ENV=production vite build && npm run b:win:x64 && npm run b:win:x86 && npm run b:win:arm"
   },
   "dependencies": {
     "electron-store": "^8.1.0"
@@ -30,6 +31,7 @@
     "@vueuse/electron": "^11.0.3",
     "autoprefixer": "^10.4.20",
     "axios": "^1.7.7",
+    "cross-env": "^7.0.3",
     "electron": "^32.0.1",
     "electron-builder": "^25.0.5",
     "eslint": "^8.56.0",
@@ -42,11 +44,11 @@
     "eslint-plugin-vue-scoped-css": "^2.7.2",
     "lodash": "^4.17.21",
     "naive-ui": "^2.39.0",
-    "postcss": "^8.4.44",
+    "postcss": "^8.4.49",
     "prettier": "^3.3.3",
     "remixicon": "^4.2.0",
     "sass": "^1.78.0",
-    "tailwindcss": "npm:@tailwindcss/postcss7-compat@^2.2.4",
+    "tailwindcss": "^3.4.15",
     "typescript": "^5.5.4",
     "unplugin-auto-import": "^0.18.2",
     "unplugin-vue-components": "^0.27.4",
@@ -57,7 +59,6 @@
     "vue": "^3.5.0",
     "vue-router": "^4.4.3",
     "vue-tsc": "^2.1.4",
-    "vuex": "^4.1.0",
-    "cross-env": "^7.0.3"
+    "vuex": "^4.1.0"
   }
 }

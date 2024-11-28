@@ -33,7 +33,7 @@
               :id="`music-lrc-text-${index}`"
               :key="index"
               class="music-lrc-text"
-              :class="{ 'now-text': index === nowIndex }"
+              :class="{ 'now-text': index === nowIndex, 'hover-text': item.text }"
               @click="setAudioTime(index, audio)"
             >
               <span :style="getLrcStyle(index)">{{ item.text }}</span>
@@ -259,11 +259,19 @@ defineExpose({
 
       span {
         padding-right: 100px;
-        display: inline-block;
+        // display: inline-block;
         background-clip: text !important;
         -webkit-background-clip: text !important;
       }
 
+      &-tr {
+        @apply font-normal;
+        opacity: 0.7;
+        color: var(--text-color-primary);
+      }
+    }
+
+    .hover-text {
       &:hover {
         @apply font-bold opacity-100 rounded-xl;
         background-color: var(--hover-bg-color);
@@ -271,12 +279,6 @@ defineExpose({
         span {
           color: var(--text-color-active) !important;
         }
-      }
-
-      &-tr {
-        @apply font-normal;
-        opacity: 0.7;
-        color: var(--text-color-primary);
       }
     }
   }
