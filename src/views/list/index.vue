@@ -189,13 +189,13 @@ watch(
 }
 
 .recommend {
-  @apply w-full h-full bg-none px-4;
+  @apply w-full h-full bg-none;
   &-title {
     @apply text-lg font-bold text-white pb-4;
   }
 
   &-list {
-    @apply grid gap-x-8 gap-y-6 pb-28;
+    @apply grid gap-x-8 gap-y-6 pb-28 pr-4;
     grid-template-columns: repeat(v-bind(ITEMS_PER_ROW), minmax(0, 1fr));
   }
   &-item {

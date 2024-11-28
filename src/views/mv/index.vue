@@ -162,14 +162,14 @@ const isPrevDisabled = computed(() => currentIndex.value === 0);
 
 <style scoped lang="scss">
 .mv-list {
-  @apply relative h-full w-full px-4;
+  @apply relative h-full w-full;
 
   &-title {
     @apply text-xl font-bold;
   }
 
   &-content {
-    @apply grid gap-6 pb-28 mt-2;
+    @apply grid gap-6 pb-28 mt-2 pr-4;
     grid-template-columns: repeat(auto-fill, minmax(14%, 1fr));
   }
 
