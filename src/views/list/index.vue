@@ -96,11 +96,10 @@ const handleScroll = (e: any) => {
 // 监听窗口大小变化，调整每行显示数量
 const updateItemsPerRow = () => {
   const width = window.innerWidth;
-  if (width > 1800) ITEMS_PER_ROW.value = 8;
-  else if (width > 1500) ITEMS_PER_ROW.value = 6;
-  else if (width > 1200) ITEMS_PER_ROW.value = 5;
-  else if (width > 768) ITEMS_PER_ROW.value = 4;
-  else ITEMS_PER_ROW.value = 3;
+  if (width > 1800) ITEMS_PER_ROW.value = 10;
+  else if (width > 1200) ITEMS_PER_ROW.value = 8;
+  else if (width > 768) ITEMS_PER_ROW.value = 6;
+  else ITEMS_PER_ROW.value = 5;
 
   // 如果已经加载了数据，重新加载以适应新的布局
   if (route.query.type && recommendList.value) {
