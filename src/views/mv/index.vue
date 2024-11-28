@@ -10,7 +10,7 @@
           :key="item.id"
           class="mv-item"
           :class="setAnimationClass('animate__bounceIn')"
-          :style="setAnimationDelay(index, 10)"
+          :style="getItemAnimationDelay(index)"
         >
           <div class="mv-item-img" @click="handleShowMv(item, index)">
             <n-image
@@ -67,6 +67,11 @@ const currentIndex = ref(0);
 const offset = ref(0);
 const limit = ref(30);
 const hasMore = ref(true);
+
+const getItemAnimationDelay = (index: number) => {
+  const currentPageIndex = index % limit.value;
+  return setAnimationDelay(currentPageIndex, 30);
+};
 
 onMounted(async () => {
   await loadMvList();

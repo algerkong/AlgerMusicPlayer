@@ -5,10 +5,21 @@
     <div>
       <template v-for="(item, index) in playlistCategory?.sub" :key="item.name">
         <span
-          v-show="isShowAllPlaylistCategory || index <= 19"
+          v-show="isShowAllPlaylistCategory || index <= 19 || isHiding"
           class="play-list-type-item"
-          :class="setAnimationClass('animate__bounceIn')"
-          :style="setAnimationDelay(index <= 19 ? index : index - 19)"
+          :class="
+            setAnimationClass(
+              index <= 19
+                ? 'animate__bounceIn'
+                : !isShowAllPlaylistCategory
+                  ? 'animate__backOutLeft'
+                  : 'animate__bounceIn',
+            ) +
+            ' ' +
+            'type-item-' +
+            index
+          "
+          :style="getAnimationDelay(index)"
           @click="handleClickPlaylistType(item.name)"
           >{{ item.name }}</span
         >
@@ -17,7 +28,7 @@
         class="play-list-type-showall"
         :class="setAnimationClass('animate__bounceIn')"
         :style="setAnimationDelay(!isShowAllPlaylistCategory ? 25 : playlistCategory?.sub.length || 100 + 30)"
-        @click="isShowAllPlaylistCategory = !isShowAllPlaylistCategory"
+        @click="handleToggleShowAllPlaylistCategory"
       >
         {{ !isShowAllPlaylistCategory ? '显示全部' : '隐藏一些' }}
       </div>
@@ -26,7 +37,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import { getPlaylistCategory } from '@/api/home';
@@ -36,6 +47,59 @@ import { setAnimationClass, setAnimationDelay } from '@/utils';
 const playlistCategory = ref<IPlayListSort>();
 // 是否显示全部歌单分类
 const isShowAllPlaylistCategory = ref<boolean>(false);
+const DELAY_TIME = 40;
+const getAnimationDelay = computed(() => {
+  return (index: number) => {
+    if (index <= 19) {
+      return setAnimationDelay(index, DELAY_TIME);
+    }
+    if (!isShowAllPlaylistCategory.value) {
+      const nowIndex = (playlistCategory.value?.sub.length || 0) - index;
+      return setAnimationDelay(nowIndex, DELAY_TIME);
+    }
+    return setAnimationDelay(index - 19, DELAY_TIME);
+  };
+});
+
+watch(isShowAllPlaylistCategory, (newVal) => {
+  if (!newVal) {
+    const elements = playlistCategory.value?.sub.map((item, index) =>
+      document.querySelector(`.type-item-${index}`),
+    ) as HTMLElement[];
+    elements
+      .slice(20)
+      .reverse()
+      .forEach((element, index) => {
+        if (element) {
+          setTimeout(
+            () => {
+              (element as HTMLElement).style.position = 'absolute';
+            },
+            index * DELAY_TIME + 400,
+          );
+        }
+      });
+
+    setTimeout(
+      () => {
+        isHiding.value = false;
+        document.querySelectorAll('.play-list-type-item').forEach((element) => {
+          if (element) {
+            console.log('element', element);
+            (element as HTMLElement).style.position = 'none';
+          }
+        });
+      },
+      (playlistCategory.value?.sub.length || 0 - 19) * DELAY_TIME,
+    );
+  } else {
+    document.querySelectorAll('.play-list-type-item').forEach((element) => {
+      if (element) {
+        (element as HTMLElement).style.position = 'none';
+      }
+    });
+  }
+});
 
 // 加载歌单分类
 const loadPlaylistCategory = async () => {
@@ -51,6 +115,14 @@ const handleClickPlaylistType = (type: string) => {
       type,
     },
   });
+};
+
+const isHiding = ref<boolean>(false);
+const handleToggleShowAllPlaylistCategory = () => {
+  isShowAllPlaylistCategory.value = !isShowAllPlaylistCategory.value;
+  if (!isShowAllPlaylistCategory.value) {
+    isHiding.value = true;
+  }
 };
 // 页面初始化
 onMounted(() => {
