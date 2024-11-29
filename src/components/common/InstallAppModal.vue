@@ -37,7 +37,7 @@ const handleInstall = async () => {
   const isWindows = os.includes('Win');
   const urls = {
     mac: 'http://file.alger.fun/d/ali/%E8%BD%AF%E4%BB%B6/AlgerMusic/AlgerMusic.dmg',
-    windows: 'http://file.alger.fun/d/ali/%E8%BD%AF%E4%BB%B6/AlgerMusic/AlgerMusic_2.1.0_Setup_x64.exe',
+    windows: 'http://file.alger.fun/d/ali/%E8%BD%AF%E4%BB%B6/AlgerMusic/AlgerMusic.exe',
   };
   // 根据操作系统选择下载链接
   let downloadUrl = '';
