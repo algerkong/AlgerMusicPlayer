@@ -100,11 +100,6 @@ const updateItemsPerRow = () => {
   else if (width > 1200) ITEMS_PER_ROW.value = 8;
   else if (width > 768) ITEMS_PER_ROW.value = 6;
   else ITEMS_PER_ROW.value = 5;
-
-  // 如果已经加载了数据，重新加载以适应新的布局
-  if (route.query.type && recommendList.value) {
-    loadList(route.query.type as string);
-  }
 };
 
 onMounted(() => {
