@@ -8,6 +8,9 @@
 - 桌面歌词
 - 歌单 mv 搜索 专辑等功能
 
+## 预览地址
+[http://mc.alger.fun/](http://mc.alger.fun/)
+
 ## 项目运行
 ```bash
   # 安装依赖
@@ -30,9 +33,10 @@
 
 
 ## 软件截图
-![首页](./docs/img/image.png)
+![首页](./docs/img/image-7.png)
+![歌词](./docs/img/image-6.png)
 ![歌单](./docs/img/image-1.png)
-![搜索](./docs/img/image-2.png)
+![搜索](./docs/img/image-8.png)
 ![mv](./docs/img/image-3.png)
 ![历史](./docs/img/image-4.png)
 ![我的](./docs/img/image-5.png)
