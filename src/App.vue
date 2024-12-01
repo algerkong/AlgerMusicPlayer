@@ -1,5 +1,6 @@
 <template>
   <div class="app-container" :class="{ mobile: isMobile }">
+    <audio id="MusicAudio" ref="audioRef" :src="playMusicUrl" :autoplay="play"></audio>
     <n-config-provider :theme="darkTheme">
       <n-dialog-provider>
         <router-view></router-view>
@@ -17,6 +18,9 @@ import store from '@/store';
 
 import { isMobile } from './utils';
 
+const playMusicUrl = computed(() => store.state.playMusicUrl as string);
+// 是否播放
+const play = computed(() => store.state.play as boolean);
 const windowData = window as any;
 onMounted(() => {
   if (windowData.electron) {
