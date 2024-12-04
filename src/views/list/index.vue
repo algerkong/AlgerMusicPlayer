@@ -96,7 +96,7 @@ const handleScroll = (e: any) => {
 // 监听窗口大小变化，调整每行显示数量
 const updateItemsPerRow = () => {
   const width = window.innerWidth;
-  if (width > 1800) ITEMS_PER_ROW.value = 10;
+  if (width > 1800) ITEMS_PER_ROW.value = 8;
   else if (width > 1200) ITEMS_PER_ROW.value = 8;
   else if (width > 768) ITEMS_PER_ROW.value = 6;
   else ITEMS_PER_ROW.value = 5;

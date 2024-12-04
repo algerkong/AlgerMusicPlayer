@@ -15,7 +15,7 @@ import directives from './directive';
 const app = createApp(App);
 
 Object.keys(directives).forEach((key: string) => {
-  app.directive(key, directives[key]);
+  app.directive(key, directives[key as keyof typeof directives]);
 });
 app.use(router);
 app.use(store);

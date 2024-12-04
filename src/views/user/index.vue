@@ -57,12 +57,18 @@ onActivated(() => {
 
 const isShowList = ref(false);
 const list = ref<Playlist>();
+const listLoading = ref(false);
 // 展示歌单
-const showPlaylist = async (id: number) => {
+const showPlaylist = async (id: number, name: string) => {
   isShowList.value = true;
-  list.value = {};
+  listLoading.value = true;
+
+  list.value = {
+    name,
+  } as Playlist;
   const { data } = await getListDetail(id);
   list.value = data.playlist;
+  listLoading.value = false;
 };
 
 const handlePlay = () => {
@@ -103,7 +109,12 @@ const handlePlay = () => {
         <div class="play-list" :class="setAnimationClass('animate__fadeInLeft')">
           <div class="title">创建的歌单</div>
           <n-scrollbar>
-            <div v-for="(item, index) in playList" :key="index" class="play-list-item" @click="showPlaylist(item.id)">
+            <div
+              v-for="(item, index) in playList"
+              :key="index"
+              class="play-list-item"
+              @click="showPlaylist(item.id, item.name)"
+            >
               <n-image :src="getImgUrl(item.coverImgUrl, '50y50')" class="play-list-item-img" lazy preview-disabled />
               <div class="play-list-item-info">
                 <div class="play-list-item-name">{{ item.name }}</div>
@@ -133,7 +144,13 @@ const handlePlay = () => {
         </n-scrollbar>
       </div>
     </div>
-    <music-list v-model:show="isShowList" :name="list?.name || ''" :song-list="list?.tracks || []" :list-info="list" />
+    <music-list
+      v-model:show="isShowList"
+      :name="list?.name || ''"
+      :song-list="list?.tracks || []"
+      :list-info="list"
+      :loading="listLoading"
+    />
   </div>
 </template>
 
