@@ -1,8 +1,6 @@
 import { computed, ref } from 'vue';
 
-import { getMusicLrc } from '@/api/music';
 import store from '@/store';
-import { ILyric } from '@/type/lyric';
 import type { ILyricText, SongResult } from '@/type/music';
 
 const windowData = window as any;

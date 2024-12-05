@@ -35,6 +35,14 @@
       />
       <div v-else class="mx-2 rounded-full cursor-pointer text-sm" @click="toLogin">登录</div>
     </div>
+    <n-tooltip v-if="!isElectron">
+      <template #trigger>
+        <div class="github" @click="toGithub">
+          <i class="ri-github-fill"></i>
+        </div>
+      </template>
+      <div>前往 Github</div>
+    </n-tooltip>
   </div>
 </template>
 
@@ -45,6 +53,7 @@ import { useStore } from 'vuex';
 import { getSearchKeyword } from '@/api/home';
 import { getUserDetail, logout } from '@/api/login';
 import { SEARCH_TYPES, USER_SET_OPTIONS } from '@/const/bar-const';
+import { isElectron } from '@/hooks/MusicHook';
 import { getImgUrl } from '@/utils';
 
 const router = useRouter();
@@ -135,6 +144,10 @@ const selectItem = async (key: string) => {
     default:
   }
 };
+
+const toGithub = () => {
+  window.open('https://github.com/algerkong/AlgerMusicPlayer', '_blank');
+};
 </script>
 
 <style lang="scss" scoped>
@@ -153,5 +166,9 @@ const selectItem = async (key: string) => {
   .search-box {
     @apply pl-4;
   }
+}
+
+.github {
+  @apply cursor-pointer text-gray-100 hover:text-gray-400 text-xl ml-4 rounded-full border border-gray-600 flex justify-center items-center px-2;
 }
 </style>
