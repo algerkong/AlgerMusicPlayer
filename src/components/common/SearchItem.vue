@@ -23,8 +23,9 @@
 </template>
 
 <script setup lang="ts">
+import { useStore } from 'vuex';
+
 import { getAlbum, getListDetail } from '@/api/list';
-import { getMvUrl } from '@/api/mv';
 import MvPlayer from '@/components/MvPlayer.vue';
 import { IMvItem } from '@/type/mv';
 import { getImgUrl } from '@/utils';
@@ -39,8 +40,6 @@ const props = defineProps<{
   };
 }>();
 
-const url = ref('');
-
 const songList = ref<any[]>([]);
 
 const showPop = ref(false);
@@ -52,6 +51,8 @@ const getCurrentMv = () => {
     name: props.item.name,
   } as unknown as IMvItem;
 };
+
+const store = useStore();
 
 const handleClick = async () => {
   listInfo.value = null;
@@ -72,8 +73,8 @@ const handleClick = async () => {
   }
 
   if (props.item.type === 'mv') {
-    const res = await getMvUrl(props.item.id);
-    url.value = res.data.data.url;
+    store.commit('setIsPlay', false);
+    store.commit('setPlayMusic', false);
     showPop.value = true;
   }
 };
