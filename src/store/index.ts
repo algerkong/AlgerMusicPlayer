@@ -35,7 +35,6 @@ const state: State = {
   searchValue: '',
   searchType: 1,
 };
-const windowData = window as any;
 
 const { handlePlayMusic, nextPlay, prevPlay } = useMusicListHook();
 
@@ -64,7 +63,9 @@ const mutations = {
   },
   async setSetData(state: State, setData: any) {
     state.setData = setData;
-    window.electron && window.electron.ipcRenderer.setStoreValue('set', JSON.parse(JSON.stringify(setData)));
+    if ((window as any).electron) {
+      (window as any).electron.ipcRenderer.setStoreValue('set', JSON.parse(JSON.stringify(setData)));
+    }
   },
 };
 

@@ -26,9 +26,10 @@
       </div>
       <div class="music-content-name">
         <n-ellipsis class="text-ellipsis" line-clamp="1">
-          <span v-for="(item, index) in playMusic.song.artists" :key="index">
-            {{ item.name }}{{ index < playMusic.song.artists.length - 1 ? ' / ' : '' }}
-          </span>
+          <span v-for="(artists, artistsindex) in playMusic.ar || playMusic.song.artists" :key="artistsindex"
+            >{{ artists.name
+            }}{{ artistsindex < (playMusic.ar || playMusic.song.artists).length - 1 ? ' / ' : '' }}</span
+          >
         </n-ellipsis>
       </div>
     </div>

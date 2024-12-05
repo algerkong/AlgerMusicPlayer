@@ -18,14 +18,15 @@
       :song-list="songList"
       :list-info="listInfo"
     />
-
-    <PlayVideo v-if="item.type === 'mv'" v-model:show="showPop" :title="item.name" :url="url" />
+    <mv-player v-if="item.type === 'mv'" v-model:show="showPop" :current-mv="getCurrentMv()" no-list />
   </div>
 </template>
 
 <script setup lang="ts">
 import { getAlbum, getListDetail } from '@/api/list';
 import { getMvUrl } from '@/api/mv';
+import MvPlayer from '@/components/MvPlayer.vue';
+import { IMvItem } from '@/type/mv';
 import { getImgUrl } from '@/utils';
 
 const props = defineProps<{
@@ -44,6 +45,13 @@ const songList = ref<any[]>([]);
 
 const showPop = ref(false);
 const listInfo = ref<any>(null);
+
+const getCurrentMv = () => {
+  return {
+    id: props.item.id,
+    name: props.item.name,
+  } as unknown as IMvItem;
+};
 
 const handleClick = async () => {
   listInfo.value = null;

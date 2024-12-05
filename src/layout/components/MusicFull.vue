@@ -12,8 +12,8 @@
         <div>
           <div class="music-content-name">{{ playMusic.name }}</div>
           <div class="music-content-singer">
-            <span v-for="(item, index) in playMusic.song.artists" :key="index">
-              {{ item.name }}{{ index < playMusic.song.artists.length - 1 ? ' / ' : '' }}
+            <span v-for="(item, index) in playMusic.ar || playMusic.song.artists" :key="index">
+              {{ item.name }}{{ index < (playMusic.ar || playMusic.song.artists).length - 1 ? ' / ' : '' }}
             </span>
           </div>
         </div>

@@ -44,9 +44,9 @@
 
           <div class="controls-main">
             <div class="left-controls">
-              <n-tooltip placement="top">
+              <n-tooltip v-if="!props.noList" placement="top">
                 <template #trigger>
-                  <n-button quaternary circle :disabled="isPrevDisabled" @click="handlePrev">
+                  <n-button quaternary circle @click="handlePrev">
                     <template #icon>
                       <n-icon size="24">
                         <n-spin v-if="prevLoading" size="small" />
@@ -72,7 +72,7 @@
                 {{ isPlaying ? '暂停' : '播放' }}
               </n-tooltip>
 
-              <n-tooltip placement="top">
+              <n-tooltip v-if="!props.noList" placement="top">
                 <template #trigger>
                   <n-button quaternary circle @click="handleNext">
                     <template #icon>
@@ -106,7 +106,7 @@
                 <n-slider v-model:value="volume" :min="0" :max="100" :tooltip="false" class="volume-slider" />
               </div>
 
-              <n-tooltip placement="top">
+              <n-tooltip v-if="!props.noList" placement="top">
                 <template #trigger>
                   <n-button quaternary circle class="play-mode-btn" @click="togglePlayMode">
                     <template #icon>
@@ -171,7 +171,7 @@
 </template>
 
 <script setup lang="ts">
-import { NButton, NIcon, NSlider, NTooltip, useMessage } from 'naive-ui';
+import { NButton, NIcon, NSlider, NTooltip } from 'naive-ui';
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 
@@ -184,10 +184,18 @@ const PLAY_MODE = {
   Auto: 'auto' as PlayMode,
 } as const;
 
-const props = defineProps<{
-  show: boolean;
-  currentMv?: IMvItem;
-}>();
+const props = withDefaults(
+  defineProps<{
+    show: boolean;
+    currentMv?: IMvItem;
+    noList?: boolean;
+  }>(),
+  {
+    show: false,
+    currentMv: undefined,
+    noList: false,
+  },
+);
 
 const emit = defineEmits<{
   (e: 'update:show', value: boolean): void;
@@ -345,7 +353,9 @@ const handleEnded = () => {
     }
   } else {
     // 自动播放模式，触发下一个
-    emit('next');
+    emit('next', (value: boolean) => {
+      nextLoading.value = value;
+    });
   }
 };
 
@@ -369,9 +379,9 @@ const checkFullscreenAPI = () => {
   return {
     requestFullscreen:
       videoContainerRef.value?.requestFullscreen ||
-      videoContainerRef.value?.webkitRequestFullscreen ||
-      videoContainerRef.value?.mozRequestFullScreen ||
-      videoContainerRef.value?.msRequestFullscreen,
+      (videoContainerRef.value as any)?.webkitRequestFullscreen ||
+      (videoContainerRef.value as any)?.mozRequestFullScreen ||
+      (videoContainerRef.value as any)?.msRequestFullscreen,
     exitFullscreen: doc.exitFullscreen || doc.webkitExitFullscreen || doc.mozCancelFullScreen || doc.msExitFullscreen,
     fullscreenElement:
       doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement,
@@ -440,9 +450,6 @@ onUnmounted(() => {
   // 添加到现有的 onUnmounted 中
   document.removeEventListener('keydown', handleKeyPress);
 });
-
-// 在 setup 中初始化 message
-const message = useMessage();
 
 // 添加提示状态
 const showModeHint = ref(false);

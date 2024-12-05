@@ -81,6 +81,7 @@ export interface Song {
   count?: number;
   playLoading?: boolean;
   picUrl?: string;
+  ar: Artist[];
 }
 
 interface Privilege {
