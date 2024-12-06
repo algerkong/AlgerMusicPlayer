@@ -29,6 +29,7 @@
       <!-- 底部音乐播放 -->
       <play-bar v-if="isPlay" />
     </div>
+    <install-app-modal></install-app-modal>
   </div>
 </template>
 
@@ -36,6 +37,7 @@
 import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 
+import InstallAppModal from '@/components/common/InstallAppModal.vue';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import { isElectron } from '@/hooks/MusicHook';
 import homeRouter from '@/router/home';

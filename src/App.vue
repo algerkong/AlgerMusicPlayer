@@ -5,7 +5,6 @@
       <n-dialog-provider>
         <router-view></router-view>
       </n-dialog-provider>
-      <install-app-modal></install-app-modal>
     </n-config-provider>
   </div>
 </template>
@@ -13,7 +12,6 @@
 <script setup lang="ts">
 import { darkTheme } from 'naive-ui';
 
-import InstallAppModal from '@/components/common/InstallAppModal.vue';
 import store from '@/store';
 
 import { isMobile } from './utils';
