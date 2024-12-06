@@ -13,8 +13,8 @@
     "b:win:x64": "cross-env NODE_ENV=production electron-builder --config ./build/win64.json",
     "b:win:x86": "cross-env NODE_ENV=production electron-builder --config ./build/win32.json",
     "b:win:arm": "cross-env NODE_ENV=production electron-builder --config ./build/winarm64.json",
-    "b:mac": "cross-env NODE_ENV=production electron-builder --config ./build/mac.json",
-    "b:win": "cross-env NODE_ENV=production vite build && npm run b:win:x64 && npm run b:win:x86 && npm run b:win:arm"
+    "b:mac": "cross-env NODE_ENV=production npm run build && electron-builder --config ./build/mac.json",
+    "b:win": "cross-env NODE_ENV=production npm run build && npm run b:win:x64 && npm run b:win:x86 && npm run b:win:arm"
   },
   "dependencies": {
     "electron-store": "^8.1.0"
