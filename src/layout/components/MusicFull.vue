@@ -252,6 +252,7 @@ defineExpose({
     background-color: inherit;
     width: 500px;
     height: 550px;
+    mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
     &-text {
       @apply text-2xl cursor-pointer font-bold px-2 py-4;
       transition: all 0.3s ease;

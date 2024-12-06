@@ -160,37 +160,110 @@ export const getLrcTimeRange = (index: number) => ({
   nextTime: lrcTimeArray.value[index + 1],
 });
 
+// 监听歌词数组变化，当切换歌曲时重新初始化歌词窗口
+watch(
+  () => lrcArray.value,
+  (newLrcArray) => {
+    if (newLrcArray.length > 0 && isElectron.value) {
+      // 重新初始化歌词数据
+      initLyricWindow();
+      // 发送当前状态
+      sendLyricToWin();
+    }
+  },
+);
+
+// 监听播放状态变化
+watch(isPlaying, (newIsPlaying) => {
+  if (isElectron.value) {
+    sendLyricToWin(newIsPlaying);
+  }
+});
+
+// 监听时间变化
+watch(nowTime, (newTime) => {
+  const newIndex = getLrcIndex(newTime);
+  if (newIndex !== nowIndex.value) {
+    nowIndex.value = newIndex;
+    currentLrcProgress.value = 0; // 重置进度
+    // 当索引变化时发送更新
+    if (isElectron.value) {
+      sendLyricToWin();
+    }
+  }
+});
+
+// 处理歌曲结束
+export const handleEnded = () => {
+  // ... 原有的结束处理逻辑 ...
+
+  // 如果有歌词窗口，发送初始化数据
+  if (isElectron.value) {
+    // 延迟一下等待新歌曲加载完成
+    setTimeout(() => {
+      initLyricWindow();
+      sendLyricToWin();
+    }, 100);
+  }
+};
+
+// 初始化歌词数据
+export const initLyricWindow = () => {
+  if (!isElectron.value) return;
+  try {
+    if (lrcArray.value.length > 0) {
+      console.log('Initializing lyric window with data:', {
+        lrcArray: lrcArray.value,
+        lrcTimeArray: lrcTimeArray.value,
+        allTime: allTime.value,
+      });
+
+      const staticData = {
+        type: 'init',
+        lrcArray: lrcArray.value,
+        lrcTimeArray: lrcTimeArray.value,
+        allTime: allTime.value,
+      };
+      windowData.electronAPI.sendLyric(JSON.stringify(staticData));
+    } else {
+      console.log('No lyrics available for initialization');
+    }
+  } catch (error) {
+    console.error('Error initializing lyric window:', error);
+  }
+};
+
+// 发送歌词更新数据
 export const sendLyricToWin = (isPlay: boolean = true) => {
   if (!isElectron.value) return;
 
   try {
     if (lrcArray.value.length > 0) {
       const nowIndex = getLrcIndex(nowTime.value);
-      const { currentLrc, nextLrc } = getCurrentLrc();
-      const { currentTime, nextTime } = getLrcTimeRange(nowIndex);
-      // 设置lyricWinData 获取 当前播放的两句歌词 和歌词时间
-      const lyricWinData = {
-        currentLrc,
-        nextLrc,
-        currentTime,
-        nextTime,
+      const updateData = {
+        type: 'update',
         nowIndex,
-        lrcTimeArray: lrcTimeArray.value,
-        lrcArray: lrcArray.value,
         nowTime: nowTime.value,
-        allTime: allTime.value,
         startCurrentTime: lrcTimeArray.value[nowIndex],
+        nextTime: lrcTimeArray.value[nowIndex + 1],
         isPlay,
       };
-      windowData.electronAPI.sendLyric(JSON.stringify(lyricWinData));
+      windowData.electronAPI.sendLyric(JSON.stringify(updateData));
     }
   } catch (error) {
-    console.error('Error sending lyric to window:', error);
+    console.error('Error sending lyric update:', error);
   }
 };
 
 export const openLyric = () => {
   if (!isElectron.value) return;
+  console.log('Opening lyric window');
   windowData.electronAPI.openLyric();
-  sendLyricToWin();
+
+  // 延迟一下初始化，确保窗口已经创建
+  setTimeout(() => {
+    console.log('Initializing lyric window after delay');
+    initLyricWindow();
+    sendLyricToWin();
+  }, 500);
 };

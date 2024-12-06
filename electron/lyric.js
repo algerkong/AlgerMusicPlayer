@@ -1,5 +1,6 @@
 const { BrowserWindow } = require('electron');
 const path = require('path');
+const config = require('./config');
 
 let lyricWindow = null;
 
@@ -10,13 +11,16 @@ const createWin = () => {
     frame: false,
     show: false,
     transparent: true,
+    hasShadow: false,
     webPreferences: {
-      nodeIntegration: true,
+      nodeIntegration: false,
+      contextIsolation: true,
       preload: `${__dirname}/preload.js`,
-      contextIsolation: false,
+      webSecurity: false,
     },
   });
 };
+
 const loadLyricWindow = (ipcMain) => {
   ipcMain.on('open-lyric', () => {
     if (lyricWindow) {
@@ -28,9 +32,9 @@ const loadLyricWindow = (ipcMain) => {
     createWin();
     if (process.env.NODE_ENV === 'development') {
       lyricWindow.webContents.openDevTools({ mode: 'detach' });
-      lyricWindow.loadURL('http://localhost:4678/#/lyric');
+      lyricWindow.loadURL(`http://localhost:${config.development.lyricPort}/#/lyric`);
     } else {
-      const distPath = path.resolve(__dirname, '../dist');
+      const distPath = path.resolve(__dirname, config.production.distPath);
       lyricWindow.loadURL(`file://${distPath}/index.html#/lyric`);
     }
 

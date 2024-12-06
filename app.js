@@ -3,6 +3,7 @@ const path = require('path');
 const Store = require('electron-store');
 const setJson = require('./electron/set.json');
 const { loadLyricWindow } = require('./electron/lyric');
+const config = require('./electron/config');
 
 let mainWin = null;
 function createWindow() {
@@ -11,8 +12,8 @@ function createWindow() {
     height: 780,
     frame: false,
     webPreferences: {
-      nodeIntegration: true,
-      // contextIsolation: false,
+      nodeIntegration: false,
+      contextIsolation: true,
       preload: path.join(__dirname, '/electron/preload.js'),
     },
   });
@@ -20,7 +21,7 @@ function createWindow() {
   win.setMinimumSize(1200, 780);
   if (process.env.NODE_ENV === 'development') {
     win.webContents.openDevTools({ mode: 'detach' });
-    win.loadURL('http://localhost:4488/');
+    win.loadURL(`http://localhost:${config.development.mainPort}/`);
   } else {
     win.loadURL(`file://${__dirname}/dist/index.html`);
   }
