@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 
 import { checkQr, createQr, getQrKey, getUserDetail, loginByCellphone } from '@/api/login';
-import { isMobile, setAnimationClass } from '@/utils';
+import { setAnimationClass } from '@/utils';
 
 defineOptions({
   name: 'Login',
@@ -14,6 +14,7 @@ defineOptions({
 const message = useMessage();
 const store = useStore();
 const router = useRouter();
+const isQr = ref(false);
 
 const qrUrl = ref<string>();
 onMounted(() => {
@@ -24,6 +25,11 @@ const timerRef = ref(null);
 
 const loadLogin = async () => {
   try {
+    if (timerRef.value) {
+      clearInterval(timerRef.value);
+      timerRef.value = null;
+    }
+    if (!isQr.value) return;
     const qrKey = await getQrKey();
     const key = qrKey.data.data.unikey;
     const { data } = await createQr(key);
@@ -65,7 +71,7 @@ const timerIsQr = (key: string) => {
       clearInterval(timer);
       timerRef.value = null;
     }
-  }, 2000);
+  }, 3000);
 
   return timer;
 };
@@ -79,9 +85,9 @@ onBeforeUnmount(() => {
 });
 
 // 是否扫码登陆
-const isQr = ref(!isMobile.value);
 const chooseQr = () => {
   isQr.value = !isQr.value;
+  loadLogin();
 };
 
 // 手机号登录
@@ -116,6 +122,7 @@ const loginPhone = async () => {
             <input v-model="phone" class="phone-input" type="text" placeholder="手机号" />
             <input v-model="password" class="phone-input" type="password" placeholder="密码" />
           </div>
+          <div class="text">使用网易云账号登录</div>
           <n-button class="btn-login" @click="loginPhone()">登录</n-button>
         </div>
       </div>
@@ -136,7 +143,7 @@ const loginPhone = async () => {
 }
 
 .text {
-  @apply mt-4 text-green-500 text-xs;
+  @apply mt-4 text-white text-xs;
 }
 
 .phone-login {
