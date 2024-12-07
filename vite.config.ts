@@ -36,15 +36,20 @@ export default defineConfig({
     port: 4488,
     proxy: {
       // with options
-      '/api': {
-        target: 'http://110.42.251.190:9898',
+      [process.env.VITE_API_PROXY as string]: {
+        target: process.env.VITE_API,
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        rewrite: (path) => path.replace(new RegExp(`^${process.env.VITE_API_PROXY}`), ''),
       },
-      '/music': {
-        target: 'http://110.42.251.190:4100',
+      [process.env.VITE_API_MUSIC_PROXY as string]: {
+        target: process.env.VITE_API_MUSIC,
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/music/, ''),
+        rewrite: (path) => path.replace(new RegExp(`^${process.env.VITE_API_MUSIC_PROXY}`), ''),
+      },
+      [process.env.VITE_API_PROXY_MUSIC as string]: {
+        target: process.env.VITE_API_PROXY,
+        changeOrigin: true,
+        rewrite: (path) => path.replace(new RegExp(`^${process.env.VITE_API_PROXY_MUSIC}`), ''),
       },
     },
   },

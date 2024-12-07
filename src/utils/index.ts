@@ -54,11 +54,9 @@ export const getIsMc = () => {
   if (windowData.electron.ipcRenderer.getStoreValue('set').isProxy) {
     return true;
   }
-  if (window.location.origin.includes('localhost')) {
-  }
   return false;
 };
-const ProxyUrl = import.meta.env.VITE_API_PROXY || 'http://110.42.251.190:9856';
+const ProxyUrl = import.meta.env.VITE_API_PROXY;
 
 export const getMusicProxyUrl = (url: string) => {
   if (!getIsMc()) {

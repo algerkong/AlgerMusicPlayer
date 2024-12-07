@@ -16,3 +16,5 @@ dist.zip
 .vscode
 
 bun.lockb
+
+.env.*.local
