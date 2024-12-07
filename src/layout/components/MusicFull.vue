@@ -220,7 +220,6 @@ defineExpose({
 
 #drawer-target {
   @apply top-0 left-0 absolute overflow-hidden rounded px-24 flex items-center justify-center w-full h-full pb-8;
-  backdrop-filter: blur(20px);
   animation-duration: 300ms;
 
   .music-img {
