@@ -44,6 +44,11 @@
 - 多平台支持（Web、Desktop、Mobile Web）
 - 构建优化（代码分割、压缩）
 
+## 咖啡☕️
+|                                        微信                                        |                                       支付宝                                       |
+| :--------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------: |
+| <img src="https://github.com/algerkong/algerkong/blob/main/wechat.jpg?raw=true" alt="WeChat QRcode" width=200> | <img src="https://github.com/algerkong/algerkong/blob/main/alipay.jpg?raw=true" alt="Wechat QRcode" width=200> |
+
 ## 项目运行
 ```bash
   # 安装依赖
@@ -89,6 +94,9 @@
   # 代理地址
   VITE_API_PROXY = ***
 ```
+
+
+
 
 ## 欢迎提Issues
 
