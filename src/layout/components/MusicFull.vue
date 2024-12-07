@@ -258,8 +258,6 @@ defineExpose({
       background-color: transparent;
 
       span {
-        padding-right: 100px;
-        // display: inline-block;
         background-clip: text !important;
         -webkit-background-clip: text !important;
       }
@@ -286,12 +284,16 @@ defineExpose({
 
 .mobile {
   #drawer-target {
-    @apply flex-col p-4 pt-8;
+    @apply flex-col p-4 pt-8 justify-start;
     .music-img {
       display: none;
     }
     .music-lrc {
       height: calc(100vh - 260px) !important;
+      width: 100vw;
+    }
+    .music-lrc-text {
+      text-align: center;
     }
   }
 }

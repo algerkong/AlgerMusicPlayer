@@ -5,7 +5,7 @@ import { getListByCat, getListDetail, getRecommendList } from '@/api/list';
 import MusicList from '@/components/MusicList.vue';
 import type { IRecommendItem } from '@/type/list';
 import type { IListDetail } from '@/type/listDetail';
-import { formatNumber, getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
+import { formatNumber, getImgUrl, isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
 
 defineOptions({
   name: 'List',
@@ -96,6 +96,10 @@ const handleScroll = (e: any) => {
 // 监听窗口大小变化，调整每行显示数量
 const updateItemsPerRow = () => {
   const width = window.innerWidth;
+  if (isMobile.value) {
+    ITEMS_PER_ROW.value = 2;
+    return;
+  }
   if (width > 1800) ITEMS_PER_ROW.value = 8;
   else if (width > 1200) ITEMS_PER_ROW.value = 8;
   else if (width > 768) ITEMS_PER_ROW.value = 6;
@@ -239,5 +243,11 @@ watch(
 
 .no-more {
   @apply text-center py-4 text-sm text-gray-500;
+}
+
+.mobile {
+  .recommend-list {
+    @apply px-4;
+  }
 }
 </style>
