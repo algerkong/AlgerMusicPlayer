@@ -14,17 +14,10 @@
 ## 预览地址
 [http://mc.alger.fun/](http://mc.alger.fun/)
 
-## Stargazers over time
-[![Stargazers over time](https://starchart.cc/algerkong/AlgerMusicPlayer.svg?variant=adaptive)](https://starchart.cc/algerkong/AlgerMusicPlayer)
-
 ## 软件截图
 ![首页](./docs/img/image-7.png)
 ![歌词](./docs/img/image-6.png)
-![歌单](./docs/img/image-1.png)
 ![搜索](./docs/img/image-8.png)
-![mv](./docs/img/image-3.png)
-![历史](./docs/img/image-4.png)
-![我的](./docs/img/image-5.png)
 
 ## 技术栈
 
@@ -94,6 +87,9 @@
   # 代理地址
   VITE_API_PROXY = ***
 ```
+
+## Stargazers over time
+[![Stargazers over time](https://starchart.cc/algerkong/AlgerMusicPlayer.svg?variant=adaptive)](https://starchart.cc/algerkong/AlgerMusicPlayer)
 
 
 
