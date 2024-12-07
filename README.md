@@ -1,4 +1,4 @@
-# 一个基于 electron typescript vue3 的桌面音乐播放器 适配 web端 桌面端 web移动端
+# Alger Music Player
 主要功能如下
 
 - 音乐推荐
@@ -8,8 +8,14 @@
 - 桌面歌词
 - 歌单 mv 搜索 专辑等功能
 
+## 项目简介
+ 一个基于 electron typescript vue3 的桌面音乐播放器 适配 web端 桌面端 web移动端
+
 ## 预览地址
 [http://mc.alger.fun/](http://mc.alger.fun/)
+
+## Stargazers over time
+[![Stargazers over time](https://starchart.cc/algerkong/AlgerMusicPlayer.svg?variant=adaptive)](https://starchart.cc/algerkong/AlgerMusicPlayer)
 
 ## 软件截图
 ![首页](./docs/img/image-7.png)
@@ -19,6 +25,24 @@
 ![mv](./docs/img/image-3.png)
 ![历史](./docs/img/image-4.png)
 ![我的](./docs/img/image-5.png)
+
+## 技术栈
+
+### 主要框架
+- Vue 3 - 渐进式 JavaScript 框架
+- TypeScript - JavaScript 的超集，添加了类型系统
+- Electron - 跨平台桌面应用开发框架
+- Vite - 下一代前端构建工具
+
+### UI 框架
+- Naive UI - 基于 Vue 3 的组件库
+
+### 项目特点
+- 完整的类型支持（TypeScript）
+- 模块化设计
+- 自动化组件和 API 导入
+- 多平台支持（Web、Desktop、Mobile Web）
+- 构建优化（代码分割、压缩）
 
 ## 项目运行
 ```bash
