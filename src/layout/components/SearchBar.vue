@@ -35,14 +35,14 @@
       />
       <div v-else class="mx-2 rounded-full cursor-pointer text-sm" @click="toLogin">登录</div>
     </div>
-    <n-tooltip v-if="!isElectron">
-      <template #trigger>
-        <div class="github" @click="toGithub">
-          <i class="ri-github-fill"></i>
-        </div>
-      </template>
-      <div>前往 Github</div>
-    </n-tooltip>
+    <coffee
+      alipay-q-r="https://github.com/algerkong/algerkong/blob/main/alipay.jpg?raw=true"
+      wechat-q-r="https://github.com/algerkong/algerkong/blob/main/wechat.jpg?raw=true"
+    >
+      <div class="github" @click="toGithub">
+        <i class="ri-github-fill"></i>
+      </div>
+    </coffee>
   </div>
 </template>
 
@@ -52,8 +52,8 @@ import { useStore } from 'vuex';
 
 import { getSearchKeyword } from '@/api/home';
 import { getUserDetail, logout } from '@/api/login';
+import Coffee from '@/components/Coffee.vue';
 import { SEARCH_TYPES, USER_SET_OPTIONS } from '@/const/bar-const';
-import { isElectron } from '@/hooks/MusicHook';
 import { getImgUrl } from '@/utils';
 
 const router = useRouter();
@@ -169,6 +169,6 @@ const toGithub = () => {
 }
 
 .github {
-  @apply cursor-pointer text-gray-100 hover:text-gray-400 text-xl ml-4 rounded-full border border-gray-600 flex justify-center items-center px-2;
+  @apply cursor-pointer text-gray-100 hover:text-gray-400 text-xl ml-4 rounded-full border border-gray-600 flex justify-center items-center px-2 h-full;
 }
 </style>
