@@ -1,76 +1,80 @@
 <template>
-  <div class="set-page">
-    <div v-if="isElectron" class="set-item">
-      <div>
-        <div class="set-item-title">代理</div>
-        <div class="set-item-content">无法听音乐时打开</div>
+  <n-scrollbar>
+    <div class="set-page">
+      <div v-if="isElectron" class="set-item">
+        <div>
+          <div class="set-item-title">代理</div>
+          <div class="set-item-content">无法听音乐时打开</div>
+        </div>
+        <n-switch v-model:value="setData.isProxy" />
       </div>
-      <n-switch v-model:value="setData.isProxy" />
-    </div>
-    <div class="set-item">
-      <div>
-        <div class="set-item-title">关闭动画效果</div>
+      <div class="set-item">
+        <div>
+          <div class="set-item-title">关闭动画效果</div>
+        </div>
+        <n-switch v-model:value="setData.noAnimate" />
       </div>
-      <n-switch v-model:value="setData.noAnimate" />
-    </div>
-    <div class="set-item">
-      <div>
-        <div class="set-item-title">动画速度</div>
-        <div class="set-item-content">调节动画播放速度</div>
-      </div>
-      <div class="flex items-center gap-2">
-        <span class="text-sm text-gray-400">{{ setData.animationSpeed }}x</span>
-        <div class="w-40">
-          <n-slider
-            v-model:value="setData.animationSpeed"
-            :min="0.1"
-            :max="3"
-            :step="0.1"
-            :marks="{
-              0.1: '极慢',
-              1: '正常',
-              3: '极快',
-            }"
-            :disabled="setData.noAnimate"
-            class="w-40"
-          />
+      <div class="set-item">
+        <div>
+          <div class="set-item-title">动画速度</div>
+          <div class="set-item-content">调节动画播放速度</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-gray-400">{{ setData.animationSpeed }}x</span>
+          <div class="w-40">
+            <n-slider
+              v-model:value="setData.animationSpeed"
+              :min="0.1"
+              :max="3"
+              :step="0.1"
+              :marks="{
+                0.1: '极慢',
+                1: '正常',
+                3: '极快',
+              }"
+              :disabled="setData.noAnimate"
+              class="w-40"
+            />
+          </div>
         </div>
       </div>
-    </div>
-    <div class="set-item">
-      <div>
-        <div class="set-item-title">版本</div>
-        <div class="set-item-content">当前已是最新版本</div>
+      <div class="set-item">
+        <div>
+          <div class="set-item-title">版本</div>
+          <div class="set-item-content">当前已是最新版本</div>
+        </div>
+        <div>{{ config.version }}</div>
       </div>
-      <div>{{ config.version }}</div>
-    </div>
-    <div class="set-item cursor-pointer hover:text-green-500 hover:bg-green-950 transition-all" @click="openAuthor">
-      <div>
-        <div class="set-item-title">作者</div>
-        <div class="set-item-content">algerkong github</div>
+      <div class="set-item cursor-pointer hover:text-green-500 hover:bg-green-950 transition-all" @click="openAuthor">
+        <div>
+          <div class="set-item-title">作者</div>
+          <div class="set-item-content">algerkong github</div>
+        </div>
+        <div>{{ setData.author }}</div>
       </div>
-      <div>{{ setData.author }}</div>
-    </div>
 
-    <div class="set-action">
-      <n-button class="w-40 h-10" @click="handelCancel">取消</n-button>
-      <n-button type="primary" class="w-40 h-10" @click="handleSave">{{ isElectron ? '保存并重启' : '保存' }}</n-button>
-    </div>
+      <div class="set-action">
+        <n-button class="w-40 h-10" @click="handelCancel">取消</n-button>
+        <n-button type="primary" class="w-40 h-10" @click="handleSave">{{
+          isElectron ? '保存并重启' : '保存'
+        }}</n-button>
+      </div>
 
-    <div class="p-6 bg-black rounded-lg shadow-lg mt-20">
-      <div class="text-gray-100 text-base text-center">支持作者</div>
-      <div class="flex gap-60">
-        <div class="flex flex-col items-center gap-2 cursor-pointer hover:scale-[2] transition-all z-10 bg-black">
-          <n-image :src="alipayQR" alt="支付宝收款码" class="w-32 h-32 rounded-lg" preview-disabled />
-          <span class="text-sm text-gray-100">支付宝</span>
-        </div>
-        <div class="flex flex-col items-center gap-2 cursor-pointer hover:scale-[2] transition-all z-10 bg-black">
-          <n-image :src="wechatQR" alt="微信收款码" class="w-32 h-32 rounded-lg" preview-disabled />
-          <span class="text-sm text-gray-100">微信支付</span>
+      <div class="p-6 bg-black rounded-lg shadow-lg mt-20">
+        <div class="text-gray-100 text-base text-center">支持作者</div>
+        <div class="flex gap-60">
+          <div class="flex flex-col items-center gap-2 cursor-pointer hover:scale-[2] transition-all z-10 bg-black">
+            <n-image :src="alipayQR" alt="支付宝收款码" class="w-32 h-32 rounded-lg" preview-disabled />
+            <span class="text-sm text-gray-100">支付宝</span>
+          </div>
+          <div class="flex flex-col items-center gap-2 cursor-pointer hover:scale-[2] transition-all z-10 bg-black">
+            <n-image :src="wechatQR" alt="微信收款码" class="w-32 h-32 rounded-lg" preview-disabled />
+            <span class="text-sm text-gray-100">微信支付</span>
+          </div>
         </div>
       </div>
     </div>
-  </div>
+  </n-scrollbar>
 </template>
 
 <script setup lang="ts">
