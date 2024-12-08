@@ -47,7 +47,7 @@
     "postcss": "^8.4.49",
     "prettier": "^3.3.3",
     "remixicon": "^4.2.0",
-    "sass": "^1.78.0",
+    "sass": "^1.82.0",
     "tailwindcss": "^3.4.15",
     "typescript": "^5.5.4",
     "unplugin-auto-import": "^0.18.2",

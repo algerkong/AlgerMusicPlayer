@@ -13,14 +13,7 @@
           :style="getItemAnimationDelay(index)"
         >
           <div class="mv-item-img" @click="handleShowMv(item, index)">
-            <n-image
-              class="mv-item-img-img"
-              :src="getImgUrl(item.cover, '200y112')"
-              lazy
-              preview-disabled
-              width="200"
-              height="112"
-            />
+            <n-image class="mv-item-img-img" :src="getImgUrl(item.cover, '320y180')" lazy preview-disabled />
             <div class="top">
               <div class="play-count">{{ formatNumber(item.playCount) }}</div>
               <i class="iconfont icon-videofill"></i>
@@ -169,8 +162,8 @@ const isPrevDisabled = computed(() => currentIndex.value === 0);
   }
 
   &-content {
-    @apply grid gap-6 pb-28 mt-2 pr-4;
-    grid-template-columns: repeat(auto-fill, minmax(14%, 1fr));
+    @apply grid gap-4 pb-28 mt-2 pr-4;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   }
 
   .mv-item {
@@ -178,6 +171,7 @@ const isPrevDisabled = computed(() => currentIndex.value === 0);
     background-color: #1f1f1f;
     &-img {
       @apply rounded-lg overflow-hidden relative;
+      aspect-ratio: 16/9;
       line-height: 0;
 
       &:hover img {
@@ -185,7 +179,7 @@ const isPrevDisabled = computed(() => currentIndex.value === 0);
       }
 
       &-img {
-        @apply w-full rounded-lg overflow-hidden;
+        @apply w-full h-full object-cover rounded-lg overflow-hidden;
       }
 
       .top {
@@ -224,7 +218,9 @@ const isPrevDisabled = computed(() => currentIndex.value === 0);
 
 .mobile {
   .mv-list-content {
-    grid-template-columns: repeat(auto-fill, minmax(30%, 1fr));
+    @apply px-4;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
 }
 

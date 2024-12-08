@@ -11,11 +11,20 @@ export const setAnimationClass = (type: String) => {
   if (store.state.setData && store.state.setData.noAnimate) {
     return '';
   }
-  return `animate__animated ${type}`;
+  const speed = store.state.setData?.animationSpeed || 1;
+
+  let speedClass = '';
+  if (speed <= 0.3) speedClass = 'animate__slower';
+  else if (speed <= 0.8) speedClass = 'animate__slow';
+  else if (speed >= 2.5) speedClass = 'animate__faster';
+  else if (speed >= 1.5) speedClass = 'animate__fast';
+
+  return `animate__animated ${type}${speedClass ? ` ${speedClass}` : ''}`;
 };
 // 设置动画延时
 export const setAnimationDelay = (index: number = 6, time: number = 50) => {
-  return `animation-delay:${index * time}ms`;
+  const speed = store.state.setData?.animationSpeed || 1;
+  return `animation-delay:${(index * time) / (speed * 2)}ms`;
 };
 
 // 将秒转换为分钟和秒

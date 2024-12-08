@@ -4,6 +4,15 @@ import { useMusicListHook } from '@/hooks/MusicListHook';
 import homeRouter from '@/router/home';
 import type { SongResult } from '@/type/music';
 
+// 默认设置
+const defaultSettings = {
+  isProxy: false,
+  noAnimate: false,
+  animationSpeed: 1,
+  author: 'Alger',
+  authorUrl: 'https://github.com/algerkong',
+};
+
 interface State {
   menus: any[];
   play: boolean;
@@ -29,7 +38,7 @@ const state: State = {
   user: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') as string) : null,
   playList: [],
   playListIndex: 0,
-  setData: null,
+  setData: defaultSettings,
   lyric: {},
   isMobile: false,
   searchValue: '',
@@ -61,10 +70,34 @@ const mutations = {
   async prevPlay(state: State) {
     await prevPlay(state);
   },
-  async setSetData(state: State, setData: any) {
+  setSetData(state: State, setData: any) {
     state.setData = setData;
-    if ((window as any).electron) {
+    const isElectron = (window as any).electronAPI !== undefined;
+    if (isElectron) {
       (window as any).electron.ipcRenderer.setStoreValue('set', JSON.parse(JSON.stringify(setData)));
+    } else {
+      localStorage.setItem('appSettings', JSON.stringify(setData));
+    }
+  },
+};
+
+const actions = {
+  initializeSettings({ commit }: { commit: any }) {
+    const isElectron = (window as any).electronAPI !== undefined;
+
+    if (isElectron) {
+      const setData = (window as any).electron.ipcRenderer.getStoreValue('set');
+      commit('setSetData', setData || defaultSettings);
+    } else {
+      const savedSettings = localStorage.getItem('appSettings');
+      if (savedSettings) {
+        commit('setSetData', {
+          ...defaultSettings,
+          ...JSON.parse(savedSettings),
+        });
+      } else {
+        commit('setSetData', defaultSettings);
+      }
     }
   },
 };
@@ -72,6 +105,7 @@ const mutations = {
 const store = createStore({
   state,
   mutations,
+  actions,
 });
 
 export default store;

@@ -5,19 +5,13 @@ import { getListByCat, getListDetail, getRecommendList } from '@/api/list';
 import MusicList from '@/components/MusicList.vue';
 import type { IRecommendItem } from '@/type/list';
 import type { IListDetail } from '@/type/listDetail';
-import { formatNumber, getImgUrl, isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
+import { formatNumber, getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
 
 defineOptions({
   name: 'List',
 });
 
-const ITEMS_PER_ROW = ref(6); // 每行显示的数量
-const TOTAL_ITEMS = 30; // 每页数量
-
-// 计算实际需要加载的数量，确保能被每行数量整除
-const getAdjustedLimit = (perRow: number) => {
-  return Math.ceil(TOTAL_ITEMS / perRow) * perRow;
-};
+const TOTAL_ITEMS = 40; // 每页数量
 
 const recommendList = ref<any[]>([]);
 const showMusic = ref(false);
@@ -25,11 +19,9 @@ const page = ref(0);
 const hasMore = ref(true);
 const isLoadingMore = ref(false);
 
-// 计算每个项目在当前页面中的索引
+// 计算每个项目的动画延迟
 const getItemAnimationDelay = (index: number) => {
-  const adjustedLimit = getAdjustedLimit(ITEMS_PER_ROW.value);
-  const currentPageIndex = index % adjustedLimit;
-  return setAnimationDelay(currentPageIndex, 30);
+  return setAnimationDelay(index, 30);
 };
 
 const recommendItem = ref<IRecommendItem | null>();
@@ -62,11 +54,10 @@ const loadList = async (type: string, isLoadMore = false) => {
   }
 
   try {
-    const adjustedLimit = getAdjustedLimit(ITEMS_PER_ROW.value);
     const params = {
       cat: type || '',
-      limit: adjustedLimit,
-      offset: page.value * adjustedLimit,
+      limit: TOTAL_ITEMS,
+      offset: page.value * TOTAL_ITEMS,
     };
     const { data } = await getListByCat(params);
     if (isLoadMore) {
@@ -93,33 +84,14 @@ const handleScroll = (e: any) => {
   }
 };
 
-// 监听窗口大小变化，调整每行显示数量
-const updateItemsPerRow = () => {
-  const width = window.innerWidth;
-  if (isMobile.value) {
-    ITEMS_PER_ROW.value = 2;
-    return;
-  }
-  if (width > 1800) ITEMS_PER_ROW.value = 8;
-  else if (width > 1200) ITEMS_PER_ROW.value = 8;
-  else if (width > 768) ITEMS_PER_ROW.value = 6;
-  else ITEMS_PER_ROW.value = 5;
-};
-
 onMounted(() => {
-  updateItemsPerRow();
-  window.addEventListener('resize', updateItemsPerRow);
   if (route.query.type) {
     loadList(route.query.type as string);
   } else {
-    getRecommendList(getAdjustedLimit(ITEMS_PER_ROW.value)).then((res: { data: { result: any } }) => {
+    getRecommendList(TOTAL_ITEMS).then((res: { data: { result: any } }) => {
       recommendList.value = res.data.result;
     });
   }
-});
-
-onUnmounted(() => {
-  window.removeEventListener('resize', updateItemsPerRow);
 });
 
 watch(
@@ -195,12 +167,12 @@ watch(
 
   &-list {
     @apply grid gap-x-8 gap-y-6 pb-28 pr-4;
-    grid-template-columns: repeat(v-bind(ITEMS_PER_ROW), minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   }
   &-item {
     @apply flex flex-col;
     &-img {
-      @apply rounded-xl overflow-hidden relative w-full;
+      @apply rounded-xl overflow-hidden relative w-full aspect-square;
       &-img {
         @apply block w-full h-full;
       }
@@ -248,6 +220,8 @@ watch(
 .mobile {
   .recommend-list {
     @apply px-4;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
 }
 </style>

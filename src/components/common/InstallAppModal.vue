@@ -7,7 +7,8 @@
         </div>
         <div class="app-info">
           <h2 class="app-name">Alger Music</h2>
-          <p class="app-desc">在桌面安装应用，获得更好的体验</p>
+          <p class="app-desc mb-2">在桌面安装应用，获得更好的体验</p>
+          <n-checkbox v-model:checked="noPrompt">不再提示</n-checkbox>
         </div>
       </div>
       <div class="modal-actions">
@@ -23,10 +24,13 @@ import { onMounted, ref } from 'vue';
 
 const showModal = ref(false);
 const isElectron = ref((window as any).electron !== undefined);
+const noPrompt = ref(false);
 
 const closeModal = () => {
   showModal.value = false;
-  localStorage.setItem('installPromptDismissed', 'true');
+  if (noPrompt.value) {
+    localStorage.setItem('installPromptDismissed', 'true');
+  }
 };
 
 const handleInstall = async () => {

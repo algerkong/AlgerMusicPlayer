@@ -1,5 +1,7 @@
 {
-  "version": "1.5.1",
   "isProxy": false,
-  "author": "alger"
+  "noAnimate": false,
+  "animationSpeed": 1,
+  "author": "Alger",
+  "authorUrl": "https://github.com/algerkong"
 }

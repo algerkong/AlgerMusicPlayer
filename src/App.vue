@@ -11,20 +11,17 @@
 
 <script setup lang="ts">
 import { darkTheme } from 'naive-ui';
+import { computed, onMounted } from 'vue';
 
 import store from '@/store';
 
 import { isMobile } from './utils';
 
 const playMusicUrl = computed(() => store.state.playMusicUrl as string);
-// 是否播放
 const play = computed(() => store.state.play as boolean);
-const windowData = window as any;
+
 onMounted(() => {
-  if (windowData.electron) {
-    const setData = windowData.electron.ipcRenderer.getStoreValue('set');
-    store.commit('setSetData', setData);
-  }
+  store.dispatch('initializeSettings');
 });
 </script>
 
