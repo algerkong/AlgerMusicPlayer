@@ -27,6 +27,7 @@ interface State {
   isMobile: boolean;
   searchValue: string;
   searchType: number;
+  favoriteList: number[];
 }
 
 const state: State = {
@@ -43,6 +44,7 @@ const state: State = {
   isMobile: false,
   searchValue: '',
   searchType: 1,
+  favoriteList: localStorage.getItem('favoriteList') ? JSON.parse(localStorage.getItem('favoriteList') || '[]') : [],
 };
 
 const { handlePlayMusic, nextPlay, prevPlay } = useMusicListHook();
@@ -78,6 +80,16 @@ const mutations = {
     } else {
       localStorage.setItem('appSettings', JSON.stringify(setData));
     }
+  },
+  addToFavorite(state: State, songId: number) {
+    if (!state.favoriteList.includes(songId)) {
+      state.favoriteList = [songId, ...state.favoriteList];
+      localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
+    }
+  },
+  removeFromFavorite(state: State, songId: number) {
+    state.favoriteList = state.favoriteList.filter((id) => id !== songId);
+    localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
   },
 };
 

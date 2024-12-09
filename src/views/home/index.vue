@@ -9,7 +9,10 @@
         <!-- 本周最热音乐 -->
         <recommend-songlist />
         <!-- 推荐最新专辑 -->
-        <recommend-album />
+        <div>
+          <favorite-list is-component />
+          <recommend-album />
+        </div>
       </div>
     </div>
   </n-scrollbar>
@@ -17,11 +20,8 @@
 
 <script lang="ts" setup>
 import { isMobile } from '@/utils';
+import FavoriteList from '@/views/favorite/index.vue';
 
-const RecommendSinger = defineAsyncComponent(() => import('@/components/RecommendSinger.vue'));
-const PlaylistType = defineAsyncComponent(() => import('@/components/PlaylistType.vue'));
-const RecommendSonglist = defineAsyncComponent(() => import('@/components/RecommendSonglist.vue'));
-const RecommendAlbum = defineAsyncComponent(() => import('@/components/RecommendAlbum.vue'));
 defineOptions({
   name: 'Home',
 });
@@ -35,7 +35,22 @@ defineOptions({
   @apply mt-6 flex mb-28;
 }
 
-.mobile .main-content {
-  @apply flex-col mx-4;
+.mobile {
+  .main-content {
+    @apply flex-col mx-4;
+  }
+  :deep(.favorite-page) {
+    @apply p-0 mx-4 h-full;
+  }
+}
+
+:deep(.favorite-page) {
+  @apply p-0 mx-4 h-[300px];
+  .favorite-header {
+    @apply mb-0;
+    h2 {
+      @apply text-lg font-bold mb-4;
+    }
+  }
 }
 </style>

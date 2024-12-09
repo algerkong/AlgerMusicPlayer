@@ -1,6 +1,6 @@
 <template>
   <div class="recommend-album">
-    <div class="title" :class="setAnimationClass('animate__fadeInLeft')">最新专辑</div>
+    <div class="title" :class="setAnimationClass('animate__fadeInRight')">最新专辑</div>
     <div class="recommend-album-list">
       <template v-for="(item, index) in albumData?.albums" :key="item.id">
         <div

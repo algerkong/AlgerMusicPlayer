@@ -51,6 +51,15 @@ const layoutRouter = [
     component: () => import('@/views/history/index.vue'),
   },
   {
+    path: '/favorite',
+    name: 'favorite',
+    component: () => import('@/views/favorite/index.vue'),
+    meta: {
+      title: '我的收藏',
+      icon: 'icon-likefill',
+    },
+  },
+  {
     path: '/user',
     name: 'user',
     meta: {

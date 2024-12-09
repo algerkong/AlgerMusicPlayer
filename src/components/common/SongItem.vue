@@ -35,8 +35,8 @@
       </template>
     </div>
     <div class="song-item-operating" :class="{ 'song-item-operating-list': list }">
-      <div class="song-item-operating-like">
-        <i class="iconfont icon-likefill"></i>
+      <div v-if="favorite" class="song-item-operating-like">
+        <i class="iconfont icon-likefill" :class="{ 'like-active': isFavorite }" @click.stop="toggleFavorite"></i>
       </div>
       <div
         class="song-item-operating-play bg-black animate__animated"
@@ -51,7 +51,7 @@
 </template>
 
 <script lang="ts" setup>
-import { useTemplateRef } from 'vue';
+import { computed, useTemplateRef } from 'vue';
 import { useStore } from 'vuex';
 
 import type { SongResult } from '@/type/music';
@@ -63,10 +63,12 @@ const props = withDefaults(
     item: SongResult;
     mini?: boolean;
     list?: boolean;
+    favorite?: boolean;
   }>(),
   {
     mini: false,
     list: false,
+    favorite: true,
   },
 );
 
@@ -112,6 +114,21 @@ const playMusicEvent = async (item: SongResult) => {
   store.commit('setIsPlay', true);
   emits('play', item);
 };
+
+// 判断是否已收藏
+const isFavorite = computed(() => {
+  return store.state.favoriteList.includes(props.item.id);
+});
+
+// 切换收藏状态
+const toggleFavorite = async (e: Event) => {
+  e.stopPropagation();
+  if (isFavorite.value) {
+    store.commit('removeFromFavorite', props.item.id);
+  } else {
+    store.commit('addToFavorite', props.item.id);
+  }
+};
 </script>
 
 <style lang="scss" scoped>
@@ -139,7 +156,7 @@ const playMusicEvent = async (item: SongResult) => {
     }
   }
   &-operating {
-    @apply flex items-center pl-4 rounded-full border border-gray-700 ml-4;
+    @apply flex items-center rounded-full border border-gray-700 ml-4;
     background-color: #0d0d0d;
     .iconfont {
       @apply text-xl;
@@ -149,7 +166,10 @@ const playMusicEvent = async (item: SongResult) => {
       @apply text-xl hover:text-red-600 transition;
     }
     &-like {
-      @apply mr-2 cursor-pointer;
+      @apply mr-2 cursor-pointer ml-4;
+    }
+    .like-active {
+      @apply text-red-600;
     }
     &-play {
       @apply cursor-pointer border border-gray-500 rounded-full w-10 h-10 flex justify-center items-center hover:bg-green-600 transition;
@@ -180,7 +200,7 @@ const playMusicEvent = async (item: SongResult) => {
         @apply text-base;
       }
       &-like {
-        @apply mr-1;
+        @apply mr-1 ml-1;
       }
       &-play {
         @apply w-8 h-8;
