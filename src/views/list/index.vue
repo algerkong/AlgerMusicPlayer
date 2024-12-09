@@ -168,7 +168,7 @@ watch(
 
   &-list {
     @apply grid gap-x-8 gap-y-6 pb-28 pr-4;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   }
   &-item {
     @apply flex flex-col;

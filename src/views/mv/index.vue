@@ -163,7 +163,7 @@ const isPrevDisabled = computed(() => currentIndex.value === 0);
 
   &-content {
     @apply grid gap-4 pb-28 mt-2 pr-4;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   }
 
   .mv-item {

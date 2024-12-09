@@ -1,7 +1,7 @@
 <template>
   <n-drawer
     :show="show"
-    :height="isMobile ? '100vh' : '70vh'"
+    :height="isMobile ? '100vh' : '80vh'"
     placement="bottom"
     block-scroll
     mask-closable
@@ -28,6 +28,7 @@
               class="cover-img"
               preview-disabled
               :class="setAnimationClass('animate__fadeIn')"
+              object-fit="cover"
             />
           </div>
           <div class="music-detail">
@@ -52,7 +53,7 @@
                   v-for="(item, index) in displayedSongs"
                   :key="item.id"
                   class="double-item"
-                  :class="setAnimationClass('animate__bounceInDown')"
+                  :class="setAnimationClass('animate__bounceInUp')"
                   :style="getItemAnimationDelay(index)"
                 >
                   <song-item :item="formatDetail(item)" @play="handlePlay" />
@@ -220,7 +221,7 @@ watch(
   }
 
   &-info {
-    @apply w-[400px] flex-shrink-0 pr-8 flex flex-col;
+    @apply w-[25%] flex-shrink-0 pr-8 flex flex-col;
 
     .music-cover {
       @apply w-full aspect-square rounded-lg overflow-hidden mb-4;
