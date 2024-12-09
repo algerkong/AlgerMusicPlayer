@@ -8,7 +8,6 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     Coffee: typeof import('./src/components/Coffee.vue')['default']
-    Cooffee: typeof import('./src/components/Cooffee.vue')['default']
     InstallAppModal: typeof import('./src/components/common/InstallAppModal.vue')['default']
     MPop: typeof import('./src/components/common/MPop.vue')['default']
     MusicList: typeof import('./src/components/MusicList.vue')['default']
@@ -38,7 +37,6 @@ declare module 'vue' {
     PlayListsItem: typeof import('./src/components/common/PlayListsItem.vue')['default']
     PlaylistType: typeof import('./src/components/PlaylistType.vue')['default']
     PlayVideo: typeof import('./src/components/common/PlayVideo.vue')['default']
-    PWAInstallPrompt: typeof import('./src/components/common/PWAInstallPrompt.vue')['default']
     RecommendAlbum: typeof import('./src/components/RecommendAlbum.vue')['default']
     RecommendSinger: typeof import('./src/components/RecommendSinger.vue')['default']
     RecommendSonglist: typeof import('./src/components/RecommendSonglist.vue')['default']

@@ -36,20 +36,21 @@ const closeModal = () => {
 const handleInstall = async () => {
   // 新页面打开
   // 识别当前环境是 mac 还是 windows
-  const os = navigator.platform;
-  const isMac = os.includes('Mac');
-  const isWindows = os.includes('Win');
-  const urls = {
-    mac: 'http://file.alger.fun/d/ali/%E8%BD%AF%E4%BB%B6/AlgerMusic/AlgerMusic.dmg',
-    windows: 'http://file.alger.fun/d/ali/%E8%BD%AF%E4%BB%B6/AlgerMusic/AlgerMusic.exe',
-  };
-  // 根据操作系统选择下载链接
-  let downloadUrl = '';
-  if (isMac) {
-    downloadUrl = urls.mac;
-  } else if (isWindows) {
-    downloadUrl = urls.windows;
-  }
+  // const os = navigator.platform;
+  // const isMac = os.includes('Mac');
+  // const isWindows = os.includes('Win');
+  // const urls = {
+  //   mac: 'http://file.alger.fun/d/ali/%E8%BD%AF%E4%BB%B6/AlgerMusic/AlgerMusic.dmg',
+  //   windows: 'http://file.alger.fun/d/ali/%E8%BD%AF%E4%BB%B6/AlgerMusic/AlgerMusic.exe',
+  // };
+  // // 根据操作系统选择下载链接
+  // let downloadUrl = '';
+  // if (isMac) {
+  //   downloadUrl = urls.mac;
+  // } else if (isWindows) {
+  //   downloadUrl = urls.windows;
+  // }
+  const downloadUrl = 'https://github.com/algerkong/AlgerMusicPlayer/releases';
   if (downloadUrl) {
     window.open(downloadUrl, '_blank');
   }
