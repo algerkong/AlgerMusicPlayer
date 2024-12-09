@@ -11,13 +11,16 @@
     class="music-play-bar"
     :class="setAnimationClass('animate__bounceInUp') + ' ' + (musicFullVisible ? 'play-bar-opcity' : '')"
   >
-    <n-image
-      :src="getImgUrl(playMusic?.picUrl, '300y300')"
-      class="play-bar-img"
-      lazy
-      preview-disabled
-      @click="setMusicFull"
-    />
+    <div class="play-bar-img-wrapper" @click="setMusicFull">
+      <n-image :src="getImgUrl(playMusic?.picUrl, '300y300')" class="play-bar-img" lazy preview-disabled />
+      <div class="hover-arrow">
+        <div class="hover-content">
+          <!-- <i class="ri-arrow-up-s-line text-3xl" :class="{ 'ri-arrow-down-s-line': musicFullVisible }"></i> -->
+          <i class="text-3xl" :class="musicFullVisible ? 'ri-arrow-down-s-line' : 'ri-arrow-up-s-line'"></i>
+          <span class="hover-text">{{ musicFullVisible ? '收起' : '展开' }}歌词</span>
+        </div>
+      </div>
+    </div>
     <div class="music-content">
       <div class="music-content-title">
         <n-ellipsis class="text-ellipsis" line-clamp="1">
@@ -408,5 +411,40 @@ const scrollToPlayList = (val: boolean) => {
 
 :root {
   --primary-color: #18a058;
+}
+
+.play-bar-img-wrapper {
+  @apply relative cursor-pointer w-14 h-14;
+
+  .hover-arrow {
+    @apply absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-300 rounded-2xl;
+    background: rgba(0, 0, 0, 0.5);
+
+    .hover-content {
+      @apply flex flex-col items-center justify-center;
+
+      i {
+        @apply text-white mb-0.5;
+      }
+
+      .hover-text {
+        @apply text-white text-xs scale-90;
+      }
+    }
+  }
+
+  &:hover {
+    .hover-arrow {
+      @apply opacity-100;
+    }
+  }
+}
+
+.tooltip-content {
+  @apply text-sm py-1 px-2;
+}
+
+.play-bar-img {
+  @apply w-14 h-14 rounded-2xl;
 }
 </style>
