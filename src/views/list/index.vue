@@ -21,7 +21,8 @@ const isLoadingMore = ref(false);
 
 // 计算每个项目的动画延迟
 const getItemAnimationDelay = (index: number) => {
-  return setAnimationDelay(index, 30);
+  const currentPageIndex = index % TOTAL_ITEMS;
+  return setAnimationDelay(currentPageIndex, 30);
 };
 
 const recommendItem = ref<IRecommendItem | null>();
@@ -167,7 +168,7 @@ watch(
 
   &-list {
     @apply grid gap-x-8 gap-y-6 pb-28 pr-4;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
   &-item {
     @apply flex flex-col;
@@ -224,6 +225,7 @@ watch(
 
   .recommend-list {
     @apply px-4 gap-4;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   }
 }
 </style>

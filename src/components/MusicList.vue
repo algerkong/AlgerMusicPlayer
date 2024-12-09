@@ -9,41 +9,72 @@
     @mask-click="close"
   >
     <div class="music-page">
-      <div class="music-close">
-        <i class="icon iconfont icon-icon_error" @click="close"></i>
+      <div class="music-header h-12 flex items-center justify-between">
+        <n-ellipsis :line-clamp="1">
+          <div class="music-title">
+            {{ name }}
+          </div>
+        </n-ellipsis>
+        <div class="music-close">
+          <i class="icon iconfont icon-icon_error" @click="close"></i>
+        </div>
       </div>
-      <div class="music-title text-el">{{ name }}</div>
-      <!-- 歌单歌曲列表 -->
-      <div v-loading="loading" class="music-list">
-        <n-virtual-list
-          v-if="displayedSongs.length"
-          ref="virtualListRef"
-          :items="displayedSongs"
-          :item-size="60"
-          :keep-alive="true"
-          :min-size="5"
-          :style="{ height: listHeight }"
-          @scroll="handleScroll"
-        >
-          <template #default="{ item }">
-            <song-item :item="formatDetail(item)" @play="handlePlay" />
-          </template>
-        </n-virtual-list>
-        <div v-else-if="loading" class="loading-more">加载中...</div>
-        <play-bottom />
+      <div class="music-content">
+        <!-- 左侧歌单信息 -->
+        <div class="music-info">
+          <div class="music-cover">
+            <n-image
+              :src="getImgUrl(listInfo?.coverImgUrl, '300y300')"
+              class="cover-img"
+              preview-disabled
+              :class="setAnimationClass('animate__fadeIn')"
+            />
+          </div>
+          <div class="music-detail">
+            <div v-if="listInfo?.creator" class="creator-info">
+              <n-avatar round :size="24" :src="getImgUrl(listInfo.creator.avatarUrl, '50y50')" />
+              <span class="creator-name">{{ listInfo.creator.nickname }}</span>
+            </div>
+            <div v-if="listInfo?.description" class="music-desc">
+              <n-ellipsis :line-clamp="isMobile ? 3 : 10">
+                {{ listInfo.description }}
+              </n-ellipsis>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧歌曲列表 -->
+        <div class="music-list-container">
+          <div v-loading="loading" class="music-list">
+            <n-scrollbar @scroll="handleScroll">
+              <div v-loading="loading || !songList.length" class="music-list-content">
+                <div
+                  v-for="(item, index) in displayedSongs"
+                  :key="item.id"
+                  class="double-item"
+                  :class="setAnimationClass('animate__bounceInDown')"
+                  :style="getItemAnimationDelay(index)"
+                >
+                  <song-item :item="formatDetail(item)" @play="handlePlay" />
+                </div>
+                <div v-if="isLoadingMore" class="loading-more">加载更多...</div>
+                <play-bottom />
+              </div>
+            </n-scrollbar>
+          </div>
+          <play-bottom />
+        </div>
       </div>
     </div>
   </n-drawer>
 </template>
 
 <script setup lang="ts">
-// 导入 NVirtualListInst 类型
-import type { VirtualListInst } from 'naive-ui';
 import { useStore } from 'vuex';
 
 import { getMusicDetail } from '@/api/music';
 import SongItem from '@/components/common/SongItem.vue';
-import { isMobile } from '@/utils';
+import { getImgUrl, isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
 
 import PlayBottom from './common/PlayBottom.vue';
 
@@ -136,8 +167,10 @@ const loadMoreSongs = async () => {
   }
 };
 
-// 添加虚拟列表的引用
-const virtualListRef = ref<VirtualListInst | null>(null);
+const getItemAnimationDelay = (index: number) => {
+  const currentPageIndex = index % pageSize;
+  return setAnimationDelay(currentPageIndex, 20);
+};
 
 // 修改滚动处理函数
 const handleScroll = (e: Event) => {
@@ -162,35 +195,62 @@ watch(
   },
   { immediate: true },
 );
-
-// 添加计算属性来处理列表高度
-const listHeight = computed(() => {
-  const baseHeight = '100%'; // 减去标题高度
-  return store.state.isPlay ? `calc(100% - 90px)` : baseHeight; // 112px 是 PlayBottom 的高度
-});
 </script>
 
 <style scoped lang="scss">
 .music {
+  &-title {
+    @apply text-xl font-bold text-white;
+  }
+
   &-page {
     @apply px-8 w-full h-full bg-black bg-opacity-75 rounded-t-2xl;
     backdrop-filter: blur(20px);
   }
 
-  &-title {
-    @apply text-lg font-bold text-white p-4;
-  }
-
   &-close {
-    @apply absolute top-4 right-8 cursor-pointer text-white flex gap-2 items-center;
+    @apply cursor-pointer text-white flex gap-2 items-center;
     .icon {
       @apply text-3xl;
     }
   }
 
+  &-content {
+    @apply flex h-[calc(100%-60px)];
+  }
+
+  &-info {
+    @apply w-[400px] flex-shrink-0 pr-8 flex flex-col;
+
+    .music-cover {
+      @apply w-full aspect-square rounded-lg overflow-hidden mb-4;
+      .cover-img {
+        @apply w-full h-full object-cover;
+      }
+    }
+
+    .music-detail {
+      @apply flex flex-col flex-grow;
+
+      .creator-info {
+        @apply flex items-center mb-4;
+        .creator-name {
+          @apply ml-2 text-sm text-gray-300;
+        }
+      }
+
+      .music-desc {
+        @apply text-sm text-gray-400;
+      }
+    }
+  }
+
+  &-list-container {
+    @apply flex-grow min-h-0 flex flex-col relative;
+  }
+
   &-list {
-    height: calc(100% - 60px);
-    position: relative; // 添加相对定位
+    @apply flex-grow min-h-0;
 
     :deep(.n-virtual-list__scroll) {
       scrollbar-width: none;
@@ -204,6 +264,21 @@ const listHeight = computed(() => {
 .mobile {
   .music-page {
     @apply px-4;
+  }
+
+  .music-content {
+    @apply flex-col;
+  }
+
+  .music-info {
+    @apply w-full pr-0 mb-2 flex flex-row;
+
+    .music-cover {
+      @apply w-[100px] h-[100px] rounded-lg overflow-hidden mb-4;
+    }
+    .music-detail {
+      @apply flex-1 ml-4;
+    }
   }
 }
 
@@ -219,13 +294,5 @@ const listHeight = computed(() => {
   .song-item {
     background-color: #191919;
   }
-}
-
-// 确保 PlayBottom 不会影响滚动区域
-:deep(.bottom) {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
 }
 </style>

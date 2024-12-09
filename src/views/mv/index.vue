@@ -58,7 +58,7 @@ const initLoading = ref(false);
 const loadingMore = ref(false);
 const currentIndex = ref(0);
 const offset = ref(0);
-const limit = ref(28);
+const limit = ref(42);
 const hasMore = ref(true);
 
 const getItemAnimationDelay = (index: number) => {
@@ -163,7 +163,7 @@ const isPrevDisabled = computed(() => currentIndex.value === 0);
 
   &-content {
     @apply grid gap-4 pb-28 mt-2 pr-4;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   }
 
   .mv-item {
@@ -223,6 +223,7 @@ const isPrevDisabled = computed(() => currentIndex.value === 0);
 
   .mv-list-content {
     @apply px-4;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   }
 }
 
