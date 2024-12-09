@@ -90,7 +90,7 @@
             </div>
 
             <div class="right-controls">
-              <div class="volume-control custom-slider">
+              <div v-if="!isMobile" class="volume-control custom-slider">
                 <n-tooltip placement="top">
                   <template #trigger>
                     <n-button quaternary circle @click="toggleMute">
@@ -172,7 +172,7 @@
 
 <script setup lang="ts">
 import { NButton, NIcon, NSlider, NTooltip } from 'naive-ui';
-import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 
 import { getMvUrl } from '@/api/mv';
@@ -300,6 +300,7 @@ onUnmounted(() => {
   if (cursorTimer) {
     clearTimeout(cursorTimer);
   }
+  unlockScreenOrientation();
 });
 
 // 监听 currentMv 的变化
@@ -390,7 +391,28 @@ const checkFullscreenAPI = () => {
   };
 };
 
-// 切换全屏状态
+// 添加横屏锁定功能
+const lockScreenOrientation = async () => {
+  try {
+    if ('orientation' in screen) {
+      await (screen as any).orientation.lock('landscape');
+    }
+  } catch (error) {
+    console.warn('无法锁定屏幕方向:', error);
+  }
+};
+
+const unlockScreenOrientation = () => {
+  try {
+    if ('orientation' in screen) {
+      (screen as any).orientation.unlock();
+    }
+  } catch (error) {
+    console.warn('无法解锁屏幕方向:', error);
+  }
+};
+
+// 修改切换全屏状态的方法
 const toggleFullscreen = async () => {
   const api = checkFullscreenAPI();
 
@@ -403,9 +425,17 @@ const toggleFullscreen = async () => {
     if (!api.fullscreenElement) {
       await videoContainerRef.value?.requestFullscreen();
       isFullscreen.value = true;
+      // 在移动端进入全屏时锁定横屏
+      if (window.innerWidth <= 768) {
+        await lockScreenOrientation();
+      }
     } else {
       await document.exitFullscreen();
       isFullscreen.value = false;
+      // 退出全屏时解锁屏幕方向
+      if (window.innerWidth <= 768) {
+        unlockScreenOrientation();
+      }
     }
   } catch (error) {
     console.error('切换全屏失败:', error);
@@ -513,15 +543,53 @@ watch(showControls, (newValue) => {
     resetCursorTimer();
   }
 });
+
+const isMobile = computed(() => store.state.isMobile);
 </script>
 
 <style scoped lang="scss">
 .mv-detail {
   @apply w-full h-full bg-black relative;
 
+  // 添加横屏模式支持
+  @media screen and (orientation: landscape) {
+    height: 100vh !important;
+    width: 100vw !important;
+  }
+
   .video-container {
     @apply w-full h-full relative;
     transition: cursor 0.3s ease;
+
+    // 移动端适配
+    @media (max-width: 768px) {
+      .custom-controls {
+        .controls-main {
+          @apply flex-wrap gap-2 justify-center;
+
+          .left-controls,
+          .right-controls {
+            @apply w-full justify-center;
+          }
+
+          .time-display {
+            @apply order-first w-full text-center mb-2;
+          }
+        }
+      }
+
+      // 调整标题样式
+      .mv-detail-title {
+        .title {
+          @apply text-base max-w-full;
+        }
+      }
+
+      // 调整进度条
+      .progress-bar {
+        @apply mb-2;
+      }
+    }
 
     &.cursor-hidden {
       * {

@@ -11,7 +11,7 @@ defineOptions({
   name: 'List',
 });
 
-const TOTAL_ITEMS = 40; // 每页数量
+const TOTAL_ITEMS = 42; // 每页数量
 
 const recommendList = ref<any[]>([]);
 const showMusic = ref(false);
@@ -162,12 +162,12 @@ watch(
 .recommend {
   @apply w-full h-full bg-none;
   &-title {
-    @apply text-lg font-bold text-white pb-4;
+    @apply text-lg font-bold text-white pb-2;
   }
 
   &-list {
     @apply grid gap-x-8 gap-y-6 pb-28 pr-4;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   }
   &-item {
     @apply flex flex-col;
@@ -218,10 +218,12 @@ watch(
 }
 
 .mobile {
+  .recommend-title {
+    @apply text-xl font-bold px-4;
+  }
+
   .recommend-list {
-    @apply px-4;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
+    @apply px-4 gap-4;
   }
 }
 </style>

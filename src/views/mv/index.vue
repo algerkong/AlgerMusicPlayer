@@ -58,7 +58,7 @@ const initLoading = ref(false);
 const loadingMore = ref(false);
 const currentIndex = ref(0);
 const offset = ref(0);
-const limit = ref(30);
+const limit = ref(28);
 const hasMore = ref(true);
 
 const getItemAnimationDelay = (index: number) => {
@@ -158,12 +158,12 @@ const isPrevDisabled = computed(() => currentIndex.value === 0);
   @apply relative h-full w-full;
 
   &-title {
-    @apply text-xl font-bold;
+    @apply text-xl font-bold pb-2;
   }
 
   &-content {
     @apply grid gap-4 pb-28 mt-2 pr-4;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   }
 
   .mv-item {
@@ -217,10 +217,12 @@ const isPrevDisabled = computed(() => currentIndex.value === 0);
 }
 
 .mobile {
+  .mv-list-title {
+    @apply text-xl font-bold px-4;
+  }
+
   .mv-list-content {
     @apply px-4;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
   }
 }
 
