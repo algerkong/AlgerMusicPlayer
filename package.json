@@ -17,7 +17,9 @@
     "b:win": "cross-env NODE_ENV=production npm run build && npm run b:win:x64 && npm run b:win:x86 && npm run b:win:arm"
   },
   "dependencies": {
-    "electron-store": "^8.1.0"
+    "@types/howler": "^2.2.12",
+    "electron-store": "^8.1.0",
+    "howler": "^2.2.4"
   },
   "devDependencies": {
     "@tailwindcss/postcss7-compat": "^2.2.4",

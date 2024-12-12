@@ -68,23 +68,21 @@
 
 ```bash
   # .env.development
-  # 你的接口地址 (必填)
-  VITE_API = ***
-  # 音乐破解接口地址
-  VITE_API_MUSIC = ***
-  # 代理地址
-  VITE_API_PROXY = ***
-
-
-  # 本地运行代理地址
-  VITE_API_PROXY = /api
+  VITE_API_LOCAL = /api
   VITE_API_MUSIC_PROXY = /music
   VITE_API_PROXY_MUSIC = /music_proxy
+
+  # 你的接口地址 (必填)
+  VITE_API = ***
+  # 音乐po接口地址
+  VITE_API_MUSIC = ***
+  VITE_API_PROXY = ***
+
 
   # .env.production
   # 你的接口地址 (必填)
   VITE_API = ***
-  # 音乐破解接口地址
+  # 音乐po接口地址
   VITE_API_MUSIC = ***
   # 代理地址
   VITE_API_PROXY = ***

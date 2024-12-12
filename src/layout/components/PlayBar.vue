@@ -1,11 +1,6 @@
 <template>
   <!-- 展开全屏 -->
-  <music-full
-    ref="MusicFullRef"
-    v-model:music-full="musicFullVisible"
-    :audio="audio.value as HTMLAudioElement"
-    :background="background"
-  />
+  <music-full ref="MusicFullRef" v-model:music-full="musicFullVisible" :background="background" />
   <!-- 底部播放栏 -->
   <div
     class="music-play-bar"
@@ -112,11 +107,12 @@
 </template>
 
 <script lang="ts" setup>
+import { useThrottleFn } from '@vueuse/core';
 import { useTemplateRef } from 'vue';
 import { useStore } from 'vuex';
 
 import SongItem from '@/components/common/SongItem.vue';
-import { allTime, getCurrentLrc, isElectron, nowTime, openLyric, sendLyricToWin } from '@/hooks/MusicHook';
+import { allTime, isElectron, nowTime, openLyric, sound } from '@/hooks/MusicHook';
 import type { SongResult } from '@/type/music';
 import { getImgUrl, secondToMinute, setAnimationClass } from '@/utils';
 
@@ -128,12 +124,8 @@ const store = useStore();
 const playMusic = computed(() => store.state.playMusic as SongResult);
 // 是否播放
 const play = computed(() => store.state.play as boolean);
-
 const playList = computed(() => store.state.playList as SongResult[]);
 
-const audio = {
-  value: document.querySelector('#MusicAudio') as HTMLAudioElement,
-};
 const background = ref('#000');
 
 watch(
@@ -144,30 +136,28 @@ watch(
   { immediate: true, deep: true },
 );
 
-const audioPlay = () => {
-  if (audio.value) {
-    audio.value.play();
-  }
-};
+// 使用 useThrottleFn 创建节流版本的 seek 函数
+const throttledSeek = useThrottleFn((value: number) => {
+  if (!sound.value) return;
+  sound.value.seek((value * allTime.value) / 100);
+  store.commit('setPlayMusic', true);
+}, 50); // 50ms 的节流延迟
 
-// 计算属性  获取当前播放时间的进度
+// 修改 timeSlider 计算属性
 const timeSlider = computed({
   get: () => (nowTime.value / allTime.value) * 100,
-  set: (value) => {
-    if (!audio.value) return;
-    audio.value.currentTime = (value * allTime.value) / 100;
-    audioPlay();
-    store.commit('setPlayMusic', true);
-  },
+  set: throttledSeek,
 });
 
 // 音量条
-const audioVolume = ref(1);
+const audioVolume = ref(localStorage.getItem('volume') ? parseFloat(localStorage.getItem('volume') as string) : 1);
 const volumeSlider = computed({
   get: () => audioVolume.value * 100,
   set: (value) => {
-    if (!audio.value) return;
-    audio.value.volume = value / 100;
+    if (!sound.value) return;
+    localStorage.setItem('volume', (value / 100).toString());
+    sound.value.volume(value / 100);
+    audioVolume.value = value / 100;
   },
 });
 // 获取当前播放时间
@@ -180,25 +170,6 @@ const getAllTime = computed(() => {
   return secondToMinute(allTime.value);
 });
 
-// 监听音乐播放 获取时间
-const onAudio = () => {
-  if (audio.value) {
-    audio.value.removeEventListener('timeupdate', handleGetAudioTime);
-    audio.value.removeEventListener('ended', handleEnded);
-    audio.value.addEventListener('timeupdate', handleGetAudioTime);
-    audio.value.addEventListener('ended', handleEnded);
-    // 监听音乐播放暂停
-    audio.value.addEventListener('pause', () => {
-      store.commit('setPlayMusic', false);
-    });
-    audio.value.addEventListener('play', () => {
-      store.commit('setPlayMusic', true);
-    });
-  }
-};
-
-onAudio();
-
 function handleEnded() {
   store.commit('nextPlay');
 }
@@ -209,27 +180,17 @@ function handlePrev() {
 
 const MusicFullRef = ref<any>(null);
 
-function handleGetAudioTime(this: HTMLAudioElement) {
-  // 监听音频播放的实时时间事件
-  const audio = this as HTMLAudioElement;
-  // 获取当前播放时间
-  nowTime.value = audio.currentTime;
-  getCurrentLrc();
-  // 获取总时间
-  allTime.value = audio.duration;
-  // 获取音量
-  audioVolume.value = audio.volume;
-  sendLyricToWin(store.state.isPlay);
-  // if (musicFullVisible.value) {
-  //   MusicFullRef.value?.lrcScroll();
-  // }
-}
-
 // 播放暂停按钮事件
 const playMusicEvent = async () => {
   if (play.value) {
+    if (sound.value) {
+      sound.value.pause();
+    }
     store.commit('setPlayMusic', false);
   } else {
+    if (sound.value) {
+      sound.value.play();
+    }
     store.commit('setPlayMusic', true);
   }
 };

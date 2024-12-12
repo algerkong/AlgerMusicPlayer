@@ -34,7 +34,7 @@
               :key="index"
               class="music-lrc-text"
               :class="{ 'now-text': index === nowIndex, 'hover-text': item.text }"
-              @click="setAudioTime(index, audio)"
+              @click="setAudioTime(index)"
             >
               <span :style="getLrcStyle(index)">{{ item.text }}</span>
               <div class="music-lrc-text-tr">{{ item.trText }}</div>
@@ -74,10 +74,6 @@ const props = defineProps({
   musicFull: {
     type: Boolean,
     default: false,
-  },
-  audio: {
-    type: HTMLAudioElement,
-    default: null,
   },
   background: {
     type: String,
@@ -260,6 +256,7 @@ defineExpose({
       span {
         background-clip: text !important;
         -webkit-background-clip: text !important;
+        padding-right: 30px;
       }
 
       &-tr {
@@ -291,6 +288,9 @@ defineExpose({
     .music-lrc {
       height: calc(100vh - 260px) !important;
       width: 100vw;
+      span {
+        padding-right: 0px !important;
+      }
     }
     .music-lrc-text {
       text-align: center;

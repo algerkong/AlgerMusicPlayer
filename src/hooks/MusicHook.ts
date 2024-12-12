@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue';
 
+import { audioService } from '@/services/audioService';
 import store from '@/store';
 import type { ILyricText, SongResult } from '@/type/music';
 
@@ -14,8 +15,34 @@ export const allTime = ref(0); // 总播放时间
 export const nowIndex = ref(0); // 当前播放歌词
 export const correctionTime = ref(0.4); // 歌词矫正时间Correction time
 export const currentLrcProgress = ref(0); // 来存储当前歌词的进度
-export const audio = ref<HTMLAudioElement>(); // 音频对象
 export const playMusic = computed(() => store.state.playMusic as SongResult); // 当前播放歌曲
+export const sound = ref<Howl | null>(audioService.getCurrentSound());
+
+document.onkeyup = (e) => {
+  switch (e.code) {
+    case 'Space':
+      if (store.state.play) {
+        store.commit('setPlayMusic', false);
+        audioService.getCurrentSound()?.pause();
+      } else {
+        store.commit('setPlayMusic', true);
+        audioService.getCurrentSound()?.play();
+      }
+      break;
+    default:
+  }
+};
+
+watch(
+  () => store.state.playMusicUrl,
+  (newVal) => {
+    if (newVal) {
+      audioService.play(newVal);
+      sound.value = audioService.getCurrentSound();
+      audioServiceOn(audioService);
+    }
+  },
+);
 
 watch(
   () => store.state.playMusic,
@@ -29,6 +56,48 @@ watch(
     deep: true,
   },
 );
+
+export const audioServiceOn = (audio: typeof audioService) => {
+  let interval: any = null;
+
+  // 监听播放
+  audio.onPlay(() => {
+    store.commit('setPlayMusic', true);
+    interval = setInterval(() => {
+      nowTime.value = sound.value?.seek() as number;
+      allTime.value = sound.value?.duration() as number;
+      const newIndex = getLrcIndex(nowTime.value);
+      if (newIndex !== nowIndex.value) {
+        nowIndex.value = newIndex;
+        currentLrcProgress.value = 0;
+      }
+      if (isElectron.value) {
+        sendLyricToWin();
+      }
+    }, 50);
+  });
+
+  // 监听暂停
+  audio.onPause(() => {
+    store.commit('setPlayMusic', false);
+    clearInterval(interval);
+  });
+
+  // 监听结束
+  audio.onEnd(() => {
+    handleEnded();
+    store.commit('nextPlay');
+  });
+};
+
+export const play = () => {
+  audioService.getCurrentSound()?.play();
+};
+
+export const pause = () => {
+  audioService.getCurrentSound()?.pause();
+};
+
 const isPlaying = computed(() => store.state.play as boolean);
 
 // 增加矫正时间
@@ -78,25 +147,18 @@ export const getLrcStyle = (index: number) => {
   return {};
 };
 
-watch(nowTime, (newTime) => {
-  const newIndex = getLrcIndex(newTime);
-  if (newIndex !== nowIndex.value) {
-    nowIndex.value = newIndex;
-    currentLrcProgress.value = 0; // 重置进度
-  }
-});
-
 // 播放进度
 export const useLyricProgress = () => {
   let animationFrameId: number | null = null;
 
   const updateProgress = () => {
     if (!isPlaying.value) return;
-    audio.value = audio.value || (document.querySelector('#MusicAudio') as HTMLAudioElement);
-    if (!audio.value) return;
+    const currentSound = sound.value;
+    if (!currentSound) return;
+
     const { start, end } = currentLrcTiming.value;
     const duration = end - start;
-    const elapsed = audio.value.currentTime - start;
+    const elapsed = (currentSound.seek() as number) - start;
     currentLrcProgress.value = Math.min(Math.max((elapsed / duration) * 100, 0), 100);
 
     animationFrameId = requestAnimationFrame(updateProgress);
@@ -140,9 +202,12 @@ export const useLyricProgress = () => {
 };
 
 // 设置当前播放时间
-export const setAudioTime = (index: number, audio: HTMLAudioElement) => {
-  audio.currentTime = lrcTimeArray.value[index];
-  audio.play();
+export const setAudioTime = (index: number) => {
+  const currentSound = sound.value;
+  if (!currentSound) return;
+
+  currentSound.seek(lrcTimeArray.value[index]);
+  currentSound.play();
 };
 
 // 获取当前播放的歌词
@@ -154,7 +219,7 @@ export const getCurrentLrc = () => {
   };
 };
 
-// 获取一句歌词播放时间是 几秒到几秒
+// 获取一句歌词播放时间几秒到几秒
 export const getLrcTimeRange = (index: number) => ({
   currentTime: lrcTimeArray.value[index],
   nextTime: lrcTimeArray.value[index + 1],
@@ -180,26 +245,9 @@ watch(isPlaying, (newIsPlaying) => {
   }
 });
 
-// 监听时间变化
-watch(nowTime, (newTime) => {
-  const newIndex = getLrcIndex(newTime);
-  if (newIndex !== nowIndex.value) {
-    nowIndex.value = newIndex;
-    currentLrcProgress.value = 0; // 重置进度
-    // 当索引变化时发送更新
-    if (isElectron.value) {
-      sendLyricToWin();
-    }
-  }
-});
-
 // 处理歌曲结束
 export const handleEnded = () => {
-  // ... 原有的结束处理逻辑 ...
-
-  // 如果有歌词窗口，发送初始化数据
   if (isElectron.value) {
-    // 延迟一下等待新歌曲加载完成
     setTimeout(() => {
       initLyricWindow();
       sendLyricToWin();

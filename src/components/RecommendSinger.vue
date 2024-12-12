@@ -89,7 +89,6 @@ const loadData = async () => {
       const {
         data: { data: dayRecommend },
       } = await getDayRecommend();
-      console.log('dayRecommend', dayRecommend);
       // 处理数据
       if (dayRecommend) {
         singerData.artists = singerData.artists.slice(0, 4);

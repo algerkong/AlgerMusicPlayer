@@ -1,6 +1,5 @@
 <template>
   <div class="app-container" :class="{ mobile: isMobile }">
-    <audio id="MusicAudio" ref="audioRef" :src="playMusicUrl" :autoplay="play"></audio>
     <n-config-provider :theme="darkTheme">
       <n-dialog-provider>
         <router-view></router-view>
@@ -11,14 +10,11 @@
 
 <script setup lang="ts">
 import { darkTheme } from 'naive-ui';
-import { computed, onMounted } from 'vue';
+import { onMounted } from 'vue';
 
 import store from '@/store';
 
 import { isMobile } from './utils';
-
-const playMusicUrl = computed(() => store.state.playMusicUrl as string);
-const play = computed(() => store.state.play as boolean);
 
 onMounted(() => {
   store.dispatch('initializeSettings');

@@ -1,5 +1,8 @@
+import { Howl } from 'howler';
+
 import { getMusicLrc, getMusicUrl, getParsingMusicUrl } from '@/api/music';
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';
+import { audioService } from '@/services/audioService';
 import type { ILyric, ILyricText, SongResult } from '@/type/music';
 import { getImgUrl, getMusicProxyUrl } from '@/utils';
 import { getImageLinearBackground } from '@/utils/linearColor';
@@ -53,9 +56,13 @@ export const useMusicListHook = () => {
 
   // 用于预加载下一首歌曲的 MP3 数据
   const preloadNextSong = (nextSongUrl: string) => {
-    const audio = new Audio(nextSongUrl);
-    audio.preload = 'auto'; // 设置预加载
-    audio.load(); // 手动加载
+    const sound = new Howl({
+      src: [nextSongUrl],
+      html5: true,
+      preload: true,
+      autoplay: false,
+    });
+    return sound;
   };
 
   const fetchSongs = async (state: any, startIndex: number, endIndex: number) => {
@@ -166,9 +173,19 @@ export const useMusicListHook = () => {
     state.playMusic.lyric = lyrics;
   };
 
+  const play = () => {
+    audioService.getCurrentSound()?.play();
+  };
+
+  const pause = () => {
+    audioService.getCurrentSound()?.pause();
+  };
+
   return {
     handlePlayMusic,
     nextPlay,
     prevPlay,
+    play,
+    pause,
   };
 };

@@ -64,68 +64,9 @@ const store = useStore();
 
 const isPlay = computed(() => store.state.isPlay as boolean);
 const { menus } = store.state;
-const play = computed(() => store.state.play as boolean);
-
 const route = useRoute();
 
-const audio = {
-  value: document.querySelector('#MusicAudio') as HTMLAudioElement,
-};
-
 const backgroundColor = ref('#000');
-// watch(
-//   () => store.state.playMusic,
-//   () => {
-//     backgroundColor.value = store.state.playMusic.backgroundColor;
-//     console.log('backgroundColor.value', backgroundColor.value);
-//   },
-//   {
-//     immediate: true,
-//     deep: true,
-//   },
-// );
-onMounted(() => {
-  // 监听音乐是否播放
-  watch(
-    () => play.value,
-    (value) => {
-      if (value && audio.value) {
-        audioPlay();
-      } else {
-        audioPause();
-      }
-    },
-  );
-
-  document.onkeyup = (e) => {
-    switch (e.code) {
-      case 'Space':
-        playMusicEvent();
-        break;
-      default:
-    }
-  };
-});
-
-const audioPlay = () => {
-  if (audio.value) {
-    audio.value.play();
-  }
-};
-
-const audioPause = () => {
-  if (audio.value) {
-    audio.value.pause();
-  }
-};
-
-const playMusicEvent = async () => {
-  if (play.value) {
-    store.commit('setPlayMusic', false);
-  } else {
-    store.commit('setPlayMusic', true);
-  }
-};
 </script>
 
 <style lang="scss" scoped>
