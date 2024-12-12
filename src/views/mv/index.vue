@@ -43,6 +43,7 @@ import { useStore } from 'vuex';
 
 import { getTopMv } from '@/api/mv';
 import MvPlayer from '@/components/MvPlayer.vue';
+import { audioService } from '@/services/audioService';
 import { IMvItem } from '@/type/mv';
 import { formatNumber, getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
 
@@ -73,6 +74,7 @@ onMounted(async () => {
 const handleShowMv = async (item: IMvItem, index: number) => {
   store.commit('setIsPlay', false);
   store.commit('setPlayMusic', false);
+  audioService.getCurrentSound()?.pause();
   showMv.value = true;
   currentIndex.value = index;
   playMvItem.value = item;

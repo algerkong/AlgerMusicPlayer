@@ -54,6 +54,7 @@
 import { computed, useTemplateRef } from 'vue';
 import { useStore } from 'vuex';
 
+import { audioService } from '@/services/audioService';
 import type { SongResult } from '@/type/music';
 import { getImgUrl } from '@/utils';
 import { getImageBackground } from '@/utils/linearColor';
@@ -105,8 +106,10 @@ const playMusicEvent = async (item: SongResult) => {
   if (playMusic.value.id === item.id) {
     if (play.value) {
       store.commit('setPlayMusic', false);
+      audioService.getCurrentSound()?.pause();
     } else {
       store.commit('setPlayMusic', true);
+      audioService.getCurrentSound()?.play();
     }
     return;
   }

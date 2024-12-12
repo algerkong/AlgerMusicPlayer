@@ -140,7 +140,6 @@ watch(
 const throttledSeek = useThrottleFn((value: number) => {
   if (!sound.value) return;
   sound.value.seek((value * allTime.value) / 100);
-  store.commit('setPlayMusic', true);
 }, 50); // 50ms 的节流延迟
 
 // 修改 timeSlider 计算属性

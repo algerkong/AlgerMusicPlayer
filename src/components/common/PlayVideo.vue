@@ -15,6 +15,8 @@
 <script setup lang="ts">
 import { useStore } from 'vuex';
 
+import { audioService } from '@/services/audioService';
+
 const props = defineProps<{
   show: boolean;
   title: string;
@@ -29,6 +31,7 @@ watch(
     if (val) {
       store.commit('setIsPlay', false);
       store.commit('setPlayMusic', false);
+      audioService.getCurrentSound()?.pause();
     }
   },
 );

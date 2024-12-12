@@ -27,6 +27,7 @@ import { useStore } from 'vuex';
 
 import { getAlbum, getListDetail } from '@/api/list';
 import MvPlayer from '@/components/MvPlayer.vue';
+import { audioService } from '@/services/audioService';
 import { IMvItem } from '@/type/mv';
 import { getImgUrl } from '@/utils';
 
@@ -75,6 +76,7 @@ const handleClick = async () => {
   if (props.item.type === 'mv') {
     store.commit('setIsPlay', false);
     store.commit('setPlayMusic', false);
+    audioService.getCurrentSound()?.pause();
     showPop.value = true;
   }
 };
