@@ -1,9 +1,10 @@
 <template>
   <n-drawer
     :show="musicFull"
-    height="100vh"
+    height="100%"
     placement="bottom"
     :style="{ background: currentBackground || background }"
+    :to="`#layout-main`"
   >
     <div id="drawer-target">
       <div class="drawer-back"></div>

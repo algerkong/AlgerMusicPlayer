@@ -15,14 +15,22 @@
 <script setup lang="ts">
 import { useDialog } from 'naive-ui';
 
+import { isElectron } from '@/hooks/MusicHook';
+
 const dialog = useDialog();
 const windowData = window as any;
 
 const minimize = () => {
+  if (!isElectron.value) {
+    return;
+  }
   windowData.electronAPI.minimize();
 };
 
 const close = () => {
+  if (!isElectron.value) {
+    return;
+  }
   dialog.warning({
     title: '提示',
     content: '确定要退出吗？',
@@ -38,6 +46,9 @@ const close = () => {
 };
 
 const drag = (event: MouseEvent) => {
+  if (!isElectron.value) {
+    return;
+  }
   windowData.electronAPI.dragStart(event);
 };
 </script>

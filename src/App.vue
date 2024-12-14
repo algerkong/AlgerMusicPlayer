@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container" :class="{ mobile: isMobile }">
+  <div class="app-container" :class="{ mobile: isMobile, noElectron: !isElectron }">
     <n-config-provider :theme="darkTheme">
       <n-dialog-provider>
         <router-view></router-view>
@@ -12,6 +12,7 @@
 import { darkTheme } from 'naive-ui';
 import { onMounted } from 'vue';
 
+import { isElectron } from '@/hooks/MusicHook';
 import store from '@/store';
 
 import { isMobile } from './utils';

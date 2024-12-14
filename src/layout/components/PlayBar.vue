@@ -54,18 +54,12 @@
       <n-slider v-model:value="volumeSlider" :step="0.01" :tooltip="false"></n-slider>
     </div>
     <div class="audio-button">
-      <!-- <n-tooltip trigger="hover" :z-index="9999999">
+      <n-tooltip trigger="hover" :z-index="9999999" @click="toggleFavorite">
         <template #trigger>
-          <i class="iconfont icon-likefill"></i>
+          <i class="iconfont icon-likefill" :class="{ 'like-active': isFavorite }" @click="toggleFavorite"></i>
         </template>
         喜欢
-      </n-tooltip> -->
-      <!-- <n-tooltip trigger="hover" :z-index="9999999">
-        <template #trigger>
-          <i class="iconfont icon-Play" @click="parsingMusic"></i>
-        </template>
-        解析播放
-      </n-tooltip> -->
+      </n-tooltip>
       <n-tooltip v-if="isElectron" class="music-lyric" trigger="hover" :z-index="9999999">
         <template #trigger>
           <i class="iconfont ri-netease-cloud-music-line" @click="openLyric"></i>
@@ -208,6 +202,19 @@ const scrollToPlayList = (val: boolean) => {
   setTimeout(() => {
     palyListRef.value?.scrollTo({ top: store.state.playListIndex * 62 });
   }, 50);
+};
+
+const isFavorite = computed(() => {
+  return store.state.favoriteList.includes(playMusic.value.id);
+});
+
+const toggleFavorite = async (e: Event) => {
+  e.stopPropagation();
+  if (isFavorite.value) {
+    store.commit('removeFromFavorite', playMusic.value.id);
+  } else {
+    store.commit('addToFavorite', playMusic.value.id);
+  }
 };
 </script>
 
@@ -406,5 +413,9 @@ const scrollToPlayList = (val: boolean) => {
 
 .play-bar-img {
   @apply w-14 h-14 rounded-2xl;
+}
+
+.like-active {
+  @apply text-red-600;
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <n-drawer :show="show" height="100vh" placement="bottom" :z-index="999999999">
+  <n-drawer :show="show" height="100%" placement="bottom" :z-index="999999999" :to="`#layout-main`">
     <div class="mv-detail">
       <div ref="videoContainerRef" class="video-container" :class="{ 'cursor-hidden': !showCursor }">
         <video
@@ -553,8 +553,8 @@ const isMobile = computed(() => store.state.isMobile);
 
   // 添加横屏模式支持
   @media screen and (orientation: landscape) {
-    height: 100vh !important;
-    width: 100vw !important;
+    height: 100% !important;
+    width: 100% !important;
   }
 
   .video-container {
@@ -617,8 +617,8 @@ const isMobile = computed(() => store.state.isMobile);
     &:-moz-full-screen,
     &:-ms-fullscreen {
       background: black;
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: 100%;
 
       // 确保全屏时标题栏正确显示
       .mv-detail-title {

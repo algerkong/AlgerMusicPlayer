@@ -1,11 +1,12 @@
 <template>
   <n-drawer
     :show="show"
-    :height="isMobile ? '100vh' : '80vh'"
+    :height="isMobile ? '100%' : '80%'"
     placement="bottom"
     block-scroll
     mask-closable
     :style="{ backgroundColor: 'transparent' }"
+    :to="`#layout-main`"
     @mask-click="close"
   >
     <div class="music-page">

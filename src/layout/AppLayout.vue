@@ -1,8 +1,8 @@
 <template>
   <div class="layout-page">
-    <div class="layout-main" :style="{ background: backgroundColor }">
-      <title-bar v-if="isElectron" />
-      <div class="layout-main-page" :class="isElectron ? '' : 'pt-6'">
+    <div id="layout-main" class="layout-main" :style="{ background: backgroundColor }">
+      <title-bar />
+      <div class="layout-main-page">
         <!-- 侧边菜单栏 -->
         <app-menu v-if="!isMobile" class="menu" :menus="menus" />
         <div class="main">
@@ -100,6 +100,17 @@ const backgroundColor = ref('#000');
   .layout-main {
     &-page {
       @apply pt-4;
+    }
+  }
+}
+
+// 如果屏幕宽度 大于 1440px 则设置布局为 70% 85%
+@media (min-width: 1440px) {
+  .noElectron {
+    .layout-main {
+      width: 70%;
+      height: 85%;
+      @apply rounded-2xl border-2 border-gray-500 shadow-xl;
     }
   }
 }
