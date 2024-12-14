@@ -19,6 +19,12 @@ export const playMusic = computed(() => store.state.playMusic as SongResult); //
 export const sound = ref<Howl | null>(audioService.getCurrentSound());
 
 document.onkeyup = (e) => {
+  // 检查事件目标是否是输入框元素
+  const target = e.target as HTMLElement;
+  if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+    return;
+  }
+
   switch (e.code) {
     case 'Space':
       if (store.state.play) {
@@ -126,7 +132,7 @@ export const getLrcIndex = (time: number): number => {
   return nowIndex.value;
 };
 
-// 获取当前播放歌词进度
+// 获取���前播放歌词进度
 const currentLrcTiming = computed(() => {
   const start = lrcTimeArray.value[nowIndex.value] || 0;
   const end = lrcTimeArray.value[nowIndex.value + 1] || start + 1;
@@ -230,7 +236,7 @@ watch(
   () => lrcArray.value,
   (newLrcArray) => {
     if (newLrcArray.length > 0 && isElectron.value) {
-      // 重新初始化歌词数据
+      // 重新初始��歌词数据
       initLyricWindow();
       // 发送当前状态
       sendLyricToWin();
