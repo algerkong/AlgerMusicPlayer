@@ -92,7 +92,13 @@ export const audioServiceOn = (audio: typeof audioService) => {
   // 监听结束
   audio.onEnd(() => {
     handleEnded();
-    store.commit('nextPlay');
+    if (store.state.playMode === 1) {
+      // 单曲循环模式
+      audio.getCurrentSound()?.play();
+    } else {
+      // 列表循环模式
+      store.commit('nextPlay');
+    }
   });
 };
 

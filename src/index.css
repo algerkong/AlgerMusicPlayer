@@ -10,6 +10,10 @@
   width: 100%;
 }
 
+.n-slider-handle-indicator--top {
+  @apply bg-transparent text-[#ffffffdd] text-2xl px-2 py-1 shadow-none mb-0 !important;
+}
+
 .text-el {
   @apply overflow-ellipsis overflow-hidden whitespace-nowrap;
 }

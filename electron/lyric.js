@@ -1,17 +1,19 @@
-const { BrowserWindow } = require('electron');
+const { BrowserWindow, screen } = require('electron');
 const path = require('path');
 const config = require('./config');
 
 let lyricWindow = null;
+let isDragging = false;
 
 const createWin = () => {
   lyricWindow = new BrowserWindow({
     width: 800,
-    height: 300,
+    height: 200,
     frame: false,
     show: false,
     transparent: true,
     hasShadow: false,
+    alwaysOnTop: true,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -67,6 +69,44 @@ const loadLyricWindow = (ipcMain) => {
 
   ipcMain.on('mouseleave-lyric', () => {
     lyricWindow.setIgnoreMouseEvents(false);
+  });
+
+  // 开始拖动
+  ipcMain.on('lyric-drag-start', () => {
+    isDragging = true;
+  });
+
+  // 处理拖动移动
+  ipcMain.on('lyric-drag-move', (e, { deltaX, deltaY }) => {
+    if (!lyricWindow) return;
+
+    const [currentX, currentY] = lyricWindow.getPosition();
+    const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
+    const [windowWidth, windowHeight] = lyricWindow.getSize();
+
+    // 计算新位置，确保窗口不会移出屏幕
+    const newX = Math.max(0, Math.min(currentX + deltaX, screenWidth - windowWidth));
+    const newY = Math.max(0, Math.min(currentY + deltaY, screenHeight - windowHeight));
+
+    lyricWindow.setPosition(newX, newY);
+  });
+
+  // 结束拖动
+  ipcMain.on('lyric-drag-end', () => {
+    isDragging = false;
+  });
+
+  // 添加鼠标穿透事件处理
+  ipcMain.on('set-ignore-mouse', (e, shouldIgnore) => {
+    if (!lyricWindow) return;
+
+    if (shouldIgnore) {
+      // 设置鼠标穿透，但保留拖动区域可交互
+      lyricWindow.setIgnoreMouseEvents(true, { forward: true });
+    } else {
+      // 取消鼠标穿透
+      lyricWindow.setIgnoreMouseEvents(false);
+    }
   });
 };
 

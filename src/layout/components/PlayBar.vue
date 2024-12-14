@@ -2,10 +2,14 @@
   <!-- 展开全屏 -->
   <music-full ref="MusicFullRef" v-model:music-full="musicFullVisible" :background="background" />
   <!-- 底部播放栏 -->
+
   <div
     class="music-play-bar"
     :class="setAnimationClass('animate__bounceInUp') + ' ' + (musicFullVisible ? 'play-bar-opcity' : '')"
   >
+    <div class="music-time custom-slider">
+      <n-slider v-model:value="timeSlider" :step="1" :max="allTime" :min="0" :format-tooltip="formatTooltip"></n-slider>
+    </div>
     <div class="play-bar-img-wrapper" @click="setMusicFull">
       <n-image :src="getImgUrl(playMusic?.picUrl, '300y300')" class="play-bar-img" lazy preview-disabled />
       <div class="hover-arrow">
@@ -38,23 +42,26 @@
       <div class="music-buttons-play" @click="playMusicEvent">
         <i class="iconfont icon" :class="play ? 'icon-stop' : 'icon-play'"></i>
       </div>
-      <div class="music-buttons-next" @click="handleEnded">
+      <div class="music-buttons-next" @click="handleNext">
         <i class="iconfont icon-next"></i>
       </div>
     </div>
-    <div class="music-time custom-slider">
-      <div class="time">{{ getNowTime }}</div>
-      <n-slider v-model:value="timeSlider" :step="0.05" :tooltip="false"></n-slider>
-      <div class="time">{{ getAllTime }}</div>
-    </div>
-    <div class="audio-volume custom-slider">
-      <div>
-        <i class="iconfont icon-notificationfill"></i>
-      </div>
-      <n-slider v-model:value="volumeSlider" :step="0.01" :tooltip="false"></n-slider>
-    </div>
     <div class="audio-button">
-      <n-tooltip trigger="hover" :z-index="9999999" @click="toggleFavorite">
+      <div class="audio-volume custom-slider">
+        <div class="volume-icon" @click="mute">
+          <i class="iconfont" :class="getVolumeIcon"></i>
+        </div>
+        <div class="volume-slider">
+          <n-slider v-model:value="volumeSlider" :step="0.01" :tooltip="false" vertical></n-slider>
+        </div>
+      </div>
+      <n-tooltip trigger="hover" :z-index="9999999">
+        <template #trigger>
+          <i class="iconfont" :class="playModeIcon" @click="togglePlayMode"></i>
+        </template>
+        {{ playModeText }}
+      </n-tooltip>
+      <n-tooltip trigger="hover" :z-index="9999999">
         <template #trigger>
           <i class="iconfont icon-likefill" :class="{ 'like-active': isFavorite }" @click="toggleFavorite"></i>
         </template>
@@ -133,17 +140,33 @@ watch(
 // 使用 useThrottleFn 创建节流版本的 seek 函数
 const throttledSeek = useThrottleFn((value: number) => {
   if (!sound.value) return;
-  sound.value.seek((value * allTime.value) / 100);
+  sound.value.seek(value);
+  nowTime.value = value;
 }, 50); // 50ms 的节流延迟
 
 // 修改 timeSlider 计算属性
 const timeSlider = computed({
-  get: () => (nowTime.value / allTime.value) * 100,
+  get: () => nowTime.value,
   set: throttledSeek,
 });
 
+const formatTooltip = (value: number) => {
+  return `${secondToMinute(value)} / ${secondToMinute(allTime.value)}`;
+};
+
 // 音量条
 const audioVolume = ref(localStorage.getItem('volume') ? parseFloat(localStorage.getItem('volume') as string) : 1);
+const getVolumeIcon = computed(() => {
+  // 0 静音 ri-volume-mute-line 0.5 ri-volume-down-line 1 ri-volume-up-line
+  if (audioVolume.value === 0) {
+    return 'ri-volume-mute-line';
+  }
+  if (audioVolume.value <= 0.5) {
+    return 'ri-volume-down-line';
+  }
+  return 'ri-volume-up-line';
+});
+
 const volumeSlider = computed({
   get: () => audioVolume.value * 100,
   set: (value) => {
@@ -153,17 +176,31 @@ const volumeSlider = computed({
     audioVolume.value = value / 100;
   },
 });
-// 获取当前播放时间
-const getNowTime = computed(() => {
-  return secondToMinute(nowTime.value);
+
+// 静音
+const mute = () => {
+  if (volumeSlider.value === 0) {
+    volumeSlider.value = 30;
+  } else {
+    volumeSlider.value = 0;
+  }
+};
+
+// 播放模式
+const playMode = computed(() => store.state.playMode);
+const playModeIcon = computed(() => {
+  return playMode.value === 0 ? 'ri-repeat-2-line' : 'ri-repeat-one-line';
+});
+const playModeText = computed(() => {
+  return playMode.value === 0 ? '列表循环' : '单曲循环';
 });
 
-// 获取总时间
-const getAllTime = computed(() => {
-  return secondToMinute(allTime.value);
-});
+// 切换播放模式
+const togglePlayMode = () => {
+  store.commit('togglePlayMode');
+};
 
-function handleEnded() {
+function handleNext() {
   store.commit('nextPlay');
 }
 
@@ -224,13 +261,13 @@ const toggleFavorite = async (e: Event) => {
 }
 
 .music-play-bar {
-  @apply h-20 w-full absolute bottom-0 left-0 flex items-center rounded-t-2xl overflow-hidden box-border px-6 py-2;
+  @apply h-20 w-full absolute bottom-0 left-0 flex items-center box-border px-6 py-2 pt-3;
   z-index: 9999;
   box-shadow: 0px 0px 10px 2px rgba(203, 203, 203, 0.034);
   background-color: #212121;
   animation-duration: 0.5s !important;
   .music-content {
-    width: 140px;
+    width: 160px;
     @apply ml-4;
 
     &-title {
@@ -253,14 +290,14 @@ const toggleFavorite = async (e: Event) => {
 }
 
 .music-buttons {
-  @apply mx-6;
+  @apply mx-6 flex-1 flex justify-center;
 
   .iconfont {
     @apply text-2xl hover:text-green-500 transition;
   }
 
   .icon {
-    @apply text-xl hover:text-white;
+    @apply text-3xl hover:text-white;
   }
 
   @apply flex items-center;
@@ -270,25 +307,28 @@ const toggleFavorite = async (e: Event) => {
   }
 
   &-play {
-    background: #383838;
-    @apply flex justify-center items-center w-12 h-12 rounded-full mx-4 hover:bg-green-500 transition bg-opacity-40;
-  }
-}
-
-.music-time {
-  @apply flex flex-1 items-center;
-
-  .time {
-    @apply mx-4 mt-1;
+    background-color: #ffffff20;
+    @apply flex justify-center items-center w-20 h-12 rounded-full mx-4 hover:bg-[#ffffff40] transition;
   }
 }
 
 .audio-volume {
-  width: 140px;
-  @apply flex items-center mx-4;
+  @apply flex items-center relative;
+  &:hover {
+    .volume-slider {
+      @apply opacity-100 visible;
+    }
+  }
+  .volume-icon {
+    @apply cursor-pointer;
 
-  .iconfont {
-    @apply text-2xl hover:text-green-500 transition cursor-pointer mr-4;
+    .iconfont {
+      @apply text-2xl hover:text-green-500 transition;
+    }
+  }
+
+  .volume-slider {
+    @apply absolute opacity-0 invisible transition-all duration-300 bottom-[30px] left-1/2 -translate-x-1/2 h-[180px] px-2 py-4 bg-gray-800 bg-opacity-80 rounded-xl;
   }
 }
 
@@ -356,17 +396,31 @@ const toggleFavorite = async (e: Event) => {
     --n-handle-size: 12px;
     --n-handle-color: var(--primary-color);
 
-    &:hover {
-      --n-rail-height: 6px;
-      --n-handle-size: 14px;
+    &.n-slider--vertical {
+      height: 100%;
+
+      .n-slider-rail {
+        width: 4px;
+      }
+
+      &:hover {
+        .n-slider-rail {
+          width: 6px;
+        }
+
+        .n-slider-handle {
+          width: 14px;
+          height: 14px;
+        }
+      }
     }
 
     .n-slider-rail {
-      @apply overflow-hidden;
+      @apply overflow-hidden transition-all duration-200;
     }
 
     .n-slider-handle {
-      @apply transition-opacity duration-200;
+      @apply transition-all duration-200;
       opacity: 0;
     }
 
@@ -417,5 +471,18 @@ const toggleFavorite = async (e: Event) => {
 
 .like-active {
   @apply text-red-600;
+}
+
+.icon-loop,
+.icon-single-loop {
+  font-size: 1.5rem;
+}
+
+.music-time .n-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  padding: 0;
+  border-radius: 0;
 }
 </style>

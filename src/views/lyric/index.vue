@@ -2,9 +2,11 @@
   <div
     class="lyric-window"
     :class="[lyricSetting.theme, { lyric_lock: lyricSetting.isLock }]"
+    @mousedown="handleMouseDown"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
   >
+    <div class="drag-overlay"></div>
     <!-- 顶部控制栏 -->
     <div class="control-bar" :class="{ 'control-bar-show': showControls }">
       <div class="font-size-controls">
@@ -25,7 +27,7 @@
         <div class="control-button" @click="handleTop">
           <i class="ri-pushpin-line" :class="{ active: lyricSetting.isTop }"></i>
         </div>
-        <div class="control-button" @click="handleLock">
+        <div id="lyric-lock" class="control-button" @click="handleLock">
           <i v-if="lyricSetting.isLock" class="ri-lock-line"></i>
           <i v-else class="ri-lock-unlock-line"></i>
         </div>
@@ -61,7 +63,7 @@
               </div>
             </div>
           </template>
-          <div v-else class="lyric-empty">暂无歌词</div>
+          <div v-else class="lyric-empty">无歌词</div>
         </div>
       </div>
     </div>
@@ -84,6 +86,8 @@ const isInitialized = ref(false);
 // 字体大小控制
 const fontSize = ref(24); // 默认字体大小
 const fontSizeStep = 2; // 每次整的步长
+const animationFrameId = ref<number | null>(null);
+const lastUpdateTime = ref(performance.now());
 
 // 静态数据
 const staticData = ref<{
@@ -136,14 +140,21 @@ const clearHideTimer = () => {
 
 // 处理鼠标进入窗口
 const handleMouseEnter = () => {
-  if (!lyricSetting.value.isLock) return;
-  isHovering.value = true;
+  console.log('handleMouseEnter');
+  if (lyricSetting.value.isLock) {
+    isHovering.value = true;
+    windowData.electron.ipcRenderer.send('set-ignore-mouse', true);
+  } else {
+    windowData.electron.ipcRenderer.send('set-ignore-mouse', false);
+  }
 };
 
 // 处理鼠标离开窗口
 const handleMouseLeave = () => {
+  console.log('handleMouseLeave');
   if (!lyricSetting.value.isLock) return;
   isHovering.value = false;
+  windowData.electron.ipcRenderer.send('set-ignore-mouse', false);
 };
 
 // 监听锁定状态变化
@@ -180,7 +191,7 @@ const wrapperStyle = computed(() => {
   const containerCenter = containerHeight.value / 2;
 
   // 计算当前行到顶部的距离（包含padding）
-  const currentLineTop = currentIndex.value * lineHeight.value + containerHeight.value * 0.2; // 加上顶部padding
+  const currentLineTop = currentIndex.value * lineHeight.value + containerHeight.value * 0.2 + lineHeight.value; // 加上顶部padding
 
   // 计算偏移量，使当前行居中
   const targetOffset = containerCenter - currentLineTop;
@@ -265,10 +276,6 @@ onMounted(() => {
     resizeObserver.disconnect();
   });
 });
-
-// 动画帧ID
-const animationFrameId = ref<number | null>(null);
-
 // 实际播放时间
 const actualTime = ref(0);
 
@@ -317,9 +324,8 @@ const updateProgress = () => {
 };
 
 // 记录上次更新时间
-const lastUpdateTime = ref(performance.now());
 
-// 监听数据更新
+// 监听据更新
 watch(
   () => dynamicData.value,
   (newData: any) => {
@@ -351,7 +357,7 @@ watch(
   },
 );
 
-// 修改数据更新处理
+// 修改数据更新处
 const handleDataUpdate = (parsedData: {
   nowTime: number;
   startCurrentTime: number;
@@ -405,7 +411,7 @@ onMounted(() => {
           animationFrameId.value = null;
         }
 
-        // 保据格式正确
+        // 确保数据格式正确
         if (Array.isArray(parsedData.lrcArray)) {
           staticData.value = {
             lrcArray: parsedData.lrcArray,
@@ -446,6 +452,7 @@ const handleTop = () => {
 
 const handleLock = () => {
   lyricSetting.value.isLock = !lyricSetting.value.isLock;
+  windowData.electron.ipcRenderer.send('set-ignore-mouse', lyricSetting.value.isLock);
 };
 
 const handleClose = () => {
@@ -459,6 +466,74 @@ watch(
   },
   { deep: true },
 );
+
+// 添加拖动相关变量
+const isDragging = ref(false);
+const startPosition = ref({ x: 0, y: 0 });
+
+// 处理鼠标按下事件
+const handleMouseDown = (e: MouseEvent) => {
+  // 如果点击的是控制按钮区域或窗口被锁定，不处理拖动
+  if (
+    lyricSetting.value.isLock ||
+    (e.target as HTMLElement).closest('.control-buttons') ||
+    (e.target as HTMLElement).closest('.font-size-controls')
+  ) {
+    return;
+  }
+
+  // 只响应鼠标左键
+  if (e.button !== 0) return;
+
+  isDragging.value = true;
+  startPosition.value = { x: e.screenX, y: e.screenY };
+
+  // 添加全局鼠标事件监听
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isDragging.value) return;
+
+    const deltaX = e.screenX - startPosition.value.x;
+    const deltaY = e.screenY - startPosition.value.y;
+
+    // 发送移动事件到主进程
+    windowData.electron.ipcRenderer.send('lyric-drag-move', { deltaX, deltaY });
+    startPosition.value = { x: e.screenX, y: e.screenY };
+  };
+
+  const handleMouseUp = () => {
+    if (!isDragging.value) return;
+    isDragging.value = false;
+
+    // 移除事件监听
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  };
+
+  // 添加全局事件监听
+  document.addEventListener('mousemove', handleMouseMove);
+  document.addEventListener('mouseup', handleMouseUp);
+};
+
+// 组件卸载时清理
+onUnmounted(() => {
+  isDragging.value = false;
+});
+
+onMounted(() => {
+  const lyricLock = document.getElementById('lyric-lock');
+  if (lyricLock) {
+    lyricLock.onmouseenter = () => {
+      if (lyricSetting.value.isLock) {
+        windowData.electron.ipcRenderer.send('set-ignore-mouse', false);
+      }
+    };
+    lyricLock.onmouseleave = () => {
+      if (lyricSetting.value.isLock) {
+        windowData.electron.ipcRenderer.send('set-ignore-mouse', true);
+      }
+    };
+  }
+});
 </script>
 
 <style>
@@ -474,9 +549,25 @@ body {
   position: relative;
   overflow: hidden;
   background: transparent;
+  user-select: none;
+  transition: background-color 0.2s ease;
+  cursor: default;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.3);
+    .control-bar {
+      &-show {
+        opacity: 1;
+        visibility: visible;
+      }
+    }
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
 
   &.dark {
-    --bg-color: transparent;
     --text-color: #ffffff;
     --text-secondary: rgba(255, 255, 255, 0.6);
     --highlight-color: #1db954;
@@ -484,21 +575,10 @@ body {
   }
 
   &.light {
-    --bg-color: transparent;
     --text-color: #333333;
     --text-secondary: rgba(51, 51, 51, 0.6);
     --highlight-color: #1db954;
     --control-bg: rgba(255, 255, 255, 0.3);
-  }
-
-  &.lyric_lock {
-    .control-bar {
-      background: var(--control-bg);
-
-      &-show {
-        opacity: 1;
-      }
-    }
   }
 }
 
@@ -508,8 +588,6 @@ body {
   left: 0;
   right: 0;
   height: 40px;
-  background: var(--control-bg);
-  backdrop-filter: blur(8px);
   display: flex;
   justify-content: flex-end;
   align-items: center;
@@ -519,13 +597,7 @@ body {
   transition:
     opacity 0.2s ease,
     visibility 0.2s ease;
-  -webkit-app-region: drag;
   z-index: 100;
-
-  &-show {
-    opacity: 1;
-    visibility: visible;
-  }
 
   .font-size-controls {
     margin-right: auto; // 将字体控制放在侧
@@ -583,6 +655,7 @@ body {
   right: 0;
   bottom: 0;
   overflow: hidden;
+  z-index: 100;
 }
 
 .lyric-scroll {
@@ -662,5 +735,28 @@ body {
 
 .lyric-line-current {
   opacity: 1;
+}
+
+.control-bar {
+  .control-buttons {
+    .control-button {
+      &:not(:has(.ri-lock-line)):not(:has(.ri-lock-unlock-line)) {
+        .lyric_lock & {
+          display: none;
+        }
+      }
+    }
+  }
+
+  .lyric_lock & .font-size-controls {
+    display: none;
+  }
+}
+
+.lyric_lock {
+  background: transparent;
+  &:hover {
+    background: transparent;
+  }
 }
 </style>

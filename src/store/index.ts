@@ -13,6 +13,11 @@ const defaultSettings = {
   authorUrl: 'https://github.com/algerkong',
 };
 
+function getLocalStorageItem<T>(key: string, defaultValue: T): T {
+  const item = localStorage.getItem(key);
+  return item ? JSON.parse(item) : defaultValue;
+}
+
 interface State {
   menus: any[];
   play: boolean;
@@ -28,6 +33,7 @@ interface State {
   searchValue: string;
   searchType: number;
   favoriteList: number[];
+  playMode: number;
 }
 
 const state: State = {
@@ -36,7 +42,7 @@ const state: State = {
   isPlay: false,
   playMusic: {} as SongResult,
   playMusicUrl: '',
-  user: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user') as string) : null,
+  user: getLocalStorageItem('user', null),
   playList: [],
   playListIndex: 0,
   setData: defaultSettings,
@@ -44,7 +50,8 @@ const state: State = {
   isMobile: false,
   searchValue: '',
   searchType: 1,
-  favoriteList: localStorage.getItem('favoriteList') ? JSON.parse(localStorage.getItem('favoriteList') || '[]') : [],
+  favoriteList: getLocalStorageItem('favoriteList', []),
+  playMode: getLocalStorageItem('playMode', 0),
 };
 
 const { handlePlayMusic, nextPlay, prevPlay } = useMusicListHook();
@@ -90,6 +97,10 @@ const mutations = {
   removeFromFavorite(state: State, songId: number) {
     state.favoriteList = state.favoriteList.filter((id) => id !== songId);
     localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
+  },
+  togglePlayMode(state: State) {
+    state.playMode = state.playMode === 0 ? 1 : 0;
+    localStorage.setItem('playMode', JSON.stringify(state.playMode));
   },
 };
 
