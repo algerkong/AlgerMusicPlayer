@@ -15,12 +15,12 @@ interface SortCategories {
 
 interface SortAll {
   name: string;
-  resourceCount: number;
-  imgId: number;
+  resourceCount?: number;
+  imgId?: number;
   imgUrl?: any;
-  type: number;
-  category: number;
-  resourceType: number;
-  hot: boolean;
-  activity: boolean;
+  type?: number;
+  category?: number;
+  resourceType?: number;
+  hot?: boolean;
+  activity?: boolean;
 }

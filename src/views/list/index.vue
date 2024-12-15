@@ -1,10 +1,12 @@
 <script lang="ts" setup>
 import { useRoute } from 'vue-router';
 
-import { getListByCat, getListDetail, getRecommendList } from '@/api/list';
+import { getPlaylistCategory } from '@/api/home';
+import { getListByCat, getListDetail } from '@/api/list';
 import MusicList from '@/components/MusicList.vue';
 import type { IRecommendItem } from '@/type/list';
 import type { IListDetail } from '@/type/listDetail';
+import type { IPlayListSort } from '@/type/playlist';
 import { formatNumber, getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
 
 defineOptions({
@@ -85,14 +87,40 @@ const handleScroll = (e: any) => {
   }
 };
 
+// 添加歌单分类相关的代码
+const playlistCategory = ref<IPlayListSort>();
+const currentType = ref((route.query.type as string) || '每日推荐');
+
+const getAnimationDelay = computed(() => {
+  return (index: number) => setAnimationDelay(index, 30);
+});
+
+// 加载歌单分类
+const loadPlaylistCategory = async () => {
+  const { data } = await getPlaylistCategory();
+  playlistCategory.value = {
+    ...data,
+    sub: [
+      {
+        name: '每日推荐',
+        category: 0,
+      },
+      ...data.sub,
+    ],
+  };
+};
+
+const handleClickPlaylistType = (type: string) => {
+  currentType.value = type;
+  listTitle.value = type;
+  loading.value = true;
+  loadList(type);
+};
+
 onMounted(() => {
-  if (route.query.type) {
-    loadList(route.query.type as string);
-  } else {
-    getRecommendList(TOTAL_ITEMS).then((res: { data: { result: any } }) => {
-      recommendList.value = res.data.result;
-    });
-  }
+  loadPlaylistCategory(); // 添加加载歌单分类
+  currentType.value = (route.query.type as string) || currentType.value;
+  loadList(currentType.value);
 });
 
 watch(
@@ -101,6 +129,8 @@ watch(
     if (newParams.type) {
       recommendList.value = [];
       listTitle.value = newParams.type || '歌单列表';
+      currentType.value = newParams.type as string;
+      loading.value = true;
       loadList(newParams.type as string);
     }
   },
@@ -109,7 +139,23 @@ watch(
 
 <template>
   <div class="list-page">
-    <div class="recommend-title" :class="setAnimationClass('animate__bounceInLeft')">{{ listTitle }}</div>
+    <!-- 修改歌单分类部分 -->
+    <div class="play-list-type">
+      <n-scrollbar x-scrollable>
+        <div class="categories-wrapper">
+          <span
+            v-for="(item, index) in playlistCategory?.sub"
+            :key="item.name"
+            class="play-list-type-item"
+            :class="[setAnimationClass('animate__bounceIn'), { active: currentType === item.name }]"
+            :style="getAnimationDelay(index)"
+            @click="handleClickPlaylistType(item.name)"
+          >
+            {{ item.name }}
+          </span>
+        </div>
+      </n-scrollbar>
+    </div>
     <!-- 歌单列表 -->
     <n-scrollbar class="recommend" :size="100" @scroll="handleScroll">
       <div v-loading="loading" class="recommend-list">
@@ -226,6 +272,37 @@ watch(
   .recommend-list {
     @apply px-4 gap-4;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+}
+
+// 添加歌单分类样式
+.play-list-type {
+  .title {
+    @apply text-lg font-bold mb-4;
+  }
+
+  .categories-wrapper {
+    @apply flex items-center py-2 pb-4;
+    white-space: nowrap;
+  }
+
+  &-item {
+    @apply py-2 px-3 mr-3 inline-block border border-gray-700 rounded-xl cursor-pointer transition-all duration-300;
+    background-color: #1a1a1a;
+
+    &:hover {
+      @apply bg-green-600/50;
+    }
+
+    &.active {
+      @apply bg-green-600 border-green-500;
+    }
+  }
+}
+
+.mobile {
+  .play-list-type {
+    @apply mx-0 w-full;
   }
 }
 </style>
