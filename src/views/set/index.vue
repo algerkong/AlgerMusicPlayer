@@ -1,6 +1,6 @@
 <template>
   <n-scrollbar>
-    <div class="set-page">
+    <div class="set-page" :class="setAnimationClass('animate__bounceInLeft')">
       <div v-if="isElectron" class="set-item">
         <div>
           <div class="set-item-title">代理</div>
@@ -60,7 +60,7 @@
         }}</n-button>
       </div>
 
-      <div class="p-6 bg-black rounded-lg shadow-lg mt-20">
+      <div class="p-6 bg-black rounded-lg shadow-lg mt-10">
         <div class="text-gray-100 text-base text-center">支持作者</div>
         <div class="flex gap-60">
           <div class="flex flex-col items-center gap-2 cursor-none hover:scale-[2] transition-all z-10 bg-black">
@@ -85,6 +85,7 @@ import config from '@/../package.json';
 import alipay from '@/assets/alipay.png';
 import wechat from '@/assets/wechat.png';
 import store from '@/store';
+import { setAnimationClass } from '@/utils';
 
 defineOptions({
   name: 'Setting',
@@ -108,7 +109,7 @@ const handleSave = () => {
   if (isElectron.value) {
     (window as any).electronAPI.restart();
   }
-  router.back();
+  router.push('/');
 };
 
 const openAuthor = () => {

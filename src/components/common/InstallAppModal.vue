@@ -23,6 +23,7 @@
 import { onMounted, ref } from 'vue';
 
 import config from '@/../package.json';
+import { isMobile } from '@/utils';
 
 const showModal = ref(false);
 const isElectron = ref((window as any).electron !== undefined);
@@ -37,7 +38,7 @@ const closeModal = () => {
 
 onMounted(() => {
   // 如果是 electron 环境，不显示安装提示
-  if (isElectron.value) {
+  if (isElectron.value || isMobile.value) {
     return;
   }
 

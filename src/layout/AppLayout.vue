@@ -1,7 +1,7 @@
 <template>
   <div class="layout-page">
     <div id="layout-main" class="layout-main" :style="{ background: backgroundColor }">
-      <title-bar />
+      <title-bar v-if="!isMobile" />
       <div class="layout-main-page">
         <!-- 侧边菜单栏 -->
         <app-menu v-if="!isMobile" class="menu" :menus="menus" />
@@ -39,7 +39,6 @@ import { useStore } from 'vuex';
 
 import InstallAppModal from '@/components/common/InstallAppModal.vue';
 import PlayBottom from '@/components/common/PlayBottom.vue';
-import { isElectron } from '@/hooks/MusicHook';
 import homeRouter from '@/router/home';
 import { isMobile } from '@/utils';
 

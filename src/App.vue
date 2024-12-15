@@ -13,12 +13,19 @@ import { darkTheme } from 'naive-ui';
 import { onMounted } from 'vue';
 
 import { isElectron } from '@/hooks/MusicHook';
+import homeRouter from '@/router/home';
 import store from '@/store';
 
 import { isMobile } from './utils';
 
 onMounted(() => {
   store.dispatch('initializeSettings');
+  if (isMobile.value) {
+    store.commit(
+      'setMenus',
+      homeRouter.filter((item) => item.meta.isMobile),
+    );
+  }
 });
 </script>
 
