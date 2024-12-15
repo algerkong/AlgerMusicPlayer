@@ -47,10 +47,13 @@ defineOptions({
 :deep(.favorite-page) {
   @apply p-0 mx-4 h-[300px];
   .favorite-header {
-    @apply mb-0;
+    @apply mb-0 px-0 !important;
     h2 {
-      @apply text-lg font-bold mb-4;
+      @apply text-lg font-bold;
     }
+  }
+  .favorite-list {
+    @apply px-0 !important;
   }
 }
 </style>

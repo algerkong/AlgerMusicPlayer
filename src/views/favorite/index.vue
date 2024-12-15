@@ -1,45 +1,35 @@
 <template>
   <div v-if="isComponent ? favoriteSongs.length : true" class="favorite-page">
-    <div class="favorite-header" :class="setAnimationClass('animate__fadeInRight')">
+    <div class="favorite-header" :class="setAnimationClass('animate__fadeInLeft')">
       <h2>我的收藏</h2>
       <div class="favorite-count">共 {{ favoriteList.length }} 首</div>
     </div>
     <div class="favorite-main" :class="setAnimationClass('animate__bounceInRight')">
-      <n-scrollbar class="favorite-content">
+      <n-scrollbar ref="scrollbarRef" class="favorite-content" @scroll="handleScroll">
         <div v-if="favoriteList.length === 0" class="empty-tip">
           <n-empty description="还没有收藏歌曲" />
         </div>
         <div v-else class="favorite-list">
-          <div v-if="loading" class="loading-wrapper">
-            <n-spin size="large" />
-          </div>
-          <template v-else>
-            <song-item
-              v-for="(song, index) in favoriteSongs"
-              :key="song.id"
-              :item="song"
-              :favorite="!isComponent"
-              :class="setAnimationClass('animate__bounceInUp')"
-              :style="getItemAnimationDelay(index)"
-              @play="handlePlay"
-            />
-          </template>
-
+          <song-item
+            v-for="(song, index) in favoriteSongs"
+            :key="song.id"
+            :item="song"
+            :favorite="!isComponent"
+            :class="setAnimationClass('animate__bounceInLeft')"
+            :style="getItemAnimationDelay(index)"
+            @play="handlePlay"
+          />
           <div v-if="isComponent" class="favorite-list-more text-center">
             <n-button text type="primary" @click="handleMore">查看更多</n-button>
           </div>
+
+          <div v-if="loading" class="loading-wrapper">
+            <n-spin size="large" />
+          </div>
+
+          <div v-if="noMore" class="no-more-tip">没有更多了</div>
         </div>
       </n-scrollbar>
-      <div v-if="favoriteList.length > 0 && !loading && !isComponent" class="pagination-wrapper">
-        <n-pagination
-          v-model:page="currentPage"
-          :page-size="pageSize"
-          :item-count="favoriteList.length"
-          :page-slot="5"
-          size="small"
-          @update:page="handlePageChange"
-        />
-      </div>
     </div>
   </div>
 </template>
@@ -58,12 +48,14 @@ const store = useStore();
 const favoriteList = computed(() => store.state.favoriteList);
 const favoriteSongs = ref<SongResult[]>([]);
 const loading = ref(false);
+const noMore = ref(false);
+const scrollbarRef = ref();
 
-// 分页相关
+// 无限滚动相关
 const pageSize = 16;
 const currentPage = ref(1);
 
-defineProps({
+const props = defineProps({
   isComponent: {
     type: Boolean,
     default: false,
@@ -72,7 +64,6 @@ defineProps({
 
 // 获取当前页的收藏歌曲ID
 const getCurrentPageIds = () => {
-  // 反转列表顺序，最新收藏的在前面
   const reversedList = [...favoriteList.value];
   const startIndex = (currentPage.value - 1) * pageSize;
   const endIndex = startIndex + pageSize;
@@ -86,17 +77,29 @@ const getFavoriteSongs = async () => {
     return;
   }
 
+  if (props.isComponent && favoriteSongs.value.length >= 16) {
+    return;
+  }
+
   loading.value = true;
   try {
     const currentIds = getCurrentPageIds();
     const res = await getMusicDetail(currentIds);
     if (res.data.songs) {
-      favoriteSongs.value = res.data.songs.map((song: SongResult) => {
-        return {
-          ...song,
-          picUrl: song.al?.picUrl || '',
-        };
-      });
+      const newSongs = res.data.songs.map((song: SongResult) => ({
+        ...song,
+        picUrl: song.al?.picUrl || '',
+      }));
+
+      // 追加新数据而不是替换
+      if (currentPage.value === 1) {
+        favoriteSongs.value = newSongs;
+      } else {
+        favoriteSongs.value = [...favoriteSongs.value, ...newSongs];
+      }
+
+      // 判断是否还有更多数据
+      noMore.value = favoriteSongs.value.length >= favoriteList.value.length;
     }
   } catch (error) {
     console.error('获取收藏歌曲失败:', error);
@@ -105,9 +108,15 @@ const getFavoriteSongs = async () => {
   }
 };
 
-// 处理页码变化
-const handlePageChange = () => {
-  getFavoriteSongs();
+// 处理滚动事件
+const handleScroll = (e: any) => {
+  const { scrollTop, scrollHeight, offsetHeight } = e.target;
+  const threshold = 100; // 距离底部多少像素时加载更多
+
+  if (!loading.value && !noMore.value && scrollHeight - (scrollTop + offsetHeight) < threshold) {
+    currentPage.value++;
+    getFavoriteSongs();
+  }
 };
 
 onMounted(() => {
@@ -119,6 +128,7 @@ watch(
   favoriteList,
   () => {
     currentPage.value = 1;
+    noMore.value = false;
     getFavoriteSongs();
   },
   { deep: true, immediate: true },
@@ -129,8 +139,7 @@ const handlePlay = () => {
 };
 
 const getItemAnimationDelay = (index: number) => {
-  const currentPageIndex = index % pageSize;
-  return setAnimationDelay(currentPageIndex, 30);
+  return setAnimationDelay(index, 30);
 };
 
 const router = useRouter();
@@ -141,13 +150,13 @@ const handleMore = () => {
 
 <style lang="scss" scoped>
 .favorite-page {
-  @apply h-full flex flex-col p-6;
+  @apply h-full flex flex-col pt-2;
 
   .favorite-header {
-    @apply flex items-center justify-between mb-6 flex-shrink-0;
+    @apply flex items-center justify-between flex-shrink-0 px-4;
 
     h2 {
-      @apply text-2xl font-bold;
+      @apply text-xl font-bold pb-2;
     }
 
     .favorite-count {
@@ -166,7 +175,7 @@ const handleMore = () => {
       }
 
       .favorite-list {
-        @apply space-y-2 pb-4;
+        @apply space-y-2 pb-4 px-4;
       }
     }
   }
@@ -176,20 +185,8 @@ const handleMore = () => {
   @apply flex justify-center items-center py-20;
 }
 
-.pagination-wrapper {
-  @apply flex justify-center py-4 flex-shrink-0;
-
-  :deep(.n-pagination) {
-    @apply bg-gray-800 rounded-full px-4 py-1;
-
-    .n-pagination-item {
-      @apply text-gray-300 hover:text-white;
-
-      &--active {
-        @apply text-green-500;
-      }
-    }
-  }
+.no-more-tip {
+  @apply text-center text-gray-400 py-4 text-sm;
 }
 
 .mobile {

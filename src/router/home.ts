@@ -44,23 +44,24 @@ const layoutRouter = [
     },
     component: () => import('@/views/mv/index.vue'),
   },
+  // {
+  //   path: '/history',
+  //   name: 'history',
+  //   meta: {
+  //     title: '历史',
+  //     icon: 'icon-a-TicketStar',
+  //     keepAlive: true,
+  //   },
+  //   component: () => import('@/views/history/index.vue'),
+  // },
   {
     path: '/history',
     name: 'history',
+    component: () => import('@/views/historyAndFavorite/index.vue'),
     meta: {
-      title: '历史',
+      title: '我的收藏和历史',
       icon: 'icon-a-TicketStar',
       keepAlive: true,
-    },
-    component: () => import('@/views/history/index.vue'),
-  },
-  {
-    path: '/favorite',
-    name: 'favorite',
-    component: () => import('@/views/favorite/index.vue'),
-    meta: {
-      title: '我的收藏',
-      icon: 'icon-likefill',
     },
   },
   {
