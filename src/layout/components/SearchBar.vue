@@ -35,10 +35,7 @@
       />
       <div v-else class="mx-2 rounded-full cursor-pointer text-sm" @click="toLogin">登录</div>
     </div>
-    <coffee
-      alipay-q-r="https://github.com/algerkong/algerkong/blob/main/alipay.jpg?raw=true"
-      wechat-q-r="https://github.com/algerkong/algerkong/blob/main/wechat.jpg?raw=true"
-    >
+    <coffee :alipay-q-r="alipay" :wechat-q-r="wechat">
       <div class="github" @click="toGithub">
         <i class="ri-github-fill"></i>
       </div>
@@ -52,6 +49,8 @@ import { useStore } from 'vuex';
 
 import { getSearchKeyword } from '@/api/home';
 import { getUserDetail, logout } from '@/api/login';
+import alipay from '@/assets/alipay.png';
+import wechat from '@/assets/wechat.png';
 import Coffee from '@/components/Coffee.vue';
 import { SEARCH_TYPES, USER_SET_OPTIONS } from '@/const/bar-const';
 import { getImgUrl } from '@/utils';

@@ -63,12 +63,12 @@
       <div class="p-6 bg-black rounded-lg shadow-lg mt-20">
         <div class="text-gray-100 text-base text-center">支持作者</div>
         <div class="flex gap-60">
-          <div class="flex flex-col items-center gap-2 cursor-pointer hover:scale-[2] transition-all z-10 bg-black">
-            <n-image :src="alipayQR" alt="支付宝收款码" class="w-32 h-32 rounded-lg" preview-disabled />
+          <div class="flex flex-col items-center gap-2 cursor-none hover:scale-[2] transition-all z-10 bg-black">
+            <n-image :src="alipay" alt="支付宝收款码" class="w-32 h-32 rounded-lg" preview-disabled />
             <span class="text-sm text-gray-100">支付宝</span>
           </div>
-          <div class="flex flex-col items-center gap-2 cursor-pointer hover:scale-[2] transition-all z-10 bg-black">
-            <n-image :src="wechatQR" alt="微信收款码" class="w-32 h-32 rounded-lg" preview-disabled />
+          <div class="flex flex-col items-center gap-2 cursor-none hover:scale-[2] transition-all z-10 bg-black">
+            <n-image :src="wechat" alt="微信收款码" class="w-32 h-32 rounded-lg" preview-disabled />
             <span class="text-sm text-gray-100">微信支付</span>
           </div>
         </div>
@@ -82,14 +82,13 @@ import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 import config from '@/../package.json';
+import alipay from '@/assets/alipay.png';
+import wechat from '@/assets/wechat.png';
 import store from '@/store';
 
 defineOptions({
   name: 'Setting',
 });
-
-const alipayQR = 'https://github.com/algerkong/algerkong/blob/main/alipay.jpg?raw=true';
-const wechatQR = 'https://github.com/algerkong/algerkong/blob/main/wechat.jpg?raw=true';
 
 const isElectron = ref((window as any).electronAPI !== undefined);
 const router = useRouter();
