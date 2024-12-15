@@ -6,7 +6,7 @@
           <img src="@/assets/logo.png" alt="App Icon" />
         </div>
         <div class="app-info">
-          <h2 class="app-name">Alger Music</h2>
+          <h2 class="app-name">Alger Music Player {{ config.version }}</h2>
           <p class="app-desc mb-2">在桌面安装应用，获得更好的体验</p>
           <n-checkbox v-model:checked="noPrompt">不再提示</n-checkbox>
         </div>
@@ -22,6 +22,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 
+import config from '@/../package.json';
+
 const showModal = ref(false);
 const isElectron = ref((window as any).electron !== undefined);
 const noPrompt = ref(false);
@@ -30,29 +32,6 @@ const closeModal = () => {
   showModal.value = false;
   if (noPrompt.value) {
     localStorage.setItem('installPromptDismissed', 'true');
-  }
-};
-
-const handleInstall = async () => {
-  // 新页面打开
-  // 识别当前环境是 mac 还是 windows
-  // const os = navigator.platform;
-  // const isMac = os.includes('Mac');
-  // const isWindows = os.includes('Win');
-  // const urls = {
-  //   mac: 'http://file.alger.fun/d/ali/%E8%BD%AF%E4%BB%B6/AlgerMusic/AlgerMusic.dmg',
-  //   windows: 'http://file.alger.fun/d/ali/%E8%BD%AF%E4%BB%B6/AlgerMusic/AlgerMusic.exe',
-  // };
-  // // 根据操作系统选择下载链接
-  // let downloadUrl = '';
-  // if (isMac) {
-  //   downloadUrl = urls.mac;
-  // } else if (isWindows) {
-  //   downloadUrl = urls.windows;
-  // }
-  const downloadUrl = 'https://github.com/algerkong/AlgerMusicPlayer/releases';
-  if (downloadUrl) {
-    window.open(downloadUrl, '_blank');
   }
 };
 
@@ -69,6 +48,29 @@ onMounted(() => {
   }
   showModal.value = true;
 });
+
+const handleInstall = async (): Promise<void> => {
+  const { userAgent } = navigator;
+  console.log('userAgent', userAgent);
+  const isMac: boolean = userAgent.includes('Mac');
+  const isWindows: boolean = userAgent.includes('Win');
+  const isARM: boolean = userAgent.includes('ARM') || userAgent.includes('arm') || userAgent.includes('OS X');
+  const isX64: boolean = userAgent.includes('x86_64') || userAgent.includes('Win64') || userAgent.includes('WOW64');
+  const isX86: boolean =
+    !isX64 && (userAgent.includes('i686') || userAgent.includes('i386') || userAgent.includes('Win32'));
+
+  const getDownloadUrl = (os: string, arch: string): string => {
+    const version = config.version as string;
+    return `https://github.com/algerkong/AlgerMusicPlayer/releases/download/${version}/AlgerMusic_${version}_${arch}.${os === 'mac' ? 'dmg' : 'exe'}`;
+  };
+
+  const osType: string | null = isMac ? 'mac' : isWindows ? 'windows' : null;
+  const archType: string | null = isARM ? 'arm64' : isX64 ? 'x64' : isX86 ? 'x86' : null;
+
+  const downloadUrl: string | null = osType && archType ? getDownloadUrl(osType, archType) : null;
+
+  window.open(downloadUrl || 'https://github.com/algerkong/AlgerMusicPlayer/releases', '_blank');
+};
 </script>
 
 <style lang="scss" scoped>
