@@ -1,14 +1,29 @@
-const { BrowserWindow, screen, ipcRenderer } = require('electron');
+const { BrowserWindow, screen } = require('electron');
 const path = require('path');
+const Store = require('electron-store');
 const config = require('./config');
 
+const store = new Store();
 let lyricWindow = null;
 
 const createWin = () => {
   console.log('Creating lyric window');
+
+  // 获取保存的窗口位置
+  const windowBounds = store.get('lyricWindowBounds') || {};
+  const { x, y, width, height } = windowBounds;
+
+  // 获取屏幕尺寸
+  const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
+
+  // 验证保存的位置是否有效
+  const validPosition = x !== undefined && y !== undefined && x >= 0 && y >= 0 && x < screenWidth && y < screenHeight;
+
   lyricWindow = new BrowserWindow({
-    width: 800,
-    height: 200,
+    width: width || 800,
+    height: height || 200,
+    x: validPosition ? x : undefined,
+    y: validPosition ? y : undefined,
     frame: false,
     show: false,
     transparent: true,
@@ -107,6 +122,13 @@ const loadLyricWindow = (ipcMain, mainWin) => {
     const newY = Math.max(0, Math.min(currentY + deltaY, screenHeight - windowHeight));
 
     lyricWindow.setPosition(newX, newY);
+
+    // 保存新位置
+    store.set('lyricWindowBounds', {
+      ...lyricWindow.getBounds(),
+      x: newX,
+      y: newY,
+    });
   });
 
   // 添加鼠标穿透事件处理

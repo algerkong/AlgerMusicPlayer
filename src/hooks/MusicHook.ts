@@ -293,25 +293,22 @@ export const sendLyricToWin = () => {
 export const openLyric = () => {
   if (!isElectron.value) return;
   console.log('Opening lyric window with current song:', playMusic.value?.name);
-  windowData.electronAPI.openLyric();
-  isLyricWindowOpen.value = true;
 
-  // 延迟一下初始化，确保窗口已经创建
-  setTimeout(() => {
-    if (isLyricWindowOpen.value) {
-      console.log('Initializing lyric window with data:', {
-        hasLyrics: lrcArray.value.length > 0,
-        songName: playMusic.value?.name,
-      });
+  isLyricWindowOpen.value = !isLyricWindowOpen.value;
+  if (isLyricWindowOpen.value) {
+    setTimeout(() => {
+      windowData.electronAPI.openLyric();
       sendLyricToWin();
-    }
-  }, 500);
+    }, 500);
+    sendLyricToWin();
+  } else {
+    closeLyric();
+  }
 };
 
 // 添加关闭歌词窗口的方法
 export const closeLyric = () => {
   if (!isElectron.value) return;
-  isLyricWindowOpen.value = false;
   windowData.electron.ipcRenderer.send('close-lyric');
 };
 
