@@ -69,7 +69,11 @@
       </n-tooltip>
       <n-tooltip v-if="isElectron" class="music-lyric" trigger="hover" :z-index="9999999">
         <template #trigger>
-          <i class="iconfont ri-netease-cloud-music-line" @click="openLyric"></i>
+          <i
+            class="iconfont ri-netease-cloud-music-line"
+            :class="{ 'text-green-500': isLyricWindowOpen }"
+            @click="openLyricWindow"
+          ></i>
         </template>
         歌词
       </n-tooltip>
@@ -113,7 +117,7 @@ import { useTemplateRef } from 'vue';
 import { useStore } from 'vuex';
 
 import SongItem from '@/components/common/SongItem.vue';
-import { allTime, isElectron, nowTime, openLyric, sound } from '@/hooks/MusicHook';
+import { allTime, isElectron, isLyricWindowOpen, nowTime, openLyric, sound } from '@/hooks/MusicHook';
 import type { SongResult } from '@/type/music';
 import { getImgUrl, secondToMinute, setAnimationClass } from '@/utils';
 
@@ -252,6 +256,10 @@ const toggleFavorite = async (e: Event) => {
   } else {
     store.commit('addToFavorite', playMusic.value.id);
   }
+};
+
+const openLyricWindow = () => {
+  openLyric();
 };
 </script>
 

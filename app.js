@@ -66,7 +66,7 @@ function createWindow() {
     store.set('set', setJson);
   }
 
-  loadLyricWindow(ipcMain);
+  loadLyricWindow(ipcMain, mainWin);
 }
 
 // 限制只能启动一个应用

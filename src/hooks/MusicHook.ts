@@ -17,6 +17,7 @@ export const correctionTime = ref(0.4); // 歌词矫正时间Correction time
 export const currentLrcProgress = ref(0); // 来存储当前歌词的进度
 export const playMusic = computed(() => store.state.playMusic as SongResult); // 当前播放歌曲
 export const sound = ref<Howl | null>(audioService.getCurrentSound());
+export const isLyricWindowOpen = ref(false); // 新增状态
 
 document.onkeyup = (e) => {
   // 检查事件目标是否是输入框元素
@@ -53,13 +54,18 @@ watch(
 watch(
   () => store.state.playMusic,
   () => {
-    nextTick(() => {
+    nextTick(async () => {
       lrcArray.value = playMusic.value.lyric?.lrcArray || [];
       lrcTimeArray.value = playMusic.value.lyric?.lrcTimeArray || [];
+      // 当歌词数据更新时，如果歌词窗口打开，则发送数据
+      if (isElectron.value && isLyricWindowOpen.value && lrcArray.value.length > 0) {
+        sendLyricToWin();
+      }
     });
   },
   {
     deep: true,
+    immediate: true,
   },
 );
 
@@ -76,8 +82,13 @@ export const audioServiceOn = (audio: typeof audioService) => {
       if (newIndex !== nowIndex.value) {
         nowIndex.value = newIndex;
         currentLrcProgress.value = 0;
+        // 当歌词索引更新时，发送歌词数据
+        if (isElectron.value && isLyricWindowOpen.value) {
+          sendLyricToWin();
+        }
       }
-      if (isElectron.value) {
+      // 定期发送歌词数据更新
+      if (isElectron.value && isLyricWindowOpen.value) {
         sendLyricToWin();
       }
     }, 50);
@@ -87,11 +98,14 @@ export const audioServiceOn = (audio: typeof audioService) => {
   audio.onPause(() => {
     store.commit('setPlayMusic', false);
     clearInterval(interval);
+    // 暂停时也发送一次状态更新
+    if (isElectron.value && isLyricWindowOpen.value) {
+      sendLyricToWin();
+    }
   });
 
   // 监听结束
   audio.onEnd(() => {
-    handleEnded();
     if (store.state.playMode === 1) {
       // 单曲循环模式
       audio.getCurrentSound()?.play();
@@ -213,7 +227,7 @@ export const useLyricProgress = () => {
   };
 };
 
-// 设置当前播放时间
+// 设置���前播放时间
 export const setAudioTime = (index: number) => {
   const currentSound = sound.value;
   if (!currentSound) return;
@@ -241,72 +255,33 @@ export const getLrcTimeRange = (index: number) => ({
 watch(
   () => lrcArray.value,
   (newLrcArray) => {
-    if (newLrcArray.length > 0 && isElectron.value) {
-      // 重新初始化歌词数据
-      initLyricWindow();
-      // 发送当前状态
+    if (newLrcArray.length > 0 && isElectron.value && isLyricWindowOpen.value) {
       sendLyricToWin();
     }
   },
 );
 
-// 监听播放状态变化
-watch(isPlaying, (newIsPlaying) => {
-  if (isElectron.value) {
-    sendLyricToWin(newIsPlaying);
-  }
-});
-
-// 处理歌曲结束
-export const handleEnded = () => {
-  if (isElectron.value) {
-    setTimeout(() => {
-      initLyricWindow();
-      sendLyricToWin();
-    }, 100);
-  }
-};
-
-// 初始化歌词数据
-export const initLyricWindow = () => {
-  if (!isElectron.value) return;
-  try {
-    if (lrcArray.value.length > 0) {
-      console.log('Initializing lyric window with data:', {
-        lrcArray: lrcArray.value,
-        lrcTimeArray: lrcTimeArray.value,
-        allTime: allTime.value,
-      });
-
-      const staticData = {
-        type: 'init',
-        lrcArray: lrcArray.value,
-        lrcTimeArray: lrcTimeArray.value,
-        allTime: allTime.value,
-      };
-      windowData.electronAPI.sendLyric(JSON.stringify(staticData));
-    } else {
-      console.log('No lyrics available for initialization');
-    }
-  } catch (error) {
-    console.error('Error initializing lyric window:', error);
-  }
-};
-
 // 发送歌词更新数据
-export const sendLyricToWin = (isPlay: boolean = true) => {
-  if (!isElectron.value) return;
+export const sendLyricToWin = () => {
+  if (!isElectron.value || !isLyricWindowOpen.value) {
+    console.log('Cannot send lyric: electron or lyric window not available');
+    return;
+  }
 
   try {
     if (lrcArray.value.length > 0) {
       const nowIndex = getLrcIndex(nowTime.value);
       const updateData = {
-        type: 'update',
+        type: 'full',
         nowIndex,
         nowTime: nowTime.value,
         startCurrentTime: lrcTimeArray.value[nowIndex],
         nextTime: lrcTimeArray.value[nowIndex + 1],
-        isPlay,
+        isPlay: isPlaying.value,
+        lrcArray: lrcArray.value,
+        lrcTimeArray: lrcTimeArray.value,
+        allTime: allTime.value,
+        playMusic: playMusic.value,
       };
       windowData.electronAPI.sendLyric(JSON.stringify(updateData));
     }
@@ -317,13 +292,55 @@ export const sendLyricToWin = (isPlay: boolean = true) => {
 
 export const openLyric = () => {
   if (!isElectron.value) return;
-  console.log('Opening lyric window');
+  console.log('Opening lyric window with current song:', playMusic.value?.name);
   windowData.electronAPI.openLyric();
+  isLyricWindowOpen.value = true;
 
   // 延迟一下初始化，确保窗口已经创建
   setTimeout(() => {
-    console.log('Initializing lyric window after delay');
-    initLyricWindow();
-    sendLyricToWin();
+    if (isLyricWindowOpen.value) {
+      console.log('Initializing lyric window with data:', {
+        hasLyrics: lrcArray.value.length > 0,
+        songName: playMusic.value?.name,
+      });
+      sendLyricToWin();
+    }
   }, 500);
 };
+
+// 添加关闭歌词窗口的方法
+export const closeLyric = () => {
+  if (!isElectron.value) return;
+  isLyricWindowOpen.value = false;
+  windowData.electron.ipcRenderer.send('close-lyric');
+};
+
+// 添加播放控制命令监听
+if (isElectron.value) {
+  windowData.electron.ipcRenderer.on('lyric-control-back', (command: string) => {
+    console.log('Received playback control command:', command);
+    switch (command) {
+      case 'playpause':
+        if (store.state.play) {
+          store.commit('setPlayMusic', false);
+          audioService.getCurrentSound()?.pause();
+        } else {
+          store.commit('setPlayMusic', true);
+          audioService.getCurrentSound()?.play();
+        }
+        break;
+      case 'prev':
+        store.commit('prevPlay');
+        break;
+      case 'next':
+        store.commit('nextPlay');
+        break;
+      case 'close':
+        closeLyric();
+        break;
+      default:
+        console.log('Unknown command:', command);
+        break;
+    }
+  });
+}

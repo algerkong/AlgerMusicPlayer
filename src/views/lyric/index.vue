@@ -18,15 +18,28 @@
             <i class="ri-add-line"></i>
           </n-button>
         </n-button-group>
+        <div>{{ staticData.playMusic.name }}</div>
+      </div>
+      <!-- 添加播放控制按钮 -->
+      <div class="play-controls">
+        <div class="control-button" @click="handlePrev">
+          <i class="ri-skip-back-fill"></i>
+        </div>
+        <div class="control-button play-button" @click="handlePlayPause">
+          <i :class="dynamicData.isPlay ? 'ri-pause-fill' : 'ri-play-fill'"></i>
+        </div>
+        <div class="control-button" @click="handleNext">
+          <i class="ri-skip-forward-fill"></i>
+        </div>
       </div>
       <div class="control-buttons">
         <div class="control-button" @click="checkTheme">
           <i v-if="lyricSetting.theme === 'light'" class="ri-sun-line"></i>
           <i v-else class="ri-moon-line"></i>
         </div>
-        <div class="control-button" @click="handleTop">
+        <!-- <div class="control-button" @click="handleTop">
           <i class="ri-pushpin-line" :class="{ active: lyricSetting.isTop }"></i>
-        </div>
+        </div> -->
         <div id="lyric-lock" class="control-button" @click="handleLock">
           <i v-if="lyricSetting.isLock" class="ri-lock-line"></i>
           <i v-else class="ri-lock-unlock-line"></i>
@@ -46,7 +59,10 @@
               v-for="(line, index) in staticData.lrcArray"
               :key="index"
               class="lyric-line"
-              :style="lyricLineStyle"
+              :style="{
+                ...lyricLineStyle,
+                display: line.text ? 'flex' : 'none',
+              }"
               :class="{
                 'lyric-line-current': index === currentIndex,
                 'lyric-line-passed': index < currentIndex,
@@ -71,18 +87,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+
+import { SongResult } from '@/type/music';
 
 defineOptions({
   name: 'Lyric',
 });
-
 const windowData = window as any;
 const containerRef = ref<HTMLElement | null>(null);
 const containerHeight = ref(0);
 const lineHeight = ref(60);
 const currentIndex = ref(0);
-const isInitialized = ref(false);
 // 字体大小控制
 const fontSize = ref(24); // 默认字体大小
 const fontSizeStep = 2; // 每次整的步长
@@ -94,10 +110,12 @@ const staticData = ref<{
   lrcArray: Array<{ text: string; trText: string }>;
   lrcTimeArray: number[];
   allTime: number;
+  playMusic: SongResult;
 }>({
   lrcArray: [],
   lrcTimeArray: [],
   allTime: 0,
+  playMusic: {} as SongResult,
 });
 
 // 动态数据
@@ -140,7 +158,6 @@ const clearHideTimer = () => {
 
 // 处理鼠标进入窗口
 const handleMouseEnter = () => {
-  console.log('handleMouseEnter');
   if (lyricSetting.value.isLock) {
     isHovering.value = true;
     windowData.electron.ipcRenderer.send('set-ignore-mouse', true);
@@ -151,7 +168,6 @@ const handleMouseEnter = () => {
 
 // 处理鼠标离开窗口
 const handleMouseLeave = () => {
-  console.log('handleMouseLeave');
   if (!lyricSetting.value.isLock) return;
   isHovering.value = false;
   windowData.electron.ipcRenderer.send('set-ignore-mouse', false);
@@ -180,7 +196,7 @@ onUnmounted(() => {
 
 // 计算歌词滚动位置
 const wrapperStyle = computed(() => {
-  if (!isInitialized.value || !containerHeight.value) {
+  if (!containerHeight.value) {
     return {
       transform: 'translateY(0)',
       transition: 'none',
@@ -208,7 +224,7 @@ const wrapperStyle = computed(() => {
 
   return {
     transform: `translateY(${finalOffset}px)`,
-    transition: isInitialized.value ? 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
+    transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   };
 });
 
@@ -281,8 +297,8 @@ const actualTime = ref(0);
 
 // 计算当前行的进度
 const currentProgress = computed(() => {
-  const { startCurrentTime, nextTime, isPlay } = dynamicData.value;
-  if (!startCurrentTime || !nextTime || !isPlay) return 0;
+  const { startCurrentTime, nextTime } = dynamicData.value;
+  if (!startCurrentTime || !nextTime) return 0;
 
   const duration = nextTime - startCurrentTime;
   const elapsed = actualTime.value - startCurrentTime;
@@ -364,22 +380,34 @@ const handleDataUpdate = (parsedData: {
   nextTime: number;
   isPlay: boolean;
   nowIndex: number;
+  lrcArray: Array<{ text: string; trText: string }>;
+  lrcTimeArray: number[];
+  allTime: number;
+  playMusic: SongResult;
 }) => {
   // 确保数据存在且格式正确
-  if (!parsedData || typeof parsedData.nowTime !== 'number') {
+  if (!parsedData) {
     console.error('Invalid update data received:', parsedData);
     return;
   }
+  // 更新静态数据
+  staticData.value = {
+    lrcArray: parsedData.lrcArray || [],
+    lrcTimeArray: parsedData.lrcTimeArray || [],
+    allTime: parsedData.allTime || 0,
+    playMusic: parsedData.playMusic || {},
+  };
 
+  // 更新动态数据
   dynamicData.value = {
-    nowTime: parsedData.nowTime,
-    startCurrentTime: parsedData.startCurrentTime,
-    nextTime: parsedData.nextTime,
+    nowTime: parsedData.nowTime || 0,
+    startCurrentTime: parsedData.startCurrentTime || 0,
+    nextTime: parsedData.nextTime || 0,
     isPlay: parsedData.isPlay,
   };
 
   // 更新索引
-  if (typeof parsedData.nowIndex === 'number' && parsedData.nowIndex !== currentIndex.value) {
+  if (typeof parsedData.nowIndex === 'number') {
     currentIndex.value = parsedData.nowIndex;
   }
 };
@@ -400,33 +428,7 @@ onMounted(() => {
   windowData.electron.ipcRenderer.on('receive-lyric', (data: string) => {
     try {
       const parsedData = JSON.parse(data);
-      if (parsedData.type === 'init') {
-        // 初始化重置状态
-        currentIndex.value = 0;
-        isInitialized.value = false;
-
-        // 清理可能存在的动画
-        if (animationFrameId.value) {
-          cancelAnimationFrame(animationFrameId.value);
-          animationFrameId.value = null;
-        }
-
-        // 确保数据格式正确
-        if (Array.isArray(parsedData.lrcArray)) {
-          staticData.value = {
-            lrcArray: parsedData.lrcArray,
-            lrcTimeArray: parsedData.lrcTimeArray || [],
-            allTime: parsedData.allTime || 0,
-          };
-        } else {
-          console.error('Invalid lyric array format:', parsedData);
-        }
-        nextTick(() => {
-          isInitialized.value = true;
-        });
-      } else if (parsedData.type === 'update') {
-        handleDataUpdate(parsedData);
-      }
+      handleDataUpdate(parsedData);
     } catch (error) {
       console.error('Error parsing lyric data:', error);
     }
@@ -467,7 +469,7 @@ watch(
   { deep: true },
 );
 
-// 添加拖动相关变量
+// 添��拖动相关变量
 const isDragging = ref(false);
 const startPosition = ref({ x: 0, y: 0 });
 
@@ -534,6 +536,19 @@ onMounted(() => {
     };
   }
 });
+
+// 添加播放控制相关的函数
+const handlePlayPause = () => {
+  windowData.electron.ipcRenderer.send('control-back', 'playpause');
+};
+
+const handlePrev = () => {
+  windowData.electron.ipcRenderer.send('control-back', 'prev');
+};
+
+const handleNext = () => {
+  windowData.electron.ipcRenderer.send('control-back', 'next');
+};
 </script>
 
 <style>
@@ -554,7 +569,7 @@ body {
   cursor: default;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.5);
     .control-bar {
       &-show {
         opacity: 1;
@@ -571,7 +586,7 @@ body {
     --text-color: #ffffff;
     --text-secondary: rgba(255, 255, 255, 0.6);
     --highlight-color: #1db954;
-    --control-bg: rgba(0, 0, 0, 0.3);
+    --control-bg: rgba(124, 124, 124, 0.3);
   }
 
   &.light {
@@ -584,13 +599,13 @@ body {
 
 .control-bar {
   position: absolute;
-  top: 0;
+  top: 10px;
   left: 0;
   right: 0;
-  height: 40px;
+  height: 80px;
   display: flex;
-  justify-content: flex-end;
-  align-items: center;
+  justify-content: space-between;
+  align-items: start;
   padding: 0 20px;
   opacity: 0;
   visibility: hidden;
@@ -600,13 +615,28 @@ body {
   z-index: 100;
 
   .font-size-controls {
-    margin-right: auto; // 将字体控制放在侧
-    padding-right: 20px;
+    -webkit-app-region: no-drag;
+    color: var(--text-color);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .play-controls {
+    position: absolute;
+    top: 0px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 16px;
     -webkit-app-region: no-drag;
 
-    .n-button {
+    .play-button {
+      width: 36px;
+      height: 36px;
       i {
-        font-size: 16px;
+        font-size: 24px;
       }
     }
   }
@@ -623,23 +653,21 @@ body {
 }
 
 .control-button {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  border-radius: 50%;
+  border-radius: 8px;
   color: var(--text-color);
   transition: all 0.2s ease;
-  backdrop-filter: blur(4px);
-
   &:hover {
     background: var(--control-bg);
   }
 
   i {
-    font-size: 18px;
+    font-size: 20px;
     text-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 
     &.active {
@@ -650,7 +678,7 @@ body {
 
 .lyric-container {
   position: absolute;
-  top: 40px;
+  top: 80px;
   left: 0;
   right: 0;
   bottom: 0;
@@ -689,8 +717,7 @@ body {
     opacity: 1;
   }
 
-  &.lyric-line-passed,
-  &.lyric-line-next {
+  &.lyric-line-passed {
     opacity: 0.6;
   }
 }
@@ -751,12 +778,23 @@ body {
   .lyric_lock & .font-size-controls {
     display: none;
   }
+
+  .lyric_lock & .play-controls {
+    display: none;
+  }
 }
 
 .lyric_lock {
   background: transparent;
   &:hover {
     background: transparent;
+  }
+
+  #lyric-lock {
+    position: absolute;
+    top: 0;
+    right: 72px;
+    background: var(--control-bg);
   }
 }
 </style>

@@ -1,11 +1,11 @@
-const { BrowserWindow, screen } = require('electron');
+const { BrowserWindow, screen, ipcRenderer } = require('electron');
 const path = require('path');
 const config = require('./config');
 
 let lyricWindow = null;
-let isDragging = false;
 
 const createWin = () => {
+  console.log('Creating lyric window');
   lyricWindow = new BrowserWindow({
     width: 800,
     height: 200,
@@ -21,16 +21,26 @@ const createWin = () => {
       webSecurity: false,
     },
   });
+
+  // 监听窗口关闭事件
+  lyricWindow.on('closed', () => {
+    console.log('Lyric window closed');
+    lyricWindow = null;
+  });
 };
 
-const loadLyricWindow = (ipcMain) => {
+const loadLyricWindow = (ipcMain, mainWin) => {
   ipcMain.on('open-lyric', () => {
+    console.log('Received open-lyric request');
     if (lyricWindow) {
+      console.log('Lyric window exists, focusing');
       if (lyricWindow.isMinimized()) lyricWindow.restore();
       lyricWindow.focus();
       lyricWindow.show();
       return;
     }
+
+    console.log('Creating new lyric window');
     createWin();
     if (process.env.NODE_ENV === 'development') {
       lyricWindow.webContents.openDevTools({ mode: 'detach' });
@@ -41,26 +51,39 @@ const loadLyricWindow = (ipcMain) => {
     }
 
     lyricWindow.setMinimumSize(600, 200);
-
-    // 隐藏任务栏
     lyricWindow.setSkipTaskbar(true);
 
-    lyricWindow.show();
+    lyricWindow.once('ready-to-show', () => {
+      console.log('Lyric window ready to show');
+      lyricWindow.show();
+    });
   });
 
   ipcMain.on('send-lyric', (e, data) => {
-    if (lyricWindow) {
-      lyricWindow.webContents.send('receive-lyric', data);
+    if (lyricWindow && !lyricWindow.isDestroyed()) {
+      try {
+        lyricWindow.webContents.send('receive-lyric', data);
+      } catch (error) {
+        console.error('Error processing lyric data:', error);
+      }
+    } else {
+      console.log('Cannot send lyric: window not available or destroyed');
     }
   });
 
   ipcMain.on('top-lyric', (e, data) => {
-    lyricWindow.setAlwaysOnTop(data);
+    if (lyricWindow && !lyricWindow.isDestroyed()) {
+      lyricWindow.setAlwaysOnTop(data);
+    }
   });
 
   ipcMain.on('close-lyric', () => {
-    lyricWindow.close();
-    lyricWindow = null;
+    if (lyricWindow && !lyricWindow.isDestroyed()) {
+      lyricWindow.webContents.send('lyric-window-close');
+      mainWin.webContents.send('lyric-control-back', 'close');
+      lyricWindow.close();
+      lyricWindow = null;
+    }
   });
 
   ipcMain.on('mouseenter-lyric', () => {
@@ -69,11 +92,6 @@ const loadLyricWindow = (ipcMain) => {
 
   ipcMain.on('mouseleave-lyric', () => {
     lyricWindow.setIgnoreMouseEvents(false);
-  });
-
-  // 开始拖动
-  ipcMain.on('lyric-drag-start', () => {
-    isDragging = true;
   });
 
   // 处理拖动移动
@@ -91,11 +109,6 @@ const loadLyricWindow = (ipcMain) => {
     lyricWindow.setPosition(newX, newY);
   });
 
-  // 结束拖动
-  ipcMain.on('lyric-drag-end', () => {
-    isDragging = false;
-  });
-
   // 添加鼠标穿透事件处理
   ipcMain.on('set-ignore-mouse', (e, shouldIgnore) => {
     if (!lyricWindow) return;
@@ -107,6 +120,12 @@ const loadLyricWindow = (ipcMain) => {
       // 取消鼠标穿透
       lyricWindow.setIgnoreMouseEvents(false);
     }
+  });
+
+  // 添加播放控制处理
+  ipcMain.on('control-back', (e, command) => {
+    console.log('Received control-back request:', command);
+    mainWin.webContents.send('lyric-control-back', command);
   });
 };
 
