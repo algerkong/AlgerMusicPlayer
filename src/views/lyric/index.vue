@@ -59,10 +59,7 @@
               v-for="(line, index) in staticData.lrcArray"
               :key="index"
               class="lyric-line"
-              :style="{
-                ...lyricLineStyle,
-                display: line.text ? 'flex' : 'none',
-              }"
+              :style="lyricLineStyle"
               :class="{
                 'lyric-line-current': index === currentIndex,
                 'lyric-line-passed': index < currentIndex,
