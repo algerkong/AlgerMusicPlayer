@@ -15,6 +15,15 @@
         <n-button class="cancel-btn" @click="closeModal">暂不安装</n-button>
         <n-button type="primary" class="install-btn" @click="handleInstall">立即安装</n-button>
       </div>
+      <div class="modal-desc mt-4 text-center">
+        <p class="text-xs text-gray-400">
+          下载遇到问题？去
+          <a class="text-green-500" target="_blank" href="https://github.com/algerkong/AlgerMusicPlayer/releases"
+            >GitHub</a
+          >
+          下载最新版本
+        </p>
+      </div>
     </div>
   </n-modal>
 </template>
@@ -62,9 +71,9 @@ const handleInstall = async (): Promise<void> => {
 
   const getDownloadUrl = (os: string, arch: string): string => {
     const version = config.version as string;
-    return `https://github.com/algerkong/AlgerMusicPlayer/releases/download/${version}/AlgerMusic_${version}_${arch}.${os === 'mac' ? 'dmg' : 'exe'}`;
+    const setup = os !== 'mac' ? 'Setup_' : '';
+    return `https://gh.llkk.cc/https://github.com/algerkong/AlgerMusicPlayer/releases/download/${version}/AlgerMusic_${version}_${setup}${arch}.${os === 'mac' ? 'dmg' : 'exe'}`;
   };
-
   const osType: string | null = isMac ? 'mac' : isWindows ? 'windows' : null;
   const archType: string | null = isARM ? 'arm64' : isX64 ? 'x64' : isX86 ? 'x86' : null;
 
@@ -80,11 +89,11 @@ const handleInstall = async (): Promise<void> => {
     @apply max-w-sm;
   }
   .modal-content {
-    @apply p-4;
+    @apply p-4 pb-0;
     .modal-header {
       @apply flex items-center mb-6;
       .app-icon {
-        @apply w-16 h-16 mr-4 rounded-2xl overflow-hidden;
+        @apply w-20 h-20 mr-4 rounded-2xl overflow-hidden;
         img {
           @apply w-full h-full object-cover;
         }
@@ -100,7 +109,7 @@ const handleInstall = async (): Promise<void> => {
       }
     }
     .modal-actions {
-      @apply flex gap-3;
+      @apply flex gap-3 mt-4;
       .n-button {
         @apply flex-1;
       }
