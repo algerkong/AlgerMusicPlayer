@@ -53,6 +53,7 @@
         v-model:show="showMusic"
         name="每日推荐列表"
         :song-list="dayRecommendData?.dailySongs"
+        :cover="false"
       />
     </div>
   </n-scrollbar>

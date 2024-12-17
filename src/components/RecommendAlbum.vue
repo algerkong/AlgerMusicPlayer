@@ -20,7 +20,14 @@
         </div>
       </template>
     </div>
-    <MusicList v-model:show="showMusic" :name="albumName" :song-list="songList" />
+    <MusicList
+      v-model:show="showMusic"
+      :name="albumName"
+      :song-list="songList"
+      :cover="false"
+      :loading="loadingList"
+      :list-info="albumInfo"
+    />
   </div>
 </template>
 
@@ -41,15 +48,28 @@ const loadAlbumList = async () => {
 const showMusic = ref(false);
 const songList = ref([]);
 const albumName = ref('');
-
+const loadingList = ref(false);
+const albumInfo = ref<any>({});
 const handleClick = async (item: any) => {
+  songList.value = [];
+  albumInfo.value = {};
   albumName.value = item.name;
+  loadingList.value = true;
   showMusic.value = true;
   const res = await getAlbum(item.id);
   songList.value = res.data.songs.map((song: any) => {
     song.al.picUrl = song.al.picUrl || item.picUrl;
     return song;
   });
+  albumInfo.value = {
+    ...res.data.album,
+    creator: {
+      avatarUrl: res.data.album.artist.img1v1Url,
+      nickname: `${res.data.album.artist.name} - ${res.data.album.company}`,
+    },
+    description: res.data.album.description,
+  };
+  loadingList.value = false;
 };
 
 onMounted(() => {

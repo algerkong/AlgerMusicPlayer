@@ -25,7 +25,7 @@
         <div class="music-info">
           <div class="music-cover">
             <n-image
-              :src="getImgUrl(listInfo?.coverImgUrl, '300y300')"
+              :src="getImgUrl(cover ? listInfo?.coverImgUrl : displayedSongs[0]?.picUrl, '300y300')"
               class="cover-img"
               preview-disabled
               :class="setAnimationClass('animate__fadeIn')"
@@ -47,21 +47,23 @@
 
         <!-- 右侧歌曲列表 -->
         <div class="music-list-container">
-          <div v-loading="loading" class="music-list">
+          <div class="music-list">
             <n-scrollbar @scroll="handleScroll">
-              <div v-loading="loading || !songList.length" class="music-list-content">
-                <div
-                  v-for="(item, index) in displayedSongs"
-                  :key="item.id"
-                  class="double-item"
-                  :class="setAnimationClass('animate__bounceInUp')"
-                  :style="getItemAnimationDelay(index)"
-                >
-                  <song-item :item="formatDetail(item)" @play="handlePlay" />
+              <n-spin :show="loadingList || loading">
+                <div class="music-list-content">
+                  <div
+                    v-for="(item, index) in displayedSongs"
+                    :key="item.id"
+                    class="double-item"
+                    :class="setAnimationClass('animate__bounceInUp')"
+                    :style="getItemAnimationDelay(index)"
+                  >
+                    <song-item :item="formatDetail(item)" @play="handlePlay" />
+                  </div>
+                  <div v-if="isLoadingMore" class="loading-more">加载更多...</div>
+                  <play-bottom />
                 </div>
-                <div v-if="isLoadingMore" class="loading-more">加载更多...</div>
-                <play-bottom />
-              </div>
+              </n-spin>
             </n-scrollbar>
           </div>
           <play-bottom />
@@ -82,22 +84,31 @@ import PlayBottom from './common/PlayBottom.vue';
 
 const store = useStore();
 
-const props = defineProps<{
-  show: boolean;
-  name: string;
-  songList: any[];
-  loading?: boolean;
-  listInfo?: {
-    trackIds: { id: number }[];
-    [key: string]: any;
-  };
-}>();
+const props = withDefaults(
+  defineProps<{
+    show: boolean;
+    name: string;
+    songList: any[];
+    loading?: boolean;
+    listInfo?: {
+      trackIds: { id: number }[];
+      [key: string]: any;
+    };
+    cover?: boolean;
+  }>(),
+  {
+    loading: false,
+    cover: true,
+  },
+);
+
 const emit = defineEmits(['update:show', 'update:loading']);
 
 const page = ref(0);
 const pageSize = 20;
 const isLoadingMore = ref(false);
 const displayedSongs = ref<any[]>([]);
+const loadingList = ref(false);
 
 // 计算总数
 const total = computed(() => {
@@ -166,6 +177,7 @@ const loadMoreSongs = async () => {
     console.error('加载歌曲失败:', error);
   } finally {
     isLoadingMore.value = false;
+    loadingList.value = false;
   }
 };
 
@@ -185,6 +197,16 @@ const handleScroll = (e: Event) => {
   }
 };
 
+watch(
+  () => props.show,
+  (newVal) => {
+    loadingList.value = newVal;
+    if (!props.cover) {
+      loadingList.value = false;
+    }
+  },
+);
+
 // 监听 songList 变化，重置分页状态
 watch(
   () => props.songList,
@@ -194,6 +216,7 @@ watch(
     if (newSongs.length > pageSize) {
       page.value = 1;
     }
+    loadingList.value = false;
   },
   { immediate: true },
 );
@@ -253,6 +276,10 @@ watch(
 
   &-list {
     @apply flex-grow min-h-0;
+
+    &-content {
+      @apply min-h-[calc(80vh-60px)];
+    }
 
     :deep(.n-virtual-list__scroll) {
       scrollbar-width: none;
