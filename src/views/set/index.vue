@@ -59,8 +59,12 @@
           isElectron ? '保存并重启' : '保存'
         }}</n-button>
       </div>
-
-      <div class="p-6 bg-black rounded-lg shadow-lg mt-10">
+      <div class="mt-10">
+        <p class="text-sm text-gray-100 text-center cursor-pointer hover:text-green-500" @click="copyQQ">
+          QQ群：789288579
+        </p>
+      </div>
+      <div class="p-6 bg-black rounded-lg shadow-lg">
         <div class="text-gray-100 text-base text-center">支持作者</div>
         <div class="flex gap-60">
           <div class="flex flex-col items-center gap-2 cursor-none hover:scale-[2] transition-all z-10 bg-black">
@@ -90,6 +94,11 @@ import { setAnimationClass } from '@/utils';
 defineOptions({
   name: 'Setting',
 });
+const message = useMessage();
+const copyQQ = () => {
+  navigator.clipboard.writeText('789288579');
+  message.success('已复制到剪贴板');
+};
 
 const isElectron = ref((window as any).electronAPI !== undefined);
 const router = useRouter();

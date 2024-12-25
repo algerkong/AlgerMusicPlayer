@@ -23,6 +23,12 @@
             <span class="text-sm text-gray-100">微信支付</span>
           </div>
         </div>
+
+        <div class="mt-4">
+          <p class="text-sm text-gray-100 text-center cursor-pointer hover:text-green-500" @click="copyQQ">
+            QQ群：789288579
+          </p>
+        </div>
       </div>
     </n-popover>
   </div>
@@ -30,6 +36,12 @@
 
 <script setup>
 import { NButton, NImage, NPopover } from 'naive-ui';
+
+const message = useMessage();
+const copyQQ = () => {
+  navigator.clipboard.writeText('789288579');
+  message.success('已复制到剪贴板');
+};
 
 defineProps({
   alipayQR: {

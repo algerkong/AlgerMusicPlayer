@@ -3,6 +3,22 @@
     <div class="mv-list-title">
       <h2>推荐MV</h2>
     </div>
+    <div class="play-list-type">
+      <n-scrollbar x-scrollable>
+        <div class="categories-wrapper">
+          <span
+            v-for="(category, index) in categories"
+            :key="category.value"
+            class="play-list-type-item"
+            :class="[setAnimationClass('animate__bounceIn'), { active: selectedCategory === category.value }]"
+            :style="getAnimationDelay(index)"
+            @click="selectedCategory = category.value"
+          >
+            {{ category.label }}
+          </span>
+        </div>
+      </n-scrollbar>
+    </div>
     <n-scrollbar :size="100" @scroll="handleScroll">
       <div v-loading="initLoading" class="mv-list-content" :class="setAnimationClass('animate__bounceInLeft')">
         <div
@@ -10,7 +26,7 @@
           :key="item.id"
           class="mv-item"
           :class="setAnimationClass('animate__bounceIn')"
-          :style="getItemAnimationDelay(index)"
+          :style="getAnimationDelay(index)"
         >
           <div class="mv-item-img" @click="handleShowMv(item, index)">
             <n-image class="mv-item-img-img" :src="getImgUrl(item.cover, '320y180')" lazy preview-disabled />
@@ -38,10 +54,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 
-import { getTopMv } from '@/api/mv';
+import { getAllMv, getTopMv } from '@/api/mv';
 import MvPlayer from '@/components/MvPlayer.vue';
 import { audioService } from '@/services/audioService';
 import { IMvItem } from '@/type/mv';
@@ -62,10 +78,26 @@ const offset = ref(0);
 const limit = ref(42);
 const hasMore = ref(true);
 
-const getItemAnimationDelay = (index: number) => {
-  const currentPageIndex = index % limit.value;
-  return setAnimationDelay(currentPageIndex, 30);
-};
+const categories = [
+  { label: '全部', value: '全部' },
+  { label: '内地', value: '内地' },
+  { label: '港台', value: '港台' },
+  { label: '欧美', value: '欧美' },
+  { label: '日本', value: '日本' },
+  { label: '韩国', value: '韩国' },
+];
+const selectedCategory = ref('全部');
+
+watch(selectedCategory, async () => {
+  offset.value = 0;
+  mvList.value = [];
+  hasMore.value = true;
+  await loadMvList();
+});
+
+const getAnimationDelay = computed(() => {
+  return (index: number) => setAnimationDelay(index, 30);
+});
 
 onMounted(async () => {
   await loadMvList();
@@ -116,26 +148,26 @@ const playNextMv = async (setLoading: (value: boolean) => void) => {
 };
 
 const loadMvList = async () => {
-  if (!hasMore.value || loadingMore.value) return;
-
-  if (offset.value === 0) {
-    initLoading.value = true;
-  } else {
-    loadingMore.value = true;
-  }
-
   try {
-    const res = await getTopMv(limit.value, offset.value);
+    if (!hasMore.value || loadingMore.value) return;
     if (offset.value === 0) {
-      mvList.value = res.data.data;
+      initLoading.value = true;
     } else {
-      mvList.value.push(...res.data.data);
+      loadingMore.value = true;
     }
 
-    hasMore.value = res.data.data.length === limit.value;
+    const params = {
+      limit: limit.value,
+      offset: offset.value,
+      area: selectedCategory.value === '全部' ? '' : selectedCategory.value,
+    };
+
+    const res = selectedCategory.value === '全部' ? await getTopMv(params) : await getAllMv(params);
+
+    const { data } = res.data;
+    mvList.value.push(...data);
+    hasMore.value = data.length === limit.value;
     offset.value += limit.value;
-  } catch (error) {
-    console.error('加载MV失败:', error);
   } finally {
     initLoading.value = false;
     loadingMore.value = false;
@@ -157,10 +189,35 @@ const isPrevDisabled = computed(() => currentIndex.value === 0);
 
 <style scoped lang="scss">
 .mv-list {
-  @apply relative h-full w-full;
+  @apply h-full flex-1 flex flex-col overflow-hidden;
 
   &-title {
     @apply text-xl font-bold pb-2;
+  }
+
+  // 添加歌单分类样式
+  .play-list-type {
+    .title {
+      @apply text-lg font-bold mb-4;
+    }
+
+    .categories-wrapper {
+      @apply flex items-center py-2 pb-4;
+      white-space: nowrap;
+    }
+
+    &-item {
+      @apply py-2 px-3 mr-3 inline-block border border-gray-700 rounded-xl cursor-pointer transition-all duration-300;
+      background-color: #1a1a1a;
+
+      &:hover {
+        @apply bg-green-600/50;
+      }
+
+      &.active {
+        @apply bg-green-600 border-green-500;
+      }
+    }
   }
 
   &-content {

@@ -10,17 +10,15 @@
           <search-bar />
           <!-- 主页面路由 -->
           <div class="main-content" :native-scrollbar="false">
-            <n-message-provider>
-              <router-view
-                v-slot="{ Component }"
-                class="main-page"
-                :class="route.meta.noScroll && !isMobile ? 'pr-3' : ''"
-              >
-                <keep-alive :include="keepAliveInclude">
-                  <component :is="Component" />
-                </keep-alive>
-              </router-view>
-            </n-message-provider>
+            <router-view
+              v-slot="{ Component }"
+              class="main-page"
+              :class="route.meta.noScroll && !isMobile ? 'pr-3' : ''"
+            >
+              <keep-alive :include="keepAliveInclude">
+                <component :is="Component" />
+              </keep-alive>
+            </router-view>
           </div>
           <play-bottom height="5rem" />
           <app-menu v-if="isMobile" class="menu" :menus="menus" />

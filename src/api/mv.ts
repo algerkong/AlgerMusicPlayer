@@ -2,15 +2,27 @@ import { IData } from '@/type';
 import { IMvItem, IMvUrlData } from '@/type/mv';
 import request from '@/utils/request';
 
+interface MvParams {
+  limit?: number;
+  offset?: number;
+  area?: string;
+}
+
 // 获取 mv 排行
-export const getTopMv = (limit = 30, offset = 0) => {
+export const getTopMv = (params: MvParams) => {
   return request({
     url: '/mv/all',
     method: 'get',
-    params: {
-      limit,
-      offset,
-    },
+    params,
+  });
+};
+
+// 获取所有mv
+export const getAllMv = (params: MvParams) => {
+  return request({
+    url: '/mv/all',
+    method: 'get',
+    params,
   });
 };
 
