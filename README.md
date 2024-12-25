@@ -16,6 +16,8 @@
 ## 预览地址
 [http://mc.alger.fun/](http://mc.alger.fun/)
 
+QQ群:789288579
+
 ## 软件截图
 ![首页](./docs/img/image-7.png)
 ![歌词](./docs/img/image-6.png)
