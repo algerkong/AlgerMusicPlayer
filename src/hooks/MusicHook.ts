@@ -111,6 +111,22 @@ export const audioServiceOn = (audio: typeof audioService) => {
     if (store.state.playMode === 1) {
       // 单曲循环模式
       audio.getCurrentSound()?.play();
+    } else if (store.state.playMode === 2) {
+      // 随机播放模式
+      const { playList } = store.state;
+      if (playList.length <= 1) {
+        // 如果播放列表只有一首歌或为空,则重新播放当前歌曲
+        audio.getCurrentSound()?.play();
+      } else {
+        // 随机选择一首不同的歌
+        let randomIndex;
+        do {
+          randomIndex = Math.floor(Math.random() * playList.length);
+        } while (randomIndex === store.state.playListIndex && playList.length > 1);
+
+        store.state.playListIndex = randomIndex;
+        store.commit('setPlay', playList[randomIndex]);
+      }
     } else {
       // 列表循环模式
       store.commit('nextPlay');
@@ -229,7 +245,7 @@ export const useLyricProgress = () => {
   };
 };
 
-// 设置���前播放时间
+// 设置当前播放时间
 export const setAudioTime = (index: number) => {
   const currentSound = sound.value;
   if (!currentSound) return;

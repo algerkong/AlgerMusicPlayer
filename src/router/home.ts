@@ -59,7 +59,7 @@ const layoutRouter = [
     name: 'history',
     component: () => import('@/views/historyAndFavorite/index.vue'),
     meta: {
-      title: '我的收藏和历史',
+      title: '收藏历史',
       icon: 'icon-a-TicketStar',
       keepAlive: true,
     },

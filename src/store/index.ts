@@ -102,7 +102,7 @@ const mutations = {
     localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
   },
   togglePlayMode(state: State) {
-    state.playMode = state.playMode === 0 ? 1 : 0;
+    state.playMode = (state.playMode + 1) % 3;
     localStorage.setItem('playMode', JSON.stringify(state.playMode));
   },
   toggleTheme(state: State) {

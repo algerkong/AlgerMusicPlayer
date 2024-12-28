@@ -9,7 +9,7 @@
     <div id="drawer-target">
       <div class="drawer-back"></div>
       <div class="music-img" :style="{ color: textColors.theme === 'dark' ? '#000000' : '#ffffff' }">
-        <n-image ref="PicImgRef" :src="getImgUrl(playMusic?.picUrl, '300y300')" class="img" lazy preview-disabled />
+        <n-image ref="PicImgRef" :src="getImgUrl(playMusic?.picUrl, '500y500')" class="img" lazy preview-disabled />
         <div>
           <div class="music-content-name">{{ playMusic.name }}</div>
           <div class="music-content-singer">

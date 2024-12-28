@@ -25,24 +25,24 @@
         <div class="music-info">
           <div class="music-cover">
             <n-image
-              :src="getImgUrl(cover ? listInfo?.coverImgUrl : displayedSongs[0]?.picUrl, '300y300')"
+              :src="getImgUrl(cover ? listInfo?.coverImgUrl : displayedSongs[0]?.picUrl, '500y500')"
               class="cover-img"
               preview-disabled
               :class="setAnimationClass('animate__fadeIn')"
               object-fit="cover"
             />
           </div>
-          <div class="music-detail">
-            <div v-if="listInfo?.creator" class="creator-info">
-              <n-avatar round :size="24" :src="getImgUrl(listInfo.creator.avatarUrl, '50y50')" />
-              <span class="creator-name">{{ listInfo.creator.nickname }}</span>
-            </div>
-            <div v-if="listInfo?.description" class="music-desc">
-              <n-ellipsis :line-clamp="isMobile ? 3 : 10">
-                {{ listInfo.description }}
-              </n-ellipsis>
-            </div>
+          <div v-if="listInfo?.creator" class="creator-info">
+            <n-avatar round :size="24" :src="getImgUrl(listInfo.creator.avatarUrl, '50y50')" />
+            <span class="creator-name">{{ listInfo.creator.nickname }}</span>
           </div>
+
+          <n-scrollbar style="max-height: 200">
+            <div v-if="listInfo?.description" class="music-desc">
+              {{ listInfo.description }}
+            </div>
+            <play-bottom />
+          </n-scrollbar>
         </div>
 
         <!-- 右侧歌曲列表 -->
@@ -248,25 +248,21 @@ watch(
     @apply w-[25%] flex-shrink-0 pr-8 flex flex-col;
 
     .music-cover {
-      @apply w-full aspect-square rounded-2xl overflow-hidden mb-4;
+      @apply w-full aspect-square rounded-2xl overflow-hidden mb-4 min-h-[250px];
       .cover-img {
         @apply w-full h-full object-cover;
       }
     }
 
-    .music-detail {
-      @apply flex flex-col flex-grow;
-
-      .creator-info {
-        @apply flex items-center mb-4;
-        .creator-name {
-          @apply ml-2 text-gray-700 dark:text-gray-300;
-        }
+    .creator-info {
+      @apply flex items-center mb-4;
+      .creator-name {
+        @apply ml-2 text-gray-700 dark:text-gray-300;
       }
+    }
 
-      .music-desc {
-        @apply text-sm text-gray-600 dark:text-gray-400 leading-relaxed;
-      }
+    .music-desc {
+      @apply text-sm text-gray-600 dark:text-gray-400 leading-relaxed pr-4;
     }
   }
 

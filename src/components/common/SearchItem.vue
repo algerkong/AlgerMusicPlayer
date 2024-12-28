@@ -1,7 +1,7 @@
 <template>
   <div class="search-item" :class="item.type" @click="handleClick">
     <div class="search-item-img">
-      <n-image :src="getImgUrl(item.picUrl, '320y180')" lazy preview-disabled />
+      <n-image :src="getImgUrl(item.picUrl, item.type === 'mv' ? '320y180' : '100y100')" lazy preview-disabled />
       <div v-if="item.type === 'mv'" class="play">
         <i class="iconfont icon icon-play"></i>
       </div>
@@ -17,6 +17,7 @@
       :name="item.name"
       :song-list="songList"
       :list-info="listInfo"
+      :cover="false"
     />
     <mv-player v-if="item.type === 'mv'" v-model:show="showPop" :current-mv="getCurrentMv()" no-list />
   </div>
@@ -64,6 +65,14 @@ const handleClick = async () => {
       song.al.picUrl = song.al.picUrl || props.item.picUrl;
       return song;
     });
+    listInfo.value = {
+      ...res.data.album,
+      creator: {
+        avatarUrl: res.data.album.artist.img1v1Url,
+        nickname: `${res.data.album.artist.name} - ${res.data.album.company}`,
+      },
+      description: res.data.album.description,
+    };
   }
 
   if (props.item.type === 'playlist') {
@@ -84,7 +93,7 @@ const handleClick = async () => {
 
 <style scoped lang="scss">
 .search-item {
-  @apply rounded-3xl p-3 flex items-center hover:bg-gray-800 transition cursor-pointer;
+  @apply rounded-3xl p-3 flex items-center hover:bg-light-200 dark:hover:bg-gray-800 transition cursor-pointer;
   margin: 0 10px;
   .search-item-img {
     @apply w-12 h-12 mr-4 rounded-2xl overflow-hidden;

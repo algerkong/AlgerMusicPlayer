@@ -1,9 +1,9 @@
 <template>
   <div>
     <!-- menu -->
-    <div class="app-menu">
+    <div class="app-menu" :class="{ 'app-menu-expanded': isText }">
       <div class="app-menu-header">
-        <div class="app-menu-logo">
+        <div class="app-menu-logo" @click="isText = !isText">
           <img src="/icon.png" class="w-9 h-9" alt="logo" />
         </div>
       </div>
@@ -11,7 +11,9 @@
         <div v-for="(item, index) in menus" :key="item.path" class="app-menu-item">
           <router-link class="app-menu-item-link" :to="item.path">
             <i class="iconfont app-menu-item-icon" :style="iconStyle(index)" :class="item.meta.icon"></i>
-            <span v-if="isText" class="app-menu-item-text ml-3">{{ item.meta.title }}</span>
+            <span v-if="isText" class="app-menu-item-text ml-3" :class="isChecked(index) ? 'text-green-500' : ''">{{
+              item.meta.title
+            }}</span>
           </router-link>
         </div>
       </div>
@@ -23,10 +25,6 @@
 import { useRoute } from 'vue-router';
 
 const props = defineProps({
-  isText: {
-    type: Boolean,
-    default: false,
-  },
   size: {
     type: String,
     default: '26px',
@@ -54,24 +52,40 @@ watch(
   },
 );
 
+const isChecked = (index: number) => {
+  return path.value === props.menus[index].path;
+};
+
 const iconStyle = (index: number) => {
   const style = {
     fontSize: props.size,
-    color: path.value === props.menus[index].path ? props.selectColor : props.color,
+    color: isChecked(index) ? props.selectColor : props.color,
   };
   return style;
 };
+
+const isText = ref(false);
 </script>
 
 <style lang="scss" scoped>
 .app-menu {
-  @apply flex-col items-center justify-center px-6 bg-light dark:bg-black;
-  max-width: 100px;
+  @apply flex-col items-center justify-center bg-light dark:bg-black transition-all duration-300 w-[100px] px-1;
+}
+
+.app-menu-expanded {
+  @apply w-[160px];
+  .app-menu-item {
+    @apply hover:bg-gray-100 dark:hover:bg-gray-800 rounded mr-4;
+  }
 }
 
 .app-menu-item-link,
 .app-menu-header {
-  @apply flex items-center justify-center;
+  @apply flex items-center w-[200px] overflow-hidden ml-2 px-5;
+}
+
+.app-menu-header {
+  @apply ml-1;
 }
 
 .app-menu-item-link {
@@ -82,7 +96,7 @@ const iconStyle = (index: number) => {
   @apply transition-all duration-200 text-gray-500 dark:text-gray-400;
 
   &:hover {
-    @apply text-green-500 scale-105;
+    @apply text-green-500 scale-105 !important;
   }
 }
 

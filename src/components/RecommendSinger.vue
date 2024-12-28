@@ -10,7 +10,7 @@
           :style="setAnimationDelay(0, 100)"
         >
           <div
-            :style="setBackgroundImg(getImgUrl(dayRecommendData?.dailySongs[0].al.picUrl, '300y300'))"
+            :style="setBackgroundImg(getImgUrl(dayRecommendData?.dailySongs[0].al.picUrl, '500y500'))"
             class="recommend-singer-item-bg"
           ></div>
           <div
@@ -34,7 +34,7 @@
           :class="setAnimationClass('animate__backInRight')"
           :style="setAnimationDelay(index + 1, 100)"
         >
-          <div :style="setBackgroundImg(getImgUrl(item.picUrl, '300y300'))" class="recommend-singer-item-bg"></div>
+          <div :style="setBackgroundImg(getImgUrl(item.picUrl, '500y500'))" class="recommend-singer-item-bg"></div>
           <div class="recommend-singer-item-count p-2 text-base text-gray-200 z-10">{{ item.musicSize }}首</div>
           <div class="recommend-singer-item-info z-10">
             <div class="recommend-singer-item-info-play" @click="toSearchSinger(item.name)">

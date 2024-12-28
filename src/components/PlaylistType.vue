@@ -136,7 +136,7 @@ onMounted(() => {
 }
 .play-list-type {
   width: 250px;
-  @apply mx-6;
+  @apply mr-4;
   &-item,
   &-showall {
     @apply bg-light dark:bg-black text-gray-900 dark:text-white;

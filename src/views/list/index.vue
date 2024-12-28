@@ -2,8 +2,8 @@
   <div class="list-page">
     <!-- 修改歌单分类部分 -->
     <div class="play-list-type">
-      <n-scrollbar x-scrollable>
-        <div class="categories-wrapper">
+      <n-scrollbar ref="scrollbarRef" x-scrollable>
+        <div class="categories-wrapper" @wheel.prevent="handleWheel">
           <span
             v-for="(item, index) in playlistCategory?.sub"
             :key="item.name"
@@ -122,7 +122,7 @@ const loadList = async (type: string, isLoadMore = false) => {
 
   try {
     const params = {
-      cat: type || '',
+      cat: type === '每日推荐' ? '' : type,
       limit: TOTAL_ITEMS,
       offset: page.value * TOTAL_ITEMS,
     };
@@ -179,6 +179,16 @@ const handleClickPlaylistType = (type: string) => {
   listTitle.value = type;
   loading.value = true;
   loadList(type);
+};
+
+const scrollbarRef = ref();
+
+const handleWheel = (e: WheelEvent) => {
+  const scrollbar = scrollbarRef.value;
+  if (scrollbar) {
+    const delta = e.deltaY || e.detail;
+    scrollbar.scrollBy({ left: delta });
+  }
 };
 
 onMounted(() => {

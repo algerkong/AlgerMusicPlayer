@@ -20,7 +20,7 @@
       <n-slider v-model:value="timeSlider" :step="1" :max="allTime" :min="0" :format-tooltip="formatTooltip"></n-slider>
     </div>
     <div class="play-bar-img-wrapper" @click="setMusicFull">
-      <n-image :src="getImgUrl(playMusic?.picUrl, '300y300')" class="play-bar-img" lazy preview-disabled />
+      <n-image :src="getImgUrl(playMusic?.picUrl, '500y500')" class="play-bar-img" lazy preview-disabled />
       <div class="hover-arrow">
         <div class="hover-content">
           <!-- <i class="ri-arrow-up-s-line text-3xl" :class="{ 'ri-arrow-down-s-line': musicFullVisible }"></i> -->
@@ -202,10 +202,28 @@ const mute = () => {
 // 播放模式
 const playMode = computed(() => store.state.playMode);
 const playModeIcon = computed(() => {
-  return playMode.value === 0 ? 'ri-repeat-2-line' : 'ri-repeat-one-line';
+  switch (playMode.value) {
+    case 0:
+      return 'ri-repeat-2-line';
+    case 1:
+      return 'ri-repeat-one-line';
+    case 2:
+      return 'ri-shuffle-line';
+    default:
+      return 'ri-repeat-2-line';
+  }
 });
 const playModeText = computed(() => {
-  return playMode.value === 0 ? '列表循环' : '单曲循环';
+  switch (playMode.value) {
+    case 0:
+      return '列表循环';
+    case 1:
+      return '单曲循环';
+    case 2:
+      return '随机播放';
+    default:
+      return '列表循环';
+  }
 });
 
 // 切换播放模式

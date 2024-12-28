@@ -92,9 +92,10 @@ watch(selectedCategory, async () => {
   await loadMvList();
 });
 
-const getAnimationDelay = computed(() => {
-  return (index: number) => setAnimationDelay(index, 30);
-});
+const getAnimationDelay = (index: number) => {
+  const currentPageIndex = index % limit.value;
+  return setAnimationDelay(currentPageIndex, 30);
+};
 
 onMounted(async () => {
   await loadMvList();

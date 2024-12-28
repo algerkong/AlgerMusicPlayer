@@ -3,7 +3,7 @@
     <n-image
       v-if="item.picUrl"
       ref="songImg"
-      :src="getImgUrl(item.picUrl, '40y40')"
+      :src="getImgUrl(item.picUrl, '100y100')"
       class="song-item-img"
       preview-disabled
       :img-props="{
