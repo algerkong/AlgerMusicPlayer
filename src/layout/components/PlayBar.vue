@@ -6,6 +6,15 @@
   <div
     class="music-play-bar"
     :class="setAnimationClass('animate__bounceInUp') + ' ' + (musicFullVisible ? 'play-bar-opcity' : '')"
+    :style="{
+      color: musicFullVisible
+        ? textColors.theme === 'dark'
+          ? '#000000'
+          : '#ffffff'
+        : store.state.theme === 'dark'
+          ? '#ffffff'
+          : '#000000',
+    }"
   >
     <div class="music-time custom-slider">
       <n-slider v-model:value="timeSlider" :step="1" :max="allTime" :min="0" :format-tooltip="formatTooltip"></n-slider>
@@ -117,7 +126,7 @@ import { useTemplateRef } from 'vue';
 import { useStore } from 'vuex';
 
 import SongItem from '@/components/common/SongItem.vue';
-import { allTime, isElectron, isLyricWindowOpen, nowTime, openLyric, sound } from '@/hooks/MusicHook';
+import { allTime, isElectron, isLyricWindowOpen, nowTime, openLyric, sound, textColors } from '@/hooks/MusicHook';
 import type { SongResult } from '@/type/music';
 import { getImgUrl, secondToMinute, setAnimationClass } from '@/utils';
 
@@ -270,26 +279,26 @@ const openLyricWindow = () => {
 
 .music-play-bar {
   @apply h-20 w-full absolute bottom-0 left-0 flex items-center box-border px-6 py-2 pt-3;
+  @apply bg-light dark:bg-dark shadow-2xl shadow-gray-300;
   z-index: 9999;
-  box-shadow: 0px 0px 10px 2px rgba(203, 203, 203, 0.034);
-  background-color: #212121;
   animation-duration: 0.5s !important;
+
   .music-content {
     width: 160px;
     @apply ml-4;
 
     &-title {
-      @apply text-base text-white;
+      @apply text-base;
     }
 
     &-name {
-      @apply text-xs mt-1 text-gray-100;
+      @apply text-xs mt-1 opacity-80;
     }
   }
 }
 
 .play-bar-opcity {
-  @apply bg-transparent;
+  @apply bg-transparent !important;
   box-shadow: 0 0 20px 5px #0000001d;
 }
 
@@ -301,11 +310,13 @@ const openLyricWindow = () => {
   @apply mx-6 flex-1 flex justify-center;
 
   .iconfont {
-    @apply text-2xl hover:text-green-500 transition;
+    @apply text-2xl transition;
+    @apply hover:text-green-500;
   }
 
   .icon {
-    @apply text-3xl hover:text-white;
+    @apply text-3xl;
+    @apply hover:text-green-500;
   }
 
   @apply flex items-center;
@@ -315,8 +326,8 @@ const openLyricWindow = () => {
   }
 
   &-play {
-    background-color: #ffffff20;
-    @apply flex justify-center items-center w-20 h-12 rounded-full mx-4 hover:bg-[#ffffff40] transition;
+    @apply flex justify-center items-center w-20 h-12 rounded-full mx-4 transition text-gray-500;
+    @apply bg-gray-100 bg-opacity-60 hover:bg-gray-200;
   }
 }
 
@@ -329,14 +340,17 @@ const openLyricWindow = () => {
   }
   .volume-icon {
     @apply cursor-pointer;
+  }
 
-    .iconfont {
-      @apply text-2xl hover:text-green-500 transition;
-    }
+  .iconfont {
+    @apply text-2xl transition;
+    @apply hover:text-green-500;
   }
 
   .volume-slider {
-    @apply absolute opacity-0 invisible transition-all duration-300 bottom-[30px] left-1/2 -translate-x-1/2 h-[180px] px-2 py-4 bg-gray-800 bg-opacity-80 rounded-xl;
+    @apply absolute opacity-0 invisible transition-all duration-300 bottom-[30px] left-1/2 -translate-x-1/2 h-[180px] px-2 py-4 rounded-xl;
+    @apply bg-light dark:bg-gray-800;
+    @apply border border-gray-200 dark:border-gray-700;
   }
 }
 
@@ -344,7 +358,8 @@ const openLyricWindow = () => {
   @apply flex items-center mx-4;
 
   .iconfont {
-    @apply text-2xl hover:text-green-500 transition cursor-pointer m-4;
+    @apply text-2xl transition cursor-pointer m-4;
+    @apply hover:text-green-500;
   }
 }
 
@@ -355,7 +370,8 @@ const openLyricWindow = () => {
     @apply relative rounded-3xl overflow-hidden py-2;
     &-back {
       backdrop-filter: blur(20px);
-      @apply absolute top-0 left-0 w-full h-full bg-gray-800 bg-opacity-75;
+      @apply absolute top-0 left-0 w-full h-full;
+      @apply bg-light dark:bg-black bg-opacity-75;
     }
     &-content {
       @apply mx-2;
@@ -395,14 +411,15 @@ const openLyricWindow = () => {
   }
 }
 
-// 添加自定义 slider 样式
+// 自定义滑块样式
 .custom-slider {
   :deep(.n-slider) {
     --n-rail-height: 4px;
-    --n-rail-color: rgba(255, 255, 255, 0.2);
-    --n-fill-color: var(--primary-color);
+    --n-rail-color: theme('colors.gray.200');
+    --n-rail-color-dark: theme('colors.gray.700');
+    --n-fill-color: theme('colors.green.500');
     --n-handle-size: 12px;
-    --n-handle-color: var(--primary-color);
+    --n-handle-color: theme('colors.green.500');
 
     &.n-slider--vertical {
       height: 100%;
@@ -425,6 +442,7 @@ const openLyricWindow = () => {
 
     .n-slider-rail {
       @apply overflow-hidden transition-all duration-200;
+      @apply bg-gray-500 dark:bg-dark-300 bg-opacity-10 !important;
     }
 
     .n-slider-handle {
@@ -436,10 +454,6 @@ const openLyricWindow = () => {
       opacity: 1;
     }
   }
-}
-
-:root {
-  --primary-color: #18a058;
 }
 
 .play-bar-img-wrapper {
@@ -478,7 +492,7 @@ const openLyricWindow = () => {
 }
 
 .like-active {
-  @apply text-red-600;
+  @apply text-red-500 hover:text-red-600 !important;
 }
 
 .icon-loop,

@@ -549,226 +549,57 @@ const isMobile = computed(() => store.state.isMobile);
 
 <style scoped lang="scss">
 .mv-detail {
-  @apply w-full h-full bg-black relative;
+  @apply h-full bg-light dark:bg-black;
 
-  // 添加横屏模式支持
-  @media screen and (orientation: landscape) {
-    height: 100% !important;
-    width: 100% !important;
+  &-title {
+    @apply fixed top-0 left-0 right-0 p-4 z-10 transition-opacity duration-300;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
+
+    .title {
+      @apply text-white text-lg font-bold;
+    }
+  }
+}
+
+.video-container {
+  @apply h-full w-full relative;
+
+  .video-player {
+    @apply h-full w-full object-contain bg-black;
   }
 
-  .video-container {
-    @apply w-full h-full relative;
-    transition: cursor 0.3s ease;
-
-    // 移动端适配
-    @media (max-width: 768px) {
-      .custom-controls {
-        .controls-main {
-          @apply flex-wrap gap-2 justify-center;
-
-          .left-controls,
-          .right-controls {
-            @apply w-full justify-center;
-          }
-
-          .time-display {
-            @apply order-first w-full text-center mb-2;
-          }
-        }
-      }
-
-      // 调整标题样式
-      .mv-detail-title {
-        .title {
-          @apply text-base max-w-full;
-        }
-      }
-
-      // 调整进度条
-      .progress-bar {
-        @apply mb-2;
-      }
+  .play-hint {
+    @apply absolute inset-0 flex items-center justify-center bg-black bg-opacity-50;
+    .n-button {
+      @apply text-white hover:text-green-500 transition-colors;
     }
+  }
 
-    &.cursor-hidden {
-      * {
-        cursor: none !important;
-      }
+  .custom-controls {
+    @apply absolute bottom-0 left-0 right-0 p-4 transition-opacity duration-300;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
 
-      // 控制栏区域保持鼠标可见
-      .custom-controls {
-        * {
-          cursor: default !important;
-        }
+    .controls-main {
+      @apply flex justify-between items-center;
+
+      .left-controls,
+      .right-controls {
+        @apply flex items-center gap-2;
 
         .n-button {
-          cursor: pointer !important;
-        }
-
-        .n-slider {
-          cursor: pointer !important;
-        }
-      }
-    }
-
-    &:fullscreen,
-    &:-webkit-full-screen,
-    &:-moz-full-screen,
-    &:-ms-fullscreen {
-      background: black;
-      width: 100%;
-      height: 100%;
-
-      // 确保全屏时标题栏正确显示
-      .mv-detail-title {
-        @apply px-8 py-6;
-
-        .title {
-          @apply text-xl;
-        }
-      }
-
-      // 确保全屏时控制栏正确显示
-      .custom-controls {
-        padding: 20px 24px;
-      }
-    }
-
-    &::after {
-      content: '';
-      @apply absolute inset-0 bg-black opacity-0 transition-opacity duration-200;
-      pointer-events: none;
-    }
-
-    &:active::after {
-      @apply opacity-10;
-    }
-
-    video {
-      @apply w-full h-full;
-    }
-
-    .custom-controls {
-      @apply absolute bottom-0 left-0 w-full transition-opacity duration-300 ease-in-out;
-      background: linear-gradient(0deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
-      padding: 16px 20px;
-
-      &.controls-hidden {
-        opacity: 0;
-        pointer-events: none;
-      }
-
-      .progress-bar {
-        @apply mb-4;
-
-        .progress-rail {
-          @apply relative w-full h-full;
-
-          .progress-buffer {
-            @apply absolute h-full bg-gray-600 rounded-full;
-            transition: width 0.2s ease;
-          }
-        }
-      }
-
-      .controls-main {
-        @apply flex justify-between items-center;
-
-        .left-controls,
-        .right-controls {
-          @apply flex items-center gap-4;
+          @apply text-white hover:text-green-500 transition-colors;
         }
 
         .time-display {
-          @apply text-sm text-white ml-2;
-        }
-
-        .volume-control {
-          @apply flex items-center gap-2;
-
-          .volume-slider {
-            width: 80px;
-          }
-        }
-
-        .n-button {
-          @apply text-white;
-
-          &:hover {
-            @apply text-green-400;
-          }
-        }
-      }
-    }
-
-    .play-hint {
-      @apply absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 cursor-pointer;
-      z-index: 10;
-
-      .n-button {
-        @apply text-white opacity-80 transform transition-all duration-300;
-
-        &:hover {
-          @apply opacity-100 scale-110;
+          @apply text-white text-sm ml-4;
         }
       }
     }
   }
-
-  .mv-detail-title {
-    @apply absolute w-full left-0 top-0 px-6 py-4 transition-opacity duration-300 z-50;
-    background: linear-gradient(180deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
-
-    &.title-hidden {
-      opacity: 0;
-    }
-
-    .title {
-      @apply text-white text-lg font-medium;
-      max-width: 80%;
-    }
-  }
 }
 
-.custom-slider {
-  :deep(.n-slider) {
-    --n-rail-height: 4px;
-    --n-rail-color: rgba(255, 255, 255, 0.2);
-    --n-fill-color: var(--primary-color);
-    --n-handle-size: 12px;
-    --n-handle-color: var(--primary-color);
-
-    &:hover {
-      --n-rail-height: 6px;
-      --n-handle-size: 14px;
-    }
-
-    .n-slider-rail {
-      @apply overflow-hidden;
-    }
-
-    .n-slider-handle {
-      @apply transition-opacity duration-200;
-      opacity: 0;
-    }
-
-    &:hover .n-slider-handle {
-      opacity: 1;
-    }
-  }
-}
-
-:root {
-  --primary-color: #18a058;
-}
-
-// 添加模式提示样式
 .mode-hint {
-  @apply absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2;
-  @apply flex flex-col items-center justify-center;
-  @apply bg-black bg-opacity-70 rounded-lg p-4;
-  z-index: 20;
+  @apply absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center;
 
   .mode-icon {
     @apply text-white mb-2;
@@ -779,7 +610,49 @@ const isMobile = computed(() => store.state.isMobile);
   }
 }
 
-// 添加过渡动画
+.custom-slider {
+  :deep(.n-slider) {
+    --n-rail-height: 4px;
+    --n-rail-color: rgba(255, 255, 255, 0.2);
+    --n-fill-color: #10b981;
+    --n-handle-size: 12px;
+    --n-handle-color: #10b981;
+  }
+}
+
+.progress-bar {
+  @apply mb-4;
+
+  .progress-rail {
+    @apply relative w-full h-1 bg-gray-600;
+
+    .progress-buffer {
+      @apply absolute top-0 left-0 h-full bg-gray-400;
+    }
+  }
+}
+
+.volume-control {
+  @apply flex items-center gap-2;
+
+  .volume-slider {
+    width: 100px;
+  }
+}
+
+.controls-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cursor-hidden {
+  cursor: none;
+}
+
+.title-hidden {
+  opacity: 0;
+}
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
@@ -788,80 +661,5 @@ const isMobile = computed(() => store.state.isMobile);
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
-}
-
-// 添加 tooltip 样式
-:deep(.n-tooltip) {
-  padding: 4px 8px;
-  font-size: 12px;
-}
-
-// 调左侧控制按钮的样式
-.left-controls {
-  @apply flex items-center gap-2;
-
-  .time-display {
-    @apply text-sm text-white ml-4; // 增加时间显示的左边距
-  }
-}
-
-// 可以添加按钮禁用状态的样式
-:deep(.n-button--disabled) {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-// 添加加载动画样式
-:deep(.n-spin) {
-  .n-spin-body {
-    @apply text-white;
-    width: 20px;
-    height: 20px;
-  }
-}
-
-// 添加视频播放器样式
-.video-player {
-  @apply w-full h-full cursor-pointer;
-}
-
-// 添加点击反馈效果
-.video-container {
-  &::after {
-    content: '';
-    @apply absolute inset-0 bg-black opacity-0 transition-opacity duration-200;
-    pointer-events: none;
-  }
-
-  &:active::after {
-    @apply opacity-10;
-  }
-}
-
-// 添加鼠标隐藏样式
-.video-container {
-  @apply w-full h-full relative;
-  transition: cursor 0.3s ease;
-
-  &.cursor-hidden {
-    * {
-      cursor: none !important;
-    }
-
-    // 控制栏区域保持鼠标可见
-    .custom-controls {
-      * {
-        cursor: default !important;
-      }
-
-      .n-button {
-        cursor: pointer !important;
-      }
-
-      .n-slider {
-        cursor: pointer !important;
-      }
-    }
-  }
 }
 </style>

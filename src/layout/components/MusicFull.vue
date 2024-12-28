@@ -8,7 +8,7 @@
   >
     <div id="drawer-target">
       <div class="drawer-back"></div>
-      <div class="music-img">
+      <div class="music-img" :style="{ color: textColors.theme === 'dark' ? '#000000' : '#ffffff' }">
         <n-image ref="PicImgRef" :src="getImgUrl(playMusic?.picUrl, '300y300')" class="img" lazy preview-disabled />
         <div>
           <div class="music-content-name">{{ playMusic.name }}</div>
@@ -56,7 +56,7 @@
 import { useDebounceFn } from '@vueuse/core';
 import { onBeforeUnmount, ref, watch } from 'vue';
 
-import { lrcArray, nowIndex, playMusic, setAudioTime, useLyricProgress } from '@/hooks/MusicHook';
+import { lrcArray, nowIndex, playMusic, setAudioTime, textColors, useLyricProgress } from '@/hooks/MusicHook';
 import { getImgUrl } from '@/utils';
 import { animateGradient, getHoverBackgroundColor, getTextColors } from '@/utils/linearColor';
 
@@ -67,9 +67,6 @@ const lrcContainer = ref<HTMLElement | null>(null);
 const currentBackground = ref('');
 const animationFrame = ref<number | null>(null);
 const isDark = ref(false);
-
-// 初始化 textColors
-const textColors = ref(getTextColors());
 
 const props = defineProps({
   musicFull: {

@@ -1,3 +1,80 @@
+<template>
+  <div class="user-page">
+    <div
+      v-if="userDetail"
+      class="left"
+      :class="setAnimationClass('animate__fadeInLeft')"
+      :style="{ backgroundImage: `url(${getImgUrl(user.backgroundUrl)})` }"
+    >
+      <div class="page">
+        <div class="user-name">{{ user.nickname }}</div>
+        <div class="user-info">
+          <n-avatar round :size="50" :src="getImgUrl(user.avatarUrl, '50y50')" />
+          <div class="user-info-list">
+            <div class="user-info-item">
+              <div class="label">{{ userDetail.profile.followeds }}</div>
+              <div>粉丝</div>
+            </div>
+            <div class="user-info-item">
+              <div class="label">{{ userDetail.profile.follows }}</div>
+              <div>关注</div>
+            </div>
+            <div class="user-info-item">
+              <div class="label">{{ userDetail.level }}</div>
+              <div>等级</div>
+            </div>
+          </div>
+        </div>
+        <div class="uesr-signature">{{ userDetail.profile.signature }}</div>
+
+        <div class="play-list" :class="setAnimationClass('animate__fadeInLeft')">
+          <div class="title">创建的歌单</div>
+          <n-scrollbar>
+            <div
+              v-for="(item, index) in playList"
+              :key="index"
+              class="play-list-item"
+              @click="showPlaylist(item.id, item.name)"
+            >
+              <n-image :src="getImgUrl(item.coverImgUrl, '50y50')" class="play-list-item-img" lazy preview-disabled />
+              <div class="play-list-item-info">
+                <div class="play-list-item-name">{{ item.name }}</div>
+                <div class="play-list-item-count">{{ item.trackCount }}首，播放{{ item.playCount }}次</div>
+              </div>
+            </div>
+            <play-bottom />
+          </n-scrollbar>
+        </div>
+      </div>
+    </div>
+    <div v-if="!isMobile" v-loading="infoLoading" class="right" :class="setAnimationClass('animate__fadeInRight')">
+      <div class="title">听歌排行</div>
+      <div class="record-list">
+        <n-scrollbar>
+          <div
+            v-for="(item, index) in recordList"
+            :key="item.id"
+            class="record-item"
+            :class="setAnimationClass('animate__bounceInUp')"
+            :style="setAnimationDelay(index, 25)"
+          >
+            <song-item class="song-item" :item="item" @play="handlePlay" />
+            <div class="play-count">{{ item.playCount }}次</div>
+          </div>
+          <play-bottom />
+        </n-scrollbar>
+      </div>
+    </div>
+    <music-list
+      v-model:show="isShowList"
+      :name="list?.name || ''"
+      :song-list="list?.tracks || []"
+      :list-info="list"
+      :loading="listLoading"
+    />
+  </div>
+</template>
+
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -77,108 +154,41 @@ const handlePlay = () => {
 };
 </script>
 
-<template>
-  <div class="user-page">
-    <div
-      v-if="userDetail"
-      class="left"
-      :class="setAnimationClass('animate__fadeInLeft')"
-      :style="{ backgroundImage: `url(${getImgUrl(user.backgroundUrl)})` }"
-    >
-      <div class="page">
-        <div class="user-name">{{ user.nickname }}</div>
-        <div class="user-info">
-          <n-avatar round :size="50" :src="getImgUrl(user.avatarUrl, '50y50')" />
-          <div class="user-info-list">
-            <div class="user-info-item">
-              <div class="label">{{ userDetail.profile.followeds }}</div>
-              <div>粉丝</div>
-            </div>
-            <div class="user-info-item">
-              <div class="label">{{ userDetail.profile.follows }}</div>
-              <div>关注</div>
-            </div>
-            <div class="user-info-item">
-              <div class="label">{{ userDetail.level }}</div>
-              <div>等级</div>
-            </div>
-          </div>
-        </div>
-        <div class="uesr-signature">{{ userDetail.profile.signature }}</div>
-
-        <div class="play-list" :class="setAnimationClass('animate__fadeInLeft')">
-          <div class="title">创建的歌单</div>
-          <n-scrollbar>
-            <div
-              v-for="(item, index) in playList"
-              :key="index"
-              class="play-list-item"
-              @click="showPlaylist(item.id, item.name)"
-            >
-              <n-image :src="getImgUrl(item.coverImgUrl, '50y50')" class="play-list-item-img" lazy preview-disabled />
-              <div class="play-list-item-info">
-                <div class="play-list-item-name">{{ item.name }}</div>
-                <div class="play-list-item-count">{{ item.trackCount }}首，播放{{ item.playCount }}次</div>
-              </div>
-            </div>
-            <play-bottom />
-          </n-scrollbar>
-        </div>
-      </div>
-    </div>
-    <div v-if="!isMobile" v-loading="infoLoading" class="right" :class="setAnimationClass('animate__fadeInRight')">
-      <div class="title">听歌排行</div>
-      <div class="record-list">
-        <n-scrollbar>
-          <div
-            v-for="(item, index) in recordList"
-            :key="item.id"
-            class="record-item"
-            :class="setAnimationClass('animate__bounceInUp')"
-            :style="setAnimationDelay(index, 25)"
-          >
-            <song-item class="song-item" :item="item" @play="handlePlay" />
-            <div class="play-count">{{ item.playCount }}次</div>
-          </div>
-          <play-bottom />
-        </n-scrollbar>
-      </div>
-    </div>
-    <music-list
-      v-model:show="isShowList"
-      :name="list?.name || ''"
-      :song-list="list?.tracks || []"
-      :list-info="list"
-      :loading="listLoading"
-    />
-  </div>
-</template>
-
 <style lang="scss" scoped>
 .user-page {
   @apply flex h-full;
   .left {
     max-width: 600px;
-    background-color: #0d0d0d;
-    background-size: 100%;
-    @apply flex-1 rounded-2xl  overflow-hidden relative bg-no-repeat h-full;
+    @apply flex-1 rounded-2xl overflow-hidden relative bg-no-repeat h-full;
+    @apply bg-gray-900 dark:bg-gray-800;
+
     .page {
-      @apply p-4  w-full z-10 flex flex-col h-full;
-      background-color: #0d0d0d66;
+      @apply p-4 w-full z-10 flex flex-col h-full;
+      @apply bg-black bg-opacity-40;
     }
+    .title {
+      @apply text-lg font-bold;
+      @apply text-gray-900 dark:text-white;
+    }
+
     .user-name {
-      @apply text-xl text-white font-bold  opacity-70 mb-4;
+      @apply text-xl font-bold mb-4;
+      @apply text-white text-opacity-70;
     }
 
     .uesr-signature {
-      @apply text-white opacity-70 mt-4;
+      @apply mt-4;
+      @apply text-white text-opacity-70;
     }
+
     .user-info {
       @apply flex items-center;
       &-list {
-        @apply flex justify-around  w-2/5 text-center opacity-70;
+        @apply flex justify-around w-2/5 text-center;
+        @apply text-white text-opacity-70;
+
         .label {
-          @apply text-xl text-white font-bold;
+          @apply text-xl font-bold text-white;
         }
       }
     }
@@ -186,10 +196,12 @@ const handlePlay = () => {
 
   .right {
     @apply flex-1 ml-4 overflow-hidden h-full;
+
     .record-list {
-      background-color: #0d0d0d;
       @apply rounded-2xl;
+      @apply bg-light dark:bg-black;
       height: calc(100% - 3.75rem);
+
       .record-item {
         @apply flex items-center px-4;
       }
@@ -199,33 +211,48 @@ const handlePlay = () => {
       }
 
       .play-count {
-        @apply text-white opacity-70 ml-4;
+        @apply ml-4;
+        @apply text-gray-600 dark:text-gray-400;
       }
     }
+
     .title {
-      @apply text-xl text-white font-bold  opacity-70 m-4;
+      @apply text-xl font-bold m-4;
+      @apply text-gray-900 dark:text-white;
     }
   }
 }
 
 .play-list {
   @apply mt-4 py-4 px-2 rounded-xl flex-1 overflow-hidden;
-  background-color: #000000;
+  @apply bg-light dark:bg-black;
+
   &-title {
-    @apply text-lg text-white opacity-70;
+    @apply text-lg;
+    @apply text-gray-900 dark:text-white;
   }
+
   &-item {
-    @apply flex items-center hover:bg-gray-800 transition-all duration-200 px-2 py-1 rounded-xl cursor-pointer;
+    @apply flex items-center px-2 py-1 rounded-xl cursor-pointer;
+    @apply transition-all duration-200;
+    @apply hover:bg-light-200 dark:hover:bg-dark-200;
+
     &-img {
       width: 60px;
       height: 60px;
       @apply rounded-xl;
     }
+
     &-info {
       @apply ml-2;
     }
+
     &-name {
-      @apply text-white;
+      @apply text-gray-900 dark:text-white text-base;
+    }
+
+    &-count {
+      @apply text-gray-500 dark:text-gray-400;
     }
   }
 }

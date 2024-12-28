@@ -29,7 +29,7 @@ defineOptions({
 
 <style lang="scss" scoped>
 .main-page {
-  @apply h-full w-full overflow-hidden;
+  @apply h-full w-full overflow-hidden bg-light dark:bg-black;
 }
 .main-content {
   @apply mt-6 flex mb-28;
@@ -49,7 +49,7 @@ defineOptions({
   .favorite-header {
     @apply mb-0 px-0 !important;
     h2 {
-      @apply text-lg font-bold;
+      @apply text-lg font-bold text-gray-900 dark:text-white;
     }
   }
   .favorite-list {

@@ -125,8 +125,11 @@ const handleDelMusic = async (item: SongResult) => {
 <style scoped lang="scss">
 .history-page {
   @apply h-full w-full pt-2;
+  @apply bg-light dark:bg-black;
+
   .title {
     @apply pl-4 text-xl font-bold pb-2 px-4;
+    @apply text-gray-900 dark:text-white;
   }
 
   .history-list-content {
@@ -138,9 +141,13 @@ const handleDelMusic = async (item: SongResult) => {
       }
       &-count {
         @apply px-4 text-lg text-center;
+        @apply text-gray-600 dark:text-gray-400;
       }
       &-delete {
-        @apply cursor-pointer rounded-full border-2 border-gray-400 w-8 h-8 flex justify-center items-center;
+        @apply cursor-pointer rounded-full border-2 w-8 h-8 flex justify-center items-center;
+        @apply border-gray-400 dark:border-gray-600;
+        @apply text-gray-600 dark:text-gray-400;
+        @apply hover:border-red-500 hover:text-red-500;
       }
     }
   }
@@ -151,6 +158,7 @@ const handleDelMusic = async (item: SongResult) => {
 }
 
 .no-more-tip {
-  @apply text-center text-gray-400 py-4 text-sm;
+  @apply text-center py-4 text-sm;
+  @apply text-gray-500 dark:text-gray-400;
 }
 </style>

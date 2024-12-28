@@ -131,14 +131,20 @@ watchEffect(() => {
   &-item {
     @apply flex-1 h-full rounded-3xl p-5 mr-5 flex flex-col justify-between overflow-hidden;
     &-bg {
-      @apply bg-gray-900 bg-no-repeat bg-cover bg-center rounded-3xl absolute w-full h-full top-0 left-0 z-0;
+      @apply bg-gray-900 dark:bg-gray-800 bg-no-repeat bg-cover bg-center rounded-3xl absolute w-full h-full top-0 left-0 z-0;
       filter: brightness(60%);
     }
     &-info {
       @apply flex items-center p-2;
       &-play {
-        @apply w-12 h-12 bg-green-500 rounded-full flex justify-center items-center hover:bg-green-600 cursor-pointer;
+        @apply w-12 h-12 bg-green-500 rounded-full flex justify-center items-center hover:bg-green-600 cursor-pointer text-white;
       }
+      &-name {
+        @apply text-gray-100 dark:text-gray-100;
+      }
+    }
+    &-count {
+      @apply text-gray-100 dark:text-gray-100;
     }
   }
 }

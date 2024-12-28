@@ -3,6 +3,7 @@ import { createStore } from 'vuex';
 import { useMusicListHook } from '@/hooks/MusicListHook';
 import homeRouter from '@/router/home';
 import type { SongResult } from '@/type/music';
+import { applyTheme, getCurrentTheme, ThemeType } from '@/utils/theme';
 
 // 默认设置
 const defaultSettings = {
@@ -34,6 +35,7 @@ interface State {
   searchType: number;
   favoriteList: number[];
   playMode: number;
+  theme: ThemeType;
 }
 
 const state: State = {
@@ -52,6 +54,7 @@ const state: State = {
   searchType: 1,
   favoriteList: getLocalStorageItem('favoriteList', []),
   playMode: getLocalStorageItem('playMode', 0),
+  theme: getCurrentTheme(),
 };
 
 const { handlePlayMusic, nextPlay, prevPlay } = useMusicListHook();
@@ -102,6 +105,10 @@ const mutations = {
     state.playMode = state.playMode === 0 ? 1 : 0;
     localStorage.setItem('playMode', JSON.stringify(state.playMode));
   },
+  toggleTheme(state: State) {
+    state.theme = state.theme === 'dark' ? 'light' : 'dark';
+    applyTheme(state.theme);
+  },
 };
 
 const actions = {
@@ -122,6 +129,9 @@ const actions = {
         commit('setSetData', defaultSettings);
       }
     }
+  },
+  initializeTheme({ state }: { state: State }) {
+    applyTheme(state.theme);
   },
 };
 

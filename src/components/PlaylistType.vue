@@ -132,15 +132,15 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .title {
-  @apply text-lg font-bold mb-4;
+  @apply text-lg font-bold mb-4 text-gray-900 dark:text-white;
 }
 .play-list-type {
   width: 250px;
   @apply mx-6;
   &-item,
   &-showall {
-    @apply py-2 px-3 mr-3 mb-3 inline-block border border-gray-700 rounded-xl cursor-pointer hover:bg-green-600 transition;
-    background-color: #1a1a1a;
+    @apply bg-light dark:bg-black text-gray-900 dark:text-white;
+    @apply py-2 px-3 mr-3 mb-3 inline-block border border-gray-200 dark:border-gray-700 rounded-xl cursor-pointer hover:bg-green-600 hover:text-white transition;
   }
   &-showall {
     @apply block text-center;

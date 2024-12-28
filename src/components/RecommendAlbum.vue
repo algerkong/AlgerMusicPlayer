@@ -81,7 +81,7 @@ onMounted(() => {
 .recommend-album {
   @apply flex-1 mx-5;
   .title {
-    @apply text-lg font-bold mb-4;
+    @apply text-lg font-bold mb-4 text-gray-900 dark:text-white;
   }
 
   .recommend-album-list {
@@ -95,7 +95,7 @@ onMounted(() => {
         filter: brightness(50%);
       }
       &-content {
-        @apply w-full h-full opacity-0 transition absolute z-10 top-0 left-0 p-4 text-xl bg-opacity-60 bg-black;
+        @apply w-full h-full opacity-0 transition absolute z-10 top-0 left-0 p-4 text-xl text-white bg-opacity-60 bg-black dark:bg-opacity-60 dark:bg-black;
       }
       &-content:hover {
         opacity: 1;

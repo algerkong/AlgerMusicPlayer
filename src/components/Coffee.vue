@@ -12,20 +12,23 @@
         </slot>
       </template>
 
-      <div class="p-6 bg-black rounded-lg shadow-lg">
+      <div class="p-6 rounded-lg shadow-lg bg-light dark:bg-gray-800">
         <div class="flex gap-10">
           <div class="flex flex-col items-center gap-2">
             <n-image :src="alipayQR" alt="支付宝收款码" class="w-32 h-32 rounded-lg cursor-none" preview-disabled />
-            <span class="text-sm text-gray-100">支付宝</span>
+            <span class="text-sm text-gray-700 dark:text-gray-200">支付宝</span>
           </div>
           <div class="flex flex-col items-center gap-2">
             <n-image :src="wechatQR" alt="微信收款码" class="w-32 h-32 rounded-lg cursor-none" preview-disabled />
-            <span class="text-sm text-gray-100">微信支付</span>
+            <span class="text-sm text-gray-700 dark:text-gray-200">微信支付</span>
           </div>
         </div>
 
         <div class="mt-4">
-          <p class="text-sm text-gray-100 text-center cursor-pointer hover:text-green-500" @click="copyQQ">
+          <p
+            class="text-sm text-gray-700 dark:text-gray-200 text-center cursor-pointer hover:text-green-500"
+            @click="copyQQ"
+          >
             QQ群：789288579
           </p>
         </div>

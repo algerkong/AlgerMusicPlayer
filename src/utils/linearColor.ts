@@ -186,6 +186,7 @@ function hslToRgb(h: number, s: number, l: number): [number, number, number] {
 interface ITextColors {
   primary: string;
   active: string;
+  theme: string;
 }
 
 // 添加新的函数
@@ -230,6 +231,7 @@ export const getTextColors = (gradient: string = ''): ITextColors => {
   return {
     primary: isDark ? 'rgba(0, 0, 0, 0.54)' : 'rgba(255, 255, 255, 0.54)',
     active: isDark ? '#000000' : '#ffffff',
+    theme: isDark ? 'dark' : 'light',
   };
 };
 

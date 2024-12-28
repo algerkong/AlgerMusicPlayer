@@ -6,7 +6,7 @@
         size="medium"
         round
         :placeholder="hotSearchKeyword"
-        class="border border-gray-600"
+        class="border dark:border-gray-600 border-gray-200"
         @keydown.enter="search"
       >
         <template #prefix>
@@ -27,7 +27,7 @@
         <div class="user-box">
           <n-avatar
             v-if="store.state.user"
-            class="ml-2 cursor-pointer"
+            class="cursor-pointer"
             circle
             size="medium"
             :src="getImgUrl(store.state.user.avatarUrl)"
@@ -46,9 +46,22 @@
             <i class="iconfont ri-login-box-line"></i>
             <span>去登录</span>
           </div>
+          <!-- 切换主题 -->
           <div class="menu-item" @click="selectItem('set')">
             <i class="iconfont ri-settings-3-line"></i>
             <span>设置</span>
+          </div>
+          <div class="menu-item">
+            <i class="iconfont" :class="isDarkTheme ? 'ri-moon-line' : 'ri-sun-line'"></i>
+            <span>主题</span>
+            <n-switch v-model:value="isDarkTheme" class="ml-auto">
+              <template #checked>
+                <i class="ri-moon-line"></i>
+              </template>
+              <template #unchecked>
+                <i class="ri-sun-line"></i>
+              </template>
+            </n-switch>
           </div>
           <div class="menu-item" @click="toGithubRelease">
             <i class="iconfont ri-refresh-line"></i>
@@ -68,6 +81,7 @@
 </template>
 
 <script lang="ts" setup>
+import { onMounted, ref, watchEffect } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 
@@ -119,6 +133,11 @@ const toLogin = () => {
 onMounted(() => {
   loadHotSearchKeyword();
   loadPage();
+});
+
+const isDarkTheme = computed({
+  get: () => store.state.theme === 'dark',
+  set: () => store.commit('toggleTheme'),
 });
 
 // 搜索词
@@ -183,14 +202,29 @@ const toGithubRelease = () => {
 
 <style lang="scss" scoped>
 .user-box {
-  @apply ml-4 flex text-lg justify-center items-center rounded-full border border-gray-600 hover:border-gray-400 transition-colors duration-200;
-  background: #1a1a1a;
+  @apply ml-4 flex text-lg justify-center items-center rounded-full transition-colors duration-200;
+  @apply border dark:border-gray-600 border-gray-200 hover:border-gray-400 dark:hover:border-gray-400;
+  @apply bg-light dark:bg-gray-800;
 }
+
 .search-box {
   @apply pb-4 pr-4;
 }
+
 .search-box-input {
   @apply relative;
+
+  :deep(.n-input) {
+    @apply bg-gray-50 dark:bg-black;
+
+    .n-input__input-el {
+      @apply text-gray-900 dark:text-white;
+    }
+
+    .n-input__prefix {
+      @apply text-gray-500 dark:text-gray-400;
+    }
+  }
 }
 
 .mobile {
@@ -200,20 +234,21 @@ const toGithubRelease = () => {
 }
 
 .github {
-  @apply cursor-pointer text-gray-100 hover:text-gray-400 text-xl ml-4 rounded-full border border-gray-600 flex justify-center items-center px-2 h-full;
+  @apply cursor-pointer text-gray-900 dark:text-gray-100 hover:text-gray-600 dark:hover:text-gray-400 text-xl ml-4 rounded-full flex justify-center items-center px-2 h-full;
+  @apply border dark:border-gray-600 border-gray-200 bg-light dark:bg-black;
 }
 
 .user-popover {
   @apply min-w-[280px] p-0 rounded-xl overflow-hidden;
-  background: #2c2c2c;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  @apply bg-light dark:bg-black;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 
   .user-header {
-    @apply flex items-center gap-2 p-3;
-    border-bottom: 1px solid #3a3a3a;
+    @apply flex items-center gap-2 p-3 cursor-pointer;
+    @apply border-b dark:border-gray-700 border-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700;
 
     .username {
-      @apply text-sm font-medium text-gray-200;
+      @apply text-sm font-medium text-gray-900 dark:text-gray-200;
     }
   }
 
@@ -222,43 +257,20 @@ const toGithubRelease = () => {
 
     .menu-item {
       @apply flex items-center px-3 py-2 text-sm cursor-pointer;
-      @apply text-gray-300;
+      @apply text-gray-700 dark:text-gray-300;
       transition: background-color 0.2s;
 
       &:hover {
-        background-color: #3a3a3a;
+        @apply bg-gray-100 dark:bg-gray-700;
       }
 
       i {
-        @apply mr-1 text-lg text-gray-400;
-      }
-
-      .shortcut {
-        @apply ml-auto text-xs text-gray-500;
+        @apply mr-1 text-lg text-gray-500 dark:text-gray-400;
       }
 
       .download-btn {
-        @apply ml-auto px-2 py-0.5 text-xs rounded;
-        background: #4a4a4a;
-        color: #fff;
-      }
-
-      .zoom-controls {
-        @apply ml-auto flex items-center gap-2;
-        color: #fff;
-
-        .zoom-btn {
-          @apply px-2 py-0.5 text-sm rounded cursor-pointer;
-          background: #3a3a3a;
-
-          &:hover {
-            background: #4a4a4a;
-          }
-        }
-
-        span:not(.zoom-btn) {
-          color: #fff;
-        }
+        @apply ml-auto text-xs px-2 py-0.5 rounded;
+        @apply bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300;
       }
     }
   }

@@ -1,7 +1,7 @@
 <!--  -->
 <template>
   <div v-if="isShow" class="loading-box">
-    <div class="mask" :style="{ background: maskBackground }"></div>
+    <div class="mask"></div>
     <div class="loading-content-box">
       <n-spin size="small" />
       <div :style="{ color: textColor }" class="tip">{{ tip }}</div>
@@ -23,7 +23,7 @@ defineProps({
   maskBackground: {
     type: String,
     default() {
-      return 'rgba(0, 0, 0, 0.8)';
+      return 'rgba(0, 0, 0, 0.05)';
     },
   },
   loadingColor: {
@@ -70,6 +70,7 @@ defineExpose({
   .mask {
     width: 100%;
     height: 100%;
+    @apply bg-light-100 bg-opacity-50 dark:bg-dark-100 dark:bg-opacity-50;
   }
   .loading-content-box {
     position: absolute;

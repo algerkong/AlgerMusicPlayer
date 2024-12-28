@@ -51,17 +51,15 @@ const handlePlay = () => {
 
 <style lang="scss" scoped>
 .title {
-  @apply text-lg font-bold mb-4;
+  @apply text-lg font-bold mb-4 text-gray-900 dark:text-white;
 }
 .recommend-music {
   @apply flex-auto;
-  // width: 530px;
   .text-ellipsis {
     width: 100%;
   }
   &-list {
-    @apply rounded-3xl p-2 w-full border border-gray-700;
-    background-color: #0d0d0d;
+    @apply rounded-3xl p-2 w-full border border-gray-200 dark:border-gray-700 bg-light dark:bg-black;
   }
 }
 </style>

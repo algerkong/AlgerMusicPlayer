@@ -165,21 +165,34 @@ const handlePlay = () => {
 .search-page {
   @apply flex h-full;
 }
+
 .hot-search {
-  @apply mr-4 rounded-xl  flex-1 overflow-hidden;
-  background-color: #0d0d0d;
+  @apply mr-4 rounded-xl flex-1 overflow-hidden;
+  @apply bg-light-100 dark:bg-dark-100;
   animation-duration: 0.2s;
   min-width: 400px;
   height: 100%;
+
   &-list {
     @apply pb-28;
   }
+
   &-item {
-    @apply px-4 py-3 text-lg hover:bg-gray-700 rounded-xl cursor-pointer;
+    @apply px-4 py-3 text-lg rounded-xl cursor-pointer;
+    @apply text-gray-900 dark:text-white;
+    transition: all 0.3s ease;
+
+    &:hover {
+      @apply bg-light-100 dark:bg-dark-200;
+    }
+
     &-count {
-      @apply text-green-500 inline-block ml-3 w-8;
+      @apply inline-block ml-3 w-8;
+      @apply text-green-500;
+
       &-3 {
-        @apply text-red-600 font-bold inline-block ml-3 w-8;
+        @apply font-bold inline-block ml-3 w-8;
+        @apply text-red-500;
       }
     }
   }
@@ -187,15 +200,17 @@ const handlePlay = () => {
 
 .search-list {
   @apply flex-1 rounded-xl;
-  background-color: #0d0d0d;
+  @apply bg-light-100 dark:bg-dark-100;
   height: 100%;
+
   &-box {
     @apply pb-28;
   }
 }
 
 .title {
-  @apply text-gray-200 text-xl font-bold my-2 mx-4;
+  @apply text-xl font-bold my-2 mx-4;
+  @apply text-gray-900 dark:text-white;
 }
 
 .mobile {

@@ -56,7 +56,8 @@ const drag = (event: MouseEvent) => {
 <style scoped lang="scss">
 #title-bar {
   -webkit-app-region: drag;
-  @apply flex justify-between text-white px-6 py-2 select-none relative;
+  @apply flex justify-between px-6 py-2 select-none relative;
+  @apply text-dark dark:text-white;
   z-index: 9999999;
 }
 
@@ -66,6 +67,6 @@ const drag = (event: MouseEvent) => {
 }
 
 button {
-  @apply hover:text-green-500;
+  @apply text-gray-600 dark:text-gray-400 hover:text-green-500;
 }
 </style>

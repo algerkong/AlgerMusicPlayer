@@ -151,16 +151,18 @@ const handleMore = () => {
 <style lang="scss" scoped>
 .favorite-page {
   @apply h-full flex flex-col pt-2;
+  @apply bg-light dark:bg-black;
 
   .favorite-header {
     @apply flex items-center justify-between flex-shrink-0 px-4;
 
     h2 {
       @apply text-xl font-bold pb-2;
+      @apply text-gray-900 dark:text-white;
     }
 
     .favorite-count {
-      @apply text-gray-400 text-sm;
+      @apply text-gray-500 dark:text-gray-400 text-sm;
     }
   }
 
@@ -172,10 +174,19 @@ const handleMore = () => {
 
       .empty-tip {
         @apply h-full flex items-center justify-center;
+        @apply text-gray-500 dark:text-gray-400;
       }
 
       .favorite-list {
         @apply space-y-2 pb-4 px-4;
+
+        &-more {
+          @apply mt-4;
+
+          .n-button {
+            @apply text-green-500 hover:text-green-600;
+          }
+        }
       }
     }
   }
@@ -186,7 +197,8 @@ const handleMore = () => {
 }
 
 .no-more-tip {
-  @apply text-center text-gray-400 py-4 text-sm;
+  @apply text-center py-4 text-sm;
+  @apply text-gray-500 dark:text-gray-400;
 }
 
 .mobile {

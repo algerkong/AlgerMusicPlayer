@@ -1,6 +1,6 @@
 <template>
   <div class="app-container" :class="{ mobile: isMobile, noElectron: !isElectron }">
-    <n-config-provider :theme="darkTheme">
+    <n-config-provider :theme="theme === 'dark' ? darkTheme : lightTheme">
       <n-dialog-provider>
         <n-message-provider>
           <router-view></router-view>
@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-import { darkTheme } from 'naive-ui';
+import { darkTheme, lightTheme } from 'naive-ui';
 import { onMounted } from 'vue';
 
 import { isElectron } from '@/hooks/MusicHook';
@@ -20,8 +20,13 @@ import store from '@/store';
 
 import { isMobile } from './utils';
 
+const theme = computed(() => {
+  return store.state.theme;
+});
+
 onMounted(() => {
   store.dispatch('initializeSettings');
+  store.dispatch('initializeTheme');
   if (isMobile.value) {
     store.commit(
       'setMenus',

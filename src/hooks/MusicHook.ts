@@ -3,6 +3,7 @@ import { computed, ref } from 'vue';
 import { audioService } from '@/services/audioService';
 import store from '@/store';
 import type { ILyricText, SongResult } from '@/type/music';
+import { getTextColors } from '@/utils/linearColor';
 
 const windowData = window as any;
 
@@ -18,6 +19,7 @@ export const currentLrcProgress = ref(0); // 来存储当前歌词的进度
 export const playMusic = computed(() => store.state.playMusic as SongResult); // 当前播放歌曲
 export const sound = ref<Howl | null>(audioService.getCurrentSound());
 export const isLyricWindowOpen = ref(false); // 新增状态
+export const textColors = ref(getTextColors());
 
 document.onkeyup = (e) => {
   // 检查事件目标是否是输入框元素

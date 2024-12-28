@@ -39,7 +39,7 @@
         <i class="iconfont icon-likefill" :class="{ 'like-active': isFavorite }" @click.stop="toggleFavorite"></i>
       </div>
       <div
-        class="song-item-operating-play bg-black animate__animated"
+        class="song-item-operating-play bg-gray-300 dark:bg-gray-800 animate__animated"
         :class="{ 'bg-green-600': isPlaying, animate__flipInY: playLoading }"
         @click="playMusicEvent(item)"
       >
@@ -139,72 +139,98 @@ const toggleFavorite = async (e: Event) => {
 .text-ellipsis {
   width: 100%;
 }
+
 .song-item {
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
-  @apply rounded-3xl p-3 flex items-center hover:bg-gray-800 transition;
+  @apply rounded-3xl p-3 flex items-center transition bg-transparent dark:text-white text-gray-900;
+
+  &:hover {
+    @apply bg-gray-100 dark:bg-gray-800;
+  }
+
   &-img {
     @apply w-12 h-12 rounded-2xl mr-4;
   }
+
   &-content {
     @apply flex-1;
+
     &-title {
-      @apply text-base text-white;
+      @apply text-base text-gray-900 dark:text-white;
     }
+
     &-name {
-      @apply text-xs;
-      @apply text-gray-400;
+      @apply text-xs text-gray-500 dark:text-gray-400;
     }
   }
+
   &-operating {
-    @apply flex items-center rounded-full border border-gray-700 ml-4;
-    background-color: #0d0d0d;
+    @apply flex items-center rounded-full ml-4 border dark:border-gray-700 border-gray-200 bg-light dark:bg-black;
+
     .iconfont {
       @apply text-xl;
     }
+
     .icon-likefill {
-      color: #868686;
-      @apply text-xl hover:text-red-600 transition;
+      @apply text-xl transition text-gray-500 dark:text-gray-400 hover:text-red-500;
     }
+
     &-like {
       @apply mr-2 cursor-pointer ml-4;
     }
+
     .like-active {
-      @apply text-red-600;
+      @apply text-red-500;
     }
+
     &-play {
-      @apply cursor-pointer border border-gray-500 rounded-full w-10 h-10 flex justify-center items-center hover:bg-green-600 transition;
-      animation-iteration-count: infinite;
+      @apply cursor-pointer rounded-full w-10 h-10 flex justify-center items-center transition
+             border dark:border-gray-700 border-gray-200 text-gray-900 dark:text-white;
+
+      &:hover,
+      &.bg-green-600 {
+        @apply bg-green-500 border-green-500 text-white;
+      }
     }
   }
 }
 
 .song-mini {
   @apply p-2 rounded-2xl;
+
   .song-item {
     @apply p-0;
+
     &-img {
       @apply w-10 h-10 mr-2;
     }
+
     &-content {
       @apply flex-1;
+
       &-title {
         @apply text-sm;
       }
+
       &-name {
         @apply text-xs;
       }
     }
+
     &-operating {
       @apply pl-2;
+
       .iconfont {
         @apply text-base;
       }
+
       &-like {
         @apply mr-1 ml-1;
       }
+
       &-play {
         @apply w-8 h-8;
       }
@@ -213,35 +239,50 @@ const toggleFavorite = async (e: Event) => {
 }
 
 .song-list {
-  @apply p-2 rounded-lg hover:bg-gray-800/50 border border-gray-800/50 mb-2;
+  @apply p-2 rounded-lg mb-2 border dark:border-gray-800 border-gray-200;
+
+  &:hover {
+    @apply bg-gray-50 dark:bg-gray-800;
+  }
+
   .song-item-img {
     @apply w-10 h-10 rounded-lg mr-3;
   }
+
   .song-item-content {
     @apply flex items-center flex-1;
+
     &-wrapper {
       @apply flex items-center flex-1 text-sm;
     }
+
     &-title {
-      @apply text-white flex-shrink-0 max-w-[45%];
+      @apply flex-shrink-0 max-w-[45%] text-gray-900 dark:text-white;
     }
+
     &-divider {
-      @apply mx-2 text-gray-400;
+      @apply mx-2 text-gray-500 dark:text-gray-400;
     }
+
     &-name {
-      @apply text-gray-400 flex-1 min-w-0;
+      @apply flex-1 min-w-0 text-gray-500 dark:text-gray-400;
     }
   }
+
   .song-item-operating {
     @apply flex items-center gap-2;
+
     &-like {
       @apply cursor-pointer hover:scale-110 transition-transform;
+
       .iconfont {
-        @apply text-base text-gray-400 hover:text-red-500;
+        @apply text-base text-gray-500 dark:text-gray-400 hover:text-red-500;
       }
     }
+
     &-play {
       @apply w-7 h-7 cursor-pointer hover:scale-110 transition-transform;
+
       .iconfont {
         @apply text-base;
       }

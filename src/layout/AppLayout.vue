@@ -1,6 +1,6 @@
 <template>
   <div class="layout-page">
-    <div id="layout-main" class="layout-main" :style="{ background: backgroundColor }">
+    <div id="layout-main" class="layout-main">
       <title-bar v-if="isElectron" />
       <div class="layout-main-page" :class="isElectron ? '' : 'pt-6'">
         <!-- 侧边菜单栏 -->
@@ -32,6 +32,7 @@
 </template>
 
 <script lang="ts" setup>
+import { computed, defineAsyncComponent } from 'vue';
 import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 
@@ -47,8 +48,6 @@ const keepAliveInclude = computed(() =>
       return item.meta.keepAlive;
     })
     .map((item) => {
-      // return item.name;
-      // 首字母大写
       return item.name.charAt(0).toUpperCase() + item.name.slice(1);
     }),
 );
@@ -63,42 +62,34 @@ const store = useStore();
 const isPlay = computed(() => store.state.isPlay as boolean);
 const { menus } = store.state;
 const route = useRoute();
-
-const backgroundColor = ref('#000');
 </script>
 
 <style lang="scss" scoped>
 .layout-page {
-  width: 100vw;
-  height: 100vh;
-  @apply flex justify-center items-center overflow-hidden bg-black;
+  @apply w-screen h-screen overflow-hidden bg-light dark:bg-black;
 }
 
 .layout-main {
-  @apply text-white shadow-xl flex flex-col relative transition-all;
-  height: 100%;
-  width: 100%;
-  overflow: hidden;
-  &-page {
-    @apply flex flex-1 overflow-hidden;
-  }
-  .main {
-    @apply flex-1 box-border flex flex-col overflow-hidden;
-    height: 100%;
-    &-content {
-      @apply box-border flex-1 overflow-hidden;
-    }
-  }
-  // :deep(.n-scrollbar-content) {
-  //   @apply pr-3;
-  // }
+  @apply w-full h-full relative  text-gray-900 dark:text-white;
 }
 
-.mobile {
-  .layout-main {
-    &-page {
-      @apply pt-4;
-    }
-  }
+.layout-main-page {
+  @apply flex h-full;
+}
+
+.menu {
+  @apply h-full;
+}
+
+.main {
+  @apply overflow-hidden flex-1 flex flex-col;
+}
+
+.main-content {
+  @apply flex-1 overflow-hidden;
+}
+
+.main-page {
+  @apply h-full;
 }
 </style>

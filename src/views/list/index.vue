@@ -1,3 +1,67 @@
+<template>
+  <div class="list-page">
+    <!-- 修改歌单分类部分 -->
+    <div class="play-list-type">
+      <n-scrollbar x-scrollable>
+        <div class="categories-wrapper">
+          <span
+            v-for="(item, index) in playlistCategory?.sub"
+            :key="item.name"
+            class="play-list-type-item"
+            :class="[setAnimationClass('animate__bounceIn'), { active: currentType === item.name }]"
+            :style="getAnimationDelay(index)"
+            @click="handleClickPlaylistType(item.name)"
+          >
+            {{ item.name }}
+          </span>
+        </div>
+      </n-scrollbar>
+    </div>
+    <!-- 歌单列表 -->
+    <n-scrollbar class="recommend" :size="100" @scroll="handleScroll">
+      <div v-loading="loading" class="recommend-list">
+        <div
+          v-for="(item, index) in recommendList"
+          :key="item.id"
+          class="recommend-item"
+          :class="setAnimationClass('animate__bounceIn')"
+          :style="getItemAnimationDelay(index)"
+          @click.stop="selectRecommendItem(item)"
+        >
+          <div class="recommend-item-img">
+            <n-image
+              class="recommend-item-img-img"
+              :src="getImgUrl(item.picUrl || item.coverImgUrl, '200y200')"
+              width="200"
+              height="200"
+              lazy
+              preview-disabled
+            />
+            <div class="top">
+              <div class="play-count">{{ formatNumber(item.playCount) }}</div>
+              <i class="iconfont icon-videofill"></i>
+            </div>
+          </div>
+          <div class="recommend-item-title">{{ item.name }}</div>
+        </div>
+      </div>
+      <!-- 加载状态 -->
+      <div v-if="isLoadingMore" class="loading-more">
+        <n-spin size="small" />
+        <span class="ml-2">加载中...</span>
+      </div>
+      <div v-if="!hasMore && recommendList.length > 0" class="no-more">没有更多了</div>
+    </n-scrollbar>
+    <music-list
+      v-model:show="showMusic"
+      v-model:loading="listLoading"
+      :name="recommendItem?.name || ''"
+      :song-list="listDetail?.playlist.tracks || []"
+      :list-info="listDetail?.playlist"
+    />
+  </div>
+</template>
+
 <script lang="ts" setup>
 import { useRoute } from 'vue-router';
 
@@ -137,131 +201,81 @@ watch(
 );
 </script>
 
-<template>
-  <div class="list-page">
-    <!-- 修改歌单分类部分 -->
-    <div class="play-list-type">
-      <n-scrollbar x-scrollable>
-        <div class="categories-wrapper">
-          <span
-            v-for="(item, index) in playlistCategory?.sub"
-            :key="item.name"
-            class="play-list-type-item"
-            :class="[setAnimationClass('animate__bounceIn'), { active: currentType === item.name }]"
-            :style="getAnimationDelay(index)"
-            @click="handleClickPlaylistType(item.name)"
-          >
-            {{ item.name }}
-          </span>
-        </div>
-      </n-scrollbar>
-    </div>
-    <!-- 歌单列表 -->
-    <n-scrollbar class="recommend" :size="100" @scroll="handleScroll">
-      <div v-loading="loading" class="recommend-list">
-        <div
-          v-for="(item, index) in recommendList"
-          :key="item.id"
-          class="recommend-item"
-          :class="setAnimationClass('animate__bounceIn')"
-          :style="getItemAnimationDelay(index)"
-          @click.stop="selectRecommendItem(item)"
-        >
-          <div class="recommend-item-img">
-            <n-image
-              class="recommend-item-img-img"
-              :src="getImgUrl(item.picUrl || item.coverImgUrl, '200y200')"
-              width="200"
-              height="200"
-              lazy
-              preview-disabled
-            />
-            <div class="top">
-              <div class="play-count">{{ formatNumber(item.playCount) }}</div>
-              <i class="iconfont icon-videofill"></i>
-            </div>
-          </div>
-          <div class="recommend-item-title">{{ item.name }}</div>
-        </div>
-      </div>
-      <!-- 加载状态 -->
-      <div v-if="isLoadingMore" class="loading-more">
-        <n-spin size="small" />
-        <span class="ml-2">加载中...</span>
-      </div>
-      <div v-if="!hasMore && recommendList.length > 0" class="no-more">没有更多了</div>
-    </n-scrollbar>
-    <music-list
-      v-model:show="showMusic"
-      v-model:loading="listLoading"
-      :name="recommendItem?.name || ''"
-      :song-list="listDetail?.playlist.tracks || []"
-      :list-info="listDetail?.playlist"
-    />
-  </div>
-</template>
-
 <style lang="scss" scoped>
 .list-page {
   @apply relative h-full w-full;
+  @apply bg-light dark:bg-black;
 }
 
 .recommend {
-  @apply w-full h-full bg-none;
+  @apply w-full h-full;
+
   &-title {
-    @apply text-lg font-bold text-white pb-2;
+    @apply text-lg font-bold pb-2;
+    @apply text-gray-900 dark:text-white;
   }
 
   &-list {
     @apply grid gap-x-8 gap-y-6 pb-28 pr-4;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   }
+
   &-item {
     @apply flex flex-col;
+
     &-img {
       @apply rounded-xl overflow-hidden relative w-full aspect-square;
+
       &-img {
         @apply block w-full h-full;
       }
+
       img {
         @apply absolute top-0 left-0 w-full h-full object-cover rounded-xl;
       }
+
       &:hover img {
         @apply hover:scale-110 transition-all duration-300 ease-in-out;
       }
+
       .top {
         @apply absolute w-full h-full top-0 left-0 flex justify-center items-center transition-all duration-300 ease-in-out cursor-pointer;
-        background-color: #00000088;
+        @apply bg-black bg-opacity-50;
         opacity: 0;
+
         i {
-          font-size: 50px;
-          transition: all 0.5s ease-in-out;
-          opacity: 0;
+          @apply text-5xl text-white transition-all duration-500 ease-in-out opacity-0;
         }
+
         &:hover {
           @apply opacity-100;
         }
+
         &:hover i {
           @apply transform scale-150 opacity-100;
         }
 
         .play-count {
-          @apply absolute top-2 left-2 text-sm;
+          @apply absolute top-2 left-2 text-sm text-white;
         }
       }
     }
+
     &-title {
-      @apply p-2 text-sm text-white truncate;
+      @apply mt-2 text-sm line-clamp-1;
+      @apply text-gray-900 dark:text-white;
     }
   }
 }
 
 .loading-more {
-  @apply flex items-center justify-center py-4 text-sm text-gray-400;
+  @apply flex justify-center items-center py-4;
+  @apply text-gray-500 dark:text-gray-400;
 }
 
 .no-more {
-  @apply text-center py-4 text-sm text-gray-500;
+  @apply text-center py-4;
+  @apply text-gray-500 dark:text-gray-400;
 }
 
 .mobile {
@@ -277,25 +291,22 @@ watch(
 
 // 添加歌单分类样式
 .play-list-type {
-  .title {
-    @apply text-lg font-bold mb-4;
-  }
-
   .categories-wrapper {
-    @apply flex items-center py-2 pb-4;
+    @apply flex items-center py-2;
     white-space: nowrap;
   }
 
   &-item {
-    @apply py-2 px-3 mr-3 inline-block border border-gray-700 rounded-xl cursor-pointer transition-all duration-300;
-    background-color: #1a1a1a;
+    @apply py-2 px-3 mr-3 inline-block rounded-xl cursor-pointer transition-all duration-300;
+    @apply bg-light dark:bg-black text-gray-900 dark:text-white;
+    @apply border border-gray-200 dark:border-gray-700;
 
     &:hover {
-      @apply bg-green-600/50;
+      @apply bg-green-50 dark:bg-green-900;
     }
 
     &.active {
-      @apply bg-green-600 border-green-500;
+      @apply bg-green-500 border-green-500 text-white;
     }
   }
 }

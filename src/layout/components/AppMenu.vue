@@ -65,9 +65,10 @@ const iconStyle = (index: number) => {
 
 <style lang="scss" scoped>
 .app-menu {
-  @apply flex-col items-center justify-center px-6;
+  @apply flex-col items-center justify-center px-6 bg-light dark:bg-black;
   max-width: 100px;
 }
+
 .app-menu-item-link,
 .app-menu-header {
   @apply flex items-center justify-center;
@@ -77,10 +78,12 @@ const iconStyle = (index: number) => {
   @apply mb-6 mt-6;
 }
 
-.app-menu-item-icon:hover {
-  color: #10b981 !important;
-  transform: scale(1.05);
-  transition: 0.2s ease-in-out;
+.app-menu-item-icon {
+  @apply transition-all duration-200 text-gray-500 dark:text-gray-400;
+
+  &:hover {
+    @apply text-green-500 scale-105;
+  }
 }
 
 .mobile {
@@ -89,13 +92,16 @@ const iconStyle = (index: number) => {
     width: 100vw;
     position: relative;
     z-index: 999999;
-    background-color: #000;
+    @apply bg-light dark:bg-black border-t border-gray-200 dark:border-gray-700;
+
     &-header {
       display: none;
     }
+
     &-list {
       @apply flex justify-between;
     }
+
     &-item {
       &-link {
         @apply my-4;

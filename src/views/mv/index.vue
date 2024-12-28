@@ -1,8 +1,5 @@
 <template>
   <div class="mv-list">
-    <div class="mv-list-title">
-      <h2>推荐MV</h2>
-    </div>
     <div class="play-list-type">
       <n-scrollbar x-scrollable>
         <div class="categories-wrapper">
@@ -193,29 +190,32 @@ const isPrevDisabled = computed(() => currentIndex.value === 0);
 
   &-title {
     @apply text-xl font-bold pb-2;
+    @apply text-gray-900 dark:text-white;
   }
 
   // 添加歌单分类样式
   .play-list-type {
     .title {
-      @apply text-lg font-bold mb-4;
+      @apply text-lg font-bold mb-2;
+      @apply text-gray-900 dark:text-white;
     }
 
     .categories-wrapper {
-      @apply flex items-center py-2 pb-4;
+      @apply flex items-center py-2;
       white-space: nowrap;
     }
 
     &-item {
-      @apply py-2 px-3 mr-3 inline-block border border-gray-700 rounded-xl cursor-pointer transition-all duration-300;
-      background-color: #1a1a1a;
+      @apply py-2 px-3 mr-3 inline-block rounded-xl cursor-pointer transition-all duration-300;
+      @apply bg-light dark:bg-black text-gray-900 dark:text-white;
+      @apply border border-gray-200 dark:border-gray-700;
 
       &:hover {
-        @apply bg-green-600/50;
+        @apply bg-green-50 dark:bg-green-900;
       }
 
       &.active {
-        @apply bg-green-600 border-green-500;
+        @apply bg-green-500 border-green-500 text-white;
       }
     }
   }
@@ -227,7 +227,9 @@ const isPrevDisabled = computed(() => currentIndex.value === 0);
 
   .mv-item {
     @apply p-2 rounded-lg;
-    background-color: #1f1f1f;
+    @apply bg-light dark:bg-black;
+    @apply border border-gray-200 dark:border-gray-700;
+
     &-img {
       @apply rounded-lg overflow-hidden relative;
       aspect-ratio: 16/9;
@@ -243,51 +245,38 @@ const isPrevDisabled = computed(() => currentIndex.value === 0);
 
       .top {
         @apply absolute w-full h-full top-0 left-0 flex justify-center items-center transition-all duration-300 ease-in-out cursor-pointer;
-        background-color: #0000009b;
+        @apply bg-black bg-opacity-60;
         opacity: 0;
 
         i {
-          font-size: 40px;
-          transition: all 0.5s ease-in-out;
-          opacity: 0;
-        }
-
-        &:hover {
-          @apply opacity-100;
-        }
-
-        &:hover i {
-          @apply transform scale-150 opacity-80;
+          @apply text-4xl text-white;
         }
 
         .play-count {
-          position: absolute;
-          top: 20px;
-          left: 10px;
-          font-size: 14px;
+          @apply absolute top-2 right-2 text-sm;
+          @apply text-white text-opacity-90;
+        }
+
+        &:hover {
+          opacity: 1;
         }
       }
     }
 
     &-title {
-      @apply p-2 text-sm text-white truncate;
+      @apply mt-2 text-sm line-clamp-1;
+      @apply text-gray-900 dark:text-white;
     }
   }
 }
 
-.mobile {
-  .mv-list-title {
-    @apply text-xl font-bold px-4;
-  }
-
-  .mv-list-content {
-    @apply px-4;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  }
+.loading-more {
+  @apply text-center py-4 col-span-full;
+  @apply text-gray-500 dark:text-gray-400;
 }
 
-.loading-more,
 .no-more {
-  @apply col-span-full text-center py-4 text-gray-400;
+  @apply text-center py-4 col-span-full;
+  @apply text-gray-500 dark:text-gray-400;
 }
 </style>

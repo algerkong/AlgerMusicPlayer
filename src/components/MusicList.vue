@@ -225,16 +225,16 @@ watch(
 <style scoped lang="scss">
 .music {
   &-title {
-    @apply text-xl font-bold text-white;
+    @apply text-xl font-bold text-gray-900 dark:text-white;
   }
 
   &-page {
-    @apply px-8 w-full h-full bg-black bg-opacity-75 rounded-t-2xl;
+    @apply px-8 w-full h-full bg-light dark:bg-black bg-opacity-75 dark:bg-opacity-75 rounded-t-2xl;
     backdrop-filter: blur(20px);
   }
 
   &-close {
-    @apply cursor-pointer text-white flex gap-2 items-center;
+    @apply cursor-pointer text-gray-900 dark:text-white flex gap-2 items-center;
     .icon {
       @apply text-3xl;
     }
@@ -248,7 +248,7 @@ watch(
     @apply w-[25%] flex-shrink-0 pr-8 flex flex-col;
 
     .music-cover {
-      @apply w-full aspect-square rounded-lg overflow-hidden mb-4;
+      @apply w-full aspect-square rounded-2xl overflow-hidden mb-4;
       .cover-img {
         @apply w-full h-full object-cover;
       }
@@ -260,22 +260,21 @@ watch(
       .creator-info {
         @apply flex items-center mb-4;
         .creator-name {
-          @apply ml-2 text-sm text-gray-300;
+          @apply ml-2 text-gray-700 dark:text-gray-300;
         }
       }
 
       .music-desc {
-        @apply text-sm text-gray-400;
+        @apply text-sm text-gray-600 dark:text-gray-400 leading-relaxed;
       }
     }
   }
 
-  &-list-container {
-    @apply flex-grow min-h-0 flex flex-col relative;
-  }
-
   &-list {
     @apply flex-grow min-h-0;
+    &-container {
+      @apply flex-grow min-h-0 flex flex-col relative;
+    }
 
     &-content {
       @apply min-h-[calc(80vh-60px)];
@@ -312,16 +311,10 @@ watch(
 }
 
 .loading-more {
-  @apply text-center text-white py-10;
+  @apply text-center py-4 text-gray-500 dark:text-gray-400;
 }
 
-.double-list {
-  .double-item {
-    width: 100%;
-  }
-
-  .song-item {
-    background-color: #191919;
-  }
+.double-item {
+  @apply mb-2 bg-light-100 bg-opacity-20 dark:bg-dark-100 dark:bg-opacity-20 rounded-3xl;
 }
 </style>
