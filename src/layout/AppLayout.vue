@@ -92,4 +92,13 @@ const route = useRoute();
 .main-page {
   @apply h-full;
 }
+
+.mobile {
+  .main-content {
+    height: calc(100vh - 146px);
+    overflow: auto;
+    display: block;
+    flex: none;
+  }
+}
 </style>

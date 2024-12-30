@@ -64,13 +64,13 @@
           <n-slider v-model:value="volumeSlider" :step="0.01" :tooltip="false" vertical></n-slider>
         </div>
       </div>
-      <n-tooltip trigger="hover" :z-index="9999999">
+      <n-tooltip v-if="!isMobile" trigger="hover" :z-index="9999999">
         <template #trigger>
           <i class="iconfont" :class="playModeIcon" @click="togglePlayMode"></i>
         </template>
         {{ playModeText }}
       </n-tooltip>
-      <n-tooltip trigger="hover" :z-index="9999999">
+      <n-tooltip v-if="!isMobile" trigger="hover" :z-index="9999999">
         <template #trigger>
           <i class="iconfont icon-likefill" :class="{ 'like-active': isFavorite }" @click="toggleFavorite"></i>
         </template>
@@ -128,7 +128,7 @@ import { useStore } from 'vuex';
 import SongItem from '@/components/common/SongItem.vue';
 import { allTime, isElectron, isLyricWindowOpen, nowTime, openLyric, sound, textColors } from '@/hooks/MusicHook';
 import type { SongResult } from '@/type/music';
-import { getImgUrl, secondToMinute, setAnimationClass } from '@/utils';
+import { getImgUrl, isMobile, secondToMinute, setAnimationClass } from '@/utils';
 
 import MusicFull from './MusicFull.vue';
 

@@ -40,6 +40,11 @@
               <span :style="getLrcStyle(index)">{{ item.text }}</span>
               <div class="music-lrc-text-tr">{{ item.trText }}</div>
             </div>
+
+            <!-- 无歌词 -->
+            <div v-if="!lrcArray.length" class="music-lrc-text mt-40">
+              <span>暂无歌词, 请欣赏</span>
+            </div>
           </div>
         </n-layout>
         <!-- 时间矫正 -->
@@ -291,7 +296,7 @@ defineExpose({
       }
     }
     .music-lrc-text {
-      text-align: center;
+      @apply text-xl text-center;
     }
   }
 }
