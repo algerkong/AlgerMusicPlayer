@@ -1,0 +1,30 @@
+{
+  "extends": "@electron-toolkit/tsconfig/tsconfig.web.json",
+  "include": [
+    "src/preload/*.d.ts",
+    "src/renderer/**/*",
+    "src/renderer/**/*.vue"
+  ],
+  "compilerOptions": {
+    "composite": true,
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "strict": true,
+    "jsx": "preserve",
+    "sourceMap": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "baseUrl": ".",
+    "types": [
+      "naive-ui/volar",
+      "./auto-imports.d.ts",
+      "./components.d.ts"
+    ],
+    "paths": {
+      "@/*": ["src/renderer/*"],
+      "@renderer/*": ["src/renderer/*"]
+    }
+  }
+}

@@ -1,0 +1,162 @@
+.music-title[data-v-1b137c3d] {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 700;
+  --tw-text-opacity: 1;
+  color: rgb(17 24 39 / var(--tw-text-opacity, 1));
+}
+.music-title[data-v-1b137c3d]:is(.dark *) {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity, 1));
+}
+.music-page[data-v-1b137c3d] {
+  height: 100%;
+  width: 100%;
+  border-top-left-radius: 1rem;
+  border-top-right-radius: 1rem;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+  --tw-bg-opacity: 0.75;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+.music-page[data-v-1b137c3d]:is(.dark *) {
+  background-color: rgb(0 0 0 / var(--tw-bg-opacity, 1));
+  --tw-bg-opacity: 0.75;
+}
+.music-page[data-v-1b137c3d] {
+  -webkit-backdrop-filter: blur(20px);
+          backdrop-filter: blur(20px);
+}
+.music-close[data-v-1b137c3d] {
+  display: flex;
+  cursor: pointer;
+  align-items: center;
+  gap: 0.5rem;
+  --tw-text-opacity: 1;
+  color: rgb(17 24 39 / var(--tw-text-opacity, 1));
+}
+.music-close[data-v-1b137c3d]:is(.dark *) {
+  --tw-text-opacity: 1;
+  color: rgb(255 255 255 / var(--tw-text-opacity, 1));
+}
+.music-close .icon[data-v-1b137c3d] {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+}
+.music-content[data-v-1b137c3d] {
+  display: flex;
+  height: calc(100% - 60px);
+}
+.music-info[data-v-1b137c3d] {
+  display: flex;
+  width: 25%;
+  flex-shrink: 0;
+  flex-direction: column;
+  padding-right: 2rem;
+}
+.music-info .music-cover[data-v-1b137c3d] {
+  margin-bottom: 1rem;
+  aspect-ratio: 1 / 1;
+  min-height: 250px;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 1rem;
+}
+.music-info .music-cover .cover-img[data-v-1b137c3d] {
+  height: 100%;
+  width: 100%;
+  -o-object-fit: cover;
+     object-fit: cover;
+}
+.music-info .creator-info[data-v-1b137c3d] {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+}
+.music-info .creator-info .creator-name[data-v-1b137c3d] {
+  margin-left: 0.5rem;
+  --tw-text-opacity: 1;
+  color: rgb(55 65 81 / var(--tw-text-opacity, 1));
+}
+.music-info .creator-info .creator-name[data-v-1b137c3d]:is(.dark *) {
+  --tw-text-opacity: 1;
+  color: rgb(209 213 219 / var(--tw-text-opacity, 1));
+}
+.music-info .music-desc[data-v-1b137c3d] {
+  padding-right: 1rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  line-height: 1.625;
+  --tw-text-opacity: 1;
+  color: rgb(75 85 99 / var(--tw-text-opacity, 1));
+}
+.music-info .music-desc[data-v-1b137c3d]:is(.dark *) {
+  --tw-text-opacity: 1;
+  color: rgb(156 163 175 / var(--tw-text-opacity, 1));
+}
+.music-list[data-v-1b137c3d] {
+  min-height: 0px;
+  flex-grow: 1;
+}
+.music-list-container[data-v-1b137c3d] {
+  position: relative;
+  display: flex;
+  min-height: 0px;
+  flex-grow: 1;
+  flex-direction: column;
+}
+.music-list-content[data-v-1b137c3d] {
+  min-height: calc(80vh - 60px);
+}
+.music-list[data-v-1b137c3d] .n-virtual-list__scroll {
+  scrollbar-width: none;
+}
+.music-list[data-v-1b137c3d] .n-virtual-list__scroll::-webkit-scrollbar {
+  display: none;
+}
+.mobile .music-page[data-v-1b137c3d] {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+.mobile .music-content[data-v-1b137c3d] {
+  flex-direction: column;
+}
+.mobile .music-info[data-v-1b137c3d] {
+  margin-bottom: 0.5rem;
+  display: flex;
+  width: 100%;
+  flex-direction: row;
+  padding-right: 0px;
+}
+.mobile .music-info .music-cover[data-v-1b137c3d] {
+  margin-bottom: 1rem;
+  height: 100px;
+  width: 100px;
+  overflow: hidden;
+  border-radius: 0.5rem;
+}
+.mobile .music-info .music-detail[data-v-1b137c3d] {
+  margin-left: 1rem;
+  flex: 1 1 0%;
+}
+.loading-more[data-v-1b137c3d] {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  text-align: center;
+  --tw-text-opacity: 1;
+  color: rgb(107 114 128 / var(--tw-text-opacity, 1));
+}
+.loading-more[data-v-1b137c3d]:is(.dark *) {
+  --tw-text-opacity: 1;
+  color: rgb(156 163 175 / var(--tw-text-opacity, 1));
+}
+.double-item[data-v-1b137c3d] {
+  margin-bottom: 0.5rem;
+  border-radius: 1.5rem;
+  background-color: rgb(248 249 250 / var(--tw-bg-opacity, 1));
+  --tw-bg-opacity: 0.2;
+}
+.double-item[data-v-1b137c3d]:is(.dark *) {
+  background-color: rgb(22 22 22 / var(--tw-bg-opacity, 1));
+  --tw-bg-opacity: 0.2;
+}

@@ -1,102 +1,34 @@
-# Alger Music Player
-主要功能如下
+# electron-lan-file
 
-- 音乐推荐
-- 音乐播放
-- 网易云登录
-- 播放历史
-- 桌面歌词
-- 歌单 mv 搜索 专辑等功能
-- 识别无法播放歌曲 并代理播放
-- 可听周杰伦（搜索专辑）
+An Electron application with Vue and TypeScript
 
-## 项目简介
- 一个基于 electron typescript vue3 的桌面音乐播放器 适配 web端 桌面端 web移动端
+## Recommended IDE Setup
 
-## 预览地址
-[http://mc.alger.fun/](http://mc.alger.fun/)
+- [VSCode](https://code.visualstudio.com/) + [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) + [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [TypeScript Vue Plugin (Volar)](https://marketplace.visualstudio.com/items?itemName=Vue.vscode-typescript-vue-plugin)
 
-QQ群:789288579
+## Project Setup
 
-## 软件截图
-![首页](./docs/img/image-7.png)
-![歌词](./docs/img/image-6.png)
-![搜索](./docs/img/image-8.png)
-
-## 技术栈
-
-### 主要框架
-- Vue 3 - 渐进式 JavaScript 框架
-- TypeScript - JavaScript 的超集，添加了类型系统
-- Electron - 跨平台桌面应用开发框架
-- Vite - 下一代前端构建工具
-
-### UI 框架
-- Naive UI - 基于 Vue 3 的组件库
-
-### 项目特点
-- 完整的类型支持（TypeScript）
-- 模块化设计
-- 自动化组件和 API 导入
-- 多平台支持（Web、Desktop、Mobile Web）
-- 构建优化（代码分割、压缩）
-
-## 咖啡☕️
-|                                        微信                                        |                                       支付宝                                       |
-| :--------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------: |
-| <img src="https://github.com/algerkong/algerkong/blob/main/wechat.jpg?raw=true" alt="WeChat QRcode" width=200> | <img src="https://github.com/algerkong/algerkong/blob/main/alipay.jpg?raw=true" alt="Wechat QRcode" width=200> |
-
-## 项目运行
-```bash
-  # 安装依赖
-  npm install
-
-  # 运行项目 web
-  npm run dev
-
-  # 运行项目 electron
-  npm run start
-
-  # 打包项目 web
-  npm run build
-
-  # 打包项目 electron
-  npm run win ... 
-  # 具体看 package.json
-```
-#### 注意
-- 本地运行需要配置 .env.development 文件
-- 打包需要配置 .env.production 文件
+### Install
 
 ```bash
-  # .env.development
-  VITE_API_LOCAL = /api
-  VITE_API_MUSIC_PROXY = /music
-  VITE_API_PROXY_MUSIC = /music_proxy
-
-  # 你的接口地址 (必填)
-  VITE_API = ***
-  # 音乐po接口地址
-  VITE_API_MUSIC = ***
-  VITE_API_PROXY = ***
-
-
-  # .env.production
-  # 你的接口地址 (必填)
-  VITE_API = ***
-  # 音乐po接口地址
-  VITE_API_MUSIC = ***
-  # 代理地址
-  VITE_API_PROXY = ***
+$ npm install
 ```
 
-## Stargazers over time
-[![Stargazers over time](https://starchart.cc/algerkong/AlgerMusicPlayer.svg?variant=adaptive)](https://starchart.cc/algerkong/AlgerMusicPlayer)
+### Development
 
+```bash
+$ npm run dev
+```
 
+### Build
 
+```bash
+# For windows
+$ npm run build:win
 
-## 欢迎提Issues
+# For macOS
+$ npm run build:mac
 
-## 免责声明
-本软件仅用于学习交流，禁止用于商业用途，否则后果自负。
+# For Linux
+$ npm run build:linux
+```

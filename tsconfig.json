@@ -1,37 +1,4 @@
 {
-  "compilerOptions": {
-    "target": "esnext",
-    "module": "esnext",
-    "moduleResolution": "node",
-    "strict": true,
-    "jsx": "preserve",
-    "sourceMap": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "types": [
-      "naive-ui/volar",
-      "./auto-imports.d.ts",
-      "./components.d.ts"
-    ],
-    "lib": [
-      "esnext",
-      "dom"
-    ],
-    "baseUrl": "./",
-    "paths": {
-      "@": [
-        "src"
-      ],
-      "@/*": [
-        "src/*"
-      ],
-    }
-  },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.d.ts",
-    "src/**/*.tsx",
-    "src/**/*.vue"
-  ]
+  "files": [],
+  "references": [{ "path": "./tsconfig.node.json" }, { "path": "./tsconfig.web.json" }]
 }
