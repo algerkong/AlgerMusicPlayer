@@ -51,7 +51,6 @@ function createWindow(): void {
     mainWindow.webContents.openDevTools({ mode: 'detach' });
     mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
   } else {
-    mainWindow.webContents.openDevTools({ mode: 'detach' });
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
   }
   

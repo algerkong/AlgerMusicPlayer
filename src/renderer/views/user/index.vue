@@ -49,6 +49,7 @@
                 </div>
               </div>
             </div>
+            <div class="pb-20"></div>
             <play-bottom />
           </n-scrollbar>
         </div>
