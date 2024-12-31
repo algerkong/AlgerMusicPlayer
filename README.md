@@ -20,10 +20,10 @@
 QQ群:789288579
 
 ## 软件截图
-![首页白](./docs/img/image.png)
-![首页黑](./docs/img/image3.png)
-![歌词](./docs/img/image1.png)
-![桌面歌词](./docs/img/image2.png)
+![首页白](./docs/image.png)
+![首页黑](./docs/image3.png)
+![歌词](./docs/image1.png)
+![桌面歌词](./docs/image2.png)
 
 ## 技术栈
 
