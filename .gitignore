@@ -18,3 +18,5 @@ dist.zip
 bun.lockb
 
 .env.*.local
+
+out
