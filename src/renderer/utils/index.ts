@@ -1,7 +1,4 @@
 import { computed } from 'vue';
-import axios from 'axios';
-import config from '../../../package.json';
-
 import store from '@/store';
 
 // 设置歌手背景图片
