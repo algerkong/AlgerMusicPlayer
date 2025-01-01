@@ -79,8 +79,6 @@ jobs:
             dist/*.deb
             dist/*.AppImage
             dist/latest*.yml
-            dist/latest-mac.yml
-            dist/latest-linux.yml
             dist/*.blockmap
           body: ${{ env.NOTES }}
           draft: false
