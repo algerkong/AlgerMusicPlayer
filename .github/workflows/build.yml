@@ -58,5 +58,8 @@ jobs:
             dist/*.exe
             dist/*.deb
             dist/*.AppImage
+            dist/latest*.yml
+            dist/latest-mac.yml
+            dist/latest-linux.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
