@@ -39,13 +39,13 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-
 import { isElectron, isMobile } from '@/utils';
-
 import config from '../../../../package.json';
+import { getLatestReleaseInfo } from '@/utils/update';
 
 const showModal = ref(false);
 const noPrompt = ref(false);
+const releaseInfo = ref<any>(null);
 
 const closeModal = () => {
   showModal.value = false;
@@ -54,7 +54,7 @@ const closeModal = () => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
   // 如果是 electron 环境，不显示安装提示
   if (isElectron || isMobile.value) {
     return;
@@ -65,33 +65,59 @@ onMounted(() => {
   if (isDismissed) {
     return;
   }
+
+  // 获取最新版本信息
+  releaseInfo.value = await getLatestReleaseInfo();
   showModal.value = true;
 });
 
 const handleInstall = async (): Promise<void> => {
+  const assets = releaseInfo.value?.assets || [];
   const { userAgent } = navigator;
-  console.log('userAgent', userAgent);
-  const isMac: boolean = userAgent.includes('Mac');
-  const isWindows: boolean = userAgent.includes('Win');
-  const isARM: boolean =
-    userAgent.includes('ARM') || userAgent.includes('arm') || userAgent.includes('OS X');
-  const isX64: boolean =
-    userAgent.includes('x86_64') || userAgent.includes('Win64') || userAgent.includes('WOW64');
-  const isX86: boolean =
-    !isX64 &&
-    (userAgent.includes('i686') || userAgent.includes('i386') || userAgent.includes('Win32'));
+  const isMac = userAgent.toLowerCase().includes('mac');
+  const isWindows = userAgent.toLowerCase().includes('win');
+  const isLinux = userAgent.toLowerCase().includes('linux');
+  const isX64 = userAgent.includes('x86_64') || 
+                userAgent.includes('Win64') || 
+                userAgent.includes('WOW64');
 
-  const getDownloadUrl = (os: string, arch: string): string => {
-    const version = config.version as string;
-    const setup = os !== 'mac' ? 'Setup_' : '';
-    return `https://gh.llkk.cc/https://github.com/algerkong/AlgerMusicPlayer/releases/download/${version}/AlgerMusic_${version}_${setup}${arch}.${os === 'mac' ? 'dmg' : 'exe'}`;
-  };
-  const osType: string | null = isMac ? 'mac' : isWindows ? 'windows' : null;
-  const archType: string | null = isARM ? 'arm64' : isX64 ? 'x64' : isX86 ? 'x86' : null;
+  let downloadUrl = '';
 
-  const downloadUrl: string | null = osType && archType ? getDownloadUrl(osType, archType) : null;
+  // 根据平台和架构选择对应的安装包
+  if (isMac) {
+    // macOS
+    const macAsset = assets.find(asset => 
+      asset.name.includes('mac')
+    );
+    downloadUrl = macAsset?.browser_download_url || '';
+  } else if (isWindows) {
+    // Windows
+    let winAsset = assets.find(asset => 
+      asset.name.includes('win') && 
+      (isX64 ? asset.name.includes('x64') : asset.name.includes('ia32'))
+    );
+    if(!winAsset){
+      winAsset = assets.find(asset => 
+        asset.name.includes('win.exe')
+      );
+    }
+    downloadUrl = winAsset?.browser_download_url || '';
+  } else if (isLinux) {
+    // Linux
+    const linuxAsset = assets.find(asset => 
+      (asset.name.endsWith('.AppImage') || asset.name.endsWith('.deb')) && 
+      asset.name.includes('x64')
+    );
+    downloadUrl = linuxAsset?.browser_download_url || '';
+  }
 
-  window.open(downloadUrl || 'https://github.com/algerkong/AlgerMusicPlayer/releases', '_blank');
+  if (downloadUrl) {
+    window.open(`https://ghproxy.cn/${downloadUrl}`, '_blank');
+  } else {
+    // 如果没有找到对应的安装包，跳转到 release 页面
+    window.open('https://github.com/algerkong/AlgerMusicPlayer/releases/latest', '_blank');
+  }
+  closeModal();
 };
 </script>
 

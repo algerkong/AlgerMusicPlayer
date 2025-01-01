@@ -1,13 +1,17 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
 
-const setData = window.electron.ipcRenderer.sendSync('get-store-value', 'set')
+let setData: any = null;
+
+if (window.electron) {
+  setData = window.electron.ipcRenderer.sendSync('get-store-value', 'set');
+}
 
 // 扩展请求配置接口
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   retryCount?: number;
 }
 
-const baseURL = window.electron ? `http://127.0.0.1:${setData.musicApiPort}` : import.meta.env.VITE_API;
+const baseURL = window.electron ? `http://127.0.0.1:${setData?.musicApiPort}` : import.meta.env.VITE_API;
 
 const request = axios.create({
   baseURL,

@@ -89,12 +89,18 @@
         @click="openAuthor"
       >
         <div>
-          <div class="set-item-title">作者</div>
-          <div class="set-item-content">algerkong github</div>
+         <Coffee>
+          <div>
+            <div class="set-item-title">作者</div>
+            <div class="set-item-content">algerkong 点个star🌟呗</div>
+          </div>
+         </Coffee>
         </div>
-        <div>{{ setData.author }}</div>
+        <div>
+          <n-button type="primary" @click="openAuthor">前往github</n-button>
+        </div>
       </div>
-      <div class="set-item">
+      <div class="set-item" v-if="isElectron">
         <div>
           <div class="set-item-title">重启</div>
           <div class="set-item-content">重启应用</div>
@@ -114,6 +120,7 @@ import { isElectron } from '@/utils';
 import { checkUpdate, UpdateResult } from '@/utils/update';
 import config from '../../../../package.json';
 import PlayBottom from '@/components/common/PlayBottom.vue';
+import Coffee from '@/components/Coffee.vue';
 
 const store = useStore();
 const checking = ref(false);
