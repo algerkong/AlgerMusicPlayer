@@ -1,5 +1,5 @@
 <template>
-  <div class="song-item" :class="{ 'song-mini': mini, 'song-list': list }">
+  <div class="song-item" :class="{ 'song-mini': mini, 'song-list': list }" @contextmenu.prevent="handleContextMenu">
     <n-image
       v-if="item.picUrl"
       ref="songImg"
@@ -57,17 +57,30 @@
         <i v-else class="iconfont icon-playfill"></i>
       </div>
     </div>
+    <n-dropdown
+      v-if="isElectron"
+      :show="showDropdown"
+      :options="dropdownOptions"
+      :x="dropdownX"
+      :y="dropdownY"
+      placement="bottom-start"
+      @clickoutside="showDropdown = false"
+      @select="handleSelect"
+    />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, useTemplateRef } from 'vue';
+import { computed, h, ref, useTemplateRef } from 'vue';
 import { useStore } from 'vuex';
+import { useMessage } from 'naive-ui';
+import type { MenuOption } from 'naive-ui';
 
 import { audioService } from '@/services/audioService';
 import type { SongResult } from '@/type/music';
-import { getImgUrl } from '@/utils';
+import { getImgUrl, isElectron } from '@/utils';
 import { getImageBackground } from '@/utils/linearColor';
+import { getSongUrl } from '@/hooks/MusicListHook';
 
 const props = withDefaults(
   defineProps<{
@@ -84,22 +97,96 @@ const props = withDefaults(
 );
 
 const store = useStore();
+const message = useMessage();
 
 const play = computed(() => store.state.play as boolean);
-
 const playMusic = computed(() => store.state.playMusic);
-
 const playLoading = computed(
   () => playMusic.value.id === props.item.id && playMusic.value.playLoading
 );
-
-// 判断是否为正在播放的音乐
 const isPlaying = computed(() => {
   return playMusic.value.id === props.item.id;
 });
 
-const emits = defineEmits(['play']);
+const showDropdown = ref(false);
+const dropdownX = ref(0);
+const dropdownY = ref(0);
 
+const isDownloading = ref(false);
+
+const dropdownOptions = computed<MenuOption[]>(() => [
+  {
+    label: isDownloading.value ? '下载中...' : '下载 ' + props.item.name,
+    key: 'download',
+    icon: () => h('i', { class: 'iconfont ri-download-line' }),
+    disabled: isDownloading.value
+  }
+]);
+
+const handleContextMenu = (e: MouseEvent) => {
+  e.preventDefault();
+  showDropdown.value = true;
+  dropdownX.value = e.clientX;
+  dropdownY.value = e.clientY;
+};
+
+const handleSelect = (key: string | number) => {
+  showDropdown.value = false;
+  if (key === 'download') {
+    downloadMusic();
+  }
+};
+
+// 下载音乐
+const downloadMusic = async () => {
+  if (isDownloading.value) {
+    message.warning('正在下载中，请稍候...');
+    return;
+  }
+
+  try {
+    isDownloading.value = true;
+    const loadingMessage = message.loading('正在下载中...', { duration: 0 });
+    
+    const url = await getSongUrl(props.item.id);
+    if (!url) {
+      loadingMessage.destroy();
+      message.error('获取音乐下载地址失败');
+      isDownloading.value = false;
+      return;
+    }
+    
+    // 先移除可能存在的旧监听器
+    window.electron.ipcRenderer.removeAllListeners('music-download-complete');
+    
+    // 发送下载请求
+    window.electron.ipcRenderer.send('download-music', {
+      url,
+      filename: `${props.item.name} - ${(props.item.ar || props.item.song?.artists)?.map(a => a.name).join(',')}`
+    });
+
+    // 添加新的一次性监听器
+    window.electron.ipcRenderer.once('music-download-complete', (_, result) => {
+      isDownloading.value = false;
+      loadingMessage.destroy();
+      
+      if (result.success) {
+        message.success('下载成功');
+      } else if (result.canceled) {
+        // 用户取消了保存
+        message.info('已取消下载');
+      } else {
+        message.error(`下载失败: ${result.error}`);
+      }
+    });
+  } catch (error) {
+    isDownloading.value = false;
+    message.destroyAll();
+    message.error('下载失败');
+  }
+};
+
+const emits = defineEmits(['play']);
 const songImageRef = useTemplateRef('songImg');
 
 const imageLoad = async () => {
@@ -205,6 +292,14 @@ const toggleFavorite = async (e: Event) => {
       &:hover,
       &.bg-green-600 {
         @apply bg-green-500 border-green-500 text-white;
+      }
+    }
+
+    &-download {
+      @apply mr-2 cursor-pointer;
+      
+      .iconfont {
+        @apply text-xl transition text-gray-500 dark:text-gray-400 hover:text-green-500;
       }
     }
   }

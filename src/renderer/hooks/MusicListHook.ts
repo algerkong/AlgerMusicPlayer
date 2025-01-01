@@ -10,7 +10,7 @@ import { getImageLinearBackground } from '@/utils/linearColor';
 const musicHistory = useMusicHistory();
 
 // 获取歌曲url
-const getSongUrl = async (id: number) => {
+export const getSongUrl = async (id: number) => {
   const { data } = await getMusicUrl(id);
   let url = '';
   try {

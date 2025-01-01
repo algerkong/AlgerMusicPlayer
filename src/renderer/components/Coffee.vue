@@ -60,12 +60,10 @@ const copyQQ = () => {
 defineProps({
   alipayQR: {
     type: String,
-    required: true,
     default: alipay
   },
   wechatQR: {
     type: String,
-    required: true,
     default: wechat
   }
 });

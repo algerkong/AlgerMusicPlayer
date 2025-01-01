@@ -26,7 +26,6 @@
     "@unblockneteasemusic/server": "^0.27.8-patch.1",
     "electron-store": "^8.1.0",
     "electron-updater": "^6.1.7",
-  
     "netease-cloud-music-api-alger": "^4.25.0"
   },
   "devDependencies": { 

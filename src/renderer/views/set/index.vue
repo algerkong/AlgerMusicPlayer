@@ -55,6 +55,18 @@
           </div>
         </div>
       </div>
+      <div class="set-item" v-if="isElectron">
+        <div>
+          <div class="set-item-title">下载目录</div>
+          <div class="set-item-content">
+            {{ setData.downloadPath || '默认下载目录' }}
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <n-button size="small" @click="openDownloadPath">打开目录</n-button>
+          <n-button size="small" @click="selectDownloadPath">修改目录</n-button>
+        </div>
+      </div>
       <div class="set-item">
         <div>
           <div class="set-item-title">版本</div>
@@ -97,7 +109,7 @@
          </Coffee>
         </div>
         <div>
-          <n-button type="primary" @click="openAuthor">前往github</n-button>
+          <n-button size="small" type="primary" @click="openAuthor"><i class="ri-github-line"></i>前往github</n-button>
         </div>
       </div>
       <div class="set-item" v-if="isElectron">
@@ -118,6 +130,7 @@ import { useStore } from 'vuex';
 import { useMessage } from 'naive-ui';
 import { isElectron } from '@/utils';
 import { checkUpdate, UpdateResult } from '@/utils/update';
+import { selectDirectory, openDirectory } from '@/utils/fileOperation';
 import config from '../../../../package.json';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import Coffee from '@/components/Coffee.vue';
@@ -176,6 +189,20 @@ const openReleasePage = () => {
   window.open(updateInfo.value.releaseInfo?.html_url || 'https://github.com/algerkong/AlgerMusicPlayer/releases/latest', '_blank');
 };
 
+const selectDownloadPath = async () => {
+  const path = await selectDirectory(message);
+  if (path) {
+    store.commit('setSetData', {
+      ...setData.value,
+      downloadPath: path
+    });
+  }
+};
+
+const openDownloadPath = () => {
+  openDirectory(setData.value.downloadPath, message);
+};
+
 onMounted(() => {
   checkForUpdates();
 });
@@ -183,7 +210,7 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .set-page {
-  @apply p-4 bg-light dark:bg-dark;
+  @apply p-4 bg-light dark:bg-dark pb-20;
 }
 
 .set-item {

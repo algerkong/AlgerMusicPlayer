@@ -27,7 +27,7 @@
       <!-- 底部音乐播放 -->
       <play-bar v-if="isPlay" />
     </div>
-    <install-app-modal></install-app-modal>
+    <install-app-modal v-if="!isElectron"></install-app-modal>
     <update-modal />
   </div>
 </template>
