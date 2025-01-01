@@ -84,6 +84,11 @@
   "build": {
     "appId": "com.alger.music",
     "productName": "AlgerMusicPlayer",
+    "publish": [{
+      "provider": "github",
+      "owner": "algerkong",
+      "repo": "AlgerMusicPlayer"
+    }],
     "mac": {
       "icon": "resources/icon.icns",
       "target": [
