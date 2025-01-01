@@ -129,7 +129,7 @@ const handleUpdate = async () => {
   }
 
   if (downloadUrl) {
-    window.open(downloadUrl, '_blank');
+    window.open(`https://ghproxy.cn/${downloadUrl}`, '_blank');
   } else {
     // 如果没有找到对应的安装包，跳转到 release 页面
     window.open('https://github.com/algerkong/AlgerMusicPlayer/releases/latest', '_blank');

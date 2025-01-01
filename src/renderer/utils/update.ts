@@ -34,8 +34,16 @@ export interface UpdateResult {
  */
 export const getLatestReleaseInfo = async (): Promise<GithubReleaseInfo | null> => {
   try {
+    const token = import.meta.env.VITE_GITHUB_TOKEN;
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = `token ${token}`;
+    }
     const response = await axios.get(
-      'https://api.github.com/repos/algerkong/AlgerMusicPlayer/releases/latest'
+      'https://api.github.com/repos/algerkong/AlgerMusicPlayer/releases/latest',
+      {
+        headers
+      }
     );
     
     if (response.data) {
