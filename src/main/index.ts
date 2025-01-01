@@ -31,7 +31,7 @@ function initialize() {
   mainWindow = createMainWindow(icon);
   
   // 初始化窗口管理
-  initializeWindowManager(mainWindow);
+  initializeWindowManager();
   
   // 初始化托盘
   initializeTray(iconPath, mainWindow);
