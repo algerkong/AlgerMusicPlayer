@@ -95,13 +95,22 @@
         {
           "target": "dmg",
           "arch": [
-            "x64",
-            "arm64"
+            "universal"
           ]
         }
       ],
       "artifactName": "${productName}-${version}-mac-${arch}.${ext}",
-      "darkModeSupport": true
+      "darkModeSupport": true,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "notarize": false,
+      "identity": null,
+      "type": "distribution",
+      "binaries": [
+        "Contents/MacOS/AlgerMusicPlayer"
+      ]
     },
     "win": {
       "icon": "resources/favicon.ico",

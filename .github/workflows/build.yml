@@ -29,14 +29,12 @@ jobs:
       - name: Build MacOS
         if: matrix.os == 'macos-latest'
         run: |
-          security create-keychain -p github_actions build.keychain
-          security default-keychain -s build.keychain
-          security unlock-keychain -p github_actions build.keychain
-          security set-keychain-settings -t 3600 -u build.keychain
+          export ELECTRON_BUILDER_EXTRA_ARGS="--universal"
           npm run build:mac
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
+          DEBUG: electron-builder
 
       # Windows Build
       - name: Build Windows
@@ -80,9 +78,10 @@ jobs:
             dist/*.exe
             dist/*.deb
             dist/*.AppImage
-            dist/latest.yml
+            dist/latest*.yml
             dist/latest-mac.yml
             dist/latest-linux.yml
+            dist/*.blockmap
           body: ${{ env.NOTES }}
           draft: false
           prerelease: false
