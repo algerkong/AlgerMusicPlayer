@@ -200,5 +200,10 @@ ipcMain.on('get-store-value', (_, key) => {
   _.returnValue = value || '';
 });
 
+// 添加 IPC 处理程序
+ipcMain.on('get-arch', (event) => {
+  event.returnValue = process.arch;
+});
+
 // In this file you can include the rest of your app"s specific main process
 // code. You can also put them in separate files and require them here.

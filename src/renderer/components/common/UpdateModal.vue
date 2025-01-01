@@ -97,10 +97,41 @@ const checkForUpdates = async () => {
 };
 
 const handleUpdate = async () => {
-  const downloadUrl = updateInfo.value.releaseInfo?.assets[0]?.browser_download_url;
+  const assets = updateInfo.value.releaseInfo?.assets || [];
+  const platform = window.electron.process.platform;
+  const arch = window.electron.ipcRenderer.sendSync('get-arch');
+  console.log(arch);
+  console.log(platform);
+
+  let downloadUrl = '';
+
+  // 根据平台和架构选择对应的安装包
+  if (platform === 'darwin') {
+    // macOS
+    const macAsset = assets.find(asset => 
+      asset.name.includes('mac')
+    );
+    downloadUrl = macAsset?.browser_download_url || '';
+  } else if (platform === 'win32') {
+    // Windows
+    const winAsset = assets.find(asset => 
+      asset.name.includes('win') && 
+      (arch === 'x64' ? asset.name.includes('x64') : asset.name.includes('ia32'))
+    );
+    downloadUrl = winAsset?.browser_download_url || '';
+  } else if (platform === 'linux') {
+    // Linux
+    const linuxAsset = assets.find(asset => 
+      (asset.name.endsWith('.AppImage') || asset.name.endsWith('.deb')) && 
+      asset.name.includes('x64')
+    );
+    downloadUrl = linuxAsset?.browser_download_url || '';
+  }
+
   if (downloadUrl) {
     window.open(downloadUrl, '_blank');
   } else {
+    // 如果没有找到对应的安装包，跳转到 release 页面
     window.open('https://github.com/algerkong/AlgerMusicPlayer/releases/latest', '_blank');
   }
   closeModal();
