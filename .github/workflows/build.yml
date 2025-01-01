@@ -49,6 +49,22 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # Get version from tag
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+        shell: bash
+
+      # Read release notes
+      - name: Read release notes
+        id: release_notes
+        run: |
+          NOTES=$(awk "/## \[v${{ env.VERSION }}\]/{p=1;print;next} /## \[v/{p=0}p" CHANGELOG.md)
+          echo "NOTES<<EOF" >> $GITHUB_ENV
+          echo "$NOTES" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+        shell: bash
+
       # Upload artifacts
       - name: Upload artifacts
         uses: softprops/action-gh-release@v1
@@ -61,5 +77,8 @@ jobs:
             dist/latest.yml
             dist/latest-mac.yml
             dist/latest-linux.yml
+          body: ${{ env.NOTES }}
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
