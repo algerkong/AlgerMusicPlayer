@@ -19,7 +19,6 @@
         </div>
       </div>
       <div class="update-info">
-        <div class="update-title">更新内容：</div>
         <n-scrollbar style="max-height: 300px">
           <div class="update-body" v-html="parsedReleaseNotes"></div>
         </n-scrollbar>
@@ -47,7 +46,7 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue';
 import { marked } from 'marked';
-import { checkUpdate } from '@/utils';
+import { checkUpdate, UpdateResult } from '@/utils/update';
 import config from '../../../../package.json';
 
 // 配置 marked
@@ -56,23 +55,13 @@ marked.setOptions({
   gfm: true // 启用 GitHub 风格的 Markdown
 });
 
-interface ReleaseInfo {
-  tag_name: string;
-  body?: string;
-  html_url: string;
-  assets: Array<{
-    browser_download_url: string;
-    name: string;
-  }>;
-}
-
 const showModal = ref(false);
 const noPrompt = ref(false);
-const updateInfo = ref({
+const updateInfo = ref<UpdateResult>({
   hasUpdate: false,
   latestVersion: '',
   currentVersion: config.version,
-  releaseInfo: null as ReleaseInfo | null
+  releaseInfo: null
 });
 
 // 解析 Markdown
@@ -95,11 +84,12 @@ const closeModal = () => {
 
 const checkForUpdates = async () => {
   try {
-    const result = await checkUpdate();
-    updateInfo.value = result;
-    // 如果有更新且用户没有选择不再提示，则显示弹窗
-    if (result.hasUpdate && localStorage.getItem('updatePromptDismissed') !== 'true') {
-      showModal.value = true;
+    const result = await checkUpdate(config.version);
+    if (result) {
+      updateInfo.value = result;
+      if (localStorage.getItem('updatePromptDismissed') !== 'true') {
+        showModal.value = true;
+      }
     }
   } catch (error) {
     console.error('检查更新失败:', error);
@@ -107,28 +97,12 @@ const checkForUpdates = async () => {
 };
 
 const handleUpdate = async () => {
-  const { userAgent } = navigator;
-  const isMac: boolean = userAgent.includes('Mac');
-  const isWindows: boolean = userAgent.includes('Win');
-  const isARM: boolean =
-    userAgent.includes('ARM') || userAgent.includes('arm') || userAgent.includes('OS X');
-  const isX64: boolean =
-    userAgent.includes('x86_64') || userAgent.includes('Win64') || userAgent.includes('WOW64');
-  const isX86: boolean =
-    !isX64 &&
-    (userAgent.includes('i686') || userAgent.includes('i386') || userAgent.includes('Win32'));
-
-  const getDownloadUrl = (os: string, arch: string): string => {
-    const version = updateInfo.value.latestVersion;
-    const setup = os !== 'mac' ? 'Setup_' : '';
-    return `https://gh.llkk.cc/https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}/AlgerMusic_${version}_${setup}${arch}.${os === 'mac' ? 'dmg' : 'exe'}`;
-  };
-
-  const osType: string | null = isMac ? 'mac' : isWindows ? 'windows' : null;
-  const archType: string | null = isARM ? 'arm64' : isX64 ? 'x64' : isX86 ? 'x86' : null;
-
-  const downloadUrl: string | null = osType && archType ? getDownloadUrl(osType, archType) : null;
-  window.open(downloadUrl || 'https://github.com/algerkong/AlgerMusicPlayer/releases/latest', '_blank');
+  const downloadUrl = updateInfo.value.releaseInfo?.assets[0]?.browser_download_url;
+  if (downloadUrl) {
+    window.open(downloadUrl, '_blank');
+  } else {
+    window.open('https://github.com/algerkong/AlgerMusicPlayer/releases/latest', '_blank');
+  }
   closeModal();
 };
 
@@ -168,7 +142,7 @@ onMounted(() => {
         @apply text-base font-medium p-4 pb-2;
       }
       .update-body {
-        @apply p-4 pt-2 text-gray-600 dark:text-gray-300;
+        @apply p-4 pt-2 text-gray-600 dark:text-gray-300 rounded-lg overflow-hidden;
         
         :deep(h1) {
           @apply text-xl font-bold mb-3;

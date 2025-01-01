@@ -109,13 +109,15 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue';
 import { useStore } from 'vuex';
-import { isElectron, checkUpdate } from '@/utils';
+import { useMessage } from 'naive-ui';
+import { isElectron } from '@/utils';
+import { checkUpdate, UpdateResult } from '@/utils/update';
 import config from '../../../../package.json';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 
 const store = useStore();
 const checking = ref(false);
-const updateInfo = ref({
+const updateInfo = ref<UpdateResult>({
   hasUpdate: false,
   latestVersion: '',
   currentVersion: config.version,
@@ -144,10 +146,19 @@ const message = useMessage();
 const checkForUpdates = async (isClick = false) => {
   checking.value = true;
   try {
-    const result = await checkUpdate();
-    updateInfo.value = result;
-    if (!result.hasUpdate && isClick) {
+    const result = await checkUpdate(config.version);
+    if (result) {
+      updateInfo.value = result;
+      if (!result.hasUpdate && isClick) {
+        message.success('当前已是最新版本');
+      }
+    } else if (isClick) {
       message.success('当前已是最新版本');
+    }
+  } catch (error) {
+    console.error('检查更新失败:', error);
+    if (isClick) {
+      message.error('检查更新失败，请稍后重试');
     }
   } finally {
     checking.value = false;
@@ -155,7 +166,7 @@ const checkForUpdates = async (isClick = false) => {
 };
 
 const openReleasePage = () => {
-  window.open('https://github.com/algerkong/AlgerMusicPlayer/releases/latest');
+  window.open(updateInfo.value.releaseInfo?.html_url || 'https://github.com/algerkong/AlgerMusicPlayer/releases/latest', '_blank');
 };
 
 onMounted(() => {

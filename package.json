@@ -93,35 +93,47 @@
             "x64",
             "arm64"
           ]
-        },
-        {
-          "target": "zip",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
         }
-      ]
+      ],
+      "artifactName": "${productName}-${version}-mac-${arch}.${ext}",
+      "darkModeSupport": true
     },
     "win": {
       "icon": "resources/favicon.ico",
       "target": [
-        "nsis",
-        "zip"
-      ]
+        {
+          "target": "nsis",
+          "arch": ["x64", "ia32"]
+        }
+      ],
+      "artifactName": "${productName}-${version}-win-${arch}.${ext}",
+      "requestedExecutionLevel": "asInvoker"
     },
     "linux": {
       "icon": "resources/icon.png",
       "target": [
-        "AppImage",
-        "deb"
-      ]
+        {
+          "target": "AppImage",
+          "arch": ["x64"]
+        },
+        {
+          "target": "deb",
+          "arch": ["x64"]
+        }
+      ],
+      "artifactName": "${productName}-${version}-linux-${arch}.${ext}",
+      "category": "Audio",
+      "maintainer": "Alger <algerkc@qq.com>"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "installerIcon": "resources/favicon.ico",
-      "uninstallerIcon": "resources/favicon.ico"
+      "uninstallerIcon": "resources/favicon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "AlgerMusicPlayer",
+      "include": "build/installer.nsh"
     }
   }
 }

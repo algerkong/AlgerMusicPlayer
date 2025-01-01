@@ -102,7 +102,8 @@ import alipay from '@/assets/alipay.png';
 import wechat from '@/assets/wechat.png';
 import Coffee from '@/components/Coffee.vue';
 import { SEARCH_TYPES, USER_SET_OPTIONS } from '@/const/bar-const';
-import { getImgUrl, checkUpdate } from '@/utils';
+import { getImgUrl } from '@/utils';
+import { checkUpdate, UpdateResult } from '@/utils/update';
 
 import config from '../../../../package.json';
 
@@ -212,7 +213,7 @@ const toGithub = () => {
   window.open('https://github.com/algerkong/AlgerMusicPlayer', '_blank');
 };
 
-const updateInfo = ref({
+const updateInfo = ref<UpdateResult>({
   hasUpdate: false,
   latestVersion: '',
   currentVersion: config.version,
@@ -221,8 +222,10 @@ const updateInfo = ref({
 
 const checkForUpdates = async () => {
   try {
-    const result = await checkUpdate();
-    updateInfo.value = result;
+    const result = await checkUpdate(config.version);
+    if (result) {
+      updateInfo.value = result;
+    }
   } catch (error) {
     console.error('检查更新失败:', error);
   }
@@ -230,7 +233,7 @@ const checkForUpdates = async () => {
 
 const toGithubRelease = () => {
   if (updateInfo.value.hasUpdate) {
-    window.open('https://github.com/algerkong/AlgerMusicPlayer/releases/latest', '_blank');
+    window.open(updateInfo.value.releaseInfo?.html_url || 'https://github.com/algerkong/AlgerMusicPlayer/releases/latest', '_blank');
   } else {
     window.open('https://github.com/algerkong/AlgerMusicPlayer/releases', '_blank');
   }
