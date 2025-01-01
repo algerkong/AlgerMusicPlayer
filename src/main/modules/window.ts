@@ -5,7 +5,7 @@ import { join } from 'path';
 /**
  * 初始化窗口管理相关的IPC监听
  */
-export function initializeWindowManager(mainWindow: BrowserWindow) {
+export function initializeWindowManager() {
   ipcMain.on('minimize-window', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) {
