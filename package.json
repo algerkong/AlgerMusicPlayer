@@ -45,7 +45,7 @@
     "@vue/eslint-config-prettier": "^9.0.0",
     "@vue/eslint-config-typescript": "^13.0.0",
     "@vue/runtime-core": "^3.5.0",
-    "@vueuse/core": "^11.0.3",
+    "@vueuse/core": "^12.2.0",
     "@vueuse/electron": "^11.0.3",
     "autoprefixer": "^10.4.20",
     "axios": "^1.7.7",
