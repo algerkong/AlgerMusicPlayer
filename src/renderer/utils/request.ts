@@ -1,11 +1,14 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
+import { isElectron } from '.';
 
 let setData: any = null;
 
-if (window.electron) {
-  setData = window.electron.ipcRenderer.sendSync('get-store-value', 'set');
+const getSetData = ()=>{
+  if (window.electron) {
+    setData = window.electron.ipcRenderer.sendSync('get-store-value', 'set');
+  }
 }
-
+getSetData()
 // 扩展请求配置接口
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   retryCount?: number;
@@ -26,19 +29,32 @@ const RETRY_DELAY = 500;
 // 请求拦截器
 request.interceptors.request.use(
   (config: CustomAxiosRequestConfig) => {
-    // 初始化重试次数
-    config.retryCount = 0;
+    getSetData();
+    // 只在retryCount未定义时初始化为0
+    if (config.retryCount === undefined) {
+      config.retryCount = 0;
+    }
 
     // 在请求发送之前做一些处理
     // 在get请求params中添加timestamp
     if (config.method === 'get') {
       config.params = {
         ...config.params,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
       const token = localStorage.getItem('token');
       if (token) {
         config.params.cookie = token;
+      }
+    }
+
+    if(isElectron){
+      const proxyConfig = setData?.proxyConfig
+      if (proxyConfig?.enable && ['http', 'https'].includes(proxyConfig?.protocol)) {
+        config.params.proxy =  `${proxyConfig.protocol}://${proxyConfig.host}:${proxyConfig.port}`
+      }
+      if(setData.enableRealIP && setData.realIP){
+        config.params.realIP = setData.realIP
       }
     }
 
@@ -58,14 +74,15 @@ request.interceptors.response.use(
   async (error) => {
     const config = error.config as CustomAxiosRequestConfig;
 
-    // 如果没有配置重试次数，则初始化为0
-    if (!config || !config.retryCount) {
-      config.retryCount = 0;
+    // 如果没有配置，直接返回错误
+    if (!config) {
+      return Promise.reject(error);
     }
 
     // 检查是否还可以重试
-    if (config.retryCount < MAX_RETRIES) {
+    if (config.retryCount !== undefined && config.retryCount < MAX_RETRIES) {
       config.retryCount++;
+      console.log(`请求重试第 ${config.retryCount} 次`);
 
       // 延迟重试
       await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
@@ -74,6 +91,7 @@ request.interceptors.response.use(
       return request(config);
     }
 
+    console.log(`重试${MAX_RETRIES}次后仍然失败`);
     return Promise.reject(error);
   }
 );

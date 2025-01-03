@@ -126,7 +126,7 @@
             { label: '最小化到托盘', value: 'minimize' },
             { label: '直接退出', value: 'close' }
           ]"
-          style="width: 120px"
+          style="width: 160px"
         />
       </div>
       <div class="set-item" v-if="isElectron">
@@ -136,15 +136,84 @@
         </div>
         <n-button type="primary" @click="restartApp">重启</n-button>
       </div>
+      <div class="set-item" v-if="isElectron">
+        <div>
+          <div class="set-item-title">代理设置</div>
+          <div class="set-item-content">无法访问音乐时可以开启代理</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <n-switch v-model:value="setData.proxyConfig.enable">
+            <template #checked>开启</template>
+            <template #unchecked>关闭</template>
+          </n-switch>
+          <n-button size="small" @click="showProxyModal = true">配置</n-button>
+        </div>
+      </div>
+      <div class="set-item" v-if="isElectron">
+        <div>
+          <div class="set-item-title">realIP</div>
+          <div class="set-item-content">由于限制,此项目在国外使用会受到限制可使用realIP参数,传进国内IP解决,如:116.25.146.177 即可解决</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <n-switch v-model:value="setData.enableRealIP">
+            <template #checked>开启</template>
+            <template #unchecked>关闭</template>
+          </n-switch>
+          <n-input
+            v-if="setData.enableRealIP"
+            v-model:value="setData.realIP"
+            placeholder="realIP"
+            @blur="validateAndSaveRealIP"
+            style="width: 200px"
+          />
+        </div>
+      </div>
     </div>
     <PlayBottom/>
+    <n-modal
+      v-model:show="showProxyModal"
+      preset="dialog"
+      title="代理设置"
+      positive-text="确认"
+      negative-text="取消"
+      @positive-click="handleProxyConfirm"
+      @negative-click="showProxyModal = false"
+      :show-icon="false"
+    >
+      <n-form
+        ref="formRef"
+        :model="proxyForm"
+        :rules="proxyRules"
+        label-placement="left"
+        label-width="80"
+        require-mark-placement="right-hanging"
+      >
+        <n-form-item label="代理协议" path="protocol">
+          <n-select
+            v-model:value="proxyForm.protocol"
+            :options="[
+              { label: 'HTTP', value: 'http' },
+              { label: 'HTTPS', value: 'https' },
+              { label: 'SOCKS5', value: 'socks5' }
+            ]"
+          />
+        </n-form-item>
+        <n-form-item label="代理地址" path="host">
+          <n-input v-model:value="proxyForm.host" placeholder="请输入代理地址" />
+        </n-form-item>
+        <n-form-item label="代理端口" path="port">
+          <n-input-number v-model:value="proxyForm.port" placeholder="请输入代理端口" :min="1" :max="65535" />
+        </n-form-item>
+      </n-form>
+    </n-modal>
   </n-scrollbar>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue';
+import { computed, ref, onMounted, watch } from 'vue';
 import { useStore } from 'vuex';
 import { useMessage } from 'naive-ui';
+import type { FormRules } from 'naive-ui';
 import { isElectron } from '@/utils';
 import { checkUpdate, UpdateResult } from '@/utils/update';
 import { selectDirectory, openDirectory } from '@/utils/fileOperation';
@@ -167,7 +236,19 @@ const closeActionLabels = {
   close: '直接退出'
 } as const;
 
-const setData = computed(() => store.state.setData);
+const setData = computed(() => {
+  const data = store.state.setData;
+  // 确保代理配置存在
+  if (!data.proxyConfig) {
+    data.proxyConfig = {
+      enable: false,
+      protocol: 'http',
+      host: '127.0.0.1',
+      port: 7890
+    };
+  }
+  return data;
+});
 
 watch(() => setData.value, (newVal) => {
   store.commit('setSetData', newVal)
@@ -226,8 +307,116 @@ const openDownloadPath = () => {
   openDirectory(setData.value.downloadPath, message);
 };
 
+const showProxyModal = ref(false);
+const formRef = ref();
+const proxyForm = ref({
+  protocol: 'http',
+  host: '127.0.0.1',
+  port: 7890
+});
+
+const proxyRules: FormRules = {
+  protocol: {
+    required: true,
+    message: '请选择代理协议',
+    trigger: ['blur', 'change']
+  },
+  host: {
+    required: true,
+    message: '请输入代理地址',
+    trigger: ['blur', 'change'],
+    validator: (_rule, value) => {
+      if (!value) return false;
+      // 简单的IP或域名验证
+      const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$|^localhost$|^[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+$/;
+      return ipRegex.test(value);
+    }
+  },
+  port: {
+    required: true,
+    message: '请输入有效的端口号(1-65535)',
+    trigger: ['blur', 'change'],
+    validator: (_rule, value) => {
+      return value >= 1 && value <= 65535;
+    }
+  }
+};
+
+// 初始化时从store获取代理配置
 onMounted(() => {
   checkForUpdates();
+  if (setData.value.proxyConfig) {
+    proxyForm.value = { ...setData.value.proxyConfig };
+  }
+  // 确保enableRealIP有默认值
+  if (setData.value.enableRealIP === undefined) {
+    store.commit('setSetData', {
+      ...setData.value,
+      enableRealIP: false
+    });
+  }
+});
+
+// 监听代理配置变化
+watch(() => setData.value.proxyConfig, (newVal) => {
+  if (newVal) {
+    proxyForm.value = {
+      protocol: newVal.protocol || 'http',
+      host: newVal.host || '127.0.0.1',
+      port: newVal.port || 7890
+    };
+  }
+}, { immediate: true, deep: true });
+
+const handleProxyConfirm = async () => {
+  try {
+    await formRef.value?.validate();
+    // 保存代理配置时保留enable状态
+    store.commit('setSetData', {
+      ...setData.value,
+      proxyConfig: {
+        enable: setData.value.proxyConfig?.enable || false,
+        protocol: proxyForm.value.protocol,
+        host: proxyForm.value.host,
+        port: proxyForm.value.port
+      }
+    });
+    showProxyModal.value = false;
+    message.success('代理设置已保存，重启应用后生效');
+  } catch (err) {
+    message.error('请检查输入是否正确');
+  }
+};
+
+const validateAndSaveRealIP = () => {
+  const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+  if (!setData.value.realIP || ipRegex.test(setData.value.realIP)) {
+    store.commit('setSetData', {
+      ...setData.value,
+      realIP: setData.value.realIP,
+      enableRealIP: true
+    });
+    if (setData.value.realIP) {
+      message.success('真实IP设置已保存');
+    }
+  } else {
+    message.error('请输入有效的IP地址');
+    store.commit('setSetData', {
+      ...setData.value,
+      realIP: ''
+    });
+  }
+};
+
+// 监听enableRealIP变化，当关闭时清空realIP
+watch(() => setData.value.enableRealIP, (newVal) => {
+  if (!newVal) {
+    store.commit('setSetData', {
+      ...setData.value,
+      realIP: '',
+      enableRealIP: false
+    });
+  }
 });
 </script>
 
