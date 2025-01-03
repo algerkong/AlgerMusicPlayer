@@ -104,6 +104,15 @@ watch(
   }
 );
 
+watch(
+  () => searchType.value,
+  () => {
+    if (store.state.searchValue) {
+      loadSearch(store.state.searchValue);
+    }
+  }
+);
+
 const dateFormat = (time: any) => useDateFormat(time, 'YYYY.MM.DD').value;
 const loadSearch = async (keywords: any, type: any = null) => {
   hotKeyword.value = keywords;

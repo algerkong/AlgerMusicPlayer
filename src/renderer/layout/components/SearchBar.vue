@@ -175,13 +175,17 @@ const search = () => {
   router.push({
     path: '/search',
     query: {
-      keyword: value
+      keyword: value,
+      type: store.state.searchType
     }
   });
 };
 
 const selectSearchType = (key: number) => {
   store.state.searchType = key;
+  if (searchValue.value) {
+    search();
+  }
 };
 
 const searchTypeOptions = ref(SEARCH_TYPES);
