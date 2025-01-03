@@ -21,11 +21,11 @@
             </router-view>
           </div>
           <play-bottom height="5rem" />
-          <app-menu v-if="isMobile" class="menu" :menus="menus" />
+          <app-menu v-if="isMobile && !store.state.musicFull" class="menu" :menus="menus" />
         </div>
       </div>
       <!-- 底部音乐播放 -->
-      <play-bar v-if="isPlay" />
+      <play-bar v-if="isPlay" :style="isMobile && store.state.musicFull ? 'bottom: 0;' : ''" />
     </div>
     <install-app-modal v-if="!isElectron"></install-app-modal>
     <update-modal />

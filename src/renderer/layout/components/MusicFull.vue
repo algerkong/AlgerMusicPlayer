@@ -35,8 +35,8 @@
           class="music-lrc"
           style="height: 60vh"
           :native-scrollbar="false"
-          @mouseover="mouseOverLayout"
-          @mouseleave="mouseLeaveLayout"
+          @mouseover="!isMobile ? mouseOverLayout : null"
+          @mouseleave="!isMobile ? mouseLeaveLayout : null"
         >
           <div ref="lrcContainer">
             <div
@@ -79,7 +79,7 @@ import {
   textColors,
   useLyricProgress
 } from '@/hooks/MusicHook';
-import { getImgUrl } from '@/utils';
+import { getImgUrl, isMobile } from '@/utils';
 import { animateGradient, getHoverBackgroundColor, getTextColors } from '@/utils/linearColor';
 
 // 定义 refs
@@ -320,6 +320,9 @@ defineExpose({
     }
     .music-lrc-text {
       @apply text-xl text-center;
+    }
+    .music-content {
+      @apply h-[calc(100vh-120px)];
     }
   }
 }

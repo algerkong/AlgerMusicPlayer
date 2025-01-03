@@ -313,4 +313,13 @@ watch(
 .double-item {
   @apply mb-2 bg-light-100 bg-opacity-20 dark:bg-dark-100 dark:bg-opacity-20 rounded-3xl;
 }
+
+.mobile {
+  .music-info {
+    @apply hidden;
+  }
+  .music-list-content {
+    @apply pb-[100px];
+  }
+}
 </style>

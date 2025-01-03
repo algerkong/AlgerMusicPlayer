@@ -18,7 +18,7 @@
       </n-scrollbar>
     </div>
     <!-- 歌单列表 -->
-    <n-scrollbar class="recommend" :size="100" @scroll="handleScroll">
+    <n-scrollbar class="recommend" style="height: calc(100% - 55px)" :size="100" @scroll="handleScroll">
       <div v-loading="loading" class="recommend-list">
         <div
           v-for="(item, index) in recommendList"
@@ -218,8 +218,6 @@ watch(
 }
 
 .recommend {
-  @apply w-full h-full;
-
   &-title {
     @apply text-lg font-bold pb-2;
     @apply text-gray-900 dark:text-white;
@@ -324,6 +322,9 @@ watch(
 .mobile {
   .play-list-type {
     @apply mx-0 w-full;
+  }
+  .categories-wrapper {
+    @apply pl-4;
   }
 }
 </style>

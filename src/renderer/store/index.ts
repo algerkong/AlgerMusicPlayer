@@ -37,6 +37,7 @@ interface State {
   favoriteList: number[];
   playMode: number;
   theme: ThemeType;
+  musicFull: boolean;
 }
 
 const state: State = {
@@ -55,7 +56,8 @@ const state: State = {
   searchType: 1,
   favoriteList: getLocalStorageItem('favoriteList', []),
   playMode: getLocalStorageItem('playMode', 0),
-  theme: getCurrentTheme()
+  theme: getCurrentTheme(),
+  musicFull: false
 };
 
 const { handlePlayMusic, nextPlay, prevPlay } = useMusicListHook();
@@ -72,6 +74,9 @@ const mutations = {
   },
   setPlayMusic(state: State, play: boolean) {
     state.play = play;
+  },
+  setMusicFull(state: State, musicFull: boolean) {
+    state.musicFull = musicFull;
   },
   setPlayList(state: State, playList: SongResult[]) {
     state.playListIndex = playList.findIndex((item) => item.id === state.playMusic.id);

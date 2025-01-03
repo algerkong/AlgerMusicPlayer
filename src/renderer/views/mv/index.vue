@@ -292,4 +292,13 @@ const isPrevDisabled = computed(() => currentIndex.value === 0);
   @apply text-center py-4 col-span-full;
   @apply text-gray-500 dark:text-gray-400;
 }
+
+.mobile {
+  .mv-list-content {
+    @apply pl-4 pr-4;
+  }
+  .categories-wrapper {
+    @apply pl-4;
+  }
+}
 </style>

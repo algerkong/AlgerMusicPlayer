@@ -1,6 +1,5 @@
 <template>
   <!-- 展开全屏 -->
-  <music-full ref="MusicFullRef" v-model:music-full="musicFullVisible" :background="background" />
   <!-- 底部播放栏 -->
 
   <div
@@ -141,6 +140,7 @@
       </n-popover>
     </div>
     <!-- 播放音乐 -->
+  <music-full ref="MusicFullRef" v-model:music-full="musicFullVisible" :background="background" />
   </div>
 </template>
 
@@ -294,6 +294,7 @@ const musicFullVisible = ref(false);
 // 设置musicFull
 const setMusicFull = () => {
   musicFullVisible.value = !musicFullVisible.value;
+  store.commit('setMusicFull', musicFullVisible.value);
 };
 
 const palyListRef = useTemplateRef('palyListRef');
@@ -432,8 +433,7 @@ const openLyricWindow = () => {
 
 .mobile {
   .music-play-bar {
-    @apply px-4;
-    bottom: 70px;
+    @apply px-4 bottom-[70px] transition-all duration-300;
   }
   .music-time {
     display: none;
