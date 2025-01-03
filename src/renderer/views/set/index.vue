@@ -114,6 +114,23 @@
       </div>
       <div class="set-item" v-if="isElectron">
         <div>
+          <div class="set-item-title">关闭行为</div>
+          <div class="set-item-content">
+            {{ closeActionLabels[setData.closeAction] || '每次询问' }}
+          </div>
+        </div>
+        <n-select
+          v-model:value="setData.closeAction"
+          :options="[
+            { label: '每次询问', value: 'ask' },
+            { label: '最小化到托盘', value: 'minimize' },
+            { label: '直接退出', value: 'close' }
+          ]"
+          style="width: 120px"
+        />
+      </div>
+      <div class="set-item" v-if="isElectron">
+        <div>
           <div class="set-item-title">重启</div>
           <div class="set-item-content">重启应用</div>
         </div>
@@ -143,6 +160,12 @@ const updateInfo = ref<UpdateResult>({
   currentVersion: config.version,
   releaseInfo: null
 });
+
+const closeActionLabels = {
+  ask: '每次询问',
+  minimize: '最小化到托盘',
+  close: '直接退出'
+} as const;
 
 const setData = computed(() => store.state.setData);
 

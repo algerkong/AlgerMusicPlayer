@@ -1,4 +1,4 @@
-import { BrowserWindow, shell, ipcMain } from 'electron';
+import { BrowserWindow, shell, ipcMain, app } from 'electron';
 import { is } from '@electron-toolkit/utils';
 import { join } from 'path';
 
@@ -28,6 +28,7 @@ export function initializeWindowManager() {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) {
       win.destroy();
+      app.quit();
     }
   });
 
