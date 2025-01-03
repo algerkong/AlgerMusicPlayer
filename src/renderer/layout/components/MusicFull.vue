@@ -35,8 +35,8 @@
           class="music-lrc"
           style="height: 60vh"
           :native-scrollbar="false"
-          @mouseover="!isMobile ? mouseOverLayout : null"
-          @mouseleave="!isMobile ? mouseLeaveLayout : null"
+          @mouseover="mouseOverLayout"
+          @mouseleave="mouseLeaveLayout"
         >
           <div ref="lrcContainer">
             <div
@@ -116,9 +116,11 @@ const lrcScroll = (behavior = 'smooth') => {
 const debouncedLrcScroll = useDebounceFn(lrcScroll, 200);
 
 const mouseOverLayout = () => {
+  if(isMobile.value) {return}
   isMouse.value = true;
 };
 const mouseLeaveLayout = () => {
+  if(isMobile.value) {return}
   setTimeout(() => {
     isMouse.value = false;
     lrcScroll();
