@@ -28,7 +28,7 @@
       <play-bar v-if="isPlay" :style="isMobile && store.state.musicFull ? 'bottom: 0;' : ''" />
     </div>
     <install-app-modal v-if="!isElectron"></install-app-modal>
-    <update-modal />
+    <update-modal v-if="isElectron"/>
   </div>
 </template>
 

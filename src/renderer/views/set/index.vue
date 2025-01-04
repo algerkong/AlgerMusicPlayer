@@ -290,7 +290,7 @@ const checkForUpdates = async (isClick = false) => {
 };
 
 const openReleasePage = () => {
-  window.open(updateInfo.value.releaseInfo?.html_url || 'https://github.com/algerkong/AlgerMusicPlayer/releases/latest', '_blank');
+  store.commit('SET_SHOW_UPDATE_MODAL', true)
 };
 
 const selectDownloadPath = async () => {

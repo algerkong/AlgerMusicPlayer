@@ -44,10 +44,11 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch } from 'vue';
 import { marked } from 'marked';
 import { checkUpdate, UpdateResult } from '@/utils/update';
 import config from '../../../../package.json';
+import { useStore } from 'vuex';
 
 // 配置 marked
 marked.setOptions({
@@ -63,6 +64,25 @@ const updateInfo = ref<UpdateResult>({
   currentVersion: config.version,
   releaseInfo: null
 });
+
+const store = useStore()
+
+// 添加计算属性
+const showUpdateModalState = computed({
+  get: () => store.state.showUpdateModal,
+  set: (val) => store.commit('SET_SHOW_UPDATE_MODAL', val)
+})
+
+// 替换原来的 watch
+watch(showUpdateModalState, (newVal) => {
+  if (newVal) {
+    showModal.value = true
+  }
+})
+
+watch(() => showModal.value, (newVal) => {
+  showUpdateModalState.value = newVal
+})
 
 // 解析 Markdown
 const parsedReleaseNotes = computed(() => {
@@ -96,12 +116,30 @@ const checkForUpdates = async () => {
   }
 };
 
+
+
 const handleUpdate = async () => {
+  
   const assets = updateInfo.value.releaseInfo?.assets || [];
   const platform = window.electron.process.platform;
   const arch = window.electron.ipcRenderer.sendSync('get-arch');
-  console.log(arch);
-  console.log(platform);
+  console.log('arch',arch)
+  console.log('platform',platform)
+  const version =  updateInfo.value.latestVersion
+  const downUrls = {
+    win32: {
+      all: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}/AlgerMusicPlayer-${version}-win.exe`,
+      x64: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}/AlgerMusicPlayer-${version}-win-x64.exe`,
+      ia32: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}/AlgerMusicPlayer-${version}-win-ia32.exe`,
+    },
+    darwin: {
+      all: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}AlgerMusicPlayer-${version}-mac-universal.dmg`,
+    },
+    linux: {
+      AppImage: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}/AlgerMusicPlayer-${version}-linux-x64.AppImage`,
+      deb: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}/AlgerMusicPlayer-${version}-linux-x64.deb`,
+    }
+  }
 
   let downloadUrl = '';
 
@@ -111,30 +149,29 @@ const handleUpdate = async () => {
     const macAsset = assets.find(asset => 
       asset.name.includes('mac')
     );
-    downloadUrl = macAsset?.browser_download_url || '';
+    downloadUrl = macAsset?.browser_download_url || downUrls.darwin.all || '';
   } else if (platform === 'win32') {
     // Windows
     const winAsset = assets.find(asset => 
       asset.name.includes('win') && 
       (arch === 'x64' ? asset.name.includes('x64') : asset.name.includes('ia32'))
     );
-    downloadUrl = winAsset?.browser_download_url || '';
+    downloadUrl = winAsset?.browser_download_url || downUrls.win32[arch] || downUrls.win32.all || ''; 
   } else if (platform === 'linux') {
     // Linux
     const linuxAsset = assets.find(asset => 
       (asset.name.endsWith('.AppImage') || asset.name.endsWith('.deb')) && 
       asset.name.includes('x64')
     );
-    downloadUrl = linuxAsset?.browser_download_url || '';
+    downloadUrl = linuxAsset?.browser_download_url || downUrls.linux[arch] || '';
   }
 
   if (downloadUrl) {
-    window.open(`https://ghproxy.cn/${downloadUrl}`, '_blank');
+    window.open(`https://www.ghproxy.cn/${downloadUrl}`, '_blank');
   } else {
     // 如果没有找到对应的安装包，跳转到 release 页面
     window.open('https://github.com/algerkong/AlgerMusicPlayer/releases/latest', '_blank');
   }
-  closeModal();
 };
 
 onMounted(() => {

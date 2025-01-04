@@ -1,7 +1,6 @@
 import axios from 'axios';
 import config from '../../../package.json';
 import { useDateFormat } from '@vueuse/core';
-
 interface GithubReleaseInfo {
   tag_name: string;
   body: string;
@@ -36,20 +35,41 @@ export const getLatestReleaseInfo = async (): Promise<GithubReleaseInfo | null> 
   try {
     const token = import.meta.env.VITE_GITHUB_TOKEN;
     const headers = {};
-    if (token) {
-      headers['Authorization'] = `token ${token}`;
-    }
-    const response = await axios.get(
+
+    const apiUrls = [
+      // 原始地址
       'https://api.github.com/repos/algerkong/AlgerMusicPlayer/releases/latest',
-      {
-        headers
-      }
-    );
-    
-    if (response.data) {
-      return response.data;
+      
+      // 使用 ghproxy.com 代理
+      'https://www.ghproxy.cn/https://raw.githubusercontent.com/algerkong/AlgerMusicPlayer/dev_electron/package.json',
+      
+      // 使用 gitee 镜像（如果有的话）
+      // 'https://gitee.com/api/v5/repos/[用户名]/AlgerMusicPlayer/releases/latest'
+    ];
+    if (token) {
+     headers['Authorization'] = `token ${token}`;
     }
-    return null;
+
+    for (const url of apiUrls) {
+      try {
+        const response = await axios.get(url, { headers });
+
+        if (url.includes('package.json')) {
+          // 如果是 package.json，直接读取版本号
+          return {
+            tag_name: response.data.version,
+            body:(await axios.get('https://raw.githubusercontent.com/algerkong/AlgerMusicPlayer/dev_electron/CHANGELOG.md')).data,
+            html_url: 'https://github.com/algerkong/AlgerMusicPlayer/releases/latest',
+            assets: []
+          } as unknown as GithubReleaseInfo;
+        }
+        return response.data;
+      } catch (err) {
+        console.warn(`尝试访问 ${url} 失败:`, err);
+        continue;
+      }
+    }
+    throw new Error('所有 API 地址均无法访问');
   } catch (error) {
     console.error('获取 GitHub Release 信息失败:', error);
     return null;
@@ -69,6 +89,7 @@ const formatDate = (dateStr: string): string => {
 export const checkUpdate = async (currentVersion: string = config.version): Promise<UpdateResult | null> => {
   try {
     const releaseInfo = await getLatestReleaseInfo();
+    console.log('releaseInfo',releaseInfo)
     if (!releaseInfo) {
       return null;
     }
@@ -77,6 +98,8 @@ export const checkUpdate = async (currentVersion: string = config.version): Prom
     if (latestVersion === currentVersion) {
       return null;
     }
+    console.log('latestVersion',latestVersion)
+    console.log('currentVersion',currentVersion)
 
     return {
       hasUpdate: true,
@@ -84,7 +107,7 @@ export const checkUpdate = async (currentVersion: string = config.version): Prom
       currentVersion,
       releaseInfo: {
         tag_name: latestVersion,
-        body: `## 更新内容\n\n- 版本: ${latestVersion}\n- 发布时间: ${formatDate(releaseInfo.published_at)}\n\n${releaseInfo.body}`,
+        body: `## 更新内容\n\n- 版本: ${latestVersion}\n${releaseInfo.body}`,
         html_url: releaseInfo.html_url,
         assets: releaseInfo.assets.map(asset => ({
           browser_download_url: asset.browser_download_url,

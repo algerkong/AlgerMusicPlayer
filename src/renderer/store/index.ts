@@ -38,6 +38,7 @@ interface State {
   playMode: number;
   theme: ThemeType;
   musicFull: boolean;
+  showUpdateModal: boolean;
 }
 
 const state: State = {
@@ -57,7 +58,8 @@ const state: State = {
   favoriteList: getLocalStorageItem('favoriteList', []),
   playMode: getLocalStorageItem('playMode', 0),
   theme: getCurrentTheme(),
-  musicFull: false
+  musicFull: false,
+  showUpdateModal: false
 };
 
 const { handlePlayMusic, nextPlay, prevPlay } = useMusicListHook();
@@ -117,6 +119,9 @@ const mutations = {
   toggleTheme(state: State) {
     state.theme = state.theme === 'dark' ? 'light' : 'dark';
     applyTheme(state.theme);
+  },
+  SET_SHOW_UPDATE_MODAL(state, value) {
+    state.showUpdateModal = value
   }
 };
 

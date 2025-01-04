@@ -237,7 +237,7 @@ const checkForUpdates = async () => {
 
 const toGithubRelease = () => {
   if (updateInfo.value.hasUpdate) {
-    window.open(updateInfo.value.releaseInfo?.html_url || 'https://github.com/algerkong/AlgerMusicPlayer/releases/latest', '_blank');
+    store.commit('SET_SHOW_UPDATE_MODAL', true)
   } else {
     window.open('https://github.com/algerkong/AlgerMusicPlayer/releases', '_blank');
   }
