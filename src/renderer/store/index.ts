@@ -5,6 +5,7 @@ import homeRouter from '@/router/home';
 import type { SongResult } from '@/type/music';
 import { applyTheme, getCurrentTheme, ThemeType } from '@/utils/theme';
 import { isElectron } from '@/utils';
+import { likeSong, getLikedList } from '@/api/music';
 
 // 默认设置
 const defaultSettings = {
@@ -102,15 +103,25 @@ const mutations = {
       localStorage.setItem('appSettings', JSON.stringify(setData));
     }
   },
-  addToFavorite(state: State, songId: number) {
-    if (!state.favoriteList.includes(songId)) {
-      state.favoriteList = [songId, ...state.favoriteList];
-      localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
+  async addToFavorite(state: State, songId: number) {
+    try {
+      await likeSong(songId, true);
+      if (!state.favoriteList.includes(songId)) {
+        state.favoriteList = [songId, ...state.favoriteList];
+        localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
+      }
+    } catch (error) {
+      console.error('收藏歌曲失败:', error);
     }
   },
-  removeFromFavorite(state: State, songId: number) {
-    state.favoriteList = state.favoriteList.filter((id) => id !== songId);
-    localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
+  async removeFromFavorite(state: State, songId: number) {
+    try {
+      await likeSong(songId, false);
+      state.favoriteList = state.favoriteList.filter((id) => id !== songId);
+      localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
+    } catch (error) {
+      console.error('取消收藏歌曲失败:', error);
+    }
   },
   togglePlayMode(state: State) {
     state.playMode = (state.playMode + 1) % 3;
@@ -145,6 +156,22 @@ const actions = {
   },
   initializeTheme({ state }: { state: State }) {
     applyTheme(state.theme);
+  },
+  async initializeFavoriteList({ state }: { state: State }) {
+    try {
+      const res = await getLikedList();
+      if (res.data?.ids) {
+        state.favoriteList = res.data.ids.reverse();
+        localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
+      }
+    } catch (error) {
+      console.error('获取收藏列表失败:', error);
+      // 如果获取失败，使用本地存储的数据
+      const localFavoriteList = localStorage.getItem('favoriteList');
+      if (localFavoriteList) {
+        state.favoriteList = JSON.parse(localFavoriteList);
+      }
+    }
   }
 };
 

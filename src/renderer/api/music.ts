@@ -24,3 +24,13 @@ export const getParsingMusicUrl = (id: number) => {
   }
   return requestMusic.get<any>('/music', { params: { id } });
 };
+
+// 收藏歌曲
+export const likeSong = (id: number, like: boolean = true) => {
+  return request.get('/like', { params: { id, like } });
+};
+
+// 获取用户喜欢的音乐列表
+export const getLikedList = () => {
+  return request.get('/likelist');
+};

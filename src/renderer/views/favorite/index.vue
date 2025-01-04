@@ -54,7 +54,7 @@ const scrollbarRef = ref();
 // 无限滚动相关
 const pageSize = 16;
 const currentPage = ref(1);
-
+  
 const props = defineProps({
   isComponent: {
     type: Boolean,
@@ -64,10 +64,9 @@ const props = defineProps({
 
 // 获取当前页的收藏歌曲ID
 const getCurrentPageIds = () => {
-  const reversedList = [...favoriteList.value];
   const startIndex = (currentPage.value - 1) * pageSize;
   const endIndex = startIndex + pageSize;
-  return reversedList.slice(startIndex, endIndex);
+  return favoriteList.value.slice(startIndex, endIndex);
 };
 
 // 获取收藏歌曲详情
@@ -120,6 +119,7 @@ const handleScroll = (e: any) => {
 };
 
 onMounted(() => {
+  store.dispatch('initializeFavoriteList');
   getFavoriteSongs();
 });
 
