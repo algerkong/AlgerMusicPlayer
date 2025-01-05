@@ -48,6 +48,10 @@
             <i class="iconfont ri-login-box-line"></i>
             <span>去登录</span>
           </div>
+          <div v-if="store.state.user" class="menu-item" @click="selectItem('logout')">
+            <i class="iconfont ri-logout-box-r-line"></i>
+            <span>退出登录</span>
+          </div>
           <!-- 切换主题 -->
           <div class="menu-item" @click="selectItem('set')">
             <i class="iconfont ri-settings-3-line"></i>

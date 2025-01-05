@@ -53,7 +53,6 @@
             </div>
             <div class="ml-4">
               <div class="recommend-singer-item-info-name text-el">{{ item.name }}</div>
-              <div class="recommend-singer-item-info-name text-el">{{ item.name }}</div>
             </div>
           </div>
         </div>
