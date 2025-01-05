@@ -105,7 +105,7 @@ const mutations = {
   },
   async addToFavorite(state: State, songId: number) {
     try {
-      await likeSong(songId, true);
+      state.user && localStorage.getItem('token') && await likeSong(songId, true);
       if (!state.favoriteList.includes(songId)) {
         state.favoriteList = [songId, ...state.favoriteList];
         localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
@@ -116,7 +116,7 @@ const mutations = {
   },
   async removeFromFavorite(state: State, songId: number) {
     try {
-      await likeSong(songId, false);
+      state.user && localStorage.getItem('token') && await likeSong(songId, false);
       state.favoriteList = state.favoriteList.filter((id) => id !== songId);
       localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
     } catch (error) {
