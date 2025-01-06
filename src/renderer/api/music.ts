@@ -1,5 +1,4 @@
 import { ILyric } from '@/type/lyric';
-import { IPlayMusicUrl } from '@/type/music';
 import { isElectron } from '@/utils';
 import request from '@/utils/request';
 import requestMusic from '@/utils/request_music';

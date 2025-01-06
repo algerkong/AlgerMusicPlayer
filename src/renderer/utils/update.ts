@@ -79,7 +79,7 @@ export const getLatestReleaseInfo = async (): Promise<GithubReleaseInfo | null> 
 /**
  * 格式化时间
  */
-const formatDate = (dateStr: string): string => {
+export const formatDate = (dateStr: string): string => {
   return useDateFormat(new Date(dateStr), 'YYYY-MM-DD HH:mm').value;
 };
 
