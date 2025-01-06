@@ -81,6 +81,7 @@ import type { SongResult } from '@/type/music';
 import { getImgUrl, isElectron } from '@/utils';
 import { getImageBackground } from '@/utils/linearColor';
 import { getSongUrl } from '@/hooks/MusicListHook';
+import { cloneDeep } from 'lodash';
 
 const props = withDefaults(
   defineProps<{
@@ -148,7 +149,7 @@ const downloadMusic = async () => {
     isDownloading.value = true;
     const loadingMessage = message.loading('正在下载中...', { duration: 0 });
     
-    const url = await getSongUrl(props.item.id);
+    const url = await getSongUrl(props.item.id, cloneDeep(props.item));
     if (!url) {
       loadingMessage.destroy();
       message.error('获取音乐下载地址失败');

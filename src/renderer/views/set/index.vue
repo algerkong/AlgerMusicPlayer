@@ -168,6 +168,27 @@
           />
         </div>
       </div>
+      <div class="set-item">
+        <div>
+          <div class="set-item-title">音质设置</div>
+          <div class="set-item-content">选择音乐播放音质（VIP）</div>
+        </div>
+        <n-select
+          v-model:value="setData.musicQuality"
+          :options="[
+            { label: '标准', value: 'standard' },
+            { label: '较高', value: 'higher' },
+            { label: '极高', value: 'exhigh' },
+            { label: '无损', value: 'lossless' },
+            { label: 'Hi-Res', value: 'hires' },
+            { label: '高清环绕声', value: 'jyeffect' },
+            { label: '沉浸环绕声', value: 'sky' },
+            { label: '杜比全景声', value: 'dolby' },
+            { label: '超清母带', value: 'jymaster' }
+          ]"
+          style="width: 160px"
+        />
+      </div>
     </div>
     <PlayBottom/>
     <n-modal
@@ -246,6 +267,10 @@ const setData = computed(() => {
       host: '127.0.0.1',
       port: 7890
     };
+  }
+  // 确保音质设置存在
+  if (!data.musicQuality) {
+    data.musicQuality = 'higher';
   }
   return data;
 });

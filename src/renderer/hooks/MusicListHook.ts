@@ -4,31 +4,31 @@ import { getMusicLrc, getMusicUrl, getParsingMusicUrl } from '@/api/music';
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';
 import { audioService } from '@/services/audioService';
 import type { ILyric, ILyricText, SongResult } from '@/type/music';
-import { getImgUrl, getMusicProxyUrl } from '@/utils';
+import { getImgUrl } from '@/utils';
 import { getImageLinearBackground } from '@/utils/linearColor';
+import { cloneDeep } from 'lodash';
 
 const musicHistory = useMusicHistory();
 
 // 获取歌曲url
-export const getSongUrl = async (id: number) => {
+export const getSongUrl = async (id: number, songData: any) => {
   const { data } = await getMusicUrl(id);
   let url = '';
   try {
     if (data.data[0].freeTrialInfo || !data.data[0].url) {
-      const res = await getParsingMusicUrl(id);
-      console.log('res', res);
+      const res = await getParsingMusicUrl(id, songData);
       url = res.data.data.url;
     }
   } catch (error) {
     console.error('error', error);
   }
   url = url || data.data[0].url;
-  return getMusicProxyUrl(url);
+  return url;
 };
 
 const getSongDetail = async (playMusic: SongResult) => {
   playMusic.playLoading = true;
-  const playMusicUrl = await getSongUrl(playMusic.id);
+  const playMusicUrl = await getSongUrl(playMusic.id, cloneDeep(playMusic));
   const { backgroundColor, primaryColor } =
     playMusic.backgroundColor && playMusic.primaryColor
       ? playMusic

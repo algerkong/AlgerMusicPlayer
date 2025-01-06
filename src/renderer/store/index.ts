@@ -6,15 +6,10 @@ import type { SongResult } from '@/type/music';
 import { applyTheme, getCurrentTheme, ThemeType } from '@/utils/theme';
 import { isElectron } from '@/utils';
 import { likeSong, getLikedList } from '@/api/music';
+import setData from '@/../main/set.json'
 
 // 默认设置
-const defaultSettings = {
-  isProxy: false,
-  noAnimate: false,
-  animationSpeed: 1,
-  author: 'Alger',
-  authorUrl: 'https://github.com/algerkong'
-};
+const defaultSettings = setData;
 
 function getLocalStorageItem<T>(key: string, defaultValue: T): T {
   const item = localStorage.getItem(key);
@@ -139,7 +134,6 @@ const mutations = {
 const actions = {
   initializeSettings({ commit }: { commit: any }) {
     if (isElectron) {
-      // const setData = (window as any).electron.ipcRenderer.getStoreValue('set');
       const setData = window.electron.ipcRenderer.sendSync('get-store-value', 'set');
       commit('setSetData', setData || defaultSettings);
     } else {

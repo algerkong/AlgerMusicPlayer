@@ -44,7 +44,9 @@ request.interceptors.request.use(
       };
       const token = localStorage.getItem('token');
       if (token) {
-        config.params.cookie = token;
+        config.params.cookie = token + ' os=pc;';
+      }else{
+        config.params.cookie = 'os=pc;';
       }
     }
 

@@ -12,7 +12,7 @@ declare global {
       dragStart: (data: string) => void;
       miniTray: () => void;
       restart: () => void;
-      unblockMusic: (id: number) => Promise<any>;
+      unblockMusic: (id: number, data: any) => Promise<any>;
     };
   }
 }

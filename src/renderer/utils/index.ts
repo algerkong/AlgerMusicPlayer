@@ -54,34 +54,9 @@ export const formatNumber = (num: string | number) => {
   return num.toString();
 };
 
-const windowData = window as any;
-export const getIsMc = () => {
-  if (!windowData.electron) {
-    return false;
-  }
-  const setData = window.electron.ipcRenderer.sendSync('get-store-value', 'set');
-  if (setData.isProxy) {
-    return true;
-  }
-  return false;
-};
-const ProxyUrl = import.meta.env.VITE_API_PROXY;
-
-export const getMusicProxyUrl = (url: string) => {
-  if (!getIsMc()) {
-    return url;
-  }
-  const PUrl = url.split('').join('+');
-  return `${ProxyUrl}/mc?url=${PUrl}`;
-};
-
 export const getImgUrl = (url: string | undefined, size: string = '') => {
-  const bdUrl = 'https://image.baidu.com/search/down?url=';
   const imgUrl = `${url}?param=${size}`;
-  if (!getIsMc()) {
-    return imgUrl;
-  }
-  return `${bdUrl}${encodeURIComponent(imgUrl)}`;
+  return imgUrl;
 };
 
 export const isMobile = computed(() => {

@@ -6,12 +6,13 @@
     "host": "127.0.0.1",
     "port": 7890
   },
-  "enableRealIP":false,
-  "realIP":"",
+  "enableRealIP": false,
+  "realIP": "",
   "noAnimate": false,
   "animationSpeed": 1,
   "author": "Alger",
   "authorUrl": "https://github.com/algerkong",
   "musicApiPort": 30488,
-  "closeAction": "ask"
+  "closeAction": "ask",
+  "musicQuality": "higher"
 }

@@ -12,8 +12,8 @@ if (!fs.existsSync(path.resolve(os.tmpdir(), 'anonymous_token'))) {
 }
 
 // 处理解锁音乐请求
-ipcMain.handle('unblock-music', async (_, id) => {
-  return unblockMusic(id);
+ipcMain.handle('unblock-music', async (_, id, data) => {
+  return unblockMusic(id, data);
 });
 
 import server from 'netease-cloud-music-api-alger/server';
