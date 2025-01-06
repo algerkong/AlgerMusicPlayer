@@ -89,7 +89,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue';
+import { computed, ref, watch, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 
@@ -112,42 +112,58 @@ const userDetail = ref<IUserDetail>();
 const playList = ref<any[]>([]);
 const recordList = ref();
 const infoLoading = ref(false);
+const mounted = ref(true);
+const isShowList = ref(false);
+const list = ref<Playlist>();
+const listLoading = ref(false);
 
 const user = computed(() => store.state.user);
 
+onBeforeUnmount(() => {
+  mounted.value = false;
+});
+
 const loadPage = async () => {
-  if (!user.value) {
-    router.push('/login');
-    return;
+  if (!mounted.value || !user.value) return;
+  
+  try {
+    infoLoading.value = true;
+
+    const { data: userData } = await getUserDetail(user.value.userId);
+    if (!mounted.value) return;
+    userDetail.value = userData;
+
+    const { data: playlistData } = await getUserPlaylist(user.value.userId);
+    if (!mounted.value) return;
+    playList.value = playlistData.playlist;
+
+    const { data: recordData } = await getUserRecord(user.value.userId);
+    if (!mounted.value) return;
+    recordList.value = recordData.allData.map((item: any) => ({
+      ...item,
+      ...item.song,
+      picUrl: item.song.al.picUrl
+    }));
+  } catch (error) {
+    console.error('加载用户页面失败:', error);
+  } finally {
+    if (mounted.value) {
+      infoLoading.value = false;
+    }
   }
-  infoLoading.value = true;
-
-  const { data: userData } = await getUserDetail(user.value.userId);
-  userDetail.value = userData;
-
-  const { data: playlistData } = await getUserPlaylist(user.value.userId);
-  playList.value = playlistData.playlist;
-
-  const { data: recordData } = await getUserRecord(user.value.userId);
-  recordList.value = recordData.allData.map((item: any) => ({
-    ...item,
-    ...item.song,
-    picUrl: item.song.al.picUrl
-  }));
-  infoLoading.value = false;
 };
 
-onActivated(() => {
-  if (!user.value) {
+// 监听用户状态变化
+watch(() => store.state.user, (newUser) => {
+  if (!mounted.value) return;
+  
+  if (!newUser) {
     router.push('/login');
   } else {
     loadPage();
   }
-});
+}, { immediate: true });
 
-const isShowList = ref(false);
-const list = ref<Playlist>();
-const listLoading = ref(false);
 // 展示歌单
 const showPlaylist = async (id: number, name: string) => {
   isShowList.value = true;

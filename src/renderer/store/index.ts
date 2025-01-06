@@ -126,8 +126,13 @@ const mutations = {
     state.theme = state.theme === 'dark' ? 'light' : 'dark';
     applyTheme(state.theme);
   },
-  SET_SHOW_UPDATE_MODAL(state, value) {
+  setShowUpdateModal(state, value) {
     state.showUpdateModal = value
+  },
+  logout(state: State) {
+    state.user = null;
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
   }
 };
 
@@ -153,18 +158,20 @@ const actions = {
   },
   async initializeFavoriteList({ state }: { state: State }) {
     try {
-      const res = await getLikedList();
-      if (res.data?.ids) {
-        state.favoriteList = res.data.ids.reverse();
-        localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
+      if(state.user && localStorage.getItem('token')){
+        const res = await getLikedList();
+        if (res.data?.ids) {
+          state.favoriteList = res.data.ids.reverse();
+          localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
+        }
+      }else{
+        const localFavoriteList = localStorage.getItem('favoriteList');
+        if (localFavoriteList) {
+          state.favoriteList = JSON.parse(localFavoriteList);
+        }
       }
     } catch (error) {
       console.error('获取收藏列表失败:', error);
-      // 如果获取失败，使用本地存储的数据
-      const localFavoriteList = localStorage.getItem('favoriteList');
-      if (localFavoriteList) {
-        state.favoriteList = JSON.parse(localFavoriteList);
-      }
     }
   }
 };

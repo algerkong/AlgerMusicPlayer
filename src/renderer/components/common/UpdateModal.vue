@@ -70,7 +70,7 @@ const store = useStore()
 // 添加计算属性
 const showUpdateModalState = computed({
   get: () => store.state.showUpdateModal,
-  set: (val) => store.commit('SET_SHOW_UPDATE_MODAL', val)
+  set: (val) => store.commit('setShowUpdateModal', val)
 })
 
 // 替换原来的 watch

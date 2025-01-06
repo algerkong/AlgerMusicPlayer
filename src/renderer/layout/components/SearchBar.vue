@@ -199,8 +199,7 @@ const selectItem = async (key: string) => {
   switch (key) {
     case 'logout':
       logout().then(() => {
-        store.state.user = null;
-        localStorage.clear();
+        store.commit('logout');
         router.push('/login');
       });
       break;
@@ -241,7 +240,7 @@ const checkForUpdates = async () => {
 
 const toGithubRelease = () => {
   if (updateInfo.value.hasUpdate) {
-    store.commit('SET_SHOW_UPDATE_MODAL', true)
+    store.commit('setShowUpdateModal', true)
   } else {
     window.open('https://github.com/algerkong/AlgerMusicPlayer/releases', '_blank');
   }

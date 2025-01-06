@@ -1,8 +1,14 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
 import { isElectron } from '.';
+import store from '@/store';
+import { createDiscreteApi } from 'naive-ui'
+
+
+const { notification } = createDiscreteApi(
+  ['notification']
+)
 
 let setData: any = null;
-
 const getSetData = ()=>{
   if (window.electron) {
     setData = window.electron.ipcRenderer.sendSync('get-store-value', 'set');
@@ -74,11 +80,36 @@ request.interceptors.response.use(
     return response;
   },
   async (error) => {
+    console.log('error',error)  
     const config = error.config as CustomAxiosRequestConfig;
 
     // 如果没有配置，直接返回错误
     if (!config) {
       return Promise.reject(error);
+    }
+
+    // 处理 301 状态码
+    if (error.response?.status === 301) {
+      // 使用 store mutation 清除用户信息
+      store.commit('logout');
+
+      // 如果还可以重试，则重新发起请求
+      if (config.retryCount === undefined || config.retryCount < MAX_RETRIES) {
+        config.retryCount = (config.retryCount || 1) + 1;
+        console.log(`301 状态码，清除登录信息后重试第 ${config.retryCount} 次`);
+        notification.error({
+          content: '登录状态失效，请重新登录',
+          meta: '请重新登录',
+          duration: 2500,
+          keepAliveOnHover: true
+        })
+
+        // 延迟重试
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
+
+        // 重新发起请求
+        return request(config);
+      }
     }
 
     // 检查是否还可以重试

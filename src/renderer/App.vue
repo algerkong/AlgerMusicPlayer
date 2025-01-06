@@ -32,10 +32,6 @@ onMounted(() => {
       'setMenus',
       homeRouter.filter((item) => item.meta.isMobile)
     );
-    console.log(
-      'qqq ',
-      homeRouter.filter((item) => item.meta.isMobile)
-    );
   }
 });
 </script>

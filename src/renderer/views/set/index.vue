@@ -112,6 +112,27 @@
           <n-button size="small" type="primary" @click="openAuthor"><i class="ri-github-line"></i>前往github</n-button>
         </div>
       </div>
+      <div class="set-item">
+        <div>
+          <div class="set-item-title">音质设置</div>
+          <div class="set-item-content">选择音乐播放音质（VIP）</div>
+        </div>
+        <n-select
+          v-model:value="setData.musicQuality"
+          :options="[
+            { label: '标准', value: 'standard' },
+            { label: '较高', value: 'higher' },
+            { label: '极高', value: 'exhigh' },
+            { label: '无损', value: 'lossless' },
+            { label: 'Hi-Res', value: 'hires' },
+            { label: '高清环绕声', value: 'jyeffect' },
+            { label: '沉浸环绕声', value: 'sky' },
+            { label: '杜比全景声', value: 'dolby' },
+            { label: '超清母带', value: 'jymaster' }
+          ]"
+          style="width: 160px"
+        />
+      </div>
       <div class="set-item" v-if="isElectron">
         <div>
           <div class="set-item-title">关闭行为</div>
@@ -129,6 +150,7 @@
           style="width: 160px"
         />
       </div>
+
       <div class="set-item" v-if="isElectron">
         <div>
           <div class="set-item-title">重启</div>
@@ -168,27 +190,7 @@
           />
         </div>
       </div>
-      <div class="set-item">
-        <div>
-          <div class="set-item-title">音质设置</div>
-          <div class="set-item-content">选择音乐播放音质（VIP）</div>
-        </div>
-        <n-select
-          v-model:value="setData.musicQuality"
-          :options="[
-            { label: '标准', value: 'standard' },
-            { label: '较高', value: 'higher' },
-            { label: '极高', value: 'exhigh' },
-            { label: '无损', value: 'lossless' },
-            { label: 'Hi-Res', value: 'hires' },
-            { label: '高清环绕声', value: 'jyeffect' },
-            { label: '沉浸环绕声', value: 'sky' },
-            { label: '杜比全景声', value: 'dolby' },
-            { label: '超清母带', value: 'jymaster' }
-          ]"
-          style="width: 160px"
-        />
-      </div>
+    
     </div>
     <PlayBottom/>
     <n-modal
@@ -315,7 +317,7 @@ const checkForUpdates = async (isClick = false) => {
 };
 
 const openReleasePage = () => {
-  store.commit('SET_SHOW_UPDATE_MODAL', true)
+  store.commit('setShowUpdateModal', true)
 };
 
 const selectDownloadPath = async () => {
