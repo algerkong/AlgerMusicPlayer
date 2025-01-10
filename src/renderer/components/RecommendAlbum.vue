@@ -20,7 +20,7 @@
         </div>
       </template>
     </div>
-    <MusicList
+    <music-list
       v-model:show="showMusic"
       :name="albumName"
       :song-list="songList"
@@ -36,9 +36,9 @@ import { onMounted, ref } from 'vue';
 
 import { getNewAlbum } from '@/api/home';
 import { getAlbum } from '@/api/list';
+import MusicList from '@/components/MusicList.vue';
 import type { IAlbumNew } from '@/type/album';
 import { getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
-import MusicList from '@/components/MusicList.vue';
 
 const albumData = ref<IAlbumNew>();
 const loadAlbumList = async () => {

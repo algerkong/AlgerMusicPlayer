@@ -1,4 +1,5 @@
 import { Howl } from 'howler';
+import { cloneDeep } from 'lodash';
 
 import { getMusicLrc, getMusicUrl, getParsingMusicUrl } from '@/api/music';
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';
@@ -6,7 +7,6 @@ import { audioService } from '@/services/audioService';
 import type { ILyric, ILyricText, SongResult } from '@/type/music';
 import { getImgUrl } from '@/utils';
 import { getImageLinearBackground } from '@/utils/linearColor';
-import { cloneDeep } from 'lodash';
 
 const musicHistory = useMusicHistory();
 

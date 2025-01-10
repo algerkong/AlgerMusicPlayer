@@ -34,10 +34,10 @@ import { onMounted, ref } from 'vue';
 import { useStore } from 'vuex';
 
 import { getMusicDetail } from '@/api/music';
+import SongItem from '@/components/common/SongItem.vue';
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';
 import type { SongResult } from '@/type/music';
 import { setAnimationClass, setAnimationDelay } from '@/utils';
-import SongItem from '@/components/common/SongItem.vue';
 
 defineOptions({
   name: 'History'

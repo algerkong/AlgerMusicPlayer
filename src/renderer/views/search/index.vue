@@ -49,7 +49,7 @@
                 :class="setAnimationClass('animate__bounceInRight')"
                 :style="setAnimationDelay(index, 50)"
               >
-                <SearchItem :item="item" />
+                <search-item :item="item" />
               </div>
             </template>
           </template>
@@ -67,10 +67,10 @@ import { useStore } from 'vuex';
 
 import { getHotSearch } from '@/api/home';
 import { getSearch } from '@/api/search';
+import SearchItem from '@/components/common/SearchItem.vue';
 import SongItem from '@/components/common/SongItem.vue';
 import type { IHotSearch } from '@/type/search';
 import { isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
-import SearchItem from '@/components/common/SearchItem.vue';
 
 defineOptions({
   name: 'Search'

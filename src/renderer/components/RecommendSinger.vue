@@ -74,11 +74,11 @@ import { onMounted, ref } from 'vue';
 import { useStore } from 'vuex';
 
 import { getDayRecommend, getHotSinger } from '@/api/home';
+import MusicList from '@/components/MusicList.vue';
 import router from '@/router';
 import { IDayRecommend } from '@/type/day_recommend';
 import type { IHotSinger } from '@/type/singer';
 import { getImgUrl, setAnimationClass, setAnimationDelay, setBackgroundImg } from '@/utils';
-import MusicList from '@/components/MusicList.vue';
 
 const store = useStore();
 

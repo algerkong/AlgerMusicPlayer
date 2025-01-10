@@ -13,10 +13,10 @@
 <script setup lang="ts">
 import { darkTheme, lightTheme } from 'naive-ui';
 import { onMounted } from 'vue';
-import { isElectron } from '@/utils';
 
 import homeRouter from '@/router/home';
 import store from '@/store';
+import { isElectron } from '@/utils';
 
 import { isMobile } from './utils';
 

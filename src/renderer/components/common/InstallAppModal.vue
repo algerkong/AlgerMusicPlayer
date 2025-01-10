@@ -39,9 +39,11 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
+
 import { isElectron, isMobile } from '@/utils';
-import config from '../../../../package.json';
 import { getLatestReleaseInfo } from '@/utils/update';
+
+import config from '../../../../package.json';
 
 const showModal = ref(false);
 const noPrompt = ref(false);
@@ -77,36 +79,33 @@ const handleInstall = async (): Promise<void> => {
   const isMac = userAgent.toLowerCase().includes('mac');
   const isWindows = userAgent.toLowerCase().includes('win');
   const isLinux = userAgent.toLowerCase().includes('linux');
-  const isX64 = userAgent.includes('x86_64') || 
-                userAgent.includes('Win64') || 
-                userAgent.includes('WOW64');
+  const isX64 =
+    userAgent.includes('x86_64') || userAgent.includes('Win64') || userAgent.includes('WOW64');
 
   let downloadUrl = '';
 
   // 根据平台和架构选择对应的安装包
   if (isMac) {
     // macOS
-    const macAsset = assets.find(asset => 
-      asset.name.includes('mac')
-    );
+    const macAsset = assets.find((asset) => asset.name.includes('mac'));
     downloadUrl = macAsset?.browser_download_url || '';
   } else if (isWindows) {
     // Windows
-    let winAsset = assets.find(asset => 
-      asset.name.includes('win') && 
-      (isX64 ? asset.name.includes('x64') : asset.name.includes('ia32'))
+    let winAsset = assets.find(
+      (asset) =>
+        asset.name.includes('win') &&
+        (isX64 ? asset.name.includes('x64') : asset.name.includes('ia32'))
     );
-    if(!winAsset){
-      winAsset = assets.find(asset => 
-        asset.name.includes('win.exe')
-      );
+    if (!winAsset) {
+      winAsset = assets.find((asset) => asset.name.includes('win.exe'));
     }
     downloadUrl = winAsset?.browser_download_url || '';
   } else if (isLinux) {
     // Linux
-    const linuxAsset = assets.find(asset => 
-      (asset.name.endsWith('.AppImage') || asset.name.endsWith('.deb')) && 
-      asset.name.includes('x64')
+    const linuxAsset = assets.find(
+      (asset) =>
+        (asset.name.endsWith('.AppImage') || asset.name.endsWith('.deb')) &&
+        asset.name.includes('x64')
     );
     downloadUrl = linuxAsset?.browser_download_url || '';
   }

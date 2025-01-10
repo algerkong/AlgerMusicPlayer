@@ -1,26 +1,27 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
-import { isElectron } from '.';
+import { createDiscreteApi } from 'naive-ui';
+
 import store from '@/store';
-import { createDiscreteApi } from 'naive-ui'
 
+import { isElectron } from '.';
 
-const { notification } = createDiscreteApi(
-  ['notification']
-)
+const { notification } = createDiscreteApi(['notification']);
 
 let setData: any = null;
-const getSetData = ()=>{
+const getSetData = () => {
   if (window.electron) {
     setData = window.electron.ipcRenderer.sendSync('get-store-value', 'set');
   }
-}
-getSetData()
+};
+getSetData();
 // 扩展请求配置接口
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   retryCount?: number;
 }
 
-const baseURL = window.electron ? `http://127.0.0.1:${setData?.musicApiPort}` : import.meta.env.VITE_API;
+const baseURL = window.electron
+  ? `http://127.0.0.1:${setData?.musicApiPort}`
+  : import.meta.env.VITE_API;
 
 const request = axios.create({
   baseURL,
@@ -46,23 +47,23 @@ request.interceptors.request.use(
     if (config.method === 'get') {
       config.params = {
         ...config.params,
-        timestamp: Date.now(),
+        timestamp: Date.now()
       };
       const token = localStorage.getItem('token');
       if (token) {
-        config.params.cookie = token + ' os=pc;';
-      }else{
+        config.params.cookie = `${token} os=pc;`;
+      } else {
         config.params.cookie = 'os=pc;';
       }
     }
 
-    if(isElectron){
-      const proxyConfig = setData?.proxyConfig
+    if (isElectron) {
+      const proxyConfig = setData?.proxyConfig;
       if (proxyConfig?.enable && ['http', 'https'].includes(proxyConfig?.protocol)) {
-        config.params.proxy =  `${proxyConfig.protocol}://${proxyConfig.host}:${proxyConfig.port}`
+        config.params.proxy = `${proxyConfig.protocol}://${proxyConfig.host}:${proxyConfig.port}`;
       }
-      if(setData.enableRealIP && setData.realIP){
-        config.params.realIP = setData.realIP
+      if (setData.enableRealIP && setData.realIP) {
+        config.params.realIP = setData.realIP;
       }
     }
 
@@ -80,7 +81,7 @@ request.interceptors.response.use(
     return response;
   },
   async (error) => {
-    console.log('error',error)  
+    console.log('error', error);
     const config = error.config as CustomAxiosRequestConfig;
 
     // 如果没有配置，直接返回错误
@@ -102,7 +103,7 @@ request.interceptors.response.use(
           meta: '请重新登录',
           duration: 2500,
           keepAliveOnHover: true
-        })
+        });
 
         // 延迟重试
         await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));

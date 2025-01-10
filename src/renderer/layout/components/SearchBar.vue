@@ -96,7 +96,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref, watchEffect, computed } from 'vue';
+import { computed, onMounted, ref, watchEffect } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 
@@ -240,7 +240,7 @@ const checkForUpdates = async () => {
 
 const toGithubRelease = () => {
   if (updateInfo.value.hasUpdate) {
-    store.commit('setShowUpdateModal', true)
+    store.commit('setShowUpdateModal', true);
   } else {
     window.open('https://github.com/algerkong/AlgerMusicPlayer/releases', '_blank');
   }
@@ -317,7 +317,7 @@ const toGithubRelease = () => {
 
       .version-info {
         @apply ml-auto flex items-center;
-        
+
         .version-number {
           @apply text-xs px-2 py-0.5 rounded;
           @apply bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300;

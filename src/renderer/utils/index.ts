@@ -1,4 +1,5 @@
 import { computed } from 'vue';
+
 import store from '@/store';
 
 // 设置歌手背景图片

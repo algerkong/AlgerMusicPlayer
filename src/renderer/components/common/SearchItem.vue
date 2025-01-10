@@ -15,7 +15,7 @@
       <p class="search-item-artist">{{ item.desc }}</p>
     </div>
 
-    <MusicList
+    <music-list
       v-if="['专辑', 'playlist'].includes(item.type)"
       v-model:show="showPop"
       :name="item.name"
@@ -40,6 +40,7 @@ import MvPlayer from '@/components/MvPlayer.vue';
 import { audioService } from '@/services/audioService';
 import { IMvItem } from '@/type/mv';
 import { getImgUrl } from '@/utils';
+
 import MusicList from '../MusicList.vue';
 
 const props = defineProps<{

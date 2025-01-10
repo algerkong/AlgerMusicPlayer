@@ -1,12 +1,12 @@
 import { createStore } from 'vuex';
 
+import setData from '@/../main/set.json';
+import { getLikedList, likeSong } from '@/api/music';
 import { useMusicListHook } from '@/hooks/MusicListHook';
 import homeRouter from '@/router/home';
 import type { SongResult } from '@/type/music';
-import { applyTheme, getCurrentTheme, ThemeType } from '@/utils/theme';
 import { isElectron } from '@/utils';
-import { likeSong, getLikedList } from '@/api/music';
-import setData from '@/../main/set.json'
+import { applyTheme, getCurrentTheme, ThemeType } from '@/utils/theme';
 
 // 默认设置
 const defaultSettings = setData;
@@ -93,14 +93,18 @@ const mutations = {
       //   'set',
       //   JSON.parse(JSON.stringify(setData))
       // );
-      window.electron.ipcRenderer.send('set-store-value', 'set', JSON.parse(JSON.stringify(setData)));
+      window.electron.ipcRenderer.send(
+        'set-store-value',
+        'set',
+        JSON.parse(JSON.stringify(setData))
+      );
     } else {
       localStorage.setItem('appSettings', JSON.stringify(setData));
     }
   },
   async addToFavorite(state: State, songId: number) {
     try {
-      state.user && localStorage.getItem('token') && await likeSong(songId, true);
+      state.user && localStorage.getItem('token') && (await likeSong(songId, true));
       if (!state.favoriteList.includes(songId)) {
         state.favoriteList = [songId, ...state.favoriteList];
         localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
@@ -111,7 +115,7 @@ const mutations = {
   },
   async removeFromFavorite(state: State, songId: number) {
     try {
-      state.user && localStorage.getItem('token') && await likeSong(songId, false);
+      state.user && localStorage.getItem('token') && (await likeSong(songId, false));
       state.favoriteList = state.favoriteList.filter((id) => id !== songId);
       localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
     } catch (error) {
@@ -127,7 +131,7 @@ const mutations = {
     applyTheme(state.theme);
   },
   setShowUpdateModal(state, value) {
-    state.showUpdateModal = value
+    state.showUpdateModal = value;
   },
   logout(state: State) {
     state.user = null;
@@ -158,13 +162,13 @@ const actions = {
   },
   async initializeFavoriteList({ state }: { state: State }) {
     try {
-      if(state.user && localStorage.getItem('token')){
+      if (state.user && localStorage.getItem('token')) {
         const res = await getLikedList();
         if (res.data?.ids) {
           state.favoriteList = res.data.ids.reverse();
           localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
         }
-      }else{
+      } else {
         const localFavoriteList = localStorage.getItem('favoriteList');
         if (localFavoriteList) {
           state.favoriteList = JSON.parse(localFavoriteList);

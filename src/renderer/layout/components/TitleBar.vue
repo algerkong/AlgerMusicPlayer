@@ -36,6 +36,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useStore } from 'vuex';
+
 import { isElectron } from '@/utils';
 
 const store = useStore();
@@ -56,7 +57,7 @@ const handleAction = (action: 'minimize' | 'close') => {
       closeAction: action
     });
   }
-  
+
   if (action === 'minimize') {
     window.api.miniTray();
   } else {
@@ -70,13 +71,13 @@ const close = () => {
     return;
   }
 
-  const closeAction = store.state.setData.closeAction;
-  
+  const { closeAction } = store.state.setData;
+
   if (closeAction === 'minimize') {
     window.api.miniTray();
     return;
   }
-  
+
   if (closeAction === 'close') {
     window.api.close();
     return;

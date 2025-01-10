@@ -3,11 +3,11 @@ import { app, globalShortcut, ipcMain, nativeImage } from 'electron';
 import { join } from 'path';
 
 import { loadLyricWindow } from './lyric';
-import { startMusicApi } from './server';
+import { initializeConfig } from './modules/config';
 import { initializeFileManager } from './modules/fileManager';
 import { initializeTray } from './modules/tray';
 import { createMainWindow, initializeWindowManager } from './modules/window';
-import { initializeConfig } from './modules/config';
+import { startMusicApi } from './server';
 
 // 导入所有图标
 const iconPath = join(__dirname, '../../resources');
@@ -15,8 +15,8 @@ const icon = nativeImage.createFromPath(
   process.platform === 'darwin'
     ? join(iconPath, 'icon.icns')
     : process.platform === 'win32'
-    ? join(iconPath, 'favicon.ico')
-    : join(iconPath, 'icon.png')
+      ? join(iconPath, 'favicon.ico')
+      : join(iconPath, 'icon.png')
 );
 
 let mainWindow: Electron.BrowserWindow;
@@ -26,19 +26,19 @@ function initialize() {
   // 初始化各个模块
   initializeConfig();
   initializeFileManager();
-  
+
   // 创建主窗口
   mainWindow = createMainWindow(icon);
-  
+
   // 初始化窗口管理
   initializeWindowManager();
-  
+
   // 初始化托盘
   initializeTray(iconPath, mainWindow);
-  
+
   // 启动音乐API
   startMusicApi();
-  
+
   // 加载歌词窗口
   loadLyricWindow(ipcMain, mainWindow);
 }

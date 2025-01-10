@@ -1,5 +1,6 @@
 import { app, ipcMain } from 'electron';
 import Store from 'electron-store';
+
 import set from '../set.json';
 
 interface StoreType {
@@ -22,7 +23,7 @@ export function initializeConfig() {
   store = new Store<StoreType>({
     name: 'config',
     defaults: {
-      set: set
+      set
     }
   });
 
@@ -39,4 +40,4 @@ export function initializeConfig() {
   });
 
   return store;
-} 
+}

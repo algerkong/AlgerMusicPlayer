@@ -49,8 +49,10 @@
 
 <script setup>
 import { NButton, NImage, NPopover } from 'naive-ui';
+
 import alipay from '@/assets/alipay.png';
 import wechat from '@/assets/wechat.png';
+
 const message = useMessage();
 const copyQQ = () => {
   navigator.clipboard.writeText('789288579');

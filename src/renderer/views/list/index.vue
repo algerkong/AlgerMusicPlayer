@@ -18,7 +18,12 @@
       </n-scrollbar>
     </div>
     <!-- 歌单列表 -->
-    <n-scrollbar class="recommend" style="height: calc(100% - 55px)" :size="100" @scroll="handleScroll">
+    <n-scrollbar
+      class="recommend"
+      style="height: calc(100% - 55px)"
+      :size="100"
+      @scroll="handleScroll"
+    >
       <div v-loading="loading" class="recommend-list">
         <div
           v-for="(item, index) in recommendList"

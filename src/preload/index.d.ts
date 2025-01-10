@@ -14,6 +14,6 @@ declare global {
       restart: () => void;
       unblockMusic: (id: number, data: any) => Promise<any>;
     };
-    $message:any
+    $message: any;
   }
 }

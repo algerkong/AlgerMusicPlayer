@@ -22,12 +22,10 @@
         </div>
         <n-switch v-model:value="setData.isProxy" />
       </div> -->
-      <div class="set-item" v-if="isElectron">
+      <div v-if="isElectron" class="set-item">
         <div>
           <div class="set-item-title">音乐API端口</div>
-          <div class="set-item-content">
-            修改后需要重启应用
-          </div>
+          <div class="set-item-content">修改后需要重启应用</div>
         </div>
         <n-input-number v-model:value="setData.musicApiPort" />
       </div>
@@ -55,7 +53,7 @@
           </div>
         </div>
       </div>
-      <div class="set-item" v-if="isElectron">
+      <div v-if="isElectron" class="set-item">
         <div>
           <div class="set-item-title">下载目录</div>
           <div class="set-item-content">
@@ -101,15 +99,17 @@
         @click="openAuthor"
       >
         <div>
-         <Coffee>
-          <div>
-            <div class="set-item-title">作者</div>
-            <div class="set-item-content">algerkong 点个star🌟呗</div>
-          </div>
-         </Coffee>
+          <coffee>
+            <div>
+              <div class="set-item-title">作者</div>
+              <div class="set-item-content">algerkong 点个star🌟呗</div>
+            </div>
+          </coffee>
         </div>
         <div>
-          <n-button size="small" type="primary" @click="openAuthor"><i class="ri-github-line"></i>前往github</n-button>
+          <n-button size="small" type="primary" @click="openAuthor"
+            ><i class="ri-github-line"></i>前往github</n-button
+          >
         </div>
       </div>
       <div class="set-item">
@@ -133,7 +133,7 @@
           style="width: 160px"
         />
       </div>
-      <div class="set-item" v-if="isElectron">
+      <div v-if="isElectron" class="set-item">
         <div>
           <div class="set-item-title">关闭行为</div>
           <div class="set-item-content">
@@ -151,14 +151,14 @@
         />
       </div>
 
-      <div class="set-item" v-if="isElectron">
+      <div v-if="isElectron" class="set-item">
         <div>
           <div class="set-item-title">重启</div>
           <div class="set-item-content">重启应用</div>
         </div>
         <n-button type="primary" @click="restartApp">重启</n-button>
       </div>
-      <div class="set-item" v-if="isElectron">
+      <div v-if="isElectron" class="set-item">
         <div>
           <div class="set-item-title">代理设置</div>
           <div class="set-item-content">无法访问音乐时可以开启代理</div>
@@ -171,10 +171,13 @@
           <n-button size="small" @click="showProxyModal = true">配置</n-button>
         </div>
       </div>
-      <div class="set-item" v-if="isElectron">
+      <div v-if="isElectron" class="set-item">
         <div>
           <div class="set-item-title">realIP</div>
-          <div class="set-item-content">由于限制,此项目在国外使用会受到限制可使用realIP参数,传进国内IP解决,如:116.25.146.177 即可解决</div>
+          <div class="set-item-content">
+            由于限制,此项目在国外使用会受到限制可使用realIP参数,传进国内IP解决,如:116.25.146.177
+            即可解决
+          </div>
         </div>
         <div class="flex items-center gap-2">
           <n-switch v-model:value="setData.enableRealIP">
@@ -185,23 +188,22 @@
             v-if="setData.enableRealIP"
             v-model:value="setData.realIP"
             placeholder="realIP"
-            @blur="validateAndSaveRealIP"
             style="width: 200px"
+            @blur="validateAndSaveRealIP"
           />
         </div>
       </div>
-    
     </div>
-    <PlayBottom/>
+    <play-bottom />
     <n-modal
       v-model:show="showProxyModal"
       preset="dialog"
       title="代理设置"
       positive-text="确认"
       negative-text="取消"
+      :show-icon="false"
       @positive-click="handleProxyConfirm"
       @negative-click="showProxyModal = false"
-      :show-icon="false"
     >
       <n-form
         ref="formRef"
@@ -225,7 +227,12 @@
           <n-input v-model:value="proxyForm.host" placeholder="请输入代理地址" />
         </n-form-item>
         <n-form-item label="代理端口" path="port">
-          <n-input-number v-model:value="proxyForm.port" placeholder="请输入代理端口" :min="1" :max="65535" />
+          <n-input-number
+            v-model:value="proxyForm.port"
+            placeholder="请输入代理端口"
+            :min="1"
+            :max="65535"
+          />
         </n-form-item>
       </n-form>
     </n-modal>
@@ -233,16 +240,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from 'vue';
-import { useStore } from 'vuex';
-import { useMessage } from 'naive-ui';
 import type { FormRules } from 'naive-ui';
-import { isElectron } from '@/utils';
-import { checkUpdate, UpdateResult } from '@/utils/update';
-import { selectDirectory, openDirectory } from '@/utils/fileOperation';
-import config from '../../../../package.json';
-import PlayBottom from '@/components/common/PlayBottom.vue';
+import { useMessage } from 'naive-ui';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useStore } from 'vuex';
+
 import Coffee from '@/components/Coffee.vue';
+import PlayBottom from '@/components/common/PlayBottom.vue';
+import { isElectron } from '@/utils';
+import { openDirectory, selectDirectory } from '@/utils/fileOperation';
+import { checkUpdate, UpdateResult } from '@/utils/update';
+
+import config from '../../../../package.json';
 
 const store = useStore();
 const checking = ref(false);
@@ -277,9 +286,13 @@ const setData = computed(() => {
   return data;
 });
 
-watch(() => setData.value, (newVal) => {
-  store.commit('setSetData', newVal)
-}, { deep: true });
+watch(
+  () => setData.value,
+  (newVal) => {
+    store.commit('setSetData', newVal);
+  },
+  { deep: true }
+);
 
 const isDarkTheme = computed({
   get: () => store.state.theme === 'dark',
@@ -317,7 +330,7 @@ const checkForUpdates = async (isClick = false) => {
 };
 
 const openReleasePage = () => {
-  store.commit('setShowUpdateModal', true)
+  store.commit('setShowUpdateModal', true);
 };
 
 const selectDownloadPath = async () => {
@@ -355,7 +368,8 @@ const proxyRules: FormRules = {
     validator: (_rule, value) => {
       if (!value) return false;
       // 简单的IP或域名验证
-      const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$|^localhost$|^[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+$/;
+      const ipRegex =
+        /^(\d{1,3}\.){3}\d{1,3}$|^localhost$|^[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+$/;
       return ipRegex.test(value);
     }
   },
@@ -385,15 +399,19 @@ onMounted(() => {
 });
 
 // 监听代理配置变化
-watch(() => setData.value.proxyConfig, (newVal) => {
-  if (newVal) {
-    proxyForm.value = {
-      protocol: newVal.protocol || 'http',
-      host: newVal.host || '127.0.0.1',
-      port: newVal.port || 7890
-    };
-  }
-}, { immediate: true, deep: true });
+watch(
+  () => setData.value.proxyConfig,
+  (newVal) => {
+    if (newVal) {
+      proxyForm.value = {
+        protocol: newVal.protocol || 'http',
+        host: newVal.host || '127.0.0.1',
+        port: newVal.port || 7890
+      };
+    }
+  },
+  { immediate: true, deep: true }
+);
 
 const handleProxyConfirm = async () => {
   try {
@@ -436,15 +454,18 @@ const validateAndSaveRealIP = () => {
 };
 
 // 监听enableRealIP变化，当关闭时清空realIP
-watch(() => setData.value.enableRealIP, (newVal) => {
-  if (!newVal) {
-    store.commit('setSetData', {
-      ...setData.value,
-      realIP: '',
-      enableRealIP: false
-    });
+watch(
+  () => setData.value.enableRealIP,
+  (newVal) => {
+    if (!newVal) {
+      store.commit('setSetData', {
+        ...setData.value,
+        realIP: '',
+        enableRealIP: false
+      });
+    }
   }
-});
+);
 </script>
 
 <style lang="scss" scoped>

@@ -29,4 +29,4 @@ export const openDirectory = (path: string | undefined, message: MessageApi, sho
   } else if (showTip) {
     message.info('目录不存在');
   }
-}; 
+};

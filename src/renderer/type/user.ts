@@ -43,7 +43,7 @@ interface Profile {
   createTime: number;
   nickname: string;
   avatarUrl: string;
-  experts: Experts;
+  experts: any;
   expertTags?: any;
   djStatus: number;
   accountStatus: number;
@@ -78,8 +78,6 @@ interface Profile {
   sCount: number;
   newFollows: number;
 }
-
-interface Experts {}
 
 interface UserPoint {
   userId: number;

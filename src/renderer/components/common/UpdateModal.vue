@@ -44,11 +44,13 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, computed, watch } from 'vue';
 import { marked } from 'marked';
-import { checkUpdate, UpdateResult } from '@/utils/update';
-import config from '../../../../package.json';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useStore } from 'vuex';
+
+import { checkUpdate, UpdateResult } from '@/utils/update';
+
+import config from '../../../../package.json';
 
 // 配置 marked
 marked.setOptions({
@@ -65,24 +67,27 @@ const updateInfo = ref<UpdateResult>({
   releaseInfo: null
 });
 
-const store = useStore()
+const store = useStore();
 
 // 添加计算属性
 const showUpdateModalState = computed({
   get: () => store.state.showUpdateModal,
   set: (val) => store.commit('setShowUpdateModal', val)
-})
+});
 
 // 替换原来的 watch
 watch(showUpdateModalState, (newVal) => {
   if (newVal) {
-    showModal.value = true
+    showModal.value = true;
   }
-})
+});
 
-watch(() => showModal.value, (newVal) => {
-  showUpdateModalState.value = newVal
-})
+watch(
+  () => showModal.value,
+  (newVal) => {
+    showUpdateModalState.value = newVal;
+  }
+);
 
 // 解析 Markdown
 const parsedReleaseNotes = computed(() => {
@@ -116,52 +121,50 @@ const checkForUpdates = async () => {
   }
 };
 
-
-
 const handleUpdate = async () => {
-  
   const assets = updateInfo.value.releaseInfo?.assets || [];
-  const platform = window.electron.process.platform;
+  const { platform } = window.electron.process;
   const arch = window.electron.ipcRenderer.sendSync('get-arch');
-  console.log('arch',arch)
-  console.log('platform',platform)
-  const version =  updateInfo.value.latestVersion
+  console.log('arch', arch);
+  console.log('platform', platform);
+  const version = updateInfo.value.latestVersion;
   const downUrls = {
     win32: {
       all: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}/AlgerMusicPlayer-${version}-win.exe`,
       x64: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}/AlgerMusicPlayer-${version}-win-x64.exe`,
-      ia32: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}/AlgerMusicPlayer-${version}-win-ia32.exe`,
+      ia32: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}/AlgerMusicPlayer-${version}-win-ia32.exe`
     },
     darwin: {
-      all: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}AlgerMusicPlayer-${version}-mac-universal.dmg`,
+      all: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}AlgerMusicPlayer-${version}-mac-universal.dmg`
     },
     linux: {
       AppImage: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}/AlgerMusicPlayer-${version}-linux-x64.AppImage`,
-      deb: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}/AlgerMusicPlayer-${version}-linux-x64.deb`,
+      deb: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}/AlgerMusicPlayer-${version}-linux-x64.deb`
     }
-  }
+  };
 
   let downloadUrl = '';
 
   // 根据平台和架构选择对应的安装包
   if (platform === 'darwin') {
     // macOS
-    const macAsset = assets.find(asset => 
-      asset.name.includes('mac')
-    );
+    const macAsset = assets.find((asset) => asset.name.includes('mac'));
     downloadUrl = macAsset?.browser_download_url || downUrls.darwin.all || '';
   } else if (platform === 'win32') {
     // Windows
-    const winAsset = assets.find(asset => 
-      asset.name.includes('win') && 
-      (arch === 'x64' ? asset.name.includes('x64') : asset.name.includes('ia32'))
+    const winAsset = assets.find(
+      (asset) =>
+        asset.name.includes('win') &&
+        (arch === 'x64' ? asset.name.includes('x64') : asset.name.includes('ia32'))
     );
-    downloadUrl = winAsset?.browser_download_url || downUrls.win32[arch] || downUrls.win32.all || ''; 
+    downloadUrl =
+      winAsset?.browser_download_url || downUrls.win32[arch] || downUrls.win32.all || '';
   } else if (platform === 'linux') {
     // Linux
-    const linuxAsset = assets.find(asset => 
-      (asset.name.endsWith('.AppImage') || asset.name.endsWith('.deb')) && 
-      asset.name.includes('x64')
+    const linuxAsset = assets.find(
+      (asset) =>
+        (asset.name.endsWith('.AppImage') || asset.name.endsWith('.deb')) &&
+        asset.name.includes('x64')
     );
     downloadUrl = linuxAsset?.browser_download_url || downUrls.linux[arch] || '';
   }
@@ -211,7 +214,7 @@ onMounted(() => {
       }
       .update-body {
         @apply p-4 pt-2 text-gray-600 dark:text-gray-300 rounded-lg overflow-hidden;
-        
+
         :deep(h1) {
           @apply text-xl font-bold mb-3;
         }
@@ -253,7 +256,8 @@ onMounted(() => {
         }
         :deep(table) {
           @apply w-full mb-3;
-          th, td {
+          th,
+          td {
             @apply px-3 py-2 border border-gray-200 dark:border-gray-600;
           }
           th {
@@ -282,4 +286,4 @@ onMounted(() => {
     }
   }
 }
-</style> 
+</style>

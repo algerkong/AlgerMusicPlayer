@@ -1,7 +1,7 @@
-import { BrowserWindow, shell, ipcMain, app, session } from 'electron';
 import { is } from '@electron-toolkit/utils';
-import { join } from 'path';
+import { app, BrowserWindow, ipcMain, session, shell } from 'electron';
 import Store from 'electron-store';
+import { join } from 'path';
 
 const store = new Store();
 
@@ -116,4 +116,4 @@ export function createMainWindow(icon: Electron.NativeImage): BrowserWindow {
   }
 
   return mainWindow;
-} 
+}

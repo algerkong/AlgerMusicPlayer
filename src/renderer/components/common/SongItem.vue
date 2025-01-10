@@ -1,5 +1,9 @@
 <template>
-  <div class="song-item" :class="{ 'song-mini': mini, 'song-list': list }" @contextmenu.prevent="handleContextMenu">
+  <div
+    class="song-item"
+    :class="{ 'song-mini': mini, 'song-list': list }"
+    @contextmenu.prevent="handleContextMenu"
+  >
     <n-image
       v-if="item.picUrl"
       ref="songImg"
@@ -71,17 +75,17 @@
 </template>
 
 <script lang="ts" setup>
+import { cloneDeep } from 'lodash';
+import type { MenuOption } from 'naive-ui';
+import { useMessage } from 'naive-ui';
 import { computed, h, ref, useTemplateRef } from 'vue';
 import { useStore } from 'vuex';
-import { useMessage } from 'naive-ui';
-import type { MenuOption } from 'naive-ui';
 
+import { getSongUrl } from '@/hooks/MusicListHook';
 import { audioService } from '@/services/audioService';
 import type { SongResult } from '@/type/music';
 import { getImgUrl, isElectron } from '@/utils';
 import { getImageBackground } from '@/utils/linearColor';
-import { getSongUrl } from '@/hooks/MusicListHook';
-import { cloneDeep } from 'lodash';
 
 const props = withDefaults(
   defineProps<{
@@ -117,7 +121,7 @@ const isDownloading = ref(false);
 
 const dropdownOptions = computed<MenuOption[]>(() => [
   {
-    label: isDownloading.value ? '下载中...' : '下载 ' + props.item.name,
+    label: isDownloading.value ? '下载中...' : `下载 ${props.item.name}`,
     key: 'download',
     icon: () => h('i', { class: 'iconfont ri-download-line' }),
     disabled: isDownloading.value
@@ -148,7 +152,7 @@ const downloadMusic = async () => {
   try {
     isDownloading.value = true;
     const loadingMessage = message.loading('正在下载中...', { duration: 0 });
-    
+
     const url = await getSongUrl(props.item.id, cloneDeep(props.item));
     if (!url) {
       loadingMessage.destroy();
@@ -156,21 +160,21 @@ const downloadMusic = async () => {
       isDownloading.value = false;
       return;
     }
-    
+
     // 先移除可能存在的旧监听器
     window.electron.ipcRenderer.removeAllListeners('music-download-complete');
-    
+
     // 发送下载请求
     window.electron.ipcRenderer.send('download-music', {
       url,
-      filename: `${props.item.name} - ${(props.item.ar || props.item.song?.artists)?.map(a => a.name).join(',')}`
+      filename: `${props.item.name} - ${(props.item.ar || props.item.song?.artists)?.map((a) => a.name).join(',')}`
     });
 
     // 添加新的一次性监听器
     window.electron.ipcRenderer.once('music-download-complete', (_, result) => {
       isDownloading.value = false;
       loadingMessage.destroy();
-      
+
       if (result.success) {
         message.success('下载成功');
       } else if (result.canceled) {
@@ -298,7 +302,7 @@ const toggleFavorite = async (e: Event) => {
 
     &-download {
       @apply mr-2 cursor-pointer;
-      
+
       .iconfont {
         @apply text-xl transition text-gray-500 dark:text-gray-400 hover:text-green-500;
       }

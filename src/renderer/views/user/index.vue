@@ -89,7 +89,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch, onBeforeUnmount } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 
@@ -125,7 +125,7 @@ onBeforeUnmount(() => {
 
 const loadPage = async () => {
   if (!mounted.value || !user.value) return;
-  
+
   try {
     infoLoading.value = true;
 
@@ -154,15 +154,19 @@ const loadPage = async () => {
 };
 
 // 监听用户状态变化
-watch(() => store.state.user, (newUser) => {
-  if (!mounted.value) return;
-  
-  if (!newUser) {
-    router.push('/login');
-  } else {
-    loadPage();
-  }
-}, { immediate: true });
+watch(
+  () => store.state.user,
+  (newUser) => {
+    if (!mounted.value) return;
+
+    if (!newUser) {
+      router.push('/login');
+    } else {
+      loadPage();
+    }
+  },
+  { immediate: true }
+);
 
 // 展示歌单
 const showPlaylist = async (id: number, name: string) => {

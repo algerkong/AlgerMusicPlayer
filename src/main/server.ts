@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron';
 import Store from 'electron-store';
 import fs from 'fs';
+import server from 'netease-cloud-music-api-alger/server';
 import os from 'os';
 import path from 'path';
 
@@ -15,9 +16,6 @@ if (!fs.existsSync(path.resolve(os.tmpdir(), 'anonymous_token'))) {
 ipcMain.handle('unblock-music', async (_, id, data) => {
   return unblockMusic(id, data);
 });
-
-import server from 'netease-cloud-music-api-alger/server';
-
 
 async function startMusicApi(): Promise<void> {
   console.log('MUSIC API STARTED');

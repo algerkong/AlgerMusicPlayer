@@ -140,7 +140,7 @@
       </n-popover>
     </div>
     <!-- 播放音乐 -->
-  <music-full ref="MusicFullRef" v-model:music-full="musicFullVisible" :background="background" />
+    <music-full ref="MusicFullRef" v-model:music-full="musicFullVisible" :background="background" />
   </div>
 </template>
 
@@ -159,7 +159,7 @@ import {
   textColors
 } from '@/hooks/MusicHook';
 import type { SongResult } from '@/type/music';
-import { getImgUrl, isMobile, secondToMinute, setAnimationClass, isElectron } from '@/utils';
+import { getImgUrl, isElectron, isMobile, secondToMinute, setAnimationClass } from '@/utils';
 
 import MusicFull from './MusicFull.vue';
 

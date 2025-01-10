@@ -1,8 +1,8 @@
+import store from '@/store';
 import { ILyric } from '@/type/lyric';
 import { isElectron } from '@/utils';
 import request from '@/utils/request';
 import requestMusic from '@/utils/request_music';
-import store from '@/store';
 
 // 获取音乐音质详情
 export const getMusicQualityDetail = (id: number) => {
@@ -11,22 +11,22 @@ export const getMusicQualityDetail = (id: number) => {
 
 // 根据音乐Id获取音乐播放URl
 export const getMusicUrl = async (id: number) => {
-  const res = await request.get('/song/download/url/v1', { 
-    params: { 
-      id, 
+  const res = await request.get('/song/download/url/v1', {
+    params: {
+      id,
       level: store.state.setData.musicQuality || 'higher'
-    } 
+    }
   });
 
   if (res.data.data.url) {
-    return {data:{  data:[{url:res.data.data.url}]}};
+    return { data: { data: [{ url: res.data.data.url }] } };
   }
 
-  return await request.get('/song/url/v1', { 
-    params: { 
-      id, 
+  return await request.get('/song/url/v1', {
+    params: {
+      id,
       level: store.state.setData.musicQuality || 'higher'
-    } 
+    }
   });
 };
 

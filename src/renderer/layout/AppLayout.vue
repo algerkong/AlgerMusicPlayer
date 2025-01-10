@@ -28,7 +28,7 @@
       <play-bar v-if="isPlay" :style="isMobile && store.state.musicFull ? 'bottom: 0;' : ''" />
     </div>
     <install-app-modal v-if="!isElectron"></install-app-modal>
-    <update-modal v-if="isElectron"/>
+    <update-modal v-if="isElectron" />
   </div>
 </template>
 
@@ -39,9 +39,9 @@ import { useStore } from 'vuex';
 
 import InstallAppModal from '@/components/common/InstallAppModal.vue';
 import PlayBottom from '@/components/common/PlayBottom.vue';
+import UpdateModal from '@/components/common/UpdateModal.vue';
 import homeRouter from '@/router/home';
 import { isElectron, isMobile } from '@/utils';
-import UpdateModal from '@/components/common/UpdateModal.vue';
 
 const keepAliveInclude = computed(() =>
   homeRouter

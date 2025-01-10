@@ -1,8 +1,8 @@
-import { app, dialog, shell, ipcMain } from 'electron';
+import axios from 'axios';
+import { app, dialog, ipcMain, shell } from 'electron';
 import Store from 'electron-store';
 import * as fs from 'fs';
 import * as path from 'path';
-import axios from 'axios';
 
 /**
  * 初始化文件管理相关的IPC监听
@@ -29,11 +29,14 @@ export function initializeFileManager() {
 /**
  * 下载音乐功能
  */
-async function downloadMusic(event: Electron.IpcMainEvent, { url, filename }: { url: string; filename: string }) {
+async function downloadMusic(
+  event: Electron.IpcMainEvent,
+  { url, filename }: { url: string; filename: string }
+) {
   try {
     const store = new Store();
-    const downloadPath = store.get('set.downloadPath') as string || app.getPath('downloads');
-    
+    const downloadPath = (store.get('set.downloadPath') as string) || app.getPath('downloads');
+
     // 直接使用配置的下载路径
     const filePath = path.join(downloadPath, `${filename}.mp3`);
 
@@ -66,4 +69,4 @@ async function downloadMusic(event: Electron.IpcMainEvent, { url, filename }: { 
   } catch (error: any) {
     event.reply('music-download-complete', { success: false, error: error.message });
   }
-} 
+}
