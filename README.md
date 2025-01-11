@@ -3,13 +3,15 @@
 
 - 音乐推荐
 - 网易云登录
-- 播放历史
+- 播放历史 歌曲收藏
 - 桌面歌词
 - 歌单 mv 搜索 专辑等功能
 - 识别无法播放歌曲 并解析播放
 - 主题切换 更新检测
 - 本地服务 不依赖线上服务
 - 可听周杰伦（搜索专辑）
+- 支持歌曲下载（歌曲右键）
+- 支持音质选择（网易云VIP）
 
 ## 项目简介
  一个基于 electron typescript vue3 的桌面音乐播放器 适配 web端 桌面端 web移动端
@@ -40,49 +42,6 @@ QQ群:789288579
 | :--------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------: |
 | <img src="https://github.com/algerkong/algerkong/blob/main/wechat.jpg?raw=true" alt="WeChat QRcode" width=200> | <img src="https://github.com/algerkong/algerkong/blob/main/alipay.jpg?raw=true" alt="Wechat QRcode" width=200> |
 
-## 项目运行
-```bash
-  # 安装依赖
-  npm install
-
-  # 运行项目 web
-  npm run dev
-
-  # 运行项目 electron
-  npm run start
-
-  # 打包项目 web
-  npm run build
-
-  # 打包项目 electron
-  npm run win ... 
-  # 具体看 package.json
-```
-#### 注意
-- 本地运行需要配置 .env.development 文件
-- 打包需要配置 .env.production 文件
-
-```bash
-  # .env.development
-  VITE_API_LOCAL = /api
-  VITE_API_MUSIC_PROXY = /music
-  VITE_API_PROXY_MUSIC = /music_proxy
-
-  # 你的接口地址 (必填)
-  VITE_API = ***
-  # 音乐po接口地址
-  VITE_API_MUSIC = ***
-  VITE_API_PROXY = ***
-
-
-  # .env.production
-  # 你的接口地址 (必填)
-  VITE_API = ***
-  # 音乐po接口地址
-  VITE_API_MUSIC = ***
-  # 代理地址
-  VITE_API_PROXY = ***
-```
 
 ## Stargazers over time
 [![Stargazers over time](https://starchart.cc/algerkong/AlgerMusicPlayer.svg?variant=adaptive)](https://starchart.cc/algerkong/AlgerMusicPlayer)
