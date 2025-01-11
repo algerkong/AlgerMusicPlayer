@@ -28,8 +28,7 @@
     "electron-updater": "^6.1.7",
     "netease-cloud-music-api-alger": "^4.25.0"
   },
-  "devDependencies": { 
-    "marked": "^15.0.4",
+  "devDependencies": {
     "@electron-toolkit/eslint-config": "^1.0.2",
     "@electron-toolkit/eslint-config-ts": "^2.0.0",
     "@electron-toolkit/tsconfig": "^1.0.1",
@@ -62,6 +61,7 @@
     "eslint-plugin-vue-scoped-css": "^2.7.2",
     "howler": "^2.2.4",
     "lodash": "^4.17.21",
+    "marked": "^15.0.4",
     "naive-ui": "^2.39.0",
     "postcss": "^8.4.49",
     "prettier": "^3.3.2",
@@ -78,16 +78,19 @@
     "vue": "^3.4.30",
     "vue-router": "^4.4.3",
     "vue-tsc": "^2.0.22",
-    "vuex": "^4.1.0"
+    "vuex": "^4.1.0",
+    "animate.css": "^4.1.1"
   },
   "build": {
     "appId": "com.alger.music",
     "productName": "AlgerMusicPlayer",
-    "publish": [{
-      "provider": "github",
-      "owner": "algerkong",
-      "repo": "AlgerMusicPlayer"
-    }],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "algerkong",
+        "repo": "AlgerMusicPlayer"
+      }
+    ],
     "mac": {
       "icon": "resources/icon.icns",
       "target": [
@@ -116,7 +119,10 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64", "ia32"]
+          "arch": [
+            "x64",
+            "ia32"
+          ]
         }
       ],
       "artifactName": "${productName}-${version}-win-${arch}.${ext}",
@@ -127,11 +133,15 @@
       "target": [
         {
           "target": "AppImage",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "deb",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "artifactName": "${productName}-${version}-linux-${arch}.${ext}",
