@@ -196,11 +196,19 @@
       <div
         class="p-4 bg-light dark:bg-dark rounded-lg mb-4 border border-gray-200 dark:border-gray-700 rounded-lg"
       >
-        <div>
-          <div class="set-item-title">捐赠支持</div>
-          <div class="set-item-content">感谢您的支持，让我有动力能够持续改进</div>
+        <div class="flex justify-between items-center">
+          <div>
+            <div class="set-item-title">捐赠支持</div>
+            <div class="set-item-content">感谢您的支持，让我有动力能够持续改进</div>
+          </div>
+          <n-button text @click="toggleDonationList">
+            <template #icon>
+              <i :class="isDonationListVisible ? 'ri-eye-line' : 'ri-eye-off-line'" />
+            </template>
+            {{ isDonationListVisible ? '隐藏列表' : '显示列表' }}
+          </n-button>
         </div>
-        <donation-list />
+        <donation-list v-if="isDonationListVisible" />
       </div>
     </div>
     <play-bottom />
@@ -476,6 +484,13 @@ watch(
     }
   }
 );
+
+const isDonationListVisible = ref(localStorage.getItem('donationListVisible') !== 'false');
+
+const toggleDonationList = () => {
+  isDonationListVisible.value = !isDonationListVisible.value;
+  localStorage.setItem('donationListVisible', isDonationListVisible.value.toString());
+};
 </script>
 
 <style lang="scss" scoped>
