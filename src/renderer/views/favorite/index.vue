@@ -1,8 +1,51 @@
 <template>
   <div v-if="isComponent ? favoriteSongs.length : true" class="favorite-page">
     <div class="favorite-header" :class="setAnimationClass('animate__fadeInLeft')">
-      <h2>我的收藏</h2>
-      <div class="favorite-count">共 {{ favoriteList.length }} 首</div>
+      <div class="favorite-header-left">
+        <h2>我的收藏</h2>
+        <div class="favorite-count">共 {{ favoriteList.length }} 首</div>
+      </div>
+      <div v-if="!isComponent" class="favorite-header-right">
+        <n-button
+          v-if="!isSelecting"
+          secondary
+          type="primary"
+          size="small"
+          class="select-btn"
+          @click="startSelect"
+        >
+          <template #icon>
+            <i class="iconfont ri-checkbox-multiple-line"></i>
+          </template>
+          批量下载
+        </n-button>
+        <div v-else class="select-controls">
+          <n-checkbox
+            class="select-all-checkbox"
+            :checked="isAllSelected"
+            :indeterminate="isIndeterminate"
+            @update:checked="handleSelectAll"
+          >
+            全选
+          </n-checkbox>
+          <n-button-group class="operation-btns">
+            <n-button
+              type="primary"
+              size="small"
+              :loading="isDownloading"
+              :disabled="selectedSongs.length === 0"
+              class="download-btn"
+              @click="handleBatchDownload"
+            >
+              <template #icon>
+                <i class="iconfont ri-download-line"></i>
+              </template>
+              下载 ({{ selectedSongs.length }})
+            </n-button>
+            <n-button size="small" class="cancel-btn" @click="cancelSelect"> 取消 </n-button>
+          </n-button-group>
+        </div>
+      </div>
     </div>
     <div class="favorite-main" :class="setAnimationClass('animate__bounceInRight')">
       <n-scrollbar ref="scrollbarRef" class="favorite-content" @scroll="handleScroll">
@@ -17,7 +60,10 @@
             :favorite="!isComponent"
             :class="setAnimationClass('animate__bounceInLeft')"
             :style="getItemAnimationDelay(index)"
+            :selectable="isSelecting"
+            :selected="selectedSongs.includes(song.id)"
             @play="handlePlay"
+            @select="handleSelect"
           />
           <div v-if="isComponent" class="favorite-list-more text-center">
             <n-button text type="primary" @click="handleMore">查看更多</n-button>
@@ -35,21 +81,111 @@
 </template>
 
 <script setup lang="ts">
+import { useMessage } from 'naive-ui';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 
 import { getMusicDetail } from '@/api/music';
 import SongItem from '@/components/common/SongItem.vue';
+import { getSongUrl } from '@/hooks/MusicListHook';
 import type { SongResult } from '@/type/music';
 import { setAnimationClass, setAnimationDelay } from '@/utils';
 
 const store = useStore();
+const message = useMessage();
 const favoriteList = computed(() => store.state.favoriteList);
 const favoriteSongs = ref<SongResult[]>([]);
 const loading = ref(false);
 const noMore = ref(false);
 const scrollbarRef = ref();
+
+// 多选相关
+const isSelecting = ref(false);
+const selectedSongs = ref<number[]>([]);
+const isDownloading = ref(false);
+
+// 开始多选
+const startSelect = () => {
+  isSelecting.value = true;
+  selectedSongs.value = [];
+};
+
+// 取消多选
+const cancelSelect = () => {
+  isSelecting.value = false;
+  selectedSongs.value = [];
+};
+
+// 处理选择
+const handleSelect = (songId: number, selected: boolean) => {
+  if (selected) {
+    selectedSongs.value.push(songId);
+  } else {
+    selectedSongs.value = selectedSongs.value.filter((id) => id !== songId);
+  }
+};
+
+// 批量下载
+const handleBatchDownload = async () => {
+  if (isDownloading.value) {
+    message.warning('正在下载中，请稍候...');
+    return;
+  }
+
+  if (selectedSongs.value.length === 0) {
+    message.warning('请先选择要下载的歌曲');
+    return;
+  }
+
+  try {
+    isDownloading.value = true;
+    const loadingMessage = message.loading('正在下载中...', { duration: 0 });
+    let successCount = 0;
+    let failCount = 0;
+
+    // 移除旧的监听器
+    window.electron.ipcRenderer.removeAllListeners('music-download-complete');
+
+    // 添加新的监听器
+    window.electron.ipcRenderer.on('music-download-complete', (_, result) => {
+      if (result.success) {
+        successCount++;
+      } else if (!result.canceled) {
+        failCount++;
+      }
+
+      // 当所有下载完成时
+      if (successCount + failCount === selectedSongs.value.length) {
+        isDownloading.value = false;
+        loadingMessage.destroy();
+        message.success(`下载完成：成功 ${successCount} 首，失败 ${failCount} 首`);
+        cancelSelect();
+      }
+    });
+
+    // 开始下载选中的歌曲
+    for (const songId of selectedSongs.value) {
+      const song = favoriteSongs.value.find((s) => s.id === songId);
+      if (!song) continue;
+
+      const url = await getSongUrl(song.id, song);
+      if (!url) {
+        failCount++;
+        continue;
+      }
+
+      window.electron.ipcRenderer.send('download-music', {
+        url,
+        filename: `${song.name} - ${(song.ar || song.song?.artists)?.map((a) => a.name).join(',')}`
+      });
+    }
+  } catch (error) {
+    isDownloading.value = false;
+    message.destroyAll();
+    message.error('下载失败');
+  }
+};
 
 // 无限滚动相关
 const pageSize = 16;
@@ -146,6 +282,26 @@ const router = useRouter();
 const handleMore = () => {
   router.push('/favorite');
 };
+
+// 全选相关
+const isAllSelected = computed(() => {
+  return (
+    favoriteSongs.value.length > 0 && selectedSongs.value.length === favoriteSongs.value.length
+  );
+});
+
+const isIndeterminate = computed(() => {
+  return selectedSongs.value.length > 0 && selectedSongs.value.length < favoriteSongs.value.length;
+});
+
+// 处理全选/取消全选
+const handleSelectAll = (checked: boolean) => {
+  if (checked) {
+    selectedSongs.value = favoriteSongs.value.map((song) => song.id);
+  } else {
+    selectedSongs.value = [];
+  }
+};
 </script>
 
 <style lang="scss" scoped>
@@ -154,15 +310,68 @@ const handleMore = () => {
   @apply bg-light dark:bg-black;
 
   .favorite-header {
-    @apply flex items-center justify-between flex-shrink-0 px-4;
+    @apply flex items-center justify-between flex-shrink-0 px-4 pb-2;
 
-    h2 {
-      @apply text-xl font-bold pb-2;
-      @apply text-gray-900 dark:text-white;
+    &-left {
+      @apply flex items-center gap-4;
+
+      h2 {
+        @apply text-xl font-bold;
+        @apply text-gray-900 dark:text-white;
+      }
+
+      .favorite-count {
+        @apply text-gray-500 dark:text-gray-400 text-sm;
+      }
     }
 
-    .favorite-count {
-      @apply text-gray-500 dark:text-gray-400 text-sm;
+    &-right {
+      @apply flex items-center;
+
+      .select-btn {
+        @apply rounded-full px-4 h-8;
+        @apply transition-all duration-300 ease-in-out;
+        @apply hover:bg-primary hover:text-white;
+        @apply dark:border-gray-600;
+
+        .iconfont {
+          @apply mr-1 text-lg;
+        }
+      }
+
+      .select-controls {
+        @apply flex items-center gap-3;
+        @apply bg-gray-50 dark:bg-gray-800;
+        @apply rounded-full px-3 py-1;
+        @apply border border-gray-200 dark:border-gray-700;
+        @apply transition-all duration-300;
+
+        .select-all-checkbox {
+          @apply text-sm text-gray-900 dark:text-gray-200;
+        }
+
+        .operation-btns {
+          @apply flex items-center gap-2 ml-2;
+
+          .download-btn {
+            @apply rounded-full px-4 h-7;
+            @apply bg-primary text-white;
+            @apply hover:bg-primary-dark;
+            @apply disabled:opacity-50 disabled:cursor-not-allowed;
+
+            .iconfont {
+              @apply mr-1 text-lg;
+            }
+          }
+
+          .cancel-btn {
+            @apply rounded-full px-4 h-7;
+            @apply text-gray-600 dark:text-gray-300;
+            @apply hover:bg-gray-100 dark:hover:bg-gray-700;
+            @apply border-gray-300 dark:border-gray-600;
+          }
+        }
+      }
     }
   }
 

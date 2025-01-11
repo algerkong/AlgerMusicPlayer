@@ -4,6 +4,9 @@
     :class="{ 'song-mini': mini, 'song-list': list }"
     @contextmenu.prevent="handleContextMenu"
   >
+    <div v-if="selectable" class="song-item-select" @click.stop="toggleSelect">
+      <n-checkbox :checked="selected" />
+    </div>
     <n-image
       v-if="item.picUrl"
       ref="songImg"
@@ -93,11 +96,15 @@ const props = withDefaults(
     mini?: boolean;
     list?: boolean;
     favorite?: boolean;
+    selectable?: boolean;
+    selected?: boolean;
   }>(),
   {
     mini: false,
     list: false,
-    favorite: true
+    favorite: true,
+    selectable: false,
+    selected: false
   }
 );
 
@@ -191,7 +198,7 @@ const downloadMusic = async () => {
   }
 };
 
-const emits = defineEmits(['play']);
+const emits = defineEmits(['play', 'select']);
 const songImageRef = useTemplateRef('songImg');
 
 const imageLoad = async () => {
@@ -235,6 +242,11 @@ const toggleFavorite = async (e: Event) => {
   } else {
     store.commit('addToFavorite', props.item.id);
   }
+};
+
+// 切换选择状态
+const toggleSelect = () => {
+  emits('select', props.item.id, !props.selected);
 };
 </script>
 
@@ -307,6 +319,10 @@ const toggleFavorite = async (e: Event) => {
         @apply text-xl transition text-gray-500 dark:text-gray-400 hover:text-green-500;
       }
     }
+  }
+
+  &-select {
+    @apply mr-3 cursor-pointer;
   }
 }
 

@@ -103,23 +103,33 @@ const mutations = {
     }
   },
   async addToFavorite(state: State, songId: number) {
-    try {
-      state.user && localStorage.getItem('token') && (await likeSong(songId, true));
-      if (!state.favoriteList.includes(songId)) {
-        state.favoriteList = [songId, ...state.favoriteList];
-        localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
+    // 先添加到本地
+    if (!state.favoriteList.includes(songId)) {
+      state.favoriteList = [songId, ...state.favoriteList];
+      localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
+    }
+
+    // 如果用户已登录，尝试同步到服务器
+    if (state.user && localStorage.getItem('token')) {
+      try {
+        await likeSong(songId, true);
+      } catch (error) {
+        console.error('同步收藏到服务器失败，但已保存在本地:', error);
       }
-    } catch (error) {
-      console.error('收藏歌曲失败:', error);
     }
   },
   async removeFromFavorite(state: State, songId: number) {
-    try {
-      state.user && localStorage.getItem('token') && (await likeSong(songId, false));
-      state.favoriteList = state.favoriteList.filter((id) => id !== songId);
-      localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
-    } catch (error) {
-      console.error('取消收藏歌曲失败:', error);
+    // 先从本地移除
+    state.favoriteList = state.favoriteList.filter((id) => id !== songId);
+    localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
+
+    // 如果用户已登录，尝试同步到服务器
+    if (state.user && localStorage.getItem('token')) {
+      try {
+        await likeSong(songId, false);
+      } catch (error) {
+        console.error('同步取消收藏到服务器失败，但已在本地移除:', error);
+      }
     }
   },
   togglePlayMode(state: State) {
@@ -161,22 +171,32 @@ const actions = {
     applyTheme(state.theme);
   },
   async initializeFavoriteList({ state }: { state: State }) {
-    try {
-      if (state.user && localStorage.getItem('token')) {
+    // 先获取本地收藏列表
+    const localFavoriteList = localStorage.getItem('favoriteList');
+    const localList: number[] = localFavoriteList ? JSON.parse(localFavoriteList) : [];
+
+    // 如果用户已登录，尝试获取服务器收藏列表并合并
+    if (state.user && localStorage.getItem('token')) {
+      try {
         const res = await getLikedList();
         if (res.data?.ids) {
-          state.favoriteList = res.data.ids.reverse();
-          localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
+          // 合并本地和服务器的收藏列表，去重
+          const serverList = res.data.ids.reverse();
+          const mergedList = Array.from(new Set([...localList, ...serverList]));
+          state.favoriteList = mergedList;
+        } else {
+          state.favoriteList = localList;
         }
-      } else {
-        const localFavoriteList = localStorage.getItem('favoriteList');
-        if (localFavoriteList) {
-          state.favoriteList = JSON.parse(localFavoriteList);
-        }
+      } catch (error) {
+        console.error('获取服务器收藏列表失败，使用本地数据:', error);
+        state.favoriteList = localList;
       }
-    } catch (error) {
-      console.error('获取收藏列表失败:', error);
+    } else {
+      state.favoriteList = localList;
     }
+
+    // 更新本地存储
+    localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
   }
 };
 
