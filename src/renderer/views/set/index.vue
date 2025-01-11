@@ -193,6 +193,15 @@
           />
         </div>
       </div>
+      <div
+        class="p-4 bg-light dark:bg-dark rounded-lg mb-4 border border-gray-200 dark:border-gray-700 rounded-lg"
+      >
+        <div>
+          <div class="set-item-title">捐赠支持</div>
+          <div class="set-item-content">感谢您的支持，让我有动力能够持续改进</div>
+        </div>
+        <donation-list />
+      </div>
     </div>
     <play-bottom />
     <n-modal
@@ -246,6 +255,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 
 import Coffee from '@/components/Coffee.vue';
+import DonationList from '@/components/common/DonationList.vue';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import { isElectron } from '@/utils';
 import { openDirectory, selectDirectory } from '@/utils/fileOperation';

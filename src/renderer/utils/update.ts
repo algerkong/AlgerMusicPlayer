@@ -62,7 +62,7 @@ export const getLatestReleaseInfo = async (): Promise<GithubReleaseInfo | null> 
             tag_name: response.data.version,
             body: (
               await axios.get(
-                'https://raw.githubusercontent.com/algerkong/AlgerMusicPlayer/dev_electron/CHANGELOG.md'
+                'https://www.ghproxy.cn/https://raw.githubusercontent.com/algerkong/AlgerMusicPlayer/dev_electron/CHANGELOG.md'
               )
             ).data,
             html_url: 'https://github.com/algerkong/AlgerMusicPlayer/releases/latest',
