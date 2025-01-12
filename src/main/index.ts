@@ -3,6 +3,7 @@ import { app, globalShortcut, ipcMain, nativeImage } from 'electron';
 import { join } from 'path';
 
 import { loadLyricWindow } from './lyric';
+import { initializeCacheManager } from './modules/cache';
 import { initializeConfig } from './modules/config';
 import { initializeFileManager } from './modules/fileManager';
 import { initializeTray } from './modules/tray';
@@ -26,6 +27,7 @@ function initialize() {
   // 初始化各个模块
   initializeConfig();
   initializeFileManager();
+  initializeCacheManager();
 
   // 创建主窗口
   mainWindow = createMainWindow(icon);

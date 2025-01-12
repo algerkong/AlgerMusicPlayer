@@ -11,7 +11,15 @@ const api = {
   restart: () => ipcRenderer.send('restart'),
   openLyric: () => ipcRenderer.send('open-lyric'),
   sendLyric: (data) => ipcRenderer.send('send-lyric', data),
-  unblockMusic: (id) => ipcRenderer.invoke('unblock-music', id)
+  unblockMusic: (id) => ipcRenderer.invoke('unblock-music', id),
+  // 歌词缓存相关
+  invoke: (channel: string, ...args: any[]) => {
+    const validChannels = ['get-cached-lyric', 'cache-lyric', 'clear-lyric-cache'];
+    if (validChannels.includes(channel)) {
+      return ipcRenderer.invoke(channel, ...args);
+    }
+    return Promise.reject(new Error(`Invalid channel: ${channel}`));
+  }
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to

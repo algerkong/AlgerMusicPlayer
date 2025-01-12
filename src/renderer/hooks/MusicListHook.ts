@@ -13,13 +13,11 @@ const musicHistory = useMusicHistory();
 // 获取歌曲url
 export const getSongUrl = async (id: number, songData: any, isDownloaded: boolean = false) => {
   const { data } = await getMusicUrl(id);
-  console.log('data', data);
   let url = '';
   let songDetail = null;
   try {
     if (data.data[0].freeTrialInfo || !data.data[0].url) {
       const res = await getParsingMusicUrl(id, songData);
-      console.log('res', res);
       url = res.data.data.url;
       songDetail = res.data.data;
     } else {
@@ -52,7 +50,6 @@ const getSongDetail = async (playMusic: SongResult) => {
 export const useMusicListHook = () => {
   const handlePlayMusic = async (state: any, playMusic: SongResult) => {
     const updatedPlayMusic = await getSongDetail(playMusic);
-    console.log('updatedPlayMusic', updatedPlayMusic);
     state.playMusic = updatedPlayMusic;
     state.playMusicUrl = updatedPlayMusic.playMusicUrl;
     state.play = true;

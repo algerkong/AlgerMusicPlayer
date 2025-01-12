@@ -552,7 +552,8 @@ const clearCacheOptions = ref([
   { label: '用户数据', key: 'user', description: '清除登录信息和用户相关数据' },
   { label: '应用设置', key: 'settings', description: '清除应用的所有自定义设置' },
   { label: '下载记录', key: 'downloads', description: '清除下载历史记录(不会删除已下载的文件)' },
-  { label: '音乐资源', key: 'resources', description: '清除已加载的音乐文件、歌词等资源缓存' }
+  { label: '音乐资源', key: 'resources', description: '清除已加载的音乐文件、歌词等资源缓存' },
+  { label: '歌词资源', key: 'lyrics', description: '清除已加载的歌词资源缓存' }
 ]);
 
 const selectedCacheTypes = ref<string[]>([]);
@@ -608,6 +609,9 @@ const clearCache = async () => {
             console.error('清除图片缓存失败:', error);
           }
         }
+        break;
+      case 'lyrics':
+        window.api.invoke('clear-lyrics-cache');
         break;
       default:
         break;

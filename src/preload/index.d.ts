@@ -13,6 +13,7 @@ declare global {
       miniTray: () => void;
       restart: () => void;
       unblockMusic: (id: number, data: any) => Promise<any>;
+      invoke: (channel: string, ...args: any[]) => Promise<any>;
     };
     $message: any;
   }

@@ -103,6 +103,7 @@ module.exports = {
     {
       files: ['*.ts', '*.tsx'],
       rules: {
+        'max-classes-per-file': 'off',
         'no-await-in-loop': 'off',
         'dot-notation': 'off',
         'constructor-super': 'off',
