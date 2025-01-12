@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import { audioService } from '@/services/audioService';
 import store from '@/store';
@@ -44,10 +44,9 @@ document.onkeyup = (e) => {
 watch(
   () => store.state.playMusicUrl,
   (newVal) => {
-    if (newVal) {
-      audioService.play(newVal);
-      sound.value = audioService.getCurrentSound();
-      audioServiceOn(audioService);
+    if (newVal && playMusic.value) {
+      sound.value = audioService.play(newVal, playMusic.value);
+      setupAudioListeners();
     }
   }
 );
@@ -70,11 +69,11 @@ watch(
   }
 );
 
-export const audioServiceOn = (audio: typeof audioService) => {
+const setupAudioListeners = () => {
   let interval: any = null;
 
   // 监听播放
-  audio.onPlay(() => {
+  audioService.on('play', () => {
     store.commit('setPlayMusic', true);
     interval = setInterval(() => {
       nowTime.value = sound.value?.seek() as number;
@@ -83,12 +82,10 @@ export const audioServiceOn = (audio: typeof audioService) => {
       if (newIndex !== nowIndex.value) {
         nowIndex.value = newIndex;
         currentLrcProgress.value = 0;
-        // 当歌词索引更新时，发送歌词数据
         if (isElectron && isLyricWindowOpen.value) {
           sendLyricToWin();
         }
       }
-      // 定期发送歌词数据更新
       if (isElectron && isLyricWindowOpen.value) {
         sendLyricToWin();
       }
@@ -96,33 +93,29 @@ export const audioServiceOn = (audio: typeof audioService) => {
   });
 
   // 监听暂停
-  audio.onPause(() => {
+  audioService.on('pause', () => {
     store.commit('setPlayMusic', false);
     clearInterval(interval);
-    // 暂停时也发送一次状态更新
     if (isElectron && isLyricWindowOpen.value) {
       sendLyricToWin();
     }
   });
 
   // 监听结束
-  audio.onEnd(() => {
+  audioService.on('end', () => {
     if (store.state.playMode === 1) {
       // 单曲循环模式
-      audio.getCurrentSound()?.play();
+      sound.value?.play();
     } else if (store.state.playMode === 2) {
       // 随机播放模式
       const { playList } = store.state;
       if (playList.length <= 1) {
-        // 如果播放列表只有一首歌或为空,则重新播放当前歌曲
-        audio.getCurrentSound()?.play();
+        sound.value?.play();
       } else {
-        // 随机选择一首不同的歌
         let randomIndex;
         do {
           randomIndex = Math.floor(Math.random() * playList.length);
         } while (randomIndex === store.state.playListIndex && playList.length > 1);
-
         store.state.playListIndex = randomIndex;
         store.commit('setPlay', playList[randomIndex]);
       }
@@ -130,6 +123,15 @@ export const audioServiceOn = (audio: typeof audioService) => {
       // 列表循环模式
       store.commit('nextPlay');
     }
+  });
+
+  // 监听上一曲/下一曲控制
+  audioService.on('previoustrack', () => {
+    store.commit('prevPlay');
+  });
+
+  audioService.on('nexttrack', () => {
+    store.commit('nextPlay');
   });
 };
 
@@ -357,3 +359,15 @@ if (isElectron) {
     }
   });
 }
+
+// 在组件挂载时设置监听器
+onMounted(() => {
+  if (isPlaying.value) {
+    useLyricProgress();
+  }
+});
+
+// 在组件卸载时清理
+onUnmounted(() => {
+  audioService.stop();
+});
