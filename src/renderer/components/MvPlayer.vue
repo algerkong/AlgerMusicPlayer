@@ -315,7 +315,6 @@ onUnmounted(() => {
   if (cursorTimer) {
     clearTimeout(cursorTimer);
   }
-  unlockScreenOrientation();
 });
 
 // 监听 currentMv 的变化
@@ -416,27 +415,6 @@ const checkFullscreenAPI = () => {
   };
 };
 
-// 添加横屏锁定功能
-const lockScreenOrientation = async () => {
-  try {
-    if ('orientation' in screen) {
-      await (screen as any).orientation.lock('landscape');
-    }
-  } catch (error) {
-    console.warn('无法锁定屏幕方向:', error);
-  }
-};
-
-const unlockScreenOrientation = () => {
-  try {
-    if ('orientation' in screen) {
-      (screen as any).orientation.unlock();
-    }
-  } catch (error) {
-    console.warn('无法解锁屏幕方向:', error);
-  }
-};
-
 // 修改切换全屏状态的方法
 const toggleFullscreen = async () => {
   const api = checkFullscreenAPI();
@@ -450,17 +428,9 @@ const toggleFullscreen = async () => {
     if (!api.fullscreenElement) {
       await videoContainerRef.value?.requestFullscreen();
       isFullscreen.value = true;
-      // 在移动端进入全屏时锁定横屏
-      if (window.innerWidth <= 768) {
-        await lockScreenOrientation();
-      }
     } else {
       await document.exitFullscreen();
       isFullscreen.value = false;
-      // 退出全屏时解锁屏幕方向
-      if (window.innerWidth <= 768) {
-        unlockScreenOrientation();
-      }
     }
   } catch (error) {
     console.error('切换全屏失败:', error);

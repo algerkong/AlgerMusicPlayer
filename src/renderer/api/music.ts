@@ -19,7 +19,7 @@ export const getMusicUrl = async (id: number) => {
   });
 
   if (res.data.data.url) {
-    return { data: { data: [{ url: res.data.data.url }] } };
+    return { data: { data: [{ ...res.data.data }] } };
   }
 
   return await request.get('/song/url/v1', {

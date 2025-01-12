@@ -123,8 +123,29 @@ onBeforeUnmount(() => {
   mounted.value = false;
 });
 
+// 检查登录状态
+const checkLoginStatus = () => {
+  const token = localStorage.getItem('token');
+  const userData = localStorage.getItem('user');
+
+  if (!token || !userData) {
+    router.push('/login');
+    return false;
+  }
+
+  // 如果store中没有用户数据，但localStorage中有，则恢复用户数据
+  if (!store.state.user && userData) {
+    store.state.user = JSON.parse(userData);
+  }
+
+  return true;
+};
+
 const loadPage = async () => {
-  if (!mounted.value || !user.value) return;
+  if (!mounted.value) return;
+
+  // 检查登录状态
+  if (!checkLoginStatus()) return;
 
   try {
     infoLoading.value = true;
@@ -144,14 +165,29 @@ const loadPage = async () => {
       ...item.song,
       picUrl: item.song.al.picUrl
     }));
-  } catch (error) {
+  } catch (error: any) {
     console.error('加载用户页面失败:', error);
+    // 如果获取用户数据失败，可能是token过期
+    if (error.response?.status === 401) {
+      store.commit('logout');
+      router.push('/login');
+    }
   } finally {
     if (mounted.value) {
       infoLoading.value = false;
     }
   }
 };
+
+// 监听路由变化
+watch(
+  () => router.currentRoute.value.path,
+  (newPath) => {
+    if (newPath === '/user') {
+      checkLoginStatus();
+    }
+  }
+);
 
 // 监听用户状态变化
 watch(
@@ -167,6 +203,12 @@ watch(
   },
   { immediate: true }
 );
+
+// 页面挂载时检查登录状态
+onMounted(() => {
+  checkLoginStatus();
+  loadPage();
+});
 
 // 展示歌单
 const showPlaylist = async (id: number, name: string) => {

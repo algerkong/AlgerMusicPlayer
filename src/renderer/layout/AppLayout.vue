@@ -26,6 +26,8 @@
       </div>
       <!-- 底部音乐播放 -->
       <play-bar v-if="isPlay" :style="isMobile && store.state.musicFull ? 'bottom: 0;' : ''" />
+      <!-- 下载管理抽屉 -->
+      <download-drawer v-if="isElectron" />
     </div>
     <install-app-modal v-if="!isElectron"></install-app-modal>
     <update-modal v-if="isElectron" />
@@ -37,6 +39,7 @@ import { computed, defineAsyncComponent, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 
+import DownloadDrawer from '@/components/common/DownloadDrawer.vue';
 import InstallAppModal from '@/components/common/InstallAppModal.vue';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import UpdateModal from '@/components/common/UpdateModal.vue';

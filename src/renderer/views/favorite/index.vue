@@ -5,7 +5,7 @@
         <h2>我的收藏</h2>
         <div class="favorite-count">共 {{ favoriteList.length }} 首</div>
       </div>
-      <div v-if="!isComponent" class="favorite-header-right">
+      <div v-if="!isComponent && isElectron" class="favorite-header-right">
         <n-button
           v-if="!isSelecting"
           secondary
@@ -81,6 +81,7 @@
 </template>
 
 <script setup lang="ts">
+import { cloneDeep } from 'lodash';
 import { useMessage } from 'naive-ui';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
@@ -90,7 +91,7 @@ import { getMusicDetail } from '@/api/music';
 import SongItem from '@/components/common/SongItem.vue';
 import { getSongUrl } from '@/hooks/MusicListHook';
 import type { SongResult } from '@/type/music';
-import { setAnimationClass, setAnimationDelay } from '@/utils';
+import { isElectron, setAnimationClass, setAnimationDelay } from '@/utils';
 
 const store = useStore();
 const message = useMessage();
@@ -140,47 +141,64 @@ const handleBatchDownload = async () => {
 
   try {
     isDownloading.value = true;
-    const loadingMessage = message.loading('正在下载中...', { duration: 0 });
-    let successCount = 0;
-    let failCount = 0;
+    message.success('开始下载...');
 
     // 移除旧的监听器
     window.electron.ipcRenderer.removeAllListeners('music-download-complete');
+
+    let successCount = 0;
+    let failCount = 0;
 
     // 添加新的监听器
     window.electron.ipcRenderer.on('music-download-complete', (_, result) => {
       if (result.success) {
         successCount++;
-      } else if (!result.canceled) {
+      } else {
         failCount++;
       }
 
       // 当所有下载完成时
       if (successCount + failCount === selectedSongs.value.length) {
         isDownloading.value = false;
-        loadingMessage.destroy();
-        message.success(`下载完成：成功 ${successCount} 首，失败 ${failCount} 首`);
+        message.success(`下载完成`);
         cancelSelect();
       }
     });
 
-    // 开始下载选中的歌曲
-    for (const songId of selectedSongs.value) {
-      const song = favoriteSongs.value.find((s) => s.id === songId);
-      if (!song) continue;
+    // 获取选中歌曲的信息
+    const selectedSongsList = selectedSongs.value
+      .map((songId) => favoriteSongs.value.find((s) => s.id === songId))
+      .filter((song) => song) as SongResult[];
 
-      const url = await getSongUrl(song.id, song);
+    // 并行获取所有歌曲的下载链接
+    const downloadUrls = await Promise.all(
+      selectedSongsList.map(async (song) => {
+        try {
+          const data = (await getSongUrl(song.id, song, true)) as any;
+          return { song, ...data };
+        } catch (error) {
+          console.error(`获取歌曲 ${song.name} 下载链接失败:`, error);
+          return { song, url: null };
+        }
+      })
+    );
+
+    // 开始下载有效的链接
+    downloadUrls.forEach(({ song, url, type }) => {
       if (!url) {
         failCount++;
-        continue;
+        return;
       }
 
       window.electron.ipcRenderer.send('download-music', {
         url,
-        filename: `${song.name} - ${(song.ar || song.song?.artists)?.map((a) => a.name).join(',')}`
+        filename: `${song.name} - ${(song.ar || song.song?.artists)?.map((a) => a.name).join(',')}`,
+        songInfo: cloneDeep(song),
+        type
       });
-    }
+    });
   } catch (error) {
+    console.error('下载失败:', error);
     isDownloading.value = false;
     message.destroyAll();
     message.error('下载失败');

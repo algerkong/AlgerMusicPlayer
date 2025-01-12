@@ -14,7 +14,7 @@ defineOptions({
 const message = useMessage();
 const store = useStore();
 const router = useRouter();
-const isQr = ref(false);
+const isQr = ref(true);
 
 const qrUrl = ref<string>();
 onMounted(() => {

@@ -156,7 +156,22 @@
           <div class="set-item-title">重启</div>
           <div class="set-item-content">重启应用</div>
         </div>
-        <n-button type="primary" @click="restartApp">重启</n-button>
+        <n-button type="primary" size="small" @click="restartApp">重启</n-button>
+      </div>
+      <!-- 缓存管理 -->
+      <!-- <n-card class="set-card" title="缓存管理">
+        <n-space vertical>
+          <n-button type="primary" @click="showClearCacheModal = true"> 清除缓存 </n-button>
+        </n-space>
+      </n-card> -->
+      <div v-if="isElectron" class="set-item">
+        <div>
+          <div class="set-item-title">缓存管理</div>
+          <div class="set-item-content">清除缓存</div>
+        </div>
+        <n-button type="primary" size="small" @click="showClearCacheModal = true">
+          清除缓存
+        </n-button>
       </div>
       <div v-if="isElectron" class="set-item">
         <div>
@@ -210,6 +225,42 @@
         </div>
         <donation-list v-if="isDonationListVisible" />
       </div>
+
+      <!-- 清除缓存弹窗 -->
+      <n-modal
+        v-model:show="showClearCacheModal"
+        preset="dialog"
+        title="清除缓存"
+        positive-text="确认"
+        negative-text="取消"
+        @positive-click="clearCache"
+        @negative-click="
+          () => {
+            selectedCacheTypes = [];
+          }
+        "
+      >
+        <n-space vertical>
+          <p>请选择要清除的缓存类型：</p>
+          <n-checkbox-group v-model:value="selectedCacheTypes">
+            <n-space vertical>
+              <n-checkbox
+                v-for="option in clearCacheOptions"
+                :key="option.key"
+                :value="option.key"
+                :label="option.label"
+              >
+                <template #default>
+                  <div>
+                    <div>{{ option.label }}</div>
+                    <div class="text-gray-400 text-sm">{{ option.description }}</div>
+                  </div>
+                </template>
+              </n-checkbox>
+            </n-space>
+          </n-checkbox-group>
+        </n-space>
+      </n-modal>
     </div>
     <play-bottom />
     <n-modal
@@ -262,6 +313,7 @@ import { useMessage } from 'naive-ui';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 
+import localData from '@/../main/set.json';
 import Coffee from '@/components/Coffee.vue';
 import DonationList from '@/components/common/DonationList.vue';
 import PlayBottom from '@/components/common/PlayBottom.vue';
@@ -490,6 +542,82 @@ const isDonationListVisible = ref(localStorage.getItem('donationListVisible') !=
 const toggleDonationList = () => {
   isDonationListVisible.value = !isDonationListVisible.value;
   localStorage.setItem('donationListVisible', isDonationListVisible.value.toString());
+};
+
+// 清除缓存相关
+const showClearCacheModal = ref(false);
+const clearCacheOptions = ref([
+  { label: '播放历史', key: 'history', description: '清除播放过的歌曲记录' },
+  { label: '收藏记录', key: 'favorite', description: '清除本地收藏的歌曲记录(不会影响云端收藏)' },
+  { label: '用户数据', key: 'user', description: '清除登录信息和用户相关数据' },
+  { label: '应用设置', key: 'settings', description: '清除应用的所有自定义设置' },
+  { label: '下载记录', key: 'downloads', description: '清除下载历史记录(不会删除已下载的文件)' },
+  { label: '音乐资源', key: 'resources', description: '清除已加载的音乐文件、歌词等资源缓存' }
+]);
+
+const selectedCacheTypes = ref<string[]>([]);
+
+const clearCache = async () => {
+  const clearTasks = selectedCacheTypes.value.map(async (type) => {
+    switch (type) {
+      case 'history':
+        localStorage.removeItem('musicHistory');
+        break;
+      case 'favorite':
+        localStorage.removeItem('favoriteList');
+        break;
+      case 'user':
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        store.commit('logout');
+        break;
+      case 'settings':
+        if (window.electron) {
+          window.electron.ipcRenderer.send('set-store-value', 'set', localData);
+        }
+        localStorage.removeItem('appSettings');
+        localStorage.removeItem('theme');
+        localStorage.removeItem('lyricData');
+        localStorage.removeItem('lyricFontSize');
+        localStorage.removeItem('playMode');
+        break;
+      case 'downloads':
+        if (window.electron) {
+          window.electron.ipcRenderer.send('clear-downloads-history');
+        }
+        break;
+      case 'resources':
+        // 清除音频资源缓存
+        if (window.electron) {
+          window.electron.ipcRenderer.send('clear-audio-cache');
+        }
+        // 清除歌词缓存
+        localStorage.removeItem('lyricCache');
+        // 清除音乐URL缓存
+        localStorage.removeItem('musicUrlCache');
+        // 清除图片缓存
+        if (window.caches) {
+          try {
+            const cache = await window.caches.open('music-images');
+            await cache.keys().then((keys) => {
+              keys.forEach((key) => {
+                cache.delete(key);
+              });
+            });
+          } catch (error) {
+            console.error('清除图片缓存失败:', error);
+          }
+        }
+        break;
+      default:
+        break;
+    }
+  });
+
+  await Promise.all(clearTasks);
+  message.success('清除成功，部分设置在重启后生效');
+  showClearCacheModal.value = false;
+  selectedCacheTypes.value = [];
 };
 </script>
 
