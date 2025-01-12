@@ -45,23 +45,23 @@
               </n-tag>
               <span class="donation-date">{{ donor.date }}</span>
             </div>
-            <div v-if="donor.message" class="donation-message">
-              <n-popover trigger="hover" placement="bottom">
-                <template #trigger>
-                  <div class="message-content">
-                    <i class="ri-double-quotes-l quote-icon"></i>
-                    <div class="message-text">{{ donor.message }}</div>
-                    <i class="ri-double-quotes-r quote-icon"></i>
-                  </div>
-                </template>
-                <div class="message-popup">
-                  <i class="ri-double-quotes-l quote-icon"></i>
-                  {{ donor.message }}
-                  <i class="ri-double-quotes-r quote-icon"></i>
-                </div>
-              </n-popover>
-            </div>
           </div>
+        </div>
+        <div v-if="donor.message" class="donation-message">
+          <n-popover trigger="hover" placement="bottom">
+            <template #trigger>
+              <div class="message-content">
+                <i class="ri-double-quotes-l quote-icon"></i>
+                <div class="message-text">{{ donor.message }}</div>
+                <i class="ri-double-quotes-r quote-icon"></i>
+              </div>
+            </template>
+            <div class="message-popup">
+              <i class="ri-double-quotes-l quote-icon"></i>
+              {{ donor.message }}
+              <i class="ri-double-quotes-r quote-icon"></i>
+            </div>
+          </n-popover>
         </div>
         <div class="card-sparkles"></div>
       </div>
@@ -137,8 +137,7 @@ const fetchDonors = async () => {
     );
     donors.value = response.data.map((donor: Donor, index: number) => ({
       ...donor,
-      avatar: `https://api.dicebear.com/7.x/micah/svg?seed=${index}`,
-      message: donor.message || '没有留言'
+      avatar: `https://api.dicebear.com/7.x/micah/svg?seed=${index}`
     }));
   } catch (error) {
     console.error('Failed to fetch donors:', error);
@@ -207,10 +206,14 @@ const handleMouseLeave = (event: MouseEvent) => {
   }
 };
 
-// 按金额排序的捐赠列表
+// 按金额和留言排序的捐赠列表
 const sortedDonors = computed(() => {
   return [...donors.value].sort((a, b) => {
-    // 首先按金额从大到小排序
+    // 如果一个有留言一个没有，有留言的排在前面
+    if (a.message && !b.message) return -1;
+    if (!a.message && b.message) return 1;
+
+    // 都有留言或都没有留言时，按金额从大到小排序
     const amountDiff = b.amount - a.amount;
     if (amountDiff !== 0) return amountDiff;
 
@@ -297,7 +300,7 @@ const toggleExpand = () => {
   }
 
   .donation-message {
-    @apply text-sm text-gray-600 dark:text-gray-300 leading-relaxed mt-2;
+    @apply text-sm text-gray-600 dark:text-gray-300 leading-relaxed mt-3 w-full;
 
     .message-content {
       @apply relative p-2 rounded-lg transition-all duration-300 cursor-pointer;
