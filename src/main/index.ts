@@ -24,16 +24,17 @@ let mainWindow: Electron.BrowserWindow;
 
 // 初始化应用
 function initialize() {
-  // 初始化各个模块
+  // 初始化配置管理
   initializeConfig();
-  initializeFileManager();
+  // 初始化缓存管理
   initializeCacheManager();
+  // 初始化文件管理
+  initializeFileManager();
+  // 初始化窗口管理
+  initializeWindowManager();
 
   // 创建主窗口
   mainWindow = createMainWindow(icon);
-
-  // 初始化窗口管理
-  initializeWindowManager();
 
   // 初始化托盘
   initializeTray(iconPath, mainWindow);

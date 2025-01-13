@@ -23,6 +23,9 @@ export const setAnimationClass = (type: String) => {
 };
 // 设置动画延时
 export const setAnimationDelay = (index: number = 6, time: number = 50) => {
+  if (store.state.setData?.noAnimate) {
+    return '';
+  }
   const speed = store.state.setData?.animationSpeed || 1;
   return `animation-delay:${(index * time) / (speed * 2)}ms`;
 };

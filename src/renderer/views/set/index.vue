@@ -32,7 +32,15 @@
       <div class="set-item">
         <div>
           <div class="set-item-title">动画速度</div>
-          <div class="set-item-content">调节动画播放速度</div>
+          <div class="set-item-content">
+            <div class="flex items-center gap-2">
+              <n-switch v-model:value="setData.noAnimate">
+                <template #checked>关闭</template>
+                <template #unchecked>开启</template>
+              </n-switch>
+              <span>是否开启动画</span>
+            </div>
+          </div>
         </div>
         <div class="flex items-center gap-2">
           <span class="text-sm text-gray-400">{{ setData.animationSpeed }}x</span>

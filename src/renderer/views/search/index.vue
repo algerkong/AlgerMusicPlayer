@@ -29,8 +29,15 @@
       class="search-list"
       :class="setAnimationClass('animate__fadeInUp')"
       :native-scrollbar="false"
+      @scroll="handleScroll"
     >
-      <div class="title">{{ hotKeyword }}</div>
+      <div v-if="searchDetail" class="title">
+        <i
+          class="ri-arrow-left-s-line mr-1 cursor-pointer hover:text-gray-500 hover:scale-110"
+          @click="searchDetail = null"
+        ></i>
+        {{ hotKeyword }}
+      </div>
       <div v-loading="searchDetailLoading" class="search-list-box">
         <template v-if="searchDetail">
           <div
@@ -53,6 +60,41 @@
               </div>
             </template>
           </template>
+          <!-- 加载状态 -->
+          <div v-if="isLoadingMore" class="loading-more">
+            <n-spin size="small" />
+            <span class="ml-2">加载中...</span>
+          </div>
+          <div v-if="!hasMore && searchDetail" class="no-more">没有更多了</div>
+        </template>
+        <!-- 搜索历史 -->
+        <template v-else>
+          <div class="search-history">
+            <div class="search-history-header title">
+              <span>搜索历史</span>
+              <n-button text type="error" @click="clearSearchHistory">
+                <template #icon>
+                  <i class="ri-delete-bin-line"></i>
+                </template>
+                清空
+              </n-button>
+            </div>
+            <div class="search-history-list">
+              <n-tag
+                v-for="(item, index) in searchHistory"
+                :key="index"
+                :class="setAnimationClass('animate__bounceInLeft')"
+                :style="setAnimationDelay(index, 10)"
+                class="search-history-item"
+                round
+                closable
+                @click="handleSearchHistory(item)"
+                @close="handleCloseSearchHistory(item)"
+              >
+                {{ item }}
+              </n-tag>
+            </div>
+          </div>
         </template>
       </div>
     </n-layout>
@@ -82,6 +124,51 @@ const store = useStore();
 const searchDetail = ref<any>();
 const searchType = computed(() => store.state.searchType as number);
 const searchDetailLoading = ref(false);
+const searchHistory = ref<string[]>([]);
+
+// 添加分页相关的状态
+const ITEMS_PER_PAGE = 30; // 每页数量
+const page = ref(0);
+const hasMore = ref(true);
+const isLoadingMore = ref(false);
+const currentKeyword = ref('');
+
+// 从 localStorage 加载搜索历史
+const loadSearchHistory = () => {
+  const history = localStorage.getItem('searchHistory');
+  searchHistory.value = history ? JSON.parse(history) : [];
+};
+
+// 保存搜索历史
+const saveSearchHistory = (keyword: string) => {
+  if (!keyword) return;
+  const history = searchHistory.value;
+  // 移除重复的关键词
+  const index = history.indexOf(keyword);
+  if (index > -1) {
+    history.splice(index, 1);
+  }
+  // 添加到开头
+  history.unshift(keyword);
+  // 只保留最近的20条记录
+  if (history.length > 20) {
+    history.pop();
+  }
+  searchHistory.value = history;
+  localStorage.setItem('searchHistory', JSON.stringify(history));
+};
+
+// 清空搜索历史
+const clearSearchHistory = () => {
+  searchHistory.value = [];
+  localStorage.removeItem('searchHistory');
+};
+
+// 删除搜索历史
+const handleCloseSearchHistory = (keyword: string) => {
+  searchHistory.value = searchHistory.value.filter((item) => item !== keyword);
+  localStorage.setItem('searchHistory', JSON.stringify(searchHistory.value));
+};
 
 // 热搜列表
 const hotSearchData = ref<IHotSearch>();
@@ -92,6 +179,7 @@ const loadHotSearch = async () => {
 
 onMounted(() => {
   loadHotSearch();
+  loadSearchHistory();
   loadSearch(route.query.keyword);
 });
 
@@ -114,48 +202,103 @@ watch(
 );
 
 const dateFormat = (time: any) => useDateFormat(time, 'YYYY.MM.DD').value;
-const loadSearch = async (keywords: any, type: any = null) => {
-  hotKeyword.value = keywords;
-  searchDetail.value = undefined;
+const loadSearch = async (keywords: any, type: any = null, isLoadMore = false) => {
   if (!keywords) return;
 
-  searchDetailLoading.value = true;
-  const { data } = await getSearch({ keywords, type: type || searchType.value });
+  if (!isLoadMore) {
+    hotKeyword.value = keywords;
+    searchDetail.value = undefined;
+    page.value = 0;
+    hasMore.value = true;
+    currentKeyword.value = keywords;
+  } else if (isLoadingMore.value || !hasMore.value) {
+    return;
+  }
 
-  const songs = data.result.songs || [];
-  const albums = data.result.albums || [];
-  const mvs = (data.result.mvs || []).map((item: any) => ({
-    ...item,
-    picUrl: item.cover,
-    playCount: item.playCount,
-    desc: item.artists.map((artist: any) => artist.name).join('/'),
-    type: 'mv'
-  }));
+  // 保存搜索历史
+  if (!isLoadMore) {
+    saveSearchHistory(keywords);
+  }
 
-  const playlists = (data.result.playlists || []).map((item: any) => ({
-    ...item,
-    picUrl: item.coverImgUrl,
-    playCount: item.playCount,
-    desc: item.creator.nickname,
-    type: 'playlist'
-  }));
+  if (isLoadMore) {
+    isLoadingMore.value = true;
+  } else {
+    searchDetailLoading.value = true;
+  }
 
-  // songs map 替换属性
-  songs.forEach((item: any) => {
-    item.picUrl = item.al.picUrl;
-    item.artists = item.ar;
-  });
-  albums.forEach((item: any) => {
-    item.desc = `${item.artist.name} ${item.company} ${dateFormat(item.publishTime)}`;
-  });
-  searchDetail.value = {
-    songs,
-    albums,
-    mvs,
-    playlists
-  };
+  try {
+    const { data } = await getSearch({
+      keywords: currentKeyword.value,
+      type: type || searchType.value,
+      limit: ITEMS_PER_PAGE,
+      offset: page.value * ITEMS_PER_PAGE
+    });
 
-  searchDetailLoading.value = false;
+    const songs = data.result.songs || [];
+    const albums = data.result.albums || [];
+    const mvs = (data.result.mvs || []).map((item: any) => ({
+      ...item,
+      picUrl: item.cover,
+      playCount: item.playCount,
+      desc: item.artists.map((artist: any) => artist.name).join('/'),
+      type: 'mv'
+    }));
+
+    const playlists = (data.result.playlists || []).map((item: any) => ({
+      ...item,
+      picUrl: item.coverImgUrl,
+      playCount: item.playCount,
+      desc: item.creator.nickname,
+      type: 'playlist'
+    }));
+
+    // songs map 替换属性
+    songs.forEach((item: any) => {
+      item.picUrl = item.al.picUrl;
+      item.artists = item.ar;
+    });
+    albums.forEach((item: any) => {
+      item.desc = `${item.artist.name} ${item.company} ${dateFormat(item.publishTime)}`;
+    });
+
+    if (isLoadMore && searchDetail.value) {
+      // 合并数据
+      searchDetail.value.songs = [...searchDetail.value.songs, ...songs];
+      searchDetail.value.albums = [...searchDetail.value.albums, ...albums];
+      searchDetail.value.mvs = [...searchDetail.value.mvs, ...mvs];
+      searchDetail.value.playlists = [...searchDetail.value.playlists, ...playlists];
+    } else {
+      searchDetail.value = {
+        songs,
+        albums,
+        mvs,
+        playlists
+      };
+    }
+
+    // 判断是否还有更多数据
+    hasMore.value =
+      songs.length === ITEMS_PER_PAGE ||
+      albums.length === ITEMS_PER_PAGE ||
+      mvs.length === ITEMS_PER_PAGE ||
+      playlists.length === ITEMS_PER_PAGE;
+
+    page.value++;
+  } catch (error) {
+    console.error('搜索失败:', error);
+  } finally {
+    searchDetailLoading.value = false;
+    isLoadingMore.value = false;
+  }
+};
+
+// 添加滚动处理函数
+const handleScroll = (e: any) => {
+  const { scrollTop, scrollHeight, clientHeight } = e.target;
+  // 距离底部100px时加载更多
+  if (scrollTop + clientHeight >= scrollHeight - 100 && !isLoadingMore.value && hasMore.value) {
+    loadSearch(currentKeyword.value, null, true);
+  }
 };
 
 watch(
@@ -170,6 +313,11 @@ watch(
 const handlePlay = () => {
   const tracks = searchDetail.value?.songs || [];
   store.commit('setPlayList', tracks);
+};
+
+// 点击搜索历史
+const handleSearchHistory = (keyword: string) => {
+  loadSearch(keyword, 1);
 };
 </script>
 
@@ -225,9 +373,35 @@ const handlePlay = () => {
   @apply text-gray-900 dark:text-white;
 }
 
+.search-history {
+  &-header {
+    @apply flex justify-between items-center mb-4;
+    @apply text-gray-900 dark:text-white;
+  }
+
+  &-list {
+    @apply flex flex-wrap gap-2 px-4;
+  }
+
+  &-item {
+    @apply cursor-pointer;
+    animation-duration: 0.2s;
+  }
+}
+
 .mobile {
   .hot-search {
     @apply mr-0 w-full;
   }
+}
+
+.loading-more {
+  @apply flex justify-center items-center py-4;
+  @apply text-gray-500 dark:text-gray-400;
+}
+
+.no-more {
+  @apply text-center py-4;
+  @apply text-gray-500 dark:text-gray-400;
 }
 </style>

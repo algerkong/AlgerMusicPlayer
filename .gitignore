@@ -20,3 +20,5 @@ bun.lockb
 .env.*.local
 
 out
+
+.cursorrules
