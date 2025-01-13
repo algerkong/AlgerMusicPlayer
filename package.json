@@ -62,7 +62,7 @@
     "howler": "^2.2.4",
     "lodash": "^4.17.21",
     "marked": "^15.0.4",
-    "naive-ui": "^2.39.0",
+    "naive-ui": "^2.41.0",
     "postcss": "^8.4.49",
     "prettier": "^3.3.2",
     "remixicon": "^4.2.0",

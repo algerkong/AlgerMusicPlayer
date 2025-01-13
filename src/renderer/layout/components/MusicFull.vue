@@ -1,6 +1,6 @@
 <template>
   <n-drawer
-    :show="musicFull"
+    v-model:show="isVisible"
     height="100%"
     placement="bottom"
     :style="{ background: currentBackground || background }"
@@ -22,15 +22,24 @@
         <div>
           <div class="music-content-name">{{ playMusic.name }}</div>
           <div class="music-content-singer">
-            <span
-              v-for="(item, index) in playMusic.ar || playMusic.song.artists"
-              :key="index"
-              class="cursor-pointer hover:text-green-500"
-              @click="handleArtistClick(item.id)"
+            <n-ellipsis
+              class="text-ellipsis"
+              line-clamp="2"
+              :tooltip="{
+                contentStyle: { maxWidth: '600px' },
+                zIndex: 99999
+              }"
             >
-              {{ item.name }}
-              {{ index < (playMusic.ar || playMusic.song.artists).length - 1 ? ' / ' : '' }}
-            </span>
+              <span
+                v-for="(item, index) in playMusic.ar || playMusic.song.artists"
+                :key="index"
+                class="cursor-pointer hover:text-green-500"
+                @click="handleArtistClick(item.id)"
+              >
+                {{ item.name }}
+                {{ index < (playMusic.ar || playMusic.song.artists).length - 1 ? ' / ' : '' }}
+              </span>
+            </n-ellipsis>
           </div>
         </div>
       </div>
@@ -74,7 +83,7 @@
 
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core';
-import { onBeforeUnmount, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 
 import {
@@ -97,7 +106,7 @@ const animationFrame = ref<number | null>(null);
 const isDark = ref(false);
 
 const props = defineProps({
-  musicFull: {
+  modelValue: {
     type: Boolean,
     default: false
   },
@@ -107,10 +116,17 @@ const props = defineProps({
   }
 });
 
+const emit = defineEmits(['update:modelValue']);
+
+const isVisible = computed({
+  get: () => props.modelValue,
+  set: (value) => emit('update:modelValue', value)
+});
+
 // 歌词滚动方法
 const lrcScroll = (behavior = 'smooth') => {
   const nowEl = document.querySelector(`#music-lrc-text-${nowIndex.value}`);
-  if (props.musicFull && !isMouse.value && nowEl && lrcContainer.value) {
+  if (isVisible.value && !isMouse.value && nowEl && lrcContainer.value) {
     const containerRect = lrcContainer.value.getBoundingClientRect();
     const nowElRect = nowEl.getBoundingClientRect();
     const relativeTop = nowElRect.top - containerRect.top;
@@ -142,9 +158,9 @@ watch(nowIndex, () => {
 });
 
 watch(
-  () => props.musicFull,
+  () => isVisible.value,
   () => {
-    if (props.musicFull) {
+    if (isVisible.value) {
       nextTick(() => {
         lrcScroll('instant');
       });
@@ -227,7 +243,7 @@ onBeforeUnmount(() => {
 
 const store = useStore();
 const handleArtistClick = (id: number) => {
-  props.musicFull = false;
+  isVisible.value = false;
   store.commit('setCurrentArtistId', id);
 };
 
@@ -275,7 +291,7 @@ defineExpose({
     @apply flex flex-col justify-center items-center relative;
 
     &-name {
-      @apply font-bold text-xl pb-1 pt-4;
+      @apply font-bold text-2xl pb-1 pt-4;
     }
 
     &-singer {

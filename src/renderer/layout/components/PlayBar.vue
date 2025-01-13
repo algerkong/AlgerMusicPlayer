@@ -51,7 +51,14 @@
         </n-ellipsis>
       </div>
       <div class="music-content-name">
-        <n-ellipsis class="text-ellipsis" line-clamp="1">
+        <n-ellipsis
+          class="text-ellipsis"
+          line-clamp="1"
+          :tooltip="{
+            contentStyle: { maxWidth: '600px' },
+            zIndex: 99999
+          }"
+        >
           <span
             v-for="(artists, artistsindex) in playMusic.ar || playMusic.song.artists"
             :key="artistsindex"
@@ -141,7 +148,7 @@
       </n-popover>
     </div>
     <!-- 播放音乐 -->
-    <music-full ref="MusicFullRef" v-model:music-full="musicFullVisible" :background="background" />
+    <music-full ref="MusicFullRef" v-model="musicFullVisible" :background="background" />
   </div>
 </template>
 

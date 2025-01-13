@@ -73,8 +73,12 @@
             <i class="iconfont ri-restart-line"></i>
             <span>重启</span>
           </div>
-          <div class="menu-item" @click="toGithubRelease">
+          <div class="menu-item" @click="selectItem('refresh')">
             <i class="iconfont ri-refresh-line"></i>
+            <span>刷新</span>
+          </div>
+          <div class="menu-item" @click="toGithubRelease">
+            <i class="iconfont ri-github-fill"></i>
             <span>当前版本</span>
             <div class="version-info">
               <span class="version-number">{{ updateInfo.currentVersion }}</span>
@@ -212,6 +216,9 @@ const selectItem = async (key: string) => {
     case 'user':
       router.push('/user');
       break;
+    case 'refresh':
+      window.location.reload();
+      break;
     default:
   }
 };
@@ -286,7 +293,7 @@ const toGithubRelease = () => {
 }
 
 .user-popover {
-  @apply min-w-[280px] p-0 rounded-xl overflow-hidden;
+  @apply min-w-[220px] p-0 rounded-xl overflow-hidden;
   @apply bg-light dark:bg-black;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 
@@ -303,7 +310,7 @@ const toGithubRelease = () => {
     @apply py-1;
 
     .menu-item {
-      @apply flex items-center px-3 py-2 text-sm cursor-pointer;
+      @apply flex items-center px-3 py-1 text-sm cursor-pointer;
       @apply text-gray-700 dark:text-gray-300;
       transition: background-color 0.2s;
 
