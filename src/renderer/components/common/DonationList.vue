@@ -77,6 +77,10 @@
     </div>
 
     <div class="p-6 rounded-lg shadow-lg bg-light dark:bg-gray-800">
+      <div class="description text-center text-sm text-gray-700 dark:text-gray-200">
+        <p>您的捐赠将用于支持开发和维护工作，包括但不限于服务器维护、域名续费等。</p>
+        <p>留言时可留下您的邮箱或 github名称。</p>
+      </div>
       <div class="flex justify-between">
         <div class="flex flex-col items-center gap-2">
           <n-image
