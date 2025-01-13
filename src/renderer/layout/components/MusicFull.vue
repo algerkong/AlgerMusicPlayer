@@ -22,9 +22,14 @@
         <div>
           <div class="music-content-name">{{ playMusic.name }}</div>
           <div class="music-content-singer">
-            <span v-for="(item, index) in playMusic.ar || playMusic.song.artists" :key="index">
-              {{ item.name
-              }}{{ index < (playMusic.ar || playMusic.song.artists).length - 1 ? ' / ' : '' }}
+            <span
+              v-for="(item, index) in playMusic.ar || playMusic.song.artists"
+              :key="index"
+              class="cursor-pointer hover:text-green-500"
+              @click="handleArtistClick(item.id)"
+            >
+              {{ item.name }}
+              {{ index < (playMusic.ar || playMusic.song.artists).length - 1 ? ' / ' : '' }}
             </span>
           </div>
         </div>
@@ -70,6 +75,7 @@
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core';
 import { onBeforeUnmount, ref, watch } from 'vue';
+import { useStore } from 'vuex';
 
 import {
   lrcArray,
@@ -218,6 +224,12 @@ onBeforeUnmount(() => {
     cancelAnimationFrame(animationFrame.value);
   }
 });
+
+const store = useStore();
+const handleArtistClick = (id: number) => {
+  props.musicFull = false;
+  store.commit('setCurrentArtistId', id);
+};
 
 defineExpose({
   lrcScroll

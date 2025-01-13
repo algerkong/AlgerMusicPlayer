@@ -25,10 +25,14 @@
         }}</n-ellipsis>
         <div class="song-item-content-divider">-</div>
         <n-ellipsis class="song-item-content-name text-ellipsis" line-clamp="1">
-          <span v-for="(artists, artistsindex) in item.ar || item.song.artists" :key="artistsindex"
-            >{{ artists.name
-            }}{{ artistsindex < (item.ar || item.song.artists).length - 1 ? ' / ' : '' }}</span
-          >
+          <template v-for="(artist, index) in artists" :key="index">
+            <span
+              class="cursor-pointer hover:text-green-500"
+              @click.stop="handleArtistClick(artist.id)"
+              >{{ artist.name }}</span
+            >
+            <span v-if="index < artists.length - 1"> / </span>
+          </template>
         </n-ellipsis>
       </div>
       <template v-else>
@@ -37,12 +41,14 @@
         </div>
         <div class="song-item-content-name">
           <n-ellipsis class="text-ellipsis" line-clamp="1">
-            <span
-              v-for="(artists, artistsindex) in item.ar || item.song.artists"
-              :key="artistsindex"
-              >{{ artists.name
-              }}{{ artistsindex < (item.ar || item.song.artists).length - 1 ? ' / ' : '' }}</span
-            >
+            <template v-for="(artist, index) in artists" :key="index">
+              <span
+                class="cursor-pointer hover:text-green-500"
+                @click.stop="handleArtistClick(artist.id)"
+                >{{ artist.name }}</span
+              >
+              <span v-if="index < artists.length - 1"> / </span>
+            </template>
           </n-ellipsis>
         </div>
       </template>
@@ -266,6 +272,15 @@ const toggleFavorite = async (e: Event) => {
 const toggleSelect = () => {
   emits('select', props.item.id, !props.selected);
 };
+
+const handleArtistClick = (id: number) => {
+  store.commit('setCurrentArtistId', id);
+};
+
+// 获取歌手列表（最多显示5个）
+const artists = computed(() => {
+  return (props.item.ar || props.item.song?.artists)?.slice(0, 4) || [];
+});
 </script>
 
 <style lang="scss" scoped>

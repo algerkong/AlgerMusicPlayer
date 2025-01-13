@@ -99,7 +99,7 @@ const drag = (event: MouseEvent) => {
   -webkit-app-region: drag;
   @apply flex justify-between px-6 py-2 select-none relative;
   @apply text-dark dark:text-white;
-  z-index: 9999999;
+  z-index: 999;
 }
 
 #buttons {

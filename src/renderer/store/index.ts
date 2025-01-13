@@ -16,7 +16,7 @@ function getLocalStorageItem<T>(key: string, defaultValue: T): T {
   return item ? JSON.parse(item) : defaultValue;
 }
 
-interface State {
+export interface State {
   menus: any[];
   play: boolean;
   isPlay: boolean;
@@ -35,6 +35,8 @@ interface State {
   theme: ThemeType;
   musicFull: boolean;
   showUpdateModal: boolean;
+  showArtistDrawer: boolean;
+  currentArtistId: number | null;
 }
 
 const state: State = {
@@ -55,7 +57,9 @@ const state: State = {
   playMode: getLocalStorageItem('playMode', 0),
   theme: getCurrentTheme(),
   musicFull: false,
-  showUpdateModal: false
+  showUpdateModal: false,
+  showArtistDrawer: false,
+  currentArtistId: null
 };
 
 const { handlePlayMusic, nextPlay, prevPlay } = useMusicListHook();
@@ -147,6 +151,15 @@ const mutations = {
     state.user = null;
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+  },
+  setShowArtistDrawer(state, show: boolean) {
+    state.showArtistDrawer = show;
+    if (!show) {
+      state.currentArtistId = null;
+    }
+  },
+  setCurrentArtistId(state, id: number) {
+    state.currentArtistId = id;
   }
 };
 
@@ -197,6 +210,9 @@ const actions = {
 
     // 更新本地存储
     localStorage.setItem('favoriteList', JSON.stringify(state.favoriteList));
+  },
+  showArtist({ commit }, id: number) {
+    commit('setCurrentArtistId', id);
   }
 };
 

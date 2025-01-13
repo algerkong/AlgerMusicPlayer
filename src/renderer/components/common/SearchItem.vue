@@ -1,8 +1,9 @@
 <template>
-  <div class="search-item" :class="item.type" @click="handleClick">
+  <div class="search-item" :class="[item.type, shape]" @click="handleClick">
     <div class="search-item-img">
       <n-image
-        :src="getImgUrl(item.picUrl, item.type === 'mv' ? '320y180' : '100y100')"
+        class="w-full h-full"
+        :src="getImgUrl(item.picUrl, item.type === 'mv' ? '320y180' : '200y200')"
         lazy
         preview-disabled
       />
@@ -13,6 +14,11 @@
     <div class="search-item-info">
       <p class="search-item-name">{{ item.name }}</p>
       <p class="search-item-artist">{{ item.desc }}</p>
+    </div>
+
+    <div v-if="item.type === '专辑'" class="search-item-size">
+      <i class="ri-music-2-line"></i>
+      <span>{{ item.size }}</span>
     </div>
 
     <music-list
@@ -43,15 +49,21 @@ import { getImgUrl } from '@/utils';
 
 import MusicList from '../MusicList.vue';
 
-const props = defineProps<{
-  item: {
-    picUrl: string;
-    name: string;
-    desc: string;
-    type: string;
-    [key: string]: any;
-  };
-}>();
+const props = withDefaults(
+  defineProps<{
+    shape?: 'square' | 'rectangle';
+    item: {
+      picUrl: string;
+      name: string;
+      desc: string;
+      type: string;
+      [key: string]: any;
+    };
+  }>(),
+  {
+    shape: 'rectangle'
+  }
+);
 
 const songList = ref<any[]>([]);
 
@@ -104,11 +116,45 @@ const handleClick = async () => {
 
 <style scoped lang="scss">
 .search-item {
-  @apply rounded-3xl p-3 flex items-center hover:bg-light-200 dark:hover:bg-gray-800 transition cursor-pointer;
-  margin: 0 10px;
-  .search-item-img {
-    @apply w-12 h-12 mr-4 rounded-2xl overflow-hidden;
+  @apply rounded-lg p-0 flex items-center hover:bg-transparent transition cursor-pointer border-none;
+
+  &.square {
+    @apply flex-col relative;
+
+    .search-item-img {
+      @apply w-full aspect-square mb-2 mr-0 rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 shadow-sm shadow-black/20 dark:shadow-white/20;
+      img {
+        @apply object-cover w-full h-full transition-transform duration-500;
+      }
+    }
+
+    .search-item-info {
+      @apply w-full text-left px-0;
+
+      .search-item-name {
+        @apply truncate mb-1 font-medium text-base text-gray-800 dark:text-gray-200;
+      }
+
+      .search-item-artist {
+        @apply truncate text-sm text-gray-500 dark:text-gray-400;
+      }
+    }
+
+    .search-item-size {
+      @apply absolute top-2 right-2 text-xs text-white px-2 py-1 rounded-full bg-black/30 backdrop-blur-sm;
+      i {
+        @apply text-xs;
+      }
+    }
   }
+
+  &.rectangle {
+    @apply hover:bg-light-200 dark:hover:bg-dark-200 p-3;
+    .search-item-img {
+      @apply w-12 h-12 mr-4 rounded-lg overflow-hidden;
+    }
+  }
+
   .search-item-info {
     @apply flex-1 overflow-hidden;
     &-name {
@@ -137,5 +183,9 @@ const handleClick = async () => {
       @apply text-white text-5xl;
     }
   }
+}
+
+.search-item-size {
+  @apply flex items-center gap-2 text-gray-400;
 }
 </style>

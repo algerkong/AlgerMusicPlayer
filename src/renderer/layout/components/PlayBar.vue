@@ -55,11 +55,12 @@
           <span
             v-for="(artists, artistsindex) in playMusic.ar || playMusic.song.artists"
             :key="artistsindex"
-            >{{ artists.name
-            }}{{
-              artistsindex < (playMusic.ar || playMusic.song.artists).length - 1 ? ' / ' : ''
-            }}</span
+            class="cursor-pointer hover:text-green-500"
+            @click="handleArtistClick(artists.id)"
           >
+            {{ artists.name
+            }}{{ artistsindex < (playMusic.ar || playMusic.song.artists).length - 1 ? ' / ' : '' }}
+          </span>
         </n-ellipsis>
       </div>
     </div>
@@ -295,6 +296,9 @@ const musicFullVisible = ref(false);
 const setMusicFull = () => {
   musicFullVisible.value = !musicFullVisible.value;
   store.commit('setMusicFull', musicFullVisible.value);
+  if (musicFullVisible.value) {
+    store.commit('setShowArtistDrawer', false);
+  }
 };
 
 const palyListRef = useTemplateRef('palyListRef');
@@ -321,6 +325,11 @@ const toggleFavorite = async (e: Event) => {
 
 const openLyricWindow = () => {
   openLyric();
+};
+
+const handleArtistClick = (id: number) => {
+  musicFullVisible.value = false;
+  store.commit('setCurrentArtistId', id);
 };
 </script>
 

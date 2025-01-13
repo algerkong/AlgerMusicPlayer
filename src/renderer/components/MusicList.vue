@@ -7,6 +7,7 @@
     mask-closable
     :style="{ backgroundColor: 'transparent' }"
     :to="`#layout-main`"
+    :z-index="9998"
     @mask-click="close"
   >
     <div class="music-page">
@@ -17,7 +18,7 @@
           </div>
         </n-ellipsis>
         <div class="music-close">
-          <i class="icon iconfont icon-icon_error" @click="close"></i>
+          <i class="icon iconfont ri-close-line" @click="close"></i>
         </div>
       </div>
       <div class="music-content">
@@ -234,7 +235,7 @@ watch(
   }
 
   &-close {
-    @apply cursor-pointer text-gray-900 dark:text-white flex gap-2 items-center;
+    @apply cursor-pointer text-gray-500 dark:text-white hover:text-gray-900 dark:hover:text-gray-300 flex gap-2 items-center transition;
     .icon {
       @apply text-3xl;
     }

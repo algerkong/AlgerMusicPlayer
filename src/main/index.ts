@@ -60,7 +60,7 @@ app.whenReady().then(() => {
   initialize();
 
   // macOS 激活应用时的处理
-  app.on('activate', function () {
+  app.on('activate', () => {
     if (mainWindow === null) initialize();
   });
 });

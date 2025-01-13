@@ -27,7 +27,7 @@
     <n-layout
       v-if="isMobile ? searchDetail : true"
       class="search-list"
-      :class="setAnimationClass('animate__fadeInUp')"
+      :class="setAnimationClass('animate__fadeInDown')"
       :native-scrollbar="false"
       @scroll="handleScroll"
     >
@@ -53,6 +53,7 @@
               <div
                 v-for="(item, index) in list"
                 :key="item.id"
+                class="mb-3"
                 :class="setAnimationClass('animate__bounceInRight')"
                 :style="setAnimationDelay(index, 50)"
               >
@@ -83,8 +84,8 @@
               <n-tag
                 v-for="(item, index) in searchHistory"
                 :key="index"
-                :class="setAnimationClass('animate__bounceInLeft')"
-                :style="setAnimationDelay(index, 10)"
+                :class="setAnimationClass('animate__bounceIn')"
+                :style="setAnimationDelay(index, 50)"
                 class="search-history-item"
                 round
                 closable
@@ -362,6 +363,7 @@ const handleSearchHistory = (keyword: string) => {
   @apply flex-1 rounded-xl;
   @apply bg-light-100 dark:bg-dark-100;
   height: 100%;
+  animation-duration: 0.2s;
 
   &-box {
     @apply pb-28;
