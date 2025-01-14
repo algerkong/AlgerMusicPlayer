@@ -1,11 +1,12 @@
 import { electronApp, optimizer } from '@electron-toolkit/utils';
-import { app, globalShortcut, ipcMain, nativeImage } from 'electron';
+import { app, ipcMain, nativeImage } from 'electron';
 import { join } from 'path';
 
 import { loadLyricWindow } from './lyric';
 import { initializeCacheManager } from './modules/cache';
 import { initializeConfig } from './modules/config';
 import { initializeFileManager } from './modules/fileManager';
+import { initializeShortcuts, registerShortcuts } from './modules/shortcuts';
 import { initializeTray } from './modules/tray';
 import { createMainWindow, initializeWindowManager } from './modules/window';
 import { startMusicApi } from './server';
@@ -44,6 +45,9 @@ function initialize() {
 
   // 加载歌词窗口
   loadLyricWindow(ipcMain, mainWindow);
+
+  // 初始化快捷键
+  initializeShortcuts(mainWindow);
 }
 
 // 应用程序准备就绪时的处理
@@ -65,15 +69,9 @@ app.whenReady().then(() => {
   });
 });
 
-// 应用程序准备就绪后的快捷键设置
-app.on('ready', () => {
-  globalShortcut.register('CommandOrControl+Alt+Shift+M', () => {
-    if (mainWindow.isVisible()) {
-      mainWindow.hide();
-    } else {
-      mainWindow.show();
-    }
-  });
+// 监听快捷键更新
+ipcMain.on('update-shortcuts', () => {
+  registerShortcuts(mainWindow);
 });
 
 // 所有窗口关闭时的处理

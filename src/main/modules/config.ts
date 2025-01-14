@@ -2,6 +2,7 @@ import { app, ipcMain } from 'electron';
 import Store from 'electron-store';
 
 import set from '../set.json';
+import { defaultShortcuts } from './shortcuts';
 
 interface StoreType {
   set: {
@@ -12,6 +13,7 @@ interface StoreType {
     authorUrl: string;
     musicApiPort: number;
   };
+  shortcuts: typeof defaultShortcuts;
 }
 
 let store: Store<StoreType>;
@@ -23,7 +25,8 @@ export function initializeConfig() {
   store = new Store<StoreType>({
     name: 'config',
     defaults: {
-      set
+      set,
+      shortcuts: defaultShortcuts
     }
   });
 
@@ -39,5 +42,9 @@ export function initializeConfig() {
     _.returnValue = value || '';
   });
 
+  return store;
+}
+
+export function getStore() {
   return store;
 }

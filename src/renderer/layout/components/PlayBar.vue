@@ -154,7 +154,7 @@
 
 <script lang="ts" setup>
 import { useThrottleFn } from '@vueuse/core';
-import { useTemplateRef } from 'vue';
+import { computed, ref, useTemplateRef, watch } from 'vue';
 import { useStore } from 'vuex';
 
 import SongItem from '@/components/common/SongItem.vue';
@@ -168,6 +168,7 @@ import {
 } from '@/hooks/MusicHook';
 import type { SongResult } from '@/type/music';
 import { getImgUrl, isElectron, isMobile, secondToMinute, setAnimationClass } from '@/utils';
+import { showShortcutToast } from '@/utils/shortcutToast';
 
 import MusicFull from './MusicFull.vue';
 
@@ -338,6 +339,52 @@ const handleArtistClick = (id: number) => {
   musicFullVisible.value = false;
   store.commit('setCurrentArtistId', id);
 };
+
+// 添加全局快捷键处理
+if (isElectron) {
+  window.electron.ipcRenderer.on('global-shortcut', (_, action: string) => {
+    console.log('action', action);
+    switch (action) {
+      case 'togglePlay':
+        playMusicEvent();
+        showShortcutToast(
+          store.state.play ? '开始播放' : '暂停播放',
+          store.state.play ? 'ri-pause-circle-line' : 'ri-play-circle-line'
+        );
+        break;
+      case 'prevPlay':
+        handlePrev();
+        showShortcutToast('上一首', 'ri-skip-back-line');
+        break;
+      case 'nextPlay':
+        handleNext();
+        showShortcutToast('下一首', 'ri-skip-forward-line');
+        break;
+      case 'volumeUp':
+        if (volumeSlider.value < 100) {
+          volumeSlider.value = Math.min(volumeSlider.value + 10, 100);
+          showShortcutToast(`音量${volumeSlider.value}%`, 'ri-volume-up-line');
+        }
+        break;
+      case 'volumeDown':
+        if (volumeSlider.value > 0) {
+          volumeSlider.value = Math.max(volumeSlider.value - 10, 0);
+          showShortcutToast(`音量${volumeSlider.value}%`, 'ri-volume-down-line');
+        }
+        break;
+      case 'toggleFavorite':
+        toggleFavorite(new Event('click'));
+        showShortcutToast(
+          isFavorite.value ? `已收藏${playMusic.value.name}` : `已取消收藏${playMusic.value.name}`,
+          isFavorite.value ? 'ri-heart-fill' : 'ri-heart-line'
+        );
+        break;
+      default:
+        console.log('未知的快捷键动作:', action);
+        break;
+    }
+  });
+}
 </script>
 
 <style lang="scss" scoped>

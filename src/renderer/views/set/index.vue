@@ -161,6 +161,16 @@
 
       <div v-if="isElectron" class="set-item">
         <div>
+          <div class="set-item-title">快捷键设置</div>
+          <div class="set-item-content">自定义全局快捷键</div>
+        </div>
+        <n-button type="primary" size="small" @click="showShortcutModal = true">配置</n-button>
+      </div>
+
+      <shortcut-settings v-model:show="showShortcutModal" @change="handleShortcutsChange" />
+
+      <div v-if="isElectron" class="set-item">
+        <div>
           <div class="set-item-title">重启</div>
           <div class="set-item-content">重启应用</div>
         </div>
@@ -325,6 +335,7 @@ import localData from '@/../main/set.json';
 import Coffee from '@/components/Coffee.vue';
 import DonationList from '@/components/common/DonationList.vue';
 import PlayBottom from '@/components/common/PlayBottom.vue';
+import ShortcutSettings from '@/components/settings/ShortcutSettings.vue';
 import { isElectron } from '@/utils';
 import { openDirectory, selectDirectory } from '@/utils/fileOperation';
 import { checkUpdate, UpdateResult } from '@/utils/update';
@@ -630,6 +641,12 @@ const clearCache = async () => {
   message.success('清除成功，部分设置在重启后生效');
   showClearCacheModal.value = false;
   selectedCacheTypes.value = [];
+};
+
+const showShortcutModal = ref(false);
+
+const handleShortcutsChange = (shortcuts: any) => {
+  console.log('快捷键已更新:', shortcuts);
 };
 </script>
 
