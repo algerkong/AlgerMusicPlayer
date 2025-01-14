@@ -22,6 +22,7 @@ declare module 'vue' {
     NEmpty: typeof import('naive-ui')['NEmpty']
     NForm: typeof import('naive-ui')['NForm']
     NFormItem: typeof import('naive-ui')['NFormItem']
+    NIcon: typeof import('naive-ui')['NIcon']
     NImage: typeof import('naive-ui')['NImage']
     NInput: typeof import('naive-ui')['NInput']
     NInputNumber: typeof import('naive-ui')['NInputNumber']
@@ -39,6 +40,8 @@ declare module 'vue' {
     NTabPane: typeof import('naive-ui')['NTabPane']
     NTabs: typeof import('naive-ui')['NTabs']
     NTag: typeof import('naive-ui')['NTag']
+    NTooltip: typeof import('naive-ui')['NTooltip']
+    NVirtualList: typeof import('naive-ui')['NVirtualList']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
   }

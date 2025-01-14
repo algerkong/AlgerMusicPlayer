@@ -28,6 +28,7 @@
       :song-list="songList"
       :list-info="listInfo"
       :cover="false"
+      :z-index="zIndex"
     />
     <mv-player
       v-if="item.type === 'mv'"
@@ -52,6 +53,7 @@ import MusicList from '../MusicList.vue';
 const props = withDefaults(
   defineProps<{
     shape?: 'square' | 'rectangle';
+    zIndex?: number;
     item: {
       picUrl: string;
       name: string;

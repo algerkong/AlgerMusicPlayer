@@ -395,7 +395,7 @@ const handleArtistClick = (id: number) => {
 
   &-play {
     @apply flex justify-center items-center w-20 h-12 rounded-full mx-4 transition text-gray-500;
-    @apply bg-gray-100 bg-opacity-60 hover:bg-gray-200;
+    @apply bg-gray-100 bg-opacity-60 dark:bg-gray-800 dark:bg-opacity-60 hover:bg-gray-200;
   }
 }
 

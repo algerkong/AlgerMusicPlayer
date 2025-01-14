@@ -7,7 +7,7 @@
     mask-closable
     :style="{ backgroundColor: 'transparent' }"
     :to="`#layout-main`"
-    :z-index="9998"
+    :z-index="zIndex"
     @mask-click="close"
   >
     <div class="music-page">
@@ -89,6 +89,7 @@ const props = withDefaults(
   defineProps<{
     show: boolean;
     name: string;
+    zIndex?: number;
     songList: any[];
     loading?: boolean;
     listInfo?: {
@@ -99,7 +100,8 @@ const props = withDefaults(
   }>(),
   {
     loading: false,
-    cover: true
+    cover: true,
+    zIndex: 9996
   }
 );
 

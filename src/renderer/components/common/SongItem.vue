@@ -328,11 +328,11 @@ const artists = computed(() => {
     }
 
     &-like {
-      @apply mr-2 cursor-pointer ml-4;
+      @apply mr-2 cursor-pointer ml-4 transition-all;
     }
 
     .like-active {
-      @apply text-red-500;
+      @apply text-red-500 dark:text-red-500;
     }
 
     &-play {

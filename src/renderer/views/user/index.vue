@@ -207,7 +207,6 @@ watch(
 // 页面挂载时检查登录状态
 onMounted(() => {
   checkLoginStatus();
-  loadPage();
 });
 
 // 展示歌单
@@ -275,7 +274,7 @@ const handlePlay = () => {
     .record-list {
       @apply rounded-2xl;
       @apply bg-light dark:bg-black;
-      height: calc(100% - 3.75rem);
+      height: calc(100% - 100px);
 
       .record-item {
         @apply flex items-center px-4;
