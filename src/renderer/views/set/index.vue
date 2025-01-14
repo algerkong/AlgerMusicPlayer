@@ -277,52 +277,89 @@
           </div>
         </div>
       </div>
-
-      <!-- 其他模态框和组件保持不变 -->
-      <shortcut-settings v-model:show="showShortcutModal" @change="handleShortcutsChange" />
       <play-bottom />
-      <n-modal
-        v-model:show="showProxyModal"
-        preset="dialog"
-        title="代理设置"
-        positive-text="确认"
-        negative-text="取消"
-        :show-icon="false"
-        @positive-click="handleProxyConfirm"
-        @negative-click="showProxyModal = false"
-      >
-        <n-form
-          ref="formRef"
-          :model="proxyForm"
-          :rules="proxyRules"
-          label-placement="left"
-          label-width="80"
-          require-mark-placement="right-hanging"
-        >
-          <n-form-item label="代理协议" path="protocol">
-            <n-select
-              v-model:value="proxyForm.protocol"
-              :options="[
-                { label: 'HTTP', value: 'http' },
-                { label: 'HTTPS', value: 'https' },
-                { label: 'SOCKS5', value: 'socks5' }
-              ]"
-            />
-          </n-form-item>
-          <n-form-item label="代理地址" path="host">
-            <n-input v-model:value="proxyForm.host" placeholder="请输入代理地址" />
-          </n-form-item>
-          <n-form-item label="代理端口" path="port">
-            <n-input-number
-              v-model:value="proxyForm.port"
-              placeholder="请输入代理端口"
-              :min="1"
-              :max="65535"
-            />
-          </n-form-item>
-        </n-form>
-      </n-modal>
     </n-scrollbar>
+
+    <!-- 快捷键设置弹窗 -->
+    <shortcut-settings v-model:show="showShortcutModal" @change="handleShortcutsChange" />
+
+    <!-- 代理设置弹窗 -->
+    <n-modal
+      v-model:show="showProxyModal"
+      preset="dialog"
+      title="代理设置"
+      positive-text="确认"
+      negative-text="取消"
+      :show-icon="false"
+      @positive-click="handleProxyConfirm"
+      @negative-click="showProxyModal = false"
+    >
+      <n-form
+        ref="formRef"
+        :model="proxyForm"
+        :rules="proxyRules"
+        label-placement="left"
+        label-width="80"
+        require-mark-placement="right-hanging"
+      >
+        <n-form-item label="代理协议" path="protocol">
+          <n-select
+            v-model:value="proxyForm.protocol"
+            :options="[
+              { label: 'HTTP', value: 'http' },
+              { label: 'HTTPS', value: 'https' },
+              { label: 'SOCKS5', value: 'socks5' }
+            ]"
+          />
+        </n-form-item>
+        <n-form-item label="代理地址" path="host">
+          <n-input v-model:value="proxyForm.host" placeholder="请输入代理地址" />
+        </n-form-item>
+        <n-form-item label="代理端口" path="port">
+          <n-input-number
+            v-model:value="proxyForm.port"
+            placeholder="请输入代理端口"
+            :min="1"
+            :max="65535"
+          />
+        </n-form-item>
+      </n-form>
+    </n-modal>
+    <!-- 清除缓存弹窗 -->
+    <n-modal
+      v-model:show="showClearCacheModal"
+      preset="dialog"
+      title="清除缓存"
+      positive-text="确认"
+      negative-text="取消"
+      @positive-click="clearCache"
+      @negative-click="
+        () => {
+          selectedCacheTypes = [];
+        }
+      "
+    >
+      <n-space vertical>
+        <p>请选择要清除的缓存类型：</p>
+        <n-checkbox-group v-model:value="selectedCacheTypes">
+          <n-space vertical>
+            <n-checkbox
+              v-for="option in clearCacheOptions"
+              :key="option.key"
+              :value="option.key"
+              :label="option.label"
+            >
+              <template #default>
+                <div>
+                  <div>{{ option.label }}</div>
+                  <div class="text-gray-400 text-sm">{{ option.description }}</div>
+                </div>
+              </template>
+            </n-checkbox>
+          </n-space>
+        </n-checkbox-group>
+      </n-space>
+    </n-modal>
   </div>
 </template>
 
