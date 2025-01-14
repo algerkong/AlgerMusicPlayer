@@ -1,334 +1,335 @@
 <template>
-  <n-scrollbar>
-    <div class="set-page">
-      <div class="set-item">
-        <div>
-          <div class="set-item-title">主题模式</div>
-          <div class="set-item-content">切换日间/夜间主题</div>
-        </div>
-        <n-switch v-model:value="isDarkTheme">
-          <template #checked>
-            <i class="ri-moon-line"></i>
-          </template>
-          <template #unchecked>
-            <i class="ri-sun-line"></i>
-          </template>
-        </n-switch>
+  <div class="settings-container">
+    <!-- 左侧导航栏 -->
+    <div class="settings-nav">
+      <div
+        v-for="section in settingSections"
+        :key="section.id"
+        class="nav-item"
+        :class="{ active: currentSection === section.id }"
+        @click="scrollToSection(section.id)"
+      >
+        {{ section.title }}
       </div>
-      <!-- <div v-if="isElectron" class="set-item">
-        <div>
-          <div class="set-item-title">代理</div>
-          <div class="set-item-content">无法听音乐时打开</div>
-        </div>
-        <n-switch v-model:value="setData.isProxy" />
-      </div> -->
-      <div v-if="isElectron" class="set-item">
-        <div>
-          <div class="set-item-title">音乐API端口</div>
-          <div class="set-item-content">修改后需要重启应用</div>
-        </div>
-        <n-input-number v-model:value="setData.musicApiPort" />
-      </div>
-      <div class="set-item">
-        <div>
-          <div class="set-item-title">动画速度</div>
-          <div class="set-item-content">
-            <div class="flex items-center gap-2">
-              <n-switch v-model:value="setData.noAnimate">
-                <template #checked>关闭</template>
-                <template #unchecked>开启</template>
+    </div>
+
+    <!-- 右侧内容区 -->
+    <n-scrollbar ref="scrollbarRef" class="settings-content" @scroll="handleScroll">
+      <div class="set-page">
+        <!-- 基础设置 -->
+        <div id="basic" ref="basicRef" class="settings-section">
+          <div class="settings-section-title">基础设置</div>
+          <div class="settings-section-content">
+            <div class="set-item">
+              <div>
+                <div class="set-item-title">主题模式</div>
+                <div class="set-item-content">切换日间/夜间主题</div>
+              </div>
+              <n-switch v-model:value="isDarkTheme">
+                <template #checked><i class="ri-moon-line"></i></template>
+                <template #unchecked><i class="ri-sun-line"></i></template>
               </n-switch>
-              <span>是否开启动画</span>
+            </div>
+
+            <div class="set-item">
+              <div>
+                <div class="set-item-title">动画速度</div>
+                <div class="set-item-content">
+                  <div class="flex items-center gap-2">
+                    <n-switch v-model:value="setData.noAnimate">
+                      <template #checked>关闭</template>
+                      <template #unchecked>开启</template>
+                    </n-switch>
+                    <span>是否开启动画</span>
+                  </div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm text-gray-400">{{ setData.animationSpeed }}x</span>
+                <div class="w-40">
+                  <n-slider
+                    v-model:value="setData.animationSpeed"
+                    :min="0.1"
+                    :max="3"
+                    :step="0.1"
+                    :marks="{
+                      0.1: '极慢',
+                      1: '正常',
+                      3: '极快'
+                    }"
+                    :disabled="setData.noAnimate"
+                    class="w-40"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <div class="flex items-center gap-2">
-          <span class="text-sm text-gray-400">{{ setData.animationSpeed }}x</span>
-          <div class="w-40">
-            <n-slider
-              v-model:value="setData.animationSpeed"
-              :min="0.1"
-              :max="3"
-              :step="0.1"
-              :marks="{
-                0.1: '极慢',
-                1: '正常',
-                3: '极快'
-              }"
-              :disabled="setData.noAnimate"
-              class="w-40"
-            />
-          </div>
-        </div>
-      </div>
-      <div v-if="isElectron" class="set-item">
-        <div>
-          <div class="set-item-title">下载目录</div>
-          <div class="set-item-content">
-            {{ setData.downloadPath || '默认下载目录' }}
-          </div>
-        </div>
-        <div class="flex items-center gap-2">
-          <n-button size="small" @click="openDownloadPath">打开目录</n-button>
-          <n-button size="small" @click="selectDownloadPath">修改目录</n-button>
-        </div>
-      </div>
-      <div class="set-item">
-        <div>
-          <div class="set-item-title">版本</div>
-          <div class="set-item-content">
-            {{ updateInfo.currentVersion }}
-            <template v-if="updateInfo.hasUpdate">
-              <n-tag type="success" class="ml-2">发现新版本 {{ updateInfo.latestVersion }}</n-tag>
-            </template>
-          </div>
-        </div>
-        <div class="flex items-center gap-2">
-          <n-button
-            :type="updateInfo.hasUpdate ? 'primary' : 'default'"
-            size="small"
-            :loading="checking"
-            @click="checkForUpdates(true)"
-          >
-            {{ checking ? '检查中...' : '检查更新' }}
-          </n-button>
-          <n-button
-            v-if="updateInfo.hasUpdate"
-            type="success"
-            size="small"
-            @click="openReleasePage"
-          >
-            前往更新
-          </n-button>
-        </div>
-      </div>
-      <div
-        class="set-item cursor-pointer hover:text-green-500 hover:bg-green-950 transition-all"
-        @click="openAuthor"
-      >
-        <div>
-          <coffee>
-            <div>
-              <div class="set-item-title">作者</div>
-              <div class="set-item-content">algerkong 点个star🌟呗</div>
+
+        <!-- 播放设置 -->
+        <div id="playback" ref="playbackRef" class="settings-section">
+          <div class="settings-section-title">播放设置</div>
+          <div class="settings-section-content">
+            <div class="set-item">
+              <div>
+                <div class="set-item-title">音质设置</div>
+                <div class="set-item-content">选择音乐播放音质（VIP）</div>
+              </div>
+              <n-select
+                v-model:value="setData.musicQuality"
+                :options="[
+                  { label: '标准', value: 'standard' },
+                  { label: '较高', value: 'higher' },
+                  { label: '极高', value: 'exhigh' },
+                  { label: '无损', value: 'lossless' },
+                  { label: 'Hi-Res', value: 'hires' },
+                  { label: '高清环绕声', value: 'jyeffect' },
+                  { label: '沉浸环绕声', value: 'sky' },
+                  { label: '杜比全景声', value: 'dolby' },
+                  { label: '超清母带', value: 'jymaster' }
+                ]"
+                style="width: 160px"
+              />
             </div>
-          </coffee>
-        </div>
-        <div>
-          <n-button size="small" type="primary" @click="openAuthor"
-            ><i class="ri-github-line"></i>前往github</n-button
-          >
-        </div>
-      </div>
-      <div class="set-item">
-        <div>
-          <div class="set-item-title">音质设置</div>
-          <div class="set-item-content">选择音乐播放音质（VIP）</div>
-        </div>
-        <n-select
-          v-model:value="setData.musicQuality"
-          :options="[
-            { label: '标准', value: 'standard' },
-            { label: '较高', value: 'higher' },
-            { label: '极高', value: 'exhigh' },
-            { label: '无损', value: 'lossless' },
-            { label: 'Hi-Res', value: 'hires' },
-            { label: '高清环绕声', value: 'jyeffect' },
-            { label: '沉浸环绕声', value: 'sky' },
-            { label: '杜比全景声', value: 'dolby' },
-            { label: '超清母带', value: 'jymaster' }
-          ]"
-          style="width: 160px"
-        />
-      </div>
-      <div v-if="isElectron" class="set-item">
-        <div>
-          <div class="set-item-title">关闭行为</div>
-          <div class="set-item-content">
-            {{ closeActionLabels[setData.closeAction] || '每次询问' }}
           </div>
         </div>
-        <n-select
-          v-model:value="setData.closeAction"
-          :options="[
-            { label: '每次询问', value: 'ask' },
-            { label: '最小化到托盘', value: 'minimize' },
-            { label: '直接退出', value: 'close' }
-          ]"
-          style="width: 160px"
-        />
-      </div>
 
-      <div v-if="isElectron" class="set-item">
-        <div>
-          <div class="set-item-title">快捷键设置</div>
-          <div class="set-item-content">自定义全局快捷键</div>
+        <!-- 应用设置 -->
+        <div v-if="isElectron" id="application" ref="applicationRef" class="settings-section">
+          <div class="settings-section-title">应用设置</div>
+          <div class="settings-section-content">
+            <div class="set-item">
+              <div>
+                <div class="set-item-title">关闭行为</div>
+                <div class="set-item-content">
+                  {{ closeActionLabels[setData.closeAction] || '每次询问' }}
+                </div>
+              </div>
+              <n-select
+                v-model:value="setData.closeAction"
+                :options="[
+                  { label: '每次询问', value: 'ask' },
+                  { label: '最小化到托盘', value: 'minimize' },
+                  { label: '直接退出', value: 'close' }
+                ]"
+                style="width: 160px"
+              />
+            </div>
+
+            <div class="set-item">
+              <div>
+                <div class="set-item-title">快捷键设置</div>
+                <div class="set-item-content">自定义全局快捷键</div>
+              </div>
+              <n-button size="small" @click="showShortcutModal = true">配置</n-button>
+            </div>
+
+            <div class="set-item">
+              <div>
+                <div class="set-item-title">下载目录</div>
+                <div class="set-item-content">
+                  {{ setData.downloadPath || '默认下载目录' }}
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <n-button size="small" @click="openDownloadPath">打开目录</n-button>
+                <n-button size="small" @click="selectDownloadPath">修改目录</n-button>
+              </div>
+            </div>
+          </div>
         </div>
-        <n-button type="primary" size="small" @click="showShortcutModal = true">配置</n-button>
+
+        <!-- 网络设置 -->
+        <div v-if="isElectron" id="network" ref="networkRef" class="settings-section">
+          <div class="settings-section-title">网络设置</div>
+          <div class="settings-section-content">
+            <div class="set-item">
+              <div>
+                <div class="set-item-title">音乐API端口</div>
+                <div class="set-item-content">修改后需要重启应用</div>
+              </div>
+              <n-input-number v-model:value="setData.musicApiPort" />
+            </div>
+
+            <div class="set-item">
+              <div>
+                <div class="set-item-title">代理设置</div>
+                <div class="set-item-content">无法访问音乐时可以开启代理</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <n-switch v-model:value="setData.proxyConfig.enable">
+                  <template #checked>开启</template>
+                  <template #unchecked>关闭</template>
+                </n-switch>
+                <n-button size="small" @click="showProxyModal = true">配置</n-button>
+              </div>
+            </div>
+
+            <div class="set-item">
+              <div>
+                <div class="set-item-title">realIP</div>
+                <div class="set-item-content">
+                  由于限制,此项目在国外使用会受到限制可使用realIP参数,传进国内IP解决,如:116.25.146.177
+                  即可解决
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <n-switch v-model:value="setData.enableRealIP">
+                  <template #checked>开启</template>
+                  <template #unchecked>关闭</template>
+                </n-switch>
+                <n-input
+                  v-if="setData.enableRealIP"
+                  v-model:value="setData.realIP"
+                  placeholder="realIP"
+                  style="width: 200px"
+                  @blur="validateAndSaveRealIP"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 系统管理 -->
+        <div v-if="isElectron" id="system" ref="systemRef" class="settings-section">
+          <div class="settings-section-title">系统管理</div>
+          <div class="settings-section-content">
+            <div class="set-item">
+              <div>
+                <div class="set-item-title">缓存管理</div>
+                <div class="set-item-content">清除缓存</div>
+              </div>
+              <n-button size="small" @click="showClearCacheModal = true"> 清除缓存 </n-button>
+            </div>
+
+            <div class="set-item">
+              <div>
+                <div class="set-item-title">重启</div>
+                <div class="set-item-content">重启应用</div>
+              </div>
+              <n-button size="small" @click="restartApp">重启</n-button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 关于 -->
+        <div id="about" ref="aboutRef" class="settings-section">
+          <div class="settings-section-title">关于</div>
+          <div class="settings-section-content">
+            <div class="set-item">
+              <div>
+                <div class="set-item-title">版本</div>
+                <div class="set-item-content">
+                  {{ updateInfo.currentVersion }}
+                  <template v-if="updateInfo.hasUpdate">
+                    <n-tag type="success" class="ml-2"
+                      >发现新版本 {{ updateInfo.latestVersion }}</n-tag
+                    >
+                  </template>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <n-button size="small" :loading="checking" @click="checkForUpdates(true)">
+                  {{ checking ? '检查中...' : '检查更新' }}
+                </n-button>
+                <n-button v-if="updateInfo.hasUpdate" size="small" @click="openReleasePage">
+                  前往更新
+                </n-button>
+              </div>
+            </div>
+
+            <div
+              class="set-item cursor-pointer hover:text-green-500 hover:bg-green-950 transition-all"
+              @click="openAuthor"
+            >
+              <coffee>
+                <div>
+                  <div class="set-item-title">作者</div>
+                  <div class="set-item-content">algerkong 点个star🌟呗</div>
+                </div>
+              </coffee>
+              <div>
+                <n-button size="small" @click="openAuthor">
+                  <i class="ri-github-line"></i>前往github
+                </n-button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 捐赠支持 -->
+        <div id="donation" ref="donationRef" class="settings-section">
+          <div class="settings-section-title">捐赠支持</div>
+          <div class="settings-section-content">
+            <div class="set-item">
+              <div>
+                <div class="set-item-title">捐赠支持</div>
+                <div class="set-item-content">感谢您的支持，让我有动力能够持续改进</div>
+              </div>
+              <n-button text @click="toggleDonationList">
+                <template #icon>
+                  <i :class="isDonationListVisible ? 'ri-eye-line' : 'ri-eye-off-line'" />
+                </template>
+                {{ isDonationListVisible ? '隐藏列表' : '显示列表' }}
+              </n-button>
+            </div>
+            <donation-list v-if="isDonationListVisible" />
+          </div>
+        </div>
       </div>
 
+      <!-- 其他模态框和组件保持不变 -->
       <shortcut-settings v-model:show="showShortcutModal" @change="handleShortcutsChange" />
-
-      <div v-if="isElectron" class="set-item">
-        <div>
-          <div class="set-item-title">重启</div>
-          <div class="set-item-content">重启应用</div>
-        </div>
-        <n-button type="primary" size="small" @click="restartApp">重启</n-button>
-      </div>
-      <!-- 缓存管理 -->
-      <!-- <n-card class="set-card" title="缓存管理">
-        <n-space vertical>
-          <n-button type="primary" @click="showClearCacheModal = true"> 清除缓存 </n-button>
-        </n-space>
-      </n-card> -->
-      <div v-if="isElectron" class="set-item">
-        <div>
-          <div class="set-item-title">缓存管理</div>
-          <div class="set-item-content">清除缓存</div>
-        </div>
-        <n-button type="primary" size="small" @click="showClearCacheModal = true">
-          清除缓存
-        </n-button>
-      </div>
-      <div v-if="isElectron" class="set-item">
-        <div>
-          <div class="set-item-title">代理设置</div>
-          <div class="set-item-content">无法访问音乐时可以开启代理</div>
-        </div>
-        <div class="flex items-center gap-2">
-          <n-switch v-model:value="setData.proxyConfig.enable">
-            <template #checked>开启</template>
-            <template #unchecked>关闭</template>
-          </n-switch>
-          <n-button size="small" @click="showProxyModal = true">配置</n-button>
-        </div>
-      </div>
-      <div v-if="isElectron" class="set-item">
-        <div>
-          <div class="set-item-title">realIP</div>
-          <div class="set-item-content">
-            由于限制,此项目在国外使用会受到限制可使用realIP参数,传进国内IP解决,如:116.25.146.177
-            即可解决
-          </div>
-        </div>
-        <div class="flex items-center gap-2">
-          <n-switch v-model:value="setData.enableRealIP">
-            <template #checked>开启</template>
-            <template #unchecked>关闭</template>
-          </n-switch>
-          <n-input
-            v-if="setData.enableRealIP"
-            v-model:value="setData.realIP"
-            placeholder="realIP"
-            style="width: 200px"
-            @blur="validateAndSaveRealIP"
-          />
-        </div>
-      </div>
-      <div
-        class="p-4 bg-light dark:bg-dark rounded-lg mb-4 border border-gray-200 dark:border-gray-700 rounded-lg"
-      >
-        <div class="flex justify-between items-center">
-          <div>
-            <div class="set-item-title">捐赠支持</div>
-            <div class="set-item-content">感谢您的支持，让我有动力能够持续改进</div>
-          </div>
-          <n-button text @click="toggleDonationList">
-            <template #icon>
-              <i :class="isDonationListVisible ? 'ri-eye-line' : 'ri-eye-off-line'" />
-            </template>
-            {{ isDonationListVisible ? '隐藏列表' : '显示列表' }}
-          </n-button>
-        </div>
-        <donation-list v-if="isDonationListVisible" />
-      </div>
-
-      <!-- 清除缓存弹窗 -->
+      <play-bottom />
       <n-modal
-        v-model:show="showClearCacheModal"
+        v-model:show="showProxyModal"
         preset="dialog"
-        title="清除缓存"
+        title="代理设置"
         positive-text="确认"
         negative-text="取消"
-        @positive-click="clearCache"
-        @negative-click="
-          () => {
-            selectedCacheTypes = [];
-          }
-        "
+        :show-icon="false"
+        @positive-click="handleProxyConfirm"
+        @negative-click="showProxyModal = false"
       >
-        <n-space vertical>
-          <p>请选择要清除的缓存类型：</p>
-          <n-checkbox-group v-model:value="selectedCacheTypes">
-            <n-space vertical>
-              <n-checkbox
-                v-for="option in clearCacheOptions"
-                :key="option.key"
-                :value="option.key"
-                :label="option.label"
-              >
-                <template #default>
-                  <div>
-                    <div>{{ option.label }}</div>
-                    <div class="text-gray-400 text-sm">{{ option.description }}</div>
-                  </div>
-                </template>
-              </n-checkbox>
-            </n-space>
-          </n-checkbox-group>
-        </n-space>
+        <n-form
+          ref="formRef"
+          :model="proxyForm"
+          :rules="proxyRules"
+          label-placement="left"
+          label-width="80"
+          require-mark-placement="right-hanging"
+        >
+          <n-form-item label="代理协议" path="protocol">
+            <n-select
+              v-model:value="proxyForm.protocol"
+              :options="[
+                { label: 'HTTP', value: 'http' },
+                { label: 'HTTPS', value: 'https' },
+                { label: 'SOCKS5', value: 'socks5' }
+              ]"
+            />
+          </n-form-item>
+          <n-form-item label="代理地址" path="host">
+            <n-input v-model:value="proxyForm.host" placeholder="请输入代理地址" />
+          </n-form-item>
+          <n-form-item label="代理端口" path="port">
+            <n-input-number
+              v-model:value="proxyForm.port"
+              placeholder="请输入代理端口"
+              :min="1"
+              :max="65535"
+            />
+          </n-form-item>
+        </n-form>
       </n-modal>
-    </div>
-    <play-bottom />
-    <n-modal
-      v-model:show="showProxyModal"
-      preset="dialog"
-      title="代理设置"
-      positive-text="确认"
-      negative-text="取消"
-      :show-icon="false"
-      @positive-click="handleProxyConfirm"
-      @negative-click="showProxyModal = false"
-    >
-      <n-form
-        ref="formRef"
-        :model="proxyForm"
-        :rules="proxyRules"
-        label-placement="left"
-        label-width="80"
-        require-mark-placement="right-hanging"
-      >
-        <n-form-item label="代理协议" path="protocol">
-          <n-select
-            v-model:value="proxyForm.protocol"
-            :options="[
-              { label: 'HTTP', value: 'http' },
-              { label: 'HTTPS', value: 'https' },
-              { label: 'SOCKS5', value: 'socks5' }
-            ]"
-          />
-        </n-form-item>
-        <n-form-item label="代理地址" path="host">
-          <n-input v-model:value="proxyForm.host" placeholder="请输入代理地址" />
-        </n-form-item>
-        <n-form-item label="代理端口" path="port">
-          <n-input-number
-            v-model:value="proxyForm.port"
-            placeholder="请输入代理端口"
-            :min="1"
-            :max="65535"
-          />
-        </n-form-item>
-      </n-form>
-    </n-modal>
-  </n-scrollbar>
+    </n-scrollbar>
+  </div>
 </template>
 
 <script setup lang="ts">
 import type { FormRules } from 'naive-ui';
 import { useMessage } from 'naive-ui';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 
 import localData from '@/../main/set.json';
@@ -648,15 +649,131 @@ const showShortcutModal = ref(false);
 const handleShortcutsChange = (shortcuts: any) => {
   console.log('快捷键已更新:', shortcuts);
 };
+
+// 定义设置分类
+const settingSections = [
+  { id: 'basic', title: '基础设置' },
+  { id: 'playback', title: '播放设置' },
+  { id: 'application', title: '应用设置', electron: true },
+  { id: 'network', title: '网络设置', electron: true },
+  { id: 'system', title: '系统管理', electron: true },
+  { id: 'about', title: '关于' },
+  { id: 'donation', title: '捐赠支持' }
+];
+
+// 当前激活的分类
+const currentSection = ref('basic');
+const scrollbarRef = ref();
+
+// 各个分类的ref
+const basicRef = ref();
+const playbackRef = ref();
+const applicationRef = ref();
+const networkRef = ref();
+const systemRef = ref();
+const aboutRef = ref();
+const donationRef = ref();
+
+// 滚动到指定分类
+const scrollToSection = async (sectionId: string) => {
+  currentSection.value = sectionId;
+  const sectionRef = {
+    basic: basicRef,
+    playback: playbackRef,
+    application: applicationRef,
+    network: networkRef,
+    system: systemRef,
+    about: aboutRef,
+    donation: donationRef
+  }[sectionId];
+
+  if (sectionRef?.value) {
+    await nextTick();
+    scrollbarRef.value?.scrollTo({
+      top: sectionRef.value.offsetTop - 20,
+      behavior: 'smooth'
+    });
+  }
+};
+
+// 处理滚动，更新当前激活的分类
+const handleScroll = () => {
+  const scrollTop = scrollbarRef.value?.containerRef.scrollTop;
+  const sections = [
+    { id: 'basic', ref: basicRef },
+    { id: 'playback', ref: playbackRef },
+    { id: 'application', ref: applicationRef },
+    { id: 'network', ref: networkRef },
+    { id: 'system', ref: systemRef },
+    { id: 'about', ref: aboutRef },
+    { id: 'donation', ref: donationRef }
+  ];
+
+  for (const section of sections) {
+    if (section.ref?.value) {
+      const { offsetTop } = section.ref.value;
+      const offsetBottom = offsetTop + section.ref.value.offsetHeight;
+
+      if (scrollTop >= offsetTop - 100 && scrollTop < offsetBottom) {
+        currentSection.value = section.id;
+        break;
+      }
+    }
+  }
+};
 </script>
 
 <style lang="scss" scoped>
+.settings-container {
+  @apply flex h-full;
+}
+
+.settings-nav {
+  @apply w-32 h-full flex-shrink-0 border-r border-gray-200 dark:border-gray-700;
+  @apply bg-light dark:bg-dark;
+
+  .nav-item {
+    @apply px-4 py-2.5 cursor-pointer text-sm;
+    @apply text-gray-600 dark:text-gray-400;
+    @apply transition-colors duration-200;
+    @apply border-l-2 border-transparent;
+
+    &:hover {
+      @apply text-primary dark:text-white bg-gray-50 dark:bg-dark-100;
+      @apply border-l-2 border-gray-200 dark:border-gray-200;
+    }
+
+    &.active {
+      @apply text-primary dark:text-white bg-gray-50 dark:bg-dark-100;
+      @apply border-l-2 border-gray-200 dark:border-gray-200;
+      @apply font-medium;
+    }
+  }
+}
+
+.settings-content {
+  @apply flex-1 h-full;
+}
+
 .set-page {
-  @apply p-4 bg-light dark:bg-dark pb-20;
+  @apply p-4 pb-20;
+}
+
+.settings-section {
+  @apply mb-6 scroll-mt-4;
+
+  &-title {
+    @apply text-base font-medium mb-4;
+    @apply text-gray-600 dark:text-white;
+  }
+
+  &-content {
+    @apply space-y-4;
+  }
 }
 
 .set-item {
-  @apply flex items-center justify-between p-4 rounded-lg mb-4 transition-all;
+  @apply flex items-center justify-between p-4 rounded-lg transition-all;
   @apply bg-light dark:bg-dark text-gray-900 dark:text-white;
   @apply border border-gray-200 dark:border-gray-700;
 
