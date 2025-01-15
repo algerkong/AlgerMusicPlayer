@@ -317,8 +317,8 @@ async function downloadMusic(
 
     // 等待下载完成
     await new Promise((resolve, reject) => {
-      writer!.on('finish', resolve);
-      writer!.on('error', reject);
+      writer!.on('finish', () => resolve(undefined));
+      writer!.on('error', (error) => reject(error));
       response.data.pipe(writer!);
     });
 
