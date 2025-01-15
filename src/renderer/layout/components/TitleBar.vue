@@ -2,12 +2,12 @@
   <div id="title-bar" @mousedown="drag">
     <div id="title">Alger Music</div>
     <div id="buttons">
-      <button @click="minimize">
+      <div class="button" @click="minimize">
         <i class="iconfont icon-minisize"></i>
-      </button>
-      <button @click="close">
+      </div>
+      <div class="button" @click="close">
         <i class="iconfont icon-close"></i>
-      </button>
+      </div>
     </div>
   </div>
 
@@ -107,7 +107,7 @@ const drag = (event: MouseEvent) => {
   -webkit-app-region: no-drag;
 }
 
-button {
+.button {
   @apply text-gray-600 dark:text-gray-400 hover:text-green-500;
 }
 
