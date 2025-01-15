@@ -202,6 +202,10 @@ class AudioService {
       this.updateMediaSessionPositionState();
     }
   }
+
+  clearAllListeners() {
+    this.callbacks = {};
+  }
 }
 
 export const audioService = new AudioService();

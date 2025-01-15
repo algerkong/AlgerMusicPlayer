@@ -72,9 +72,13 @@ watch(
 const setupAudioListeners = () => {
   let interval: any = null;
 
+  // 清理所有事件监听器
+  audioService.clearAllListeners();
+
   // 监听播放
   audioService.on('play', () => {
     store.commit('setPlayMusic', true);
+    if (interval) clearInterval(interval);
     interval = setInterval(() => {
       nowTime.value = sound.value?.seek() as number;
       allTime.value = sound.value?.duration() as number;
@@ -95,7 +99,10 @@ const setupAudioListeners = () => {
   // 监听暂停
   audioService.on('pause', () => {
     store.commit('setPlayMusic', false);
-    clearInterval(interval);
+    if (interval) {
+      clearInterval(interval);
+      interval = null;
+    }
     if (isElectron && isLyricWindowOpen.value) {
       sendLyricToWin();
     }
@@ -103,9 +110,17 @@ const setupAudioListeners = () => {
 
   // 监听结束
   audioService.on('end', () => {
+    if (interval) {
+      clearInterval(interval);
+      interval = null;
+    }
+
     if (store.state.playMode === 1) {
       // 单曲循环模式
-      sound.value?.play();
+      if (sound.value) {
+        sound.value.seek(0);
+        sound.value.play();
+      }
     } else if (store.state.playMode === 2) {
       // 随机播放模式
       const { playList } = store.state;
