@@ -1,8 +1,9 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 
+import useIndexedDB from '@/hooks/IndexDBHook';
 import { audioService } from '@/services/audioService';
 import store from '@/store';
-import type { ILyricText, SongResult } from '@/type/music';
+import type { Artist, ILyricText, SongResult } from '@/type/music';
 import { isElectron } from '@/utils';
 import { getTextColors } from '@/utils/linearColor';
 
@@ -19,6 +20,15 @@ export const playMusic = computed(() => store.state.playMusic as SongResult); //
 export const sound = ref<Howl | null>(audioService.getCurrentSound());
 export const isLyricWindowOpen = ref(false); // 新增状态
 export const textColors = ref<any>(getTextColors());
+export const artistList = computed(
+  () => (store.state.playMusic.ar || store.state.playMusic?.song?.artists) as Artist[]
+);
+
+export const musicDB = await useIndexedDB('musicDB', [
+  { name: 'music', keyPath: 'id' },
+  { name: 'music_lyric', keyPath: 'id' },
+  { name: 'api_cache', keyPath: 'id' }
+]);
 
 document.onkeyup = (e) => {
   // 检查事件目标是否是输入框元素
@@ -43,10 +53,18 @@ document.onkeyup = (e) => {
 
 watch(
   () => store.state.playMusicUrl,
-  (newVal) => {
+  async (newVal) => {
     if (newVal && playMusic.value) {
-      sound.value = audioService.play(newVal, playMusic.value);
-      setupAudioListeners();
+      try {
+        const newSound = await audioService.play(newVal, playMusic.value);
+        sound.value = newSound as Howl;
+        setupAudioListeners();
+      } catch (error) {
+        console.error('播放音频失败:', error);
+        store.commit('setPlayMusic', false);
+        // 下一首
+        store.commit('nextPlay');
+      }
     }
   }
 );
@@ -72,26 +90,52 @@ watch(
 const setupAudioListeners = () => {
   let interval: any = null;
 
+  const clearInterval = () => {
+    if (interval) {
+      window.clearInterval(interval);
+      interval = null;
+    }
+  };
+
   // 清理所有事件监听器
   audioService.clearAllListeners();
 
   // 监听播放
   audioService.on('play', () => {
     store.commit('setPlayMusic', true);
-    if (interval) clearInterval(interval);
-    interval = setInterval(() => {
-      nowTime.value = sound.value?.seek() as number;
-      allTime.value = sound.value?.duration() as number;
-      const newIndex = getLrcIndex(nowTime.value);
-      if (newIndex !== nowIndex.value) {
-        nowIndex.value = newIndex;
-        currentLrcProgress.value = 0;
+    clearInterval();
+    interval = window.setInterval(() => {
+      try {
+        const currentSound = sound.value;
+        if (!currentSound || typeof currentSound.seek !== 'function') {
+          console.error('Invalid sound object or seek function');
+          clearInterval();
+          return;
+        }
+
+        const currentTime = currentSound.seek() as number;
+        if (typeof currentTime !== 'number' || Number.isNaN(currentTime)) {
+          console.error('Invalid current time:', currentTime);
+          clearInterval();
+          return;
+        }
+
+        nowTime.value = currentTime;
+        allTime.value = currentSound.duration() as number;
+        const newIndex = getLrcIndex(nowTime.value);
+        if (newIndex !== nowIndex.value) {
+          nowIndex.value = newIndex;
+          currentLrcProgress.value = 0;
+          if (isElectron && isLyricWindowOpen.value) {
+            sendLyricToWin();
+          }
+        }
         if (isElectron && isLyricWindowOpen.value) {
           sendLyricToWin();
         }
-      }
-      if (isElectron && isLyricWindowOpen.value) {
-        sendLyricToWin();
+      } catch (error) {
+        console.error('Error in interval:', error);
+        clearInterval();
       }
     }, 50);
   });
@@ -99,10 +143,7 @@ const setupAudioListeners = () => {
   // 监听暂停
   audioService.on('pause', () => {
     store.commit('setPlayMusic', false);
-    if (interval) {
-      clearInterval(interval);
-      interval = null;
-    }
+    clearInterval();
     if (isElectron && isLyricWindowOpen.value) {
       sendLyricToWin();
     }
@@ -110,22 +151,28 @@ const setupAudioListeners = () => {
 
   // 监听结束
   audioService.on('end', () => {
-    if (interval) {
-      clearInterval(interval);
-      interval = null;
-    }
+    clearInterval();
 
     if (store.state.playMode === 1) {
       // 单曲循环模式
       if (sound.value) {
         sound.value.seek(0);
-        sound.value.play();
+        try {
+          sound.value.play();
+        } catch (error) {
+          console.error('Error replaying song:', error);
+          store.commit('nextPlay');
+        }
       }
     } else if (store.state.playMode === 2) {
       // 随机播放模式
       const { playList } = store.state;
       if (playList.length <= 1) {
-        sound.value?.play();
+        try {
+          sound.value?.play();
+        } catch (error) {
+          console.error('Error replaying song:', error);
+        }
       } else {
         let randomIndex;
         do {
@@ -140,14 +187,7 @@ const setupAudioListeners = () => {
     }
   });
 
-  // 监听上一曲/下一曲控制
-  audioService.on('previoustrack', () => {
-    store.commit('prevPlay');
-  });
-
-  audioService.on('nexttrack', () => {
-    store.commit('nextPlay');
-  });
+  return clearInterval;
 };
 
 export const play = () => {
@@ -212,20 +252,47 @@ export const useLyricProgress = () => {
   let animationFrameId: number | null = null;
 
   const updateProgress = () => {
-    if (!isPlaying.value) return;
+    if (!isPlaying.value) {
+      stopProgressAnimation();
+      return;
+    }
+
     const currentSound = sound.value;
-    if (!currentSound) return;
+    if (!currentSound || typeof currentSound.seek !== 'function') {
+      console.error('Invalid sound object or seek function');
+      stopProgressAnimation();
+      return;
+    }
 
-    const { start, end } = currentLrcTiming.value;
-    const duration = end - start;
-    const elapsed = (currentSound.seek() as number) - start;
-    currentLrcProgress.value = Math.min(Math.max((elapsed / duration) * 100, 0), 100);
+    try {
+      const { start, end } = currentLrcTiming.value;
+      if (typeof start !== 'number' || typeof end !== 'number' || start === end) {
+        return;
+      }
 
+      const currentTime = currentSound.seek() as number;
+      if (typeof currentTime !== 'number' || Number.isNaN(currentTime)) {
+        console.error('Invalid current time:', currentTime);
+        return;
+      }
+
+      const elapsed = currentTime - start;
+      const duration = end - start;
+      const progress = (elapsed / duration) * 100;
+
+      // 确保进度在 0-100 之间
+      currentLrcProgress.value = Math.min(Math.max(progress, 0), 100);
+    } catch (error) {
+      console.error('Error updating progress:', error);
+    }
+
+    // 继续下一帧更新
     animationFrameId = requestAnimationFrame(updateProgress);
   };
 
   const startProgressAnimation = () => {
-    if (!animationFrameId && isPlaying.value) {
+    stopProgressAnimation(); // 先停止之前的动画
+    if (isPlaying.value) {
       updateProgress();
     }
   };
@@ -237,8 +304,30 @@ export const useLyricProgress = () => {
     }
   };
 
-  watch(isPlaying, (newIsPlaying) => {
-    if (newIsPlaying) {
+  // 监听播放状态变化
+  watch(
+    isPlaying,
+    (newIsPlaying) => {
+      if (newIsPlaying) {
+        startProgressAnimation();
+      } else {
+        stopProgressAnimation();
+      }
+    },
+    { immediate: true }
+  );
+
+  // 监听当前歌词索引变化
+  watch(nowIndex, () => {
+    currentLrcProgress.value = 0;
+    if (isPlaying.value) {
+      startProgressAnimation();
+    }
+  });
+
+  // 监听音频对象变化
+  watch(sound, (newSound) => {
+    if (newSound && isPlaying.value) {
       startProgressAnimation();
     } else {
       stopProgressAnimation();
@@ -377,12 +466,13 @@ if (isElectron) {
 
 // 在组件挂载时设置监听器
 onMounted(() => {
-  if (isPlaying.value) {
-    useLyricProgress();
-  }
-});
+  const clearIntervalFn = setupAudioListeners();
+  useLyricProgress(); // 直接调用，不需要解构返回值
 
-// 在组件卸载时清理
-onUnmounted(() => {
-  audioService.stop();
+  // 在组件卸载时清理
+  onUnmounted(() => {
+    clearIntervalFn();
+    audioService.stop();
+    audioService.clearAllListeners();
+  });
 });

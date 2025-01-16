@@ -11,7 +11,12 @@
 }
 
 .n-slider-handle-indicator--top {
-  @apply bg-transparent dark:text-[#ffffffdd] text-[#000000dd] text-2xl px-2 py-1 shadow-none mb-0 !important;
+  @apply bg-transparent text-2xl px-2 py-1 shadow-none mb-0 dark:text-[#ffffffdd] text-[#000000dd]  !important;
+  mix-blend-mode: difference !important;
+}
+
+.v-binder-follower-container:has(.n-slider-handle-indicator--top) {
+  z-index: 999999999 !important;
 }
 
 .text-el {
@@ -55,4 +60,12 @@
   --text-color-200: #2d2d2d;
   --text-color-300: #3d3d3d;
   --primary-color: #22c55e;
+}
+
+:root {
+  --text-color: #000000dd;
+}
+
+:root[class='dark'] {
+  --text-color: #ffffffdd;
 }

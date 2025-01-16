@@ -5,6 +5,7 @@
     placement="bottom"
     :style="{ background: currentBackground || background }"
     :to="`#layout-main`"
+    :z-index="9998"
   >
     <div id="drawer-target">
       <div class="drawer-back"></div>
@@ -31,13 +32,13 @@
               }"
             >
               <span
-                v-for="(item, index) in playMusic.ar || playMusic.song.artists"
+                v-for="(item, index) in artistList"
                 :key="index"
                 class="cursor-pointer hover:text-green-500"
                 @click="handleArtistClick(item.id)"
               >
                 {{ item.name }}
-                {{ index < (playMusic.ar || playMusic.song.artists).length - 1 ? ' / ' : '' }}
+                {{ index < artistList.length - 1 ? ' / ' : '' }}
               </span>
             </n-ellipsis>
           </div>
@@ -87,6 +88,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 
 import {
+  artistList,
   lrcArray,
   nowIndex,
   playMusic,
@@ -124,14 +126,18 @@ const isVisible = computed({
 });
 
 // 歌词滚动方法
-const lrcScroll = (behavior = 'smooth') => {
+const lrcScroll = (behavior = 'smooth', top: null | number = null) => {
   const nowEl = document.querySelector(`#music-lrc-text-${nowIndex.value}`);
   if (isVisible.value && !isMouse.value && nowEl && lrcContainer.value) {
-    const containerRect = lrcContainer.value.getBoundingClientRect();
-    const nowElRect = nowEl.getBoundingClientRect();
-    const relativeTop = nowElRect.top - containerRect.top;
-    const scrollTop = relativeTop - lrcSider.value.$el.getBoundingClientRect().height / 2;
-    lrcSider.value.scrollTo({ top: scrollTop, behavior });
+    if (top !== null) {
+      lrcSider.value.scrollTo({ top, behavior });
+    } else {
+      const containerRect = lrcContainer.value.getBoundingClientRect();
+      const nowElRect = nowEl.getBoundingClientRect();
+      const relativeTop = nowElRect.top - containerRect.top;
+      const scrollTop = relativeTop - lrcSider.value.$el.getBoundingClientRect().height / 2;
+      lrcSider.value.scrollTo({ top: scrollTop, behavior });
+    }
   }
 };
 

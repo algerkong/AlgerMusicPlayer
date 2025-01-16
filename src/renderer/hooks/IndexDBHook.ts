@@ -1,24 +1,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { ref } from 'vue';
 
+// 定义表配置的泛型接口
+export interface StoreConfig<T extends string> {
+  name: T;
+  keyPath?: string;
+}
+
 // 创建一个使用 IndexedDB 的组合函数
-const useIndexedDB = () => {
-  const db = ref<IDBDatabase | null>(null); // 数据库引用
+const useIndexedDB = async <T extends string, S extends Record<T, Record<string, any>>>(
+  dbName: string,
+  stores: StoreConfig<T>[],
+  version: number = 1
+) => {
+  const db = ref<IDBDatabase | null>(null);
 
   // 打开数据库并创建表
-  const initDB = (
-    dbName: string,
-    version: number,
-    stores: { name: string; keyPath?: string }[]
-  ) => {
+  const initDB = () => {
     return new Promise<void>((resolve, reject) => {
-      const request = indexedDB.open(dbName, version); // 打开数据库请求
+      const request = indexedDB.open(dbName, version);
 
       request.onupgradeneeded = (event: any) => {
-        const db = event.target.result; // 获取数据库实例
+        const db = event.target.result;
         stores.forEach((store) => {
           if (!db.objectStoreNames.contains(store.name)) {
-            // 确保对象存储（表）创建
             db.createObjectStore(store.name, {
               keyPath: store.keyPath || 'id',
               autoIncrement: true
@@ -28,39 +33,41 @@ const useIndexedDB = () => {
       };
 
       request.onsuccess = (event: any) => {
-        db.value = event.target.result; // 保存数据库实例
-        resolve(); // 成功时解析 Promise
+        db.value = event.target.result;
+        resolve();
       };
 
       request.onerror = (event: any) => {
-        reject(event.target.error); // 失败时拒绝 Promise
+        reject(event.target.error);
       };
     });
   };
 
-  // 通用新增数据
-  const addData = (storeName: string, value: any) => {
-    return new Promise<void>((resolve, reject) => {
-      if (!db.value) return reject('数据库未初始化'); // 检查数据库是否已初始化
-      const tx = db.value.transaction(storeName, 'readwrite'); // 创建事务
-      const store = tx.objectStore(storeName); // 获取对象存储
+  await initDB();
 
-      const request = store.add(value); // 添加数据请求
+  // 通用新增数据
+  const addData = <K extends T>(storeName: K, value: S[K]) => {
+    return new Promise<void>((resolve, reject) => {
+      if (!db.value) return reject('数据库未初始化');
+      const tx = db.value.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+
+      const request = store.add(value);
 
       request.onsuccess = () => {
-        console.log('成功'); // 成功时输出
-        resolve(); // 解析 Promise
+        console.log('成功');
+        resolve();
       };
 
       request.onerror = (event) => {
-        console.error('新增失败:', (event.target as IDBRequest).error); // 输出错误
-        reject((event.target as IDBRequest).error); // 拒绝 Promise
+        console.error('新增失败:', (event.target as IDBRequest).error);
+        reject((event.target as IDBRequest).error);
       };
     });
   };
 
   // 通用保存数据（新增或更新）
-  const saveData = (storeName: string, value: any) => {
+  const saveData = <K extends T>(storeName: K, value: S[K]) => {
     return new Promise<void>((resolve, reject) => {
       if (!db.value) return reject('数据库未初始化');
       const tx = db.value.transaction(storeName, 'readwrite');
@@ -79,8 +86,8 @@ const useIndexedDB = () => {
   };
 
   // 通用获取数据
-  const getData = (storeName: string, key: string | number) => {
-    return new Promise<any>((resolve, reject) => {
+  const getData = <K extends T>(storeName: K, key: string | number) => {
+    return new Promise<S[K]>((resolve, reject) => {
       if (!db.value) return reject('数据库未初始化');
       const tx = db.value.transaction(storeName, 'readonly');
       const store = tx.objectStore(storeName);
@@ -101,7 +108,7 @@ const useIndexedDB = () => {
   };
 
   // 删除数据
-  const deleteData = (storeName: string, key: string | number) => {
+  const deleteData = <K extends T>(storeName: K, key: string | number) => {
     return new Promise<void>((resolve, reject) => {
       if (!db.value) return reject('数据库未初始化');
       const tx = db.value.transaction(storeName, 'readwrite');
@@ -120,8 +127,8 @@ const useIndexedDB = () => {
   };
 
   // 查询所有数据
-  const getAllData = (storeName: string) => {
-    return new Promise<any[]>((resolve, reject) => {
+  const getAllData = <K extends T>(storeName: K) => {
+    return new Promise<S[K][]>((resolve, reject) => {
       if (!db.value) return reject('数据库未初始化');
       const tx = db.value.transaction(storeName, 'readonly');
       const store = tx.objectStore(storeName);
@@ -142,29 +149,29 @@ const useIndexedDB = () => {
   };
 
   // 分页查询数据
-  const getDataWithPagination = (storeName: string, page: number, pageSize: number) => {
-    return new Promise<any[]>((resolve, reject) => {
+  const getDataWithPagination = <K extends T>(storeName: K, page: number, pageSize: number) => {
+    return new Promise<S[K][]>((resolve, reject) => {
       if (!db.value) return reject('数据库未初始化');
       const tx = db.value.transaction(storeName, 'readonly');
       const store = tx.objectStore(storeName);
-      const request = store.openCursor(); // 打开游标请求
-      const results: any[] = []; // 存储结果的数组
-      let index = 0; // 当前索引
-      const skip = (page - 1) * pageSize; // 计算跳过的数量
+      const request = store.openCursor();
+      const results: S[K][] = [];
+      let index = 0;
+      const skip = (page - 1) * pageSize;
 
       request.onsuccess = (event: any) => {
-        const cursor = event.target.result; // 获取游标
+        const cursor = event.target.result;
         if (!cursor) {
-          resolve(results); // 如果没有更多数据，解析结果
+          resolve(results);
           return;
         }
 
         if (index >= skip && results.length < pageSize) {
-          results.push(cursor.value); // 添加当前游标值到结果
+          results.push(cursor.value);
         }
 
-        index++; // 增加索引
-        cursor.continue(); // 继续游标
+        index++;
+        cursor.continue();
       };
 
       request.onerror = (event: any) => {
