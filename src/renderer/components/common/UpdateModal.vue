@@ -3,7 +3,8 @@
     v-model:show="showModal"
     preset="dialog"
     :show-icon="false"
-    :mask-closable="true"
+    :mask-closable="!downloading"
+    :closable="!downloading"
     class="update-app-modal"
     style="width: 800px; max-width: 90vw"
   >
@@ -15,7 +16,6 @@
         <div class="app-info">
           <h2 class="app-name">发现新版本 {{ updateInfo.latestVersion }}</h2>
           <p class="app-desc mb-2">当前版本 {{ updateInfo.currentVersion }}</p>
-          <n-checkbox v-model:checked="noPrompt">不再提示</n-checkbox>
         </div>
       </div>
       <div class="update-info">
@@ -23,11 +23,35 @@
           <div class="update-body" v-html="parsedReleaseNotes"></div>
         </n-scrollbar>
       </div>
-      <div class="modal-actions">
-        <n-button class="cancel-btn" @click="closeModal">暂不更新</n-button>
-        <n-button type="primary" class="update-btn" @click="handleUpdate">立即更新</n-button>
+      <div v-if="downloading" class="download-status mt-6">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-sm text-gray-500">{{ downloadStatus }}</span>
+          <span class="text-sm font-medium">{{ downloadProgress }}%</span>
+        </div>
+        <div class="progress-bar-wrapper">
+          <div class="progress-bar" :style="{ width: `${downloadProgress}%` }"></div>
+        </div>
       </div>
-      <div class="modal-desc mt-4 text-center">
+      <div class="modal-actions" :class="{ 'mt-6': !downloading }">
+        <n-button
+          class="cancel-btn"
+          :disabled="downloading"
+          :loading="downloading"
+          @click="closeModal"
+        >
+          {{ '暂不更新' }}
+        </n-button>
+        <n-button
+          type="primary"
+          class="update-btn"
+          :loading="downloading"
+          :disabled="downloading"
+          @click="handleUpdate"
+        >
+          {{ downloadBtnText }}
+        </n-button>
+      </div>
+      <div v-if="!downloading" class="modal-desc mt-4 text-center">
         <p class="text-xs text-gray-400">
           下载遇到问题？去
           <a
@@ -45,7 +69,7 @@
 
 <script setup lang="ts">
 import { marked } from 'marked';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 
 import { checkUpdate, UpdateResult } from '@/utils/update';
@@ -59,7 +83,6 @@ marked.setOptions({
 });
 
 const showModal = ref(false);
-const noPrompt = ref(false);
 const updateInfo = ref<UpdateResult>({
   hasUpdate: false,
   latestVersion: '',
@@ -102,9 +125,6 @@ const parsedReleaseNotes = computed(() => {
 
 const closeModal = () => {
   showModal.value = false;
-  if (noPrompt.value) {
-    localStorage.setItem('updatePromptDismissed', 'true');
-  }
 };
 
 const checkForUpdates = async () => {
@@ -112,21 +132,54 @@ const checkForUpdates = async () => {
     const result = await checkUpdate(config.version);
     if (result) {
       updateInfo.value = result;
-      if (localStorage.getItem('updatePromptDismissed') !== 'true') {
-        showModal.value = true;
-      }
+      showModal.value = true;
     }
   } catch (error) {
     console.error('检查更新失败:', error);
   }
 };
 
+const downloading = ref(false);
+const downloadProgress = ref(0);
+const downloadStatus = ref('准备下载...');
+const downloadBtnText = computed(() => {
+  if (downloading.value) return '下载中...';
+  return '立即更新';
+});
+
+// 处理下载状态更新
+const handleDownloadProgress = (_event: any, progress: number, status: string) => {
+  downloadProgress.value = progress;
+  downloadStatus.value = status;
+};
+
+// 处理下载完成
+const handleDownloadComplete = (_event: any, success: boolean, filePath: string) => {
+  downloading.value = false;
+  if (success) {
+    window.electron.ipcRenderer.send('install-update', filePath);
+  } else {
+    window.$message.error('下载失败，请重试或手动下载');
+  }
+};
+
+// 监听下载事件
+onMounted(() => {
+  checkForUpdates();
+  window.electron.ipcRenderer.on('download-progress', handleDownloadProgress);
+  window.electron.ipcRenderer.on('download-complete', handleDownloadComplete);
+});
+
+// 清理事件监听
+onUnmounted(() => {
+  window.electron.ipcRenderer.removeListener('download-progress', handleDownloadProgress);
+  window.electron.ipcRenderer.removeListener('download-complete', handleDownloadComplete);
+});
+
 const handleUpdate = async () => {
   const assets = updateInfo.value.releaseInfo?.assets || [];
   const { platform } = window.electron.process;
   const arch = window.electron.ipcRenderer.sendSync('get-arch');
-  console.log('arch', arch);
-  console.log('platform', platform);
   const version = updateInfo.value.latestVersion;
   const downUrls = {
     win32: {
@@ -170,16 +223,20 @@ const handleUpdate = async () => {
   }
 
   if (downloadUrl) {
-    window.open(`https://www.ghproxy.cn/${downloadUrl}`, '_blank');
+    try {
+      downloading.value = true;
+      downloadStatus.value = '准备下载...';
+      window.electron.ipcRenderer.send('start-download', downloadUrl);
+    } catch (error) {
+      downloading.value = false;
+      window.$message.error('启动下载失败，请重试或手动下载');
+      console.error('下载失败:', error);
+    }
   } else {
-    // 如果没有找到对应的安装包，跳转到 release 页面
+    window.$message.error('未找到适合当前系统的安装包，请手动下载');
     window.open('https://github.com/algerkong/AlgerMusicPlayer/releases/latest', '_blank');
   }
 };
-
-onMounted(() => {
-  checkForUpdates();
-});
 </script>
 
 <style lang="scss" scoped>
@@ -266,8 +323,18 @@ onMounted(() => {
         }
       }
     }
+    .download-status {
+      @apply p-2;
+      .progress-bar-wrapper {
+        @apply w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden;
+        .progress-bar {
+          @apply h-full bg-green-500 rounded-full transition-all duration-300 ease-out;
+          box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+        }
+      }
+    }
     .modal-actions {
-      @apply flex gap-4 mt-6;
+      @apply flex gap-4;
       .n-button {
         @apply flex-1 text-base py-2;
       }
@@ -276,11 +343,17 @@ onMounted(() => {
         &:hover {
           @apply bg-gray-700;
         }
+        &:disabled {
+          @apply opacity-50 cursor-not-allowed;
+        }
       }
       .update-btn {
         @apply bg-green-600 border-none;
         &:hover {
           @apply bg-green-500;
+        }
+        &:disabled {
+          @apply opacity-50 cursor-not-allowed;
         }
       }
     }

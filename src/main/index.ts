@@ -7,6 +7,7 @@ import { initializeConfig } from './modules/config';
 import { initializeFileManager } from './modules/fileManager';
 import { initializeShortcuts, registerShortcuts } from './modules/shortcuts';
 import { initializeTray } from './modules/tray';
+import { setupUpdateHandlers } from './modules/update';
 import { createMainWindow, initializeWindowManager } from './modules/window';
 import { startMusicApi } from './server';
 
@@ -45,6 +46,9 @@ function initialize() {
 
   // 初始化快捷键
   initializeShortcuts(mainWindow);
+
+  // 初始化更新处理程序
+  setupUpdateHandlers(mainWindow);
 }
 
 // 应用程序准备就绪时的处理

@@ -13,6 +13,10 @@ declare global {
       miniTray: () => void;
       restart: () => void;
       unblockMusic: (id: number, data: any) => Promise<any>;
+      startDownload: (url: string) => void;
+      onDownloadProgress: (callback: (progress: number, status: string) => void) => void;
+      onDownloadComplete: (callback: (success: boolean, filePath: string) => void) => void;
+      removeDownloadListeners: () => void;
       invoke: (channel: string, ...args: any[]) => Promise<any>;
     };
     $message: any;
