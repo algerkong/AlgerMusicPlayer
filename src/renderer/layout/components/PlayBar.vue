@@ -1,7 +1,4 @@
 <template>
-  <!-- 展开全屏 -->
-  <!-- 底部播放栏 -->
-
   <div
     class="music-play-bar"
     :class="
@@ -60,13 +57,12 @@
           }"
         >
           <span
-            v-for="(artists, artistsindex) in playMusic.ar || playMusic.song.artists"
+            v-for="(artists, artistsindex) in artistList"
             :key="artistsindex"
             class="cursor-pointer hover:text-green-500"
             @click="handleArtistClick(artists.id)"
           >
-            {{ artists.name
-            }}{{ artistsindex < (playMusic.ar || playMusic.song.artists).length - 1 ? ' / ' : '' }}
+            {{ artists.name }}{{ artistsindex < artistList.length - 1 ? ' / ' : '' }}
           </span>
         </n-ellipsis>
       </div>
@@ -160,9 +156,11 @@ import { useStore } from 'vuex';
 import SongItem from '@/components/common/SongItem.vue';
 import {
   allTime,
+  artistList,
   isLyricWindowOpen,
   nowTime,
   openLyric,
+  playMusic,
   sound,
   textColors
 } from '@/hooks/MusicHook';
@@ -174,12 +172,11 @@ import MusicFull from './MusicFull.vue';
 
 const store = useStore();
 
-// 播放的音乐信息
-const playMusic = computed(() => store.state.playMusic as SongResult);
 // 是否播放
 const play = computed(() => store.state.play as boolean);
+// 播放列表
 const playList = computed(() => store.state.playList as SongResult[]);
-
+// 背景颜色
 const background = ref('#000');
 
 watch(
@@ -190,7 +187,7 @@ watch(
   { immediate: true, deep: true }
 );
 
-// 使用 useThrottleFn 创建节流版本的 seek 函数
+// 节流版本的 seek 函数
 const throttledSeek = useThrottleFn((value: number) => {
   if (!sound.value) return;
   sound.value.seek(value);

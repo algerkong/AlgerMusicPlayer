@@ -1,5 +1,6 @@
 import { Howl } from 'howler';
 import { cloneDeep } from 'lodash';
+import { ref } from 'vue';
 
 import { getMusicLrc, getMusicUrl, getParsingMusicUrl } from '@/api/music';
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';
@@ -63,43 +64,91 @@ export const useMusicListHook = () => {
     fetchSongs(state, playListIndex + 1, playListIndex + 6);
   };
 
+  const preloadingSounds = ref<Howl[]>([]);
+
   // 用于预加载下一首歌曲的 MP3 数据
   const preloadNextSong = (nextSongUrl: string) => {
-    const sound = new Howl({
-      src: [nextSongUrl],
-      html5: true,
-      preload: true,
-      autoplay: false
-    });
-    return sound;
+    try {
+      // 限制同时预加载的数量
+      if (preloadingSounds.value.length >= 2) {
+        const oldestSound = preloadingSounds.value.shift();
+        if (oldestSound) {
+          oldestSound.unload();
+        }
+      }
+
+      const sound = new Howl({
+        src: [nextSongUrl],
+        html5: true,
+        preload: true,
+        autoplay: false
+      });
+
+      preloadingSounds.value.push(sound);
+
+      // 添加加载错误处理
+      sound.on('loaderror', () => {
+        console.error('预加载音频失败:', nextSongUrl);
+        const index = preloadingSounds.value.indexOf(sound);
+        if (index > -1) {
+          preloadingSounds.value.splice(index, 1);
+        }
+        sound.unload();
+      });
+
+      return sound;
+    } catch (error) {
+      console.error('预加载音频出错:', error);
+      return null;
+    }
   };
 
   const fetchSongs = async (state: any, startIndex: number, endIndex: number) => {
-    const songs = state.playList.slice(
-      Math.max(0, startIndex),
-      Math.min(endIndex, state.playList.length)
-    );
+    try {
+      const songs = state.playList.slice(
+        Math.max(0, startIndex),
+        Math.min(endIndex, state.playList.length)
+      );
 
-    const detailedSongs = await Promise.all(
-      songs.map(async (song: SongResult) => {
-        // 如果歌曲详情已经存在，就不重复请求
-        if (!song.playMusicUrl) {
-          return await getSongDetail(song);
+      const detailedSongs = await Promise.all(
+        songs.map(async (song: SongResult) => {
+          try {
+            // 如果歌曲详情已经存在，就不重复请求
+            if (!song.playMusicUrl) {
+              return await getSongDetail(song);
+            }
+            return song;
+          } catch (error) {
+            console.error('获取歌曲详情失败:', error);
+            return song;
+          }
+        })
+      );
+
+      // 加载下一首的歌词
+      const nextSong = detailedSongs[0];
+      if (nextSong && !(nextSong.lyric && nextSong.lyric.lrcTimeArray.length > 0)) {
+        try {
+          nextSong.lyric = await loadLrc(nextSong.id);
+        } catch (error) {
+          console.error('加载歌词失败:', error);
         }
-        return song;
-      })
-    );
-    // 加载下一首的歌词
-    const nextSong = detailedSongs[0];
-    if (!(nextSong.lyric && nextSong.lyric.lrcTimeArray.length > 0)) {
-      nextSong.lyric = await loadLrc(nextSong.id);
-    }
+      }
 
-    // 更新播放列表中的歌曲详情
-    detailedSongs.forEach((song, index) => {
-      state.playList[startIndex + index] = song;
-    });
-    preloadNextSong(nextSong.playMusicUrl);
+      // 更新播放列表中的歌曲详情
+      detailedSongs.forEach((song, index) => {
+        if (song && startIndex + index < state.playList.length) {
+          state.playList[startIndex + index] = song;
+        }
+      });
+
+      // 只预加载下一首歌曲
+      if (nextSong && nextSong.playMusicUrl) {
+        preloadNextSong(nextSong.playMusicUrl);
+      }
+    } catch (error) {
+      console.error('获取歌曲列表失败:', error);
+    }
   };
 
   const nextPlay = async (state: any) => {
@@ -153,7 +202,7 @@ export const useMusicListHook = () => {
       const { lyrics, times } = parseLyrics(data.lrc.lyric);
       const tlyric: Record<string, string> = {};
 
-      if (data.tlyric.lyric) {
+      if (data.tlyric && data.tlyric.lyric) {
         const { lyrics: tLyrics, times: tTimes } = parseLyrics(data.tlyric.lyric);
         tLyrics.forEach((lyric, index) => {
           tlyric[tTimes[index].toString()] = lyric.text;
@@ -192,6 +241,12 @@ export const useMusicListHook = () => {
   const pause = () => {
     audioService.getCurrentSound()?.pause();
   };
+
+  // 在组件卸载时清理预加载的音频
+  onUnmounted(() => {
+    preloadingSounds.value.forEach((sound) => sound.unload());
+    preloadingSounds.value = [];
+  });
 
   return {
     handlePlayMusic,

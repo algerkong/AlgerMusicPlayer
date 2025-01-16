@@ -160,7 +160,7 @@ interface Album {
   picId_str: string;
 }
 
-interface Artist {
+export interface Artist {
   name: string;
   id: number;
   picId: number;

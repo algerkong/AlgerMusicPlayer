@@ -106,8 +106,6 @@
 </template>
 
 <script setup lang="ts">
-import 'animate.css';
-
 import axios from 'axios';
 import { computed, onActivated, onMounted, ref } from 'vue';
 

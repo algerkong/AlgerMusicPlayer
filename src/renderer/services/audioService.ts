@@ -121,52 +121,79 @@ class AudioService {
   }
 
   // 播放控制相关
-  play(url: string, track: SongResult) {
-    // Howler.unload();
-    if (this.currentSound) {
-      this.currentSound.unload();
-    }
-    this.currentSound = null;
-    this.currentTrack = track;
+  play(url: string, track: SongResult): Promise<Howl> {
+    return new Promise((resolve, reject) => {
+      let retryCount = 0;
+      const maxRetries = 3;
 
-    this.currentSound = new Howl({
-      src: [url],
-      html5: true,
-      autoplay: true,
-      volume: localStorage.getItem('volume')
-        ? parseFloat(localStorage.getItem('volume') as string)
-        : 1
+      const tryPlay = () => {
+        if (this.currentSound) {
+          this.currentSound.unload();
+        }
+        this.currentSound = null;
+        this.currentTrack = track;
+
+        this.currentSound = new Howl({
+          src: [url],
+          html5: true,
+          autoplay: true,
+          volume: localStorage.getItem('volume')
+            ? parseFloat(localStorage.getItem('volume') as string)
+            : 1,
+          onloaderror: () => {
+            console.error('Audio load error');
+            if (retryCount < maxRetries) {
+              retryCount++;
+              console.log(`Retrying playback (${retryCount}/${maxRetries})...`);
+              setTimeout(tryPlay, 1000 * retryCount);
+            } else {
+              reject(new Error('音频加载失败，请尝试切换其他歌曲'));
+            }
+          },
+          onplayerror: () => {
+            console.error('Audio play error');
+            if (retryCount < maxRetries) {
+              retryCount++;
+              console.log(`Retrying playback (${retryCount}/${maxRetries})...`);
+              setTimeout(tryPlay, 1000 * retryCount);
+            } else {
+              reject(new Error('音频播放失败，请尝试切换其他歌曲'));
+            }
+          }
+        });
+
+        // 更新媒体会话元数据
+        this.updateMediaSessionMetadata(track);
+
+        // 设置音频事件监听
+        this.currentSound.on('play', () => {
+          this.updateMediaSessionState(true);
+          this.emit('play');
+        });
+
+        this.currentSound.on('pause', () => {
+          this.updateMediaSessionState(false);
+          this.emit('pause');
+        });
+
+        this.currentSound.on('end', () => {
+          this.emit('end');
+        });
+
+        this.currentSound.on('seek', () => {
+          this.updateMediaSessionPositionState();
+          this.emit('seek');
+        });
+
+        this.currentSound.on('load', () => {
+          this.updateMediaSessionPositionState();
+          this.emit('load');
+          resolve(this.currentSound as Howl);
+        });
+      };
+
+      tryPlay();
     });
-
-    // 更新媒体会话元数据
-    this.updateMediaSessionMetadata(track);
-
-    // 设置音频事件监听
-    this.currentSound.on('play', () => {
-      this.updateMediaSessionState(true);
-      this.emit('play');
-    });
-
-    this.currentSound.on('pause', () => {
-      this.updateMediaSessionState(false);
-      this.emit('pause');
-    });
-
-    this.currentSound.on('end', () => {
-      this.emit('end');
-    });
-
-    this.currentSound.on('seek', () => {
-      this.updateMediaSessionPositionState();
-      this.emit('seek');
-    });
-
-    this.currentSound.on('load', () => {
-      this.updateMediaSessionPositionState();
-      this.emit('load');
-    });
-
-    return this.currentSound;
   }
 
   getCurrentSound() {

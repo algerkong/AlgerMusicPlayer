@@ -1,8 +1,11 @@
+import { musicDB } from '@/hooks/MusicHook';
 import store from '@/store';
 import type { ILyric } from '@/type/lyric';
 import { isElectron } from '@/utils';
 import request from '@/utils/request';
 import requestMusic from '@/utils/request_music';
+
+const { addData, getData, deleteData } = musicDB;
 
 // 获取音乐音质详情
 export const getMusicQualityDetail = (id: number) => {
@@ -37,24 +40,31 @@ export const getMusicDetail = (ids: Array<number>) => {
 
 // 根据音乐Id获取音乐歌词
 export const getMusicLrc = async (id: number) => {
-  if (isElectron) {
-    // 先尝试从缓存获取
-    const cachedLyric = await window.api.invoke('get-cached-lyric', id);
-    console.log('cachedLyric', cachedLyric);
-    if (cachedLyric) {
-      return { data: cachedLyric };
+  const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000; // 10天的毫秒数
+
+  try {
+    // 尝试获取缓存的歌词
+    const cachedLyric = await getData('music_lyric', id);
+    if (cachedLyric?.createTime && Date.now() - cachedLyric.createTime < TEN_DAYS_MS) {
+      return { ...cachedLyric };
     }
+
+    // 获取新的歌词数据
+    const res = await request.get<ILyric>('/lyric', { params: { id } });
+
+    // 只有在成功获取新数据后才删除旧缓存并添加新缓存
+    if (res?.data) {
+      if (cachedLyric) {
+        await deleteData('music_lyric', id);
+      }
+      addData('music_lyric', { id, data: res.data, createTime: Date.now() });
+    }
+
+    return res;
+  } catch (error) {
+    console.error('获取歌词失败:', error);
+    throw error; // 向上抛出错误，让调用者处理
   }
-
-  // 如果缓存中没有，则从服务器获取
-  const res = await request.get<ILyric>('/lyric', { params: { id } });
-
-  // 缓存完整的响应数据
-  if (isElectron && res) {
-    await window.api.invoke('cache-lyric', id, res.data);
-  }
-
-  return res;
 };
 
 export const getParsingMusicUrl = (id: number, data: any) => {

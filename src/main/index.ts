@@ -3,7 +3,6 @@ import { app, ipcMain, nativeImage } from 'electron';
 import { join } from 'path';
 
 import { loadLyricWindow } from './lyric';
-import { initializeCacheManager } from './modules/cache';
 import { initializeConfig } from './modules/config';
 import { initializeFileManager } from './modules/fileManager';
 import { initializeShortcuts, registerShortcuts } from './modules/shortcuts';
@@ -27,8 +26,6 @@ let mainWindow: Electron.BrowserWindow;
 function initialize() {
   // 初始化配置管理
   initializeConfig();
-  // 初始化缓存管理
-  initializeCacheManager();
   // 初始化文件管理
   initializeFileManager();
   // 初始化窗口管理
