@@ -6,7 +6,7 @@ import store from '@/store';
 import type { Artist, ILyricText, SongResult } from '@/type/music';
 import { isElectron } from '@/utils';
 import { getTextColors } from '@/utils/linearColor';
-
+import { createDiscreteApi } from 'naive-ui';
 const windowData = window as any;
 
 export const lrcArray = ref<ILyricText[]>([]); // 歌词数组
@@ -51,6 +51,8 @@ document.onkeyup = (e) => {
   }
 };
 
+const { message } = createDiscreteApi(['message']);
+
 watch(
   () => store.state.playMusicUrl,
   async (newVal) => {
@@ -60,8 +62,10 @@ watch(
         sound.value = newSound as Howl;
         setupAudioListeners();
       } catch (error) {
+
         console.error('播放音频失败:', error);
         store.commit('setPlayMusic', false);
+        message.error('当前歌曲播放失败，播放下一首');
         // 下一首
         store.commit('nextPlay');
       }

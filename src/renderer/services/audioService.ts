@@ -128,7 +128,7 @@ class AudioService {
     }
     return new Promise((resolve, reject) => {
       let retryCount = 0;
-      const maxRetries = 3;
+      const maxRetries = 1;
 
       const tryPlay = () => {
         if (this.currentSound) {
