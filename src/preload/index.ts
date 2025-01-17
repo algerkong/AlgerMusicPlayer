@@ -14,11 +14,18 @@ const api = {
   unblockMusic: (id) => ipcRenderer.invoke('unblock-music', id),
   // 歌词缓存相关
   invoke: (channel: string, ...args: any[]) => {
-    const validChannels = ['get-cached-lyric', 'cache-lyric', 'clear-lyric-cache'];
+    const validChannels = [
+      'get-lyrics',
+      'clear-lyrics-cache',
+      'get-system-fonts',
+      'get-cached-lyric',
+      'cache-lyric',
+      'clear-lyric-cache'
+    ];
     if (validChannels.includes(channel)) {
       return ipcRenderer.invoke(channel, ...args);
     }
-    return Promise.reject(new Error(`Invalid channel: ${channel}`));
+    return Promise.reject(new Error(`未授权的 IPC 通道: ${channel}`));
   }
 };
 

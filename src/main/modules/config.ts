@@ -12,6 +12,17 @@ interface StoreType {
     author: string;
     authorUrl: string;
     musicApiPort: number;
+    closeAction: 'ask' | 'minimize' | 'close';
+    musicQuality: string;
+    fontFamily: string;
+    proxyConfig: {
+      enable: boolean;
+      protocol: string;
+      host: string;
+      port: number;
+    };
+    enableRealIP: boolean;
+    realIP: string;
   };
   shortcuts: typeof defaultShortcuts;
 }

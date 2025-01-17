@@ -33,6 +33,51 @@
 
             <div class="set-item">
               <div>
+                <div class="set-item-title">字体设置</div>
+                <div class="set-item-content">选择字体，优先使用排在前面的字体</div>
+              </div>
+              <div class="flex gap-2">
+                <n-radio-group v-model:value="setData.fontScope" class="mt-2">
+                  <n-radio key="global" value="global">全局</n-radio>
+                  <n-radio key="lyric" value="lyric">仅歌词</n-radio>
+                </n-radio-group>
+                <n-select
+                  v-model:value="selectedFonts"
+                  :options="systemFonts"
+                  filterable
+                  multiple
+                  placeholder="选择字体"
+                  style="width: 300px"
+                  :render-label="renderFontLabel"
+                >
+                </n-select>
+              </div>
+            </div>
+
+            <div v-if="selectedFonts.length > 0" class="font-preview-container">
+              <div class="font-preview-title">字体预览</div>
+              <div class="font-preview" :style="{ fontFamily: setData.fontFamily }">
+                <div class="preview-item">
+                  <div class="preview-label">中文</div>
+                  <div class="preview-text">静夜思 床前明月光 疑是地上霜</div>
+                </div>
+                <div class="preview-item">
+                  <div class="preview-label">English</div>
+                  <div class="preview-text">The quick brown fox jumps over the lazy dog</div>
+                </div>
+                <div class="preview-item">
+                  <div class="preview-label">日本語</div>
+                  <div class="preview-text">あいうえお かきくけこ さしすせそ</div>
+                </div>
+                <div class="preview-item">
+                  <div class="preview-label">한국어</div>
+                  <div class="preview-text">가나다라마 바사아자차 카타파하</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="set-item">
+              <div>
                 <div class="set-item-title">动画速度</div>
                 <div class="set-item-content">
                   <div class="flex items-center gap-2">
@@ -366,7 +411,7 @@
 <script setup lang="ts">
 import type { FormRules } from 'naive-ui';
 import { useMessage } from 'naive-ui';
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, h, nextTick, onMounted, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 
 import localData from '@/../main/set.json';
@@ -510,8 +555,55 @@ const proxyRules: FormRules = {
   }
 };
 
-// 初始化时从store获取代理配置
-onMounted(() => {
+// 使用 store 中的字体列表
+const systemFonts = computed(() => store.state.systemFonts);
+
+// 已选择的字体列表
+const selectedFonts = ref<string[]>([]);
+
+// 自定义渲染函数
+const renderFontLabel = (option: { label: string; value: string }) => {
+  return h('span', { style: { fontFamily: option.value } }, option.label);
+};
+
+// 监听字体选择变化
+watch(
+  selectedFonts,
+  (newFonts) => {
+    // 如果没有选择任何字体，使用系统默认字体
+    if (newFonts.length === 0) {
+      store.commit('setSetData', {
+        ...setData.value,
+        fontFamily: 'system-ui'
+      });
+      return;
+    }
+    // 将选择的字体组合成字体列表
+    store.commit('setSetData', {
+      ...setData.value,
+      fontFamily: newFonts.join(',')
+    });
+  },
+  { deep: true }
+);
+
+// 初始化已选择的字体
+watch(
+  () => setData.value.fontFamily,
+  (newFont) => {
+    if (newFont) {
+      if (newFont === 'system-ui') {
+        selectedFonts.value = [];
+      } else {
+        selectedFonts.value = newFont.split(',');
+      }
+    }
+  },
+  { immediate: true }
+);
+
+// 初始化时从store获取配置
+onMounted(async () => {
   checkForUpdates();
   if (setData.value.proxyConfig) {
     proxyForm.value = { ...setData.value.proxyConfig };
@@ -734,8 +826,9 @@ const scrollToSection = async (sectionId: string) => {
 };
 
 // 处理滚动，更新当前激活的分类
-const handleScroll = () => {
-  const scrollTop = scrollbarRef.value?.containerRef.scrollTop;
+const handleScroll = (e: any) => {
+  const { scrollTop } = e.target;
+
   const sections = [
     { id: 'basic', ref: basicRef },
     { id: 'playback', ref: playbackRef },
@@ -746,18 +839,30 @@ const handleScroll = () => {
     { id: 'donation', ref: donationRef }
   ];
 
+  const activeSection = sections[0].id;
+  let lastValidSection = activeSection;
+
   for (const section of sections) {
     if (section.ref?.value) {
       const { offsetTop } = section.ref.value;
-      const offsetBottom = offsetTop + section.ref.value.offsetHeight;
-
-      if (scrollTop >= offsetTop - 100 && scrollTop < offsetBottom) {
-        currentSection.value = section.id;
-        break;
+      if (scrollTop >= offsetTop - 100) {
+        lastValidSection = section.id;
       }
     }
   }
+
+  if (lastValidSection !== currentSection.value) {
+    currentSection.value = lastValidSection;
+  }
 };
+
+// 初始化时设置当前激活的分类
+onMounted(() => {
+  // 延迟一帧等待 DOM 完全渲染
+  nextTick(() => {
+    handleScroll({ target: { scrollTop: 0 } });
+  });
+});
 </script>
 
 <style lang="scss" scoped>
@@ -828,6 +933,36 @@ const handleScroll = () => {
 
   &.cursor-pointer:hover {
     @apply text-green-500 bg-green-50 dark:bg-green-900;
+  }
+}
+
+.font-preview-container {
+  @apply mt-4 p-4 rounded-lg;
+  @apply bg-gray-50 dark:bg-dark-100;
+  @apply border border-gray-200 dark:border-gray-700;
+
+  .font-preview-title {
+    @apply text-sm font-medium mb-3;
+    @apply text-gray-600 dark:text-gray-300;
+  }
+
+  .font-preview {
+    @apply space-y-3;
+
+    .preview-item {
+      @apply flex flex-col gap-1;
+
+      .preview-label {
+        @apply text-xs text-gray-500 dark:text-gray-400;
+      }
+
+      .preview-text {
+        @apply text-base text-gray-900 dark:text-gray-100;
+        @apply p-2 rounded;
+        @apply bg-white dark:bg-dark;
+        @apply border border-gray-200 dark:border-gray-700;
+      }
+    }
   }
 }
 </style>

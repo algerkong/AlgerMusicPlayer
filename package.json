@@ -26,6 +26,7 @@
     "@unblockneteasemusic/server": "^0.27.8-patch.1",
     "electron-store": "^8.1.0",
     "electron-updater": "^6.1.7",
+    "font-list": "^1.5.1",
     "netease-cloud-music-api-alger": "^4.25.0"
   },
   "devDependencies": {
@@ -45,6 +46,7 @@
     "@vue/runtime-core": "^3.5.0",
     "@vueuse/core": "^11.0.3",
     "@vueuse/electron": "^11.0.3",
+    "animate.css": "^4.1.1",
     "autoprefixer": "^10.4.20",
     "axios": "^1.7.7",
     "cross-env": "^7.0.3",
@@ -78,8 +80,7 @@
     "vue": "^3.4.30",
     "vue-router": "^4.4.3",
     "vue-tsc": "^2.0.22",
-    "vuex": "^4.1.0",
-    "animate.css": "^4.1.1"
+    "vuex": "^4.1.0"
   },
   "build": {
     "appId": "com.alger.music",

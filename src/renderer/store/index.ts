@@ -37,6 +37,7 @@ export interface State {
   showUpdateModal: boolean;
   showArtistDrawer: boolean;
   currentArtistId: number | null;
+  systemFonts: { label: string; value: string }[];
 }
 
 const state: State = {
@@ -59,7 +60,8 @@ const state: State = {
   musicFull: false,
   showUpdateModal: false,
   showArtistDrawer: false,
-  currentArtistId: null
+  currentArtistId: null,
+  systemFonts: [{ label: '系统默认', value: 'system-ui' }]
 };
 
 const { handlePlayMusic, nextPlay, prevPlay } = useMusicListHook();
@@ -160,6 +162,15 @@ const mutations = {
   },
   setCurrentArtistId(state, id: number) {
     state.currentArtistId = id;
+  },
+  setSystemFonts(state, fonts: string[]) {
+    state.systemFonts = [
+      { label: '系统默认', value: 'system-ui' },
+      ...fonts.map((font) => ({
+        label: font,
+        value: font
+      }))
+    ];
   }
 };
 
@@ -167,7 +178,10 @@ const actions = {
   initializeSettings({ commit }: { commit: any }) {
     if (isElectron) {
       const setData = window.electron.ipcRenderer.sendSync('get-store-value', 'set');
-      commit('setSetData', setData || defaultSettings);
+      commit('setSetData', {
+        ...defaultSettings,
+        ...setData
+      });
     } else {
       const savedSettings = localStorage.getItem('appSettings');
       if (savedSettings) {
@@ -213,6 +227,17 @@ const actions = {
   },
   showArtist({ commit }, id: number) {
     commit('setCurrentArtistId', id);
+  },
+  async initializeSystemFonts({ commit, state }) {
+    // 如果已经有字体列表（不只是默认字体），则不重复获取
+    if (state.systemFonts.length > 1) return;
+
+    try {
+      const fonts = await window.api.invoke('get-system-fonts');
+      commit('setSystemFonts', fonts);
+    } catch (error) {
+      console.error('获取系统字体失败:', error);
+    }
   }
 };
 

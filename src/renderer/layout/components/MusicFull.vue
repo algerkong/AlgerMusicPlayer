@@ -253,6 +253,43 @@ const handleArtistClick = (id: number) => {
   store.commit('setCurrentArtistId', id);
 };
 
+const setData = computed(() => store.state.setData);
+
+// 监听字体变化并更新 CSS 变量
+watch(
+  () => [setData.value.fontFamily, setData.value.fontScope],
+  ([newFont, fontScope]) => {
+    const defaultFonts =
+      'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+
+    // 如果不是歌词模式或全局模式，使用默认字体
+    if (fontScope !== 'lyric' && fontScope !== 'global') {
+      document.documentElement.style.setProperty('--current-font-family', defaultFonts);
+      return;
+    }
+
+    if (newFont === 'system-ui') {
+      document.documentElement.style.setProperty('--current-font-family', defaultFonts);
+    } else {
+      // 处理多个字体，确保每个字体名都被正确引用
+      const fontList = newFont.split(',').map((font) => {
+        const trimmedFont = font.trim();
+        // 如果字体名包含空格或特殊字符，添加引号（如果还没有引号的话）
+        return /[\s'"()]/.test(trimmedFont) && !/^['"].*['"]$/.test(trimmedFont)
+          ? `"${trimmedFont}"`
+          : trimmedFont;
+      });
+
+      // 将选择的字体和默认字体组合
+      document.documentElement.style.setProperty(
+        '--current-font-family',
+        `${fontList.join(', ')}, ${defaultFonts}`
+      );
+    }
+  },
+  { immediate: true }
+);
+
 defineExpose({
   lrcScroll
 });
@@ -369,5 +406,20 @@ defineExpose({
 
 .music-drawer {
   transition: none; // 移除之前的过渡效果，现在使用 JS 动画
+}
+
+// 添加全局字体样式
+:root {
+  --current-font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+}
+
+#drawer-target {
+  @apply top-0 left-0 absolute overflow-hidden rounded px-24 flex items-center justify-center w-full h-full pb-8;
+  animation-duration: 300ms;
+
+  .music-lrc-text {
+    font-family: var(--current-font-family);
+  }
 }
 </style>

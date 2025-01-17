@@ -5,6 +5,7 @@ import { join } from 'path';
 import { loadLyricWindow } from './lyric';
 import { initializeConfig } from './modules/config';
 import { initializeFileManager } from './modules/fileManager';
+import { initializeFonts } from './modules/fonts';
 import { initializeShortcuts, registerShortcuts } from './modules/shortcuts';
 import { initializeTray } from './modules/tray';
 import { createMainWindow, initializeWindowManager } from './modules/window';
@@ -30,6 +31,8 @@ function initialize() {
   initializeFileManager();
   // 初始化窗口管理
   initializeWindowManager();
+  // 初始化字体管理
+  initializeFonts();
 
   // 创建主窗口
   mainWindow = createMainWindow(icon);

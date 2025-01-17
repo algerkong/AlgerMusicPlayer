@@ -14,5 +14,7 @@
   "authorUrl": "https://github.com/algerkong",
   "musicApiPort": 30488,
   "closeAction": "ask",
-  "musicQuality": "higher"
+  "musicQuality": "higher",
+  "fontFamily": "system-ui",
+  "fontScope": "global"
 }
