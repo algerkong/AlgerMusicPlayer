@@ -149,6 +149,30 @@ const setupAudioListeners = () => {
     }
   });
 
+  const replayMusic = async () => {
+    try {
+      // 如果当前有音频实例，先停止并销毁
+      if (sound.value) {
+        sound.value.stop();
+        sound.value.unload();
+        sound.value = null;
+      }
+
+      // 重新播放当前歌曲
+      if (store.state.playMusicUrl && playMusic.value) {
+        const newSound = await audioService.play(store.state.playMusicUrl, playMusic.value);
+        sound.value = newSound as Howl;
+        setupAudioListeners();
+      } else {
+        console.error('No music URL or playMusic data available');
+        store.commit('nextPlay');
+      }
+    } catch (error) {
+      console.error('Error replaying song:', error);
+      store.commit('nextPlay');
+    }
+  };
+
   // 监听结束
   audioService.on('end', () => {
     clearInterval();
@@ -156,23 +180,13 @@ const setupAudioListeners = () => {
     if (store.state.playMode === 1) {
       // 单曲循环模式
       if (sound.value) {
-        sound.value.seek(0);
-        try {
-          sound.value.play();
-        } catch (error) {
-          console.error('Error replaying song:', error);
-          store.commit('nextPlay');
-        }
+        replayMusic();
       }
     } else if (store.state.playMode === 2) {
       // 随机播放模式
       const { playList } = store.state;
       if (playList.length <= 1) {
-        try {
-          sound.value?.play();
-        } catch (error) {
-          console.error('Error replaying song:', error);
-        }
+        replayMusic();
       } else {
         let randomIndex;
         do {
@@ -466,13 +480,6 @@ if (isElectron) {
 
 // 在组件挂载时设置监听器
 onMounted(() => {
-  const clearIntervalFn = setupAudioListeners();
+  setupAudioListeners();
   useLyricProgress(); // 直接调用，不需要解构返回值
-
-  // 在组件卸载时清理
-  onUnmounted(() => {
-    clearIntervalFn();
-    audioService.stop();
-    audioService.clearAllListeners();
-  });
 });

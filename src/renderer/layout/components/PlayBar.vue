@@ -167,6 +167,7 @@ import {
 import type { SongResult } from '@/type/music';
 import { getImgUrl, isElectron, isMobile, secondToMinute, setAnimationClass } from '@/utils';
 import { showShortcutToast } from '@/utils/shortcutToast';
+import { audioService } from '@/services/audioService';
 
 import MusicFull from './MusicFull.vue';
 
@@ -282,16 +283,19 @@ const MusicFullRef = ref<any>(null);
 
 // 播放暂停按钮事件
 const playMusicEvent = async () => {
-  if (play.value) {
-    if (sound.value) {
-      sound.value.pause();
+  try {
+    if (play.value) {
+      audioService.pause();
+      store.commit('setPlayMusic', false);
+    } else {
+      audioService.play();
+      store.commit('setPlayMusic', true);
     }
-    store.commit('setPlayMusic', false);
-  } else {
-    if (sound.value) {
-      sound.value.play();
+  } catch (error) {
+    console.log('error',error)
+    if (play.value) {
+      store.commit('nextPlay');
     }
-    store.commit('setPlayMusic', true);
   }
 };
 

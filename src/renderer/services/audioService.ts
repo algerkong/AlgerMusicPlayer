@@ -121,7 +121,11 @@ class AudioService {
   }
 
   // 播放控制相关
-  play(url: string, track: SongResult): Promise<Howl> {
+  play(url?: string, track?: SongResult): Promise<Howl> {
+    if (this.currentSound && !url && !track) {
+      this.currentSound.play();
+      return Promise.resolve(this.currentSound as Howl);
+    }
     return new Promise((resolve, reject) => {
       let retryCount = 0;
       const maxRetries = 3;
@@ -131,10 +135,10 @@ class AudioService {
           this.currentSound.unload();
         }
         this.currentSound = null;
-        this.currentTrack = track;
+        this.currentTrack = track as SongResult;
 
         this.currentSound = new Howl({
-          src: [url],
+          src: [url as string],
           html5: true,
           autoplay: true,
           volume: localStorage.getItem('volume')
@@ -163,7 +167,7 @@ class AudioService {
         });
 
         // 更新媒体会话元数据
-        this.updateMediaSessionMetadata(track);
+        this.updateMediaSessionMetadata(track as SongResult);
 
         // 设置音频事件监听
         this.currentSound.on('play', () => {
@@ -229,6 +233,13 @@ class AudioService {
       this.updateMediaSessionPositionState();
     }
   }
+
+  pause() {
+    if (this.currentSound) {
+      this.currentSound.pause();
+    }
+  }
+  
 
   clearAllListeners() {
     this.callbacks = {};
