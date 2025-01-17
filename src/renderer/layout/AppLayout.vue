@@ -25,7 +25,7 @@
         </div>
       </div>
       <!-- 底部音乐播放 -->
-      <play-bar v-if="isPlay" :style="isMobile && store.state.musicFull ? 'bottom: 0;' : ''" />
+      <play-bar v-show="isPlay" :style="isMobile && store.state.musicFull ? 'bottom: 0;' : ''" />
       <!-- 下载管理抽屉 -->
       <download-drawer v-if="isElectron" />
     </div>

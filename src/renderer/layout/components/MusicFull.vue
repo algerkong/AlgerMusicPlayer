@@ -7,9 +7,29 @@
     :to="`#layout-main`"
     :z-index="9998"
   >
-    <div id="drawer-target">
-      <div class="drawer-back"></div>
+    <div id="drawer-target" :class="[config.theme]">
       <div
+        class="control-btn absolute top-8 left-8"
+        :class="{ 'pure-mode': config.pureModeEnabled }"
+        @click="isVisible = false"
+      >
+        <i class="ri-arrow-down-s-line"></i>
+      </div>
+
+      <n-popover trigger="click" placement="bottom">
+        <template #trigger>
+          <div
+            class="control-btn absolute top-8 right-8"
+            :class="{ 'pure-mode': config.pureModeEnabled }"
+          >
+            <i class="ri-settings-3-line"></i>
+          </div>
+        </template>
+        <lyric-settings ref="lyricSettingsRef" />
+      </n-popover>
+
+      <div
+        v-show="!config.hideCover"
         class="music-img"
         :style="{ color: textColors.theme === 'dark' ? '#000000' : '#ffffff' }"
       >
@@ -44,16 +64,39 @@
           </div>
         </div>
       </div>
-      <div class="music-content">
+      <div class="music-content" :class="{ center: config.centerLyrics && config.hideCover }">
         <n-layout
           ref="lrcSider"
           class="music-lrc"
-          style="height: 60vh"
+          :style="{
+            height: config.hidePlayBar ? '85vh' : '65vh',
+            width: config.hideCover ? '50vw' : '500px'
+          }"
           :native-scrollbar="false"
           @mouseover="mouseOverLayout"
           @mouseleave="mouseLeaveLayout"
         >
-          <div ref="lrcContainer">
+          <!-- 歌曲信息 -->
+
+          <div ref="lrcContainer" class="music-lrc-container">
+            <div
+              v-if="config.hideCover"
+              class="music-info-header"
+              :style="{ textAlign: config.centerLyrics ? 'center' : 'left' }"
+            >
+              <div class="music-info-name">{{ playMusic.name }}</div>
+              <div class="music-info-singer">
+                <span
+                  v-for="(item, index) in artistList"
+                  :key="index"
+                  class="cursor-pointer hover:text-green-500"
+                  @click="handleArtistClick(item.id)"
+                >
+                  {{ item.name }}
+                  {{ index < artistList.length - 1 ? ' / ' : '' }}
+                </span>
+              </div>
+            </div>
             <div
               v-for="(item, index) in lrcArray"
               :id="`music-lrc-text-${index}`"
@@ -63,7 +106,9 @@
               @click="setAudioTime(index)"
             >
               <span :style="getLrcStyle(index)">{{ item.text }}</span>
-              <div class="music-lrc-text-tr">{{ item.trText }}</div>
+              <div v-show="config.showTranslation" class="music-lrc-text-tr">
+                {{ item.trText }}
+              </div>
             </div>
 
             <!-- 无歌词 -->
@@ -84,9 +129,10 @@
 
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core';
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 
+import LyricSettings from '@/components/lyric/LyricSettings.vue';
 import {
   artistList,
   lrcArray,
@@ -106,6 +152,56 @@ const lrcContainer = ref<HTMLElement | null>(null);
 const currentBackground = ref('');
 const animationFrame = ref<number | null>(null);
 const isDark = ref(false);
+const showStickyHeader = ref(false);
+const lyricSettingsRef = ref<InstanceType<typeof LyricSettings>>();
+
+interface LyricConfig {
+  hideCover: boolean;
+  centerLyrics: boolean;
+  fontSize: number;
+  letterSpacing: number;
+  lineHeight: number;
+  showTranslation: boolean;
+  theme: 'default' | 'light' | 'dark';
+  hidePlayBar: boolean;
+  pureModeEnabled: boolean;
+}
+
+// 移除 computed 配置
+const config = ref<LyricConfig>({
+  hideCover: false,
+  centerLyrics: false,
+  fontSize: 22,
+  letterSpacing: 0,
+  lineHeight: 1.5,
+  showTranslation: true,
+  theme: 'default',
+  hidePlayBar: false,
+  pureModeEnabled: false
+});
+
+// 监听设置组件的配置变化
+watch(
+  () => lyricSettingsRef.value?.config,
+  (newConfig) => {
+    if (newConfig) {
+      config.value = newConfig;
+    }
+  },
+  { deep: true, immediate: true }
+);
+
+// 监听本地配置变化，保存到 localStorage
+watch(
+  () => config.value,
+  (newConfig) => {
+    localStorage.setItem('music-full-config', JSON.stringify(newConfig));
+    if (lyricSettingsRef.value) {
+      lyricSettingsRef.value.config = newConfig;
+    }
+  },
+  { deep: true }
+);
 
 const props = defineProps({
   modelValue: {
@@ -118,6 +214,11 @@ const props = defineProps({
   }
 });
 
+const themeMusic = {
+  light: 'linear-gradient(to bottom, #ffffff, #f5f5f5)',
+  dark: 'linear-gradient(to bottom, #1a1a1a, #000000)'
+};
+
 const emit = defineEmits(['update:modelValue']);
 
 const isVisible = computed({
@@ -126,18 +227,17 @@ const isVisible = computed({
 });
 
 // 歌词滚动方法
-const lrcScroll = (behavior = 'smooth', top: null | number = null) => {
-  const nowEl = document.querySelector(`#music-lrc-text-${nowIndex.value}`);
-  if (isVisible.value && !isMouse.value && nowEl && lrcContainer.value) {
-    if (top !== null) {
-      lrcSider.value.scrollTo({ top, behavior });
-    } else {
-      const containerRect = lrcContainer.value.getBoundingClientRect();
-      const nowElRect = nowEl.getBoundingClientRect();
-      const relativeTop = nowElRect.top - containerRect.top;
-      const scrollTop = relativeTop - lrcSider.value.$el.getBoundingClientRect().height / 2;
-      lrcSider.value.scrollTo({ top: scrollTop, behavior });
-    }
+const lrcScroll = (behavior: ScrollBehavior = 'smooth') => {
+  const nowEl = document.querySelector(`#music-lrc-text-${nowIndex.value}`) as HTMLElement;
+  if (isVisible.value && !isMouse.value && nowEl && lrcSider.value) {
+    const containerHeight = lrcSider.value.$el.clientHeight;
+    const elementTop = nowEl.offsetTop;
+    const scrollTop = elementTop - containerHeight / 2 + nowEl.clientHeight / 2;
+
+    lrcSider.value.scrollTo({
+      top: scrollTop,
+      behavior
+    });
   }
 };
 
@@ -149,6 +249,7 @@ const mouseOverLayout = () => {
   }
   isMouse.value = true;
 };
+
 const mouseLeaveLayout = () => {
   if (isMobile.value) {
     return;
@@ -174,41 +275,51 @@ watch(
   }
 );
 
+const setTextColors = (background: string) => {
+  if (!background) {
+    textColors.value = getTextColors();
+    document.documentElement.style.setProperty('--hover-bg-color', getHoverBackgroundColor(false));
+    document.documentElement.style.setProperty('--text-color-primary', textColors.value.primary);
+    document.documentElement.style.setProperty('--text-color-active', textColors.value.active);
+    return;
+  }
+
+  // 更新文字颜色
+  textColors.value = getTextColors(background);
+  isDark.value = textColors.value.active === '#000000';
+
+  document.documentElement.style.setProperty(
+    '--hover-bg-color',
+    getHoverBackgroundColor(isDark.value)
+  );
+  document.documentElement.style.setProperty('--text-color-primary', textColors.value.primary);
+  document.documentElement.style.setProperty('--text-color-active', textColors.value.active);
+
+  // 处理背景颜色动画
+  if (currentBackground.value) {
+    if (animationFrame.value) {
+      cancelAnimationFrame(animationFrame.value);
+    }
+    const result = animateGradient(currentBackground.value, background, (gradient) => {
+      currentBackground.value = gradient;
+    });
+    if (typeof result === 'number') {
+      animationFrame.value = result;
+    }
+  } else {
+    currentBackground.value = background;
+  }
+};
+
 // 监听背景变化
 watch(
   () => props.background,
   (newBg) => {
-    if (!newBg) {
-      textColors.value = getTextColors();
-      document.documentElement.style.setProperty(
-        '--hover-bg-color',
-        getHoverBackgroundColor(false)
-      );
-      document.documentElement.style.setProperty('--text-color-primary', textColors.value.primary);
-      document.documentElement.style.setProperty('--text-color-active', textColors.value.active);
-      return;
-    }
-
-    if (currentBackground.value) {
-      if (animationFrame.value) {
-        cancelAnimationFrame(animationFrame.value);
-      }
-      animationFrame.value = animateGradient(currentBackground.value, newBg, (gradient) => {
-        currentBackground.value = gradient;
-      });
+    if (config.value.theme === 'default') {
+      setTextColors(newBg);
     } else {
-      currentBackground.value = newBg;
+      setTextColors(themeMusic[config.value.theme] || props.background);
     }
-
-    textColors.value = getTextColors(newBg);
-    isDark.value = textColors.value.active === '#000000';
-
-    document.documentElement.style.setProperty(
-      '--hover-bg-color',
-      getHoverBackgroundColor(isDark.value)
-    );
-    document.documentElement.style.setProperty('--text-color-primary', textColors.value.primary);
-    document.documentElement.style.setProperty('--text-color-active', textColors.value.active);
   },
   { immediate: true }
 );
@@ -290,8 +401,87 @@ watch(
   { immediate: true }
 );
 
+// 监听配置变化并保存到本地存储
+watch(
+  () => config.value,
+  (newConfig) => {
+    localStorage.setItem('music-full-config', JSON.stringify(newConfig));
+  },
+  { deep: true }
+);
+
+// 监听滚动事件
+const handleScroll = () => {
+  if (!lrcSider.value || !config.value.hideCover) return;
+  const { scrollTop } = lrcSider.value.$el;
+  showStickyHeader.value = scrollTop > 100;
+};
+
+// 添加滚动监听
+onMounted(() => {
+  if (lrcSider.value?.$el) {
+    lrcSider.value.$el.addEventListener('scroll', handleScroll);
+  }
+});
+
+// 移除滚动监听
+onBeforeUnmount(() => {
+  if (animationFrame.value) {
+    cancelAnimationFrame(animationFrame.value);
+  }
+  if (lrcSider.value?.$el) {
+    lrcSider.value.$el.removeEventListener('scroll', handleScroll);
+  }
+});
+
+// 监听字体大小变化
+watch(
+  () => config.value.fontSize,
+  (newSize) => {
+    document.documentElement.style.setProperty('--lyric-font-size', `${newSize}px`);
+  }
+);
+
+// 监听主题变化
+watch(
+  () => config.value.theme,
+  (newTheme) => {
+    const newBackground = themeMusic[newTheme] || props.background;
+    setTextColors(newBackground);
+  },
+  { immediate: true }
+);
+
+// 添加文字间距监听
+watch(
+  () => config.value.letterSpacing,
+  (newSpacing) => {
+    document.documentElement.style.setProperty('--lyric-letter-spacing', `${newSpacing}px`);
+  }
+);
+
+// 添加行高监听
+watch(
+  () => config.value.lineHeight,
+  (newLineHeight) => {
+    document.documentElement.style.setProperty('--lyric-line-height', newLineHeight.toString());
+  }
+);
+
+// 加载保存的配置
+onMounted(() => {
+  const savedConfig = localStorage.getItem('music-full-config');
+  if (savedConfig) {
+    config.value = { ...config.value, ...JSON.parse(savedConfig) };
+  }
+  if (lrcSider.value?.$el) {
+    lrcSider.value.$el.addEventListener('scroll', handleScroll);
+  }
+});
+
 defineExpose({
-  lrcScroll
+  lrcScroll,
+  config
 });
 </script>
 
@@ -318,7 +508,7 @@ defineExpose({
 }
 
 #drawer-target {
-  @apply top-0 left-0 absolute overflow-hidden rounded px-24 flex items-center justify-center w-full h-full pb-8;
+  @apply top-0 left-0 absolute overflow-hidden rounded px-24 flex items-center justify-center w-full h-full py-8;
   animation-duration: 300ms;
 
   .music-img {
@@ -326,12 +516,23 @@ defineExpose({
     max-width: 360px;
     max-height: 360px;
     .img {
-      @apply rounded-xl w-full h-full  shadow-2xl;
+      @apply rounded-xl w-full h-full shadow-2xl;
     }
   }
 
   .music-content {
     @apply flex flex-col justify-center items-center relative;
+    width: 500px;
+
+    &.center {
+      @apply w-full;
+      .music-lrc {
+        @apply w-full max-w-3xl mx-auto;
+      }
+      .music-lrc-text {
+        @apply text-center;
+      }
+    }
 
     &-name {
       @apply font-bold text-2xl pb-1 pt-4;
@@ -346,15 +547,46 @@ defineExpose({
     display: none;
     @apply flex justify-center items-center;
   }
+
+  .music-lrc-container {
+    padding-top: 30vh;
+  }
+
   .music-lrc {
     background-color: inherit;
     width: 500px;
     height: 550px;
+    position: relative;
     mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      black 10%,
+      black 90%,
+      transparent 100%
+    );
+
+    .music-info-header {
+      @apply mb-8;
+
+      .music-info-name {
+        @apply text-4xl font-bold mb-2;
+        color: var(--text-color-active);
+      }
+
+      .music-info-singer {
+        @apply text-base;
+        color: var(--text-color-primary);
+      }
+    }
+
     &-text {
       @apply text-2xl cursor-pointer font-bold px-2 py-4;
       transition: all 0.3s ease;
       background-color: transparent;
+      font-size: var(--lyric-font-size, 22px) !important;
+      letter-spacing: var(--lyric-letter-spacing, 0) !important;
+      line-height: var(--lyric-line-height, 2) !important;
 
       span {
         background-clip: text !important;
@@ -415,11 +647,49 @@ defineExpose({
 }
 
 #drawer-target {
-  @apply top-0 left-0 absolute overflow-hidden rounded px-24 flex items-center justify-center w-full h-full pb-8;
+  @apply top-0 left-0 absolute overflow-hidden rounded px-24 flex items-center justify-center w-full h-full py-8;
   animation-duration: 300ms;
 
   .music-lrc-text {
     font-family: var(--current-font-family);
+  }
+}
+
+.close-btn {
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.control-btn {
+  @apply w-9 h-9 flex items-center justify-center rounded cursor-pointer transition-all duration-300;
+  background: rgba(142, 142, 142, 0.192);
+  backdrop-filter: blur(12px);
+
+  i {
+    @apply text-xl;
+    color: var(--text-color-active);
+  }
+
+  &.pure-mode {
+    background: transparent;
+    backdrop-filter: none;
+
+    &:not(:hover) {
+      i {
+        opacity: 0;
+      }
+    }
+  }
+
+  &:hover {
+    background: rgba(126, 121, 121, 0.2);
+    i {
+      opacity: 1;
+    }
   }
 }
 </style>

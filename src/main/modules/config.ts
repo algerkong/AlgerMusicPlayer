@@ -4,26 +4,28 @@ import Store from 'electron-store';
 import set from '../set.json';
 import { defaultShortcuts } from './shortcuts';
 
-interface StoreType {
-  set: {
-    isProxy: boolean;
-    noAnimate: boolean;
-    animationSpeed: number;
-    author: string;
-    authorUrl: string;
-    musicApiPort: number;
-    closeAction: 'ask' | 'minimize' | 'close';
-    musicQuality: string;
-    fontFamily: string;
-    proxyConfig: {
-      enable: boolean;
-      protocol: string;
-      host: string;
-      port: number;
-    };
-    enableRealIP: boolean;
-    realIP: string;
+type SetConfig = {
+  isProxy: boolean;
+  proxyConfig: {
+    enable: boolean;
+    protocol: string;
+    host: string;
+    port: number;
   };
+  enableRealIP: boolean;
+  realIP: string;
+  noAnimate: boolean;
+  animationSpeed: number;
+  author: string;
+  authorUrl: string;
+  musicApiPort: number;
+  closeAction: 'ask' | 'minimize' | 'close';
+  musicQuality: string;
+  fontFamily: string;
+  fontScope: 'global' | 'lyric';
+};
+interface StoreType {
+  set: SetConfig;
   shortcuts: typeof defaultShortcuts;
 }
 
@@ -36,7 +38,7 @@ export function initializeConfig() {
   store = new Store<StoreType>({
     name: 'config',
     defaults: {
-      set,
+      set: set as SetConfig,
       shortcuts: defaultShortcuts
     }
   });

@@ -1,9 +1,13 @@
 <template>
   <div
     class="music-play-bar"
-    :class="
-      setAnimationClass('animate__bounceInUp') + ' ' + (musicFullVisible ? 'play-bar-opcity' : '')
-    "
+    :class="[
+      setAnimationClass('animate__bounceInUp'),
+      musicFullVisible ? 'play-bar-opcity' : '',
+      musicFullVisible && MusicFullRef?.config?.hidePlayBar
+        ? 'animate__animated animate__slideOutDown'
+        : ''
+    ]"
     :style="{
       color: musicFullVisible
         ? textColors.theme === 'dark'
@@ -25,7 +29,7 @@
     </div>
     <div class="play-bar-img-wrapper" @click="setMusicFull">
       <n-image
-        :src="getImgUrl(playMusic?.picUrl, '500y500')"
+        :src="getImgUrl(playMusic?.picUrl, '100y100')"
         class="play-bar-img"
         lazy
         preview-disabled
@@ -164,10 +168,10 @@ import {
   sound,
   textColors
 } from '@/hooks/MusicHook';
+import { audioService } from '@/services/audioService';
 import type { SongResult } from '@/type/music';
 import { getImgUrl, isElectron, isMobile, secondToMinute, setAnimationClass } from '@/utils';
 import { showShortcutToast } from '@/utils/shortcutToast';
-import { audioService } from '@/services/audioService';
 
 import MusicFull from './MusicFull.vue';
 
@@ -292,7 +296,7 @@ const playMusicEvent = async () => {
       store.commit('setPlayMusic', true);
     }
   } catch (error) {
-    console.log('error',error)
+    console.log('error', error);
     if (play.value) {
       store.commit('nextPlay');
     }
@@ -386,6 +390,16 @@ if (isElectron) {
     }
   });
 }
+
+// 监听播放栏显示状态
+watch(
+  () => MusicFullRef.value?.config?.hidePlayBar,
+  (newVal) => {
+    if (newVal && musicFullVisible.value) {
+      // 使用 animate.css 动画，不需要手动设置样式
+    }
+  }
+);
 </script>
 
 <style lang="scss" scoped>
@@ -399,6 +413,16 @@ if (isElectron) {
   z-index: 9999;
   animation-duration: 0.5s !important;
 
+  &.play-bar-opcity {
+    @apply bg-transparent !important;
+    box-shadow: 0 0 20px 5px #0000001d;
+  }
+
+  &.animate__slideOutDown {
+    animation-duration: 0.3s !important;
+    pointer-events: none;
+  }
+
   .music-content {
     width: 160px;
     @apply ml-4;
@@ -411,11 +435,6 @@ if (isElectron) {
       @apply text-xs mt-1 opacity-80;
     }
   }
-}
-
-.play-bar-opcity {
-  @apply bg-transparent !important;
-  box-shadow: 0 0 20px 5px #0000001d;
 }
 
 .play-bar-img {

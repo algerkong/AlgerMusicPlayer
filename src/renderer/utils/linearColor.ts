@@ -1,6 +1,15 @@
+import { useDebounceFn } from '@vueuse/core';
+import tinycolor from 'tinycolor2';
+
 interface IColor {
   backgroundColor: string;
   primaryColor: string;
+}
+
+interface ITextColors {
+  primary: string;
+  active: string;
+  theme: string;
 }
 
 export const getImageLinearBackground = async (imageSrc: string): Promise<IColor> => {
@@ -96,124 +105,41 @@ const getAverageColor = (data: Uint8ClampedArray): number[] => {
 };
 
 const generateGradientBackground = (color: string): string => {
-  const [r, g, b] = color.match(/\d+/g)?.map(Number) || [0, 0, 0];
-  const [h, s, l] = rgbToHsl(r, g, b);
+  const tc = tinycolor(color);
+  const hsl = tc.toHsl();
 
   // 增加亮度和暗度的差异
-  const lightL = Math.min(l + 0.2, 0.95);
-  const darkL = Math.max(l - 0.3, 0.05);
-  const midL = (lightL + darkL) / 2;
+  const lightColor = tinycolor({ h: hsl.h, s: hsl.s * 0.8, l: Math.min(hsl.l + 0.2, 0.95) });
+  const midColor = tinycolor({ h: hsl.h, s: hsl.s, l: hsl.l });
+  const darkColor = tinycolor({
+    h: hsl.h,
+    s: Math.min(hsl.s * 1.2, 1),
+    l: Math.max(hsl.l - 0.3, 0.05)
+  });
 
-  // 调整饱和度以增强效果
-  const lightS = Math.min(s * 0.8, 1);
-  const darkS = Math.min(s * 1.2, 1);
-
-  const [lightR, lightG, lightB] = hslToRgb(h, lightS, lightL);
-  const [midR, midG, midB] = hslToRgb(h, s, midL);
-  const [darkR, darkG, darkB] = hslToRgb(h, darkS, darkL);
-
-  const lightColor = `rgb(${lightR}, ${lightG}, ${lightB})`;
-  const midColor = `rgb(${midR}, ${midG}, ${midB})`;
-  const darkColor = `rgb(${darkR}, ${darkG}, ${darkB})`;
-
-  // 使用三个颜色点创建更丰富的渐变
-  return `linear-gradient(to bottom, ${lightColor} 0%, ${midColor} 50%, ${darkColor} 100%)`;
-};
-
-// Helper functions (unchanged)
-function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
-  r /= 255;
-  g /= 255;
-  b /= 255;
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  let h = 0;
-  let s;
-  const l = (max + min) / 2;
-
-  if (max === min) {
-    h = s = 0;
-  } else {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r:
-        h = (g - b) / d + (g < b ? 6 : 0);
-        break;
-      case g:
-        h = (b - r) / d + 2;
-        break;
-      case b:
-        h = (r - g) / d + 4;
-        break;
-      default:
-        break;
-    }
-    h /= 6;
-  }
-
-  return [h, s, l];
-}
-
-function hslToRgb(h: number, s: number, l: number): [number, number, number] {
-  let r;
-  let g;
-  let b;
-
-  if (s === 0) {
-    r = g = b = l;
-  } else {
-    const hue2rgb = (p: number, q: number, t: number) => {
-      if (t < 0) t += 1;
-      if (t > 1) t -= 1;
-      if (t < 1 / 6) return p + (q - p) * 6 * t;
-      if (t < 1 / 2) return q;
-      if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-      return p;
-    };
-
-    const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-    const p = 2 * l - q;
-    r = hue2rgb(p, q, h + 1 / 3);
-    g = hue2rgb(p, q, h);
-    b = hue2rgb(p, q, h - 1 / 3);
-  }
-
-  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
-}
-
-// 添加新的接口
-interface ITextColors {
-  primary: string;
-  active: string;
-  theme: string;
-}
-
-// 添加新的函数
-export const calculateBrightness = (r: number, g: number, b: number): number => {
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return `linear-gradient(to bottom, ${lightColor.toRgbString()} 0%, ${midColor.toRgbString()} 50%, ${darkColor.toRgbString()} 100%)`;
 };
 
 export const parseGradient = (gradientStr: string) => {
-  const matches = gradientStr.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/g);
-  if (!matches) return [];
-  return matches.map((rgb) => {
-    const [r, g, b] = rgb.match(/\d+/g)!.map(Number);
-    return { r, g, b };
+  if (!gradientStr) return [];
+
+  // 处理非渐变色
+  if (!gradientStr.startsWith('linear-gradient')) {
+    const color = tinycolor(gradientStr);
+    if (color.isValid()) {
+      const rgb = color.toRgb();
+      return [{ r: rgb.r, g: rgb.g, b: rgb.b }];
+    }
+    return [];
+  }
+
+  // 处理渐变色，支持 rgb、rgba 和十六进制颜色
+  const colorMatches = gradientStr.match(/(?:(?:rgb|rgba)\([^)]+\)|#[0-9a-fA-F]{3,8})/g) || [];
+  return colorMatches.map((color) => {
+    const tc = tinycolor(color);
+    const rgb = tc.toRgb();
+    return { r: rgb.r, g: rgb.g, b: rgb.b };
   });
-};
-
-export const interpolateRGB = (start: number, end: number, progress: number) => {
-  return Math.round(start + (end - start) * progress);
-};
-
-export const createGradientString = (
-  colors: { r: number; g: number; b: number }[],
-  percentages = [0, 50, 100]
-) => {
-  return `linear-gradient(to bottom, ${colors
-    .map((color, i) => `rgb(${color.r}, ${color.g}, ${color.b}) ${percentages[i]}%`)
-    .join(', ')})`;
 };
 
 export const getTextColors = (gradient: string = ''): ITextColors => {
@@ -226,11 +152,12 @@ export const getTextColors = (gradient: string = ''): ITextColors => {
   if (!gradient) return defaultColors;
 
   const colors = parseGradient(gradient);
+  console.log('colors', colors);
   if (!colors.length) return defaultColors;
 
-  const mainColor = colors[1] || colors[0];
-  const brightness = calculateBrightness(mainColor.r, mainColor.g, mainColor.b);
-  const isDark = brightness > 0.6;
+  const mainColor = colors.length === 1 ? colors[0] : colors[1] || colors[0];
+  const tc = tinycolor(mainColor);
+  const isDark = tc.getBrightness() > 155; // tinycolor 的亮度范围是 0-255
 
   return {
     primary: isDark ? 'rgba(0, 0, 0, 0.54)' : 'rgba(255, 255, 255, 0.54)',
@@ -243,35 +170,130 @@ export const getHoverBackgroundColor = (isDark: boolean): string => {
   return isDark ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)';
 };
 
-export const animateGradient = (
-  oldGradient: string,
-  newGradient: string,
-  onUpdate: (gradient: string) => void,
-  duration = 1000
-) => {
-  const startColors = parseGradient(oldGradient);
-  const endColors = parseGradient(newGradient);
-  if (startColors.length !== endColors.length) return null;
+export const animateGradient = (() => {
+  let currentAnimation: number | null = null;
+  let isAnimating = false;
+  let lastProgress = 0;
 
-  const startTime = performance.now();
-
-  const animate = (currentTime: number) => {
-    const elapsed = currentTime - startTime;
-    const progress = Math.min(elapsed / duration, 1);
-
-    const currentColors = startColors.map((startColor, i) => ({
-      r: interpolateRGB(startColor.r, endColors[i].r, progress),
-      g: interpolateRGB(startColor.g, endColors[i].g, progress),
-      b: interpolateRGB(startColor.b, endColors[i].b, progress)
-    }));
-
-    onUpdate(createGradientString(currentColors));
-
-    if (progress < 1) {
-      return requestAnimationFrame(animate);
-    }
-    return null;
+  const validateColors = (colors: ReturnType<typeof parseGradient>) => {
+    return colors.every(
+      (color) =>
+        typeof color.r === 'number' &&
+        typeof color.g === 'number' &&
+        typeof color.b === 'number' &&
+        !Number.isNaN(color.r) &&
+        !Number.isNaN(color.g) &&
+        !Number.isNaN(color.b)
+    );
   };
 
-  return requestAnimationFrame(animate);
+  const easeInOutCubic = (x: number): number => {
+    return x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2;
+  };
+
+  const animate = (
+    oldGradient: string,
+    newGradient: string,
+    onUpdate: (gradient: string) => void,
+    duration = 300
+  ) => {
+    // 如果新旧渐变色相同，不执行动画
+    if (oldGradient === newGradient) {
+      return null;
+    }
+
+    // 如果正在动画中，取消当前动画
+    if (currentAnimation !== null) {
+      cancelAnimationFrame(currentAnimation);
+      currentAnimation = null;
+    }
+
+    // 解析颜色
+    const startColors = parseGradient(oldGradient);
+    const endColors = parseGradient(newGradient);
+
+    // 验证颜色数组
+    if (
+      !startColors.length ||
+      !endColors.length ||
+      !validateColors(startColors) ||
+      !validateColors(endColors)
+    ) {
+      console.warn('Invalid color values detected');
+      onUpdate(newGradient); // 直接更新到目标颜色
+      return null;
+    }
+
+    // 如果颜色数量不匹配，直接更新到目标颜色
+    if (startColors.length !== endColors.length) {
+      onUpdate(newGradient);
+      return null;
+    }
+
+    isAnimating = true;
+    const startTime = performance.now();
+
+    const animateFrame = (currentTime: number) => {
+      if (!isAnimating) return null;
+
+      const elapsed = currentTime - startTime;
+      const rawProgress = Math.min(elapsed / duration, 1);
+      // 使用缓动函数使动画更平滑
+      const progress = easeInOutCubic(rawProgress);
+
+      try {
+        // 使用上一帧的进度来平滑过渡
+        const effectiveProgress = lastProgress + (progress - lastProgress) * 0.6;
+        lastProgress = effectiveProgress;
+
+        const currentColors = startColors.map((startColor, i) => {
+          const start = tinycolor(startColor);
+          const end = tinycolor(endColors[i]);
+          return tinycolor.mix(start, end, effectiveProgress * 100);
+        });
+
+        const gradientString = createGradientString(
+          currentColors.map((c) => {
+            const rgb = c.toRgb();
+            return { r: rgb.r, g: rgb.g, b: rgb.b };
+          })
+        );
+
+        onUpdate(gradientString);
+
+        if (rawProgress < 1) {
+          currentAnimation = requestAnimationFrame(animateFrame);
+          return currentAnimation;
+        }
+        // 确保最终颜色正确
+        onUpdate(newGradient);
+        isAnimating = false;
+        currentAnimation = null;
+        lastProgress = 0;
+        return null;
+      } catch (error) {
+        console.error('Animation error:', error);
+        onUpdate(newGradient);
+        isAnimating = false;
+        currentAnimation = null;
+        lastProgress = 0;
+        return null;
+      }
+    };
+
+    currentAnimation = requestAnimationFrame(animateFrame);
+    return currentAnimation;
+  };
+
+  // 使用更短的防抖时间
+  return useDebounceFn(animate, 50);
+})();
+
+export const createGradientString = (
+  colors: { r: number; g: number; b: number }[],
+  percentages = [0, 50, 100]
+) => {
+  return `linear-gradient(to bottom, ${colors
+    .map((color, i) => `rgb(${color.r}, ${color.g}, ${color.b}) ${percentages[i]}%`)
+    .join(', ')})`;
 };
