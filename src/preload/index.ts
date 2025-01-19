@@ -12,6 +12,18 @@ const api = {
   openLyric: () => ipcRenderer.send('open-lyric'),
   sendLyric: (data) => ipcRenderer.send('send-lyric', data),
   unblockMusic: (id) => ipcRenderer.invoke('unblock-music', id),
+  // 更新相关
+  startDownload: (url: string) => ipcRenderer.send('start-download', url),
+  onDownloadProgress: (callback: (progress: number, status: string) => void) => {
+    ipcRenderer.on('download-progress', (_event, progress, status) => callback(progress, status));
+  },
+  onDownloadComplete: (callback: (success: boolean, filePath: string) => void) => {
+    ipcRenderer.on('download-complete', (_event, success, filePath) => callback(success, filePath));
+  },
+  removeDownloadListeners: () => {
+    ipcRenderer.removeAllListeners('download-progress');
+    ipcRenderer.removeAllListeners('download-complete');
+  },
   // 歌词缓存相关
   invoke: (channel: string, ...args: any[]) => {
     const validChannels = [
