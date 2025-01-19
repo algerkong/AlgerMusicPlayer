@@ -298,7 +298,7 @@ const getItemAnimationDelay = (index: number) => {
 
 const router = useRouter();
 const handleMore = () => {
-  router.push('/favorite');
+  router.push('/history');
 };
 
 // 全选相关
