@@ -227,9 +227,21 @@ const isVisible = computed({
 });
 
 // 歌词滚动方法
-const lrcScroll = (behavior: ScrollBehavior = 'smooth') => {
+const lrcScroll = (behavior: ScrollBehavior = 'smooth', forceTop: boolean = false) => {
+  if (!isVisible.value || !lrcSider.value) return;
+
+  if (forceTop) {
+    lrcSider.value.scrollTo({
+      top: 0,
+      behavior
+    });
+    return;
+  }
+
+  if (isMouse.value) return;
+
   const nowEl = document.querySelector(`#music-lrc-text-${nowIndex.value}`) as HTMLElement;
-  if (isVisible.value && !isMouse.value && nowEl && lrcSider.value) {
+  if (nowEl) {
     const containerHeight = lrcSider.value.$el.clientHeight;
     const elementTop = nowEl.offsetTop;
     const scrollTop = elementTop - containerHeight / 2 + nowEl.clientHeight / 2;
@@ -477,6 +489,13 @@ onMounted(() => {
   if (lrcSider.value?.$el) {
     lrcSider.value.$el.addEventListener('scroll', handleScroll);
   }
+});
+
+// 添加对 playMusic 的监听
+watch(playMusic, () => {
+  nextTick(() => {
+    lrcScroll('instant', true);
+  });
 });
 
 defineExpose({

@@ -152,7 +152,6 @@ export const getTextColors = (gradient: string = ''): ITextColors => {
   if (!gradient) return defaultColors;
 
   const colors = parseGradient(gradient);
-  console.log('colors', colors);
   if (!colors.length) return defaultColors;
 
   const mainColor = colors.length === 1 ? colors[0] : colors[1] || colors[0];
