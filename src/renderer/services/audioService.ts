@@ -154,7 +154,7 @@ class AudioService {
               ? parseFloat(localStorage.getItem('volume') as string)
               : 1,
             format: ['mp3', 'aac'],
-            onloaderror: (id, error) => {
+            onloaderror: (_, error) => {
               console.error('Audio load error:', error);
               if (retryCount < maxRetries) {
                 retryCount++;
@@ -164,7 +164,7 @@ class AudioService {
                 reject(new Error('音频加载失败，请尝试切换其他歌曲'));
               }
             },
-            onplayerror: (id, error) => {
+            onplayerror: (_, error) => {
               console.error('Audio play error:', error);
               if (retryCount < maxRetries) {
                 retryCount++;
