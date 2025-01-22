@@ -4,7 +4,6 @@ import setData from '@/../main/set.json';
 import { getLikedList, likeSong } from '@/api/music';
 import { useMusicListHook } from '@/hooks/MusicListHook';
 import homeRouter from '@/router/home';
-import { audioService } from '@/services/audioService';
 import type { SongResult } from '@/type/music';
 import { isElectron } from '@/utils';
 import { applyTheme, getCurrentTheme, ThemeType } from '@/utils/theme';
@@ -152,6 +151,27 @@ const mutations = {
   },
   async prevPlay(state: State) {
     await prevPlay(state);
+  },
+  // 添加到下一首播放
+  addToNextPlay(state: State, song: SongResult) {
+    const playList = [...state.playList];
+    const currentIndex = state.playListIndex;
+
+    // 检查歌曲是否已经在播放列表中
+    const existingIndex = playList.findIndex((item) => item.id === song.id);
+    if (existingIndex !== -1) {
+      // 如果歌曲已经在列表中，将其移动到当前播放歌曲的下一个位置
+      playList.splice(existingIndex, 1);
+    }
+
+    // 在当前播放歌曲后插入新歌曲
+    playList.splice(currentIndex + 1, 0, song);
+
+    // 更新播放列表
+    state.playList = playList;
+    state.playListIndex = playList.findIndex((item) => item.id === state.playMusic.id);
+    localStorage.setItem('playList', JSON.stringify(playList));
+    localStorage.setItem('playListIndex', state.playListIndex.toString());
   },
   setSetData(state: State, setData: any) {
     state.setData = setData;

@@ -134,6 +134,11 @@ const isDownloading = ref(false);
 
 const dropdownOptions = computed<MenuOption[]>(() => [
   {
+    label: '下一首播放',
+    key: 'playNext',
+    icon: () => h('i', { class: 'iconfont ri-play-list-2-line' })
+  },
+  {
     label: isDownloading.value ? '下载中...' : `下载 ${props.item.name}`,
     key: 'download',
     icon: () => h('i', { class: 'iconfont ri-download-line' }),
@@ -152,6 +157,8 @@ const handleSelect = (key: string | number) => {
   showDropdown.value = false;
   if (key === 'download') {
     downloadMusic();
+  } else if (key === 'playNext') {
+    handlePlayNext();
   }
 };
 
@@ -281,6 +288,12 @@ const handleArtistClick = (id: number) => {
 const artists = computed(() => {
   return (props.item.ar || props.item.song?.artists)?.slice(0, 4) || [];
 });
+
+// 添加到下一首播放
+const handlePlayNext = () => {
+  store.commit('addToNextPlay', props.item);
+  message.success('已添加到下一首播放');
+};
 </script>
 
 <style lang="scss" scoped>
