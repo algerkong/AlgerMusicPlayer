@@ -44,19 +44,14 @@ request.interceptors.request.use(
 
     // 在请求发送之前做一些处理
     // 在get请求params中添加timestamp
-    if (config.method === 'get') {
-      config.params = {
-        ...config.params,
-        timestamp: Date.now()
-      };
-      const token = localStorage.getItem('token');
-      if (token) {
-        config.params.cookie = `${token} os=pc;`;
-      } else {
-        config.params.cookie = 'os=pc;';
-      }
+    config.params = {
+      ...config.params,
+      timestamp: Date.now()
+    };
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.params.cookie = `${token} os=pc;`;
     }
-
     if (isElectron) {
       const proxyConfig = setData?.proxyConfig;
       if (proxyConfig?.enable && ['http', 'https'].includes(proxyConfig?.protocol)) {

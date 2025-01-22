@@ -73,9 +73,10 @@
     <n-dropdown
       v-if="isElectron"
       :show="showDropdown"
-      :options="dropdownOptions"
       :x="dropdownX"
       :y="dropdownY"
+      :options="dropdownOptions"
+      :z-index="99999"
       placement="bottom-start"
       @clickoutside="showDropdown = false"
       @select="handleSelect"
@@ -86,8 +87,8 @@
 <script lang="ts" setup>
 import { cloneDeep } from 'lodash';
 import type { MenuOption } from 'naive-ui';
-import { useMessage } from 'naive-ui';
-import { computed, h, ref, useTemplateRef } from 'vue';
+import { NImage, NText, useMessage } from 'naive-ui';
+import { computed, h, inject, ref, useTemplateRef } from 'vue';
 import { useStore } from 'vuex';
 
 import { getSongUrl } from '@/hooks/MusicListHook';
@@ -104,13 +105,15 @@ const props = withDefaults(
     favorite?: boolean;
     selectable?: boolean;
     selected?: boolean;
+    canRemove?: boolean;
   }>(),
   {
     mini: false,
     list: false,
     favorite: true,
     selectable: false,
-    selected: false
+    selected: false,
+    canRemove: false
   }
 );
 
@@ -132,19 +135,109 @@ const dropdownY = ref(0);
 
 const isDownloading = ref(false);
 
-const dropdownOptions = computed<MenuOption[]>(() => [
-  {
-    label: '下一首播放',
-    key: 'playNext',
-    icon: () => h('i', { class: 'iconfont ri-play-list-2-line' })
-  },
-  {
-    label: isDownloading.value ? '下载中...' : `下载 ${props.item.name}`,
-    key: 'download',
-    icon: () => h('i', { class: 'iconfont ri-download-line' }),
-    disabled: isDownloading.value
+const openPlaylistDrawer = inject<(songId: number) => void>('openPlaylistDrawer');
+
+const renderSongPreview = () => {
+  return h(
+    'div',
+    {
+      class: 'flex items-center gap-3 px-2 py-1 dark:border-gray-800'
+    },
+    [
+      h(NImage, {
+        src: getImgUrl(props.item.picUrl || props.item.al?.picUrl, '100y100'),
+        class: 'w-10 h-10 rounded-lg flex-shrink-0',
+        previewDisabled: true,
+        imgProps: {
+          crossorigin: 'anonymous'
+        }
+      }),
+      h(
+        'div',
+        {
+          class: 'flex-1 min-w-0 py-1'
+        },
+        [
+          h(
+            'div',
+            {
+              class: 'mb-1'
+            },
+            [
+              h(
+                NText,
+                {
+                  depth: 1,
+                  class: 'text-sm font-medium'
+                },
+                {
+                  default: () => props.item.name
+                }
+              )
+            ]
+          )
+        ]
+      )
+    ]
+  );
+};
+
+const dropdownOptions = computed<MenuOption[]>(() => {
+  const options: MenuOption[] = [
+    {
+      key: 'header',
+      type: 'render',
+      render: renderSongPreview
+    },
+    {
+      key: 'divider1',
+      type: 'divider'
+    },
+    {
+      label: '播放',
+      key: 'play',
+      icon: () => h('i', { class: 'iconfont ri-play-circle-line' })
+    },
+    {
+      label: '下一首播放',
+      key: 'playNext',
+      icon: () => h('i', { class: 'iconfont ri-play-list-2-line' })
+    },
+    {
+      type: 'divider',
+      key: 'd1'
+    },
+    {
+      label: '添加到歌单',
+      key: 'addToPlaylist',
+      icon: () => h('i', { class: 'iconfont ri-folder-add-line' })
+    },
+    {
+      label: isFavorite.value ? '取消喜欢' : '喜欢',
+      key: 'favorite',
+      icon: () =>
+        h('i', {
+          class: `iconfont ${isFavorite.value ? 'ri-heart-fill text-red-500' : 'ri-heart-line'}`
+        })
+    }
+  ];
+
+  if (props.canRemove) {
+    options.push(
+      {
+        type: 'divider',
+        key: 'd2'
+      },
+      {
+        label: '从歌单中删除',
+        key: 'remove',
+        icon: () => h('i', { class: 'iconfont ri-delete-bin-line' })
+      }
+    );
   }
-]);
+
+  return options;
+});
 
 const handleContextMenu = (e: MouseEvent) => {
   e.preventDefault();
@@ -159,6 +252,14 @@ const handleSelect = (key: string | number) => {
     downloadMusic();
   } else if (key === 'playNext') {
     handlePlayNext();
+  } else if (key === 'addToPlaylist') {
+    openPlaylistDrawer?.(props.item.id);
+  } else if (key === 'favorite') {
+    toggleFavorite(new Event('click'));
+  } else if (key === 'play') {
+    playMusicEvent(props.item);
+  } else if (key === 'remove') {
+    emits('remove-song', props.item.id);
   }
 };
 
@@ -229,7 +330,7 @@ const downloadMusic = async () => {
   }
 };
 
-const emits = defineEmits(['play', 'select']);
+const emits = defineEmits(['play', 'select', 'remove-song']);
 const songImageRef = useTemplateRef('songImg');
 
 const imageLoad = async () => {
@@ -462,5 +563,57 @@ const handlePlayNext = () => {
       }
     }
   }
+}
+
+:deep(.n-dropdown-menu) {
+  @apply min-w-[240px] overflow-hidden rounded-lg border dark:border-gray-800;
+
+  .n-dropdown-option {
+    @apply h-9 text-sm;
+
+    &:hover {
+      @apply bg-gray-100 dark:bg-gray-800;
+    }
+
+    .n-dropdown-option-body {
+      @apply h-full;
+
+      .n-dropdown-option-body__prefix {
+        @apply w-8 flex justify-center items-center;
+
+        .iconfont {
+          @apply text-base;
+        }
+      }
+    }
+  }
+
+  .n-dropdown-divider {
+    @apply my-1;
+  }
+}
+
+:deep(.song-preview) {
+  @apply flex items-center gap-3 p-3 border-b dark:border-gray-800;
+
+  .n-image {
+    @apply w-12 h-12 rounded-lg flex-shrink-0;
+  }
+
+  .song-preview-info {
+    @apply flex-1 min-w-0 py-1;
+
+    .song-preview-name {
+      @apply text-sm font-medium truncate mb-1;
+    }
+
+    .song-preview-artist {
+      @apply text-xs text-gray-500 dark:text-gray-400 truncate;
+    }
+  }
+}
+
+:deep(.n-dropdown-option-body--render) {
+  @apply p-0;
 }
 </style>

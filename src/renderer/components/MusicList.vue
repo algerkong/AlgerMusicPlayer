@@ -59,7 +59,12 @@
                     :class="setAnimationClass('animate__bounceInUp')"
                     :style="getItemAnimationDelay(index)"
                   >
-                    <song-item :item="formatDetail(item)" @play="handlePlay" />
+                    <song-item
+                      :item="formatDetail(item)"
+                      :can-remove="canRemove"
+                      @play="handlePlay"
+                      @remove-song="(id) => emit('remove-song', id)"
+                    />
                   </div>
                   <div v-if="isLoadingMore" class="loading-more">加载更多...</div>
                   <play-bottom />
@@ -97,15 +102,17 @@ const props = withDefaults(
       [key: string]: any;
     };
     cover?: boolean;
+    canRemove?: boolean;
   }>(),
   {
     loading: false,
     cover: true,
-    zIndex: 9996
+    zIndex: 9996,
+    canRemove: false
   }
 );
 
-const emit = defineEmits(['update:show', 'update:loading']);
+const emit = defineEmits(['update:show', 'update:loading', 'remove-song']);
 
 const page = ref(0);
 const pageSize = 20;

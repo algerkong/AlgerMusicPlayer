@@ -32,11 +32,12 @@
     <install-app-modal v-if="!isElectron"></install-app-modal>
     <update-modal v-if="isElectron" />
     <artist-drawer ref="artistDrawerRef" :show="artistDrawerShow" />
+    <playlist-drawer v-model="showPlaylistDrawer" :song-id="currentSongId" />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, defineAsyncComponent, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, nextTick, onMounted, provide, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 
@@ -63,6 +64,7 @@ const SearchBar = defineAsyncComponent(() => import('./components/SearchBar.vue'
 const TitleBar = defineAsyncComponent(() => import('./components/TitleBar.vue'));
 
 const ArtistDrawer = defineAsyncComponent(() => import('@/components/common/ArtistDrawer.vue'));
+const PlaylistDrawer = defineAsyncComponent(() => import('@/components/common/PlaylistDrawer.vue'));
 
 const store = useStore();
 
@@ -93,6 +95,18 @@ watch(
     }
   }
 );
+
+const showPlaylistDrawer = ref(false);
+const currentSongId = ref<number | undefined>();
+
+// 提供一个方法来打开歌单抽屉
+const openPlaylistDrawer = (songId: number) => {
+  currentSongId.value = songId;
+  showPlaylistDrawer.value = true;
+};
+
+// 将方法提供给全局
+provide('openPlaylistDrawer', openPlaylistDrawer);
 </script>
 
 <style lang="scss" scoped>

@@ -83,3 +83,17 @@ export const likeSong = (id: number, like: boolean = true) => {
 export const getLikedList = () => {
   return request.get('/likelist');
 };
+
+// 创建歌单
+export const createPlaylist = (params: { name: string; privacy: number }) => {
+  return request.post('/playlist/create', params);
+};
+
+// 添加或删除歌单歌曲
+export const updatePlaylistTracks = (params: {
+  op: 'add' | 'del';
+  pid: number;
+  tracks: string;
+}) => {
+  return request.get('/playlist/tracks', { params });
+};

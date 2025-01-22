@@ -84,16 +84,20 @@
       :song-list="list?.tracks || []"
       :list-info="list"
       :loading="listLoading"
+      :can-remove="true"
+      @remove-song="handleRemoveFromPlaylist"
     />
   </div>
 </template>
 
 <script lang="ts" setup>
+import { useMessage } from 'naive-ui';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 
 import { getListDetail } from '@/api/list';
+import { updatePlaylistTracks } from '@/api/music';
 import { getUserDetail, getUserPlaylist, getUserRecord } from '@/api/user';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import SongItem from '@/components/common/SongItem.vue';
@@ -116,6 +120,7 @@ const mounted = ref(true);
 const isShowList = ref(false);
 const list = ref<Playlist>();
 const listLoading = ref(false);
+const message = useMessage();
 
 const user = computed(() => store.state.user);
 
@@ -185,6 +190,8 @@ watch(
   (newPath) => {
     if (newPath === '/user') {
       checkLoginStatus();
+    } else {
+      loadPage();
     }
   }
 );
@@ -215,11 +222,41 @@ const showPlaylist = async (id: number, name: string) => {
   listLoading.value = true;
 
   list.value = {
-    name
+    name,
+    id
   } as Playlist;
+  await loadPlaylistDetail(id);
+  listLoading.value = false;
+};
+
+// 加载歌单详情
+const loadPlaylistDetail = async (id: number) => {
   const { data } = await getListDetail(id);
   list.value = data.playlist;
-  listLoading.value = false;
+};
+
+// 从歌单中删除歌曲
+const handleRemoveFromPlaylist = async (songId: number) => {
+  if (!list.value?.id) return;
+
+  try {
+    const res = await updatePlaylistTracks({
+      op: 'del',
+      pid: list.value.id,
+      tracks: songId.toString()
+    });
+
+    if (res.status === 200) {
+      message.success('删除成功');
+      // 重新加载歌单详情
+      await loadPlaylistDetail(list.value.id);
+    } else {
+      throw new Error(res.data?.msg || '删除失败');
+    }
+  } catch (error: any) {
+    console.error('删除歌曲失败:', error);
+    message.error(error.message || '删除失败');
+  }
 };
 
 const handlePlay = () => {
