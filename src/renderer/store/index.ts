@@ -4,6 +4,7 @@ import setData from '@/../main/set.json';
 import { getLikedList, likeSong } from '@/api/music';
 import { useMusicListHook } from '@/hooks/MusicListHook';
 import homeRouter from '@/router/home';
+import { audioService } from '@/services/audioService';
 import type { SongResult } from '@/type/music';
 import { isElectron } from '@/utils';
 import { applyTheme, getCurrentTheme, ThemeType } from '@/utils/theme';
@@ -11,9 +12,63 @@ import { applyTheme, getCurrentTheme, ThemeType } from '@/utils/theme';
 // 默认设置
 const defaultSettings = setData;
 
+function isValidUrl(urlString: string): boolean {
+  try {
+    return Boolean(new URL(urlString));
+  } catch (e) {
+    return false;
+  }
+}
+
 function getLocalStorageItem<T>(key: string, defaultValue: T): T {
-  const item = localStorage.getItem(key);
-  return item ? JSON.parse(item) : defaultValue;
+  try {
+    const item = localStorage.getItem(key);
+    if (!item) return defaultValue;
+
+    // 尝试解析 JSON
+    const parsedItem = JSON.parse(item);
+
+    // 对于音乐 URL，检查是否是有效的 URL 格式或本地文件路径
+    if (key === 'currentPlayMusicUrl' && typeof parsedItem === 'string') {
+      if (!parsedItem.startsWith('local://') && !isValidUrl(parsedItem)) {
+        console.warn(`Invalid URL in localStorage for key ${key}, using default value`);
+        localStorage.removeItem(key);
+        return defaultValue;
+      }
+    }
+
+    // 对于播放列表，检查是否是数组且每个项都有必要的字段
+    if (key === 'playList') {
+      if (!Array.isArray(parsedItem)) {
+        console.warn(`Invalid playList format in localStorage, using default value`);
+        localStorage.removeItem(key);
+        return defaultValue;
+      }
+      // 检查每个歌曲对象是否有必要的字段
+      const isValid = parsedItem.every((item) => item && typeof item === 'object' && 'id' in item);
+      if (!isValid) {
+        console.warn(`Invalid song objects in playList, using default value`);
+        localStorage.removeItem(key);
+        return defaultValue;
+      }
+    }
+
+    // 对于当前播放音乐，检查是否是对象且包含必要的字段
+    if (key === 'currentPlayMusic') {
+      if (!parsedItem || typeof parsedItem !== 'object' || !('id' in parsedItem)) {
+        console.warn(`Invalid currentPlayMusic format in localStorage, using default value`);
+        localStorage.removeItem(key);
+        return defaultValue;
+      }
+    }
+
+    return parsedItem;
+  } catch (error) {
+    console.warn(`Error parsing localStorage item for key ${key}:`, error);
+    // 如果解析失败，删除可能损坏的数据
+    localStorage.removeItem(key);
+    return defaultValue;
+  }
 }
 
 export interface State {
@@ -44,11 +99,11 @@ const state: State = {
   menus: homeRouter,
   play: false,
   isPlay: false,
-  playMusic: {} as SongResult,
-  playMusicUrl: '',
+  playMusic: getLocalStorageItem('currentPlayMusic', {} as SongResult),
+  playMusicUrl: getLocalStorageItem('currentPlayMusicUrl', ''),
   user: getLocalStorageItem('user', null),
-  playList: [],
-  playListIndex: 0,
+  playList: getLocalStorageItem('playList', []),
+  playListIndex: getLocalStorageItem('playListIndex', 0),
   setData: defaultSettings,
   lyric: {},
   isMobile: false,
@@ -72,12 +127,16 @@ const mutations = {
   },
   async setPlay(state: State, playMusic: SongResult) {
     await handlePlayMusic(state, playMusic);
+    localStorage.setItem('currentPlayMusic', JSON.stringify(state.playMusic));
+    localStorage.setItem('currentPlayMusicUrl', state.playMusicUrl);
   },
   setIsPlay(state: State, isPlay: boolean) {
     state.isPlay = isPlay;
+    localStorage.setItem('isPlaying', isPlay.toString());
   },
-  setPlayMusic(state: State, play: boolean) {
+  async setPlayMusic(state: State, play: boolean) {
     state.play = play;
+    localStorage.setItem('isPlaying', play.toString());
   },
   setMusicFull(state: State, musicFull: boolean) {
     state.musicFull = musicFull;
@@ -85,6 +144,8 @@ const mutations = {
   setPlayList(state: State, playList: SongResult[]) {
     state.playListIndex = playList.findIndex((item) => item.id === state.playMusic.id);
     state.playList = playList;
+    localStorage.setItem('playList', JSON.stringify(playList));
+    localStorage.setItem('playListIndex', state.playListIndex.toString());
   },
   async nextPlay(state: State) {
     await nextPlay(state);
@@ -237,6 +298,39 @@ const actions = {
       commit('setSystemFonts', fonts);
     } catch (error) {
       console.error('获取系统字体失败:', error);
+    }
+  },
+  async initializePlayState({ state, commit }: { state: State; commit: any }) {
+    const savedPlayList = getLocalStorageItem('playList', []);
+    const savedPlayMusic = getLocalStorageItem('currentPlayMusic', null);
+
+    if (savedPlayList.length > 0) {
+      commit('setPlayList', savedPlayList);
+    }
+
+    if (savedPlayMusic && Object.keys(savedPlayMusic).length > 0) {
+      // 不直接使用保存的 URL，而是重新获取
+      try {
+        // 使用 handlePlayMusic 来重新获取音乐 URL
+
+        // 根据自动播放设置决定是否恢复播放状态
+        const shouldAutoPlay = state.setData.autoPlay;
+        if (shouldAutoPlay) {
+          await handlePlayMusic(state, savedPlayMusic);
+        }
+        state.play = shouldAutoPlay;
+        state.isPlay = true;
+      } catch (error) {
+        console.error('重新获取音乐链接失败:', error);
+        // 清除无效的播放状态
+        state.play = false;
+        state.isPlay = false;
+        state.playMusic = {} as SongResult;
+        state.playMusicUrl = '';
+        localStorage.removeItem('currentPlayMusic');
+        localStorage.removeItem('currentPlayMusicUrl');
+        localStorage.removeItem('isPlaying');
+      }
     }
   }
 };

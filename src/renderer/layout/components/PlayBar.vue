@@ -288,18 +288,33 @@ const MusicFullRef = ref<any>(null);
 // 播放暂停按钮事件
 const playMusicEvent = async () => {
   try {
+    // 检查是否有有效的音乐对象和 URL
+    if (!playMusic.value?.id || !store.state.playMusicUrl) {
+      console.warn('No valid music or URL available');
+      store.commit('setPlay', playMusic.value);
+      return;
+    }
+
     if (play.value) {
-      audioService.pause();
-      store.commit('setPlayMusic', false);
+      // 暂停播放
+      if (audioService.getCurrentSound()) {
+        audioService.pause();
+        store.commit('setPlayMusic', false);
+      }
     } else {
-      audioService.play();
+      // 开始播放
+      if (audioService.getCurrentSound()) {
+        // 如果已经有音频实例，直接播放
+        audioService.play();
+      } else {
+        // 如果没有音频实例，重新创建并播放
+        await audioService.play(store.state.playMusicUrl, playMusic.value);
+      }
       store.commit('setPlayMusic', true);
     }
   } catch (error) {
-    console.log('error', error);
-    if (play.value) {
-      store.commit('nextPlay');
-    }
+    console.error('播放出错:', error);
+    store.commit('nextPlay');
   }
 };
 

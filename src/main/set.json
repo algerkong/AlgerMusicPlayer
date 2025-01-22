@@ -16,5 +16,7 @@
   "closeAction": "ask",
   "musicQuality": "higher",
   "fontFamily": "system-ui",
-  "fontScope": "global"
+  "fontScope": "global",
+  "autoPlay": false,
+  "downloadPath": ""
 }

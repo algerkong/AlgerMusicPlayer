@@ -136,6 +136,17 @@
                 style="width: 160px"
               />
             </div>
+
+            <div class="set-item">
+              <div>
+                <div class="set-item-title">自动播放</div>
+                <div class="set-item-content">重新打开应用时是否自动继续播放</div>
+              </div>
+              <n-switch v-model:value="setData.autoPlay">
+                <template #checked>开启</template>
+                <template #unchecked>关闭</template>
+              </n-switch>
+            </div>
           </div>
         </div>
 

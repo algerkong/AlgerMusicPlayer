@@ -63,6 +63,7 @@ onMounted(() => {
   store.dispatch('initializeSettings');
   store.dispatch('initializeTheme');
   store.dispatch('initializeSystemFonts');
+  store.dispatch('initializePlayState');
   if (isMobile.value) {
     store.commit(
       'setMenus',
@@ -72,7 +73,7 @@ onMounted(() => {
 });
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .app-container {
   @apply h-full w-full;
   user-select: none;

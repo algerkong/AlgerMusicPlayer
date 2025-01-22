@@ -122,78 +122,94 @@ class AudioService {
 
   // 播放控制相关
   play(url?: string, track?: SongResult): Promise<Howl> {
+    // 如果没有提供新的 URL 和 track，且当前有音频实例，则继续播放
     if (this.currentSound && !url && !track) {
       this.currentSound.play();
-      return Promise.resolve(this.currentSound as Howl);
+      return Promise.resolve(this.currentSound);
     }
+
+    // 如果没有提供必要的参数，返回错误
+    if (!url || !track) {
+      return Promise.reject(new Error('Missing required parameters: url and track'));
+    }
+
     return new Promise((resolve, reject) => {
       let retryCount = 0;
       const maxRetries = 1;
 
       const tryPlay = () => {
+        // 清理现有的音频实例
         if (this.currentSound) {
           this.currentSound.unload();
+          this.currentSound = null;
         }
-        this.currentSound = null;
-        this.currentTrack = track as SongResult;
 
-        this.currentSound = new Howl({
-          src: [url as string],
-          html5: true,
-          autoplay: true,
-          volume: localStorage.getItem('volume')
-            ? parseFloat(localStorage.getItem('volume') as string)
-            : 1,
-          onloaderror: () => {
-            console.error('Audio load error');
-            if (retryCount < maxRetries) {
-              retryCount++;
-              console.log(`Retrying playback (${retryCount}/${maxRetries})...`);
-              setTimeout(tryPlay, 1000 * retryCount);
-            } else {
-              reject(new Error('音频加载失败，请尝试切换其他歌曲'));
+        try {
+          this.currentTrack = track;
+          this.currentSound = new Howl({
+            src: [url],
+            html5: true,
+            autoplay: true,
+            volume: localStorage.getItem('volume')
+              ? parseFloat(localStorage.getItem('volume') as string)
+              : 1,
+            format: ['mp3', 'aac'],
+            onloaderror: (id, error) => {
+              console.error('Audio load error:', error);
+              if (retryCount < maxRetries) {
+                retryCount++;
+                console.log(`Retrying playback (${retryCount}/${maxRetries})...`);
+                setTimeout(tryPlay, 1000 * retryCount);
+              } else {
+                reject(new Error('音频加载失败，请尝试切换其他歌曲'));
+              }
+            },
+            onplayerror: (id, error) => {
+              console.error('Audio play error:', error);
+              if (retryCount < maxRetries) {
+                retryCount++;
+                console.log(`Retrying playback (${retryCount}/${maxRetries})...`);
+                setTimeout(tryPlay, 1000 * retryCount);
+              } else {
+                reject(new Error('音频播放失败，请尝试切换其他歌曲'));
+              }
+            },
+            onload: () => {
+              // 音频加载成功后更新媒体会话
+              if (track && this.currentSound) {
+                this.updateMediaSessionMetadata(track);
+                this.updateMediaSessionPositionState();
+                this.emit('load');
+                resolve(this.currentSound);
+              }
             }
-          },
-          onplayerror: () => {
-            console.error('Audio play error');
-            if (retryCount < maxRetries) {
-              retryCount++;
-              console.log(`Retrying playback (${retryCount}/${maxRetries})...`);
-              setTimeout(tryPlay, 1000 * retryCount);
-            } else {
-              reject(new Error('音频播放失败，请尝试切换其他歌曲'));
-            }
+          });
+
+          // 设置音频事件监听
+          if (this.currentSound) {
+            this.currentSound.on('play', () => {
+              this.updateMediaSessionState(true);
+              this.emit('play');
+            });
+
+            this.currentSound.on('pause', () => {
+              this.updateMediaSessionState(false);
+              this.emit('pause');
+            });
+
+            this.currentSound.on('end', () => {
+              this.emit('end');
+            });
+
+            this.currentSound.on('seek', () => {
+              this.updateMediaSessionPositionState();
+              this.emit('seek');
+            });
           }
-        });
-
-        // 更新媒体会话元数据
-        this.updateMediaSessionMetadata(track as SongResult);
-
-        // 设置音频事件监听
-        this.currentSound.on('play', () => {
-          this.updateMediaSessionState(true);
-          this.emit('play');
-        });
-
-        this.currentSound.on('pause', () => {
-          this.updateMediaSessionState(false);
-          this.emit('pause');
-        });
-
-        this.currentSound.on('end', () => {
-          this.emit('end');
-        });
-
-        this.currentSound.on('seek', () => {
-          this.updateMediaSessionPositionState();
-          this.emit('seek');
-        });
-
-        this.currentSound.on('load', () => {
-          this.updateMediaSessionPositionState();
-          this.emit('load');
-          resolve(this.currentSound as Howl);
-        });
+        } catch (error) {
+          console.error('Error creating audio instance:', error);
+          reject(error);
+        }
       };
 
       tryPlay();
@@ -210,8 +226,12 @@ class AudioService {
 
   stop() {
     if (this.currentSound) {
-      this.currentSound.stop();
-      this.currentSound.unload();
+      try {
+        this.currentSound.stop();
+        this.currentSound.unload();
+      } catch (error) {
+        console.error('Error stopping audio:', error);
+      }
       this.currentSound = null;
     }
     this.currentTrack = null;
@@ -236,10 +256,13 @@ class AudioService {
 
   pause() {
     if (this.currentSound) {
-      this.currentSound.pause();
+      try {
+        this.currentSound.pause();
+      } catch (error) {
+        console.error('Error pausing audio:', error);
+      }
     }
   }
-  
 
   clearAllListeners() {
     this.callbacks = {};
