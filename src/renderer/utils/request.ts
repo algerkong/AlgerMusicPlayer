@@ -50,7 +50,7 @@ request.interceptors.request.use(
     };
     const token = localStorage.getItem('token');
     if (token) {
-      config.params.cookie = `${token} os=pc;`;
+      config.params.cookie = config.params.cookie || token;
     }
     if (isElectron) {
       const proxyConfig = setData?.proxyConfig;

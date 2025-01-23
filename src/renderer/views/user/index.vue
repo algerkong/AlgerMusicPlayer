@@ -132,6 +132,7 @@ onBeforeUnmount(() => {
 const checkLoginStatus = () => {
   const token = localStorage.getItem('token');
   const userData = localStorage.getItem('user');
+  console.log('触发了', token, userData);
 
   if (!token || !userData) {
     router.push('/login');
@@ -152,6 +153,10 @@ const loadPage = async () => {
   // 检查登录状态
   if (!checkLoginStatus()) return;
 
+  await loadData();
+};
+
+const loadData = async () => {
   try {
     infoLoading.value = true;
 
@@ -188,10 +193,10 @@ const loadPage = async () => {
 watch(
   () => router.currentRoute.value.path,
   (newPath) => {
+    console.log('newPath', newPath);
     if (newPath === '/user') {
       checkLoginStatus();
-    } else {
-      loadPage();
+      loadData();
     }
   }
 );
