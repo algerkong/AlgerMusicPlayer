@@ -3,7 +3,10 @@
   "include": [
     "src/preload/*.d.ts",
     "src/renderer/**/*",
-    "src/renderer/**/*.vue"
+    "src/renderer/**/*.vue",
+    "src/i18n/**/*",
+    "src/main/modules/config.ts",
+    "src/main/modules/shortcuts.ts"
   ],
   "compilerOptions": {
     "composite": true,
@@ -24,7 +27,8 @@
     ],
     "paths": {
       "@/*": ["src/renderer/*"],
-      "@renderer/*": ["src/renderer/*"]
+      "@renderer/*": ["src/renderer/*"],
+      "@main/*": ["src/main/*"]
     }
   }
 }

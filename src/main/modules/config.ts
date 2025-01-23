@@ -23,6 +23,7 @@ type SetConfig = {
   musicQuality: string;
   fontFamily: string;
   fontScope: 'global' | 'lyric';
+  language: string;
 };
 interface StoreType {
   set: SetConfig;

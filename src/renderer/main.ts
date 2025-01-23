@@ -7,6 +7,7 @@ import 'remixicon/fonts/remixicon.css';
 
 import { createApp } from 'vue';
 
+import i18n from '@/../i18n/renderer';
 import router from '@/router';
 import store from '@/store';
 
@@ -18,6 +19,8 @@ const app = createApp(App);
 Object.keys(directives).forEach((key: string) => {
   app.directive(key, directives[key as keyof typeof directives]);
 });
+
 app.use(router);
 app.use(store);
+app.use(i18n);
 app.mount('#app');

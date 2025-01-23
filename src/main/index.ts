@@ -2,6 +2,7 @@ import { electronApp, optimizer } from '@electron-toolkit/utils';
 import { app, ipcMain, nativeImage } from 'electron';
 import { join } from 'path';
 
+import i18n from '../i18n/main';
 import { loadLyricWindow } from './lyric';
 import { initializeConfig } from './modules/config';
 import { initializeFileManager } from './modules/fileManager';
@@ -93,6 +94,13 @@ if (!isSingleInstance) {
   // 监听快捷键更新
   ipcMain.on('update-shortcuts', () => {
     registerShortcuts(mainWindow);
+  });
+
+  // 监听语言切换
+  ipcMain.on('change-language', (_, locale) => {
+    i18n.global.locale = locale;
+    // 通知所有窗口语言已更改
+    mainWindow?.webContents.send('language-changed', locale);
   });
 
   // 所有窗口关闭时的处理

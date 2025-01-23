@@ -5,7 +5,7 @@
         <template #icon>
           <i class="ri-refresh-line"></i>
         </template>
-        刷新列表
+        {{ $t('donation.refresh') }}
       </n-button>
     </div>
     <div class="donation-grid" :class="{ 'grid-expanded': isExpanded }">
@@ -78,27 +78,27 @@
 
     <div class="p-6 rounded-lg shadow-lg bg-light dark:bg-gray-800">
       <div class="description text-center text-sm text-gray-700 dark:text-gray-200">
-        <p>您的捐赠将用于支持开发和维护工作，包括但不限于服务器维护、域名续费等。</p>
-        <p>留言时可留下您的邮箱或 github名称。</p>
+        <p>{{ $t('donation.description') }}</p>
+        <p>{{ $t('donation.message') }}</p>
       </div>
       <div class="flex justify-between">
         <div class="flex flex-col items-center gap-2">
           <n-image
             :src="alipay"
-            alt="支付宝收款码"
+            :alt="$t('common.alipay')"
             class="w-60 h-60 rounded-lg cursor-none"
             preview-disabled
           />
-          <span class="text-sm text-gray-700 dark:text-gray-200">支付宝</span>
+          <span class="text-sm text-gray-700 dark:text-gray-200">{{ $t('common.alipay') }}</span>
         </div>
         <div class="flex flex-col items-center gap-2">
           <n-image
             :src="wechat"
-            alt="微信收款码"
+            :alt="$t('common.wechat')"
             class="w-60 h-60 rounded-lg cursor-none"
             preview-disabled
           />
-          <span class="text-sm text-gray-700 dark:text-gray-200">微信支付</span>
+          <span class="text-sm text-gray-700 dark:text-gray-200">{{ $t('common.wechat') }}</span>
         </div>
       </div>
     </div>

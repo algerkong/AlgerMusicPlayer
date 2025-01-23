@@ -33,7 +33,7 @@
 
       <!-- 标签页切换 -->
       <n-tabs v-model:value="activeTab" class="flex-1" type="line" animated>
-        <n-tab-pane name="songs" tab="热门歌曲">
+        <n-tab-pane name="songs" :tab="$t('artist.songs')">
           <div ref="songListRef" class="songs-list">
             <n-scrollbar style="max-height: 61vh" :size="5" @scroll="handleSongScroll">
               <div class="song-list-content">
@@ -44,14 +44,14 @@
                   :list="true"
                   @play="handlePlay"
                 />
-                <div v-if="songLoading" class="loading-more">加载中...</div>
+                <div v-if="songLoading" class="loading-more">{{ $t('common.loading') }}</div>
               </div>
               <play-bottom />
             </n-scrollbar>
           </div>
         </n-tab-pane>
 
-        <n-tab-pane name="albums" tab="专辑">
+        <n-tab-pane name="albums" :tab="$t('artist.albums')">
           <div ref="albumListRef" class="albums-list">
             <n-scrollbar style="max-height: 61vh" :size="5" @scroll="handleAlbumScroll">
               <div class="albums-grid">
@@ -69,14 +69,14 @@
                     type: '专辑'
                   }"
                 />
-                <div v-if="albumLoading" class="loading-more">加载中...</div>
+                <div v-if="albumLoading" class="loading-more">{{ $t('common.loading') }}</div>
               </div>
               <play-bottom />
             </n-scrollbar>
           </div>
         </n-tab-pane>
 
-        <n-tab-pane name="about" tab="艺人介绍">
+        <n-tab-pane name="about" :tab="$t('artist.description')">
           <div class="artist-description">
             <n-scrollbar style="max-height: 60vh">
               <div class="description-content" v-html="artistInfo?.briefDesc"></div>
