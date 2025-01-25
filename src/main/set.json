@@ -18,5 +18,6 @@
   "fontFamily": "system-ui",
   "fontScope": "global",
   "autoPlay": false,
-  "downloadPath": ""
+  "downloadPath": "",
+  "alwaysShowDownloadButton": false
 }

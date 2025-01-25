@@ -1,7 +1,7 @@
 <template>
   <div class="download-drawer-trigger">
     <n-badge :value="downloadingCount" :max="99" :show="downloadingCount > 0">
-      <n-button circle @click="showDrawer = true">
+      <n-button circle @click="store.commit('setShowDownloadDrawer', true)">
         <template #icon>
           <i class="iconfont ri-download-cloud-2-line"></i>
         </template>
@@ -9,7 +9,12 @@
     </n-badge>
   </div>
 
-  <n-drawer v-model:show="showDrawer" :height="'80%'" placement="bottom">
+  <n-drawer
+    v-model:show="showDrawer"
+    :height="'80%'"
+    placement="bottom"
+    @after-leave="handleDrawerClose"
+  >
     <n-drawer-content title="下载管理" closable :native-scrollbar="false">
       <div class="drawer-container">
         <n-tabs type="line" animated class="h-full">
@@ -159,8 +164,8 @@
 import type { ProgressStatus } from 'naive-ui';
 import { useMessage } from 'naive-ui';
 import { computed, onMounted, ref } from 'vue';
+import { useStore } from 'vuex';
 
-// import { useStore } from 'vuex';
 import { getMusicDetail } from '@/api/music';
 // import { audioService } from '@/services/audioService';
 import { getImgUrl } from '@/utils';
@@ -185,9 +190,14 @@ interface DownloadedItem {
   ar: { name: string }[];
 }
 
-// const store = useStore();
 const message = useMessage();
-const showDrawer = ref(false);
+const store = useStore();
+
+const showDrawer = computed({
+  get: () => store.state.showDownloadDrawer,
+  set: (val) => store.commit('setShowDownloadDrawer', val)
+});
+
 const downloadList = ref<DownloadItem[]>([]);
 const downloadedList = ref<DownloadedItem[]>(
   JSON.parse(localStorage.getItem('downloadedList') || '[]')
@@ -491,6 +501,10 @@ onMounted(() => {
     }
   });
 });
+
+const handleDrawerClose = () => {
+  store.commit('setShowDownloadDrawer', false);
+};
 </script>
 
 <style lang="scss" scoped>

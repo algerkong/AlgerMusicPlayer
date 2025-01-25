@@ -80,7 +80,7 @@ export interface State {
   user: any;
   playList: SongResult[];
   playListIndex: number;
-  setData: any;
+  setData: typeof defaultSettings;
   lyric: any;
   isMobile: boolean;
   searchValue: string;
@@ -93,6 +93,7 @@ export interface State {
   showArtistDrawer: boolean;
   currentArtistId: number | null;
   systemFonts: { label: string; value: string }[];
+  showDownloadDrawer: boolean;
 }
 
 const state: State = {
@@ -116,7 +117,8 @@ const state: State = {
   showUpdateModal: false,
   showArtistDrawer: false,
   currentArtistId: null,
-  systemFonts: [{ label: '系统默认', value: 'system-ui' }]
+  systemFonts: [{ label: '系统默认', value: 'system-ui' }],
+  showDownloadDrawer: false
 };
 
 const { handlePlayMusic, nextPlay, prevPlay } = useMusicListHook();
@@ -255,6 +257,9 @@ const mutations = {
         value: font
       }))
     ];
+  },
+  setShowDownloadDrawer(state: State, show: boolean) {
+    state.showDownloadDrawer = show;
   }
 };
 
