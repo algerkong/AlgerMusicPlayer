@@ -105,7 +105,7 @@ import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 
 import { getSearchKeyword } from '@/api/home';
-import { getUserDetail, logout } from '@/api/login';
+import { getUserDetail } from '@/api/login';
 import alipay from '@/assets/alipay.png';
 import wechat from '@/assets/wechat.png';
 import Coffee from '@/components/Coffee.vue';
@@ -132,8 +132,10 @@ const loadPage = async () => {
   const token = localStorage.getItem('token');
   if (!token) return;
   const { data } = await getUserDetail();
-  store.state.user = data.profile;
-  localStorage.setItem('user', JSON.stringify(data.profile));
+  console.log('data', data);
+  store.state.user =
+    data.profile || store.state.user || JSON.parse(localStorage.getItem('user') || '{}');
+  localStorage.setItem('user', JSON.stringify(store.state.user));
 };
 
 loadPage();
@@ -202,10 +204,7 @@ const selectItem = async (key: string) => {
   // switch 判断
   switch (key) {
     case 'logout':
-      logout().then(() => {
-        store.commit('logout');
-        router.push('/login');
-      });
+      store.commit('logout');
       break;
     case 'login':
       router.push('/login');

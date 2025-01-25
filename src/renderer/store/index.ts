@@ -1,6 +1,7 @@
 import { createStore } from 'vuex';
 
 import setData from '@/../main/set.json';
+import { logout } from '@/api/login';
 import { getLikedList, likeSong } from '@/api/music';
 import { useMusicListHook } from '@/hooks/MusicListHook';
 import homeRouter from '@/router/home';
@@ -231,9 +232,11 @@ const mutations = {
     state.showUpdateModal = value;
   },
   logout(state: State) {
-    state.user = null;
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
+    logout().then(() => {
+      state.user = null;
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+    });
   },
   setShowArtistDrawer(state, show: boolean) {
     state.showArtistDrawer = show;
@@ -284,9 +287,9 @@ const actions = {
     const localList: number[] = localFavoriteList ? JSON.parse(localFavoriteList) : [];
 
     // 如果用户已登录，尝试获取服务器收藏列表并合并
-    if (state.user && localStorage.getItem('token')) {
+    if (state.user && state.user.userId) {
       try {
-        const res = await getLikedList();
+        const res = await getLikedList(state.user.userId);
         if (res.data?.ids) {
           // 合并本地和服务器的收藏列表，去重
           const serverList = res.data.ids.reverse();

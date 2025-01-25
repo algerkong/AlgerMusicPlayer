@@ -13,20 +13,25 @@ export const getMusicQualityDetail = (id: number) => {
 };
 
 // 根据音乐Id获取音乐播放URl
-export const getMusicUrl = async (id: number) => {
+export const getMusicUrl = async (id: number, isDownloaded: boolean = false) => {
   // 判断是否登录
-  if (store.state.user) {
-    const res = await request.get('/song/download/url/v1', {
-      params: {
-        id,
-        level: store.state.setData.musicQuality || 'higher',
-        cookie: `${localStorage.getItem('token')} os=pc;`
-      }
-    });
+  try {
+    if (store.state.user && isDownloaded && store.state.user.vipType !== 0) {
+      const url = '/song/download/url/v1';
+      const res = await request.get(url, {
+        params: {
+          id,
+          level: store.state.setData.musicQuality || 'higher',
+          cookie: `${localStorage.getItem('token')} os=pc;`
+        }
+      });
 
-    if (res.data.data.url) {
-      return { data: { data: [{ ...res.data.data }] } };
+      if (res.data.data.url) {
+        return { data: { data: [{ ...res.data.data }] } };
+      }
     }
+  } catch (error) {
+    console.error('error', error);
   }
 
   return await request.get('/song/url/v1', {
@@ -84,8 +89,10 @@ export const likeSong = (id: number, like: boolean = true) => {
 };
 
 // 获取用户喜欢的音乐列表
-export const getLikedList = () => {
-  return request.get('/likelist');
+export const getLikedList = (uid: number) => {
+  return request.get('/likelist', {
+    params: { uid }
+  });
 };
 
 // 创建歌单

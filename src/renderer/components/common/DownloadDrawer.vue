@@ -85,7 +85,7 @@
               </div>
               <div v-else class="downloaded-content">
                 <div class="downloaded-items">
-                  <div v-for="item in downloadedList" :key="item.path" class="downloaded-item">
+                  <div v-for="item in downList" :key="item.path" class="downloaded-item">
                     <div class="downloaded-item-content">
                       <div class="downloaded-item-cover">
                         <n-image
@@ -105,11 +105,11 @@
                         <div class="downloaded-item-size">{{ formatSize(item.size) }}</div>
                       </div>
                       <div class="downloaded-item-actions">
-                        <n-button text type="primary" size="large" @click="handlePlayMusic(item)">
+                        <!-- <n-button text type="primary" size="large" @click="handlePlayMusic(item)">
                           <template #icon>
                             <i class="iconfont ri-play-circle-line text-xl"></i>
                           </template>
-                        </n-button>
+                        </n-button> -->
                         <n-button
                           text
                           type="primary"
@@ -159,10 +159,10 @@
 import type { ProgressStatus } from 'naive-ui';
 import { useMessage } from 'naive-ui';
 import { computed, onMounted, ref } from 'vue';
-import { useStore } from 'vuex';
 
+// import { useStore } from 'vuex';
 import { getMusicDetail } from '@/api/music';
-import { audioService } from '@/services/audioService';
+// import { audioService } from '@/services/audioService';
 import { getImgUrl } from '@/utils';
 
 interface DownloadItem {
@@ -185,15 +185,21 @@ interface DownloadedItem {
   ar: { name: string }[];
 }
 
-const store = useStore();
+// const store = useStore();
 const message = useMessage();
 const showDrawer = ref(false);
 const downloadList = ref<DownloadItem[]>([]);
-const downloadedList = ref<DownloadedItem[]>([]);
+const downloadedList = ref<DownloadedItem[]>(
+  JSON.parse(localStorage.getItem('downloadedList') || '[]')
+);
+
+const downList = computed(() => {
+  return (downloadedList.value as DownloadedItem[]).reverse();
+});
 
 // 获取播放状态
-const play = computed(() => store.state.play as boolean);
-const currentMusic = computed(() => store.state.playMusic);
+// const play = computed(() => store.state.play as boolean);
+// const currentMusic = computed(() => store.state.playMusic);
 
 // 计算下载中的任务数量
 const downloadingCount = computed(() => {
@@ -264,8 +270,7 @@ const formatSize = (bytes: number) => {
 
 // 打开目录
 const openDirectory = (path: string) => {
-  const directory = path.substring(0, path.lastIndexOf('/'));
-  window.electron.ipcRenderer.send('open-directory', directory);
+  window.electron.ipcRenderer.send('open-directory', path);
 };
 
 // 删除相关
@@ -288,6 +293,14 @@ const confirmDelete = async () => {
       itemToDelete.value.path
     );
     if (success) {
+      localStorage.setItem(
+        'downloadedList',
+        JSON.stringify(
+          downloadedList.value.filter(
+            (item) => item.id !== (itemToDelete.value as DownloadedItem).id
+          )
+        )
+      );
       await refreshDownloadedList();
       message.success('删除成功');
     } else {
@@ -303,58 +316,59 @@ const confirmDelete = async () => {
 };
 
 // 播放音乐
-const handlePlayMusic = async (item: DownloadedItem) => {
-  // 确保路径正确编码
-  const encodedPath = encodeURIComponent(item.path);
-  const localUrl = `local://${encodedPath}`;
+// const handlePlayMusic = async (item: DownloadedItem) => {
+//   // 确保路径正确编码
+//   const encodedPath = encodeURIComponent(item.path);
+//   const localUrl = `local://${encodedPath}`;
 
-  const musicInfo = {
-    name: item.filename,
-    id: item.id,
-    url: localUrl,
-    playMusicUrl: localUrl,
-    picUrl: item.picUrl,
-    ar: item.ar || [{ name: '本地音乐' }],
-    song: {
-      artists: item.ar || [{ name: '本地音乐' }]
-    },
-    al: {
-      picUrl: item.picUrl || '/images/default_cover.png'
-    }
-  };
+//   const musicInfo = {
+//     name: item.filename,
+//     id: item.id,
+//     url: localUrl,
+//     playMusicUrl: localUrl,
+//     picUrl: item.picUrl,
+//     ar: item.ar || [{ name: '本地音乐' }],
+//     song: {
+//       artists: item.ar || [{ name: '本地音乐' }]
+//     },
+//     al: {
+//       picUrl: item.picUrl || '/images/default_cover.png'
+//     }
+//   };
 
-  // 如果是当前播放的音乐，则切换播放状态
-  if (currentMusic.value?.id === item.id) {
-    if (play.value) {
-      audioService.getCurrentSound()?.pause();
-      store.commit('setPlayMusic', false);
-    } else {
-      audioService.getCurrentSound()?.play();
-      store.commit('setPlayMusic', true);
-    }
-    return;
-  }
+//   // 如果是当前播放的音乐，则切换播放状态
+//   if (currentMusic.value?.id === item.id) {
+//     if (play.value) {
+//       audioService.getCurrentSound()?.pause();
+//       store.commit('setPlayMusic', false);
+//     } else {
+//       audioService.getCurrentSound()?.play();
+//       store.commit('setPlayMusic', true);
+//     }
+//     return;
+//   }
 
-  // 播放新的音乐
-  store.commit('setPlay', musicInfo);
-  store.commit('setPlayMusic', true);
-  store.commit('setIsPlay', true);
+//   // 播放新的音乐
+//   store.commit('setPlay', musicInfo);
+//   store.commit('setPlayMusic', true);
+//   store.commit('setIsPlay', true);
 
-  store.commit(
-    'setPlayList',
-    downloadedList.value.map((item) => ({
-      ...item,
-      playMusicUrl: `local://${encodeURIComponent(item.path)}`
-    }))
-  );
-};
+//   store.commit(
+//     'setPlayList',
+//     downloadedList.value.map((item) => ({
+//       ...item,
+//       playMusicUrl: `local://${encodeURIComponent(item.path)}`
+//     }))
+//   );
+// };
 
 // 获取已下载音乐列表
 const refreshDownloadedList = async () => {
   try {
+    let saveList: any = [];
     const list = await window.electron.ipcRenderer.invoke('get-downloaded-music');
     if (!Array.isArray(list) || list.length === 0) {
-      downloadedList.value = [];
+      saveList = [];
       return;
     }
 
@@ -369,7 +383,7 @@ const refreshDownloadedList = async () => {
           return acc;
         }, {});
 
-        downloadedList.value = list.map((item) => {
+        saveList = list.map((item) => {
           const songDetail = songDetails[item.id];
           return {
             ...item,
@@ -379,15 +393,27 @@ const refreshDownloadedList = async () => {
         });
       } catch (detailError) {
         console.error('Failed to get music details:', detailError);
-        downloadedList.value = list;
+        saveList = list;
       }
     } else {
-      downloadedList.value = list;
+      saveList = list;
     }
+    setLocalDownloadedList(saveList);
   } catch (error) {
     console.error('Failed to get downloaded music list:', error);
     downloadedList.value = [];
   }
+};
+
+const setLocalDownloadedList = (list: DownloadedItem[]) => {
+  const localList = localStorage.getItem('downloadedList');
+  // 合并 去重
+  const saveList = [...(localList ? JSON.parse(localList) : []), ...list];
+  const uniqueList = saveList.filter(
+    (item, index, self) => index === self.findIndex((t) => t.id === item.id)
+  );
+  localStorage.setItem('downloadedList', JSON.stringify(uniqueList));
+  downloadedList.value = uniqueList;
 };
 
 // 监听抽屉显示状态

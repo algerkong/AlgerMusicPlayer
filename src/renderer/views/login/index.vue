@@ -58,7 +58,7 @@ const timerIsQr = (key: string) => {
         localStorage.setItem('token', data.cookie);
         const user = await getUserDetail();
         store.state.user = user.data.profile;
-        localStorage.setItem('user', JSON.stringify(store.state.user));
+        localStorage.setItem('user', JSON.stringify(user.data.profile));
         message.success('登录成功');
 
         clearInterval(timer);

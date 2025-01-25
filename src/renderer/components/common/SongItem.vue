@@ -208,6 +208,11 @@ const dropdownOptions = computed<MenuOption[]>(() => {
       key: 'd1'
     },
     {
+      label: '下载歌曲',
+      key: 'download',
+      icon: () => h('i', { class: 'iconfont ri-download-line' })
+    },
+    {
       label: '添加到歌单',
       key: 'addToPlaylist',
       icon: () => h('i', { class: 'iconfont ri-folder-add-line' })

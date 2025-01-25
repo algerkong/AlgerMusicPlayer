@@ -728,8 +728,6 @@ const clearCache = async () => {
         localStorage.removeItem('favoriteList');
         break;
       case 'user':
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
         store.commit('logout');
         break;
       case 'settings':

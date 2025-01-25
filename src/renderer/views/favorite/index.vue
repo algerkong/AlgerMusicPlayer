@@ -272,9 +272,9 @@ const handleScroll = (e: any) => {
   }
 };
 
-onMounted(() => {
-  store.dispatch('initializeFavoriteList');
-  getFavoriteSongs();
+onMounted(async () => {
+  await store.dispatch('initializeFavoriteList');
+  await getFavoriteSongs();
 });
 
 // 监听收藏列表变化

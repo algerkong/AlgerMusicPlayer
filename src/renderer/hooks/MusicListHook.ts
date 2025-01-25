@@ -13,7 +13,7 @@ const musicHistory = useMusicHistory();
 
 // 获取歌曲url
 export const getSongUrl = async (id: number, songData: any, isDownloaded: boolean = false) => {
-  const { data } = await getMusicUrl(id);
+  const { data } = await getMusicUrl(id, isDownloaded);
   let url = '';
   let songDetail = null;
   try {

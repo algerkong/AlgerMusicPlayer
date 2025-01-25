@@ -132,7 +132,6 @@ onBeforeUnmount(() => {
 const checkLoginStatus = () => {
   const token = localStorage.getItem('token');
   const userData = localStorage.getItem('user');
-  console.log('触发了', token, userData);
 
   if (!token || !userData) {
     router.push('/login');
