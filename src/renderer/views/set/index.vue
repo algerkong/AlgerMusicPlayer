@@ -180,6 +180,24 @@
               <n-button size="small" @click="showShortcutModal = true">配置</n-button>
             </div>
 
+            <div v-if="isElectron" class="set-item">
+              <div>
+                <div class="set-item-title">下载管理</div>
+                <div class="set-item-content">
+                  <n-switch v-model:value="setData.alwaysShowDownloadButton" class="mr-2">
+                    <template #checked>显示</template>
+                    <template #unchecked>隐藏</template>
+                  </n-switch>
+                  是否始终显示下载列表按钮
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <n-button size="small" @click="store.commit('setShowDownloadDrawer', true)">
+                  打开下载管理
+                </n-button>
+              </div>
+            </div>
+
             <div class="set-item">
               <div>
                 <div class="set-item-title">下载目录</div>

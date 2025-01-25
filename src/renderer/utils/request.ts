@@ -1,11 +1,8 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
-import { createDiscreteApi } from 'naive-ui';
 
 import store from '@/store';
 
 import { isElectron } from '.';
-
-const { notification } = createDiscreteApi(['notification']);
 
 let setData: any = null;
 const getSetData = () => {

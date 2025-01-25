@@ -27,7 +27,14 @@
       <!-- 底部音乐播放 -->
       <play-bar v-show="isPlay" :style="isMobile && store.state.musicFull ? 'bottom: 0;' : ''" />
       <!-- 下载管理抽屉 -->
-      <download-drawer v-if="isElectron" />
+      <download-drawer
+        v-if="
+          isElectron &&
+          (store.state.setData?.alwaysShowDownloadButton ||
+            store.state.showDownloadDrawer ||
+            store.state.hasDownloadingTasks)
+        "
+      />
     </div>
     <install-app-modal v-if="!isElectron"></install-app-modal>
     <update-modal v-if="isElectron" />
