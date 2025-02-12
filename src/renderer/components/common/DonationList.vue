@@ -106,38 +106,24 @@
 </template>
 
 <script setup lang="ts">
-import axios from 'axios';
 import { computed, onActivated, onMounted, ref } from 'vue';
 
+import type { Donor } from '@/api/donation';
+import { getDonationList } from '@/api/donation';
 import alipay from '@/assets/alipay.png';
 import wechat from '@/assets/wechat.png';
 
 // 默认头像
 const defaultAvatar = 'https://avatars.githubusercontent.com/u/0?v=4';
 
-// 捐赠者数据
-interface Donor {
-  id: number;
-  name: string;
-  amount: number;
-  date: string;
-  message?: string;
-  avatar?: string;
-  badge: string;
-  badgeColor: string;
-}
-
 const donors = ref<Donor[]>([]);
-
 const isLoading = ref(false);
 
 const fetchDonors = async () => {
   isLoading.value = true;
   try {
-    const response = await axios.get(
-      'https://www.ghproxy.cn/https://raw.githubusercontent.com/algerkong/data/main/donors.json'
-    );
-    donors.value = response.data.map((donor: Donor, index: number) => ({
+    const data = await getDonationList();
+    donors.value = data.map((donor, index) => ({
       ...donor,
       avatar: `https://api.dicebear.com/7.x/micah/svg?seed=${index}`
     }));
