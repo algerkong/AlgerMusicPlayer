@@ -38,16 +38,28 @@ export const getLatestReleaseInfo = async (): Promise<GithubReleaseInfo | null> 
     const token = import.meta.env.VITE_GITHUB_TOKEN;
     const headers = {};
 
+    // GitHub API 代理地址列表
+    const proxyHosts = [
+      'https://gh.lk.cc',
+      'https://ghproxy.cn',
+      'https://ghproxy.net',
+      'https://gitproxy.click',
+      'https://github.tbedu.top',
+      'https://github.moeyy.xyz'
+    ];
+
+    // 构建 API URL 列表
     const apiUrls = [
       // 原始地址
       'https://api.github.com/repos/algerkong/AlgerMusicPlayer/releases/latest',
 
-      // 使用 ghproxy.com 代理
-      'https://www.ghproxy.cn/https://raw.githubusercontent.com/algerkong/AlgerMusicPlayer/dev_electron/package.json'
-
-      // 使用 gitee 镜像（如果有的话）
-      // 'https://gitee.com/api/v5/repos/[用户名]/AlgerMusicPlayer/releases/latest'
+      // 使用各种代理
+      ...proxyHosts.map(
+        (host) =>
+          `${host}/https://raw.githubusercontent.com/algerkong/AlgerMusicPlayer/dev_electron/package.json`
+      )
     ];
+
     if (token) {
       headers['Authorization'] = `token ${token}`;
     }
@@ -57,14 +69,13 @@ export const getLatestReleaseInfo = async (): Promise<GithubReleaseInfo | null> 
         const response = await axios.get(url, { headers });
 
         if (url.includes('package.json')) {
-          // 如果是 package.json，直接读取版本号
+          // 如果是 package.json，获取对应的 CHANGELOG
+          const changelogUrl = url.replace('package.json', 'CHANGELOG.md');
+          const changelogResponse = await axios.get(changelogUrl);
+
           return {
             tag_name: response.data.version,
-            body: (
-              await axios.get(
-                'https://www.ghproxy.cn/https://raw.githubusercontent.com/algerkong/AlgerMusicPlayer/dev_electron/CHANGELOG.md'
-              )
-            ).data,
+            body: changelogResponse.data,
             html_url: 'https://github.com/algerkong/AlgerMusicPlayer/releases/latest',
             assets: []
           } as unknown as GithubReleaseInfo;
