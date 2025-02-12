@@ -72,7 +72,7 @@ import { marked } from 'marked';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 
-import { checkUpdate, UpdateResult } from '@/utils/update';
+import { checkUpdate, getProxyNodes, UpdateResult } from '@/utils/update';
 
 import config from '../../../../package.json';
 
@@ -226,7 +226,13 @@ const handleUpdate = async () => {
     try {
       downloading.value = true;
       downloadStatus.value = '准备下载...';
-      window.electron.ipcRenderer.send('start-download', downloadUrl);
+
+      // 获取代理节点列表
+      const proxyHosts = await getProxyNodes();
+      const proxyDownloadUrl = `${proxyHosts[0]}/${downloadUrl}`;
+
+      // 发送所有可能的下载地址到主进程
+      window.electron.ipcRenderer.send('start-download', proxyDownloadUrl);
     } catch (error) {
       downloading.value = false;
       window.$message.error('启动下载失败，请重试或手动下载');
