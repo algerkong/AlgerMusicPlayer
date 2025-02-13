@@ -47,8 +47,6 @@ QQ群:789288579
 
 ## 咖啡☕️
 
-[<img src="https://api.gitsponsors.com/api/badge/img?id=710867462" height="90">](https://api.gitsponsors.com/api/badge/link?p=GTUHmTNQ9W5XzPhaLd8cPBm26uhtP/QOon9hexaWh9gnfaDT3ivj1ID0uKScVHL61jTFrK1fRWyigScIYvcLh/no+3zgtdW3TK0+vN0TVs84Mt3RibhEqAgBHSd8KhNLxaMd4vMIY37P5gOA2/QYcw==)
-
 |                                        微信                                        |                                       支付宝                                       |
 | :--------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------: |
 | <img src="https://github.com/algerkong/algerkong/blob/main/wechat.jpg?raw=true" alt="WeChat QRcode" width=200> | <img src="https://github.com/algerkong/algerkong/blob/main/alipay.jpg?raw=true" alt="Wechat QRcode" width=200> |

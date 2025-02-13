@@ -60,13 +60,22 @@ export function initializeFileManager() {
   // 通用的打开目录处理
   ipcMain.on('open-directory', (_, filePath) => {
     try {
-      if (fs.statSync(filePath).isDirectory()) {
-        shell.openPath(filePath);
+      // 验证文件路径
+      if (!filePath) {
+        console.error('无效的文件路径: 路径为空');
+        return;
+      }
+
+      // 统一处理路径分隔符
+      const normalizedPath = path.normalize(filePath);
+
+      if (fs.statSync(normalizedPath).isDirectory()) {
+        shell.openPath(normalizedPath);
       } else {
-        shell.showItemInFolder(filePath);
+        shell.showItemInFolder(normalizedPath);
       }
     } catch (error) {
-      console.error('Error opening path:', error);
+      console.error('打开路径失败:', error);
     }
   });
 

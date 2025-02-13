@@ -19,5 +19,6 @@
   "fontScope": "global",
   "autoPlay": false,
   "downloadPath": "",
-  "language": "zh-CN"
+  "language": "zh-CN",
+  "alwaysShowDownloadButton": false
 }

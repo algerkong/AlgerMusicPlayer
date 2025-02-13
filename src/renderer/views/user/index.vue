@@ -152,6 +152,10 @@ const loadPage = async () => {
   // 检查登录状态
   if (!checkLoginStatus()) return;
 
+  await loadData();
+};
+
+const loadData = async () => {
   try {
     infoLoading.value = true;
 
@@ -188,10 +192,10 @@ const loadPage = async () => {
 watch(
   () => router.currentRoute.value.path,
   (newPath) => {
+    console.log('newPath', newPath);
     if (newPath === '/user') {
       checkLoginStatus();
-    } else {
-      loadPage();
+      loadData();
     }
   }
 );

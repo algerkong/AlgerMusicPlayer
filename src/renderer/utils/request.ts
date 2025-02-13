@@ -1,11 +1,8 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
-import { createDiscreteApi } from 'naive-ui';
 
 import store from '@/store';
 
 import { isElectron } from '.';
-
-const { notification } = createDiscreteApi(['notification']);
 
 let setData: any = null;
 const getSetData = () => {
@@ -50,7 +47,7 @@ request.interceptors.request.use(
     };
     const token = localStorage.getItem('token');
     if (token) {
-      config.params.cookie = `${token} os=pc;`;
+      config.params.cookie = config.params.cookie !== undefined ? config.params.cookie : token;
     }
     if (isElectron) {
       const proxyConfig = setData?.proxyConfig;
@@ -70,6 +67,8 @@ request.interceptors.request.use(
   }
 );
 
+const NO_RETRY_URLS = ['暂时没有'];
+
 // 响应拦截器
 request.interceptors.response.use(
   (response) => {
@@ -88,28 +87,16 @@ request.interceptors.response.use(
     if (error.response?.status === 301) {
       // 使用 store mutation 清除用户信息
       store.commit('logout');
-
-      // 如果还可以重试，则重新发起请求
-      if (config.retryCount === undefined || config.retryCount < MAX_RETRIES) {
-        config.retryCount = (config.retryCount || 1) + 1;
-        console.log(`301 状态码，清除登录信息后重试第 ${config.retryCount} 次`);
-        notification.error({
-          content: '登录状态失效，请重新登录',
-          meta: '请重新登录',
-          duration: 2500,
-          keepAliveOnHover: true
-        });
-
-        // 延迟重试
-        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
-
-        // 重新发起请求
-        return request(config);
-      }
+      console.log(`301 状态码，清除登录信息后重试第 ${config.retryCount} 次`);
+      config.retryCount = 3;
     }
 
     // 检查是否还可以重试
-    if (config.retryCount !== undefined && config.retryCount < MAX_RETRIES) {
+    if (
+      config.retryCount !== undefined &&
+      config.retryCount < MAX_RETRIES &&
+      !NO_RETRY_URLS.includes(config.url as string)
+    ) {
       config.retryCount++;
       console.log(`请求重试第 ${config.retryCount} 次`);
 

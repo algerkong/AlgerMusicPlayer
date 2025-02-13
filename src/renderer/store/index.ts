@@ -1,6 +1,7 @@
 import { createStore } from 'vuex';
 
 import setData from '@/../main/set.json';
+import { logout } from '@/api/login';
 import { getLikedList, likeSong } from '@/api/music';
 import { useMusicListHook } from '@/hooks/MusicListHook';
 import homeRouter from '@/router/home';
@@ -79,7 +80,7 @@ export interface State {
   user: any;
   playList: SongResult[];
   playListIndex: number;
-  setData: any;
+  setData: typeof defaultSettings;
   lyric: any;
   isMobile: boolean;
   searchValue: string;
@@ -92,6 +93,7 @@ export interface State {
   showArtistDrawer: boolean;
   currentArtistId: number | null;
   systemFonts: { label: string; value: string }[];
+  showDownloadDrawer: boolean;
 }
 
 const state: State = {
@@ -115,7 +117,8 @@ const state: State = {
   showUpdateModal: false,
   showArtistDrawer: false,
   currentArtistId: null,
-  systemFonts: [{ label: '系统默认', value: 'system-ui' }]
+  systemFonts: [{ label: '系统默认', value: 'system-ui' }],
+  showDownloadDrawer: false
 };
 
 const { handlePlayMusic, nextPlay, prevPlay } = useMusicListHook();
@@ -231,9 +234,11 @@ const mutations = {
     state.showUpdateModal = value;
   },
   logout(state: State) {
-    state.user = null;
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
+    logout().then(() => {
+      state.user = null;
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+    });
   },
   setShowArtistDrawer(state, show: boolean) {
     state.showArtistDrawer = show;
@@ -252,6 +257,9 @@ const mutations = {
         value: font
       }))
     ];
+  },
+  setShowDownloadDrawer(state: State, show: boolean) {
+    state.showDownloadDrawer = show;
   }
 };
 
@@ -284,9 +292,9 @@ const actions = {
     const localList: number[] = localFavoriteList ? JSON.parse(localFavoriteList) : [];
 
     // 如果用户已登录，尝试获取服务器收藏列表并合并
-    if (state.user && localStorage.getItem('token')) {
+    if (state.user && state.user.userId) {
       try {
-        const res = await getLikedList();
+        const res = await getLikedList(state.user.userId);
         if (res.data?.ids) {
           // 合并本地和服务器的收藏列表，去重
           const serverList = res.data.ids.reverse();

@@ -15,6 +15,23 @@ interface GithubReleaseInfo {
   }>;
 }
 
+interface ProxyNode {
+  url: string;
+  server: string;
+  ip: string;
+  location: string;
+  latency: number;
+  speed: number;
+}
+
+interface ProxyResponse {
+  code: number;
+  msg: string;
+  data: ProxyNode[];
+  total: number;
+  update_time: string;
+}
+
 export interface UpdateResult {
   hasUpdate: boolean;
   latestVersion: string;
@@ -30,6 +47,81 @@ export interface UpdateResult {
   } | null;
 }
 
+// 缓存相关配置
+const CACHE_KEY = 'github_proxy_nodes';
+const CACHE_EXPIRE_TIME = 1000 * 60 * 10; // 10分钟过期
+
+// 请求配置
+const REQUEST_TIMEOUT = 2000; // 2秒超时
+
+/**
+ * 从缓存获取代理节点
+ */
+const getCachedProxyNodes = (): { nodes: string[]; timestamp: number } | null => {
+  const cached = localStorage.getItem(CACHE_KEY);
+  if (cached) {
+    const { nodes, timestamp } = JSON.parse(cached);
+    if (Date.now() - timestamp < CACHE_EXPIRE_TIME) {
+      return { nodes, timestamp };
+    }
+  }
+  return null;
+};
+
+/**
+ * 缓存代理节点
+ */
+const cacheProxyNodes = (nodes: string[]) => {
+  localStorage.setItem(
+    CACHE_KEY,
+    JSON.stringify({
+      nodes,
+      timestamp: Date.now()
+    })
+  );
+};
+
+/**
+ * 获取代理节点列表
+ */
+export const getProxyNodes = async (): Promise<string[]> => {
+  // 尝试从缓存获取
+  const cached = getCachedProxyNodes();
+  if (cached) {
+    return cached.nodes;
+  }
+
+  try {
+    // 获取最新代理节点
+    const { data } = await axios.get<ProxyResponse>('https://api.akams.cn/github', {
+      timeout: REQUEST_TIMEOUT
+    });
+    if (data.code === 200) {
+      // 按速度排序并获取前10个节点
+      const nodes = data.data
+        .sort((a, b) => b.speed - a.speed)
+        .slice(0, 10)
+        .map((node) => node.url);
+
+      // 缓存节点
+      cacheProxyNodes(nodes);
+      return nodes;
+    }
+  } catch (error) {
+    console.error('获取代理节点失败:', error);
+  }
+
+  // 使用备用节点
+  return [
+    'https://gh.lk.cc',
+    'https://ghproxy.cn',
+    'https://ghproxy.net',
+    'https://gitproxy.click',
+    'https://github.tbedu.top',
+    'https://github.moeyy.xyz'
+  ];
+};
+
 /**
  * 获取 GitHub 最新发布版本信息
  */
@@ -38,33 +130,42 @@ export const getLatestReleaseInfo = async (): Promise<GithubReleaseInfo | null> 
     const token = import.meta.env.VITE_GITHUB_TOKEN;
     const headers = {};
 
+    // 获取代理节点列表
+    const proxyHosts = await getProxyNodes();
+
+    // 构建 API URL 列表
     const apiUrls = [
       // 原始地址
       'https://api.github.com/repos/algerkong/AlgerMusicPlayer/releases/latest',
 
-      // 使用 ghproxy.com 代理
-      'https://www.ghproxy.cn/https://raw.githubusercontent.com/algerkong/AlgerMusicPlayer/dev_electron/package.json'
-
-      // 使用 gitee 镜像（如果有的话）
-      // 'https://gitee.com/api/v5/repos/[用户名]/AlgerMusicPlayer/releases/latest'
+      // 使用代理节点
+      ...proxyHosts.map(
+        (host) =>
+          `${host}/https://raw.githubusercontent.com/algerkong/AlgerMusicPlayer/dev_electron/package.json`
+      )
     ];
+
     if (token) {
       headers['Authorization'] = `token ${token}`;
     }
 
     for (const url of apiUrls) {
       try {
-        const response = await axios.get(url, { headers });
+        const response = await axios.get(url, {
+          headers,
+          timeout: REQUEST_TIMEOUT
+        });
 
         if (url.includes('package.json')) {
-          // 如果是 package.json，直接读取版本号
+          // 如果是 package.json，获取对应的 CHANGELOG
+          const changelogUrl = url.replace('package.json', 'CHANGELOG.md');
+          const changelogResponse = await axios.get(changelogUrl, {
+            timeout: REQUEST_TIMEOUT
+          });
+
           return {
             tag_name: response.data.version,
-            body: (
-              await axios.get(
-                'https://www.ghproxy.cn/https://raw.githubusercontent.com/algerkong/AlgerMusicPlayer/dev_electron/CHANGELOG.md'
-              )
-            ).data,
+            body: changelogResponse.data,
             html_url: 'https://github.com/algerkong/AlgerMusicPlayer/releases/latest',
             assets: []
           } as unknown as GithubReleaseInfo;
