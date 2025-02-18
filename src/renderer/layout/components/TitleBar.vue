@@ -19,15 +19,21 @@
     :mask-closable="true"
   >
     <div class="close-dialog-content">
-      <p>请选择关闭方式</p>
+      <p>{{ t('comp.titleBar.closeTitle') }}</p>
       <div class="remember-choice">
-        <n-checkbox v-model:checked="rememberChoice">记住我的选择</n-checkbox>
+        <n-checkbox v-model:checked="rememberChoice">
+          {{ t('comp.titleBar.rememberChoice') }}
+        </n-checkbox>
       </div>
     </div>
     <template #action>
       <div class="dialog-footer">
-        <n-button type="primary" @click="handleAction('minimize')">最小化到托盘</n-button>
-        <n-button @click="handleAction('close')">退出应用</n-button>
+        <n-button type="primary" @click="handleAction('minimize')">
+          {{ t('comp.titleBar.minimizeToTray') }}
+        </n-button>
+        <n-button @click="handleAction('close')">
+          {{ t('comp.titleBar.exitApp') }}
+        </n-button>
       </div>
     </template>
   </n-modal>

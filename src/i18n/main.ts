@@ -1,28 +1,38 @@
-import type { I18nOptions } from 'vue-i18n';
-import { createI18n } from 'vue-i18n';
-
-import { getStore } from '../main/modules/config';
 import enUS from './lang/en-US';
 import zhCN from './lang/zh-CN';
 
-// 从配置中获取保存的语言设置
-const store = getStore();
-const savedLanguage = (store?.get('set.language') as string) || 'zh-CN';
+const messages = {
+  'zh-CN': zhCN,
+  'en-US': enUS
+} as const;
 
-const options = {
-  legacy: false,
-  locale: savedLanguage,
-  fallbackLocale: 'en-US',
-  messages: {
-    'zh-CN': zhCN,
-    'en-US': enUS
-  },
-  silentTranslationWarn: true,
-  silentFallbackWarn: true
-} as I18nOptions;
+type Language = keyof typeof messages;
 
-const i18n = createI18n(options);
+// 为主进程提供一个简单的 i18n 实现
+const mainI18n = {
+  global: {
+    currentLocale: 'zh-CN' as Language,
+    get locale() {
+      return this.currentLocale;
+    },
+    set locale(value: Language) {
+      this.currentLocale = value;
+    },
+    t(key: string) {
+      const keys = key.split('.');
+      let current: any = messages[this.currentLocale];
+      for (const k of keys) {
+        if (current[k] === undefined) {
+          // 如果找不到翻译，返回键名
+          return key;
+        }
+        current = current[k];
+      }
+      return current;
+    },
+    messages
+  }
+};
 
-export const $t: typeof i18n.global.t = i18n.global.t;
-
-export default i18n;
+export type { Language };
+export default mainI18n;

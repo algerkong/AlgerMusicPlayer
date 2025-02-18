@@ -1,7 +1,11 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useStore } from 'vuex';
 
+import { isElectron } from '@/utils';
+
+const store = useStore();
 const { locale } = useI18n();
 
 const languages = [
@@ -9,28 +13,44 @@ const languages = [
   { label: 'English', value: 'en-US' }
 ];
 
-// 从配置中读取语言设置
-onMounted(() => {
-  const savedLanguage = window.electron.ipcRenderer.sendSync('get-store-value', 'set.language');
-  if (savedLanguage) {
-    locale.value = savedLanguage;
+// 使用计算属性来获取当前语言
+const currentLanguage = computed({
+  get: () => store.state.setData.language || 'zh-CN',
+  set: (value: string) => {
+    handleLanguageChange(value);
   }
 });
 
+// 当语言改变时的处理函数
 const handleLanguageChange = (value: string) => {
+  // 更新 i18n locale
   locale.value = value;
-  // 保存语言设置到配置中
-  window.electron.ipcRenderer.send('set-store-value', 'set.language', value);
+  // 通过 mutation 更新 store
+  store.commit('setLanguage', value);
   // 通知主进程语言已更改
-  window.electron.ipcRenderer.send('change-language', value);
+  if (isElectron) {
+    window.electron.ipcRenderer.send('change-language', value);
+  }
 };
+
+// 监听来自主进程的语言切换事件
+const handleSetLanguage = (_: any, value: string) => {
+  handleLanguageChange(value);
+};
+
+onMounted(() => {
+  if (isElectron) {
+    window.electron.ipcRenderer.on('set-language', handleSetLanguage);
+  }
+});
+
+onUnmounted(() => {
+  if (isElectron) {
+    window.electron.ipcRenderer.removeListener('set-language', handleSetLanguage);
+  }
+});
 </script>
 
 <template>
-  <n-select
-    v-model:value="locale"
-    :options="languages"
-    size="small"
-    @update:value="handleLanguageChange"
-  />
+  <n-select v-model:value="currentLanguage" :options="languages" size="small" />
 </template>

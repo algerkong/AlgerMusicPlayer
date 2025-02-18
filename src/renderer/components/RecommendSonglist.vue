@@ -1,6 +1,8 @@
 <template>
   <div class="recommend-music">
-    <div class="title" :class="setAnimationClass('animate__fadeInLeft')">本周最热音乐</div>
+    <div class="title" :class="setAnimationClass('animate__fadeInLeft')">
+      {{ t('comp.recommendSonglist.title') }}
+    </div>
     <div
       v-show="recommendMusic?.result"
       v-loading="loading"
@@ -21,6 +23,7 @@
 </template>
 
 <script lang="ts" setup>
+import { useI18n } from 'vue-i18n';
 import { useStore } from 'vuex';
 
 import { getRecommendMusic } from '@/api/home';
@@ -29,6 +32,7 @@ import { setAnimationClass, setAnimationDelay } from '@/utils';
 
 import SongItem from './common/SongItem.vue';
 
+const { t } = useI18n();
 const store = useStore();
 // 推荐歌曲
 const recommendMusic = ref<IRecommendMusic>();

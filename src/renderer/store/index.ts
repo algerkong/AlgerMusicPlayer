@@ -1,5 +1,6 @@
 import { createStore } from 'vuex';
 
+import i18n from '@/../i18n/renderer';
 import setData from '@/../main/set.json';
 import { logout } from '@/api/login';
 import { getLikedList, likeSong } from '@/api/music';
@@ -260,6 +261,17 @@ const mutations = {
   },
   setShowDownloadDrawer(state: State, show: boolean) {
     state.showDownloadDrawer = show;
+  },
+  setLanguage(state: State, language: string) {
+    state.setData.language = language;
+    if (isElectron) {
+      window.electron.ipcRenderer.send('set-store-value', 'set.language', language);
+    } else {
+      localStorage.setItem('appSettings', JSON.stringify(state.setData));
+    }
+  },
+  getLanguage(state: State) {
+    return state.setData.language;
   }
 };
 
@@ -360,6 +372,17 @@ const actions = {
         localStorage.removeItem('isPlaying');
       }
     }
+  },
+  initializeLanguage({ state }: { state: State }) {
+    state.setData.language = getLocalStorageItem('appSettings', { language: 'zh-CN' }).language;
+    if (isElectron) {
+      window.electron.ipcRenderer.on('set-language', (_, language: string) => {
+        state.setData.language = language;
+      });
+    } else {
+      localStorage.setItem('appSettings', JSON.stringify(state.setData));
+    }
+    i18n.global.locale.value = state.setData.language as 'zh-CN' | 'en-US';
   }
 };
 

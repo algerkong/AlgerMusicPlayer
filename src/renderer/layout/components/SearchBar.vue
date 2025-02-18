@@ -35,7 +35,9 @@
             :src="getImgUrl(store.state.user.avatarUrl)"
             @click="selectItem('user')"
           />
-          <div v-else class="mx-2 rounded-full cursor-pointer text-sm" @click="toLogin">登录</div>
+          <div v-else class="mx-2 rounded-full cursor-pointer text-sm" @click="toLogin">
+            {{ t('comp.searchBar.login') }}
+          </div>
         </div>
       </template>
       <div class="user-popover">
@@ -46,20 +48,20 @@
         <div class="menu-items">
           <div v-if="!store.state.user" class="menu-item" @click="toLogin">
             <i class="iconfont ri-login-box-line"></i>
-            <span>去登录</span>
+            <span>{{ t('comp.searchBar.toLogin') }}</span>
           </div>
           <div v-if="store.state.user" class="menu-item" @click="selectItem('logout')">
             <i class="iconfont ri-logout-box-r-line"></i>
-            <span>退出登录</span>
+            <span>{{ t('comp.searchBar.logout') }}</span>
           </div>
           <!-- 切换主题 -->
           <div class="menu-item" @click="selectItem('set')">
             <i class="iconfont ri-settings-3-line"></i>
-            <span>设置</span>
+            <span>{{ t('comp.searchBar.set') }}</span>
           </div>
           <div class="menu-item">
             <i class="iconfont" :class="isDarkTheme ? 'ri-moon-line' : 'ri-sun-line'"></i>
-            <span>主题</span>
+            <span>{{ t('comp.searchBar.theme') }}</span>
             <n-switch v-model:value="isDarkTheme" class="ml-auto">
               <template #checked>
                 <i class="ri-moon-line"></i>
@@ -71,15 +73,15 @@
           </div>
           <div class="menu-item" @click="restartApp">
             <i class="iconfont ri-restart-line"></i>
-            <span>重启</span>
+            <span>{{ t('comp.searchBar.restart') }}</span>
           </div>
           <div class="menu-item" @click="selectItem('refresh')">
             <i class="iconfont ri-refresh-line"></i>
-            <span>刷新</span>
+            <span>{{ t('comp.searchBar.refresh') }}</span>
           </div>
           <div class="menu-item" @click="toGithubRelease">
             <i class="iconfont ri-github-fill"></i>
-            <span>当前版本</span>
+            <span>{{ t('comp.searchBar.currentVersion') }}</span>
             <div class="version-info">
               <span class="version-number">{{ updateInfo.currentVersion }}</span>
               <n-tag v-if="updateInfo.hasUpdate" type="success" size="small" class="ml-1">
@@ -101,6 +103,7 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, ref, watchEffect } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 
@@ -118,9 +121,10 @@ import config from '../../../../package.json';
 const router = useRouter();
 const store = useStore();
 const userSetOptions = ref(USER_SET_OPTIONS);
+const { t } = useI18n();
 
 // 推荐热搜词
-const hotSearchKeyword = ref('搜索点什么吧...');
+const hotSearchKeyword = ref(t('comp.searchBar.searchPlaceholder'));
 const hotSearchValue = ref('');
 const loadHotSearchKeyword = async () => {
   const { data } = await getSearchKeyword();

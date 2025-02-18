@@ -54,7 +54,7 @@
                     </template>
                   </n-button>
                 </template>
-                上一个
+                {{ t('player.previous') }}
               </n-tooltip>
 
               <n-tooltip placement="top">
@@ -68,7 +68,7 @@
                     </template>
                   </n-button>
                 </template>
-                {{ isPlaying ? '暂停' : '播放' }}
+                {{ isPlaying ? t('player.pause') : t('player.play') }}
               </n-tooltip>
 
               <n-tooltip v-if="!props.noList" placement="top">
@@ -82,7 +82,7 @@
                     </template>
                   </n-button>
                 </template>
-                下一个
+                {{ t('player.next') }}
               </n-tooltip>
 
               <div class="time-display">
@@ -104,7 +104,7 @@
                       </template>
                     </n-button>
                   </template>
-                  {{ volume === 0 ? '取消静音' : '静音' }}
+                  {{ volume === 0 ? t('player.unmute') : t('player.mute') }}
                 </n-tooltip>
                 <n-slider
                   v-model:value="volume"
@@ -129,7 +129,9 @@
                     </template>
                   </n-button>
                 </template>
-                {{ playMode === 'single' ? '单曲循环' : '列表循环' }}
+                {{
+                  playMode === 'single' ? t('player.modeHint.single') : t('player.modeHint.list')
+                }}
               </n-tooltip>
 
               <n-tooltip placement="top">
@@ -144,7 +146,7 @@
                     </template>
                   </n-button>
                 </template>
-                {{ isFullscreen ? '退出全屏' : '全屏' }}
+                {{ isFullscreen ? t('player.fullscreen.exit') : t('player.fullscreen.enter') }}
               </n-tooltip>
 
               <n-tooltip placement="top">
@@ -157,7 +159,7 @@
                     </template>
                   </n-button>
                 </template>
-                关闭
+                {{ t('player.close') }}
               </n-tooltip>
             </div>
           </div>
@@ -170,7 +172,7 @@
               <i :class="playMode === 'single' ? 'ri-repeat-one-line' : 'ri-play-list-line'"></i>
             </n-icon>
             <div class="mode-text">
-              {{ playMode === 'single' ? '单曲循环' : '自动播放下一个' }}
+              {{ playMode === 'single' ? t('player.modeHint.single') : t('player.modeHint.list') }}
             </div>
           </div>
         </transition>
@@ -188,11 +190,13 @@
 <script setup lang="ts">
 import { NButton, NIcon, NSlider, NTooltip } from 'naive-ui';
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useStore } from 'vuex';
 
 import { getMvUrl } from '@/api/mv';
 import { IMvItem } from '@/type/mv';
 
+const { t } = useI18n();
 type PlayMode = 'single' | 'auto';
 const PLAY_MODE = {
   Single: 'single' as PlayMode,

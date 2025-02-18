@@ -89,6 +89,7 @@ import { cloneDeep } from 'lodash';
 import type { MenuOption } from 'naive-ui';
 import { NImage, NText, useMessage } from 'naive-ui';
 import { computed, h, inject, ref, useTemplateRef } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useStore } from 'vuex';
 
 import { getSongUrl } from '@/hooks/MusicListHook';
@@ -96,6 +97,8 @@ import { audioService } from '@/services/audioService';
 import type { SongResult } from '@/type/music';
 import { getImgUrl, isElectron } from '@/utils';
 import { getImageBackground } from '@/utils/linearColor';
+
+const { t } = useI18n();
 
 const props = withDefaults(
   defineProps<{
@@ -194,12 +197,12 @@ const dropdownOptions = computed<MenuOption[]>(() => {
       type: 'divider'
     },
     {
-      label: '播放',
+      label: t('songItem.menu.play'),
       key: 'play',
       icon: () => h('i', { class: 'iconfont ri-play-circle-line' })
     },
     {
-      label: '下一首播放',
+      label: t('songItem.menu.playNext'),
       key: 'playNext',
       icon: () => h('i', { class: 'iconfont ri-play-list-2-line' })
     },
@@ -208,17 +211,17 @@ const dropdownOptions = computed<MenuOption[]>(() => {
       key: 'd1'
     },
     {
-      label: '下载歌曲',
+      label: t('songItem.menu.download'),
       key: 'download',
       icon: () => h('i', { class: 'iconfont ri-download-line' })
     },
     {
-      label: '添加到歌单',
+      label: t('songItem.menu.addToPlaylist'),
       key: 'addToPlaylist',
       icon: () => h('i', { class: 'iconfont ri-folder-add-line' })
     },
     {
-      label: isFavorite.value ? '取消喜欢' : '喜欢',
+      label: isFavorite.value ? t('songItem.menu.unfavorite') : t('songItem.menu.favorite'),
       key: 'favorite',
       icon: () =>
         h('i', {
@@ -234,7 +237,7 @@ const dropdownOptions = computed<MenuOption[]>(() => {
         key: 'd2'
       },
       {
-        label: '从歌单中删除',
+        label: t('songItem.menu.removeFromPlaylist'),
         key: 'remove',
         icon: () => h('i', { class: 'iconfont ri-delete-bin-line' })
       }
@@ -271,7 +274,7 @@ const handleSelect = (key: string | number) => {
 // 下载音乐
 const downloadMusic = async () => {
   if (isDownloading.value) {
-    message.warning('正在下载中，请稍候...');
+    message.warning(t('songItem.message.downloading'));
     return;
   }
 
@@ -280,7 +283,7 @@ const downloadMusic = async () => {
 
     const data = (await getSongUrl(props.item.id, cloneDeep(props.item), true)) as any;
     if (!data || !data.url) {
-      throw new Error('获取音乐下载地址失败');
+      throw new Error(t('songItem.message.getUrlFailed'));
     }
 
     // 构建文件名
@@ -298,7 +301,7 @@ const downloadMusic = async () => {
       }
     });
 
-    message.success('已加入下载队列');
+    message.success(t('songItem.message.downloadQueued'));
 
     // 监听下载完成事件
     const handleDownloadComplete = (_, result) => {
@@ -331,7 +334,7 @@ const downloadMusic = async () => {
   } catch (error: any) {
     console.error('Download error:', error);
     isDownloading.value = false;
-    message.error(error.message || '下载失败');
+    message.error(error.message || t('songItem.message.downloadFailed'));
   }
 };
 
@@ -398,7 +401,7 @@ const artists = computed(() => {
 // 添加到下一首播放
 const handlePlayNext = () => {
   store.commit('addToNextPlay', props.item);
-  message.success('已添加到下一首播放');
+  message.success(t('songItem.message.addedToNextPlay'));
 };
 </script>
 

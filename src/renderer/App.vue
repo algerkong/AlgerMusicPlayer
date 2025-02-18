@@ -15,18 +15,18 @@ import { darkTheme, lightTheme } from 'naive-ui';
 import { computed, onMounted, watch } from 'vue';
 
 import homeRouter from '@/router/home';
-import store from '@/store';
+import globalStore from '@/store';
 import { isElectron } from '@/utils';
 
 import { isMobile } from './utils';
 
 const theme = computed(() => {
-  return store.state.theme;
+  return globalStore.state.theme;
 });
 
 // 监听字体变化并应用
 watch(
-  () => [store.state.setData.fontFamily, store.state.setData.fontScope],
+  () => [globalStore.state.setData.fontFamily, globalStore.state.setData.fontScope],
   ([newFont, fontScope]) => {
     const appElement = document.body;
     if (!appElement) return;
@@ -60,12 +60,13 @@ watch(
 );
 
 onMounted(() => {
-  store.dispatch('initializeSettings');
-  store.dispatch('initializeTheme');
-  store.dispatch('initializeSystemFonts');
-  store.dispatch('initializePlayState');
+  globalStore.dispatch('initializeSettings');
+  globalStore.dispatch('initializeLanguage');
+  globalStore.dispatch('initializeTheme');
+  globalStore.dispatch('initializeSystemFonts');
+  globalStore.dispatch('initializePlayState');
   if (isMobile.value) {
-    store.commit(
+    globalStore.commit(
       'setMenus',
       homeRouter.filter((item) => item.meta.isMobile)
     );

@@ -1,6 +1,8 @@
 <template>
   <div class="history-page">
-    <div class="title" :class="setAnimationClass('animate__fadeInRight')">播放历史</div>
+    <div class="title" :class="setAnimationClass('animate__fadeInRight')">
+      {{ t('history.title') }}
+    </div>
     <n-scrollbar ref="scrollbarRef" :size="100" @scroll="handleScroll">
       <div class="history-list-content" :class="setAnimationClass('animate__bounceInLeft')">
         <div
@@ -12,7 +14,7 @@
         >
           <song-item class="history-item-content" :item="item" @play="handlePlay" />
           <div class="history-item-count min-w-[60px]">
-            {{ item.count }}
+            {{ t('history.playCount', { count: item.count }) }}
           </div>
           <div class="history-item-delete">
             <i class="iconfont icon-close" @click="handleDelMusic(item)"></i>
@@ -23,7 +25,7 @@
           <n-spin size="large" />
         </div>
 
-        <div v-if="noMore" class="no-more-tip">没有更多了</div>
+        <div v-if="noMore" class="no-more-tip">{{ t('common.noMore') }}</div>
       </div>
     </n-scrollbar>
   </div>
@@ -31,6 +33,7 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useStore } from 'vuex';
 
 import { getMusicDetail } from '@/api/music';
@@ -43,6 +46,7 @@ defineOptions({
   name: 'History'
 });
 
+const { t } = useI18n();
 const store = useStore();
 const { delMusic, musicList } = useMusicHistory();
 const scrollbarRef = ref();
@@ -89,7 +93,7 @@ const getHistorySongs = async () => {
       noMore.value = displayList.value.length >= musicList.value.length;
     }
   } catch (error) {
-    console.error('获取历史记录失败:', error);
+    console.error(t('history.getHistoryFailed'), error);
   } finally {
     loading.value = false;
   }

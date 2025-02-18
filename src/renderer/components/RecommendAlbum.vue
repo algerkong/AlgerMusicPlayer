@@ -1,6 +1,8 @@
 <template>
   <div class="recommend-album">
-    <div class="title" :class="setAnimationClass('animate__fadeInRight')">最新专辑</div>
+    <div class="title" :class="setAnimationClass('animate__fadeInRight')">
+      {{ t('comp.recommendAlbum.title') }}
+    </div>
     <div class="recommend-album-list">
       <template v-for="(item, index) in albumData?.albums" :key="item.id">
         <div
@@ -33,6 +35,7 @@
 
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import { getNewAlbum } from '@/api/home';
 import { getAlbum } from '@/api/list';
@@ -40,6 +43,7 @@ import MusicList from '@/components/MusicList.vue';
 import type { IAlbumNew } from '@/type/album';
 import { getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
 
+const { t } = useI18n();
 const albumData = ref<IAlbumNew>();
 const loadAlbumList = async () => {
   const { data } = await getNewAlbum();

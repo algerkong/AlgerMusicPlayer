@@ -6,7 +6,7 @@
       :class="setAnimationClass('animate__fadeInDown')"
       :native-scrollbar="false"
     >
-      <div class="title">热搜列表</div>
+      <div class="title">{{ t('search.title.hotSearch') }}</div>
       <div class="hot-search-list">
         <template v-for="(item, index) in hotSearchData?.data" :key="index">
           <div
@@ -64,20 +64,20 @@
           <!-- 加载状态 -->
           <div v-if="isLoadingMore" class="loading-more">
             <n-spin size="small" />
-            <span class="ml-2">加载中...</span>
+            <span class="ml-2">{{ t('search.loading.more') }}</span>
           </div>
-          <div v-if="!hasMore && searchDetail" class="no-more">没有更多了</div>
+          <div v-if="!hasMore && searchDetail" class="no-more">{{ t('search.noMore') }}</div>
         </template>
         <!-- 搜索历史 -->
         <template v-else>
           <div class="search-history">
             <div class="search-history-header title">
-              <span>搜索历史</span>
+              <span>{{ t('search.title.searchHistory') }}</span>
               <n-button text type="error" @click="clearSearchHistory">
                 <template #icon>
                   <i class="ri-delete-bin-line"></i>
                 </template>
-                清空
+                {{ t('search.button.clear') }}
               </n-button>
             </div>
             <div class="search-history-list">
@@ -105,6 +105,7 @@
 <script lang="ts" setup>
 import { useDateFormat } from '@vueuse/core';
 import { onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 
@@ -119,6 +120,7 @@ defineOptions({
   name: 'Search'
 });
 
+const { t } = useI18n();
 const route = useRoute();
 const store = useStore();
 
@@ -184,7 +186,7 @@ onMounted(() => {
   loadSearch(route.query.keyword);
 });
 
-const hotKeyword = ref(route.query.keyword || '搜索列表');
+const hotKeyword = ref(route.query.keyword || t('search.title.searchList'));
 
 watch(
   () => store.state.searchValue,
@@ -286,7 +288,7 @@ const loadSearch = async (keywords: any, type: any = null, isLoadMore = false) =
 
     page.value++;
   } catch (error) {
-    console.error('搜索失败:', error);
+    console.error(t('search.error.searchFailed'), error);
   } finally {
     searchDetailLoading.value = false;
     isLoadingMore.value = false;

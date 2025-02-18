@@ -5,7 +5,7 @@
         <template #icon>
           <i class="ri-refresh-line"></i>
         </template>
-        {{ $t('donation.refresh') }}
+        {{ t('donation.refresh') }}
       </n-button>
     </div>
     <div class="donation-grid" :class="{ 'grid-expanded': isExpanded }">
@@ -72,33 +72,33 @@
         <template #icon>
           <i :class="isExpanded ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'"></i>
         </template>
-        {{ isExpanded ? '收起' : '展开更多' }}
+        {{ isExpanded ? t('common.collapse') : t('common.expand') }}
       </n-button>
     </div>
 
     <div class="p-6 rounded-lg shadow-lg bg-light dark:bg-gray-800">
       <div class="description text-center text-sm text-gray-700 dark:text-gray-200">
-        <p>{{ $t('donation.description') }}</p>
-        <p>{{ $t('donation.message') }}</p>
+        <p>{{ t('donation.description') }}</p>
+        <p>{{ t('donation.message') }}</p>
       </div>
       <div class="flex justify-between">
         <div class="flex flex-col items-center gap-2">
           <n-image
             :src="alipay"
-            :alt="$t('common.alipay')"
+            :alt="t('common.alipay')"
             class="w-60 h-60 rounded-lg cursor-none"
             preview-disabled
           />
-          <span class="text-sm text-gray-700 dark:text-gray-200">{{ $t('common.alipay') }}</span>
+          <span class="text-sm text-gray-700 dark:text-gray-200">{{ t('common.alipay') }}</span>
         </div>
         <div class="flex flex-col items-center gap-2">
           <n-image
             :src="wechat"
-            :alt="$t('common.wechat')"
+            :alt="t('common.wechat')"
             class="w-60 h-60 rounded-lg cursor-none"
             preview-disabled
           />
-          <span class="text-sm text-gray-700 dark:text-gray-200">{{ $t('common.wechat') }}</span>
+          <span class="text-sm text-gray-700 dark:text-gray-200">{{ t('common.wechat') }}</span>
         </div>
       </div>
     </div>
@@ -107,11 +107,14 @@
 
 <script setup lang="ts">
 import { computed, onActivated, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import type { Donor } from '@/api/donation';
 import { getDonationList } from '@/api/donation';
 import alipay from '@/assets/alipay.png';
 import wechat from '@/assets/wechat.png';
+
+const { t } = useI18n();
 
 // 默认头像
 const defaultAvatar = 'https://avatars.githubusercontent.com/u/0?v=4';

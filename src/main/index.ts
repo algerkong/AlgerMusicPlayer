@@ -2,13 +2,14 @@ import { electronApp, optimizer } from '@electron-toolkit/utils';
 import { app, ipcMain, nativeImage } from 'electron';
 import { join } from 'path';
 
+import type { Language } from '../i18n/main';
 import i18n from '../i18n/main';
 import { loadLyricWindow } from './lyric';
 import { initializeConfig } from './modules/config';
 import { initializeFileManager } from './modules/fileManager';
 import { initializeFonts } from './modules/fonts';
 import { initializeShortcuts, registerShortcuts } from './modules/shortcuts';
-import { initializeTray } from './modules/tray';
+import { initializeTray, updateTrayMenu } from './modules/tray';
 import { setupUpdateHandlers } from './modules/update';
 import { createMainWindow, initializeWindowManager } from './modules/window';
 import { startMusicApi } from './server';
@@ -28,7 +29,14 @@ let mainWindow: Electron.BrowserWindow;
 // 初始化应用
 function initialize() {
   // 初始化配置管理
-  initializeConfig();
+  const store = initializeConfig();
+
+  // 设置初始语言
+  const savedLanguage = store.get('set.language') as Language;
+  if (savedLanguage) {
+    i18n.global.locale = savedLanguage;
+  }
+
   // 初始化文件管理
   initializeFileManager();
   // 初始化窗口管理
@@ -97,8 +105,11 @@ if (!isSingleInstance) {
   });
 
   // 监听语言切换
-  ipcMain.on('change-language', (_, locale) => {
+  ipcMain.on('change-language', (_, locale: Language) => {
+    // 更新主进程的语言设置
     i18n.global.locale = locale;
+    // 更新托盘菜单
+    updateTrayMenu();
     // 通知所有窗口语言已更改
     mainWindow?.webContents.send('language-changed', locale);
   });

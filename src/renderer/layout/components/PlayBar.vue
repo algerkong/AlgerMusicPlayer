@@ -41,7 +41,9 @@
             class="text-3xl"
             :class="musicFullVisible ? 'ri-arrow-down-s-line' : 'ri-arrow-up-s-line'"
           ></i>
-          <span class="hover-text">{{ musicFullVisible ? '收起' : '展开' }}歌词</span>
+          <span class="hover-text">{{
+            musicFullVisible ? t('player.playBar.collapse') : t('player.playBar.expand')
+          }}</span>
         </div>
       </div>
     </div>
@@ -105,7 +107,7 @@
             @click="toggleFavorite"
           ></i>
         </template>
-        喜欢
+        {{ t('player.playBar.like') }}
       </n-tooltip>
       <n-tooltip v-if="isElectron" class="music-lyric" trigger="hover" :z-index="9999999">
         <template #trigger>
@@ -115,7 +117,7 @@
             @click="openLyricWindow"
           ></i>
         </template>
-        歌词
+        {{ t('player.playBar.lyric') }}
       </n-tooltip>
       <n-popover
         trigger="click"
@@ -132,7 +134,7 @@
             <template #trigger>
               <i class="iconfont icon-list"></i>
             </template>
-            播放列表
+            {{ t('player.playBar.playList') }}
           </n-tooltip>
         </template>
         <div class="music-play-list">
@@ -155,6 +157,7 @@
 <script lang="ts" setup>
 import { useThrottleFn } from '@vueuse/core';
 import { computed, ref, useTemplateRef, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useStore } from 'vuex';
 
 import SongItem from '@/components/common/SongItem.vue';
@@ -176,7 +179,7 @@ import { showShortcutToast } from '@/utils/shortcutToast';
 import MusicFull from './MusicFull.vue';
 
 const store = useStore();
-
+const { t } = useI18n();
 // 是否播放
 const play = computed(() => store.state.play as boolean);
 // 播放列表
@@ -260,13 +263,13 @@ const playModeIcon = computed(() => {
 const playModeText = computed(() => {
   switch (playMode.value) {
     case 0:
-      return '列表循环';
+      return t('player.playBar.playMode.sequence');
     case 1:
-      return '单曲循环';
+      return t('player.playBar.playMode.loop');
     case 2:
-      return '随机播放';
+      return t('player.playBar.playMode.random');
     default:
-      return '列表循环';
+      return t('player.playBar.playMode.sequence');
   }
 });
 
@@ -368,34 +371,42 @@ if (isElectron) {
       case 'togglePlay':
         playMusicEvent();
         showShortcutToast(
-          store.state.play ? '开始播放' : '暂停播放',
+          store.state.play ? t('player.playBar.play') : t('player.playBar.pause'),
           store.state.play ? 'ri-pause-circle-line' : 'ri-play-circle-line'
         );
         break;
       case 'prevPlay':
         handlePrev();
-        showShortcutToast('上一首', 'ri-skip-back-line');
+        showShortcutToast(t('player.playBar.prev'), 'ri-skip-back-line');
         break;
       case 'nextPlay':
         handleNext();
-        showShortcutToast('下一首', 'ri-skip-forward-line');
+        showShortcutToast(t('player.playBar.next'), 'ri-skip-forward-line');
         break;
       case 'volumeUp':
         if (volumeSlider.value < 100) {
           volumeSlider.value = Math.min(volumeSlider.value + 10, 100);
-          showShortcutToast(`音量${volumeSlider.value}%`, 'ri-volume-up-line');
+          showShortcutToast(
+            `${t('player.playBar.volume')}${volumeSlider.value}%`,
+            'ri-volume-up-line'
+          );
         }
         break;
       case 'volumeDown':
         if (volumeSlider.value > 0) {
           volumeSlider.value = Math.max(volumeSlider.value - 10, 0);
-          showShortcutToast(`音量${volumeSlider.value}%`, 'ri-volume-down-line');
+          showShortcutToast(
+            `${t('player.playBar.volume')}${volumeSlider.value}%`,
+            'ri-volume-down-line'
+          );
         }
         break;
       case 'toggleFavorite':
         toggleFavorite(new Event('click'));
         showShortcutToast(
-          isFavorite.value ? `已收藏${playMusic.value.name}` : `已取消收藏${playMusic.value.name}`,
+          isFavorite.value
+            ? t('player.playBar.favorite', { name: playMusic.value.name })
+            : t('player.playBar.unFavorite', { name: playMusic.value.name }),
           isFavorite.value ? 'ri-heart-fill' : 'ri-heart-line'
         );
         break;

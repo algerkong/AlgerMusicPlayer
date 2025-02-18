@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { useMessage } from 'naive-ui';
 import { onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 
@@ -11,6 +12,7 @@ defineOptions({
   name: 'Login'
 });
 
+const { t } = useI18n();
 const message = useMessage();
 const store = useStore();
 const router = useRouter();
@@ -36,14 +38,11 @@ const loadLogin = async () => {
     qrUrl.value = data.data.qrimg;
 
     const timer = timerIsQr(key);
-    // 添加对定时器的引用，以便在出现错误时可以清除
     timerRef.value = timer as any;
   } catch (error) {
-    console.error('加载登录信息时出错:', error);
+    console.error(t('login.message.loadError'), error);
   }
 };
-
-// 使用 ref 来保存定时器，便于在任何地方清除它
 
 const timerIsQr = (key: string) => {
   const timer = setInterval(async () => {
@@ -59,15 +58,14 @@ const timerIsQr = (key: string) => {
         const user = await getUserDetail();
         store.state.user = user.data.profile;
         localStorage.setItem('user', JSON.stringify(user.data.profile));
-        message.success('登录成功');
+        message.success(t('login.message.loginSuccess'));
 
         clearInterval(timer);
         timerRef.value = null;
         router.push('/user');
       }
     } catch (error) {
-      console.error('检查二维码状态时出错:', error);
-      // 在出现错误时清除定时器
+      console.error(t('login.message.qrCheckError'), error);
       clearInterval(timer);
       timerRef.value = null;
     }
@@ -96,7 +94,7 @@ const password = ref('');
 const loginPhone = async () => {
   const { data } = await loginByCellphone(phone.value, password.value);
   if (data.code === 200) {
-    message.success('登录成功');
+    message.success(t('login.message.loginSuccess'));
     store.state.user = data.profile;
     localStorage.setItem('token', data.cookie);
     setTimeout(() => {
@@ -112,22 +110,34 @@ const loginPhone = async () => {
       <div class="bg"></div>
       <div class="content">
         <div v-if="isQr" class="phone" :class="setAnimationClass('animate__fadeInUp')">
-          <div class="login-title">扫码登陆</div>
+          <div class="login-title">{{ t('login.title.qr') }}</div>
           <img class="qr-img" :src="qrUrl" />
-          <div class="text">使用网易云APP扫码登录</div>
+          <div class="text">{{ t('login.qrTip') }}</div>
         </div>
         <div v-else class="phone" :class="setAnimationClass('animate__fadeInUp')">
-          <div class="login-title">手机号登录</div>
+          <div class="login-title">{{ t('login.title.phone') }}</div>
           <div class="phone-page">
-            <input v-model="phone" class="phone-input" type="text" placeholder="手机号" />
-            <input v-model="password" class="phone-input" type="password" placeholder="密码" />
+            <input
+              v-model="phone"
+              class="phone-input"
+              type="text"
+              :placeholder="t('login.placeholder.phone')"
+            />
+            <input
+              v-model="password"
+              class="phone-input"
+              type="password"
+              :placeholder="t('login.placeholder.password')"
+            />
           </div>
-          <div class="text">使用网易云账号登录</div>
-          <n-button class="btn-login" @click="loginPhone()">登录</n-button>
+          <div class="text">{{ t('login.phoneTip') }}</div>
+          <n-button class="btn-login" @click="loginPhone()">{{ t('login.button.login') }}</n-button>
         </div>
       </div>
       <div class="bottom">
-        <div class="title" @click="chooseQr()">{{ isQr ? '手机号登录' : '扫码登录' }}</div>
+        <div class="title" @click="chooseQr()">
+          {{ isQr ? t('login.button.switchToPhone') : t('login.button.switchToQr') }}
+        </div>
       </div>
     </div>
   </div>

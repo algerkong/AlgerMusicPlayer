@@ -7,7 +7,7 @@
             quaternary
             class="inline-flex items-center gap-2 px-4 py-2 transition-all duration-300 hover:-translate-y-0.5"
           >
-            请我喝咖啡
+            {{ t('comp.coffee.title') }}
           </n-button>
         </slot>
       </template>
@@ -17,20 +17,24 @@
           <div class="flex flex-col items-center gap-2">
             <n-image
               :src="alipayQR"
-              alt="支付宝收款码"
+              :alt="t('comp.coffee.alipayQR')"
               class="w-32 h-32 rounded-lg cursor-none"
               preview-disabled
             />
-            <span class="text-sm text-gray-700 dark:text-gray-200">支付宝</span>
+            <span class="text-sm text-gray-700 dark:text-gray-200">{{
+              t('comp.coffee.alipay')
+            }}</span>
           </div>
           <div class="flex flex-col items-center gap-2">
             <n-image
               :src="wechatQR"
-              alt="微信收款码"
+              :alt="t('comp.coffee.wechatQR')"
               class="w-32 h-32 rounded-lg cursor-none"
               preview-disabled
             />
-            <span class="text-sm text-gray-700 dark:text-gray-200">微信支付</span>
+            <span class="text-sm text-gray-700 dark:text-gray-200">{{
+              t('comp.coffee.wechat')
+            }}</span>
           </div>
         </div>
 
@@ -39,7 +43,7 @@
             class="text-sm text-gray-700 dark:text-gray-200 text-center cursor-pointer hover:text-green-500"
             @click="copyQQ"
           >
-            QQ群：789288579
+            {{ t('comp.coffee.qqGroup') }}
           </p>
         </div>
       </div>
@@ -48,10 +52,13 @@
 </template>
 
 <script setup>
-import { NButton, NImage, NPopover } from 'naive-ui';
+import { NButton, NImage, NPopover, useMessage } from 'naive-ui';
+import { useI18n } from 'vue-i18n';
 
 import alipay from '@/assets/alipay.png';
 import wechat from '@/assets/wechat.png';
+
+const { t } = useI18n();
 
 const message = useMessage();
 const copyQQ = () => {

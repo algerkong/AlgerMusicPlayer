@@ -2,7 +2,7 @@
   <n-modal
     v-model:show="visible"
     preset="dialog"
-    title="快捷键设置"
+    :title="t('settings.shortcutSettings.title')"
     :show-icon="false"
     style="width: 600px"
     @after-leave="handleAfterLeave"
@@ -20,7 +20,7 @@
                   <n-input
                     :value="formatShortcut(shortcut)"
                     :status="duplicateKeys[key] ? 'error' : undefined"
-                    placeholder="点击输入快捷键"
+                    :placeholder="t('settings.shortcutSettings.inputPlaceholder')"
                     readonly
                     @keydown="(e) => handleKeyDown(e, key)"
                     @focus="() => startRecording(key)"
@@ -32,7 +32,7 @@
                         <i class="ri-error-warning-line"></i>
                       </n-icon>
                     </template>
-                    快捷键冲突
+                    {{ t('settings.shortcutSettings.shortcutConflict') }}
                   </n-tooltip>
                 </div>
               </div>
@@ -42,10 +42,12 @@
 
         <div class="shortcut-footer">
           <n-space justify="end">
-            <n-button size="small" @click="handleCancel">取消</n-button>
-            <n-button size="small" @click="resetShortcuts">恢复默认</n-button>
+            <n-button size="small" @click="handleCancel">{{ t('common.cancel') }}</n-button>
+            <n-button size="small" @click="resetShortcuts">{{
+              t('settings.shortcutSettings.resetShortcuts')
+            }}</n-button>
             <n-button type="primary" size="small" :disabled="hasConflict" @click="handleSave">
-              保存
+              {{ t('common.save') }}
             </n-button>
           </n-space>
         </div>
@@ -58,8 +60,11 @@
 import { cloneDeep } from 'lodash';
 import { useMessage } from 'naive-ui';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import { isElectron } from '@/utils';
+
+const { t } = useI18n();
 
 interface Shortcuts {
   togglePlay: string;
@@ -121,13 +126,13 @@ onMounted(() => {
 });
 
 const shortcutLabels: Record<keyof Shortcuts, string> = {
-  togglePlay: '播放/暂停',
-  prevPlay: '上一首',
-  nextPlay: '下一首',
-  volumeUp: '音量增加',
-  volumeDown: '音量减少',
-  toggleFavorite: '收藏/取消收藏',
-  toggleWindow: '显示/隐藏窗口'
+  togglePlay: t('settings.shortcutSettings.togglePlay'),
+  prevPlay: t('settings.shortcutSettings.prevPlay'),
+  nextPlay: t('settings.shortcutSettings.nextPlay'),
+  volumeUp: t('settings.shortcutSettings.volumeUp'),
+  volumeDown: t('settings.shortcutSettings.volumeDown'),
+  toggleFavorite: t('settings.shortcutSettings.toggleFavorite'),
+  toggleWindow: t('settings.shortcutSettings.toggleWindow')
 };
 
 const getShortcutLabel = (key: keyof Shortcuts) => shortcutLabels[key];
@@ -221,12 +226,12 @@ const handleKeyDown = (e: KeyboardEvent, key: keyof Shortcuts) => {
 
 const resetShortcuts = () => {
   tempShortcuts.value = { ...defaultShortcuts };
-  message.success('已恢复默认快捷键，请记得保存');
+  message.success(t('settings.shortcutSettings.messages.resetSuccess'));
 };
 
 const saveShortcuts = () => {
   if (hasConflict.value) {
-    message.error('存在冲突的快捷键，请重新设置');
+    message.error(t('settings.shortcutSettings.messages.conflict'));
     return;
   }
 
@@ -241,17 +246,17 @@ const saveShortcuts = () => {
       window.electron.ipcRenderer.send('set-store-value', 'shortcuts', shortcutsToSave);
       // 然后更新快捷键
       window.electron.ipcRenderer.send('update-shortcuts');
-      message.success('快捷键设置已保存');
+      message.success(t('settings.shortcutSettings.messages.saveSuccess'));
     } catch (error) {
       console.error('保存快捷键失败:', error);
-      message.error('保存快捷键失败，请重试');
+      message.error(t('settings.shortcutSettings.messages.saveError'));
     }
   }
 };
 
 const cancelEdit = () => {
   tempShortcuts.value = { ...shortcuts.value };
-  message.info('已取消修改');
+  message.info(t('settings.shortcutSettings.messages.cancelEdit'));
   emit('update:show', false);
 };
 

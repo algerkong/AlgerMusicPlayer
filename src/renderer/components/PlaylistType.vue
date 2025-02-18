@@ -1,7 +1,9 @@
 <template>
   <!-- 歌单分类列表 -->
   <div class="play-list-type">
-    <div class="title" :class="setAnimationClass('animate__fadeInLeft')">歌单分类</div>
+    <div class="title" :class="setAnimationClass('animate__fadeInLeft')">
+      {{ t('comp.playlistType.title') }}
+    </div>
     <div>
       <template v-for="(item, index) in playlistCategory?.sub" :key="item.name">
         <span
@@ -34,7 +36,9 @@
         "
         @click="handleToggleShowAllPlaylistCategory"
       >
-        {{ !isShowAllPlaylistCategory ? '显示全部' : '隐藏一些' }}
+        {{
+          !isShowAllPlaylistCategory ? t('comp.playlistType.showAll') : t('comp.playlistType.hide')
+        }}
       </div>
     </div>
   </div>
@@ -42,11 +46,14 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
 import { getPlaylistCategory } from '@/api/home';
 import type { IPlayListSort } from '@/type/playlist';
 import { setAnimationClass, setAnimationDelay } from '@/utils';
+
+const { t } = useI18n();
 // 歌单分类
 const playlistCategory = ref<IPlayListSort>();
 // 是否显示全部歌单分类

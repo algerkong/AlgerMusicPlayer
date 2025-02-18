@@ -19,7 +19,9 @@
             class="recommend-singer-item-count p-2 text-base text-gray-200 z-10 cursor-pointer"
             @click="showMusic = true"
           >
-            <div class="font-bold text-xl">每日推荐</div>
+            <div class="font-bold text-lg">
+              {{ t('comp.recommendSinger.title') }}
+            </div>
 
             <div class="mt-2">
               <p
@@ -45,7 +47,7 @@
             class="recommend-singer-item-bg"
           ></div>
           <div class="recommend-singer-item-count p-2 text-base text-gray-200 z-10">
-            {{ item.musicSize }}首
+            {{ t('common.songCount', { count: item.musicSize }) }}
           </div>
           <div class="recommend-singer-item-info z-10">
             <div class="recommend-singer-item-info-play" @click="toSearchSinger(item.name)">
@@ -61,7 +63,7 @@
       <music-list
         v-if="dayRecommendData?.dailySongs.length"
         v-model:show="showMusic"
-        name="每日推荐列表"
+        :name="t('comp.recommendSinger.songlist')"
         :song-list="dayRecommendData?.dailySongs"
         :cover="false"
       />
@@ -71,6 +73,7 @@
 
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useStore } from 'vuex';
 
 import { getDayRecommend, getHotSinger } from '@/api/home';
@@ -81,6 +84,7 @@ import type { IHotSinger } from '@/type/singer';
 import { getImgUrl, setAnimationClass, setAnimationDelay, setBackgroundImg } from '@/utils';
 
 const store = useStore();
+const { t } = useI18n();
 
 // 歌手信息
 const hotSingerData = ref<IHotSinger>();

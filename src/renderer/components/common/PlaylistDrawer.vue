@@ -5,7 +5,7 @@
     placement="right"
     @update:show="$emit('update:modelValue', $event)"
   >
-    <n-drawer-content title="添加到歌单" class="mac-style-drawer">
+    <n-drawer-content :title="t('comp.playlistDrawer.title')" class="mac-style-drawer">
       <n-scrollbar class="h-full">
         <div class="playlist-drawer">
           <!-- 创建新歌单按钮和表单 -->
@@ -18,14 +18,20 @@
               <div class="create-playlist-icon">
                 <i class="iconfont" :class="isCreating ? 'ri-close-line' : 'ri-add-line'"></i>
               </div>
-              <div class="create-playlist-text">{{ isCreating ? '取消创建' : '创建新歌单' }}</div>
+              <div class="create-playlist-text">
+                {{
+                  isCreating
+                    ? t('comp.playlistDrawer.cancelCreate')
+                    : t('comp.playlistDrawer.createPlaylist')
+                }}
+              </div>
             </div>
 
             <!-- 创建歌单表单 -->
             <div class="create-playlist-form" :class="{ 'is-visible': isCreating }">
               <n-input
                 v-model:value="formValue.name"
-                placeholder="歌单名称"
+                :placeholder="t('comp.playlistDrawer.playlistName')"
                 maxlength="40"
                 class="mac-style-input"
                 :status="inputError ? 'error' : undefined"
@@ -40,11 +46,15 @@
                     class="iconfont"
                     :class="formValue.privacy ? 'ri-lock-line' : 'ri-earth-line'"
                   ></i>
-                  <span>{{ formValue.privacy ? '私密歌单' : '公开歌单' }}</span>
+                  <span>{{
+                    formValue.privacy
+                      ? t('comp.playlistDrawer.privatePlaylist')
+                      : t('comp.playlistDrawer.publicPlaylist')
+                  }}</span>
                 </div>
                 <n-switch v-model:value="formValue.privacy" class="mac-style-switch">
-                  <template #checked>私密</template>
-                  <template #unchecked>公开</template>
+                  <template #checked>{{ t('comp.playlistDrawer.private') }}</template>
+                  <template #unchecked>{{ t('comp.playlistDrawer.public') }}</template>
                 </n-switch>
               </div>
               <div class="form-actions">
@@ -56,7 +66,7 @@
                   :disabled="!formValue.name"
                   @click="handleCreatePlaylist"
                 >
-                  创建歌单
+                  {{ t('comp.playlistDrawer.create') }}
                 </n-button>
               </div>
             </div>
@@ -80,7 +90,10 @@
               />
               <div class="playlist-item-info">
                 <div class="playlist-item-name">{{ playlist.name }}</div>
-                <div class="playlist-item-count">{{ playlist.trackCount }}首歌曲</div>
+                <div class="playlist-item-count">
+                  {{ playlist.trackCount }}
+                  {{ t('comp.playlistDrawer.count') }}
+                </div>
               </div>
               <div class="playlist-item-action">
                 <i class="iconfont ri-add-line"></i>
@@ -96,12 +109,14 @@
 <script lang="ts" setup>
 import { useMessage } from 'naive-ui';
 import { computed, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useStore } from 'vuex';
 
 import { createPlaylist, updatePlaylistTracks } from '@/api/music';
 import { getUserPlaylist } from '@/api/user';
 import { getImgUrl } from '@/utils';
 
+const { t } = useI18n();
 const props = defineProps<{
   modelValue: boolean;
   songId?: number;
@@ -138,7 +153,7 @@ const fetchUserPlaylists = async () => {
   try {
     const { user } = store.state;
     if (!user?.userId) {
-      message.error('请先登录');
+      message.error(t('comp.playlistDrawer.loginFirst'));
       emit('update:modelValue', false);
       return;
     }
@@ -149,7 +164,7 @@ const fetchUserPlaylists = async () => {
     }
   } catch (error) {
     console.error('获取歌单失败:', error);
-    message.error('获取歌单失败');
+    message.error(t('comp.playlistDrawer.getPlaylistFailed'));
   }
 };
 
@@ -165,21 +180,21 @@ const handleAddToPlaylist = async (playlist: any) => {
     console.log('res.data', res.data);
 
     if (res.status === 200) {
-      message.success('添加成功');
+      message.success(t('comp.playlistDrawer.addSuccess'));
       emit('update:modelValue', false);
     } else {
-      throw new Error(res.data?.msg || '添加失败');
+      throw new Error(res.data?.msg || t('comp.playlistDrawer.addFailed'));
     }
   } catch (error: any) {
     console.error('添加到歌单失败:', error);
-    message.error(error.message || '添加到歌单失败');
+    message.error(error.message || t('comp.playlistDrawer.addFailed'));
   }
 };
 
 // 创建歌单
 const handleCreatePlaylist = async () => {
   if (!formValue.value.name) {
-    message.error('请输入歌单名称');
+    message.error(t('comp.playlistDrawer.inputPlaylistName'));
     return;
   }
 
@@ -192,7 +207,7 @@ const handleCreatePlaylist = async () => {
     });
 
     if (res.data?.id) {
-      message.success('创建成功');
+      message.success(t('comp.playlistDrawer.createSuccess'));
       isCreating.value = false;
       formValue.value.name = '';
       formValue.value.privacy = false;
@@ -200,7 +215,7 @@ const handleCreatePlaylist = async () => {
     }
   } catch (error) {
     console.error('创建歌单失败:', error);
-    message.error('创建歌单失败');
+    message.error(t('comp.playlistDrawer.createFailed'));
   } finally {
     creating.value = false;
   }

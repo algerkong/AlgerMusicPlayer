@@ -15,18 +15,20 @@
     placement="bottom"
     @after-leave="handleDrawerClose"
   >
-    <n-drawer-content title="下载管理" closable :native-scrollbar="false">
+    <n-drawer-content :title="t('download.title')" closable :native-scrollbar="false">
       <div class="drawer-container">
         <n-tabs type="line" animated class="h-full">
           <!-- 下载列表 -->
-          <n-tab-pane name="downloading" tab="下载中" class="h-full">
+          <n-tab-pane name="downloading" :tab="t('download.tabs.downloading')" class="h-full">
             <div class="download-list">
               <div v-if="downloadList.length === 0" class="empty-tip">
-                <n-empty description="暂无下载任务" />
+                <n-empty :description="t('download.empty.noTasks')" />
               </div>
               <template v-else>
                 <div class="total-progress">
-                  <div class="total-progress-text">总进度: {{ totalProgress.toFixed(1) }}%</div>
+                  <div class="total-progress-text">
+                    {{ t('download.progress.total', { progress: totalProgress.toFixed(1) }) }}
+                  </div>
                   <n-progress
                     type="line"
                     :percentage="Number(totalProgress.toFixed(1))"
@@ -52,7 +54,10 @@
                             {{ item.filename }}
                           </div>
                           <div class="download-item-artist">
-                            {{ item.songInfo?.ar?.map((a) => a.name).join(', ') || '未知歌手' }}
+                            {{
+                              item.songInfo?.ar?.map((a) => a.name).join(', ') ||
+                              t('download.artist.unknown')
+                            }}
                           </div>
                           <div class="download-item-progress">
                             <n-progress
@@ -83,10 +88,10 @@
           </n-tab-pane>
 
           <!-- 已下载列表 -->
-          <n-tab-pane name="downloaded" tab="已下载" class="h-full">
+          <n-tab-pane name="downloaded" :tab="t('download.tabs.downloaded')" class="h-full">
             <div class="downloaded-list">
               <div v-if="downloadedList.length === 0" class="empty-tip">
-                <n-empty description="暂无已下载歌曲" />
+                <n-empty :description="t('download.empty.noDownloaded')" />
               </div>
               <div v-else class="downloaded-content">
                 <div class="downloaded-items">
@@ -143,19 +148,28 @@
   </n-drawer>
 
   <!-- 删除确认对话框 -->
-  <n-modal v-model:show="showDeleteConfirm" preset="dialog" type="warning" title="删除确认">
+  <n-modal
+    v-model:show="showDeleteConfirm"
+    preset="dialog"
+    type="warning"
+    :title="t('download.delete.title')"
+  >
     <template #header>
       <div class="flex items-center">
         <i class="iconfont ri-error-warning-line mr-2 text-xl"></i>
-        <span>删除确认</span>
+        <span>{{ t('download.delete.title') }}</span>
       </div>
     </template>
     <div class="delete-confirm-content">
-      确定要删除歌曲 "{{ itemToDelete?.filename }}" 吗？此操作不可恢复。
+      {{ t('download.delete.message', { filename: itemToDelete?.filename }) }}
     </div>
     <template #action>
-      <n-button size="small" @click="showDeleteConfirm = false">取消</n-button>
-      <n-button size="small" type="warning" @click="confirmDelete">确定删除</n-button>
+      <n-button size="small" @click="showDeleteConfirm = false">{{
+        t('download.delete.cancel')
+      }}</n-button>
+      <n-button size="small" type="warning" @click="confirmDelete">{{
+        t('download.delete.confirm')
+      }}</n-button>
     </template>
   </n-modal>
 </template>
@@ -164,11 +178,14 @@
 import type { ProgressStatus } from 'naive-ui';
 import { useMessage } from 'naive-ui';
 import { computed, onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useStore } from 'vuex';
 
 import { getMusicDetail } from '@/api/music';
 // import { audioService } from '@/services/audioService';
 import { getImgUrl } from '@/utils';
+
+const { t } = useI18n();
 
 interface DownloadItem {
   filename: string;
@@ -247,13 +264,13 @@ const getStatusType = (item: DownloadItem) => {
 const getStatusText = (item: DownloadItem) => {
   switch (item.status) {
     case 'downloading':
-      return '下载中';
+      return t('download.status.downloading');
     case 'completed':
-      return '已完成';
+      return t('download.status.completed');
     case 'error':
-      return '失败';
+      return t('download.status.failed');
     default:
-      return '未知';
+      return t('download.status.unknown');
   }
 };
 
@@ -312,13 +329,13 @@ const confirmDelete = async () => {
         )
       );
       await refreshDownloadedList();
-      message.success('删除成功');
+      message.success(t('download.delete.success'));
     } else {
-      message.error('删除失败');
+      message.error(t('download.delete.failed'));
     }
   } catch (error) {
     console.error('Failed to delete music:', error);
-    message.error('删除失败');
+    message.error(t('download.delete.failed'));
   } finally {
     showDeleteConfirm.value = false;
     itemToDelete.value = null;
@@ -398,7 +415,7 @@ const refreshDownloadedList = async () => {
           return {
             ...item,
             picUrl: songDetail?.al?.picUrl || item.picUrl || '/images/default_cover.png',
-            ar: songDetail?.ar || item.ar || [{ name: '本地音乐' }]
+            ar: songDetail?.ar || item.ar || [{ name: t('download.localMusic') }]
           };
         });
       } catch (detailError) {
@@ -468,7 +485,7 @@ onMounted(() => {
       downloadList.value = downloadList.value.filter((item) => item.filename !== data.filename);
       // 刷新已下载列表
       refreshDownloadedList();
-      message.success(`${data.filename} 下载完成`);
+      message.success(t('download.message.downloadComplete', { filename: data.filename }));
     } else {
       const existingItem = downloadList.value.find((item) => item.filename === data.filename);
       if (existingItem) {
@@ -481,7 +498,9 @@ onMounted(() => {
           downloadList.value = downloadList.value.filter((item) => item.filename !== data.filename);
         }, 3000);
       }
-      message.error(`${data.filename} 下载失败: ${data.error}`);
+      message.error(
+        t('download.message.downloadFailed', { filename: data.filename, error: data.error })
+      );
     }
   });
 

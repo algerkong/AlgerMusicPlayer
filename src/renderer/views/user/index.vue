@@ -13,22 +13,22 @@
           <div class="user-info-list">
             <div class="user-info-item">
               <div class="label">{{ userDetail.profile.followeds }}</div>
-              <div>粉丝</div>
+              <div>{{ t('user.profile.followers') }}</div>
             </div>
             <div class="user-info-item">
               <div class="label">{{ userDetail.profile.follows }}</div>
-              <div>关注</div>
+              <div>{{ t('user.profile.following') }}</div>
             </div>
             <div class="user-info-item">
               <div class="label">{{ userDetail.level }}</div>
-              <div>等级</div>
+              <div>{{ t('user.profile.level') }}</div>
             </div>
           </div>
         </div>
         <div class="uesr-signature">{{ userDetail.profile.signature }}</div>
 
         <div class="play-list" :class="setAnimationClass('animate__fadeInLeft')">
-          <div class="title">创建的歌单</div>
+          <div class="title">{{ t('user.playlist.created') }}</div>
           <n-scrollbar>
             <div
               v-for="(item, index) in playList"
@@ -45,7 +45,9 @@
               <div class="play-list-item-info">
                 <div class="play-list-item-name">{{ item.name }}</div>
                 <div class="play-list-item-count">
-                  {{ item.trackCount }}首，播放{{ item.playCount }}次
+                  {{ t('user.playlist.trackCount', { count: item.trackCount }) }}，{{
+                    t('user.playlist.playCount', { count: item.playCount })
+                  }}
                 </div>
               </div>
             </div>
@@ -61,7 +63,7 @@
       class="right"
       :class="setAnimationClass('animate__fadeInRight')"
     >
-      <div class="title">听歌排行</div>
+      <div class="title">{{ t('user.ranking.title') }}</div>
       <div class="record-list">
         <n-scrollbar>
           <div
@@ -72,7 +74,9 @@
             :style="setAnimationDelay(index, 25)"
           >
             <song-item class="song-item" :item="item" @play="handlePlay" />
-            <div class="play-count">{{ item.playCount }}次</div>
+            <div class="play-count">
+              {{ t('user.ranking.playCount', { count: item.playCount }) }}
+            </div>
           </div>
           <play-bottom />
         </n-scrollbar>
@@ -93,6 +97,7 @@
 <script lang="ts" setup>
 import { useMessage } from 'naive-ui';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 
@@ -110,6 +115,7 @@ defineOptions({
   name: 'User'
 });
 
+const { t } = useI18n();
 const store = useStore();
 const router = useRouter();
 const userDetail = ref<IUserDetail>();
@@ -251,15 +257,15 @@ const handleRemoveFromPlaylist = async (songId: number) => {
     });
 
     if (res.status === 200) {
-      message.success('删除成功');
+      message.success(t('user.message.deleteSuccess'));
       // 重新加载歌单详情
       await loadPlaylistDetail(list.value.id);
     } else {
-      throw new Error(res.data?.msg || '删除失败');
+      throw new Error(res.data?.msg || t('user.message.deleteFailed'));
     }
   } catch (error: any) {
     console.error('删除歌曲失败:', error);
-    message.error(error.message || '删除失败');
+    message.error(error.message || t('user.message.deleteFailed'));
   }
 };
 

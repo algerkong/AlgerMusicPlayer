@@ -66,7 +66,9 @@
                       @remove-song="(id) => emit('remove-song', id)"
                     />
                   </div>
-                  <div v-if="isLoadingMore" class="loading-more">加载更多...</div>
+                  <div v-if="isLoadingMore" class="loading-more">
+                    {{ t('common.loadingMore') }}
+                  </div>
                   <play-bottom />
                 </div>
               </n-spin>
@@ -80,6 +82,7 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
 import { useStore } from 'vuex';
 
 import { getMusicDetail } from '@/api/music';
@@ -88,6 +91,7 @@ import { getImgUrl, isMobile, setAnimationClass, setAnimationDelay } from '@/uti
 
 import PlayBottom from './common/PlayBottom.vue';
 
+const { t } = useI18n();
 const store = useStore();
 
 const props = withDefaults(

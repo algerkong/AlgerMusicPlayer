@@ -14,8 +14,10 @@
           <img src="@/assets/logo.png" alt="App Icon" />
         </div>
         <div class="app-info">
-          <h2 class="app-name">发现新版本 {{ updateInfo.latestVersion }}</h2>
-          <p class="app-desc mb-2">当前版本 {{ updateInfo.currentVersion }}</p>
+          <h2 class="app-name">{{ t('comp.update.title') }} {{ updateInfo.latestVersion }}</h2>
+          <p class="app-desc mb-2">
+            {{ t('comp.update.currentVersion') }} {{ updateInfo.currentVersion }}
+          </p>
         </div>
       </div>
       <div class="update-info">
@@ -39,7 +41,7 @@
           :loading="downloading"
           @click="closeModal"
         >
-          {{ '暂不更新' }}
+          {{ t('comp.update.cancel') }}
         </n-button>
         <n-button
           type="primary"
@@ -53,14 +55,14 @@
       </div>
       <div v-if="!downloading" class="modal-desc mt-4 text-center">
         <p class="text-xs text-gray-400">
-          下载遇到问题？去
+          {{ t('comp.installApp.downloadProblem') }}
           <a
             class="text-green-500"
             target="_blank"
             href="https://github.com/algerkong/AlgerMusicPlayer/releases"
             >GitHub</a
           >
-          下载最新版本
+          {{ t('comp.installApp.downloadProblemLinkText') }}
         </p>
       </div>
     </div>
@@ -70,11 +72,14 @@
 <script setup lang="ts">
 import { marked } from 'marked';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useStore } from 'vuex';
 
 import { checkUpdate, getProxyNodes, UpdateResult } from '@/utils/update';
 
 import config from '../../../../package.json';
+
+const { t } = useI18n();
 
 // 配置 marked
 marked.setOptions({
@@ -141,10 +146,10 @@ const checkForUpdates = async () => {
 
 const downloading = ref(false);
 const downloadProgress = ref(0);
-const downloadStatus = ref('准备下载...');
+const downloadStatus = ref(t('comp.update.prepareDownload'));
 const downloadBtnText = computed(() => {
-  if (downloading.value) return '下载中...';
-  return '立即更新';
+  if (downloading.value) return t('comp.update.downloading');
+  return t('comp.update.nowUpdate');
 });
 
 // 处理下载状态更新
@@ -159,7 +164,7 @@ const handleDownloadComplete = (_event: any, success: boolean, filePath: string)
   if (success) {
     window.electron.ipcRenderer.send('install-update', filePath);
   } else {
-    window.$message.error('下载失败，请重试或手动下载');
+    window.$message.error(t('comp.update.downloadFailed'));
   }
 };
 
@@ -225,7 +230,7 @@ const handleUpdate = async () => {
   if (downloadUrl) {
     try {
       downloading.value = true;
-      downloadStatus.value = '准备下载...';
+      downloadStatus.value = t('comp.update.prepareDownload');
 
       // 获取代理节点列表
       const proxyHosts = await getProxyNodes();
@@ -235,11 +240,11 @@ const handleUpdate = async () => {
       window.electron.ipcRenderer.send('start-download', proxyDownloadUrl);
     } catch (error) {
       downloading.value = false;
-      window.$message.error('启动下载失败，请重试或手动下载');
+      window.$message.error(t('comp.update.startFailed'));
       console.error('下载失败:', error);
     }
   } else {
-    window.$message.error('未找到适合当前系统的安装包，请手动下载');
+    window.$message.error(t('comp.update.noDownloadUrl'));
     window.open('https://github.com/algerkong/AlgerMusicPlayer/releases/latest', '_blank');
   }
 };

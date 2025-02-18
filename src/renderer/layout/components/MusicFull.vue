@@ -113,7 +113,7 @@
 
             <!-- 无歌词 -->
             <div v-if="!lrcArray.length" class="music-lrc-text mt-40">
-              <span>暂无歌词, 请欣赏</span>
+              <span>{{ t('player.lrc.noLrc') }}</span>
             </div>
           </div>
         </n-layout>
@@ -130,6 +130,7 @@
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useStore } from 'vuex';
 
 import LyricSettings from '@/components/lyric/LyricSettings.vue';
@@ -145,6 +146,7 @@ import {
 import { getImgUrl, isMobile } from '@/utils';
 import { animateGradient, getHoverBackgroundColor, getTextColors } from '@/utils/linearColor';
 
+const { t } = useI18n();
 // 定义 refs
 const lrcSider = ref<any>(null);
 const isMouse = ref(false);

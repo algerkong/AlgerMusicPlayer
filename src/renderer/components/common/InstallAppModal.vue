@@ -13,24 +13,28 @@
         </div>
         <div class="app-info">
           <h2 class="app-name">Alger Music Player {{ config.version }}</h2>
-          <p class="app-desc mb-2">在桌面安装应用，获得更好的体验</p>
-          <n-checkbox v-model:checked="noPrompt">不再提示</n-checkbox>
+          <p class="app-desc mb-2">{{ t('comp.installApp.description') }}</p>
+          <n-checkbox v-model:checked="noPrompt">{{ t('comp.installApp.noPrompt') }}</n-checkbox>
         </div>
       </div>
       <div class="modal-actions">
-        <n-button class="cancel-btn" @click="closeModal">暂不安装</n-button>
-        <n-button type="primary" class="install-btn" @click="handleInstall">立即安装</n-button>
+        <n-button class="cancel-btn" @click="closeModal">{{
+          t('comp.installApp.cancel')
+        }}</n-button>
+        <n-button type="primary" class="install-btn" @click="handleInstall">{{
+          t('comp.installApp.install')
+        }}</n-button>
       </div>
       <div class="modal-desc mt-4 text-center">
         <p class="text-xs text-gray-400">
-          下载遇到问题？去
+          {{ t('comp.installApp.downloadProblem') }}
           <a
             class="text-green-500"
             target="_blank"
             href="https://github.com/algerkong/AlgerMusicPlayer/releases"
             >GitHub</a
           >
-          下载最新版本
+          {{ t('comp.installApp.downloadProblemLinkText') }}
         </p>
       </div>
     </div>
@@ -39,11 +43,14 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import { isElectron, isMobile } from '@/utils';
 import { getLatestReleaseInfo } from '@/utils/update';
 
 import config from '../../../../package.json';
+
+const { t } = useI18n();
 
 const showModal = ref(false);
 const noPrompt = ref(false);

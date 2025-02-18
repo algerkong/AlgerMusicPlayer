@@ -2,8 +2,8 @@
   <div v-if="isComponent ? favoriteSongs.length : true" class="favorite-page">
     <div class="favorite-header" :class="setAnimationClass('animate__fadeInLeft')">
       <div class="favorite-header-left">
-        <h2>我的收藏</h2>
-        <div class="favorite-count">共 {{ favoriteList.length }} 首</div>
+        <h2>{{ t('favorite.title') }}</h2>
+        <div class="favorite-count">{{ t('favorite.count', { count: favoriteList.length }) }}</div>
       </div>
       <div v-if="!isComponent && isElectron" class="favorite-header-right">
         <n-button
@@ -17,7 +17,7 @@
           <template #icon>
             <i class="iconfont ri-checkbox-multiple-line"></i>
           </template>
-          批量下载
+          {{ t('favorite.batchDownload') }}
         </n-button>
         <div v-else class="select-controls">
           <n-checkbox
@@ -26,7 +26,7 @@
             :indeterminate="isIndeterminate"
             @update:checked="handleSelectAll"
           >
-            全选
+            {{ t('common.selectAll') }}
           </n-checkbox>
           <n-button-group class="operation-btns">
             <n-button
@@ -40,9 +40,11 @@
               <template #icon>
                 <i class="iconfont ri-download-line"></i>
               </template>
-              下载 ({{ selectedSongs.length }})
+              {{ t('favorite.download', { count: selectedSongs.length }) }}
             </n-button>
-            <n-button size="small" class="cancel-btn" @click="cancelSelect"> 取消 </n-button>
+            <n-button size="small" class="cancel-btn" @click="cancelSelect">
+              {{ t('common.cancel') }}
+            </n-button>
           </n-button-group>
         </div>
       </div>
@@ -50,7 +52,7 @@
     <div class="favorite-main" :class="setAnimationClass('animate__bounceInRight')">
       <n-scrollbar ref="scrollbarRef" class="favorite-content" @scroll="handleScroll">
         <div v-if="favoriteList.length === 0" class="empty-tip">
-          <n-empty description="还没有收藏歌曲" />
+          <n-empty :description="t('favorite.emptyTip')" />
         </div>
         <div v-else class="favorite-list">
           <song-item
@@ -66,14 +68,14 @@
             @select="handleSelect"
           />
           <div v-if="isComponent" class="favorite-list-more text-center">
-            <n-button text type="primary" @click="handleMore">查看更多</n-button>
+            <n-button text type="primary" @click="handleMore">{{ t('common.viewMore') }}</n-button>
           </div>
 
           <div v-if="loading" class="loading-wrapper">
             <n-spin size="large" />
           </div>
 
-          <div v-if="noMore" class="no-more-tip">没有更多了</div>
+          <div v-if="noMore" class="no-more-tip">{{ t('common.noMore') }}</div>
         </div>
       </n-scrollbar>
     </div>
@@ -84,6 +86,7 @@
 import { cloneDeep } from 'lodash';
 import { useMessage } from 'naive-ui';
 import { computed, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 
@@ -93,6 +96,7 @@ import { getSongUrl } from '@/hooks/MusicListHook';
 import type { SongResult } from '@/type/music';
 import { isElectron, setAnimationClass, setAnimationDelay } from '@/utils';
 
+const { t } = useI18n();
 const store = useStore();
 const message = useMessage();
 const favoriteList = computed(() => store.state.favoriteList);
@@ -130,18 +134,18 @@ const handleSelect = (songId: number, selected: boolean) => {
 // 批量下载
 const handleBatchDownload = async () => {
   if (isDownloading.value) {
-    message.warning('正在下载中，请稍候...');
+    message.warning(t('favorite.downloading'));
     return;
   }
 
   if (selectedSongs.value.length === 0) {
-    message.warning('请先选择要下载的歌曲');
+    message.warning(t('favorite.selectSongsFirst'));
     return;
   }
 
   try {
     isDownloading.value = true;
-    message.success('开始下载...');
+    message.success(t('favorite.downloading'));
 
     // 移除旧的监听器
     window.electron.ipcRenderer.removeAllListeners('music-download-complete');
@@ -160,7 +164,7 @@ const handleBatchDownload = async () => {
       // 当所有下载完成时
       if (successCount + failCount === selectedSongs.value.length) {
         isDownloading.value = false;
-        message.success(`下载完成`);
+        message.success(t('favorite.downloadSuccess'));
         cancelSelect();
       }
     });
@@ -201,7 +205,7 @@ const handleBatchDownload = async () => {
     console.error('下载失败:', error);
     isDownloading.value = false;
     message.destroyAll();
-    message.error('下载失败');
+    message.error(t('favorite.downloadFailed'));
   }
 };
 

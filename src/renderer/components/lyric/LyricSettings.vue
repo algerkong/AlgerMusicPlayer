@@ -1,83 +1,83 @@
 <template>
   <div class="settings-panel transparent-popover">
-    <div class="settings-title">页面设置</div>
+    <div class="settings-title">{{ t('lyricSettings.title') }}</div>
     <div class="settings-content">
       <div class="settings-item">
-        <span>纯净模式</span>
+        <span>{{ t('lyricSettings.pureMode') }}</span>
         <n-switch v-model:value="config.pureModeEnabled" />
       </div>
 
       <div class="settings-item">
-        <span>隐藏封面</span>
+        <span>{{ t('lyricSettings.hideCover') }}</span>
         <n-switch v-model:value="config.hideCover" />
       </div>
 
       <div class="settings-item">
-        <span>居中显示</span>
+        <span>{{ t('lyricSettings.centerDisplay') }}</span>
         <n-switch v-model:value="config.centerLyrics" />
       </div>
 
       <div class="settings-item">
-        <span>显示翻译</span>
+        <span>{{ t('lyricSettings.showTranslation') }}</span>
         <n-switch v-model:value="config.showTranslation" />
       </div>
 
       <div class="settings-item">
-        <span>隐藏播放栏</span>
+        <span>{{ t('lyricSettings.hidePlayBar') }}</span>
         <n-switch v-model:value="config.hidePlayBar" />
       </div>
 
       <div class="settings-slider">
-        <span>字体大小</span>
+        <span>{{ t('lyricSettings.fontSize') }}</span>
         <n-slider
           v-model:value="config.fontSize"
           :step="1"
           :min="12"
           :max="32"
           :marks="{
-            12: '小',
-            22: '中',
-            32: '大'
+            12: t('lyricSettings.fontSizeMarks.small'),
+            22: t('lyricSettings.fontSizeMarks.medium'),
+            32: t('lyricSettings.fontSizeMarks.large')
           }"
         />
       </div>
 
       <div class="settings-slider">
-        <span>文字间距</span>
+        <span>{{ t('lyricSettings.letterSpacing') }}</span>
         <n-slider
           v-model:value="config.letterSpacing"
           :step="0.2"
           :min="-2"
           :max="10"
           :marks="{
-            '-2': '紧凑',
-            0: '默认',
-            10: '宽松'
+            '-2': t('lyricSettings.letterSpacingMarks.compact'),
+            0: t('lyricSettings.letterSpacingMarks.default'),
+            10: t('lyricSettings.letterSpacingMarks.loose')
           }"
         />
       </div>
 
       <div class="settings-slider">
-        <span>行高</span>
+        <span>{{ t('lyricSettings.lineHeight') }}</span>
         <n-slider
           v-model:value="config.lineHeight"
           :step="0.1"
           :min="1"
           :max="3"
           :marks="{
-            1: '紧凑',
-            1.5: '默认',
-            3: '宽松'
+            1: t('lyricSettings.lineHeightMarks.compact'),
+            1.5: t('lyricSettings.lineHeightMarks.default'),
+            3: t('lyricSettings.lineHeightMarks.loose')
           }"
         />
       </div>
 
       <div class="settings-item">
-        <span>背景主题</span>
+        <span>{{ t('lyricSettings.backgroundTheme') }}</span>
         <n-radio-group v-model:value="config.theme" name="theme">
-          <n-radio value="default">默认</n-radio>
-          <n-radio value="light">亮色</n-radio>
-          <n-radio value="dark">暗色</n-radio>
+          <n-radio value="default">{{ t('lyricSettings.themeOptions.default') }}</n-radio>
+          <n-radio value="light">{{ t('lyricSettings.themeOptions.light') }}</n-radio>
+          <n-radio value="dark">{{ t('lyricSettings.themeOptions.dark') }}</n-radio>
         </n-radio-group>
       </div>
     </div>
@@ -86,6 +86,9 @@
 
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+const { t } = useI18n();
 
 interface LyricConfig {
   hideCover: boolean;
