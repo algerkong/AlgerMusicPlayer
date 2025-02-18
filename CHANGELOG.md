@@ -1,13 +1,9 @@
 # 更新日志
 
-## v3.9.2
+## v3.9.3
 
-### 🐞 修复
-- 修复下载功能导致的登陆失败问题
-- 优化下载功能
-- 添加下载按钮显隐配置 默认隐藏(设置页面配置)
-
-## 咖啡☕️
-|                                        微信                                 |       |                                       支付宝                                       |
-| :--------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------: |
-| <img src="https://www.ghproxy.cn/https://raw.githubusercontent.com/algerkong/AlgerMusicPlayer/dev_electron/src/renderer/assets/wechat.png" alt="WeChat QRcode" width=200>|           | <img src="https://www.ghproxy.cn/https://raw.githubusercontent.com/algerkong/AlgerMusicPlayer/dev_electron/src/renderer/assets/alipay.png" alt="Wechat QRcode" width=200> |
+### ✨ 新功能
+- 实现国际化（i18n）功能
+- 增加动态代理节点获取和缓存机制
+- 优化更新检查逻辑，增加多个代理源支持
+- 修改捐赠列表 API
