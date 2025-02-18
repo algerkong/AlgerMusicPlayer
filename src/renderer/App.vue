@@ -12,13 +12,23 @@
 
 <script setup lang="ts">
 import { darkTheme, lightTheme } from 'naive-ui';
-import { computed, onMounted, watch } from 'vue';
+import { computed, onMounted, onUnmounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import homeRouter from '@/router/home';
 import globalStore from '@/store';
 import { isElectron } from '@/utils';
 
 import { isMobile } from './utils';
+
+const { locale } = useI18n();
+
+const savedLanguage = isElectron
+  ? window.electron.ipcRenderer.sendSync('get-store-value', 'set.language')
+  : JSON.parse(localStorage.getItem('appSettings') || '{}').language || 'zh-CN';
+if (savedLanguage) {
+  locale.value = savedLanguage;
+}
 
 const theme = computed(() => {
   return globalStore.state.theme;
@@ -59,9 +69,16 @@ watch(
   { immediate: true }
 );
 
+// 监听来自主进程的语言切换事件
+const handleSetLanguage = (_: any, value: string) => {
+  // 更新 i18n locale
+  locale.value = value;
+  // 通过 mutation 更新 store
+  globalStore.commit('setLanguage', value);
+};
+
 onMounted(() => {
   globalStore.dispatch('initializeSettings');
-  globalStore.dispatch('initializeLanguage');
   globalStore.dispatch('initializeTheme');
   globalStore.dispatch('initializeSystemFonts');
   globalStore.dispatch('initializePlayState');
@@ -71,6 +88,11 @@ onMounted(() => {
       homeRouter.filter((item) => item.meta.isMobile)
     );
   }
+  window.electron.ipcRenderer.on('set-language', handleSetLanguage);
+});
+
+onUnmounted(() => {
+  window.electron.ipcRenderer.removeListener('set-language', handleSetLanguage);
 });
 </script>
 

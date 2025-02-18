@@ -1,6 +1,5 @@
 import { createStore } from 'vuex';
 
-import i18n from '@/../i18n/renderer';
 import setData from '@/../main/set.json';
 import { logout } from '@/api/login';
 import { getLikedList, likeSong } from '@/api/music';
@@ -376,13 +375,10 @@ const actions = {
   initializeLanguage({ state }: { state: State }) {
     state.setData.language = getLocalStorageItem('appSettings', { language: 'zh-CN' }).language;
     if (isElectron) {
-      window.electron.ipcRenderer.on('set-language', (_, language: string) => {
-        state.setData.language = language;
-      });
+      window.electron.ipcRenderer.send('set-store-value', 'set.language', state.setData.language);
     } else {
       localStorage.setItem('appSettings', JSON.stringify(state.setData));
     }
-    i18n.global.locale.value = state.setData.language as 'zh-CN' | 'en-US';
   }
 };
 

@@ -1,83 +1,83 @@
 <template>
   <div class="settings-panel transparent-popover">
-    <div class="settings-title">{{ t('lyricSettings.title') }}</div>
+    <div class="settings-title">{{ t('settings.lyricSettings.title') }}</div>
     <div class="settings-content">
       <div class="settings-item">
-        <span>{{ t('lyricSettings.pureMode') }}</span>
+        <span>{{ t('settings.lyricSettings.pureMode') }}</span>
         <n-switch v-model:value="config.pureModeEnabled" />
       </div>
 
       <div class="settings-item">
-        <span>{{ t('lyricSettings.hideCover') }}</span>
+        <span>{{ t('settings.lyricSettings.hideCover') }}</span>
         <n-switch v-model:value="config.hideCover" />
       </div>
 
       <div class="settings-item">
-        <span>{{ t('lyricSettings.centerDisplay') }}</span>
+        <span>{{ t('settings.lyricSettings.centerDisplay') }}</span>
         <n-switch v-model:value="config.centerLyrics" />
       </div>
 
       <div class="settings-item">
-        <span>{{ t('lyricSettings.showTranslation') }}</span>
+        <span>{{ t('settings.lyricSettings.showTranslation') }}</span>
         <n-switch v-model:value="config.showTranslation" />
       </div>
 
       <div class="settings-item">
-        <span>{{ t('lyricSettings.hidePlayBar') }}</span>
+        <span>{{ t('settings.lyricSettings.hidePlayBar') }}</span>
         <n-switch v-model:value="config.hidePlayBar" />
       </div>
 
       <div class="settings-slider">
-        <span>{{ t('lyricSettings.fontSize') }}</span>
+        <span>{{ t('settings.lyricSettings.fontSize') }}</span>
         <n-slider
           v-model:value="config.fontSize"
           :step="1"
           :min="12"
           :max="32"
           :marks="{
-            12: t('lyricSettings.fontSizeMarks.small'),
-            22: t('lyricSettings.fontSizeMarks.medium'),
-            32: t('lyricSettings.fontSizeMarks.large')
+            12: t('settings.lyricSettings.fontSizeMarks.small'),
+            22: t('settings.lyricSettings.fontSizeMarks.medium'),
+            32: t('settings.lyricSettings.fontSizeMarks.large')
           }"
         />
       </div>
 
       <div class="settings-slider">
-        <span>{{ t('lyricSettings.letterSpacing') }}</span>
+        <span>{{ t('settings.lyricSettings.letterSpacing') }}</span>
         <n-slider
           v-model:value="config.letterSpacing"
           :step="0.2"
           :min="-2"
           :max="10"
           :marks="{
-            '-2': t('lyricSettings.letterSpacingMarks.compact'),
-            0: t('lyricSettings.letterSpacingMarks.default'),
-            10: t('lyricSettings.letterSpacingMarks.loose')
+            '-2': t('settings.lyricSettings.letterSpacingMarks.compact'),
+            0: t('settings.lyricSettings.letterSpacingMarks.default'),
+            10: t('settings.lyricSettings.letterSpacingMarks.loose')
           }"
         />
       </div>
 
       <div class="settings-slider">
-        <span>{{ t('lyricSettings.lineHeight') }}</span>
+        <span>{{ t('settings.lyricSettings.lineHeight') }}</span>
         <n-slider
           v-model:value="config.lineHeight"
           :step="0.1"
           :min="1"
           :max="3"
           :marks="{
-            1: t('lyricSettings.lineHeightMarks.compact'),
-            1.5: t('lyricSettings.lineHeightMarks.default'),
-            3: t('lyricSettings.lineHeightMarks.loose')
+            1: t('settings.lyricSettings.lineHeightMarks.compact'),
+            1.5: t('settings.lyricSettings.lineHeightMarks.default'),
+            3: t('settings.lyricSettings.lineHeightMarks.loose')
           }"
         />
       </div>
 
       <div class="settings-item">
-        <span>{{ t('lyricSettings.backgroundTheme') }}</span>
+        <span>{{ t('settings.lyricSettings.backgroundTheme') }}</span>
         <n-radio-group v-model:value="config.theme" name="theme">
-          <n-radio value="default">{{ t('lyricSettings.themeOptions.default') }}</n-radio>
-          <n-radio value="light">{{ t('lyricSettings.themeOptions.light') }}</n-radio>
-          <n-radio value="dark">{{ t('lyricSettings.themeOptions.dark') }}</n-radio>
+          <n-radio value="default">{{ t('settings.lyricSettings.themeOptions.default') }}</n-radio>
+          <n-radio value="light">{{ t('settings.lyricSettings.themeOptions.light') }}</n-radio>
+          <n-radio value="dark">{{ t('settings.lyricSettings.themeOptions.dark') }}</n-radio>
         </n-radio-group>
       </div>
     </div>

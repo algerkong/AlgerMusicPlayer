@@ -13,3 +13,7 @@ body {
   background-color: transparent !important;
   padding: 0 !important;
 }
+
+.settings-slider .n-slider-mark {
+  font-size: 10px !important;
+}
