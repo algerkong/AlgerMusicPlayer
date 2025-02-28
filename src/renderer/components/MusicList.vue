@@ -119,10 +119,11 @@ const props = withDefaults(
 const emit = defineEmits(['update:show', 'update:loading', 'remove-song']);
 
 const page = ref(0);
-const pageSize = 20;
+const pageSize = 40;
 const isLoadingMore = ref(false);
 const displayedSongs = ref<any[]>([]);
 const loadingList = ref(false);
+const loadedIds = ref(new Set<number>()); // 用于追踪已加载的歌曲ID
 
 // 计算总数
 const total = computed(() => {
@@ -144,11 +145,31 @@ const formatDetail = computed(() => (detail: any) => {
   return detail;
 });
 
+const loadAllSongs = () => {
+  return new Promise((resolve, reject) => {
+    const loadNext = () => {
+      if (displayedSongs.value.length >= total.value) {
+        resolve(true);
+        return;
+      }
+
+      loadMoreSongs()
+        .then(() => {
+          // 使用 setTimeout 避免阻塞主线程
+          setTimeout(loadNext, 100);
+        })
+        .catch(reject);
+    };
+
+    loadNext();
+  });
+};
+
 const handlePlay = () => {
-  const tracks = props.songList || [];
+  // 立即使用当前已加载的歌曲开始播放
   store.commit(
     'setPlayList',
-    tracks.map((item) => ({
+    displayedSongs.value.map((item) => ({
       ...item,
       picUrl: item.al.picUrl,
       song: {
@@ -156,6 +177,30 @@ const handlePlay = () => {
       }
     }))
   );
+
+  // 如果还有未加载的歌曲，在后台异步加载
+  if (displayedSongs.value.length < total.value) {
+    setTimeout(() => {
+      loadAllSongs()
+        .then(() => {
+          // 加载完成后更新完整播放列表
+          store.commit(
+            'setPlayList',
+            displayedSongs.value.map((item) => ({
+              ...item,
+              picUrl: item.al.picUrl,
+              song: {
+                artists: item.ar
+              }
+            }))
+          );
+        })
+        .catch((error) => {
+          console.error('加载完整播放列表失败:', error);
+          window.$message.warning(t('common.partialLoadFailed'));
+        });
+    }, 2000);
+  }
 };
 
 const close = () => {
@@ -172,23 +217,32 @@ const loadMoreSongs = async () => {
       // 如果有 trackIds，需要分批请求歌曲详情
       const start = page.value * pageSize;
       const end = Math.min((page.value + 1) * pageSize, total.value);
-      const trackIds = props.listInfo.trackIds.slice(start, end).map((item) => item.id);
 
-      if (trackIds.length > 0) {
-        const { data } = await getMusicDetail(trackIds);
+      // 从 trackIds 中获取需要加载的 ID
+      const trackIdsToLoad = props.listInfo.trackIds
+        .slice(start, end)
+        .map((item) => item.id)
+        .filter((id) => !loadedIds.value.has(id));
+
+      if (trackIdsToLoad.length > 0) {
+        const { data } = await getMusicDetail(trackIdsToLoad);
+        // 更新已加载ID集合
+        data.songs.forEach((song) => loadedIds.value.add(song.id));
         displayedSongs.value = [...displayedSongs.value, ...data.songs];
-        page.value++;
       }
+      page.value++;
     } else {
       // 如果没有 trackIds，直接使用 songList 分页
       const start = page.value * pageSize;
       const end = Math.min((page.value + 1) * pageSize, props.songList.length);
       const newSongs = props.songList.slice(start, end);
+      newSongs.forEach((song) => loadedIds.value.add(song.id));
       displayedSongs.value = [...displayedSongs.value, ...newSongs];
       page.value++;
     }
   } catch (error) {
     console.error('加载歌曲失败:', error);
+    throw error;
   } finally {
     isLoadingMore.value = false;
     loadingList.value = false;
@@ -226,10 +280,23 @@ watch(
   () => props.songList,
   (newSongs) => {
     page.value = 0;
-    displayedSongs.value = newSongs.slice(0, pageSize);
-    if (newSongs.length > pageSize) {
-      page.value = 1;
+    loadedIds.value.clear();
+    displayedSongs.value = [];
+
+    // 优先加载 songList 的数据
+    if (newSongs.length > 0) {
+      displayedSongs.value = newSongs;
+      // 记录已加载的歌曲ID
+      newSongs.forEach((song) => loadedIds.value.add(song.id));
+      // 计算起始页码
+      page.value = Math.ceil(newSongs.length / pageSize);
     }
+
+    // 如果还有更多歌曲需要加载（通过 trackIds），则继续加载
+    if (props.listInfo?.trackIds && total.value > newSongs.length) {
+      loadMoreSongs();
+    }
+
     loadingList.value = false;
   },
   { immediate: true }

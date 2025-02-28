@@ -36,7 +36,7 @@
           <div class="recommend-item-img">
             <n-image
               class="recommend-item-img-img"
-              :src="getImgUrl(item.picUrl || item.coverImgUrl, '200y200')"
+              :src="getImgUrl(item.picUrl || item.coverImgUrl, '300y300')"
               width="200"
               height="200"
               lazy

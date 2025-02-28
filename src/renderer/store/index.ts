@@ -329,6 +329,7 @@ const actions = {
     commit('setCurrentArtistId', id);
   },
   async initializeSystemFonts({ commit, state }) {
+    if (!isElectron) return;
     // 如果已经有字体列表（不只是默认字体），则不重复获取
     if (state.systemFonts.length > 1) return;
 
