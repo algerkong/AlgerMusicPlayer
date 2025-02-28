@@ -46,7 +46,7 @@ import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { isElectron, isMobile } from '@/utils';
-import { getLatestReleaseInfo } from '@/utils/update';
+import { getLatestReleaseInfo, getProxyNodes } from '@/utils/update';
 
 import config from '../../../../package.json';
 
@@ -63,6 +63,8 @@ const closeModal = () => {
   }
 };
 
+const proxyHosts = ref<string[]>([]);
+
 onMounted(async () => {
   // 如果是 electron 环境，不显示安装提示
   if (isElectron || isMobile.value) {
@@ -78,6 +80,7 @@ onMounted(async () => {
   // 获取最新版本信息
   releaseInfo.value = await getLatestReleaseInfo();
   showModal.value = true;
+  proxyHosts.value = await getProxyNodes();
 });
 
 const handleInstall = async (): Promise<void> => {
@@ -118,7 +121,8 @@ const handleInstall = async (): Promise<void> => {
   }
 
   if (downloadUrl) {
-    window.open(`https://ghproxy.cn/${downloadUrl}`, '_blank');
+    const proxyDownloadUrl = `${proxyHosts.value[0]}/${downloadUrl}`;
+    window.open(proxyDownloadUrl, '_blank');
   } else {
     // 如果没有找到对应的安装包，跳转到 release 页面
     window.open('https://github.com/algerkong/AlgerMusicPlayer/releases/latest', '_blank');
