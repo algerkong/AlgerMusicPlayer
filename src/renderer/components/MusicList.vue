@@ -82,6 +82,7 @@
 </template>
 
 <script setup lang="ts">
+import { onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useStore } from 'vuex';
 
@@ -147,18 +148,53 @@ const formatDetail = computed(() => (detail: any) => {
 
 const loadAllSongs = () => {
   return new Promise((resolve, reject) => {
-    const loadNext = () => {
-      if (displayedSongs.value.length >= total.value) {
-        resolve(true);
-        return;
-      }
+    // 设置最大重试次数
+    let retryCount = 0;
+    const maxRetries = 3;
 
-      loadMoreSongs()
-        .then(() => {
+    const loadNext = async () => {
+      try {
+        // 如果已经加载完所有歌曲或者达到最大重试次数，则解析 Promise
+        if (displayedSongs.value.length >= total.value) {
+          console.log('所有歌曲加载完成，总数:', displayedSongs.value.length);
+          resolve(true);
+          return;
+        }
+
+        // 如果重试次数过多，也解析 Promise，但记录警告
+        if (retryCount >= maxRetries) {
+          console.warn(
+            '达到最大重试次数，已加载:',
+            displayedSongs.value.length,
+            '总数:',
+            total.value
+          );
+          resolve(false);
+          return;
+        }
+
+        // 记录加载前的歌曲数量
+        const beforeCount = displayedSongs.value.length;
+
+        // 加载更多歌曲
+        await loadMoreSongs();
+
+        // 检查是否有新歌曲被加载
+        if (displayedSongs.value.length > beforeCount) {
+          // 重置重试计数
+          retryCount = 0;
           // 使用 setTimeout 避免阻塞主线程
           setTimeout(loadNext, 100);
-        })
-        .catch(reject);
+        } else {
+          // 如果没有新歌曲被加载，增加重试计数
+          retryCount++;
+          console.log('没有新歌曲被加载，重试:', retryCount);
+          setTimeout(loadNext, 500 * retryCount);
+        }
+      } catch (error) {
+        console.error('加载歌曲出错:', error);
+        reject(error);
+      }
     };
 
     loadNext();
@@ -180,10 +216,13 @@ const handlePlay = () => {
 
   // 如果还有未加载的歌曲，在后台异步加载
   if (displayedSongs.value.length < total.value) {
-    setTimeout(() => {
-      loadAllSongs()
-        .then(() => {
-          // 加载完成后更新完整播放列表
+    // 使用一个标志变量来跟踪后台加载状态
+    const isBackgroundLoading = ref(true);
+
+    loadAllSongs()
+      .then(() => {
+        // 加载完成后更新完整播放列表
+        if (isBackgroundLoading.value) {
           store.commit(
             'setPlayList',
             displayedSongs.value.map((item) => ({
@@ -194,12 +233,19 @@ const handlePlay = () => {
               }
             }))
           );
-        })
-        .catch((error) => {
-          console.error('加载完整播放列表失败:', error);
-          window.$message.warning(t('common.partialLoadFailed'));
-        });
-    }, 2000);
+        }
+      })
+      .catch((error) => {
+        console.error('加载完整播放列表失败:', error);
+      })
+      .finally(() => {
+        isBackgroundLoading.value = false;
+      });
+
+    // 监听组件销毁，避免组件已卸载时仍然更新状态
+    onUnmounted(() => {
+      isBackgroundLoading.value = false;
+    });
   }
 };
 
