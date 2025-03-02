@@ -37,12 +37,12 @@
             <n-avatar round :size="24" :src="getImgUrl(listInfo.creator.avatarUrl, '50y50')" />
             <span class="creator-name">{{ listInfo.creator.nickname }}</span>
           </div>
+          <div v-if="total" class="music-total">{{ t('player.songNum', { num: total }) }}</div>
 
-          <n-scrollbar style="max-height: 200">
+          <n-scrollbar style="max-height: 200px">
             <div v-if="listInfo?.description" class="music-desc">
               {{ listInfo.description }}
             </div>
-            <play-bottom />
           </n-scrollbar>
         </div>
 
@@ -60,7 +60,7 @@
                     :style="getItemAnimationDelay(index)"
                   >
                     <song-item
-                      :item="formatDetail(item)"
+                      :item="formatSong(item)"
                       :can-remove="canRemove"
                       @play="handlePlay"
                       @remove-song="(id) => emit('remove-song', id)"
@@ -68,6 +68,9 @@
                   </div>
                   <div v-if="isLoadingMore" class="loading-more">
                     {{ t('common.loadingMore') }}
+                  </div>
+                  <div v-if="!hasMore" class="loading-more">
+                    {{ t('common.noMore') }}
                   </div>
                   <play-bottom />
                 </div>
@@ -82,7 +85,7 @@
 </template>
 
 <script setup lang="ts">
-import { onUnmounted } from 'vue';
+import { computed, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useStore } from 'vuex';
 
@@ -125,6 +128,9 @@ const isLoadingMore = ref(false);
 const displayedSongs = ref<any[]>([]);
 const loadingList = ref(false);
 const loadedIds = ref(new Set<number>()); // 用于追踪已加载的歌曲ID
+const isPlaylistLoading = ref(false); // 标记是否正在加载播放列表
+const completePlaylist = ref<any[]>([]); // 存储完整的播放列表
+const hasMore = ref(true); // 标记是否还有更多数据可加载
 
 // 计算总数
 const total = computed(() => {
@@ -134,170 +140,159 @@ const total = computed(() => {
   return props.songList.length;
 });
 
-const formatDetail = computed(() => (detail: any) => {
-  const song = {
-    artists: detail.ar,
-    name: detail.al.name,
-    id: detail.al.id
+// 格式化歌曲数据
+const formatSong = (item: any) => {
+  return {
+    ...item,
+    picUrl: item.al?.picUrl || item.picUrl,
+    song: {
+      artists: item.ar || item.artists,
+      name: item.al?.name || item.name,
+      id: item.al?.id || item.id
+    }
   };
-
-  detail.song = song;
-  detail.picUrl = detail.al.picUrl;
-  return detail;
-});
-
-const loadAllSongs = () => {
-  return new Promise((resolve, reject) => {
-    // 设置最大重试次数
-    let retryCount = 0;
-    const maxRetries = 3;
-
-    const loadNext = async () => {
-      try {
-        // 如果已经加载完所有歌曲或者达到最大重试次数，则解析 Promise
-        if (displayedSongs.value.length >= total.value) {
-          console.log('所有歌曲加载完成，总数:', displayedSongs.value.length);
-          resolve(true);
-          return;
-        }
-
-        // 如果重试次数过多，也解析 Promise，但记录警告
-        if (retryCount >= maxRetries) {
-          console.warn(
-            '达到最大重试次数，已加载:',
-            displayedSongs.value.length,
-            '总数:',
-            total.value
-          );
-          resolve(false);
-          return;
-        }
-
-        // 记录加载前的歌曲数量
-        const beforeCount = displayedSongs.value.length;
-
-        // 加载更多歌曲
-        await loadMoreSongs();
-
-        // 检查是否有新歌曲被加载
-        if (displayedSongs.value.length > beforeCount) {
-          // 重置重试计数
-          retryCount = 0;
-          // 使用 setTimeout 避免阻塞主线程
-          setTimeout(loadNext, 100);
-        } else {
-          // 如果没有新歌曲被加载，增加重试计数
-          retryCount++;
-          console.log('没有新歌曲被加载，重试:', retryCount);
-          setTimeout(loadNext, 500 * retryCount);
-        }
-      } catch (error) {
-        console.error('加载歌曲出错:', error);
-        reject(error);
-      }
-    };
-
-    loadNext();
-  });
 };
 
-const handlePlay = () => {
-  // 立即使用当前已加载的歌曲开始播放
-  store.commit(
-    'setPlayList',
-    displayedSongs.value.map((item) => ({
-      ...item,
-      picUrl: item.al.picUrl,
-      song: {
-        artists: item.ar
-      }
-    }))
-  );
+/**
+ * 加载歌曲数据的核心函数
+ * @param ids 要加载的歌曲ID数组
+ * @param appendToList 是否将加载的歌曲追加到现有列表
+ * @param updateComplete 是否更新完整播放列表
+ */
+const loadSongs = async (ids: number[], appendToList = true, updateComplete = false) => {
+  if (ids.length === 0) return [];
 
-  // 如果还有未加载的歌曲，在后台异步加载
-  if (displayedSongs.value.length < total.value) {
-    // 使用一个标志变量来跟踪后台加载状态
-    const isBackgroundLoading = ref(true);
+  try {
+    const { data } = await getMusicDetail(ids);
+    if (data?.songs) {
+      // 更新已加载ID集合
+      const newSongs = data.songs.filter((song: any) => !loadedIds.value.has(song.id));
 
-    loadAllSongs()
-      .then(() => {
-        // 加载完成后更新完整播放列表
-        if (isBackgroundLoading.value) {
-          store.commit(
-            'setPlayList',
-            displayedSongs.value.map((item) => ({
-              ...item,
-              picUrl: item.al.picUrl,
-              song: {
-                artists: item.ar
-              }
-            }))
-          );
-        }
-      })
-      .catch((error) => {
-        console.error('加载完整播放列表失败:', error);
-      })
-      .finally(() => {
-        isBackgroundLoading.value = false;
+      newSongs.forEach((song: any) => {
+        loadedIds.value.add(song.id);
       });
 
-    // 监听组件销毁，避免组件已卸载时仍然更新状态
-    onUnmounted(() => {
-      isBackgroundLoading.value = false;
-    });
+      if (appendToList) {
+        displayedSongs.value.push(...newSongs);
+      }
+
+      if (updateComplete) {
+        completePlaylist.value.push(...newSongs);
+      }
+
+      return newSongs;
+    }
+  } catch (error) {
+    console.error('加载歌曲失败:', error);
   }
+
+  return [];
+};
+
+// 加载完整播放列表
+const loadFullPlaylist = async () => {
+  if (isPlaylistLoading.value) return;
+  isPlaylistLoading.value = true;
+  completePlaylist.value = [...displayedSongs.value]; // 先用当前已加载的歌曲初始化
+
+  try {
+    // 如果没有trackIds，直接使用当前歌曲列表
+    if (!props.listInfo?.trackIds) {
+      return;
+    }
+
+    // 获取所有未加载的歌曲ID
+    const allIds = props.listInfo.trackIds.map((item) => item.id);
+    const unloadedIds = allIds.filter((id) => !loadedIds.value.has(id));
+
+    // 如果所有歌曲都已加载，直接返回
+    if (unloadedIds.length === 0) {
+      return;
+    }
+
+    // 分批加载未加载的歌曲
+    const batchSize = 500; // 每批加载的歌曲数量
+    for (let i = 0; i < unloadedIds.length; i += batchSize) {
+      const batchIds = unloadedIds.slice(i, i + batchSize);
+      if (batchIds.length === 0) continue;
+
+      await loadSongs(batchIds, false, true);
+
+      // 添加小延迟避免请求过于密集
+      if (i + batchSize < unloadedIds.length) {
+        // 使用 setTimeout 直接延迟，避免 Promise 相关的 linter 错误
+        await new Promise<void>((resolve) => {
+          setTimeout(() => resolve(), 300);
+        });
+      }
+    }
+  } catch (error) {
+    console.error('加载完整播放列表失败:', error);
+  } finally {
+    isPlaylistLoading.value = false;
+  }
+};
+
+// 处理播放
+const handlePlay = async () => {
+  // 先使用当前已加载的歌曲开始播放
+  store.commit('setPlayList', displayedSongs.value.map(formatSong));
+
+  // 在后台加载完整播放列表
+  loadFullPlaylist().then(() => {
+    // 加载完成后，更新播放列表为完整列表
+    if (completePlaylist.value.length > 0) {
+      store.commit('setPlayList', completePlaylist.value.map(formatSong));
+    }
+  });
 };
 
 const close = () => {
   emit('update:show', false);
 };
 
-// 优化加载更多歌曲的函数
+// 加载更多歌曲
 const loadMoreSongs = async () => {
-  if (isLoadingMore.value || displayedSongs.value.length >= total.value) return;
+  // 检查是否正在加载或已经加载完成
+  if (isLoadingMore.value || displayedSongs.value.length >= total.value) {
+    hasMore.value = false;
+    return;
+  }
 
   isLoadingMore.value = true;
   try {
-    if (props.listInfo?.trackIds) {
-      // 如果有 trackIds，需要分批请求歌曲详情
-      const start = page.value * pageSize;
-      const end = Math.min((page.value + 1) * pageSize, total.value);
+    const start = displayedSongs.value.length;
+    const end = Math.min(start + pageSize, total.value);
 
-      // 从 trackIds 中获取需要加载的 ID
+    if (props.listInfo?.trackIds) {
+      // 获取这一批次需要加载的所有ID
       const trackIdsToLoad = props.listInfo.trackIds
         .slice(start, end)
         .map((item) => item.id)
         .filter((id) => !loadedIds.value.has(id));
 
       if (trackIdsToLoad.length > 0) {
-        const { data } = await getMusicDetail(trackIdsToLoad);
-        // 更新已加载ID集合
-        data.songs.forEach((song) => loadedIds.value.add(song.id));
-        displayedSongs.value = [...displayedSongs.value, ...data.songs];
+        await loadSongs(trackIdsToLoad, true, false);
       }
-      page.value++;
-    } else {
-      // 如果没有 trackIds，直接使用 songList 分页
-      const start = page.value * pageSize;
-      const end = Math.min((page.value + 1) * pageSize, props.songList.length);
+    } else if (start < props.songList.length) {
+      // 直接使用 songList 分页
       const newSongs = props.songList.slice(start, end);
-      newSongs.forEach((song) => loadedIds.value.add(song.id));
-      displayedSongs.value = [...displayedSongs.value, ...newSongs];
-      page.value++;
+      newSongs.forEach((song) => {
+        if (!loadedIds.value.has(song.id)) {
+          loadedIds.value.add(song.id);
+          displayedSongs.value.push(song);
+        }
+      });
     }
+
+    // 更新是否还有更多数据的状态
+    hasMore.value = displayedSongs.value.length < total.value;
   } catch (error) {
-    console.error('加载歌曲失败:', error);
-    throw error;
+    console.error('加载更多歌曲失败:', error);
   } finally {
     isLoadingMore.value = false;
     loadingList.value = false;
   }
-};
-
-const getItemAnimationDelay = (index: number) => {
-  const currentPageIndex = index % pageSize;
-  return setAnimationDelay(currentPageIndex, 20);
 };
 
 // 修改滚动处理函数
@@ -306,53 +301,78 @@ const handleScroll = (e: Event) => {
   if (!target) return;
 
   const { scrollTop, scrollHeight, clientHeight } = target;
-  if (scrollHeight - scrollTop - clientHeight < 100 && !isLoadingMore.value) {
+  const threshold = 200;
+
+  if (
+    scrollHeight - scrollTop - clientHeight < threshold &&
+    !isLoadingMore.value &&
+    hasMore.value
+  ) {
     loadMoreSongs();
   }
 };
 
-watch(
-  () => props.show,
-  (newVal) => {
-    loadingList.value = newVal;
-    if (!props.cover) {
-      loadingList.value = false;
-    }
-  }
-);
+const getItemAnimationDelay = (index: number) => {
+  const currentPageIndex = index % pageSize;
+  return setAnimationDelay(currentPageIndex, 20);
+};
 
-// 监听 songList 变化，重置分页状态
+// 重置列表状态
+const resetListState = () => {
+  page.value = 0;
+  loadedIds.value.clear();
+  displayedSongs.value = [];
+  completePlaylist.value = [];
+  hasMore.value = true;
+  loadingList.value = false;
+};
+
+// 初始化歌曲列表
+const initSongList = (songs: any[]) => {
+  if (songs.length > 0) {
+    displayedSongs.value = [...songs];
+    songs.forEach((song) => loadedIds.value.add(song.id));
+    page.value = Math.ceil(songs.length / pageSize);
+  }
+
+  // 检查是否还有更多数据可加载
+  hasMore.value = displayedSongs.value.length < total.value;
+};
+
+// 修改 songList 监听器
 watch(
   () => props.songList,
   (newSongs) => {
-    page.value = 0;
-    loadedIds.value.clear();
-    displayedSongs.value = [];
+    // 重置所有状态
+    resetListState();
 
-    // 优先加载 songList 的数据
-    if (newSongs.length > 0) {
-      displayedSongs.value = newSongs;
-      // 记录已加载的歌曲ID
-      newSongs.forEach((song) => loadedIds.value.add(song.id));
-      // 计算起始页码
-      page.value = Math.ceil(newSongs.length / pageSize);
+    // 初始化歌曲列表
+    initSongList(newSongs);
+
+    // 如果还有更多歌曲需要加载，且差距较小，立即加载
+    if (hasMore.value && props.listInfo?.trackIds) {
+      setTimeout(() => {
+        loadMoreSongs();
+      }, 300);
     }
-
-    // 如果还有更多歌曲需要加载（通过 trackIds），则继续加载
-    if (props.listInfo?.trackIds && total.value > newSongs.length) {
-      loadMoreSongs();
-    }
-
-    loadingList.value = false;
   },
   { immediate: true }
 );
+
+// 组件卸载时清理状态
+onUnmounted(() => {
+  isPlaylistLoading.value = false;
+});
 </script>
 
 <style scoped lang="scss">
 .music {
   &-title {
     @apply text-xl font-bold text-gray-900 dark:text-white;
+  }
+
+  &-total {
+    @apply text-sm font-normal text-gray-500 dark:text-gray-400;
   }
 
   &-page {

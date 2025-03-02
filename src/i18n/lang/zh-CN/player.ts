@@ -10,6 +10,7 @@ export default {
   volumeDown: '音量减少',
   mute: '静音',
   unmute: '取消静音',
+  songNum: '歌曲总数：{num}',
   playMode: {
     sequence: '顺序播放',
     loop: '循环播放',
