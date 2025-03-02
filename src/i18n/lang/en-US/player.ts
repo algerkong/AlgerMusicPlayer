@@ -10,6 +10,7 @@ export default {
   volumeDown: 'Volume Down',
   mute: 'Mute',
   unmute: 'Unmute',
+  songNum: 'Song Number: {num}',
   playMode: {
     sequence: 'Sequence',
     loop: 'Loop',

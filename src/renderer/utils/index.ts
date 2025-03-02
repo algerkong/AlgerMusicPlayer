@@ -59,6 +59,13 @@ export const formatNumber = (num: string | number) => {
 };
 
 export const getImgUrl = (url: string | undefined, size: string = '') => {
+  if (!url) return '';
+
+  if (url.includes('thumbnail')) {
+    // 只替换最后一个 thumbnail 参数的尺寸
+    return url.replace(/thumbnail=\d+y\d+(?!.*thumbnail)/, `thumbnail=${size}`);
+  }
+
   const imgUrl = `${url}?param=${size}`;
   return imgUrl;
 };

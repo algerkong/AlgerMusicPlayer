@@ -88,11 +88,15 @@ onMounted(() => {
       homeRouter.filter((item) => item.meta.isMobile)
     );
   }
-  window.electron.ipcRenderer.on('set-language', handleSetLanguage);
+  if (isElectron) {
+    window.electron.ipcRenderer.on('set-language', handleSetLanguage);
+  }
 });
 
 onUnmounted(() => {
-  window.electron.ipcRenderer.removeListener('set-language', handleSetLanguage);
+  if (isElectron) {
+    window.electron.ipcRenderer.removeListener('set-language', handleSetLanguage);
+  }
 });
 </script>
 
