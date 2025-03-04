@@ -156,7 +156,20 @@ export const useMusicListHook = () => {
       state.play = true;
       return;
     }
-    const playListIndex = (state.playListIndex + 1) % state.playList.length;
+
+    let playListIndex: number;
+
+    if (state.playMode === 2) {
+      // 随机播放模式
+      do {
+        playListIndex = Math.floor(Math.random() * state.playList.length);
+      } while (playListIndex === state.playListIndex && state.playList.length > 1);
+    } else {
+      // 列表循环模式
+      playListIndex = (state.playListIndex + 1) % state.playList.length;
+    }
+
+    state.playListIndex = playListIndex;
     await handlePlayMusic(state, state.playList[playListIndex]);
   };
 
