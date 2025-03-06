@@ -33,6 +33,7 @@ export default {
     collapse: 'Collapse Lyrics',
     like: 'Like',
     lyric: 'Lyric',
+    eq: 'Equalizer',
     playList: 'Play List',
     playMode: {
       sequence: 'Sequence',
@@ -46,5 +47,29 @@ export default {
     volume: 'Volume',
     favorite: 'Favorite {name}',
     unFavorite: 'Unfavorite {name}'
+  },
+  eq: {
+    title: 'Equalizer',
+    reset: 'Reset',
+    on: 'On',
+    off: 'Off',
+    bass: 'Bass',
+    midrange: 'Midrange',
+    treble: 'Treble',
+    presets: {
+      flat: 'Flat',
+      pop: 'Pop',
+      rock: 'Rock',
+      classical: 'Classical',
+      jazz: 'Jazz',
+      electronic: 'Electronic',
+      hiphop: 'Hip-Hop',
+      rb: 'R&B',
+      metal: 'Metal',
+      vocal: 'Vocal',
+      dance: 'Dance',
+      acoustic: 'Acoustic',
+      custom: 'Custom'
+    }
   }
 };

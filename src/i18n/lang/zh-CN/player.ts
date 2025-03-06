@@ -33,6 +33,7 @@ export default {
     collapse: '收起歌词',
     like: '喜欢',
     lyric: '歌词',
+    eq: '均衡器',
     playList: '播放列表',
     playMode: {
       sequence: '顺序播放',
@@ -46,5 +47,29 @@ export default {
     volume: '音量',
     favorite: '已收藏{name}',
     unFavorite: '已取消收藏{name}'
+  },
+  eq: {
+    title: '均衡器',
+    reset: '重置',
+    on: '开启',
+    off: '关闭',
+    bass: '低音',
+    midrange: '中音',
+    treble: '高音',
+    presets: {
+      flat: '平坦',
+      pop: '流行',
+      rock: '摇滚',
+      classical: '古典',
+      jazz: '爵士',
+      electronic: '电子',
+      hiphop: '嘻哈',
+      rb: 'R&B',
+      metal: '金属',
+      vocal: '人声',
+      dance: '舞曲',
+      acoustic: '原声',
+      custom: '自定义'
+    }
   }
 };

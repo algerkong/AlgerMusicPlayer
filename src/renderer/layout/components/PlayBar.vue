@@ -122,6 +122,25 @@
       <n-popover
         trigger="click"
         :z-index="99999999"
+        content-class="music-eq"
+        raw
+        :show-arrow="false"
+        :delay="200"
+        placement="top"
+      >
+        <template #trigger>
+          <n-tooltip trigger="hover" :z-index="9999999">
+            <template #trigger>
+              <i class="iconfont ri-equalizer-line" :class="{ 'text-green-500': isEQVisible }"></i>
+            </template>
+            {{ t('player.playBar.eq') }}
+          </n-tooltip>
+        </template>
+        <eq-control />
+      </n-popover>
+      <n-popover
+        trigger="click"
+        :z-index="99999999"
         content-class="music-play"
         raw
         :show-arrow="false"
@@ -161,6 +180,7 @@ import { useI18n } from 'vue-i18n';
 import { useStore } from 'vuex';
 
 import SongItem from '@/components/common/SongItem.vue';
+import EqControl from '@/components/EQControl.vue';
 import {
   allTime,
   artistList,
@@ -426,6 +446,8 @@ watch(
     }
   }
 );
+
+const isEQVisible = ref(false);
 </script>
 
 <style lang="scss" scoped>
@@ -666,5 +688,11 @@ watch(
   left: 0;
   padding: 0;
   border-radius: 0;
+}
+
+.music-eq {
+  @apply p-4 rounded-3xl;
+  backdrop-filter: blur(20px);
+  @apply bg-light dark:bg-black bg-opacity-75;
 }
 </style>
