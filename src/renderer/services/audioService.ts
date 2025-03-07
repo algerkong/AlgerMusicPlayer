@@ -2,15 +2,57 @@ import { Howl } from 'howler';
 
 import type { SongResult } from '@/type/music';
 
+interface Window {
+  webkitAudioContext: typeof AudioContext;
+}
+
+interface HowlSound {
+  node: HTMLMediaElement & {
+    audioSource?: MediaElementAudioSourceNode;
+  };
+}
+
 class AudioService {
   private currentSound: Howl | null = null;
 
   private currentTrack: SongResult | null = null;
 
+  private context: AudioContext | null = null;
+
+  private filters: BiquadFilterNode[] = [];
+
+  private source: MediaElementAudioSourceNode | null = null;
+
+  private gainNode: GainNode | null = null;
+
+  private bypass = false;
+
+  // 预设的 EQ 频段
+  private readonly frequencies = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
+
+  // 默认的 EQ 设置
+  private defaultEQSettings: { [key: string]: number } = {
+    '31': 0,
+    '62': 0,
+    '125': 0,
+    '250': 0,
+    '500': 0,
+    '1000': 0,
+    '2000': 0,
+    '4000': 0,
+    '8000': 0,
+    '16000': 0
+  };
+
+  private retryCount = 0;
+
   constructor() {
     if ('mediaSession' in navigator) {
       this.initMediaSession();
     }
+    // 从本地存储加载 EQ 开关状态
+    const bypassState = localStorage.getItem('eqBypass');
+    this.bypass = bypassState ? JSON.parse(bypassState) : false;
   }
 
   private initMediaSession() {
@@ -120,6 +162,198 @@ class AudioService {
     }
   }
 
+  // EQ 相关方法
+  public isEQEnabled(): boolean {
+    return !this.bypass;
+  }
+
+  public setEQEnabled(enabled: boolean) {
+    this.bypass = !enabled;
+    localStorage.setItem('eqBypass', JSON.stringify(this.bypass));
+
+    if (this.source && this.gainNode && this.context) {
+      this.applyBypassState();
+    }
+  }
+
+  public setEQFrequencyGain(frequency: string, gain: number) {
+    const filterIndex = this.frequencies.findIndex((f) => f.toString() === frequency);
+    if (filterIndex !== -1 && this.filters[filterIndex]) {
+      this.filters[filterIndex].gain.setValueAtTime(gain, this.context?.currentTime || 0);
+      this.saveEQSettings(frequency, gain);
+    }
+  }
+
+  public resetEQ() {
+    this.filters.forEach((filter) => {
+      filter.gain.setValueAtTime(0, this.context?.currentTime || 0);
+    });
+    localStorage.removeItem('eqSettings');
+  }
+
+  public getAllEQSettings(): { [key: string]: number } {
+    return this.loadEQSettings();
+  }
+
+  private saveEQSettings(frequency: string, gain: number) {
+    const settings = this.loadEQSettings();
+    settings[frequency] = gain;
+    localStorage.setItem('eqSettings', JSON.stringify(settings));
+  }
+
+  private loadEQSettings(): { [key: string]: number } {
+    const savedSettings = localStorage.getItem('eqSettings');
+    return savedSettings ? JSON.parse(savedSettings) : { ...this.defaultEQSettings };
+  }
+
+  private async disposeEQ(keepContext = false) {
+    try {
+      // 清理音频节点连接
+      if (this.source) {
+        this.source.disconnect();
+        this.source = null;
+      }
+
+      // 清理滤波器
+      this.filters.forEach((filter) => {
+        try {
+          filter.disconnect();
+        } catch (e) {
+          console.warn('清理滤波器时出错:', e);
+        }
+      });
+      this.filters = [];
+
+      // 清理增益节点
+      if (this.gainNode) {
+        this.gainNode.disconnect();
+        this.gainNode = null;
+      }
+
+      // 如果不需要保持上下文，则关闭它
+      if (!keepContext && this.context) {
+        try {
+          await this.context.close();
+          this.context = null;
+        } catch (e) {
+          console.warn('关闭音频上下文时出错:', e);
+        }
+      }
+    } catch (error) {
+      console.error('清理EQ资源时出错:', error);
+    }
+  }
+
+  private async setupEQ(sound: Howl) {
+    try {
+      const howl = sound as any;
+      const audioNode = howl._sounds?.[0]?._node;
+
+      if (!audioNode || !(audioNode instanceof HTMLMediaElement)) {
+        if (this.retryCount < 3) {
+          console.warn('等待音频节点初始化，重试次数:', this.retryCount + 1);
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          this.retryCount++;
+          return await this.setupEQ(sound);
+        }
+        throw new Error('无法获取音频节点，请重试');
+      }
+
+      this.retryCount = 0;
+
+      // 确保使用 Howler 的音频上下文
+      this.context = Howler.ctx as AudioContext;
+
+      if (!this.context || this.context.state === 'closed') {
+        Howler.ctx = new AudioContext();
+        this.context = Howler.ctx;
+        Howler.masterGain = this.context.createGain();
+        Howler.masterGain.connect(this.context.destination);
+      }
+
+      if (this.context.state === 'suspended') {
+        await this.context.resume();
+      }
+
+      // 清理现有连接
+      await this.disposeEQ(true);
+
+      try {
+        // 检查节点是否已经有源
+        const existingSource = (audioNode as any).source as MediaElementAudioSourceNode;
+        if (existingSource?.context === this.context) {
+          console.log('复用现有音频源节点');
+          this.source = existingSource;
+        } else {
+          // 创建新的源节点
+          console.log('创建新的音频源节点');
+          this.source = this.context.createMediaElementSource(audioNode);
+          (audioNode as any).source = this.source;
+        }
+      } catch (e) {
+        console.error('创建音频源节点失败:', e);
+        throw e;
+      }
+
+      // 创建增益节点
+      this.gainNode = this.context.createGain();
+
+      // 创建滤波器
+      this.filters = this.frequencies.map((freq) => {
+        const filter = this.context!.createBiquadFilter();
+        filter.type = 'peaking';
+        filter.frequency.value = freq;
+        filter.Q.value = 1;
+        filter.gain.value = this.loadEQSettings()[freq.toString()] || 0;
+        return filter;
+      });
+
+      // 应用EQ状态
+      this.applyBypassState();
+
+      // 设置音量
+      const volume = localStorage.getItem('volume');
+      if (this.gainNode) {
+        this.gainNode.gain.value = volume ? parseFloat(volume) : 1;
+      }
+
+      console.log('EQ初始化成功');
+    } catch (error) {
+      console.error('EQ初始化失败:', error);
+      await this.disposeEQ();
+      throw error;
+    }
+  }
+
+  private applyBypassState() {
+    if (!this.source || !this.gainNode || !this.context) return;
+
+    try {
+      // 断开所有现有连接
+      this.source.disconnect();
+      this.filters.forEach((filter) => filter.disconnect());
+      this.gainNode.disconnect();
+
+      if (this.bypass) {
+        // EQ被禁用时，直接连接到输出
+        this.source.connect(this.gainNode);
+        this.gainNode.connect(this.context.destination);
+      } else {
+        // EQ启用时，通过滤波器链连接
+        this.source.connect(this.filters[0]);
+        this.filters.forEach((filter, index) => {
+          if (index < this.filters.length - 1) {
+            filter.connect(this.filters[index + 1]);
+          }
+        });
+        this.filters[this.filters.length - 1].connect(this.gainNode);
+        this.gainNode.connect(this.context.destination);
+      }
+    } catch (error) {
+      console.error('应用EQ状态时出错:', error);
+    }
+  }
+
   // 播放控制相关
   play(url?: string, track?: SongResult): Promise<Howl> {
     // 如果没有提供新的 URL 和 track，且当前有音频实例，则继续播放
@@ -137,14 +371,31 @@ class AudioService {
       let retryCount = 0;
       const maxRetries = 1;
 
-      const tryPlay = () => {
-        // 清理现有的音频实例
-        if (this.currentSound) {
-          this.currentSound.unload();
-          this.currentSound = null;
-        }
-
+      const tryPlay = async () => {
         try {
+          // 确保使用同一个音频上下文
+          if (!Howler.ctx || Howler.ctx.state === 'closed') {
+            Howler.ctx = new AudioContext();
+            this.context = Howler.ctx;
+            Howler.masterGain = this.context.createGain();
+            Howler.masterGain.connect(this.context.destination);
+          }
+
+          // 恢复上下文状态
+          if (Howler.ctx.state === 'suspended') {
+            await Howler.ctx.resume();
+          }
+
+          // 先停止并清理现有的音频实例
+          if (this.currentSound) {
+            this.currentSound.stop();
+            this.currentSound.unload();
+            this.currentSound = null;
+          }
+
+          // 清理 EQ 但保持上下文
+          await this.disposeEQ(true);
+
           this.currentTrack = track;
           this.currentSound = new Howl({
             src: [url],
@@ -174,13 +425,20 @@ class AudioService {
                 reject(new Error('音频播放失败，请尝试切换其他歌曲'));
               }
             },
-            onload: () => {
-              // 音频加载成功后更新媒体会话
-              if (track && this.currentSound) {
-                this.updateMediaSessionMetadata(track);
-                this.updateMediaSessionPositionState();
-                this.emit('load');
-                resolve(this.currentSound);
+            onload: async () => {
+              // 音频加载成功后设置 EQ 和更新媒体会话
+              if (this.currentSound) {
+                try {
+                  await this.setupEQ(this.currentSound);
+                  this.updateMediaSessionMetadata(track);
+                  this.updateMediaSessionPositionState();
+                  this.emit('load');
+                  resolve(this.currentSound);
+                } catch (error) {
+                  console.error('设置 EQ 失败:', error);
+                  // 即使 EQ 设置失败，也继续播放
+                  resolve(this.currentSound);
+                }
               }
             }
           });
@@ -238,6 +496,7 @@ class AudioService {
     if ('mediaSession' in navigator) {
       navigator.mediaSession.playbackState = 'none';
     }
+    this.disposeEQ();
   }
 
   setVolume(volume: number) {
@@ -266,6 +525,14 @@ class AudioService {
 
   clearAllListeners() {
     this.callbacks = {};
+  }
+
+  public getCurrentPreset(): string | null {
+    return localStorage.getItem('currentPreset');
+  }
+
+  public setCurrentPreset(preset: string): void {
+    localStorage.setItem('currentPreset', preset);
   }
 }
 
