@@ -45,16 +45,16 @@ QQ群:789288579
 - Naive UI - 基于 Vue 3 的组件库
 
 
-## 咖啡☕️
-
-|                                        微信                                        |                                       支付宝                                       |
+## 赞赏☕️
+[赞赏列表](http://donate.alger.fun/)
+|                                        微信赞赏                                        |                                       支付宝赞赏                                       |
 | :--------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------: |
-| <img src="https://github.com/algerkong/algerkong/blob/main/wechat.jpg?raw=true" alt="WeChat QRcode" width=200> | <img src="https://github.com/algerkong/algerkong/blob/main/alipay.jpg?raw=true" alt="Wechat QRcode" width=200> |
+| <img src="https://github.com/algerkong/algerkong/blob/main/wechat.jpg?raw=true" alt="WeChat QRcode" width=200> <br><small>喝点咖啡继续干</small> | <img src="https://github.com/algerkong/algerkong/blob/main/alipay.jpg?raw=true" alt="Wechat QRcode" width=200> <br><small>来包辣条吧~</small> |
 
 
-## Stargazers over time
+## 项目统计
 [![Stargazers over time](https://starchart.cc/algerkong/AlgerMusicPlayer.svg?variant=adaptive)](https://starchart.cc/algerkong/AlgerMusicPlayer)
-
+![Alt](https://repobeats.axiom.co/api/embed/c4d01b3632e241c90cdec9508dfde86a7f54c9f5.svg "Repobeats analytics image")
 
 
 
