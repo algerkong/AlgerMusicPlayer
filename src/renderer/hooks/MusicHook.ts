@@ -1,5 +1,5 @@
 import { createDiscreteApi } from 'naive-ui';
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 
 import useIndexedDB from '@/hooks/IndexDBHook';
 import { audioService } from '@/services/audioService';
@@ -54,19 +54,205 @@ document.onkeyup = (e) => {
 
 const { message } = createDiscreteApi(['message']);
 
+// 全局变量
+let progressAnimationInitialized = false;
+let globalAnimationFrameId: number | null = null;
+
+// 全局停止函数
+const stopProgressAnimation = () => {
+  if (globalAnimationFrameId) {
+    cancelAnimationFrame(globalAnimationFrameId);
+    globalAnimationFrameId = null;
+  }
+};
+
+// 全局更新函数
+const updateProgress = () => {
+  if (!store.state.play) {
+    stopProgressAnimation();
+    return;
+  }
+
+  const currentSound = sound.value;
+  if (!currentSound) {
+    console.log('进度更新：无效的 sound 对象');
+    // 不是立即返回，而是设置定时器稍后再次尝试
+    globalAnimationFrameId = setTimeout(() => {
+      requestAnimationFrame(updateProgress);
+    }, 100) as unknown as number;
+    return;
+  }
+
+  if (typeof currentSound.seek !== 'function') {
+    console.log('进度更新：无效的 seek 函数');
+    // 不是立即返回，而是设置定时器稍后再次尝试
+    globalAnimationFrameId = setTimeout(() => {
+      requestAnimationFrame(updateProgress);
+    }, 100) as unknown as number;
+    return;
+  }
+
+  try {
+    const { start, end } = currentLrcTiming.value;
+    if (typeof start !== 'number' || typeof end !== 'number' || start === end) {
+      globalAnimationFrameId = requestAnimationFrame(updateProgress);
+      return;
+    }
+
+    let currentTime;
+    try {
+      currentTime = currentSound.seek() as number;
+
+      // 保存当前播放进度到 localStorage (每秒保存一次，避免频繁写入)
+      if (Math.floor(currentTime) % 2 === 0) {
+        if (store.state.playMusic && store.state.playMusic.id) {
+          localStorage.setItem(
+            'playProgress',
+            JSON.stringify({
+              songId: store.state.playMusic.id,
+              progress: currentTime
+            })
+          );
+        }
+      }
+    } catch (seekError) {
+      console.error('调用 seek() 方法出错:', seekError);
+      globalAnimationFrameId = requestAnimationFrame(updateProgress);
+      return;
+    }
+
+    if (typeof currentTime !== 'number' || Number.isNaN(currentTime)) {
+      console.error('无效的当前时间:', currentTime);
+      globalAnimationFrameId = requestAnimationFrame(updateProgress);
+      return;
+    }
+
+    const elapsed = currentTime - start;
+    const duration = end - start;
+    const progress = (elapsed / duration) * 100;
+
+    // 确保进度在 0-100 之间
+    currentLrcProgress.value = Math.min(Math.max(progress, 0), 100);
+  } catch (error) {
+    console.error('更新进度出错:', error);
+  }
+
+  // 继续下一帧更新
+  globalAnimationFrameId = requestAnimationFrame(updateProgress);
+};
+
+// 全局启动函数
+const startProgressAnimation = () => {
+  stopProgressAnimation(); // 先停止之前的动画
+  updateProgress();
+};
+
+// 全局初始化函数
+const initProgressAnimation = () => {
+  if (progressAnimationInitialized) return;
+
+  console.log('初始化进度动画');
+  progressAnimationInitialized = true;
+
+  // 监听播放状态变化，这里使用防抖，避免频繁触发
+  let debounceTimer: any = null;
+
+  watch(
+    () => store.state.play,
+    (newIsPlaying) => {
+      console.log('播放状态变化:', newIsPlaying);
+
+      // 清除之前的定时器
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+
+      // 使用防抖，延迟 100ms 再执行
+      debounceTimer = setTimeout(() => {
+        if (newIsPlaying) {
+          // 确保 sound 对象有效时才启动进度更新
+          if (sound.value) {
+            console.log('sound 对象已存在，立即启动进度更新');
+            startProgressAnimation();
+          } else {
+            console.log('等待 sound 对象初始化...');
+            // 定时检查 sound 对象是否已初始化
+            const checkInterval = setInterval(() => {
+              if (sound.value) {
+                clearInterval(checkInterval);
+                console.log('sound 对象已初始化，开始进度更新');
+                startProgressAnimation();
+              }
+            }, 100);
+            // 设置超时，防止无限等待
+            setTimeout(() => {
+              clearInterval(checkInterval);
+              console.log('等待 sound 对象超时，已停止等待');
+            }, 5000);
+          }
+        } else {
+          stopProgressAnimation();
+        }
+      }, 100);
+    }
+  );
+
+  // 监听当前歌词索引变化
+  watch(nowIndex, () => {
+    currentLrcProgress.value = 0;
+    if (store.state.play) {
+      startProgressAnimation();
+    }
+  });
+
+  // 监听音频对象变化
+  watch(sound, (newSound) => {
+    console.log('sound 对象变化:', !!newSound);
+    if (newSound && store.state.play) {
+      startProgressAnimation();
+    }
+  });
+};
+
+// 初始化进度动画
+initProgressAnimation();
+
+// 简化后的 watch 函数，只保留核心逻辑
 watch(
   () => store.state.playMusicUrl,
   async (newVal) => {
     if (newVal && playMusic.value) {
       try {
-        const newSound = await audioService.play(newVal, playMusic.value);
+        // 保存当前播放状态
+        const shouldPlay = store.state.play;
+
+        // 检查是否有保存的进度
+        let initialPosition = 0;
+        const savedProgress = JSON.parse(localStorage.getItem('playProgress') || '{}');
+        if (savedProgress.songId === playMusic.value.id) {
+          initialPosition = savedProgress.progress;
+        }
+
+        // 播放新音频，传递是否应该播放的状态
+        const newSound = await audioService.play(newVal, playMusic.value, shouldPlay);
         sound.value = newSound as Howl;
+
+        // 如果有保存的进度，设置播放位置
+        if (initialPosition > 0) {
+          newSound.seek(initialPosition);
+          // 同时更新进度条显示
+          nowTime.value = initialPosition;
+        }
+
         setupAudioListeners();
+
+        // 确保状态与 localStorage 同步
+        localStorage.setItem('currentPlayMusic', JSON.stringify(store.state.playMusic));
+        localStorage.setItem('currentPlayMusicUrl', newVal);
       } catch (error) {
         console.error('播放音频失败:', error);
         store.commit('setPlayMusic', false);
         message.error('当前歌曲播放失败，播放下一首');
-        // 下一首
         store.commit('nextPlay');
       }
     }
@@ -104,6 +290,26 @@ const setupAudioListeners = () => {
   // 清理所有事件监听器
   audioService.clearAllListeners();
 
+  // 立即更新一次时间和进度（解决初始化时进度条不显示问题）
+  const updateCurrentTimeAndDuration = () => {
+    const currentSound = audioService.getCurrentSound();
+    if (currentSound) {
+      try {
+        // 更新当前时间和总时长
+        const currentTime = currentSound.seek() as number;
+        if (typeof currentTime === 'number' && !Number.isNaN(currentTime)) {
+          nowTime.value = currentTime;
+          allTime.value = currentSound.duration() as number;
+        }
+      } catch (error) {
+        console.error('初始化时间和进度失败:', error);
+      }
+    }
+  };
+
+  // 立即执行一次更新
+  updateCurrentTimeAndDuration();
+
   // 监听播放
   audioService.on('play', () => {
     store.commit('setPlayMusic', true);
@@ -111,8 +317,15 @@ const setupAudioListeners = () => {
     interval = window.setInterval(() => {
       try {
         const currentSound = sound.value;
-        if (!currentSound || typeof currentSound.seek !== 'function') {
-          console.error('Invalid sound object or seek function');
+        if (!currentSound) {
+          console.error('Invalid sound object: sound is null or undefined');
+          clearInterval();
+          return;
+        }
+
+        // 确保 seek 方法存在且可调用
+        if (typeof currentSound.seek !== 'function') {
+          console.error('Invalid sound object: seek function not available');
           clearInterval();
           return;
         }
@@ -129,7 +342,8 @@ const setupAudioListeners = () => {
         const newIndex = getLrcIndex(nowTime.value);
         if (newIndex !== nowIndex.value) {
           nowIndex.value = newIndex;
-          currentLrcProgress.value = 0;
+          // 注意：我们不在这里设置 currentLrcProgress 为 0
+          // 因为这会与全局进度更新冲突
           if (isElectron && isLyricWindowOpen.value) {
             sendLyricToWin();
           }
@@ -146,6 +360,7 @@ const setupAudioListeners = () => {
 
   // 监听暂停
   audioService.on('pause', () => {
+    console.log('音频暂停事件触发');
     store.commit('setPlayMusic', false);
     clearInterval();
     if (isElectron && isLyricWindowOpen.value) {
@@ -179,6 +394,7 @@ const setupAudioListeners = () => {
 
   // 监听结束
   audioService.on('end', () => {
+    console.log('音频播放结束事件触发');
     clearInterval();
 
     if (store.state.playMode === 1) {
@@ -213,7 +429,26 @@ export const play = () => {
 };
 
 export const pause = () => {
-  audioService.getCurrentSound()?.pause();
+  const currentSound = audioService.getCurrentSound();
+  if (currentSound) {
+    try {
+      // 保存当前播放进度
+      const currentTime = currentSound.seek() as number;
+      if (store.state.playMusic && store.state.playMusic.id) {
+        localStorage.setItem(
+          'playProgress',
+          JSON.stringify({
+            songId: store.state.playMusic.id,
+            progress: currentTime
+          })
+        );
+      }
+
+      currentSound.pause();
+    } catch (error) {
+      console.error('暂停播放出错:', error);
+    }
+  }
 };
 
 const isPlaying = computed(() => store.state.play as boolean);
@@ -267,103 +502,8 @@ export const getLrcStyle = (index: number) => {
 
 // 播放进度
 export const useLyricProgress = () => {
-  let animationFrameId: number | null = null;
-
-  const updateProgress = () => {
-    if (!isPlaying.value) {
-      stopProgressAnimation();
-      return;
-    }
-
-    const currentSound = sound.value;
-    if (!currentSound || typeof currentSound.seek !== 'function') {
-      console.error('Invalid sound object or seek function');
-      stopProgressAnimation();
-      return;
-    }
-
-    try {
-      const { start, end } = currentLrcTiming.value;
-      if (typeof start !== 'number' || typeof end !== 'number' || start === end) {
-        return;
-      }
-
-      const currentTime = currentSound.seek() as number;
-      if (typeof currentTime !== 'number' || Number.isNaN(currentTime)) {
-        console.error('Invalid current time:', currentTime);
-        return;
-      }
-
-      const elapsed = currentTime - start;
-      const duration = end - start;
-      const progress = (elapsed / duration) * 100;
-
-      // 确保进度在 0-100 之间
-      currentLrcProgress.value = Math.min(Math.max(progress, 0), 100);
-    } catch (error) {
-      console.error('Error updating progress:', error);
-    }
-
-    // 继续下一帧更新
-    animationFrameId = requestAnimationFrame(updateProgress);
-  };
-
-  const startProgressAnimation = () => {
-    stopProgressAnimation(); // 先停止之前的动画
-    if (isPlaying.value) {
-      updateProgress();
-    }
-  };
-
-  const stopProgressAnimation = () => {
-    if (animationFrameId) {
-      cancelAnimationFrame(animationFrameId);
-      animationFrameId = null;
-    }
-  };
-
-  // 监听播放状态变化
-  watch(
-    isPlaying,
-    (newIsPlaying) => {
-      if (newIsPlaying) {
-        startProgressAnimation();
-      } else {
-        stopProgressAnimation();
-      }
-    },
-    { immediate: true }
-  );
-
-  // 监听当前歌词索引变化
-  watch(nowIndex, () => {
-    currentLrcProgress.value = 0;
-    if (isPlaying.value) {
-      startProgressAnimation();
-    }
-  });
-
-  // 监听音频对象变化
-  watch(sound, (newSound) => {
-    if (newSound && isPlaying.value) {
-      startProgressAnimation();
-    } else {
-      stopProgressAnimation();
-    }
-  });
-
-  onMounted(() => {
-    if (isPlaying.value) {
-      startProgressAnimation();
-    }
-  });
-
-  onUnmounted(() => {
-    stopProgressAnimation();
-  });
-
+  // 如果已经在全局更新进度，立即返回
   return {
-    currentLrcProgress,
     getLrcStyle
   };
 };
@@ -484,6 +624,29 @@ if (isElectron) {
 
 // 在组件挂载时设置监听器
 onMounted(() => {
+  // 初始化音频监听器
   setupAudioListeners();
-  useLyricProgress(); // 直接调用，不需要解构返回值
+
+  // 检查是否需要初始化 sound 对象
+  if (!sound.value && audioService.getCurrentSound()) {
+    sound.value = audioService.getCurrentSound();
+
+    // 如果当前处于播放状态，启动进度更新
+    if (store.state.play && sound.value) {
+      // 如果有保存的播放进度，应用它
+      if (store.state.savedPlayProgress !== undefined && sound.value) {
+        try {
+          // 设置音频位置
+          sound.value.seek(store.state.savedPlayProgress);
+          // 同时更新时间显示，这样进度条也会更新
+          nowTime.value = store.state.savedPlayProgress;
+          console.log('恢复播放进度:', store.state.savedPlayProgress);
+        } catch (e) {
+          console.error('恢复播放进度失败:', e);
+        }
+      }
+
+      startProgressAnimation();
+    }
+  }
 });

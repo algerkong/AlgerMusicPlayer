@@ -49,11 +49,19 @@ const getSongDetail = async (playMusic: SongResult) => {
 
 // 加载 当前歌曲 歌曲列表数据 下一首mp3预加载 歌词数据
 export const useMusicListHook = () => {
-  const handlePlayMusic = async (state: any, playMusic: SongResult) => {
+  const handlePlayMusic = async (state: any, playMusic: SongResult, isPlay: boolean = true) => {
     const updatedPlayMusic = await getSongDetail(playMusic);
     state.playMusic = updatedPlayMusic;
     state.playMusicUrl = updatedPlayMusic.playMusicUrl;
-    state.play = true;
+
+    // 记录当前设置的播放状态
+    state.play = isPlay;
+
+    // 每次设置新歌曲时，立即更新 localStorage
+    localStorage.setItem('currentPlayMusic', JSON.stringify(state.playMusic));
+    localStorage.setItem('currentPlayMusicUrl', state.playMusicUrl);
+    localStorage.setItem('isPlaying', state.play.toString());
+
     // 设置网页标题
     document.title = `${updatedPlayMusic.name} - ${updatedPlayMusic?.song?.artists?.reduce((prev, curr) => `${prev}${curr.name}/`, '')}`;
     loadLrcAsync(state, updatedPlayMusic.id);

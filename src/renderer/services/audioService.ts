@@ -1,12 +1,14 @@
-import { Howl } from 'howler';
+import { Howl, Howler } from 'howler';
 
 import type { SongResult } from '@/type/music';
 
-interface Window {
+// 使用下划线前缀表示允许未使用的变量
+interface _Window {
   webkitAudioContext: typeof AudioContext;
 }
 
-interface HowlSound {
+// 使用下划线前缀表示允许未使用的变量
+interface _HowlSound {
   node: HTMLMediaElement & {
     audioSource?: MediaElementAudioSourceNode;
   };
@@ -247,6 +249,7 @@ class AudioService {
   private async setupEQ(sound: Howl) {
     try {
       const howl = sound as any;
+      // eslint-disable-next-line no-underscore-dangle
       const audioNode = howl._sounds?.[0]?._node;
 
       if (!audioNode || !(audioNode instanceof HTMLMediaElement)) {
@@ -355,7 +358,7 @@ class AudioService {
   }
 
   // 播放控制相关
-  play(url?: string, track?: SongResult): Promise<Howl> {
+  play(url?: string, track?: SongResult, isPlay: boolean = true): Promise<Howl> {
     // 如果没有提供新的 URL 和 track，且当前有音频实例，则继续播放
     if (this.currentSound && !url && !track) {
       this.currentSound.play();
@@ -373,9 +376,18 @@ class AudioService {
 
       const tryPlay = async () => {
         try {
+          console.log('audioService: 开始创建音频对象');
+
+          // 确保 Howler 上下文已初始化
+          if (!Howler.ctx) {
+            console.log('audioService: 初始化 Howler 上下文');
+            Howler.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+          }
+
           // 确保使用同一个音频上下文
-          if (!Howler.ctx || Howler.ctx.state === 'closed') {
-            Howler.ctx = new AudioContext();
+          if (Howler.ctx.state === 'closed') {
+            console.log('audioService: 重新创建音频上下文');
+            Howler.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
             this.context = Howler.ctx;
             Howler.masterGain = this.context.createGain();
             Howler.masterGain.connect(this.context.destination);
@@ -383,24 +395,28 @@ class AudioService {
 
           // 恢复上下文状态
           if (Howler.ctx.state === 'suspended') {
+            console.log('audioService: 恢复暂停的音频上下文');
             await Howler.ctx.resume();
           }
 
           // 先停止并清理现有的音频实例
           if (this.currentSound) {
+            console.log('audioService: 停止并清理现有的音频实例');
             this.currentSound.stop();
             this.currentSound.unload();
             this.currentSound = null;
           }
 
           // 清理 EQ 但保持上下文
+          console.log('audioService: 清理 EQ');
           await this.disposeEQ(true);
 
           this.currentTrack = track;
+          console.log('audioService: 创建新的 Howl 对象');
           this.currentSound = new Howl({
             src: [url],
             html5: true,
-            autoplay: true,
+            autoplay: false, // 修改为 false，不自动播放，等待完全初始化后手动播放
             volume: localStorage.getItem('volume')
               ? parseFloat(localStorage.getItem('volume') as string)
               : 1,
@@ -429,14 +445,26 @@ class AudioService {
               // 音频加载成功后设置 EQ 和更新媒体会话
               if (this.currentSound) {
                 try {
+                  console.log('audioService: 音频加载成功，设置 EQ');
                   await this.setupEQ(this.currentSound);
                   this.updateMediaSessionMetadata(track);
                   this.updateMediaSessionPositionState();
                   this.emit('load');
+
+                  // 此时音频已完全初始化，根据 isPlay 参数决定是否播放
+                  console.log('audioService: 音频完全初始化，isPlay =', isPlay);
+                  if (isPlay) {
+                    console.log('audioService: 开始播放');
+                    this.currentSound.play();
+                  }
+
                   resolve(this.currentSound);
                 } catch (error) {
                   console.error('设置 EQ 失败:', error);
-                  // 即使 EQ 设置失败，也继续播放
+                  // 即使 EQ 设置失败，也继续播放（如果需要）
+                  if (isPlay) {
+                    this.currentSound.play();
+                  }
                   resolve(this.currentSound);
                 }
               }

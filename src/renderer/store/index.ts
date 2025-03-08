@@ -94,6 +94,7 @@ export interface State {
   currentArtistId: number | null;
   systemFonts: { label: string; value: string }[];
   showDownloadDrawer: boolean;
+  savedPlayProgress?: number;
 }
 
 const state: State = {
@@ -139,6 +140,14 @@ const mutations = {
   async setPlayMusic(state: State, play: boolean) {
     state.play = play;
     localStorage.setItem('isPlaying', play.toString());
+
+    // 每次更改播放状态时，确保当前播放歌曲信息也被保存
+    if (state.playMusic && Object.keys(state.playMusic).length > 0) {
+      localStorage.setItem('currentPlayMusic', JSON.stringify(state.playMusic));
+      if (state.playMusicUrl) {
+        localStorage.setItem('currentPlayMusicUrl', state.playMusicUrl);
+      }
+    }
   },
   setMusicFull(state: State, musicFull: boolean) {
     state.musicFull = musicFull;
@@ -342,7 +351,8 @@ const actions = {
   },
   async initializePlayState({ state, commit }: { state: State; commit: any }) {
     const savedPlayList = getLocalStorageItem('playList', []);
-    const savedPlayMusic = getLocalStorageItem('currentPlayMusic', null);
+    const savedPlayMusic = getLocalStorageItem('currentPlayMusic', null) as SongResult | null;
+    const savedPlayProgress = localStorage.getItem('playProgress');
 
     if (savedPlayList.length > 0) {
       commit('setPlayList', savedPlayList);
@@ -355,11 +365,26 @@ const actions = {
 
         // 根据自动播放设置决定是否恢复播放状态
         const shouldAutoPlay = state.setData.autoPlay;
-        if (shouldAutoPlay) {
-          await handlePlayMusic(state, savedPlayMusic);
-        }
+        await handlePlayMusic(state, savedPlayMusic, shouldAutoPlay);
         state.play = shouldAutoPlay;
         state.isPlay = true;
+
+        // 如果有保存的播放进度，则提供给前端组件使用
+        if (savedPlayProgress) {
+          try {
+            const progress = JSON.parse(savedPlayProgress);
+            if (progress && progress.songId === savedPlayMusic.id) {
+              // 在全局状态中添加播放进度
+              state.savedPlayProgress = progress.progress;
+            } else {
+              // 如果歌曲ID不匹配，清除保存的进度
+              localStorage.removeItem('playProgress');
+            }
+          } catch (e) {
+            console.error('解析保存的播放进度失败', e);
+            localStorage.removeItem('playProgress');
+          }
+        }
       } catch (error) {
         console.error('重新获取音乐链接失败:', error);
         // 清除无效的播放状态
@@ -370,6 +395,7 @@ const actions = {
         localStorage.removeItem('currentPlayMusic');
         localStorage.removeItem('currentPlayMusicUrl');
         localStorage.removeItem('isPlaying');
+        localStorage.removeItem('playProgress');
       }
     }
   },
