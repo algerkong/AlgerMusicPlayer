@@ -12,6 +12,10 @@ const api = {
   openLyric: () => ipcRenderer.send('open-lyric'),
   sendLyric: (data) => ipcRenderer.send('send-lyric', data),
   unblockMusic: (id) => ipcRenderer.invoke('unblock-music', id),
+  // 歌词窗口关闭事件
+  onLyricWindowClosed: (callback: () => void) => {
+    ipcRenderer.on('lyric-window-closed', () => callback());
+  },
   // 更新相关
   startDownload: (url: string) => ipcRenderer.send('start-download', url),
   onDownloadProgress: (callback: (progress: number, status: string) => void) => {

@@ -378,27 +378,46 @@ watch(
 
 // 修改数据更新处
 const handleDataUpdate = (parsedData: {
+  type?: string;
   nowTime: number;
   startCurrentTime: number;
   nextTime: number;
   isPlay: boolean;
   nowIndex: number;
-  lrcArray: Array<{ text: string; trText: string }>;
-  lrcTimeArray: number[];
-  allTime: number;
-  playMusic: SongResult;
+  lrcArray?: Array<{ text: string; trText: string }>;
+  lrcTimeArray?: number[];
+  allTime?: number;
+  playMusic?: SongResult;
 }) => {
   // 确保数据存在且格式正确
   if (!parsedData) {
     console.error('Invalid update data received:', parsedData);
     return;
   }
+
+  // 根据数据类型处理
+  if (parsedData.type === 'update') {
+    // 增量更新，只更新动态数据
+    dynamicData.value = {
+      ...dynamicData.value,
+      nowTime: parsedData.nowTime || dynamicData.value.nowTime,
+      isPlay: typeof parsedData.isPlay === 'boolean' ? parsedData.isPlay : dynamicData.value.isPlay
+    };
+
+    // 更新索引（如果提供）
+    if (typeof parsedData.nowIndex === 'number') {
+      currentIndex.value = parsedData.nowIndex;
+    }
+    return;
+  }
+
+  // 完整更新或空歌词提示
   // 更新静态数据
   staticData.value = {
     lrcArray: parsedData.lrcArray || [],
     lrcTimeArray: parsedData.lrcTimeArray || [],
     allTime: parsedData.allTime || 0,
-    playMusic: parsedData.playMusic || {}
+    playMusic: parsedData.playMusic || ({} as SongResult)
   };
 
   // 更新动态数据
@@ -472,7 +491,7 @@ watch(
   { deep: true }
 );
 
-// 添��拖动相关变量
+// 添加拖动相关变量
 const isDragging = ref(false);
 const startPosition = ref({ x: 0, y: 0 });
 

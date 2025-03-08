@@ -33,6 +33,7 @@ export default {
     collapse: 'Collapse Lyrics',
     like: 'Like',
     lyric: 'Lyric',
+    noSongPlaying: 'No song playing',
     eq: 'Equalizer',
     playList: 'Play List',
     playMode: {

@@ -33,6 +33,7 @@ export default {
     collapse: '收起歌词',
     like: '喜欢',
     lyric: '歌词',
+    noSongPlaying: '没有正在播放的歌曲',
     eq: '均衡器',
     playList: '播放列表',
     playMode: {

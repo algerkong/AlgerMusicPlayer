@@ -1,5 +1,5 @@
 import { createDiscreteApi } from 'naive-ui';
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import useIndexedDB from '@/hooks/IndexDBHook';
 import { audioService } from '@/services/audioService';
@@ -263,11 +263,21 @@ watch(
   () => store.state.playMusic,
   () => {
     nextTick(async () => {
+      console.log('歌曲切换，更新歌词数据');
+      // 更新歌词数据
       lrcArray.value = playMusic.value.lyric?.lrcArray || [];
       lrcTimeArray.value = playMusic.value.lyric?.lrcTimeArray || [];
+
       // 当歌词数据更新时，如果歌词窗口打开，则发送数据
-      if (isElectron && isLyricWindowOpen.value && lrcArray.value.length > 0) {
+      if (isElectron && isLyricWindowOpen.value) {
+        console.log('歌词窗口已打开，同步最新歌词数据');
+        // 不管歌词数组是否为空，都发送最新数据
         sendLyricToWin();
+
+        // 再次延迟发送，确保歌词窗口已完全加载
+        setTimeout(() => {
+          sendLyricToWin();
+        }, 500);
       }
     });
   },
@@ -451,8 +461,6 @@ export const pause = () => {
   }
 };
 
-const isPlaying = computed(() => store.state.play as boolean);
-
 // 增加矫正时间
 export const addCorrectionTime = (time: number) => (correctionTime.value += time);
 
@@ -545,53 +553,182 @@ watch(
 // 发送歌词更新数据
 export const sendLyricToWin = () => {
   if (!isElectron || !isLyricWindowOpen.value) {
-    console.log('Cannot send lyric: electron or lyric window not available');
+    return;
+  }
+
+  // 检查是否有播放的歌曲
+  if (!playMusic.value || !playMusic.value.id) {
     return;
   }
 
   try {
-    if (lrcArray.value.length > 0) {
+    // 记录歌词发送状态
+    if (lrcArray.value && lrcArray.value.length > 0) {
       const nowIndex = getLrcIndex(nowTime.value);
+      // 构建完整的歌词更新数据
       const updateData = {
         type: 'full',
         nowIndex,
         nowTime: nowTime.value,
-        startCurrentTime: lrcTimeArray.value[nowIndex],
-        nextTime: lrcTimeArray.value[nowIndex + 1],
-        isPlay: isPlaying.value,
+        startCurrentTime: lrcTimeArray.value[nowIndex] || 0,
+        nextTime: lrcTimeArray.value[nowIndex + 1] || 0,
+        isPlay: store.state.play,
         lrcArray: lrcArray.value,
         lrcTimeArray: lrcTimeArray.value,
         allTime: allTime.value,
         playMusic: playMusic.value
       };
+
+      // 发送数据到歌词窗口
       window.api.sendLyric(JSON.stringify(updateData));
+    } else {
+      console.log('No lyric data available, sending empty lyric message');
+
+      // 发送没有歌词的提示
+      const emptyLyricData = {
+        type: 'empty',
+        nowIndex: 0,
+        nowTime: nowTime.value,
+        startCurrentTime: 0,
+        nextTime: 0,
+        isPlay: store.state.play,
+        lrcArray: [{ text: '当前歌曲暂无歌词', trText: '' }],
+        lrcTimeArray: [0],
+        allTime: allTime.value,
+        playMusic: playMusic.value
+      };
+      window.api.sendLyric(JSON.stringify(emptyLyricData));
     }
   } catch (error) {
     console.error('Error sending lyric update:', error);
   }
 };
 
+// 歌词同步定时器
+let lyricSyncInterval: any = null;
+
+// 开始歌词同步
+const startLyricSync = () => {
+  // 清除已有的定时器
+  if (lyricSyncInterval) {
+    clearInterval(lyricSyncInterval);
+  }
+
+  // 每秒同步一次歌词数据
+  lyricSyncInterval = setInterval(() => {
+    if (isElectron && isLyricWindowOpen.value && store.state.play && playMusic.value?.id) {
+      // 发送当前播放进度的更新
+      try {
+        const updateData = {
+          type: 'update',
+          nowIndex: getLrcIndex(nowTime.value),
+          nowTime: nowTime.value,
+          isPlay: store.state.play
+        };
+        window.api.sendLyric(JSON.stringify(updateData));
+      } catch (error) {
+        console.error('发送歌词进度更新失败:', error);
+      }
+    }
+  }, 1000);
+};
+
+// 停止歌词同步
+const stopLyricSync = () => {
+  if (lyricSyncInterval) {
+    clearInterval(lyricSyncInterval);
+    lyricSyncInterval = null;
+  }
+};
+
+// 修改openLyric函数，添加定时同步
 export const openLyric = () => {
   if (!isElectron) return;
+
+  // 检查是否有播放中的歌曲
+  if (!playMusic.value || !playMusic.value.id) {
+    console.log('没有正在播放的歌曲，无法打开歌词窗口');
+    return;
+  }
+
   console.log('Opening lyric window with current song:', playMusic.value?.name);
 
   isLyricWindowOpen.value = !isLyricWindowOpen.value;
   if (isLyricWindowOpen.value) {
+    // 立即打开窗口
+    window.api.openLyric();
+
+    // 确保有歌词数据，如果没有，则使用默认的"无歌词"提示
+    if (!lrcArray.value || lrcArray.value.length === 0) {
+      // 如果当前播放的歌曲有ID但没有歌词，则尝试加载歌词
+      console.log('尝试加载歌词数据...');
+      // 发送默认的"无歌词"数据
+      const emptyLyricData = {
+        type: 'empty',
+        nowIndex: 0,
+        nowTime: nowTime.value,
+        startCurrentTime: 0,
+        nextTime: 0,
+        isPlay: store.state.play,
+        lrcArray: [{ text: '加载歌词中...', trText: '' }],
+        lrcTimeArray: [0],
+        allTime: allTime.value,
+        playMusic: playMusic.value
+      };
+      window.api.sendLyric(JSON.stringify(emptyLyricData));
+    } else {
+      // 发送完整歌词数据
+      sendLyricToWin();
+    }
+
+    // 设置定时器，确保500ms后再次发送数据，以防窗口加载延迟
     setTimeout(() => {
-      window.api.openLyric();
       sendLyricToWin();
     }, 500);
-    sendLyricToWin();
+
+    // 启动歌词同步
+    startLyricSync();
   } else {
     closeLyric();
+    // 停止歌词同步
+    stopLyricSync();
   }
 };
 
-// 添加关闭歌词窗口的方法
+// 修改closeLyric函数，确保停止定时同步
 export const closeLyric = () => {
   if (!isElectron) return;
+  isLyricWindowOpen.value = false; // 确保状态更新
   windowData.electron.ipcRenderer.send('close-lyric');
+
+  // 停止歌词同步
+  stopLyricSync();
 };
+
+// 在组件挂载时设置对播放状态的监听
+watch(
+  () => store.state.play,
+  (isPlaying) => {
+    // 如果歌词窗口打开，根据播放状态控制同步
+    if (isElectron && isLyricWindowOpen.value) {
+      if (isPlaying) {
+        startLyricSync();
+      } else {
+        // 如果暂停播放，发送一次暂停状态的更新
+        const pauseData = {
+          type: 'update',
+          isPlay: false
+        };
+        window.api.sendLyric(JSON.stringify(pauseData));
+      }
+    }
+  }
+);
+
+// 在组件卸载时清理资源
+onUnmounted(() => {
+  stopLyricSync();
+});
 
 // 添加播放控制命令监听
 if (isElectron) {
@@ -613,7 +750,7 @@ if (isElectron) {
         store.commit('nextPlay');
         break;
       case 'close':
-        closeLyric();
+        isLyricWindowOpen.value = false; // 确保状态更新
         break;
       default:
         console.log('Unknown command:', command);
@@ -626,6 +763,13 @@ if (isElectron) {
 onMounted(() => {
   // 初始化音频监听器
   setupAudioListeners();
+
+  // 监听歌词窗口关闭事件
+  if (isElectron) {
+    window.api.onLyricWindowClosed(() => {
+      isLyricWindowOpen.value = false;
+    });
+  }
 
   // 检查是否需要初始化 sound 对象
   if (!sound.value && audioService.getCurrentSound()) {

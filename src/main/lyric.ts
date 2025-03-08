@@ -25,9 +25,15 @@ const createWin = () => {
   const validPosition =
     x !== undefined && y !== undefined && x >= 0 && y >= 0 && x < screenWidth && y < screenHeight;
 
+  // 确保宽高合理
+  const defaultWidth = 800;
+  const defaultHeight = 200;
+  const validWidth = width && width > 0 ? width : defaultWidth;
+  const validHeight = height && height > 0 ? height : defaultHeight;
+
   lyricWindow = new BrowserWindow({
-    width: width || 800,
-    height: height || 200,
+    width: validWidth,
+    height: validHeight,
     x: validPosition ? x : undefined,
     y: validPosition ? y : undefined,
     frame: false,
@@ -47,6 +53,17 @@ const createWin = () => {
     if (lyricWindow) {
       lyricWindow.destroy();
       lyricWindow = null;
+    }
+  });
+
+  // 监听窗口大小变化事件，保存新的尺寸
+  lyricWindow.on('resize', () => {
+    if (lyricWindow && !lyricWindow.isDestroyed()) {
+      const [width, height] = lyricWindow.getSize();
+      const [x, y] = lyricWindow.getPosition();
+
+      // 保存窗口位置和大小
+      store.set('lyricWindowBounds', { x, y, width, height });
     }
   });
 
@@ -118,6 +135,7 @@ export const loadLyricWindow = (ipcMain: IpcMain, mainWin: BrowserWindow): void 
     if (lyricWindow && !lyricWindow.isDestroyed()) {
       lyricWindow.webContents.send('lyric-window-close');
       mainWin.webContents.send('lyric-control-back', 'close');
+      mainWin.webContents.send('lyric-window-closed');
       lyricWindow.destroy();
       lyricWindow = null;
     }
@@ -150,12 +168,14 @@ export const loadLyricWindow = (ipcMain: IpcMain, mainWin: BrowserWindow): void 
 
     lyricWindow.setPosition(newX, newY);
 
-    // 保存新位置
-    store.set('lyricWindowBounds', {
-      ...lyricWindow.getBounds(),
+    // 保存新位置，但只保存位置信息，不使用getBounds()避免在Windows下引起尺寸变化
+    const bounds = {
       x: newX,
-      y: newY
-    });
+      y: newY,
+      width: windowWidth, // 使用当前保存的宽度
+      height: windowHeight // 使用当前保存的高度
+    };
+    store.set('lyricWindowBounds', bounds);
   });
 
   // 添加鼠标穿透事件处理

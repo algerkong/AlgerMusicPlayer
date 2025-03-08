@@ -13,6 +13,7 @@ declare global {
       miniTray: () => void;
       restart: () => void;
       unblockMusic: (id: number, data: any) => Promise<any>;
+      onLyricWindowClosed: (callback: () => void) => void;
       startDownload: (url: string) => void;
       onDownloadProgress: (callback: (progress: number, status: string) => void) => void;
       onDownloadComplete: (callback: (success: boolean, filePath: string) => void) => void;

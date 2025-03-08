@@ -113,11 +113,11 @@
         <template #trigger>
           <i
             class="iconfont ri-netease-cloud-music-line"
-            :class="{ 'text-green-500': isLyricWindowOpen }"
-            @click="openLyricWindow"
+            :class="{ 'text-green-500': isLyricWindowOpen, 'disabled-icon': !playMusic.id }"
+            @click="playMusic.id && openLyricWindow()"
           ></i>
         </template>
-        {{ t('player.playBar.lyric') }}
+        {{ playMusic.id ? t('player.playBar.lyric') : t('player.playBar.noSongPlaying') }}
       </n-tooltip>
       <n-popover
         trigger="click"
@@ -675,6 +675,13 @@ const isEQVisible = ref(false);
 
 .like-active {
   @apply text-red-500 hover:text-red-600 !important;
+}
+
+.disabled-icon {
+  @apply opacity-50 cursor-not-allowed !important;
+  &:hover {
+    @apply text-inherit !important;
+  }
 }
 
 .icon-loop,
