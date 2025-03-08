@@ -38,6 +38,7 @@ module.exports = {
   rules: {
     'vue/require-default-prop': 'off',
     'vue/multi-word-component-names': 'off',
+    'no-underscore-dangle': 'off',
     'no-nested-ternary': 'off',
     'no-console': 'off',
     'no-await-in-loop': 'off',

@@ -120,6 +120,7 @@
         {{ playMusic.id ? t('player.playBar.lyric') : t('player.playBar.noSongPlaying') }}
       </n-tooltip>
       <n-popover
+        v-if="isElectron"
         trigger="click"
         :z-index="99999999"
         content-class="music-eq"

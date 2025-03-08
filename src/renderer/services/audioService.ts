@@ -1,18 +1,7 @@
 import { Howl, Howler } from 'howler';
 
 import type { SongResult } from '@/type/music';
-
-// 使用下划线前缀表示允许未使用的变量
-interface _Window {
-  webkitAudioContext: typeof AudioContext;
-}
-
-// 使用下划线前缀表示允许未使用的变量
-interface _HowlSound {
-  node: HTMLMediaElement & {
-    audioSource?: MediaElementAudioSourceNode;
-  };
-}
+import { isElectron } from '@/utils'; // 导入isElectron常量
 
 class AudioService {
   private currentSound: Howl | null = null;
@@ -248,6 +237,11 @@ class AudioService {
 
   private async setupEQ(sound: Howl) {
     try {
+      if (!isElectron) {
+        console.log('Web环境中跳过EQ设置，避免CORS问题');
+        this.bypass = true;
+        return;
+      }
       const howl = sound as any;
       // eslint-disable-next-line no-underscore-dangle
       const audioNode = howl._sounds?.[0]?._node;

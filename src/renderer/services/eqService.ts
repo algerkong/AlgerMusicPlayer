@@ -25,8 +25,6 @@ export class EQService {
 
   private gainNode: GainNode | null = null;
 
-  private howlInstance: Howl | null = null;
-
   private bypass = false;
 
   // 预设频率
@@ -80,7 +78,6 @@ export class EQService {
 
       // 创建新的处理链
       this.tuna = new Tuna(this.context);
-      this.howlInstance = howl;
 
       // 创建/复用源节点
       if (!sound._node.destination) {
@@ -180,7 +177,6 @@ export class EQService {
       this.source = null;
       this.equalizer = null;
       this.gainNode = null;
-      this.howlInstance = null;
     } catch (error) {
       console.error('资源清理失败:', error);
     }
