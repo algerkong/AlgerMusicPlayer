@@ -51,7 +51,8 @@ export default {
     qqGroup: 'QQ群：789288579',
     messages: {
       copySuccess: '已复制到剪贴板'
-    }
+    },
+    donateList: '请我喝咖啡'
   },
   playlistType: {
     title: '歌单分类',

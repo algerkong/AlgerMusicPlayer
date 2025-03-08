@@ -76,12 +76,12 @@
       </n-button>
     </div>
 
-    <div class="p-6 rounded-lg shadow-lg bg-light dark:bg-gray-800">
+    <div class="p-6 rounded-lg shadow-lg">
       <div class="description text-center text-sm text-gray-700 dark:text-gray-200">
         <p>{{ t('donation.description') }}</p>
         <p>{{ t('donation.message') }}</p>
       </div>
-      <div class="flex justify-between">
+      <div class="flex justify-between mt-6">
         <div class="flex flex-col items-center gap-2">
           <n-image
             :src="alipay"
@@ -91,6 +91,13 @@
           />
           <span class="text-sm text-gray-700 dark:text-gray-200">{{ t('common.alipay') }}</span>
         </div>
+        <n-button type="primary" @click="toDonateList">
+          <template #icon>
+            <i class="ri-cup-line"></i>
+          </template>
+          {{ t('donation.toDonateList') }}
+          <i class="ri-arrow-right-s-line"></i>
+        </n-button>
         <div class="flex flex-col items-center gap-2">
           <n-image
             :src="wechat"
@@ -224,6 +231,10 @@ const displayDonors = computed(() => {
 
 const toggleExpand = () => {
   isExpanded.value = !isExpanded.value;
+};
+
+const toDonateList = () => {
+  window.open('http://donate.alger.fun', '_blank');
 };
 </script>
 

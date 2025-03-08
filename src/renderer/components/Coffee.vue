@@ -46,6 +46,15 @@
             {{ t('comp.coffee.qqGroup') }}
           </p>
         </div>
+        <div class="mt-4">
+          <!-- 赞赏列表地址 -->
+          <p
+            class="text-sm text-green-600 dark:text-gray-200 text-center cursor-pointer hover:text-green-500"
+            @click="toDonateList"
+          >
+            {{ t('comp.coffee.donateList') }}
+          </p>
+        </div>
       </div>
     </n-popover>
   </div>
@@ -64,6 +73,10 @@ const message = useMessage();
 const copyQQ = () => {
   navigator.clipboard.writeText('789288579');
   message.success('已复制到剪贴板');
+};
+
+const toDonateList = () => {
+  window.open('http://donate.alger.fun', '_blank');
 };
 
 defineProps({

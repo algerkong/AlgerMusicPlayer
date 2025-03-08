@@ -52,7 +52,8 @@ export default {
     qqGroup: 'QQ group: 789288579',
     messages: {
       copySuccess: 'Copied to clipboard'
-    }
+    },
+    donateList: 'Buy me a coffee'
   },
   playlistType: {
     title: 'Playlist Category',

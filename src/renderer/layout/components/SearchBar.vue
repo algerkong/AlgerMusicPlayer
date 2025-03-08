@@ -227,7 +227,7 @@ const selectItem = async (key: string) => {
 };
 
 const toGithub = () => {
-  window.open('https://github.com/algerkong/AlgerMusicPlayer', '_blank');
+  window.open('http://donate.alger.fun', '_blank');
 };
 
 const updateInfo = ref<UpdateResult>({
