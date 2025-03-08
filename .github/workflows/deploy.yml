@@ -1,0 +1,42 @@
+name: Deploy Web
+
+on:
+  push:
+    branches:
+      - dev_electron # 或者您的主分支名称
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to Server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          source: "out/renderer/*"
+          target: ${{ secrets.DEPLOY_PATH }}
+          strip_components: 2
+
+      - name: Execute Remote Commands
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            cd ${{ secrets.DEPLOY_PATH }}

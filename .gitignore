@@ -22,3 +22,5 @@ bun.lockb
 out
 
 .cursorrules
+
+.github/deploy_keys
