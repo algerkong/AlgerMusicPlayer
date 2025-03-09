@@ -2,12 +2,25 @@
   <div id="title-bar" @mousedown="drag">
     <div id="title">Alger Music</div>
     <div id="buttons">
-      <div class="button" @click="minimize">
-        <i class="iconfont icon-minisize"></i>
-      </div>
-      <div class="button" @click="close">
-        <i class="iconfont icon-close"></i>
-      </div>
+      <n-button
+        v-if="!isElectron"
+        type="primary"
+        size="small"
+        text
+        title="下载应用"
+        @click="openDownloadPage"
+      >
+        <i class="ri-download-line"></i>
+        下载桌面版
+      </n-button>
+      <template v-if="isElectron">
+        <div class="button" @click="minimize">
+          <i class="iconfont icon-minisize"></i>
+        </div>
+        <div class="button" @click="close">
+          <i class="iconfont icon-close"></i>
+        </div>
+      </template>
     </div>
   </div>
 
@@ -51,6 +64,12 @@ const { t } = useI18n();
 const store = useStore();
 const showCloseModal = ref(false);
 const rememberChoice = ref(false);
+
+const openDownloadPage = () => {
+  if (!isElectron) {
+    window.open('http://donate.alger.fun/download', '_blank');
+  }
+};
 
 const minimize = () => {
   if (!isElectron) {

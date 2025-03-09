@@ -1,8 +1,8 @@
 <template>
   <div class="layout-page">
     <div id="layout-main" class="layout-main">
-      <title-bar v-if="isElectron" />
-      <div class="layout-main-page" :class="isElectron ? '' : 'pt-6'">
+      <title-bar />
+      <div class="layout-main-page">
         <!-- 侧边菜单栏 -->
         <app-menu v-if="!isMobile" class="menu" :menus="menus" />
         <div class="main">
