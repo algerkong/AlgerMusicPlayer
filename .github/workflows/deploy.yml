@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - dev_electron # 或者您的主分支名称
+  workflow_dispatch: # 允许手动触发
 
 jobs:
   build-and-deploy:
@@ -15,6 +16,13 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
+          
+      - name: 创建环境变量文件
+        run: |
+          echo "VITE_API=${{ secrets.VITE_API }}" > .env.production.local
+          echo "VITE_API_MUSIC=${{ secrets.VITE_API_MUSIC }}" >> .env.production.local
+          # 添加其他需要的环境变量
+          cat .env.production.local # 查看创建的文件内容，调试用
 
       - name: Install Dependencies
         run: npm install
@@ -40,3 +48,4 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           script: |
             cd ${{ secrets.DEPLOY_PATH }}
+            echo "部署完成于 $(date)"
