@@ -494,6 +494,8 @@ watch(
 // 添加拖动相关变量
 const isDragging = ref(false);
 const startPosition = ref({ x: 0, y: 0 });
+const lastMoveTime = ref(0);
+const moveThrottleMs = 10; // 限制拖动事件发送频率，提高性能
 
 // 处理鼠标按下事件
 const handleMouseDown = (e: MouseEvent) => {
@@ -501,7 +503,8 @@ const handleMouseDown = (e: MouseEvent) => {
   if (
     lyricSetting.value.isLock ||
     (e.target as HTMLElement).closest('.control-buttons') ||
-    (e.target as HTMLElement).closest('.font-size-controls')
+    (e.target as HTMLElement).closest('.font-size-controls') ||
+    (e.target as HTMLElement).closest('.play-controls')
   ) {
     return;
   }
@@ -511,22 +514,37 @@ const handleMouseDown = (e: MouseEvent) => {
 
   isDragging.value = true;
   startPosition.value = { x: e.screenX, y: e.screenY };
+  lastMoveTime.value = performance.now();
+
+  // 发送拖动开始信号到主进程
+  windowData.electron.ipcRenderer.send('lyric-drag-start');
 
   // 添加全局鼠标事件监听
   const handleMouseMove = (e: MouseEvent) => {
     if (!isDragging.value) return;
 
+    // 时间节流，避免过于频繁的更新
+    const now = performance.now();
+    if (now - lastMoveTime.value < moveThrottleMs) return;
+    lastMoveTime.value = now;
+
     const deltaX = e.screenX - startPosition.value.x;
     const deltaY = e.screenY - startPosition.value.y;
 
-    // 发送移动事件到主进程
-    windowData.electron.ipcRenderer.send('lyric-drag-move', { deltaX, deltaY });
-    startPosition.value = { x: e.screenX, y: e.screenY };
+    // 只有在实际移动时才发送事件
+    if (Math.abs(deltaX) > 0 || Math.abs(deltaY) > 0) {
+      // 发送移动事件到主进程
+      windowData.electron.ipcRenderer.send('lyric-drag-move', { deltaX, deltaY });
+      startPosition.value = { x: e.screenX, y: e.screenY };
+    }
   };
 
   const handleMouseUp = () => {
     if (!isDragging.value) return;
     isDragging.value = false;
+
+    // 发送拖动结束信号到主进程
+    windowData.electron.ipcRenderer.send('lyric-drag-end');
 
     // 移除事件监听
     document.removeEventListener('mousemove', handleMouseMove);
@@ -573,7 +591,7 @@ const handleNext = () => {
 };
 </script>
 
-<style>
+<style scoped>
 body {
   background-color: transparent !important;
 }
@@ -589,9 +607,10 @@ body {
   user-select: none;
   transition: background-color 0.2s ease;
   cursor: default;
+  border-radius: 14px;
 
   &:hover {
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(44, 44, 44, 0.466);
     .control-bar {
       &-show {
         opacity: 1;
@@ -750,16 +769,15 @@ body {
   color: var(--text-color);
   white-space: pre-wrap;
   word-break: break-all;
-  text-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
   transition: all 0.2s ease;
   line-height: 1.4;
+  -webkit-text-stroke: 0.5px #0000008a;
 }
 
 .lyric-translation {
   color: var(--text-secondary);
   white-space: pre-wrap;
   word-break: break-all;
-  text-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
   transition: font-size 0.2s ease;
   line-height: 1.4; // 添加行高比例
 }
