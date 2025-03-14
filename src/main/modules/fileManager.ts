@@ -258,6 +258,17 @@ async function processDownloadQueue(event: Electron.IpcMainEvent) {
 }
 
 /**
+ * 清理文件名中的非法字符
+ */
+function sanitizeFilename(filename: string): string {
+  // 替换 Windows 和 Unix 系统中的非法字符
+  return filename
+    .replace(/[<>:"/\\|?*]/g, '_') // 替换特殊字符为下划线
+    .replace(/\s+/g, ' ') // 将多个空格替换为单个空格
+    .trim(); // 移除首尾空格
+}
+
+/**
  * 下载音乐功能
  */
 async function downloadMusic(
@@ -276,9 +287,12 @@ async function downloadMusic(
     const store = new Store();
     const downloadPath = (store.get('set.downloadPath') as string) || app.getPath('downloads');
 
+    // 清理文件名中的非法字符
+    const sanitizedFilename = sanitizeFilename(filename);
+
     // 从URL中获取文件扩展名，如果没有则使用传入的type或默认mp3
     const urlExt = type ? `.${type}` : '.mp3';
-    const filePath = path.join(downloadPath, `${filename}${urlExt}`);
+    const filePath = path.join(downloadPath, `${sanitizedFilename}${urlExt}`);
 
     // 检查文件是否已存在，如果存在则添加序号
     finalFilePath = filePath;
