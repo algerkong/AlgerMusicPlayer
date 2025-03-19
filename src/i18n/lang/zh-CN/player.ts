@@ -11,6 +11,7 @@ export default {
   mute: '静音',
   unmute: '取消静音',
   songNum: '歌曲总数：{num}',
+  playFailed: '当前歌曲播放失败，播放下一首',
   playMode: {
     sequence: '顺序播放',
     loop: '循环播放',

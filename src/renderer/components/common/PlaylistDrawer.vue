@@ -110,12 +110,13 @@
 import { useMessage } from 'naive-ui';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useStore } from 'vuex';
 
 import { createPlaylist, updatePlaylistTracks } from '@/api/music';
 import { getUserPlaylist } from '@/api/user';
+import { useUserStore } from '@/store';
 import { getImgUrl } from '@/utils';
 
+const store = useUserStore();
 const { t } = useI18n();
 const props = defineProps<{
   modelValue: boolean;
@@ -127,7 +128,6 @@ const emit = defineEmits(['update:modelValue']);
 const message = useMessage();
 const playlists = ref<any[]>([]);
 const creating = ref(false);
-const store = useStore();
 const isCreating = ref(false);
 
 const formValue = ref({
@@ -151,7 +151,7 @@ const toggleCreateForm = () => {
 // 获取用户歌单
 const fetchUserPlaylists = async () => {
   try {
-    const { user } = store.state;
+    const { user } = store;
     if (!user?.userId) {
       message.error(t('comp.playlistDrawer.loginFirst'));
       emit('update:modelValue', false);

@@ -3,10 +3,13 @@
 </template>
 
 <script setup lang="ts">
-import { useStore } from 'vuex';
+import { computed } from 'vue';
 
-const store = useStore();
-const isPlay = computed(() => store.state.isPlay as boolean);
+import { usePlayerStore } from '@/store/modules/player';
+
+const playerStore = usePlayerStore();
+const isPlay = computed(() => playerStore.isPlay);
+
 defineProps({
   height: {
     type: String,

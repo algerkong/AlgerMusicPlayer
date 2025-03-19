@@ -55,13 +55,13 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useStore } from 'vuex';
 
+import { useSettingsStore } from '@/store/modules/settings';
 import { isElectron } from '@/utils';
 
 const { t } = useI18n();
 
-const store = useStore();
+const settingsStore = useSettingsStore();
 const showCloseModal = ref(false);
 const rememberChoice = ref(false);
 
@@ -80,38 +80,30 @@ const minimize = () => {
 
 const handleAction = (action: 'minimize' | 'close') => {
   if (rememberChoice.value) {
-    store.commit('setSetData', {
-      ...store.state.setData,
+    settingsStore.setSettings({
+      ...settingsStore.setData,
       closeAction: action
     });
   }
 
   if (action === 'minimize') {
-    window.api.miniTray();
+    window.api.minimize();
   } else {
     window.api.close();
   }
   showCloseModal.value = false;
 };
 
-const close = () => {
-  if (!isElectron) {
-    return;
-  }
-
-  const { closeAction } = store.state.setData;
+const handleClose = () => {
+  const { closeAction } = settingsStore.setData;
 
   if (closeAction === 'minimize') {
-    window.api.miniTray();
-    return;
-  }
-
-  if (closeAction === 'close') {
+    window.api.minimize();
+  } else if (closeAction === 'close') {
     window.api.close();
-    return;
+  } else {
+    showCloseModal.value = true;
   }
-
-  showCloseModal.value = true;
 };
 
 const drag = (event: MouseEvent) => {
@@ -119,6 +111,10 @@ const drag = (event: MouseEvent) => {
     return;
   }
   window.api.dragStart(event as unknown as string);
+};
+
+const handleThemeChange = () => {
+  settingsStore.toggleTheme();
 };
 </script>
 

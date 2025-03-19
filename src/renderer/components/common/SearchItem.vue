@@ -40,11 +40,10 @@
 </template>
 
 <script setup lang="ts">
-import { useStore } from 'vuex';
-
 import { getAlbum, getListDetail } from '@/api/list';
 import MvPlayer from '@/components/MvPlayer.vue';
 import { audioService } from '@/services/audioService';
+import { usePlayerStore } from '@/store/modules/player';
 import { IMvItem } from '@/type/mv';
 import { getImgUrl } from '@/utils';
 
@@ -72,14 +71,14 @@ const songList = ref<any[]>([]);
 const showPop = ref(false);
 const listInfo = ref<any>(null);
 
+const playerStore = usePlayerStore();
+
 const getCurrentMv = () => {
   return {
     id: props.item.id,
     name: props.item.name
   } as unknown as IMvItem;
 };
-
-const store = useStore();
 
 const handleClick = async () => {
   listInfo.value = null;
@@ -108,11 +107,16 @@ const handleClick = async () => {
   }
 
   if (props.item.type === 'mv') {
-    store.commit('setIsPlay', false);
-    store.commit('setPlayMusic', false);
-    audioService.getCurrentSound()?.pause();
-    showPop.value = true;
+    handleShowMv(getCurrentMv());
   }
+};
+
+const handleShowMv = async (item: IMvItem) => {
+  playerStore.setIsPlay(false);
+  playerStore.setPlayMusic(false);
+  audioService.getCurrentSound()?.pause();
+  showPop.value = true;
+  currentMv.value = item;
 };
 </script>
 

@@ -87,16 +87,16 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useStore } from 'vuex';
 
 import { getMusicDetail } from '@/api/music';
 import SongItem from '@/components/common/SongItem.vue';
+import { usePlayerStore } from '@/store/modules/player';
 import { getImgUrl, isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
 
 import PlayBottom from './common/PlayBottom.vue';
 
 const { t } = useI18n();
-const store = useStore();
+const playerStore = usePlayerStore();
 
 const props = withDefaults(
   defineProps<{
@@ -236,13 +236,13 @@ const loadFullPlaylist = async () => {
 // 处理播放
 const handlePlay = async () => {
   // 先使用当前已加载的歌曲开始播放
-  store.commit('setPlayList', displayedSongs.value.map(formatSong));
+  playerStore.setPlayList(displayedSongs.value.map(formatSong));
 
   // 在后台加载完整播放列表
   loadFullPlaylist().then(() => {
     // 加载完成后，更新播放列表为完整列表
     if (completePlaylist.value.length > 0) {
-      store.commit('setPlayList', completePlaylist.value.map(formatSong));
+      playerStore.setPlayList(completePlaylist.value.map(formatSong));
     }
   });
 };

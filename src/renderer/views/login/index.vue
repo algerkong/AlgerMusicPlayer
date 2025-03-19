@@ -3,9 +3,9 @@ import { useMessage } from 'naive-ui';
 import { onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { useStore } from 'vuex';
 
 import { checkQr, createQr, getQrKey, getUserDetail, loginByCellphone } from '@/api/login';
+import { useUserStore } from '@/store/modules/user';
 import { setAnimationClass } from '@/utils';
 
 defineOptions({
@@ -14,11 +14,12 @@ defineOptions({
 
 const { t } = useI18n();
 const message = useMessage();
-const store = useStore();
 const router = useRouter();
 const isQr = ref(true);
 
 const qrUrl = ref<string>();
+const userStore = useUserStore();
+
 onMounted(() => {
   loadLogin();
 });
@@ -56,7 +57,7 @@ const timerIsQr = (key: string) => {
       if (data.code === 803) {
         localStorage.setItem('token', data.cookie);
         const user = await getUserDetail();
-        store.state.user = user.data.profile;
+        userStore.user = user.data.profile;
         localStorage.setItem('user', JSON.stringify(user.data.profile));
         message.success(t('login.message.loginSuccess'));
 
@@ -95,7 +96,7 @@ const loginPhone = async () => {
   const { data } = await loginByCellphone(phone.value, password.value);
   if (data.code === 200) {
     message.success(t('login.message.loginSuccess'));
-    store.state.user = data.profile;
+    userStore.user = data.profile;
     localStorage.setItem('token', data.cookie);
     setTimeout(() => {
       router.push('/user');

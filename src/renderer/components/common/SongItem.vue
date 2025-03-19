@@ -90,10 +90,10 @@ import type { MenuOption } from 'naive-ui';
 import { NImage, NText, useMessage } from 'naive-ui';
 import { computed, h, inject, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useStore } from 'vuex';
 
 import { getSongUrl } from '@/hooks/MusicListHook';
 import { audioService } from '@/services/audioService';
+import { usePlayerStore, useSettingsStore } from '@/store';
 import type { SongResult } from '@/type/music';
 import { getImgUrl, isElectron } from '@/utils';
 import { getImageBackground } from '@/utils/linearColor';
@@ -120,11 +120,13 @@ const props = withDefaults(
   }
 );
 
-const store = useStore();
+const playerStore = usePlayerStore();
+const settingsStore = useSettingsStore();
+
 const message = useMessage();
 
-const play = computed(() => store.state.play as boolean);
-const playMusic = computed(() => store.state.playMusic);
+const play = computed(() => playerStore.isPlay);
+const playMusic = computed(() => playerStore.playMusic);
 const playLoading = computed(
   () => playMusic.value.id === props.item.id && playMusic.value.playLoading
 );
@@ -356,31 +358,31 @@ const imageLoad = async () => {
 const playMusicEvent = async (item: SongResult) => {
   if (playMusic.value.id === item.id) {
     if (play.value) {
-      store.commit('setPlayMusic', false);
+      playerStore.setPlayMusic(false);
       audioService.getCurrentSound()?.pause();
     } else {
-      store.commit('setPlayMusic', true);
+      playerStore.setPlayMusic(true);
       audioService.getCurrentSound()?.play();
     }
     return;
   }
-  await store.commit('setPlay', item);
-  store.commit('setIsPlay', true);
+  await playerStore.setPlay(item);
+  playerStore.isPlay = true;
   emits('play', item);
 };
 
 // 判断是否已收藏
 const isFavorite = computed(() => {
-  return store.state.favoriteList.includes(props.item.id);
+  return playerStore.favoriteList.includes(props.item.id);
 });
 
 // 切换收藏状态
 const toggleFavorite = async (e: Event) => {
   e.stopPropagation();
   if (isFavorite.value) {
-    store.commit('removeFromFavorite', props.item.id);
+    playerStore.removeFromFavorite(props.item.id);
   } else {
-    store.commit('addToFavorite', props.item.id);
+    playerStore.addToFavorite(props.item.id);
   }
 };
 
@@ -390,7 +392,7 @@ const toggleSelect = () => {
 };
 
 const handleArtistClick = (id: number) => {
-  store.commit('setCurrentArtistId', id);
+  settingsStore.currentArtistId = id;
 };
 
 // 获取歌手列表（最多显示5个）
@@ -400,7 +402,7 @@ const artists = computed(() => {
 
 // 添加到下一首播放
 const handlePlayNext = () => {
-  store.commit('addToNextPlay', props.item);
+  playerStore.addToNextPlay(props.item);
   message.success(t('songItem.message.addedToNextPlay'));
 };
 </script>

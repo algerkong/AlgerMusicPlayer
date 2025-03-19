@@ -24,15 +24,15 @@
 
 <script lang="ts" setup>
 import { useI18n } from 'vue-i18n';
-import { useStore } from 'vuex';
 
 import { getRecommendMusic } from '@/api/home';
 import SongItem from '@/components/common/SongItem.vue';
+import { usePlayerStore } from '@/store/modules/player';
 import type { IRecommendMusic } from '@/type/music';
 import { setAnimationClass, setAnimationDelay } from '@/utils';
 
 const { t } = useI18n();
-const store = useStore();
+const playerStore = usePlayerStore();
 // 推荐歌曲
 const recommendMusic = ref<IRecommendMusic>();
 const loading = ref(false);
@@ -51,7 +51,9 @@ onMounted(() => {
 });
 
 const handlePlay = () => {
-  store.commit('setPlayList', recommendMusic.value?.result);
+  if (recommendMusic.value?.result) {
+    playerStore.setPlayList(recommendMusic.value.result);
+  }
 };
 </script>
 

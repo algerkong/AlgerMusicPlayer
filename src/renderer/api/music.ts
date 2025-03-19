@@ -1,5 +1,5 @@
 import { musicDB } from '@/hooks/MusicHook';
-import store from '@/store';
+import { useSettingsStore, useUserStore } from '@/store';
 import type { ILyric } from '@/type/lyric';
 import { isElectron } from '@/utils';
 import request from '@/utils/request';
@@ -14,14 +14,16 @@ export const getMusicQualityDetail = (id: number) => {
 
 // 根据音乐Id获取音乐播放URl
 export const getMusicUrl = async (id: number, isDownloaded: boolean = false) => {
+  const userStore = useUserStore();
+  const settingStore = useSettingsStore();
   // 判断是否登录
   try {
-    if (store.state.user && isDownloaded && store.state.user.vipType !== 0) {
+    if (userStore.user && isDownloaded && userStore.user.vipType !== 0) {
       const url = '/song/download/url/v1';
       const res = await request.get(url, {
         params: {
           id,
-          level: store.state.setData.musicQuality || 'higher',
+          level: settingStore.setData.musicQuality || 'higher',
           cookie: `${localStorage.getItem('token')} os=pc;`
         }
       });
@@ -37,7 +39,7 @@ export const getMusicUrl = async (id: number, isDownloaded: boolean = false) => 
   return await request.get('/song/url/v1', {
     params: {
       id,
-      level: store.state.setData.musicQuality || 'higher'
+      level: settingStore.setData.musicQuality || 'higher'
     }
   });
 };

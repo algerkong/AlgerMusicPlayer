@@ -107,12 +107,13 @@ import { useDateFormat } from '@vueuse/core';
 import { onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
-import { useStore } from 'vuex';
 
 import { getHotSearch } from '@/api/home';
 import { getSearch } from '@/api/search';
 import SearchItem from '@/components/common/SearchItem.vue';
 import SongItem from '@/components/common/SongItem.vue';
+import { usePlayerStore } from '@/store/modules/player';
+import { useSearchStore } from '@/store/modules/search';
 import type { IHotSearch } from '@/type/search';
 import { isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
 
@@ -122,10 +123,11 @@ defineOptions({
 
 const { t } = useI18n();
 const route = useRoute();
-const store = useStore();
+const playerStore = usePlayerStore();
+const searchStore = useSearchStore();
 
 const searchDetail = ref<any>();
-const searchType = computed(() => store.state.searchType as number);
+const searchType = computed(() => searchStore.searchType as number);
 const searchDetailLoading = ref(false);
 const searchHistory = ref<string[]>([]);
 
@@ -188,23 +190,6 @@ onMounted(() => {
 
 const hotKeyword = ref(route.query.keyword || t('search.title.searchList'));
 
-watch(
-  () => store.state.searchValue,
-  (value) => {
-    loadSearch(value);
-  }
-);
-
-watch(
-  () => searchType.value,
-  () => {
-    if (store.state.searchValue) {
-      loadSearch(store.state.searchValue);
-    }
-  }
-);
-
-const dateFormat = (time: any) => useDateFormat(time, 'YYYY.MM.DD').value;
 const loadSearch = async (keywords: any, type: any = null, isLoadMore = false) => {
   if (!keywords) return;
 
@@ -295,6 +280,31 @@ const loadSearch = async (keywords: any, type: any = null, isLoadMore = false) =
   }
 };
 
+watch(
+  () => searchStore.searchValue,
+  (value) => {
+    loadSearch(value);
+  }
+);
+
+watch(
+  () => searchType.value,
+  () => {
+    if (searchStore.searchValue) {
+      loadSearch(searchStore.searchValue);
+    }
+  }
+);
+// 修改 store.state 的访问
+if (searchStore.searchValue) {
+  loadSearch(searchStore.searchValue);
+}
+
+// 修改 store.state 的设置
+searchStore.searchValue = route.query.keyword as string;
+
+const dateFormat = (time: any) => useDateFormat(time, 'YYYY.MM.DD').value;
+
 // 添加滚动处理函数
 const handleScroll = (e: any) => {
   const { scrollTop, scrollHeight, clientHeight } = e.target;
@@ -308,14 +318,14 @@ watch(
   () => route.path,
   async (path) => {
     if (path === '/search') {
-      store.state.searchValue = route.query.keyword;
+      searchStore.searchValue = route.query.keyword as string;
     }
   }
 );
 
 const handlePlay = () => {
   const tracks = searchDetail.value?.songs || [];
-  store.commit('setPlayList', tracks);
+  playerStore.setPlayList(tracks);
 };
 
 // 点击搜索历史

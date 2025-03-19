@@ -191,9 +191,9 @@
 import { NButton, NIcon, NSlider, NTooltip } from 'naive-ui';
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useStore } from 'vuex';
 
 import { getMvUrl } from '@/api/mv';
+import { usePlayerStore } from '@/store/modules/player';
 import { IMvItem } from '@/type/mv';
 
 const { t } = useI18n();
@@ -222,7 +222,7 @@ const emit = defineEmits<{
   (e: 'prev', loading: (value: boolean) => void): void;
 }>();
 
-const store = useStore();
+const playerStore = usePlayerStore();
 const mvUrl = ref<string>();
 const playMode = ref<PlayMode>(PLAY_MODE.Auto);
 
@@ -359,8 +359,8 @@ const loadMvUrl = async (mv: IMvItem) => {
 
 const handleClose = () => {
   emit('update:show', false);
-  if (store.state.playMusicUrl) {
-    store.commit('setIsPlay', true);
+  if (playerStore.playMusicUrl) {
+    playerStore.setIsPlay(true);
   }
 };
 
@@ -543,7 +543,11 @@ watch(showControls, (newValue) => {
   }
 });
 
-const isMobile = computed(() => store.state.isMobile);
+const isMobile = computed(() => false); // TODO: 从 settings store 获取
+
+const handlePlay = () => {
+  playerStore.setIsPlay(true);
+};
 </script>
 
 <style scoped lang="scss">

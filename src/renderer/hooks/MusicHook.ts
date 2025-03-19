@@ -1,15 +1,17 @@
 import { createDiscreteApi } from 'naive-ui';
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 
+import i18n from '@/../i18n/renderer';
 import useIndexedDB from '@/hooks/IndexDBHook';
 import { audioService } from '@/services/audioService';
-import store from '@/store';
+import pinia, { usePlayerStore } from '@/store';
 import type { Artist, ILyricText, SongResult } from '@/type/music';
 import { isElectron } from '@/utils';
 import { getTextColors } from '@/utils/linearColor';
 
 const windowData = window as any;
 
+const playerStore = usePlayerStore(pinia);
 export const lrcArray = ref<ILyricText[]>([]); // 歌词数组
 export const lrcTimeArray = ref<number[]>([]); // 歌词时间数组
 export const nowTime = ref(0); // 当前播放时间
@@ -17,12 +19,12 @@ export const allTime = ref(0); // 总播放时间
 export const nowIndex = ref(0); // 当前播放歌词
 export const correctionTime = ref(0.4); // 歌词矫正时间Correction time
 export const currentLrcProgress = ref(0); // 来存储当前歌词的进度
-export const playMusic = computed(() => store.state.playMusic as SongResult); // 当前播放歌曲
+export const playMusic = computed(() => playerStore.playMusic as SongResult); // 当前播放歌曲
 export const sound = ref<Howl | null>(audioService.getCurrentSound());
 export const isLyricWindowOpen = ref(false); // 新增状态
 export const textColors = ref<any>(getTextColors());
 export const artistList = computed(
-  () => (store.state.playMusic.ar || store.state.playMusic?.song?.artists) as Artist[]
+  () => (playerStore.playMusic.ar || playerStore.playMusic?.song?.artists) as Artist[]
 );
 
 export const musicDB = await useIndexedDB('musicDB', [
@@ -40,11 +42,11 @@ document.onkeyup = (e) => {
 
   switch (e.code) {
     case 'Space':
-      if (store.state.play) {
-        store.commit('setPlayMusic', false);
+      if (playerStore.play) {
+        playerStore.setPlayMusic(false);
         audioService.getCurrentSound()?.pause();
       } else {
-        store.commit('setPlayMusic', true);
+        playerStore.setPlayMusic(true);
         audioService.getCurrentSound()?.play();
       }
       break;
@@ -68,7 +70,7 @@ const stopProgressAnimation = () => {
 
 // 全局更新函数
 const updateProgress = () => {
-  if (!store.state.play) {
+  if (!playerStore.play) {
     stopProgressAnimation();
     return;
   }
@@ -105,11 +107,11 @@ const updateProgress = () => {
 
       // 保存当前播放进度到 localStorage (每秒保存一次，避免频繁写入)
       if (Math.floor(currentTime) % 2 === 0) {
-        if (store.state.playMusic && store.state.playMusic.id) {
+        if (playerStore.playMusic && playerStore.playMusic.id) {
           localStorage.setItem(
             'playProgress',
             JSON.stringify({
-              songId: store.state.playMusic.id,
+              songId: playerStore.playMusic.id,
               progress: currentTime
             })
           );
@@ -158,7 +160,7 @@ const initProgressAnimation = () => {
   let debounceTimer: any = null;
 
   watch(
-    () => store.state.play,
+    () => playerStore.play,
     (newIsPlaying) => {
       console.log('播放状态变化:', newIsPlaying);
 
@@ -200,7 +202,7 @@ const initProgressAnimation = () => {
   // 监听当前歌词索引变化
   watch(nowIndex, () => {
     currentLrcProgress.value = 0;
-    if (store.state.play) {
+    if (playerStore.play) {
       startProgressAnimation();
     }
   });
@@ -208,7 +210,7 @@ const initProgressAnimation = () => {
   // 监听音频对象变化
   watch(sound, (newSound) => {
     console.log('sound 对象变化:', !!newSound);
-    if (newSound && store.state.play) {
+    if (newSound && playerStore.play) {
       startProgressAnimation();
     }
   });
@@ -219,12 +221,12 @@ initProgressAnimation();
 
 // 简化后的 watch 函数，只保留核心逻辑
 watch(
-  () => store.state.playMusicUrl,
+  () => playerStore.playMusicUrl,
   async (newVal) => {
     if (newVal && playMusic.value) {
       try {
         // 保存当前播放状态
-        const shouldPlay = store.state.play;
+        const shouldPlay = playerStore.play;
 
         // 检查是否有保存的进度
         let initialPosition = 0;
@@ -247,20 +249,20 @@ watch(
         setupAudioListeners();
 
         // 确保状态与 localStorage 同步
-        localStorage.setItem('currentPlayMusic', JSON.stringify(store.state.playMusic));
+        localStorage.setItem('currentPlayMusic', JSON.stringify(playerStore.playMusic));
         localStorage.setItem('currentPlayMusicUrl', newVal);
       } catch (error) {
         console.error('播放音频失败:', error);
-        store.commit('setPlayMusic', false);
-        message.error('当前歌曲播放失败，播放下一首');
-        store.commit('nextPlay');
+        // store.commit('setPlayMusic', false);
+        playerStore.setPlayMusic(false);
+        message.error(i18n.global.t('player.playFailed'));
       }
     }
   }
 );
 
 watch(
-  () => store.state.playMusic,
+  () => playerStore.playMusic,
   () => {
     nextTick(async () => {
       console.log('歌曲切换，更新歌词数据');
@@ -322,7 +324,7 @@ const setupAudioListeners = () => {
 
   // 监听播放
   audioService.on('play', () => {
-    store.commit('setPlayMusic', true);
+    playerStore.setPlayMusic(true);
     clearInterval();
     interval = window.setInterval(() => {
       try {
@@ -371,7 +373,7 @@ const setupAudioListeners = () => {
   // 监听暂停
   audioService.on('pause', () => {
     console.log('音频暂停事件触发');
-    store.commit('setPlayMusic', false);
+    playerStore.setPlayMusic(false);
     clearInterval();
     if (isElectron && isLyricWindowOpen.value) {
       sendLyricToWin();
@@ -388,17 +390,17 @@ const setupAudioListeners = () => {
       }
 
       // 重新播放当前歌曲
-      if (store.state.playMusicUrl && playMusic.value) {
-        const newSound = await audioService.play(store.state.playMusicUrl, playMusic.value);
+      if (playerStore.playMusicUrl && playMusic.value) {
+        const newSound = await audioService.play(playerStore.playMusicUrl, playMusic.value);
         sound.value = newSound as Howl;
         setupAudioListeners();
       } else {
         console.error('No music URL or playMusic data available');
-        store.commit('nextPlay');
+        playerStore.nextPlay();
       }
     } catch (error) {
       console.error('Error replaying song:', error);
-      store.commit('nextPlay');
+      playerStore.nextPlay();
     }
   };
 
@@ -407,27 +409,27 @@ const setupAudioListeners = () => {
     console.log('音频播放结束事件触发');
     clearInterval();
 
-    if (store.state.playMode === 1) {
+    if (playerStore.playMode === 1) {
       // 单曲循环模式
       if (sound.value) {
         replayMusic();
       }
-    } else if (store.state.playMode === 2) {
+    } else if (playerStore.playMode === 2) {
       // 随机播放模式
-      const { playList } = store.state;
-      if (playList.length <= 1) {
+
+      if (playerStore.playList.length <= 1) {
         replayMusic();
       } else {
         let randomIndex;
         do {
-          randomIndex = Math.floor(Math.random() * playList.length);
-        } while (randomIndex === store.state.playListIndex && playList.length > 1);
-        store.state.playListIndex = randomIndex;
-        store.commit('setPlay', playList[randomIndex]);
+          randomIndex = Math.floor(Math.random() * playerStore.playList.length);
+        } while (randomIndex === playerStore.playListIndex && playerStore.playList.length > 1);
+        playerStore.playListIndex = randomIndex;
+        playerStore.setPlay(playerStore.playList[randomIndex]);
       }
     } else {
       // 列表循环模式
-      store.commit('nextPlay');
+      playerStore.nextPlay();
     }
   });
 
@@ -444,11 +446,11 @@ export const pause = () => {
     try {
       // 保存当前播放进度
       const currentTime = currentSound.seek() as number;
-      if (store.state.playMusic && store.state.playMusic.id) {
+      if (playerStore.playMusic && playerStore.playMusic.id) {
         localStorage.setItem(
           'playProgress',
           JSON.stringify({
-            songId: store.state.playMusic.id,
+            songId: playerStore.playMusic.id,
             progress: currentTime
           })
         );
@@ -572,7 +574,7 @@ export const sendLyricToWin = () => {
         nowTime: nowTime.value,
         startCurrentTime: lrcTimeArray.value[nowIndex] || 0,
         nextTime: lrcTimeArray.value[nowIndex + 1] || 0,
-        isPlay: store.state.play,
+        isPlay: playerStore.play,
         lrcArray: lrcArray.value,
         lrcTimeArray: lrcTimeArray.value,
         allTime: allTime.value,
@@ -591,7 +593,7 @@ export const sendLyricToWin = () => {
         nowTime: nowTime.value,
         startCurrentTime: 0,
         nextTime: 0,
-        isPlay: store.state.play,
+        isPlay: playerStore.play,
         lrcArray: [{ text: '当前歌曲暂无歌词', trText: '' }],
         lrcTimeArray: [0],
         allTime: allTime.value,
@@ -616,14 +618,14 @@ const startLyricSync = () => {
 
   // 每秒同步一次歌词数据
   lyricSyncInterval = setInterval(() => {
-    if (isElectron && isLyricWindowOpen.value && store.state.play && playMusic.value?.id) {
+    if (isElectron && isLyricWindowOpen.value && playerStore.play && playMusic.value?.id) {
       // 发送当前播放进度的更新
       try {
         const updateData = {
           type: 'update',
           nowIndex: getLrcIndex(nowTime.value),
           nowTime: nowTime.value,
-          isPlay: store.state.play
+          isPlay: playerStore.play
         };
         window.api.sendLyric(JSON.stringify(updateData));
       } catch (error) {
@@ -669,7 +671,7 @@ export const openLyric = () => {
         nowTime: nowTime.value,
         startCurrentTime: 0,
         nextTime: 0,
-        isPlay: store.state.play,
+        isPlay: playerStore.play,
         lrcArray: [{ text: '加载歌词中...', trText: '' }],
         lrcTimeArray: [0],
         allTime: allTime.value,
@@ -707,7 +709,7 @@ export const closeLyric = () => {
 
 // 在组件挂载时设置对播放状态的监听
 watch(
-  () => store.state.play,
+  () => playerStore.play,
   (isPlaying) => {
     // 如果歌词窗口打开，根据播放状态控制同步
     if (isElectron && isLyricWindowOpen.value) {
@@ -735,19 +737,20 @@ if (isElectron) {
   windowData.electron.ipcRenderer.on('lyric-control-back', (_, command: string) => {
     switch (command) {
       case 'playpause':
-        if (store.state.play) {
-          store.commit('setPlayMusic', false);
+        if (playerStore.play) {
+          playerStore.setPlayMusic(false);
           audioService.getCurrentSound()?.pause();
         } else {
-          store.commit('setPlayMusic', true);
+          playerStore.setPlayMusic(true);
+
           audioService.getCurrentSound()?.play();
         }
         break;
       case 'prev':
-        store.commit('prevPlay');
+        playerStore.prevPlay();
         break;
       case 'next':
-        store.commit('nextPlay');
+        playerStore.nextPlay();
         break;
       case 'close':
         isLyricWindowOpen.value = false; // 确保状态更新
@@ -776,15 +779,15 @@ onMounted(() => {
     sound.value = audioService.getCurrentSound();
 
     // 如果当前处于播放状态，启动进度更新
-    if (store.state.play && sound.value) {
+    if (playerStore.play && sound.value) {
       // 如果有保存的播放进度，应用它
-      if (store.state.savedPlayProgress !== undefined && sound.value) {
+      if (playerStore.savedPlayProgress !== undefined && sound.value) {
         try {
           // 设置音频位置
-          sound.value.seek(store.state.savedPlayProgress);
+          sound.value.seek(playerStore.savedPlayProgress);
           // 同时更新时间显示，这样进度条也会更新
-          nowTime.value = store.state.savedPlayProgress;
-          console.log('恢复播放进度:', store.state.savedPlayProgress);
+          nowTime.value = playerStore.savedPlayProgress;
+          console.log('恢复播放进度:', playerStore.savedPlayProgress);
         } catch (e) {
           console.error('恢复播放进度失败:', e);
         }

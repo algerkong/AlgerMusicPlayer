@@ -64,11 +64,11 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { useStore } from 'vuex';
 
 import { getAllMv, getTopMv } from '@/api/mv';
 import MvPlayer from '@/components/MvPlayer.vue';
 import { audioService } from '@/services/audioService';
+import { usePlayerStore } from '@/store/modules/player';
 import { IMvItem } from '@/type/mv';
 import { formatNumber, getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
 
@@ -79,7 +79,6 @@ defineOptions({
 const showMv = ref(false);
 const mvList = ref<Array<IMvItem>>([]);
 const playMvItem = ref<IMvItem>();
-const store = useStore();
 const initLoading = ref(false);
 const loadingMore = ref(false);
 const currentIndex = ref(0);
@@ -96,6 +95,8 @@ const categories = [
   { label: '韩国', value: '韩国' }
 ];
 const selectedCategory = ref('全部');
+
+const playerStore = usePlayerStore();
 
 watch(selectedCategory, async () => {
   offset.value = 0;
@@ -114,8 +115,8 @@ onMounted(async () => {
 });
 
 const handleShowMv = async (item: IMvItem, index: number) => {
-  store.commit('setIsPlay', false);
-  store.commit('setPlayMusic', false);
+  playerStore.setIsPlay(false);
+  playerStore.setPlayMusic(false);
   audioService.getCurrentSound()?.pause();
   showMv.value = true;
   currentIndex.value = index;

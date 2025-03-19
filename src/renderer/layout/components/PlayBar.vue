@@ -13,7 +13,7 @@
         ? textColors.theme === 'dark'
           ? '#000000'
           : '#ffffff'
-        : store.state.theme === 'dark'
+        : settingsStore.theme === 'dark'
           ? '#ffffff'
           : '#000000'
     }"
@@ -178,7 +178,6 @@
 import { useThrottleFn } from '@vueuse/core';
 import { computed, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useStore } from 'vuex';
 
 import SongItem from '@/components/common/SongItem.vue';
 import EqControl from '@/components/EQControl.vue';
@@ -193,23 +192,26 @@ import {
   textColors
 } from '@/hooks/MusicHook';
 import { audioService } from '@/services/audioService';
+import { usePlayerStore } from '@/store/modules/player';
+import { useSettingsStore } from '@/store/modules/settings';
 import type { SongResult } from '@/type/music';
 import { getImgUrl, isElectron, isMobile, secondToMinute, setAnimationClass } from '@/utils';
 import { showShortcutToast } from '@/utils/shortcutToast';
 
 import MusicFull from './MusicFull.vue';
 
-const store = useStore();
+const playerStore = usePlayerStore();
+const settingsStore = useSettingsStore();
 const { t } = useI18n();
 // 是否播放
-const play = computed(() => store.state.play as boolean);
+const play = computed(() => playerStore.isPlay);
 // 播放列表
-const playList = computed(() => store.state.playList as SongResult[]);
+const playList = computed(() => playerStore.playList as SongResult[]);
 // 背景颜色
 const background = ref('#000');
 
 watch(
-  () => store.state.playMusic,
+  () => playerStore.playMusic,
   async () => {
     background.value = playMusic.value.backgroundColor as string;
   },
@@ -268,7 +270,7 @@ const mute = () => {
 };
 
 // 播放模式
-const playMode = computed(() => store.state.playMode);
+const playMode = computed(() => playerStore.playMode);
 const playModeIcon = computed(() => {
   switch (playMode.value) {
     case 0:
@@ -296,15 +298,15 @@ const playModeText = computed(() => {
 
 // 切换播放模式
 const togglePlayMode = () => {
-  store.commit('togglePlayMode');
+  playerStore.togglePlayMode();
 };
 
 function handleNext() {
-  store.commit('nextPlay');
+  playerStore.nextPlay();
 }
 
 function handlePrev() {
-  store.commit('prevPlay');
+  playerStore.prevPlay();
 }
 
 const MusicFullRef = ref<any>(null);
@@ -313,9 +315,9 @@ const MusicFullRef = ref<any>(null);
 const playMusicEvent = async () => {
   try {
     // 检查是否有有效的音乐对象和 URL
-    if (!playMusic.value?.id || !store.state.playMusicUrl) {
+    if (!playMusic.value?.id || !playerStore.playMusicUrl) {
       console.warn('No valid music or URL available');
-      store.commit('setPlay', playMusic.value);
+      playerStore.setPlay(playMusic.value);
       return;
     }
 
@@ -323,7 +325,7 @@ const playMusicEvent = async () => {
       // 暂停播放
       if (audioService.getCurrentSound()) {
         audioService.pause();
-        store.commit('setPlayMusic', false);
+        playerStore.setPlayMusic(false);
       }
     } else {
       // 开始播放
@@ -332,13 +334,13 @@ const playMusicEvent = async () => {
         audioService.play();
       } else {
         // 如果没有音频实例，重新创建并播放
-        await audioService.play(store.state.playMusicUrl, playMusic.value);
+        await audioService.play(playerStore.playMusicUrl, playMusic.value);
       }
-      store.commit('setPlayMusic', true);
+      playerStore.setPlayMusic(true);
     }
   } catch (error) {
     console.error('播放出错:', error);
-    store.commit('nextPlay');
+    playerStore.nextPlay();
   }
 };
 
@@ -347,31 +349,31 @@ const musicFullVisible = ref(false);
 // 设置musicFull
 const setMusicFull = () => {
   musicFullVisible.value = !musicFullVisible.value;
-  store.commit('setMusicFull', musicFullVisible.value);
+  playerStore.setMusicFull(musicFullVisible.value);
   if (musicFullVisible.value) {
-    store.commit('setShowArtistDrawer', false);
+    settingsStore.showArtistDrawer = false;
   }
 };
 
-const palyListRef = useTemplateRef('palyListRef');
+const palyListRef = useTemplateRef('palyListRef') as any;
 
 const scrollToPlayList = (val: boolean) => {
   if (!val) return;
   setTimeout(() => {
-    palyListRef.value?.scrollTo({ top: store.state.playListIndex * 62 });
+    palyListRef.value?.scrollTo({ top: playerStore.playListIndex * 62 });
   }, 50);
 };
 
 const isFavorite = computed(() => {
-  return store.state.favoriteList.includes(playMusic.value.id);
+  return playerStore.favoriteList.includes(playMusic.value.id);
 });
 
 const toggleFavorite = async (e: Event) => {
   e.stopPropagation();
   if (isFavorite.value) {
-    store.commit('removeFromFavorite', playMusic.value.id);
+    playerStore.removeFromFavorite(playMusic.value.id);
   } else {
-    store.commit('addToFavorite', playMusic.value.id);
+    playerStore.addToFavorite(playMusic.value.id);
   }
 };
 
@@ -381,7 +383,7 @@ const openLyricWindow = () => {
 
 const handleArtistClick = (id: number) => {
   musicFullVisible.value = false;
-  store.commit('setCurrentArtistId', id);
+  settingsStore.currentArtistId = id;
 };
 
 // 添加全局快捷键处理
@@ -392,8 +394,8 @@ if (isElectron) {
       case 'togglePlay':
         playMusicEvent();
         showShortcutToast(
-          store.state.play ? t('player.playBar.play') : t('player.playBar.pause'),
-          store.state.play ? 'ri-pause-circle-line' : 'ri-play-circle-line'
+          play.value ? t('player.playBar.play') : t('player.playBar.pause'),
+          play.value ? 'ri-pause-circle-line' : 'ri-play-circle-line'
         );
         break;
       case 'prevPlay':

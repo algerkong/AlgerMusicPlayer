@@ -88,18 +88,18 @@ import { useMessage } from 'naive-ui';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { useStore } from 'vuex';
 
 import { getMusicDetail } from '@/api/music';
 import SongItem from '@/components/common/SongItem.vue';
 import { getSongUrl } from '@/hooks/MusicListHook';
+import { usePlayerStore } from '@/store';
 import type { SongResult } from '@/type/music';
 import { isElectron, setAnimationClass, setAnimationDelay } from '@/utils';
 
 const { t } = useI18n();
-const store = useStore();
+const playerStore = usePlayerStore();
 const message = useMessage();
-const favoriteList = computed(() => store.state.favoriteList);
+const favoriteList = computed(() => playerStore.favoriteList);
 const favoriteSongs = ref<SongResult[]>([]);
 const loading = ref(false);
 const noMore = ref(false);
@@ -277,7 +277,7 @@ const handleScroll = (e: any) => {
 };
 
 onMounted(async () => {
-  await store.dispatch('initializeFavoriteList');
+  await playerStore.initializeFavoriteList();
   await getFavoriteSongs();
 });
 
@@ -293,7 +293,7 @@ watch(
 );
 
 const handlePlay = () => {
-  store.commit('setPlayList', favoriteSongs.value);
+  playerStore.setPlayList(favoriteSongs.value);
 };
 
 const getItemAnimationDelay = (index: number) => {

@@ -205,7 +205,7 @@
                 </div>
               </div>
               <div class="flex items-center gap-2">
-                <n-button size="small" @click="store.commit('setShowDownloadDrawer', true)">
+                <n-button size="small" @click="settingsStore.showDownloadDrawer = true">
                   {{ t('settings.application.download') }}
                 </n-button>
               </div>
@@ -461,11 +461,11 @@
 </template>
 
 <script setup lang="ts">
+import { cloneDeep } from 'lodash';
 import type { FormRules } from 'naive-ui';
 import { useMessage } from 'naive-ui';
 import { computed, h, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useStore } from 'vuex';
 
 import localData from '@/../main/set.json';
 import Coffee from '@/components/Coffee.vue';
@@ -473,13 +473,17 @@ import DonationList from '@/components/common/DonationList.vue';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import ShortcutSettings from '@/components/settings/ShortcutSettings.vue';
+import { useSettingsStore } from '@/store/modules/settings';
+import { useUserStore } from '@/store/modules/user';
 import { isElectron } from '@/utils';
 import { openDirectory, selectDirectory } from '@/utils/fileOperation';
 import { checkUpdate, UpdateResult } from '@/utils/update';
 
 import config from '../../../../package.json';
 
-const store = useStore();
+const settingsStore = useSettingsStore();
+const userStore = useUserStore();
+
 const checking = ref(false);
 const updateInfo = ref<UpdateResult>({
   hasUpdate: false,
@@ -490,36 +494,22 @@ const updateInfo = ref<UpdateResult>({
 
 const { t } = useI18n();
 
-const setData = computed(() => {
-  const data = store.state.setData;
-  // 确保代理配置存在
-  if (!data.proxyConfig) {
-    data.proxyConfig = {
-      enable: false,
-      protocol: 'http',
-      host: '127.0.0.1',
-      port: 7890
-    };
-  }
-  // 确保音质设置存在
-  if (!data.musicQuality) {
-    data.musicQuality = 'higher';
-  }
-  return data;
-});
-
-watch(
-  () => setData.value,
-  (newVal) => {
-    store.commit('setSetData', newVal);
-  },
-  { deep: true }
-);
-
+const setData = ref(settingsStore.setData);
 const isDarkTheme = computed({
-  get: () => store.state.theme === 'dark',
-  set: () => store.commit('toggleTheme')
+  get: () => settingsStore.theme === 'dark',
+  set: () => settingsStore.toggleTheme()
 });
+
+// watch(
+//   () => setData.value,
+//   (newData) => {
+//     console.log('newData', newData);
+//     settingsStore.setSetData(newData);
+//   },
+//   {
+//     deep: true
+//   }
+// );
 
 const openAuthor = () => {
   window.open(setData.value.authorUrl);
@@ -552,16 +542,16 @@ const checkForUpdates = async (isClick = false) => {
 };
 
 const openReleasePage = () => {
-  store.commit('setShowUpdateModal', true);
+  settingsStore.showUpdateModal = true;
 };
 
 const selectDownloadPath = async () => {
   const path = await selectDirectory(message);
   if (path) {
-    store.commit('setSetData', {
+    setData.value = {
       ...setData.value,
       downloadPath: path
-    });
+    };
   }
 };
 
@@ -606,7 +596,7 @@ const proxyRules: FormRules = {
 };
 
 // 使用 store 中的字体列表
-const systemFonts = computed(() => store.state.systemFonts);
+const systemFonts = computed(() => settingsStore.systemFonts);
 
 // 已选择的字体列表
 const selectedFonts = ref<string[]>([]);
@@ -622,17 +612,17 @@ watch(
   (newFonts) => {
     // 如果没有选择任何字体，使用系统默认字体
     if (newFonts.length === 0) {
-      store.commit('setSetData', {
+      setData.value = {
         ...setData.value,
         fontFamily: 'system-ui'
-      });
+      };
       return;
     }
     // 将选择的字体组合成字体列表
-    store.commit('setSetData', {
+    setData.value = {
       ...setData.value,
       fontFamily: newFonts.join(',')
-    });
+    };
   },
   { deep: true }
 );
@@ -660,10 +650,10 @@ onMounted(async () => {
   }
   // 确保enableRealIP有默认值
   if (setData.value.enableRealIP === undefined) {
-    store.commit('setSetData', {
+    setData.value = {
       ...setData.value,
       enableRealIP: false
-    });
+    };
   }
 });
 
@@ -686,7 +676,7 @@ const handleProxyConfirm = async () => {
   try {
     await formRef.value?.validate();
     // 保存代理配置时保留enable状态
-    store.commit('setSetData', {
+    setData.value = {
       ...setData.value,
       proxyConfig: {
         enable: setData.value.proxyConfig?.enable || false,
@@ -694,7 +684,7 @@ const handleProxyConfirm = async () => {
         host: proxyForm.value.host,
         port: proxyForm.value.port
       }
-    });
+    };
     showProxyModal.value = false;
     message.success(t('settings.network.messages.proxySuccess'));
   } catch (err) {
@@ -705,20 +695,20 @@ const handleProxyConfirm = async () => {
 const validateAndSaveRealIP = () => {
   const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
   if (!setData.value.realIP || ipRegex.test(setData.value.realIP)) {
-    store.commit('setSetData', {
+    setData.value = {
       ...setData.value,
       realIP: setData.value.realIP,
       enableRealIP: true
-    });
+    };
     if (setData.value.realIP) {
       message.success(t('settings.network.messages.realIPSuccess'));
     }
   } else {
     message.error(t('settings.network.messages.realIPError'));
-    store.commit('setSetData', {
+    setData.value = {
       ...setData.value,
       realIP: ''
-    });
+    };
   }
 };
 
@@ -727,11 +717,11 @@ watch(
   () => setData.value.enableRealIP,
   (newVal) => {
     if (!newVal) {
-      store.commit('setSetData', {
+      setData.value = {
         ...setData.value,
         realIP: '',
         enableRealIP: false
-      });
+      };
     }
   }
 );
@@ -795,7 +785,7 @@ const clearCache = async () => {
         localStorage.removeItem('favoriteList');
         break;
       case 'user':
-        store.commit('logout');
+        userStore.handleLogout();
         break;
       case 'settings':
         if (window.electron) {

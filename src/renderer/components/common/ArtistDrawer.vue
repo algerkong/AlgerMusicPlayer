@@ -90,14 +90,14 @@
 
 <script setup lang="ts">
 import { useDateFormat } from '@vueuse/core';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useStore } from 'vuex';
 
 import { getArtistAlbums, getArtistDetail, getArtistTopSongs } from '@/api/artist';
 import { getMusicDetail } from '@/api/music';
 import SearchItem from '@/components/common/SearchItem.vue';
 import SongItem from '@/components/common/SongItem.vue';
+import { usePlayerStore, useSettingsStore } from '@/store';
 import { IArtist } from '@/type/artist';
 import { getImgUrl } from '@/utils';
 
@@ -105,11 +105,17 @@ import PlayBottom from './PlayBottom.vue';
 
 const { t } = useI18n();
 
+const settingsStore = useSettingsStore();
+const playerStore = usePlayerStore();
+
+const currentArtistId = computed({
+  get: () => settingsStore.currentArtistId,
+  set: (val) => settingsStore.setCurrentArtistId(val as number)
+});
+
 const modelValue = defineModel<boolean>('show', { required: true });
 
-const store = useStore();
 const activeTab = ref('songs');
-const currentArtistId = ref<number>();
 
 // 歌手信息
 const artistInfo = ref<IArtist>();
@@ -134,7 +140,7 @@ const albumPage = ref({
 });
 
 watch(modelValue, (newVal) => {
-  store.commit('setShowArtistDrawer', newVal);
+  settingsStore.setShowArtistDrawer(newVal);
 });
 const loading = ref(false);
 // 加载歌手信息
@@ -260,8 +266,7 @@ const formatPublishTime = (time: number) => {
 };
 
 const handlePlay = () => {
-  store.commit(
-    'setPlayList',
+  playerStore.setPlayList(
     songs.value.map((item) => ({
       ...item,
       picUrl: item.al.picUrl

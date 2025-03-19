@@ -1,9 +1,11 @@
-import { createStore } from 'vuex';
+import { createPinia } from 'pinia';
+import { markRaw } from 'vue';
 
 import setData from '@/../main/set.json';
 import { logout } from '@/api/login';
 import { getLikedList, likeSong } from '@/api/music';
 import { useMusicListHook } from '@/hooks/MusicListHook';
+import router from '@/router';
 import homeRouter from '@/router/home';
 import type { SongResult } from '@/type/music';
 import { isElectron } from '@/utils';
@@ -409,10 +411,20 @@ const actions = {
   }
 };
 
-const store = createStore({
-  state,
-  mutations,
-  actions
+// 创建 pinia 实例
+const pinia = createPinia();
+
+// 添加路由到 Pinia
+pinia.use(({ store }) => {
+  store.router = markRaw(router);
 });
 
-export default store;
+// 导出所有 store
+export * from './modules/lyric';
+export * from './modules/menu';
+export * from './modules/player';
+export * from './modules/search';
+export * from './modules/settings';
+export * from './modules/user';
+
+export default pinia;

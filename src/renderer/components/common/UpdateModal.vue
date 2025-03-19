@@ -73,8 +73,8 @@
 import { marked } from 'marked';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useStore } from 'vuex';
 
+import { useSettingsStore } from '@/store/modules/settings';
 import { checkUpdate, getProxyNodes, UpdateResult } from '@/utils/update';
 
 import config from '../../../../package.json';
@@ -87,35 +87,19 @@ marked.setOptions({
   gfm: true // 启用 GitHub 风格的 Markdown
 });
 
-const showModal = ref(false);
+const settingsStore = useSettingsStore();
+
+const showModal = computed({
+  get: () => settingsStore.showUpdateModal,
+  set: (val) => settingsStore.setShowUpdateModal(val)
+});
+
 const updateInfo = ref<UpdateResult>({
   hasUpdate: false,
   latestVersion: '',
   currentVersion: config.version,
   releaseInfo: null
 });
-
-const store = useStore();
-
-// 添加计算属性
-const showUpdateModalState = computed({
-  get: () => store.state.showUpdateModal,
-  set: (val) => store.commit('setShowUpdateModal', val)
-});
-
-// 替换原来的 watch
-watch(showUpdateModalState, (newVal) => {
-  if (newVal) {
-    showModal.value = true;
-  }
-});
-
-watch(
-  () => showModal.value,
-  (newVal) => {
-    showUpdateModalState.value = newVal;
-  }
-);
 
 // 解析 Markdown
 const parsedReleaseNotes = computed(() => {

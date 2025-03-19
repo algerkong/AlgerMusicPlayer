@@ -1,7 +1,7 @@
 <template>
   <div class="download-drawer-trigger">
     <n-badge :value="downloadingCount" :max="99" :show="downloadingCount > 0">
-      <n-button circle @click="store.commit('setShowDownloadDrawer', true)">
+      <n-button circle @click="settingsStore.showDownloadDrawer = true">
         <template #icon>
           <i class="iconfont ri-download-cloud-2-line"></i>
         </template>
@@ -179,9 +179,10 @@ import type { ProgressStatus } from 'naive-ui';
 import { useMessage } from 'naive-ui';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useStore } from 'vuex';
 
 import { getMusicDetail } from '@/api/music';
+import { usePlayerStore } from '@/store/modules/player';
+import { useSettingsStore } from '@/store/modules/settings';
 // import { audioService } from '@/services/audioService';
 import { getImgUrl } from '@/utils';
 
@@ -208,11 +209,14 @@ interface DownloadedItem {
 }
 
 const message = useMessage();
-const store = useStore();
+const playerStore = usePlayerStore();
+const settingsStore = useSettingsStore();
 
 const showDrawer = computed({
-  get: () => store.state.showDownloadDrawer,
-  set: (val) => store.commit('setShowDownloadDrawer', val)
+  get: () => settingsStore.showDownloadDrawer,
+  set: (val) => {
+    settingsStore.showDownloadDrawer = val;
+  }
 });
 
 const downloadList = ref<DownloadItem[]>([]);
@@ -223,10 +227,6 @@ const downloadedList = ref<DownloadedItem[]>(
 const downList = computed(() => {
   return (downloadedList.value as DownloadedItem[]).reverse();
 });
-
-// 获取播放状态
-// const play = computed(() => store.state.play as boolean);
-// const currentMusic = computed(() => store.state.playMusic);
 
 // 计算下载中的任务数量
 const downloadingCount = computed(() => {
@@ -343,51 +343,11 @@ const confirmDelete = async () => {
 };
 
 // 播放音乐
-// const handlePlayMusic = async (item: DownloadedItem) => {
-//   // 确保路径正确编码
-//   const encodedPath = encodeURIComponent(item.path);
-//   const localUrl = `local://${encodedPath}`;
-
-//   const musicInfo = {
-//     name: item.filename,
-//     id: item.id,
-//     url: localUrl,
-//     playMusicUrl: localUrl,
-//     picUrl: item.picUrl,
-//     ar: item.ar || [{ name: '本地音乐' }],
-//     song: {
-//       artists: item.ar || [{ name: '本地音乐' }]
-//     },
-//     al: {
-//       picUrl: item.picUrl || '/images/default_cover.png'
-//     }
-//   };
-
-//   // 如果是当前播放的音乐，则切换播放状态
-//   if (currentMusic.value?.id === item.id) {
-//     if (play.value) {
-//       audioService.getCurrentSound()?.pause();
-//       store.commit('setPlayMusic', false);
-//     } else {
-//       audioService.getCurrentSound()?.play();
-//       store.commit('setPlayMusic', true);
-//     }
-//     return;
-//   }
-
-//   // 播放新的音乐
-//   store.commit('setPlay', musicInfo);
-//   store.commit('setPlayMusic', true);
-//   store.commit('setIsPlay', true);
-
-//   store.commit(
-//     'setPlayList',
-//     downloadedList.value.map((item) => ({
-//       ...item,
-//       playMusicUrl: `local://${encodeURIComponent(item.path)}`
-//     }))
-//   );
-// };
+const handlePlay = async (musicInfo: SongResult) => {
+  await playerStore.setPlay(musicInfo);
+  playerStore.setPlayMusic(true);
+  playerStore.setIsPlay(true);
+};
 
 // 获取已下载音乐列表
 const refreshDownloadedList = async () => {
@@ -522,7 +482,7 @@ onMounted(() => {
 });
 
 const handleDrawerClose = () => {
-  store.commit('setShowDownloadDrawer', false);
+  settingsStore.showDownloadDrawer = false;
 };
 </script>
 

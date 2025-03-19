@@ -99,7 +99,6 @@ import { useMessage } from 'naive-ui';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { useStore } from 'vuex';
 
 import { getListDetail } from '@/api/list';
 import { updatePlaylistTracks } from '@/api/music';
@@ -107,6 +106,8 @@ import { getUserDetail, getUserPlaylist, getUserRecord } from '@/api/user';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import SongItem from '@/components/common/SongItem.vue';
 import MusicList from '@/components/MusicList.vue';
+import { usePlayerStore } from '@/store/modules/player';
+import { useUserStore } from '@/store/modules/user';
 import type { Playlist } from '@/type/listDetail';
 import type { IUserDetail } from '@/type/user';
 import { getImgUrl, isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
@@ -116,7 +117,8 @@ defineOptions({
 });
 
 const { t } = useI18n();
-const store = useStore();
+const userStore = useUserStore();
+const playerStore = usePlayerStore();
 const router = useRouter();
 const userDetail = ref<IUserDetail>();
 const playList = ref<any[]>([]);
@@ -128,7 +130,7 @@ const list = ref<Playlist>();
 const listLoading = ref(false);
 const message = useMessage();
 
-const user = computed(() => store.state.user);
+const user = computed(() => userStore.user);
 
 onBeforeUnmount(() => {
   mounted.value = false;
@@ -145,8 +147,8 @@ const checkLoginStatus = () => {
   }
 
   // 如果store中没有用户数据，但localStorage中有，则恢复用户数据
-  if (!store.state.user && userData) {
-    store.state.user = JSON.parse(userData);
+  if (!userStore.user && userData) {
+    userStore.setUser(JSON.parse(userData));
   }
 
   return true;
@@ -184,7 +186,7 @@ const loadData = async () => {
     console.error('加载用户页面失败:', error);
     // 如果获取用户数据失败，可能是token过期
     if (error.response?.status === 401) {
-      store.commit('logout');
+      userStore.logout();
       router.push('/login');
     }
   } finally {
@@ -208,17 +210,13 @@ watch(
 
 // 监听用户状态变化
 watch(
-  () => store.state.user,
+  () => userStore.user,
   (newUser) => {
     if (!mounted.value) return;
-
-    if (!newUser) {
-      router.push('/login');
-    } else {
-      loadPage();
+    if (newUser) {
+      loadUserData();
     }
-  },
-  { immediate: true }
+  }
 );
 
 // 页面挂载时检查登录状态
@@ -271,7 +269,7 @@ const handleRemoveFromPlaylist = async (songId: number) => {
 
 const handlePlay = () => {
   const tracks = recordList.value || [];
-  store.commit('setPlayList', tracks);
+  playerStore.setPlayList(tracks);
 };
 </script>
 

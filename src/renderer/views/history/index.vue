@@ -34,11 +34,11 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useStore } from 'vuex';
 
 import { getMusicDetail } from '@/api/music';
 import SongItem from '@/components/common/SongItem.vue';
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';
+import { usePlayerStore } from '@/store/modules/player';
 import type { SongResult } from '@/type/music';
 import { setAnimationClass, setAnimationDelay } from '@/utils';
 
@@ -47,12 +47,12 @@ defineOptions({
 });
 
 const { t } = useI18n();
-const store = useStore();
 const { delMusic, musicList } = useMusicHistory();
 const scrollbarRef = ref();
 const loading = ref(false);
 const noMore = ref(false);
 const displayList = ref<SongResult[]>([]);
+const playerStore = usePlayerStore();
 
 // 无限滚动相关配置
 const pageSize = 20;
@@ -112,7 +112,7 @@ const handleScroll = (e: any) => {
 
 // 播放全部
 const handlePlay = () => {
-  store.commit('setPlayList', displayList.value);
+  playerStore.setPlayList(displayList.value);
 };
 
 onMounted(() => {

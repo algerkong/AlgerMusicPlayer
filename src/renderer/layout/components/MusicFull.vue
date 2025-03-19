@@ -131,7 +131,6 @@
 import { useDebounceFn } from '@vueuse/core';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useStore } from 'vuex';
 
 import LyricSettings from '@/components/lyric/LyricSettings.vue';
 import {
@@ -143,6 +142,8 @@ import {
   textColors,
   useLyricProgress
 } from '@/hooks/MusicHook';
+import { usePlayerStore } from '@/store/modules/player';
+import { useSettingsStore } from '@/store/modules/settings';
 import { getImgUrl, isMobile } from '@/utils';
 import { animateGradient, getHoverBackgroundColor, getTextColors } from '@/utils/linearColor';
 
@@ -372,13 +373,15 @@ onBeforeUnmount(() => {
   }
 });
 
-const store = useStore();
+const playerStore = usePlayerStore();
+const settingsStore = useSettingsStore();
+
 const handleArtistClick = (id: number) => {
   isVisible.value = false;
-  store.commit('setCurrentArtistId', id);
+  settingsStore.currentArtistId = id;
 };
 
-const setData = computed(() => store.state.setData);
+const setData = computed(() => settingsStore.setData);
 
 // 监听字体变化并更新 CSS 变量
 watch(

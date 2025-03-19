@@ -11,6 +11,7 @@ export default {
   mute: 'Mute',
   unmute: 'Unmute',
   songNum: 'Song Number: {num}',
+  playFailed: 'Play Failed, Play Next Song',
   playMode: {
     sequence: 'Sequence',
     loop: 'Loop',
