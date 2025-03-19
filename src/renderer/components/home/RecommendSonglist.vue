@@ -27,10 +27,9 @@ import { useI18n } from 'vue-i18n';
 import { useStore } from 'vuex';
 
 import { getRecommendMusic } from '@/api/home';
+import SongItem from '@/components/common/SongItem.vue';
 import type { IRecommendMusic } from '@/type/music';
 import { setAnimationClass, setAnimationDelay } from '@/utils';
-
-import SongItem from './common/SongItem.vue';
 
 const { t } = useI18n();
 const store = useStore();

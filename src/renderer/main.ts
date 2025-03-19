@@ -1,6 +1,3 @@
-import 'vfonts/Lato.css';
-import 'vfonts/FiraCode.css';
-// tailwind css
 import './index.css';
 import 'animate.css';
 import 'remixicon/fonts/remixicon.css';

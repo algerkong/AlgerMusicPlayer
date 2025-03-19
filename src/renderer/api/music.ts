@@ -91,7 +91,7 @@ export const likeSong = (id: number, like: boolean = true) => {
 // 获取用户喜欢的音乐列表
 export const getLikedList = (uid: number) => {
   return request.get('/likelist', {
-    params: { uid }
+    params: { uid, noLogin: true }
   });
 };
 

@@ -135,9 +135,9 @@ const loginPhone = async () => {
         </div>
       </div>
       <div class="bottom">
-        <div class="title" @click="chooseQr()">
+        <!-- <div class="title" @click="chooseQr()">
           {{ isQr ? t('login.button.switchToPhone') : t('login.button.switchToQr') }}
-        </div>
+        </div> -->
       </div>
     </div>
   </div>

@@ -75,7 +75,7 @@ request.interceptors.response.use(
     return response;
   },
   async (error) => {
-    console.log('error', error);
+    console.error('error', error);
     const config = error.config as CustomAxiosRequestConfig;
 
     // 如果没有配置，直接返回错误
@@ -84,10 +84,10 @@ request.interceptors.response.use(
     }
 
     // 处理 301 状态码
-    if (error.response?.status === 301) {
+    if (error.response?.status === 301 && config.params.noLogin !== true) {
       // 使用 store mutation 清除用户信息
       store.commit('logout');
-      console.log(`301 状态码，清除登录信息后重试第 ${config.retryCount} 次`);
+      console.error(`301 状态码，清除登录信息后重试第 ${config.retryCount} 次`, config);
       config.retryCount = 3;
     }
 
@@ -98,7 +98,7 @@ request.interceptors.response.use(
       !NO_RETRY_URLS.includes(config.url as string)
     ) {
       config.retryCount++;
-      console.log(`请求重试第 ${config.retryCount} 次`);
+      console.error(`请求重试第 ${config.retryCount} 次`);
 
       // 延迟重试
       await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
@@ -107,7 +107,7 @@ request.interceptors.response.use(
       return request(config);
     }
 
-    console.log(`重试${MAX_RETRIES}次后仍然失败`);
+    console.error(`重试${MAX_RETRIES}次后仍然失败`);
     return Promise.reject(error);
   }
 );

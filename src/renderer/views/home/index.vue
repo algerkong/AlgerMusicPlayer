@@ -2,7 +2,7 @@
   <n-scrollbar :size="100" :x-scrollable="false">
     <div class="main-page">
       <!-- 推荐歌手 -->
-      <recommend-singer />
+      <top-banner />
       <div class="main-content">
         <!-- 歌单分类列表 -->
         <playlist-type v-if="!isMobile" />
@@ -19,10 +19,10 @@
 </template>
 
 <script lang="ts" setup>
-import PlaylistType from '@/components/PlaylistType.vue';
-import RecommendAlbum from '@/components/RecommendAlbum.vue';
-import RecommendSinger from '@/components/RecommendSinger.vue';
-import RecommendSonglist from '@/components/RecommendSonglist.vue';
+import PlaylistType from '@/components/home/PlaylistType.vue';
+import RecommendAlbum from '@/components/home/RecommendAlbum.vue';
+import RecommendSonglist from '@/components/home/RecommendSonglist.vue';
+import TopBanner from '@/components/home/TopBanner.vue';
 import { isMobile } from '@/utils';
 import FavoriteList from '@/views/favorite/index.vue';
 
