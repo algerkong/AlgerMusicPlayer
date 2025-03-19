@@ -1,7 +1,7 @@
 <template>
   <div class="user-page">
     <div
-      v-if="userDetail"
+      v-if="userDetail && user"
       class="left"
       :class="setAnimationClass('animate__fadeInLeft')"
       :style="{ backgroundImage: `url(${getImgUrl(user.backgroundUrl)})` }"
@@ -167,6 +167,8 @@ const loadData = async () => {
   try {
     infoLoading.value = true;
 
+    if (!user.value) return;
+
     const { data: userData } = await getUserDetail(user.value.userId);
     if (!mounted.value) return;
     userDetail.value = userData;
@@ -186,7 +188,7 @@ const loadData = async () => {
     console.error('加载用户页面失败:', error);
     // 如果获取用户数据失败，可能是token过期
     if (error.response?.status === 401) {
-      userStore.logout();
+      userStore.handleLogout();
       router.push('/login');
     }
   } finally {
@@ -214,7 +216,7 @@ watch(
   (newUser) => {
     if (!mounted.value) return;
     if (newUser) {
-      loadUserData();
+      loadPage();
     }
   }
 );

@@ -181,10 +181,11 @@ import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { getMusicDetail } from '@/api/music';
-import { usePlayerStore } from '@/store/modules/player';
+// import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 // import { audioService } from '@/services/audioService';
 import { getImgUrl } from '@/utils';
+// import { SongResult } from '@/type/music';
 
 const { t } = useI18n();
 
@@ -209,7 +210,7 @@ interface DownloadedItem {
 }
 
 const message = useMessage();
-const playerStore = usePlayerStore();
+// const playerStore = usePlayerStore();
 const settingsStore = useSettingsStore();
 
 const showDrawer = computed({
@@ -343,11 +344,11 @@ const confirmDelete = async () => {
 };
 
 // 播放音乐
-const handlePlay = async (musicInfo: SongResult) => {
-  await playerStore.setPlay(musicInfo);
-  playerStore.setPlayMusic(true);
-  playerStore.setIsPlay(true);
-};
+// const handlePlay = async (musicInfo: SongResult) => {
+//   await playerStore.setPlay(musicInfo);
+//   playerStore.setPlayMusic(true);
+//   playerStore.setIsPlay(true);
+// };
 
 // 获取已下载音乐列表
 const refreshDownloadedList = async () => {

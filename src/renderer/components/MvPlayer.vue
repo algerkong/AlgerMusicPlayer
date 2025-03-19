@@ -544,10 +544,6 @@ watch(showControls, (newValue) => {
 });
 
 const isMobile = computed(() => false); // TODO: 从 settings store 获取
-
-const handlePlay = () => {
-  playerStore.setIsPlay(true);
-};
 </script>
 
 <style scoped lang="scss">

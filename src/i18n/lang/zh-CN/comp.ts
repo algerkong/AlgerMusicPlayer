@@ -84,6 +84,7 @@ export default {
     closeTitle: '请选择关闭方式',
     minimizeToTray: '最小化到托盘',
     exitApp: '退出应用',
-    rememberChoice: '记住我的选择'
+    rememberChoice: '记住我的选择',
+    closeApp: '关闭应用'
   }
 };

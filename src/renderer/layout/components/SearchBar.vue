@@ -112,7 +112,6 @@ import alipay from '@/assets/alipay.png';
 import wechat from '@/assets/wechat.png';
 import Coffee from '@/components/Coffee.vue';
 import { SEARCH_TYPES, USER_SET_OPTIONS } from '@/const/bar-const';
-import { usePlayerStore } from '@/store/modules/player';
 import { useSearchStore } from '@/store/modules/search';
 import { useSettingsStore } from '@/store/modules/settings';
 import { useUserStore } from '@/store/modules/user';
@@ -122,7 +121,6 @@ import { checkUpdate, UpdateResult } from '@/utils/update';
 import config from '../../../../package.json';
 
 const router = useRouter();
-const playerStore = usePlayerStore();
 const searchStore = useSearchStore();
 const settingsStore = useSettingsStore();
 const userStore = useUserStore();

@@ -85,6 +85,7 @@ export default {
     closeTitle: 'Choose how to close',
     minimizeToTray: 'Minimize to Tray',
     exitApp: 'Exit App',
-    rememberChoice: 'Remember my choice'
+    rememberChoice: 'Remember my choice',
+    closeApp: 'Close App'
   }
 };

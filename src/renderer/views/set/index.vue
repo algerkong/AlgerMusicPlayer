@@ -461,7 +461,6 @@
 </template>
 
 <script setup lang="ts">
-import { cloneDeep } from 'lodash';
 import type { FormRules } from 'naive-ui';
 import { useMessage } from 'naive-ui';
 import { computed, h, nextTick, onMounted, ref, watch } from 'vue';
@@ -494,22 +493,18 @@ const updateInfo = ref<UpdateResult>({
 
 const { t } = useI18n();
 
-const setData = ref(settingsStore.setData);
+// 使用计算属性来管理设置数据
+const setData = computed({
+  get: () => settingsStore.setData,
+  set: (newData) => {
+    settingsStore.setSetData(newData);
+  }
+});
+
 const isDarkTheme = computed({
   get: () => settingsStore.theme === 'dark',
   set: () => settingsStore.toggleTheme()
 });
-
-// watch(
-//   () => setData.value,
-//   (newData) => {
-//     console.log('newData', newData);
-//     settingsStore.setSetData(newData);
-//   },
-//   {
-//     deep: true
-//   }
-// );
 
 const openAuthor = () => {
   window.open(setData.value.authorUrl);

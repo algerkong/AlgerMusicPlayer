@@ -142,7 +142,6 @@ import {
   textColors,
   useLyricProgress
 } from '@/hooks/MusicHook';
-import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 import { getImgUrl, isMobile } from '@/utils';
 import { animateGradient, getHoverBackgroundColor, getTextColors } from '@/utils/linearColor';
@@ -373,7 +372,6 @@ onBeforeUnmount(() => {
   }
 });
 
-const playerStore = usePlayerStore();
 const settingsStore = useSettingsStore();
 
 const handleArtistClick = (id: number) => {

@@ -71,7 +71,7 @@
 
 <script setup lang="ts">
 import { marked } from 'marked';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { useSettingsStore } from '@/store/modules/settings';

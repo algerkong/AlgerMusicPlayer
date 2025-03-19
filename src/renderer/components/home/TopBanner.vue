@@ -7,13 +7,14 @@
         :space-between="20"
         draggable
         show-arrow
-        :autoplay="false"
+        autoplay
       >
-        <n-carousel-item :class="setAnimationClass('animate__backInRight')" :style="setAnimationDelay(0, 100)" style="width: calc((100% / 5) - 16px)">
-          <div
-            v-if="dayRecommendData"
-            class="recommend-singer-item relative"
-          >
+        <n-carousel-item
+          :class="setAnimationClass('animate__backInRight')"
+          :style="setAnimationDelay(0, 100)"
+          style="width: calc((100% / 5) - 16px)"
+        >
+          <div v-if="dayRecommendData" class="recommend-singer-item relative">
             <div
               :style="
                 setBackgroundImg(getImgUrl(dayRecommendData?.dailySongs[0].al.picUrl, '500y500'))
@@ -42,20 +43,33 @@
           </div>
         </n-carousel-item>
 
-        <n-carousel-item  :class="setAnimationClass('animate__backInRight')"
-          :style="setAnimationDelay(1, 100)"
-          style="width: calc(((100% / 5) - 16px) * 3)">
+        <n-carousel-item
+          v-if="userStore.user && userPlaylist.length"
+          :class="setAnimationClass('animate__backInRight')"
+          :style="setAnimationDelay(1, 100) + '; width: calc(100% / 2); max-width: 460px;'"
+        >
           <div class="user-play">
-            <div class="user-play-title">
-              {{ store.state.user?.nickname }}
+            <div class="user-play-title flex items-center mb-3">
+              <n-avatar size="small" round :src="userStore.user?.avatarUrl" class="mr-2" />
+              {{ userStore.user?.nickname }}的常听
             </div>
-            <div class="user-play-item" v-for="item in userPlaylist" :key="item.id">
-              <div class="user-play-item-img">
-                <img :src="getImgUrl(item.coverImgUrl, '200y200')" alt="">
-              </div>
-              <div class="user-play-item-info">
-                <div class="user-play-item-info-name text- overflow-hidden">{{ item.name }}</div>
-                <div class="user-play-item-info-count">{{ t('common.songCount', { count: item.trackCount }) }}</div>
+            <div class="user-play-list">
+              <div
+                v-for="item in userPlaylist"
+                :key="item.id"
+                class="user-play-item"
+                @click="toPlaylist(item.id)"
+              >
+                <div class="user-play-item-img">
+                  <img :src="getImgUrl(item.coverImgUrl, '200y200')" alt="" />
+                  <div class="user-play-item-overlay"></div>
+                </div>
+                <div class="user-play-item-info">
+                  <div class="user-play-item-info-name">{{ item.name }}</div>
+                  <div class="user-play-item-info-count text-xs opacity-70">
+                    {{ t('common.songCount', { count: item.trackCount }) }}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -99,25 +113,36 @@
       :song-list="dayRecommendData?.dailySongs"
       :cover="false"
     />
+
+    <!-- 添加用户歌单弹窗 -->
+    <music-list
+      v-model:show="showPlaylist"
+      v-model:loading="playlistLoading"
+      :name="playlistItem?.name || ''"
+      :song-list="playlistDetail?.playlist?.tracks || []"
+      :list-info="playlistDetail?.playlist"
+    />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useStore } from 'vuex';
 
 import { getDayRecommend, getHotSinger } from '@/api/home';
+import { getListDetail } from '@/api/list';
+import { getUserPlaylist } from '@/api/user';
 import MusicList from '@/components/MusicList.vue';
 import router from '@/router';
+import { useUserStore } from '@/store';
 import { IDayRecommend } from '@/type/day_recommend';
+import { Playlist } from '@/type/list';
+import type { IListDetail } from '@/type/listDetail';
 import type { IHotSinger } from '@/type/singer';
 import { getImgUrl, setAnimationClass, setAnimationDelay, setBackgroundImg } from '@/utils';
-import { getUserPlaylist } from '@/api/user';
-import { Playlist } from '@/type/list';
 
+const userStore = useUserStore();
 
-const store = useStore();
 const { t } = useI18n();
 
 // 歌手信息
@@ -125,6 +150,12 @@ const hotSingerData = ref<IHotSinger>();
 const dayRecommendData = ref<IDayRecommend>();
 const showMusic = ref(false);
 const userPlaylist = ref<Playlist[]>([]);
+
+// 为歌单弹窗添加的状态
+const showPlaylist = ref(false);
+const playlistLoading = ref(false);
+const playlistItem = ref<Playlist | null>(null);
+const playlistDetail = ref<IListDetail | null>(null);
 
 onMounted(async () => {
   await loadData();
@@ -146,9 +177,11 @@ const loadData = async () => {
     }
 
     hotSingerData.value = singerData;
-    if(store.state.user){
-      const { data: playlistData } = await getUserPlaylist(store.state.user?.userId);
-      userPlaylist.value = (playlistData.playlist as Playlist[]).sort((a, b) => b.playCount - a.playCount).slice(0, 3);
+    if (userStore.user) {
+      const { data: playlistData } = await getUserPlaylist(userStore.user?.userId);
+      userPlaylist.value = (playlistData.playlist as Playlist[])
+        .sort((a, b) => b.playCount - a.playCount)
+        .slice(0, 3);
     }
   } catch (error) {
     console.error('error', error);
@@ -164,9 +197,32 @@ const toSearchSinger = (keyword: string) => {
   });
 };
 
+const toPlaylist = async (id: number) => {
+  playlistLoading.value = true;
+  playlistItem.value = null;
+  playlistDetail.value = null;
+  showPlaylist.value = true;
+
+  // 设置当前点击的歌单信息
+  const selectedPlaylist = userPlaylist.value.find((item) => item.id === id);
+  if (selectedPlaylist) {
+    playlistItem.value = selectedPlaylist;
+  }
+
+  try {
+    // 获取歌单详情
+    const { data } = await getListDetail(id);
+    playlistDetail.value = data;
+  } catch (error) {
+    console.error('获取歌单详情失败:', error);
+  } finally {
+    playlistLoading.value = false;
+  }
+};
+
 // 监听登录状态
 watchEffect(() => {
-  if (store.state.user) {
+  if (userStore.user) {
     loadData();
   }
 });
@@ -200,23 +256,48 @@ watchEffect(() => {
   }
 }
 
-.user-play{
-  @apply flex bg-light-100 dark:bg-dark rounded-3xl p-4 gap-4;
-  &-item{
-    @apply bg-light dark:bg-dark-100 rounded-3xl overflow-hidden w-28;
-    &-img{
-      @apply w-28 h-28 rounded-3xl overflow-hidden;
-      img{
-        @apply w-full h-full object-cover;
+.user-play {
+  @apply bg-light-200 dark:bg-dark-100 rounded-3xl p-5 h-full flex flex-col;
+  backdrop-filter: blur(20px);
+  &-title {
+    @apply text-gray-900 dark:text-gray-100 font-bold text-lg;
+  }
+  &-list {
+    @apply grid grid-cols-3 gap-5 h-full;
+  }
+  &-item {
+    @apply bg-light dark:bg-dark-200 rounded-2xl overflow-hidden flex flex-col cursor-pointer transition-all duration-300;
+    height: 190px;
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      .user-play-item-overlay {
+        opacity: 1;
       }
     }
-    &-info{
-      @apply flex-1;
-      &-name{
-        @apply text-gray-900 dark:text-gray-100 line-clamp-1;
+    &-img {
+      @apply relative;
+      height: 0;
+      width: 100%;
+      padding-bottom: 100%; /* 确保宽高比为1:1，即正方形 */
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 8px;
+
+      img {
+        @apply absolute inset-0 w-full h-full object-cover;
       }
-      &-count{
-        @apply text-gray-900 dark:text-gray-100;
+    }
+    &-overlay {
+      @apply absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 transition-opacity duration-300;
+    }
+    &-info {
+      @apply px-1 py-1;
+      &-name {
+        @apply text-gray-900 dark:text-gray-100 font-medium text-sm line-clamp-1;
+      }
+      &-count {
+        @apply text-gray-700 dark:text-gray-300 mt-1;
       }
     }
   }

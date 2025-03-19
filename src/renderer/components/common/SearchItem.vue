@@ -1,5 +1,5 @@
 <template>
-  <div class="search-item" :class="[item.type, shape]" @click="handleClick">
+  <div class="search-item" :class="[shape, item.type]" @click="handleClick">
     <div class="search-item-img">
       <n-image
         class="w-full h-full"
@@ -107,16 +107,15 @@ const handleClick = async () => {
   }
 
   if (props.item.type === 'mv') {
-    handleShowMv(getCurrentMv());
+    handleShowMv();
   }
 };
 
-const handleShowMv = async (item: IMvItem) => {
+const handleShowMv = async () => {
   playerStore.setIsPlay(false);
   playerStore.setPlayMusic(false);
   audioService.getCurrentSound()?.pause();
   showPop.value = true;
-  currentMv.value = item;
 };
 </script>
 
@@ -172,15 +171,15 @@ const handleShowMv = async (item: IMvItem) => {
   }
 }
 
-.mv {
+.search-item.mv {
   &:hover {
     .play {
       @apply opacity-60;
     }
   }
   .search-item-img {
-    width: 160px;
-    height: 90px;
+    width: 160px !important;
+    height: 90px !important;
     @apply rounded-lg relative;
   }
   .play {

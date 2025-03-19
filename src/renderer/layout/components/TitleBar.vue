@@ -17,7 +17,7 @@
         <div class="button" @click="minimize">
           <i class="iconfont icon-minisize"></i>
         </div>
-        <div class="button" @click="close">
+        <div class="button" @click="handleClose">
           <i class="iconfont icon-close"></i>
         </div>
       </template>
@@ -27,7 +27,7 @@
   <n-modal
     v-model:show="showCloseModal"
     preset="dialog"
-    title="关闭应用"
+    :title="t('comp.titleBar.closeApp')"
     :style="{ width: '400px' }"
     :mask-closable="true"
   >
@@ -80,7 +80,7 @@ const minimize = () => {
 
 const handleAction = (action: 'minimize' | 'close') => {
   if (rememberChoice.value) {
-    settingsStore.setSettings({
+    settingsStore.setSetData({
       ...settingsStore.setData,
       closeAction: action
     });
@@ -111,10 +111,6 @@ const drag = (event: MouseEvent) => {
     return;
   }
   window.api.dragStart(event as unknown as string);
-};
-
-const handleThemeChange = () => {
-  settingsStore.toggleTheme();
 };
 </script>
 

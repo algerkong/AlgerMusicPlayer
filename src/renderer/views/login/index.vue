@@ -84,10 +84,10 @@ onBeforeUnmount(() => {
 });
 
 // 是否扫码登陆
-const chooseQr = () => {
-  isQr.value = !isQr.value;
-  loadLogin();
-};
+// const chooseQr = () => {
+//   isQr.value = !isQr.value;
+//   loadLogin();
+// };
 
 // 手机号登录
 const phone = ref('');

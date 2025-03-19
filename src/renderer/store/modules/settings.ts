@@ -29,12 +29,17 @@ export const useSettingsStore = defineStore('settings', () => {
   const showDownloadDrawer = ref(false);
 
   const setSetData = (data: any) => {
+    // 合并现有设置和新设置
+    const mergedData = {
+      ...setData.value,
+      ...data
+    };
+
     if (isElectron) {
-      console.log('data', data);
-      window.electron.ipcRenderer.send('set-store-value', 'set', cloneDeep(data));
-      setData.value = cloneDeep(data);
+      window.electron.ipcRenderer.send('set-store-value', 'set', cloneDeep(mergedData));
+      setData.value = cloneDeep(mergedData);
     } else {
-      localStorage.setItem('appSettings', JSON.stringify(cloneDeep(data)));
+      localStorage.setItem('appSettings', JSON.stringify(cloneDeep(mergedData)));
     }
   };
 
@@ -73,10 +78,7 @@ export const useSettingsStore = defineStore('settings', () => {
   };
 
   const setLanguage = (language: string) => {
-    setSetData({
-      ...setData.value,
-      language
-    });
+    setSetData({ language });
     if (isElectron) {
       window.electron.ipcRenderer.send('change-language', language);
     }
