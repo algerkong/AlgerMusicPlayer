@@ -1,5 +1,5 @@
 import { createDiscreteApi } from 'naive-ui';
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 
 import i18n from '@/../i18n/renderer';
 import useIndexedDB from '@/hooks/IndexDBHook';
@@ -763,37 +763,74 @@ if (isElectron) {
 }
 
 // 在组件挂载时设置监听器
-onMounted(() => {
-  // 初始化音频监听器
-  setupAudioListeners();
-
-  // 监听歌词窗口关闭事件
-  if (isElectron) {
-    window.api.onLyricWindowClosed(() => {
-      isLyricWindowOpen.value = false;
-    });
-  }
-
-  // 检查是否需要初始化 sound 对象
-  if (!sound.value && audioService.getCurrentSound()) {
-    sound.value = audioService.getCurrentSound();
-
-    // 如果当前处于播放状态，启动进度更新
-    if (playerStore.play && sound.value) {
-      // 如果有保存的播放进度，应用它
-      if (playerStore.savedPlayProgress !== undefined && sound.value) {
-        try {
-          // 设置音频位置
-          sound.value.seek(playerStore.savedPlayProgress);
-          // 同时更新时间显示，这样进度条也会更新
-          nowTime.value = playerStore.savedPlayProgress;
-          console.log('恢复播放进度:', playerStore.savedPlayProgress);
-        } catch (e) {
-          console.error('恢复播放进度失败:', e);
-        }
-      }
-
-      startProgressAnimation();
+export const initAudioListeners = async () => {
+  try {
+    // 确保有正在播放的音乐
+    if (!playerStore.playMusic || !playerStore.playMusic.id) {
+      console.log('没有正在播放的音乐，跳过音频监听器初始化');
+      return;
     }
+
+    // 确保有音频实例
+    const initialSound = audioService.getCurrentSound();
+    if (!initialSound) {
+      console.log('没有音频实例，等待音频加载...');
+      // 等待音频加载完成
+      await new Promise<void>((resolve) => {
+        const checkInterval = setInterval(() => {
+          const sound = audioService.getCurrentSound();
+          if (sound) {
+            clearInterval(checkInterval);
+            resolve();
+          }
+        }, 100);
+
+        // 设置超时
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          console.log('等待音频加载超时');
+          resolve();
+        }, 5000);
+      });
+    }
+
+    // 初始化音频监听器
+    setupAudioListeners();
+
+    // 监听歌词窗口关闭事件
+    if (isElectron) {
+      window.api.onLyricWindowClosed(() => {
+        isLyricWindowOpen.value = false;
+      });
+    }
+
+    // 获取最新的音频实例
+    const finalSound = audioService.getCurrentSound();
+    if (finalSound) {
+      // 更新全局 sound 引用
+      sound.value = finalSound;
+
+      // 如果当前处于播放状态，启动进度更新
+      if (playerStore.play) {
+        // 如果有保存的播放进度，应用它
+        if (playerStore.savedPlayProgress !== undefined) {
+          try {
+            // 设置音频位置
+            finalSound.seek(playerStore.savedPlayProgress);
+            // 同时更新时间显示
+            nowTime.value = playerStore.savedPlayProgress;
+            console.log('恢复播放进度:', playerStore.savedPlayProgress);
+          } catch (e) {
+            console.error('恢复播放进度失败:', e);
+          }
+        }
+
+        startProgressAnimation();
+      }
+    } else {
+      console.warn('无法获取音频实例，跳过进度更新初始化');
+    }
+  } catch (error) {
+    console.error('初始化音频监听器失败:', error);
   }
-});
+};

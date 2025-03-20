@@ -37,6 +37,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
     if (isElectron) {
       window.electron.ipcRenderer.send('set-store-value', 'set', cloneDeep(mergedData));
+      console.log('mergedData', mergedData);
       setData.value = cloneDeep(mergedData);
     } else {
       localStorage.setItem('appSettings', JSON.stringify(cloneDeep(mergedData)));

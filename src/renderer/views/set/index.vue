@@ -461,9 +461,11 @@
 </template>
 
 <script setup lang="ts">
+import { useDebounceFn } from '@vueuse/core';
+import { debounce } from 'lodash';
 import type { FormRules } from 'naive-ui';
 import { useMessage } from 'naive-ui';
-import { computed, h, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, h, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import localData from '@/../main/set.json';
@@ -483,6 +485,15 @@ import config from '../../../../package.json';
 const settingsStore = useSettingsStore();
 const userStore = useUserStore();
 
+// 创建一个本地缓存的setData，避免频繁更新
+const localSetData = ref({ ...settingsStore.setData });
+
+// 在组件卸载时保存设置
+onUnmounted(() => {
+  // 确保最终设置被保存
+  settingsStore.setSetData(localSetData.value);
+});
+
 const checking = ref(false);
 const updateInfo = ref<UpdateResult>({
   hasUpdate: false,
@@ -493,13 +504,43 @@ const updateInfo = ref<UpdateResult>({
 
 const { t } = useI18n();
 
+// 创建一个防抖的保存函数
+// const debouncedSaveSettings = debounce((newData) => {
+//   settingsStore.setSetData(newData);
+// }, 500);
+
+const saveSettings = useDebounceFn((data) => {
+  settingsStore.setSetData(data);
+}, 500);
+
 // 使用计算属性来管理设置数据
 const setData = computed({
-  get: () => settingsStore.setData,
+  get: () => localSetData.value,
   set: (newData) => {
-    settingsStore.setSetData(newData);
+    localSetData.value = newData;
   }
 });
+
+// 监听localSetData变化，保存设置
+watch(
+  () => localSetData.value,
+  (newValue) => {
+    saveSettings(newValue);
+  },
+  { deep: true }
+);
+
+// 监听store中setData的变化，同步到本地
+watch(
+  () => settingsStore.setData,
+  (newValue) => {
+    // 只在初始加载时更新本地数据，避免循环更新
+    if (JSON.stringify(localSetData.value) !== JSON.stringify(newValue)) {
+      localSetData.value = { ...newValue };
+    }
+  },
+  { deep: true, immediate: true }
+);
 
 const isDarkTheme = computed({
   get: () => settingsStore.theme === 'dark',

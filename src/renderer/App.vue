@@ -12,7 +12,7 @@
 
 <script setup lang="ts">
 import { darkTheme, lightTheme } from 'naive-ui';
-import { computed, onMounted, watch } from 'vue';
+import { computed, nextTick, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import homeRouter from '@/router/home';
@@ -21,6 +21,7 @@ import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 import { isElectron } from '@/utils';
 
+import { initAudioListeners } from './hooks/MusicHook';
 import { isMobile } from './utils';
 
 const { locale } = useI18n();
@@ -61,18 +62,27 @@ const handleSetLanguage = (_: any, value: string) => {
   // settingsStore.setLanguage(value);
 };
 
-onMounted(() => {
-  settingsStore.initializeSettings();
-  handleSetLanguage(null, settingsStore.setData.language);
-  settingsStore.initializeTheme();
-  settingsStore.initializeSystemFonts();
-  playerStore.initializePlayState();
-  if (isMobile.value) {
-    menuStore.setMenus(homeRouter.filter((item) => item.meta.isMobile));
-  }
+settingsStore.initializeSettings();
+handleSetLanguage(null, settingsStore.setData.language);
+settingsStore.initializeTheme();
+settingsStore.initializeSystemFonts();
+if (isMobile.value) {
+  menuStore.setMenus(homeRouter.filter((item) => item.meta.isMobile));
+}
 
-  if (isElectron) {
-    window.electron.ipcRenderer.on('language-changed', handleSetLanguage);
+if (isElectron) {
+  window.electron.ipcRenderer.on('language-changed', handleSetLanguage);
+}
+
+onMounted(async () => {
+  // 先初始化播放状态
+  await playerStore.initializePlayState();
+
+  // 如果有正在播放的音乐，则初始化音频监听器
+  if (playerStore.playMusic && playerStore.playMusic.id) {
+    // 使用 nextTick 确保 DOM 更新后再初始化
+    await nextTick();
+    initAudioListeners();
   }
 });
 </script>

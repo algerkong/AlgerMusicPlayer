@@ -359,7 +359,7 @@ export const usePlayerStore = defineStore('player', () => {
       try {
         console.log('settingStore.setData', settingStore.setData);
         const isPlaying = settingStore.setData.autoPlay;
-        await handlePlayMusic(savedPlayMusic, isPlaying);
+        await handlePlayMusic({ ...savedPlayMusic, playMusicUrl: undefined }, isPlaying);
 
         if (savedProgress) {
           try {
