@@ -167,29 +167,36 @@ const loadData = async () => {
   try {
     infoLoading.value = true;
 
-    if (!user.value) return;
+    if (!user.value) {
+      console.warn('用户数据不存在，尝试重新获取');
+      // 可以尝试重新获取用户数据
+      return;
+    }
 
-    const { data: userData } = await getUserDetail(user.value.userId);
-    if (!mounted.value) return;
-    userDetail.value = userData;
+    // 使用 Promise.all 并行请求提高效率
+    const [userDetailRes, playlistRes, recordRes] = await Promise.all([
+      getUserDetail(user.value.userId),
+      getUserPlaylist(user.value.userId),
+      getUserRecord(user.value.userId)
+    ]);
 
-    const { data: playlistData } = await getUserPlaylist(user.value.userId);
     if (!mounted.value) return;
-    playList.value = playlistData.playlist;
 
-    const { data: recordData } = await getUserRecord(user.value.userId);
-    if (!mounted.value) return;
-    recordList.value = recordData.allData.map((item: any) => ({
+    userDetail.value = userDetailRes.data;
+    playList.value = playlistRes.data.playlist;
+    recordList.value = recordRes.data.allData.map((item: any) => ({
       ...item,
       ...item.song,
       picUrl: item.song.al.picUrl
     }));
   } catch (error: any) {
     console.error('加载用户页面失败:', error);
-    // 如果获取用户数据失败，可能是token过期
     if (error.response?.status === 401) {
       userStore.handleLogout();
       router.push('/login');
+    } else {
+      // 添加更多错误处理和重试逻辑
+      message.error(t('user.message.loadFailed'));
     }
   } finally {
     if (mounted.value) {
@@ -223,7 +230,7 @@ watch(
 
 // 页面挂载时检查登录状态
 onMounted(() => {
-  checkLoginStatus();
+  checkLoginStatus() && loadData();
 });
 
 // 展示歌单
