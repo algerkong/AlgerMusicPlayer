@@ -19,7 +19,7 @@ import homeRouter from '@/router/home';
 import { useMenuStore } from '@/store/modules/menu';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
-import { isElectron } from '@/utils';
+import { isElectron, isLyricWindow } from '@/utils';
 
 import { initAudioListeners } from './hooks/MusicHook';
 import { isMobile } from './utils';
@@ -64,19 +64,25 @@ const handleSetLanguage = (value: string) => {
   }
 };
 
-settingsStore.initializeSettings();
-handleSetLanguage(settingsStore.setData.language);
-settingsStore.initializeTheme();
-settingsStore.initializeSystemFonts();
-if (isMobile.value) {
-  menuStore.setMenus(homeRouter.filter((item) => item.meta.isMobile));
+if (!isLyricWindow.value) {
+  settingsStore.initializeSettings();
+  settingsStore.initializeTheme();
+  settingsStore.initializeSystemFonts();
+  if (isMobile.value) {
+    menuStore.setMenus(homeRouter.filter((item) => item.meta.isMobile));
+  }
 }
+
+handleSetLanguage(settingsStore.setData.language);
 
 if (isElectron) {
   window.api.onLanguageChanged(handleSetLanguage);
 }
 
 onMounted(async () => {
+  if (isLyricWindow.value) {
+    return;
+  }
   // 先初始化播放状态
   await playerStore.initializePlayState();
   // 如果有正在播放的音乐，则初始化音频监听器
