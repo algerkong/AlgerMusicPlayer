@@ -180,7 +180,7 @@ const playlistDetail = ref<IListDetail | null>(null);
 const getCarouselItemStyle = (
   index: number,
   delayStep: number,
-  totalItems: number = 5,
+  totalItems: number,
   maxWidth?: number
 ) => {
   if (isMobile.value) {
