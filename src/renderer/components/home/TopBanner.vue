@@ -7,12 +7,11 @@
         :space-between="20"
         draggable
         show-arrow
-        autoplay
+        :autoplay="false"
       >
         <n-carousel-item
           :class="setAnimationClass('animate__backInRight')"
-          :style="setAnimationDelay(0, 100)"
-          style="width: calc((100% / 5) - 16px)"
+          :style="getCarouselItemStyle(0, 100, 6 )"
         >
           <div v-if="dayRecommendData" class="recommend-singer-item relative">
             <div
@@ -46,14 +45,13 @@
         <n-carousel-item
           v-if="userStore.user && userPlaylist.length"
           :class="setAnimationClass('animate__backInRight')"
-          :style="setAnimationDelay(1, 100) + '; width: calc(100% / 2); max-width: 460px;'"
+          :style="getCarouselItemStyleForPlaylist(userPlaylist.length)"
         >
           <div class="user-play">
-            <div class="user-play-title flex items-center mb-3">
-              <n-avatar size="small" round :src="userStore.user?.avatarUrl" class="mr-2" />
-              {{ userStore.user?.nickname }}的常听
+            <div class="user-play-title mb-3">
+                {{ t('comp.userPlayList.title', { name: userStore.user?.nickname }) }}
             </div>
-            <div class="user-play-list">
+            <div class="user-play-list" :class="getPlaylistGridClass(userPlaylist.length)">
               <div
                 v-for="item in userPlaylist"
                 :key="item.id"
@@ -62,12 +60,16 @@
               >
                 <div class="user-play-item-img">
                   <img :src="getImgUrl(item.coverImgUrl, '200y200')" alt="" />
-                  <div class="user-play-item-overlay"></div>
-                </div>
-                <div class="user-play-item-info">
-                  <div class="user-play-item-info-name">{{ item.name }}</div>
-                  <div class="user-play-item-info-count text-xs opacity-70">
-                    {{ t('common.songCount', { count: item.trackCount }) }}
+                  <div class="user-play-item-overlay">
+                    <div class="user-play-item-play-btn">
+                      <i class="iconfont icon-playfill text-3xl text-white"></i>
+                    </div>
+                  </div>
+                  <div class="user-play-item-title">
+                    <div class="user-play-item-title-name">{{ item.name }}</div>
+                  </div>
+                  <div class="user-play-item-count">
+                    <div class="user-play-item-count-tag">{{ t('common.songCount', { count: item.trackCount }) }}</div>
                   </div>
                 </div>
               </div>
@@ -78,13 +80,13 @@
           v-for="(item, index) in hotSingerData?.artists"
           :key="item.id"
           :class="setAnimationClass('animate__backInRight')"
-          :style="setAnimationDelay(index + 1, 100)"
-          style="width: calc((100% / 5) - 16px)"
+          :style="getCarouselItemStyle(index + 1, 100, 6)"
         >
           <div
             class="recommend-singer-item relative"
             :class="setAnimationClass('animate__backInRight')"
             :style="setAnimationDelay(index + 2, 100)"
+            @click="handleOpenSinger(item.id)"
           >
             <div
               :style="setBackgroundImg(getImgUrl(item.picUrl, '500y500'))"
@@ -94,11 +96,12 @@
               {{ t('common.songCount', { count: item.musicSize }) }}
             </div>
             <div class="recommend-singer-item-info z-10">
-              <div class="recommend-singer-item-info-play" @click="toSearchSinger(item.name)">
-                <i class="iconfont icon-playfill text-xl"></i>
-              </div>
-              <div class="ml-4">
-                <div class="recommend-singer-item-info-name text-el">{{ item.name }}</div>
+              <div class="recommend-singer-item-info-name text-el text-right line-clamp-1">{{ item.name }}</div>
+            </div>
+            <!-- 播放按钮(hover时显示) -->
+            <div class="recommend-singer-item-play-overlay" @click.stop="handleOpenSinger(item.id)">
+              <div class="recommend-singer-item-play-btn">
+                <i class="iconfont icon-playfill text-4xl"></i>
               </div>
             </div>
           </div>
@@ -133,8 +136,7 @@ import { getDayRecommend, getHotSinger } from '@/api/home';
 import { getListDetail } from '@/api/list';
 import { getUserPlaylist } from '@/api/user';
 import MusicList from '@/components/MusicList.vue';
-import router from '@/router';
-import { useUserStore } from '@/store';
+import { useSettingsStore, useUserStore } from '@/store';
 import { IDayRecommend } from '@/type/day_recommend';
 import { Playlist } from '@/type/list';
 import type { IListDetail } from '@/type/listDetail';
@@ -156,6 +158,58 @@ const showPlaylist = ref(false);
 const playlistLoading = ref(false);
 const playlistItem = ref<Playlist | null>(null);
 const playlistDetail = ref<IListDetail | null>(null);
+
+/**
+ * 获取轮播项的样式
+ * @param index 项目索引（用于动画延迟）
+ * @param delayStep 动画延迟的步长（毫秒）
+ * @param totalItems 总共分成几等分（默认为5）
+ * @param maxWidth 最大宽度（可选，单位为px）
+ * @returns 样式字符串
+ */
+const getCarouselItemStyle = (
+  index: number, 
+  delayStep: number, 
+  totalItems: number = 5, 
+  maxWidth?: number
+) => {
+  const animationDelay = setAnimationDelay(index, delayStep);
+  const width = `calc((100% / ${totalItems}) - 16px)`;
+  const maxWidthStyle = maxWidth ? `max-width: ${maxWidth}px;` : '';
+  
+  return `${animationDelay}; width: ${width}; ${maxWidthStyle}`;
+};
+
+/**
+ * 根据歌单数量获取轮播项的样式
+ * @param playlistCount 歌单数量
+ * @returns 样式字符串
+ */
+const getCarouselItemStyleForPlaylist = (playlistCount: number) => {
+  const animationDelay = setAnimationDelay(1, 100);
+  let width = '';
+  let maxWidth = '';
+  
+  switch(playlistCount) {
+    case 1:
+      width = 'calc(100% / 4 - 16px)';
+      maxWidth = 'max-width: 180px;';
+      break;
+    case 2:
+      width = 'calc(100% / 3 - 16px)';
+      maxWidth = 'max-width: 380px;';
+      break;
+    case 3:
+      width = 'calc(100% / 2 - 16px)';
+      maxWidth = 'max-width: 520px;';
+      break;
+    default:
+      width = 'calc(100% / 1 - 16px)';
+      maxWidth = 'max-width: 656px;';
+  }
+  
+  return `${animationDelay}; width: ${width}; ${maxWidth}`;
+};
 
 onMounted(async () => {
   await loadData();
@@ -179,22 +233,21 @@ const loadData = async () => {
     hotSingerData.value = singerData;
     if (userStore.user) {
       const { data: playlistData } = await getUserPlaylist(userStore.user?.userId);
+      // 确保最多只显示4个歌单，并按播放次数排序
       userPlaylist.value = (playlistData.playlist as Playlist[])
         .sort((a, b) => b.playCount - a.playCount)
-        .slice(0, 3);
+        .slice(0, 4);
     }
   } catch (error) {
     console.error('error', error);
   }
 };
 
-const toSearchSinger = (keyword: string) => {
-  router.push({
-    path: '/search',
-    query: {
-      keyword
-    }
-  });
+const settingsStore = useSettingsStore();
+
+const handleOpenSinger = (id: number) => {
+  settingsStore.setCurrentArtistId(id);
+  settingsStore.setShowArtistDrawer(true);
 };
 
 const toPlaylist = async (id: number) => {
@@ -226,63 +279,127 @@ watchEffect(() => {
     loadData();
   }
 });
+
+const getPlaylistGridClass = (length: number) => {
+  switch(length) {
+    case 1:
+      return 'one-column';
+    case 2:
+      return 'two-columns';
+    case 3:
+      return 'three-columns';
+    default:
+      return 'four-columns';
+  }
+};
 </script>
 
 <style lang="scss" scoped>
 .recommend-singer {
   &-list {
     @apply flex;
-    height: 280px;
+    height: 220px;
     margin-right: 20px;
   }
   &-item {
-    @apply flex-1 h-full rounded-3xl p-5 flex flex-col justify-between overflow-hidden;
+    @apply flex-1 h-full rounded-3xl p-5 flex flex-col justify-between overflow-hidden relative;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-5px);
+    }
+    
     &-bg {
       @apply bg-gray-900 dark:bg-gray-800 bg-no-repeat bg-cover bg-center rounded-3xl absolute w-full h-full top-0 left-0 z-0;
       filter: brightness(60%);
     }
+    
     &-info {
-      @apply flex items-center p-2;
-      &-play {
-        @apply w-12 h-12 bg-green-500 rounded-full flex justify-center items-center hover:bg-green-600 cursor-pointer text-white;
-      }
+      @apply flex flex-col p-2;
       &-name {
         @apply text-gray-100 dark:text-gray-100;
       }
     }
+    
     &-count {
       @apply text-gray-100 dark:text-gray-100;
+    }
+    
+    &-play {
+      &-overlay {
+        @apply absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20 z-20 opacity-0 transition-all duration-300 flex items-center justify-center;
+        backdrop-filter: blur(1px);
+        
+        .recommend-singer-item:hover & {
+          opacity: 1;
+        }
+      }
+      
+      &-btn {
+        @apply w-20 h-20 bg-transparent flex justify-center items-center text-white;
+        transform: translateY(50px) scale(0.8);
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        
+        .recommend-singer-item:hover & {
+          transform: translateY(0) scale(1);
+        }
+      }
     }
   }
 }
 
 .user-play {
-  @apply bg-light-200 dark:bg-dark-100 rounded-3xl p-5 h-full flex flex-col;
+  @apply bg-light-300 dark:bg-dark-300 rounded-3xl px-4 py-3 h-full;
   backdrop-filter: blur(20px);
   &-title {
-    @apply text-gray-900 dark:text-gray-100 font-bold text-lg;
+    @apply text-gray-900 dark:text-gray-100 font-bold text-lg line-clamp-1;
   }
   &-list {
-    @apply grid grid-cols-3 gap-5 h-full;
+    @apply grid gap-3 h-full;
+    &.one-column {
+      grid-template-columns: repeat(1, minmax(0, 1fr));
+      .user-play-item {
+        max-width: 100%;
+      }
+    }
+    &.two-columns {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      .user-play-item {
+        max-width: 100%;
+      }
+    }
+    &.three-columns {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      .user-play-item {
+        max-width: 100%;
+      }
+    }
+    &.four-columns {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      .user-play-item {
+        max-width: 100%;
+      }
+    }
   }
   &-item {
-    @apply bg-light dark:bg-dark-200 rounded-2xl overflow-hidden flex flex-col cursor-pointer transition-all duration-300;
-    height: 190px;
-    &:hover {
+    @apply rounded-2xl overflow-hidden flex flex-col;
+    height: 176px;
+   
+    &-img {
+      @apply relative cursor-pointer transition-all duration-300;
+      height: 0;
+      width: 100%;
+      padding-bottom: 100%; /* 确保宽高比为1:1，即正方形 */
+      border-radius: 12px;
+      overflow: hidden;
+      &:hover {
       transform: translateY(-5px);
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
       .user-play-item-overlay {
         opacity: 1;
       }
     }
-    &-img {
-      @apply relative;
-      height: 0;
-      width: 100%;
-      padding-bottom: 100%; /* 确保宽高比为1:1，即正方形 */
-      border-radius: 12px;
-      overflow: hidden;
-      margin-bottom: 8px;
 
       img {
         @apply absolute inset-0 w-full h-full object-cover;
@@ -291,13 +408,25 @@ watchEffect(() => {
     &-overlay {
       @apply absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 transition-opacity duration-300;
     }
-    &-info {
-      @apply px-1 py-1;
+    &-title {
+      @apply absolute top-0 left-0 right-0 p-2 bg-gradient-to-b from-black/70 to-transparent z-10;
       &-name {
-        @apply text-gray-900 dark:text-gray-100 font-medium text-sm line-clamp-1;
+        @apply text-white font-medium text-sm line-clamp-3;
       }
-      &-count {
-        @apply text-gray-700 dark:text-gray-300 mt-1;
+    }
+    &-count {
+      @apply absolute bottom-2 right-2 z-10;
+      &-tag {
+        @apply px-2 py-0.5 text-xs text-white bg-black/50 backdrop-blur-sm rounded-full;
+      }
+    }
+    &-play-btn {
+      @apply flex items-center justify-center;
+      transform: scale(0.8);
+      transition: transform 0.3s ease;
+      
+      .user-play-item:hover & {
+        transform: scale(1);
       }
     }
   }

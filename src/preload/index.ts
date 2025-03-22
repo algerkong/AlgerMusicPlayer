@@ -24,6 +24,14 @@ const api = {
   onDownloadComplete: (callback: (success: boolean, filePath: string) => void) => {
     ipcRenderer.on('download-complete', (_event, success, filePath) => callback(success, filePath));
   },
+  // 语言相关
+  onLanguageChanged: (callback: (locale: string) => void) => {
+    console.log('注册语言变更监听器');
+    ipcRenderer.on('language-changed', (_event, locale) => {
+      console.log('收到语言变更事件:', locale);
+      callback(locale);
+    });
+  },
   removeDownloadListeners: () => {
     ipcRenderer.removeAllListeners('download-progress');
     ipcRenderer.removeAllListeners('download-complete');

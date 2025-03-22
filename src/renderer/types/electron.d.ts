@@ -8,6 +8,7 @@ export interface IElectronAPI {
   openLyric: () => void;
   sendLyric: (data: string) => void;
   unblockMusic: (id: number) => Promise<string>;
+  onLanguageChanged: (callback: (locale: string) => void) => void;
   store: {
     get: (key: string) => Promise<any>;
     set: (key: string, value: any) => Promise<boolean>;

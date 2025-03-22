@@ -86,5 +86,8 @@ export default {
     exitApp: '退出应用',
     rememberChoice: '记住我的选择',
     closeApp: '关闭应用'
+  },
+  userPlayList: {
+    title: '{name}的常听'
   }
 };

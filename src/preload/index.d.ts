@@ -18,6 +18,7 @@ declare global {
       onDownloadProgress: (callback: (progress: number, status: string) => void) => void;
       onDownloadComplete: (callback: (success: boolean, filePath: string) => void) => void;
       removeDownloadListeners: () => void;
+      onLanguageChanged: (callback: (locale: string) => void) => void;
       invoke: (channel: string, ...args: any[]) => Promise<any>;
     };
     $message: any;

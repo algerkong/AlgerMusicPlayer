@@ -8,7 +8,7 @@ import { computed } from 'vue';
 import { usePlayerStore } from '@/store/modules/player';
 
 const playerStore = usePlayerStore();
-const isPlay = computed(() => playerStore.isPlay);
+const isPlay = computed(() => playerStore.playMusicUrl);
 
 defineProps({
   height: {

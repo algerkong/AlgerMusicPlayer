@@ -144,11 +144,14 @@ watch(modelValue, (newVal) => {
 });
 const loading = ref(false);
 // 加载歌手信息
+
+const previousArtistId = ref<number>();
 const loadArtistInfo = async (id: number) => {
-  if (currentArtistId.value === id) return;
+  // if (currentArtistId.value === id) return;
+  if (previousArtistId.value === id) return;
   activeTab.value = 'songs';
   loading.value = true;
-  currentArtistId.value = id;
+  previousArtistId.value = id;
   try {
     const info = await getArtistDetail(id);
     if (info.data?.data?.artist) {

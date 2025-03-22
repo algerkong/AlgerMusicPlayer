@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, nativeImage, Tray } from 'electron';
+import { app, BrowserWindow, Menu, nativeImage, Tray, ipcMain } from 'electron';
 import { join } from 'path';
 
 import type { Language } from '../../i18n/main';
@@ -35,9 +35,12 @@ export function updateTrayMenu() {
           i18n.global.locale = value;
           // 更新托盘菜单
           updateTrayMenu();
-          // 通知渲染进程
-          const win = BrowserWindow.getAllWindows()[0];
-          win?.webContents.send('set-language', value);
+          // 直接通知主窗口
+          const windows = BrowserWindow.getAllWindows();
+          for (const win of windows) {
+            win.webContents.send('language-changed', value);
+            console.log('向窗口发送语言变更事件:', value);
+          }
         }
       }))
     },

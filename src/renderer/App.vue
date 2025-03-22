@@ -57,13 +57,15 @@ watch(
   }
 );
 
-const handleSetLanguage = (_: any, value: string) => {
-  locale.value = value;
-  // settingsStore.setLanguage(value);
+const handleSetLanguage = (value: string) => {
+  console.log('应用语言变更:', value);
+  if (value) {
+    locale.value = value;
+  }
 };
 
 settingsStore.initializeSettings();
-handleSetLanguage(null, settingsStore.setData.language);
+handleSetLanguage(settingsStore.setData.language);
 settingsStore.initializeTheme();
 settingsStore.initializeSystemFonts();
 if (isMobile.value) {
@@ -71,13 +73,12 @@ if (isMobile.value) {
 }
 
 if (isElectron) {
-  window.electron.ipcRenderer.on('language-changed', handleSetLanguage);
+  window.api.onLanguageChanged(handleSetLanguage);
 }
 
 onMounted(async () => {
   // 先初始化播放状态
   await playerStore.initializePlayState();
-
   // 如果有正在播放的音乐，则初始化音频监听器
   if (playerStore.playMusic && playerStore.playMusic.id) {
     // 使用 nextTick 确保 DOM 更新后再初始化

@@ -392,7 +392,8 @@ const toggleSelect = () => {
 };
 
 const handleArtistClick = (id: number) => {
-  settingsStore.currentArtistId = id;
+  settingsStore.setCurrentArtistId(id);
+  settingsStore.setShowArtistDrawer(true);
 };
 
 // 获取歌手列表（最多显示5个）

@@ -87,5 +87,8 @@ export default {
     exitApp: 'Exit App',
     rememberChoice: 'Remember my choice',
     closeApp: 'Close App'
+  },
+  userPlayList: {
+    title: "{name}'s Playlist"
   }
 };

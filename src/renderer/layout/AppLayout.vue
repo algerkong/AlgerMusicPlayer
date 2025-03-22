@@ -99,6 +99,7 @@ watch(
   () => settingsStore.currentArtistId,
   (newId) => {
     if (newId) {
+      console.log('newId',newId)
       artistDrawerShow.value = true;
       nextTick(() => {
         artistDrawerRef.value?.loadArtistInfo(newId);
