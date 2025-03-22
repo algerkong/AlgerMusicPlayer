@@ -657,12 +657,13 @@ defineExpose({
         padding-right: 0px !important;
       }
       .hover-text {
-      &:hover {
-        background-color: transparent;
+        &:hover {
+          background-color: transparent;
         }
       }
-    .music-lrc-text {
-      @apply text-xl text-center;
+      .music-lrc-text {
+        @apply text-xl text-center;
+      }
     }
     .music-content {
       @apply h-[calc(100vh-120px)];
