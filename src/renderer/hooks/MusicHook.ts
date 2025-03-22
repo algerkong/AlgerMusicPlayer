@@ -433,6 +433,14 @@ const setupAudioListeners = () => {
     }
   });
 
+  audioService.on('previoustrack', () => {
+    playerStore.prevPlay();
+  });
+
+  audioService.on('nexttrack', () => {
+    playerStore.nextPlay();
+  });
+
   return clearInterval;
 };
 
