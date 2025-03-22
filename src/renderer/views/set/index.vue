@@ -1,7 +1,7 @@
 <template>
   <div class="settings-container">
     <!-- 左侧导航栏 -->
-    <div class="settings-nav">
+    <div v-if="!isMobile" class="settings-nav">
       <div
         v-for="section in settingSections"
         :key="section.id"
@@ -462,7 +462,6 @@
 
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core';
-import { debounce } from 'lodash';
 import type { FormRules } from 'naive-ui';
 import { useMessage } from 'naive-ui';
 import { computed, h, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
@@ -476,7 +475,7 @@ import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import ShortcutSettings from '@/components/settings/ShortcutSettings.vue';
 import { useSettingsStore } from '@/store/modules/settings';
 import { useUserStore } from '@/store/modules/user';
-import { isElectron } from '@/utils';
+import { isElectron, isMobile } from '@/utils';
 import { openDirectory, selectDirectory } from '@/utils/fileOperation';
 import { checkUpdate, UpdateResult } from '@/utils/update';
 

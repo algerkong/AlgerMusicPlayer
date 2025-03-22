@@ -25,7 +25,16 @@
         </div>
       </div>
       <!-- 底部音乐播放 -->
-      <play-bar v-show="isPlay" :style="isMobile && playerStore.musicFull ? 'bottom: 0;' : ''" />
+      <play-bar
+        v-if="!isMobile"
+        v-show="isPlay"
+        :style="playerStore.musicFull ? 'bottom: 0;' : ''"
+      />
+      <mobile-play-bar
+        v-else
+        v-show="isPlay"
+        :style="isMobile && playerStore.musicFull ? 'bottom: 0;' : ''"
+      />
       <!-- 下载管理抽屉 -->
       <download-drawer
         v-if="
@@ -69,6 +78,7 @@ const keepAliveInclude = computed(() =>
 
 const AppMenu = defineAsyncComponent(() => import('./components/AppMenu.vue'));
 const PlayBar = defineAsyncComponent(() => import('./components/PlayBar.vue'));
+const MobilePlayBar = defineAsyncComponent(() => import('./components/MobilePlayBar.vue'));
 const SearchBar = defineAsyncComponent(() => import('./components/SearchBar.vue'));
 const TitleBar = defineAsyncComponent(() => import('./components/TitleBar.vue'));
 
@@ -99,7 +109,7 @@ watch(
   () => settingsStore.currentArtistId,
   (newId) => {
     if (newId) {
-      console.log('newId',newId)
+      console.log('newId', newId);
       artistDrawerShow.value = true;
       nextTick(() => {
         artistDrawerRef.value?.loadArtistInfo(newId);
@@ -152,7 +162,7 @@ provide('openPlaylistDrawer', openPlaylistDrawer);
 
 .mobile {
   .main-content {
-    height: calc(100vh - 146px);
+    height: calc(100vh - 154px);
     overflow: auto;
     display: block;
     flex: none;

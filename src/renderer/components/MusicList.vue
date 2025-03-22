@@ -439,6 +439,7 @@ onUnmounted(() => {
 
   .music-content {
     @apply flex-col;
+    width: 100vw !important;
   }
 
   .music-info {

@@ -11,7 +11,7 @@
       >
         <n-carousel-item
           :class="setAnimationClass('animate__backInRight')"
-          :style="getCarouselItemStyle(0, 100, 6 )"
+          :style="getCarouselItemStyle(0, 100, 6)"
         >
           <div v-if="dayRecommendData" class="recommend-singer-item relative">
             <div
@@ -49,7 +49,7 @@
         >
           <div class="user-play">
             <div class="user-play-title mb-3">
-                {{ t('comp.userPlayList.title', { name: userStore.user?.nickname }) }}
+              {{ t('comp.userPlayList.title', { name: userStore.user?.nickname }) }}
             </div>
             <div class="user-play-list" :class="getPlaylistGridClass(userPlaylist.length)">
               <div
@@ -69,7 +69,9 @@
                     <div class="user-play-item-title-name">{{ item.name }}</div>
                   </div>
                   <div class="user-play-item-count">
-                    <div class="user-play-item-count-tag">{{ t('common.songCount', { count: item.trackCount }) }}</div>
+                    <div class="user-play-item-count-tag">
+                      {{ t('common.songCount', { count: item.trackCount }) }}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -96,7 +98,9 @@
               {{ t('common.songCount', { count: item.musicSize }) }}
             </div>
             <div class="recommend-singer-item-info z-10">
-              <div class="recommend-singer-item-info-name text-el text-right line-clamp-1">{{ item.name }}</div>
+              <div class="recommend-singer-item-info-name text-el text-right line-clamp-1">
+                {{ item.name }}
+              </div>
             </div>
             <!-- 播放按钮(hover时显示) -->
             <div class="recommend-singer-item-play-overlay" @click.stop="handleOpenSinger(item.id)">
@@ -141,7 +145,13 @@ import { IDayRecommend } from '@/type/day_recommend';
 import { Playlist } from '@/type/list';
 import type { IListDetail } from '@/type/listDetail';
 import type { IHotSinger } from '@/type/singer';
-import { getImgUrl, setAnimationClass, setAnimationDelay, setBackgroundImg } from '@/utils';
+import {
+  getImgUrl,
+  isMobile,
+  setAnimationClass,
+  setAnimationDelay,
+  setBackgroundImg
+} from '@/utils';
 
 const userStore = useUserStore();
 
@@ -168,15 +178,18 @@ const playlistDetail = ref<IListDetail | null>(null);
  * @returns 样式字符串
  */
 const getCarouselItemStyle = (
-  index: number, 
-  delayStep: number, 
-  totalItems: number = 5, 
+  index: number,
+  delayStep: number,
+  totalItems: number = 5,
   maxWidth?: number
 ) => {
+  if (isMobile.value) {
+    return 'width: 30%;';
+  }
   const animationDelay = setAnimationDelay(index, delayStep);
   const width = `calc((100% / ${totalItems}) - 16px)`;
   const maxWidthStyle = maxWidth ? `max-width: ${maxWidth}px;` : '';
-  
+
   return `${animationDelay}; width: ${width}; ${maxWidthStyle}`;
 };
 
@@ -186,11 +199,14 @@ const getCarouselItemStyle = (
  * @returns 样式字符串
  */
 const getCarouselItemStyleForPlaylist = (playlistCount: number) => {
+  if (isMobile.value) {
+    return 'width: 100%;';
+  }
   const animationDelay = setAnimationDelay(1, 100);
   let width = '';
   let maxWidth = '';
-  
-  switch(playlistCount) {
+
+  switch (playlistCount) {
     case 1:
       width = 'calc(100% / 4 - 16px)';
       maxWidth = 'max-width: 180px;';
@@ -207,7 +223,7 @@ const getCarouselItemStyleForPlaylist = (playlistCount: number) => {
       width = 'calc(100% / 1 - 16px)';
       maxWidth = 'max-width: 656px;';
   }
-  
+
   return `${animationDelay}; width: ${width}; ${maxWidth}`;
 };
 
@@ -281,7 +297,7 @@ watchEffect(() => {
 });
 
 const getPlaylistGridClass = (length: number) => {
-  switch(length) {
+  switch (length) {
     case 1:
       return 'one-column';
     case 2:
@@ -305,42 +321,42 @@ const getPlaylistGridClass = (length: number) => {
     @apply flex-1 h-full rounded-3xl p-5 flex flex-col justify-between overflow-hidden relative;
     cursor: pointer;
     transition: transform 0.3s ease;
-    
+
     &:hover {
       transform: translateY(-5px);
     }
-    
+
     &-bg {
       @apply bg-gray-900 dark:bg-gray-800 bg-no-repeat bg-cover bg-center rounded-3xl absolute w-full h-full top-0 left-0 z-0;
       filter: brightness(60%);
     }
-    
+
     &-info {
       @apply flex flex-col p-2;
       &-name {
         @apply text-gray-100 dark:text-gray-100;
       }
     }
-    
+
     &-count {
       @apply text-gray-100 dark:text-gray-100;
     }
-    
+
     &-play {
       &-overlay {
         @apply absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20 z-20 opacity-0 transition-all duration-300 flex items-center justify-center;
         backdrop-filter: blur(1px);
-        
+
         .recommend-singer-item:hover & {
           opacity: 1;
         }
       }
-      
+
       &-btn {
         @apply w-20 h-20 bg-transparent flex justify-center items-center text-white;
         transform: translateY(50px) scale(0.8);
         transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        
+
         .recommend-singer-item:hover & {
           transform: translateY(0) scale(1);
         }
@@ -385,7 +401,7 @@ const getPlaylistGridClass = (length: number) => {
   &-item {
     @apply rounded-2xl overflow-hidden flex flex-col;
     height: 176px;
-   
+
     &-img {
       @apply relative cursor-pointer transition-all duration-300;
       height: 0;
@@ -394,12 +410,12 @@ const getPlaylistGridClass = (length: number) => {
       border-radius: 12px;
       overflow: hidden;
       &:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-      .user-play-item-overlay {
-        opacity: 1;
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        .user-play-item-overlay {
+          opacity: 1;
+        }
       }
-    }
 
       img {
         @apply absolute inset-0 w-full h-full object-cover;
@@ -424,22 +440,24 @@ const getPlaylistGridClass = (length: number) => {
       @apply flex items-center justify-center;
       transform: scale(0.8);
       transition: transform 0.3s ease;
-      
+
       .user-play-item:hover & {
         transform: scale(1);
       }
     }
   }
 }
-.mobile .recommend-singer {
-  &-list {
-    height: 180px;
-    @apply ml-4;
-  }
-  &-item {
-    @apply p-4 rounded-xl;
-    &-bg {
-      @apply rounded-xl;
+.mobile {
+  .recommend-singer {
+    &-list {
+      height: 180px;
+      @apply ml-4;
+    }
+    &-item {
+      @apply p-2 rounded-xl;
+      &-bg {
+        @apply rounded-xl;
+      }
     }
   }
 }

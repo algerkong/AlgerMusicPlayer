@@ -127,7 +127,7 @@ const isText = ref(false);
 
     &-item {
       &-link {
-        @apply my-4 w-auto;
+        @apply my-2 w-auto;
       }
     }
   }

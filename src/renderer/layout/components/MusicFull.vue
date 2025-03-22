@@ -11,7 +11,7 @@
       <div
         class="control-btn absolute top-8 left-8"
         :class="{ 'pure-mode': config.pureModeEnabled }"
-        @click="isVisible = false"
+        @click="closeMusicFull"
       >
         <i class="ri-arrow-down-s-line"></i>
       </div>
@@ -70,7 +70,7 @@
           class="music-lrc"
           :style="{
             height: config.hidePlayBar ? '85vh' : '65vh',
-            width: config.hideCover ? '50vw' : '500px'
+            width: isMobile ? '100vw' : config.hideCover ? '50vw' : '500px'
           }"
           :native-scrollbar="false"
           @mouseover="mouseOverLayout"
@@ -142,6 +142,7 @@ import {
   textColors,
   useLyricProgress
 } from '@/hooks/MusicHook';
+import { usePlayerStore } from '@/store';
 import { useSettingsStore } from '@/store/modules/settings';
 import { getImgUrl, isMobile } from '@/utils';
 import { animateGradient, getHoverBackgroundColor, getTextColors } from '@/utils/linearColor';
@@ -432,6 +433,13 @@ const handleScroll = () => {
   showStickyHeader.value = scrollTop > 100;
 };
 
+const playerStore = usePlayerStore();
+
+const closeMusicFull = () => {
+  isVisible.value = false;
+  playerStore.setMusicFull(false);
+};
+
 // 添加滚动监听
 onMounted(() => {
   if (lrcSider.value?.$el) {
@@ -648,12 +656,17 @@ defineExpose({
       span {
         padding-right: 0px !important;
       }
-    }
+      .hover-text {
+      &:hover {
+        background-color: transparent;
+        }
+      }
     .music-lrc-text {
       @apply text-xl text-center;
     }
     .music-content {
       @apply h-[calc(100vh-120px)];
+      width: 100vw !important;
     }
   }
 }
@@ -664,8 +677,9 @@ defineExpose({
 
 // 添加全局字体样式
 :root {
-  --current-font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, sans-serif;
+  --current-font-family:
+    system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
 }
 
 #drawer-target {
@@ -687,7 +701,7 @@ defineExpose({
 }
 
 .control-btn {
-  @apply w-9 h-9 flex items-center justify-center rounded cursor-pointer transition-all duration-300;
+  @apply w-9 h-9 flex items-center justify-center rounded cursor-pointer transition-all duration-300 z-[9999];
   background: rgba(142, 142, 142, 0.192);
   backdrop-filter: blur(12px);
 

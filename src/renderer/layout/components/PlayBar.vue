@@ -567,7 +567,7 @@ const isEQVisible = ref(false);
 
 .mobile {
   .music-play-bar {
-    @apply px-4 bottom-[70px] transition-all duration-300;
+    @apply px-4 bottom-[56px] transition-all duration-300;
   }
   .music-time {
     display: none;
