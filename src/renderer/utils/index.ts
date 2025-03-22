@@ -97,3 +97,7 @@ export const isMobile = computed(() => {
 });
 
 export const isElectron = (window as any).electron !== undefined;
+
+export const isLyricWindow = computed(() => {
+  return window.location.hash.includes('lyric');
+});
