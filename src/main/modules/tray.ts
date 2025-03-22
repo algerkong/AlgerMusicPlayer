@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, nativeImage, Tray, ipcMain } from 'electron';
+import { app, BrowserWindow, Menu, nativeImage, Tray } from 'electron';
 import { join } from 'path';
 
 import type { Language } from '../../i18n/main';
