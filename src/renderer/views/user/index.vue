@@ -15,7 +15,7 @@
               <div class="label">{{ userDetail.profile.followeds }}</div>
               <div>{{ t('user.profile.followers') }}</div>
             </div>
-            <div class="user-info-item">
+            <div class="user-info-item" @click="showFollowList">
               <div class="label">{{ userDetail.profile.follows }}</div>
               <div>{{ t('user.profile.following') }}</div>
             </div>
@@ -73,10 +73,10 @@
             :class="setAnimationClass('animate__bounceInUp')"
             :style="setAnimationDelay(index, 25)"
           >
-            <song-item class="song-item" :item="item" @play="handlePlay" />
-            <div class="play-count">
-              {{ t('user.ranking.playCount', { count: item.playCount }) }}
+            <div class="play-score">
+              {{ index + 1 }}
             </div>
+            <song-item class="song-item" :item="item" mini @play="handlePlay" />
           </div>
           <play-bottom />
         </n-scrollbar>
@@ -96,7 +96,7 @@
 
 <script lang="ts" setup>
 import { useMessage } from 'naive-ui';
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
@@ -223,6 +223,7 @@ watch(
   (newUser) => {
     if (!mounted.value) return;
     if (newUser) {
+      checkLoginStatus();
       loadPage();
     }
   }
@@ -280,6 +281,18 @@ const handlePlay = () => {
   const tracks = recordList.value || [];
   playerStore.setPlayList(tracks);
 };
+
+// 显示关注列表
+const showFollowList = () => {
+  if (!user.value) return;
+  router.push('/user/follows');
+};
+
+// // 显示粉丝列表
+// const showFollowerList = () => {
+//   if (!user.value) return;
+//   router.push('/user/followers');
+// };
 </script>
 
 <style lang="scss" scoped>
@@ -319,6 +332,10 @@ const handlePlay = () => {
           @apply text-xl font-bold text-white;
         }
       }
+
+      &-item {
+        @apply cursor-pointer;
+      }
     }
   }
 
@@ -331,16 +348,15 @@ const handlePlay = () => {
       height: calc(100% - 100px);
 
       .record-item {
-        @apply flex items-center px-4;
+        @apply flex items-center px-2 mb-2 rounded-2xl bg-light-100 dark:bg-dark-100;
       }
 
       .song-item {
         @apply flex-1;
       }
 
-      .play-count {
-        @apply ml-4;
-        @apply text-gray-600 dark:text-gray-400;
+      .play-score {
+        @apply text-gray-500 dark:text-gray-400 mr-2 text-lg w-10 h-10 rounded-full flex items-center justify-center;
       }
     }
 

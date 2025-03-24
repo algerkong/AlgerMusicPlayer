@@ -14,6 +14,20 @@ export interface IUserDetail {
   profileVillageInfo: ProfileVillageInfo;
 }
 
+export interface IUserFollow {
+  followed: boolean;
+  follows: boolean;
+  nickname: string;
+  avatarUrl: string;
+  userId: number;
+  gender: number;
+  signature: string;
+  backgroundUrl: string;
+  vipType: number;
+  userType: number;
+  accountType: number;
+}
+
 interface ProfileVillageInfo {
   title: string;
   imageUrl?: any;

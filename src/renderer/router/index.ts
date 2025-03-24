@@ -2,6 +2,7 @@ import { createRouter, createWebHashHistory } from 'vue-router';
 
 import AppLayout from '@/layout/AppLayout.vue';
 import homeRouter from '@/router/home';
+import otherRouter from '@/router/other';
 
 const loginRouter = {
   path: '/login',
@@ -29,7 +30,7 @@ const routes = [
   {
     path: '/',
     component: AppLayout,
-    children: [...homeRouter, loginRouter, setRouter]
+    children: [...homeRouter, loginRouter, setRouter, ...otherRouter]
   },
   {
     path: '/lyric',

@@ -1,5 +1,8 @@
 <template>
   <div class="search-box flex">
+    <div v-if="showBackButton" class="back-button" @click="goBack">
+      <i class="ri-arrow-left-line"></i>
+    </div>
     <div class="search-box-input flex-1">
       <n-input
         v-model:value="searchValue"
@@ -126,6 +129,16 @@ const settingsStore = useSettingsStore();
 const userStore = useUserStore();
 const userSetOptions = ref(USER_SET_OPTIONS);
 const { t } = useI18n();
+
+// 显示返回按钮
+const showBackButton = computed(() => {
+  return router.currentRoute.value.meta.back === true;
+});
+
+// 返回上一页
+const goBack = () => {
+  router.back();
+};
 
 // 推荐热搜词
 const hotSearchKeyword = ref(t('comp.searchBar.searchPlaceholder'));
@@ -262,6 +275,15 @@ const toGithubRelease = () => {
 </script>
 
 <style lang="scss" scoped>
+.back-button {
+  @apply mr-2 flex items-center justify-center text-xl cursor-pointer;
+  @apply w-9 h-9 rounded-full;
+  @apply bg-light-100 dark:bg-dark-100 text-gray-900 dark:text-white;
+  @apply border dark:border-gray-600 border-gray-200;
+  @apply hover:bg-light-200 dark:hover:bg-dark-200;
+  @apply transition-all duration-200;
+}
+
 .user-box {
   @apply ml-4 flex text-lg justify-center items-center rounded-full transition-colors duration-200;
   @apply border dark:border-gray-600 border-gray-200 hover:border-gray-400 dark:hover:border-gray-400;

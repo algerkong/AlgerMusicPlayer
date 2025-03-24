@@ -26,9 +26,7 @@ const api = {
   },
   // 语言相关
   onLanguageChanged: (callback: (locale: string) => void) => {
-    console.log('注册语言变更监听器');
     ipcRenderer.on('language-changed', (_event, locale) => {
-      console.log('收到语言变更事件:', locale);
       callback(locale);
     });
   },

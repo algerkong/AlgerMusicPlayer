@@ -27,7 +27,8 @@ const baseURL = window.electron
 
 const request = axios.create({
   baseURL,
-  timeout: 5000
+  timeout: 5000,
+  withCredentials: true
 });
 
 // 最大重试次数
@@ -54,8 +55,13 @@ request.interceptors.request.use(
       timestamp: Date.now()
     };
     const token = localStorage.getItem('token');
-    if (token) {
+    if (token && config.method !== 'post') {
       config.params.cookie = config.params.cookie !== undefined ? config.params.cookie : token;
+    } else if (token && config.method === 'post') {
+      config.data = {
+        ...config.data,
+        cookie: token
+      };
     }
     if (isElectron) {
       const proxyConfig = setData?.proxyConfig;
