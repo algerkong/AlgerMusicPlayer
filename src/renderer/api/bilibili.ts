@@ -126,3 +126,25 @@ export const getBilibiliProxyUrl = (url: string) => {
   const AUrl = url.startsWith('http') ? url : `https:${url}`;
   return `${import.meta.env.VITE_API}/bilibili/stream-proxy?url=${encodeURIComponent(AUrl)}`;
 };
+
+export const getBilibiliAudioUrl = async (bvid: string, cid: number): Promise<string> => {
+  console.log('获取B站音频URL', { bvid, cid });
+  try {
+    const res = await getBilibiliPlayUrl(bvid, cid);
+    const playUrlData = res.data;
+    let url = '';
+
+    if (playUrlData.dash && playUrlData.dash.audio && playUrlData.dash.audio.length > 0) {
+      url = playUrlData.dash.audio[0].baseUrl;
+    } else if (playUrlData.durl && playUrlData.durl.length > 0) {
+      url = playUrlData.durl[0].url;
+    } else {
+      throw new Error('未找到可用的音频地址');
+    }
+
+    return getBilibiliProxyUrl(url);
+  } catch (error) {
+    console.error('获取B站音频URL失败:', error);
+    throw error;
+  }
+};

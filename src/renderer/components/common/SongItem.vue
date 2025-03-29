@@ -140,7 +140,7 @@ const dropdownY = ref(0);
 
 const isDownloading = ref(false);
 
-const openPlaylistDrawer = inject<(songId: number) => void>('openPlaylistDrawer');
+const openPlaylistDrawer = inject<(songId: number | string) => void>('openPlaylistDrawer');
 
 const { navigateToArtist } = useArtist();
 
@@ -285,7 +285,7 @@ const downloadMusic = async () => {
   try {
     isDownloading.value = true;
 
-    const data = (await getSongUrl(props.item.id, cloneDeep(props.item), true)) as any;
+    const data = (await getSongUrl(props.item.id as number, cloneDeep(props.item), true)) as any;
     if (!data || !data.url) {
       throw new Error(t('songItem.message.getUrlFailed'));
     }
@@ -358,6 +358,7 @@ const imageLoad = async () => {
 
 // 播放音乐 设置音乐详情 打开音乐底栏
 const playMusicEvent = async (item: SongResult) => {
+  // 如果是当前正在播放的音乐，则切换播放/暂停状态
   if (playMusic.value.id === item.id) {
     if (play.value) {
       playerStore.setPlayMusic(false);
@@ -368,23 +369,37 @@ const playMusicEvent = async (item: SongResult) => {
     }
     return;
   }
-  await playerStore.setPlay(item);
-  playerStore.isPlay = true;
-  emits('play', item);
+
+  try {
+    // 使用store的setPlay方法，该方法已经包含了B站视频URL处理逻辑
+    const result = await playerStore.setPlay(item);
+    if (!result) {
+      throw new Error('播放失败');
+    }
+    playerStore.isPlay = true;
+    emits('play', item);
+  } catch (error) {
+    console.error('播放出错:', error);
+  }
 };
 
 // 判断是否已收藏
 const isFavorite = computed(() => {
-  return playerStore.favoriteList.includes(props.item.id);
+  // 将id转换为number，兼容B站视频ID
+  const numericId = typeof props.item.id === 'string' ? parseInt(props.item.id, 10) : props.item.id;
+  return playerStore.favoriteList.includes(numericId);
 });
 
 // 切换收藏状态
 const toggleFavorite = async (e: Event) => {
   e.stopPropagation();
+  // 将id转换为number，兼容B站视频ID
+  const numericId = typeof props.item.id === 'string' ? parseInt(props.item.id, 10) : props.item.id;
+
   if (isFavorite.value) {
-    playerStore.removeFromFavorite(props.item.id);
+    playerStore.removeFromFavorite(numericId);
   } else {
-    playerStore.addToFavorite(props.item.id);
+    playerStore.addToFavorite(numericId);
   }
 };
 

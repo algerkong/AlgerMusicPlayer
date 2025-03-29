@@ -23,6 +23,9 @@ export interface SongResult {
   canDislike?: boolean;
   program?: any;
   alg?: string;
+  ar: Artist[];
+  al: Album;
+  count: number;
   playMusicUrl?: string;
   playLoading?: boolean;
   lyric?: ILyric;

@@ -106,7 +106,6 @@ if (!isSingleInstance) {
 
   // 监听语言切换
   ipcMain.on('change-language', (_, locale: Language) => {
-    console.log('locale',locale)
     // 更新主进程的语言设置
     i18n.global.locale = locale;
     // 更新托盘菜单

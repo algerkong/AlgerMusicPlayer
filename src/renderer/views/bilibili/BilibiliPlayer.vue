@@ -1,150 +1,174 @@
 <template>
-  <n-drawer
-    v-model:show="showModal"
-    class="bilibili-player-modal"
-    :mask-closable="true"
-    :auto-focus="false"
-    :to="`#layout-main`"
-    preset="card"
-    height="80%"
-    placement="bottom"
-  >
-    <div class="bilibili-player-wrapper">
-      <div class="bilibili-player-header">
-        <div class="title">{{ videoDetail?.title || '加载中...' }}</div>
-        <div class="actions">
-          <n-button quaternary circle @click="closePlayer">
-            <template #icon>
-              <i class="ri-close-line"></i>
-            </template>
-          </n-button>
+  <div class="bilibili-player-page">
+    <n-scrollbar class="content-scrollbar">
+      <div class="content-wrapper">
+        <div v-if="isLoading" class="loading-wrapper">
+          <n-spin size="large" />
+          <p>听书加载中...</p>
         </div>
-      </div>
 
-      <div v-if="isLoading" class="loading-wrapper">
-        <n-spin size="large" />
-        <p>听书加载中...</p>
-      </div>
+        <div v-else-if="errorMessage" class="error-wrapper">
+          <i class="ri-error-warning-line text-4xl text-red-500"></i>
+          <p>{{ errorMessage }}</p>
+          <n-button type="primary" @click="loadVideoSource">重试</n-button>
+        </div>
 
-      <div v-else-if="errorMessage" class="error-wrapper">
-        <i class="ri-error-warning-line text-4xl text-red-500"></i>
-        <p>{{ errorMessage }}</p>
-        <n-button type="primary" @click="loadVideoSource">重试</n-button>
-      </div>
+        <div v-else-if="videoDetail" class="bilibili-info-wrapper" :class="mainContentAnimation">
+          <div class="bilibili-cover">
+            <n-image
+              :src="getBilibiliProxyUrl(videoDetail.pic)"
+              class="cover-image"
+              preview-disabled
+            />
+            <!-- 悬浮的播放按钮 -->
+            <div class="play-overlay">
+              <div class="play-icon-bg" @click="playCurrentAudio">
+                <i class="ri-play-fill"></i>
+              </div>
+              <!-- 固定在右下角的大型播放按钮 -->
+              <n-button
+                type="primary"
+                size="large"
+                class="corner-play-button"
+                :loading="partLoading"
+                @click="playCurrentAudio"
+              >
+                <template #icon>
+                  <i class="ri-play-fill"></i>
+                </template>
+                立即播放
+              </n-button>
+            </div>
+          </div>
 
-      <div v-else-if="videoDetail" class="bilibili-info-wrapper">
-        <div class="bilibili-cover">
-          <n-image
-            :src="getBilibiliProxyUrl(videoDetail.pic)"
-            class="cover-image"
-            preview-disabled
-          />
-          <div class="play-button" @click="playCurrentAudio">
-            <i class="ri-play-fill text-4xl"></i>
+          <div class="video-info">
+            <div class="title">{{ videoDetail?.title || '加载中...' }}</div>
+
+            <div class="author">
+              <i class="ri-user-line mr-1"></i>
+              <span>{{ videoDetail.owner?.name }}</span>
+            </div>
+            <div class="stats">
+              <span
+                ><i class="ri-play-line mr-1"></i>{{ formatNumber(videoDetail.stat?.view) }}</span
+              >
+              <span
+                ><i class="ri-chat-1-line mr-1"></i
+                >{{ formatNumber(videoDetail.stat?.danmaku) }}</span
+              >
+              <span
+                ><i class="ri-thumb-up-line mr-1"></i
+                >{{ formatNumber(videoDetail.stat?.like) }}</span
+              >
+            </div>
+            <div class="description">
+              <p>{{ videoDetail.desc }}</p>
+            </div>
+            <div class="duration">
+              <p>总时长: {{ formatTotalDuration(videoDetail.duration) }}</p>
+            </div>
           </div>
         </div>
 
-        <div class="video-info">
-          <div class="author">
-            <i class="ri-user-line mr-1"></i>
-            <span>{{ videoDetail.owner?.name }}</span>
+        <div
+          v-if="videoDetail?.pages && videoDetail.pages.length > 1"
+          class="video-parts"
+          :class="partsListAnimation"
+        >
+          <div class="parts-title">
+            分P列表 (共{{ videoDetail.pages.length }}集)
+            <n-spin v-if="partLoading" size="small" class="ml-2" />
           </div>
-          <div class="stats">
-            <span><i class="ri-play-line mr-1"></i>{{ formatNumber(videoDetail.stat?.view) }}</span>
-            <span
-              ><i class="ri-chat-1-line mr-1"></i
-              >{{ formatNumber(videoDetail.stat?.danmaku) }}</span
+          <div class="parts-list">
+            <n-button
+              v-for="page in videoDetail.pages"
+              :key="page.cid"
+              :type="isCurrentPlayingPage(page) ? 'primary' : 'default'"
+              :disabled="partLoading"
+              size="small"
+              class="part-item"
+              @click="switchPage(page)"
             >
-            <span
-              ><i class="ri-thumb-up-line mr-1"></i>{{ formatNumber(videoDetail.stat?.like) }}</span
-            >
-          </div>
-          <div class="description">
-            <p>{{ videoDetail.desc }}</p>
-          </div>
-          <div class="duration">
-            <p>总时长: {{ formatTotalDuration(videoDetail.duration) }}</p>
+              {{ page.part }}
+            </n-button>
           </div>
         </div>
-      </div>
 
-      <div v-if="videoDetail?.pages && videoDetail.pages.length > 1" class="video-parts">
-        <div class="parts-title">分P列表 (共{{ videoDetail.pages.length }}集)</div>
-        <div class="parts-list">
-          <n-button
-            v-for="page in videoDetail.pages"
-            :key="page.cid"
-            :type="currentPage?.cid === page.cid ? 'primary' : 'default'"
-            size="small"
-            class="part-item"
-            @click="switchPage(page)"
-          >
-            {{ page.part }}
-          </n-button>
-        </div>
+        <!-- 底部留白 -->
+        <div class="pb-20"></div>
       </div>
-    </div>
-  </n-drawer>
+    </n-scrollbar>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { useMessage } from 'naive-ui';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
 import { getBilibiliPlayUrl, getBilibiliProxyUrl, getBilibiliVideoDetail } from '@/api/bilibili';
 import { usePlayerStore } from '@/store/modules/player';
 import type { SongResult } from '@/type/music';
 import type { IBilibiliPage, IBilibiliVideoDetail } from '@/types/bilibili';
+import { setAnimationClass } from '@/utils';
 
-const props = defineProps<{
-  show: boolean;
-  bvid?: string;
-}>();
+defineOptions({
+  name: 'BilibiliPlayer'
+});
 
-const emit = defineEmits<{
-  (e: 'update:show', value: boolean): void;
-  (e: 'close'): void;
-}>();
-
+// 使用路由获取参数
+const route = useRoute();
+const router = useRouter();
+const message = useMessage();
 const playerStore = usePlayerStore();
-const isLoading = ref(true);
+
+// 从路由参数获取bvid
+const bvid = computed(() => route.params.bvid as string);
+
+const isLoading = ref(true); // 初始加载状态
+const partLoading = ref(false); // 分P加载状态，仅影响分P选择
 const errorMessage = ref('');
 const videoDetail = ref<IBilibiliVideoDetail | null>(null);
 const currentPage = ref<IBilibiliPage | null>(null);
 const audioList = ref<SongResult[]>([]);
 
-const showModal = computed({
-  get: () => props.show,
-  set: (value) => {
-    emit('update:show', value);
-    if (!value) {
-      emit('close');
-    }
+// 只在初始加载时应用动画
+const initialLoadDone = ref(false);
+const mainContentAnimation = computed(() => {
+  if (!initialLoadDone.value) {
+    return setAnimationClass('animate__fadeInDown');
   }
+  return '';
 });
 
+const partsListAnimation = computed(() => {
+  if (!initialLoadDone.value) {
+    return setAnimationClass('animate__fadeInUp');
+  }
+  return '';
+});
+
+// 监听bvid变化
 watch(
-  () => props.bvid,
+  () => bvid.value,
   async (newBvid) => {
     if (newBvid) {
+      // 新的视频ID，重置初始加载状态
+      initialLoadDone.value = false;
       await loadVideoDetail(newBvid);
-    }
-  },
-  { immediate: true }
-);
-
-watch(
-  () => props.show,
-  (newValue) => {
-    console.log('Modal show changed:', newValue);
-    if (newValue && props.bvid && !videoDetail.value) {
-      loadVideoDetail(props.bvid);
     }
   }
 );
 
-const closePlayer = () => {
-  showModal.value = false;
-};
+// 组件挂载时加载数据
+onMounted(async () => {
+  if (bvid.value) {
+    await loadVideoDetail(bvid.value);
+  } else {
+    message.error('视频ID无效');
+    router.back();
+  }
+});
 
 const loadVideoDetail = async (bvid: string) => {
   if (!bvid) return;
@@ -176,12 +200,14 @@ const loadVideoDetail = async (bvid: string) => {
     errorMessage.value = '获取视频详情失败';
   } finally {
     isLoading.value = false;
+    // 标记初始加载完成
+    initialLoadDone.value = true;
   }
 };
 
 const loadVideoSource = async () => {
-  if (!props.bvid || !currentPage.value?.cid) {
-    console.error('缺少必要参数:', { bvid: props.bvid, cid: currentPage.value?.cid });
+  if (!bvid.value || !currentPage.value?.cid) {
+    console.error('缺少必要参数:', { bvid: bvid.value, cid: currentPage.value?.cid });
     return;
   }
 
@@ -189,7 +215,7 @@ const loadVideoSource = async () => {
   errorMessage.value = '';
 
   try {
-    console.log('加载音频源:', props.bvid, currentPage.value.cid);
+    console.log('加载音频源:', bvid.value, currentPage.value.cid);
 
     // 将当前视频转换为音频格式加入播放列表
     const tempAudio = createSongFromBilibiliVideo(); // 创建一个临时对象，还没有URL
@@ -228,7 +254,7 @@ const loadVideoSource = async () => {
             }
           } as any,
           bilibiliData: {
-            bvid: props.bvid,
+            bvid: bvid.value,
             cid: page.cid
           }
         } as SongResult;
@@ -283,18 +309,22 @@ const createSongFromBilibiliVideo = (): SongResult => {
       }
     } as any,
     bilibiliData: {
-      bvid: props.bvid,
+      bvid: bvid.value,
       cid: currentPage.value.cid
     }
   } as SongResult;
 };
 
-const loadSongUrl = async (page: IBilibiliPage, songItem: SongResult) => {
-  if (songItem.playMusicUrl) return songItem; // 如果已有URL则直接返回
+const loadSongUrl = async (
+  page: IBilibiliPage,
+  songItem: SongResult,
+  forceRefresh: boolean = false
+) => {
+  if (songItem.playMusicUrl && !forceRefresh) return songItem; // 如果已有URL且不强制刷新则直接返回
 
   try {
     console.log(`加载分P音频URL: ${page.part}, cid: ${page.cid}`);
-    const res = await getBilibiliPlayUrl(props.bvid!, page.cid);
+    const res = await getBilibiliPlayUrl(bvid.value, page.cid);
     const playUrlData = res.data;
     let url = '';
 
@@ -319,23 +349,32 @@ const loadSongUrl = async (page: IBilibiliPage, songItem: SongResult) => {
 };
 
 const switchPage = async (page: IBilibiliPage) => {
+  if (partLoading.value || currentPage.value?.cid === page.cid) return;
+
   console.log('切换到分P:', page.part);
+  // 立即更新UI选中状态
   currentPage.value = page;
 
   // 查找对应的音频项
   const audioItem = audioList.value.find((item) => item.bilibiliData?.cid === page.cid);
 
-  if (audioItem && !audioItem.playMusicUrl) {
-    // 如果该分P没有音频URL，则先加载
+  if (audioItem) {
+    // 设置局部加载状态
     try {
-      isLoading.value = true;
-      await loadSongUrl(page, audioItem);
+      partLoading.value = true;
+      // 每次切换分P都强制重新加载音频URL，以解决之前的URL可能失效的问题
+      await loadSongUrl(page, audioItem, true);
+      // 切换后自动播放
+      playCurrentAudio();
     } catch (error) {
       console.error('切换分P时加载音频URL失败:', error);
-      errorMessage.value = '获取音频地址失败，请重试';
+      message.error('获取音频地址失败，请重试');
     } finally {
-      isLoading.value = false;
+      partLoading.value = false;
     }
+  } else {
+    console.error('未找到对应的音频项');
+    message.error('未找到对应的音频，请重试');
   }
 };
 
@@ -361,14 +400,12 @@ const playCurrentAudio = async () => {
   console.log('准备播放当前选中的分P:', currentAudio.name);
 
   try {
-    // 加载当前分P的音频URL（如果需要）
-    if (!currentAudio.playMusicUrl) {
-      isLoading.value = true;
-      await loadSongUrl(currentPage.value!, currentAudio);
+    // 每次播放前都强制重新加载当前分P的音频URL（解决可能的URL失效问题）
+    partLoading.value = true;
+    await loadSongUrl(currentPage.value!, currentAudio, true);
 
-      if (!currentAudio.playMusicUrl) {
-        throw new Error('获取音频URL失败');
-      }
+    if (!currentAudio.playMusicUrl) {
+      throw new Error('获取音频URL失败');
     }
 
     // 预加载下一个分P的音频URL（如果有）
@@ -377,7 +414,7 @@ const playCurrentAudio = async () => {
       const nextAudio = audioList.value[nextIndex];
       const nextPage = videoDetail.value!.pages.find((p) => p.cid === nextAudio.bilibiliData?.cid);
 
-      if (nextPage && !nextAudio.playMusicUrl) {
+      if (nextPage) {
         console.log('预加载下一个分P:', nextPage.part);
         loadSongUrl(nextPage, nextAudio).catch((e) => console.warn('预加载下一个分P失败:', e));
       }
@@ -390,13 +427,13 @@ const playCurrentAudio = async () => {
     console.log('播放当前选中的分P:', currentAudio.name, '音频URL:', currentAudio.playMusicUrl);
     playerStore.setPlayMusic(currentAudio);
 
-    // 关闭模态框
-    closePlayer();
+    // 播放后通知用户已开始播放
+    message.success('已开始播放');
   } catch (error) {
     console.error('播放音频失败:', error);
     errorMessage.value = error instanceof Error ? error.message : '播放失败，请重试';
   } finally {
-    isLoading.value = false;
+    partLoading.value = false;
   }
 };
 
@@ -423,27 +460,61 @@ const formatNumber = (num?: number) => {
   }
   return num.toString();
 };
+
+// 判断是否是当前正在播放的分P
+const isCurrentPlayingPage = (page: IBilibiliPage) => {
+  // 只根据播放器状态判断，不再使用UI选中状态
+  const currentPlayingMusic = playerStore.playMusic as any;
+  if (
+    currentPlayingMusic &&
+    typeof currentPlayingMusic === 'object' &&
+    currentPlayingMusic.bilibiliData
+  ) {
+    // 比较当前播放的音频的cid与此分P的cid
+    return (
+      currentPlayingMusic.bilibiliData.cid === page.cid &&
+      currentPlayingMusic.bilibiliData.bvid === bvid.value
+    );
+  }
+
+  // 如果没有正在播放的音乐，则使用UI选择状态
+  return currentPage.value?.cid === page.cid;
+};
+
+// 监听播放器状态变化，保持分P列表选中状态同步
+watch(
+  () => playerStore.playMusic,
+  (newMusic: any) => {
+    if (
+      newMusic &&
+      typeof newMusic === 'object' &&
+      newMusic.bilibiliData &&
+      newMusic.bilibiliData.bvid === bvid.value
+    ) {
+      // 查找对应的分P
+      const playingPage = videoDetail.value?.pages?.find(
+        (p) => p.cid === newMusic.bilibiliData.cid
+      );
+
+      // 无条件更新UI状态以确保UI状态与播放状态一致
+      if (playingPage) {
+        currentPage.value = playingPage;
+      }
+    }
+  }
+);
 </script>
 
 <style scoped lang="scss">
-.bilibili-player-modal {
-  width: 90vw;
-  max-width: 1000px;
-}
+.bilibili-player-page {
+  @apply h-full flex flex-col;
 
-.bilibili-player-wrapper {
-  @apply flex flex-col p-8 pt-4;
-}
-
-.bilibili-player-header {
-  @apply flex justify-between items-center mb-4;
-
-  .title {
-    @apply text-lg font-medium truncate;
+  .content-scrollbar {
+    @apply flex-1 overflow-hidden;
   }
 
-  .actions {
-    @apply flex items-center;
+  .content-wrapper {
+    @apply flex flex-col p-4;
   }
 }
 
@@ -457,8 +528,28 @@ const formatNumber = (num?: number) => {
       @apply w-full h-full object-cover;
     }
 
-    .play-button {
-      @apply absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 hover:opacity-100 transition-opacity cursor-pointer;
+    .play-overlay {
+      @apply absolute inset-0;
+
+      .play-icon-bg {
+        @apply absolute inset-0 flex items-center justify-center bg-black/40 text-white opacity-0 hover:opacity-100 transition-opacity cursor-pointer;
+
+        i {
+          @apply text-4xl;
+        }
+      }
+
+      .corner-play-button {
+        @apply absolute right-3 bottom-3 shadow-lg flex items-center gap-1 px-4 py-1 text-sm transition-all duration-200;
+
+        &:hover {
+          @apply transform scale-110;
+        }
+
+        i {
+          @apply text-xl;
+        }
+      }
     }
   }
 }
@@ -481,6 +572,10 @@ const formatNumber = (num?: number) => {
 
 .video-info {
   @apply flex-1 p-4 rounded-lg bg-gray-100 dark:bg-gray-800;
+
+  .title {
+    @apply text-lg font-medium mb-4 text-gray-900 dark:text-white;
+  }
 
   .author {
     @apply flex items-center text-sm mb-2;
@@ -505,11 +600,11 @@ const formatNumber = (num?: number) => {
   @apply mt-4;
 
   .parts-title {
-    @apply text-sm font-medium mb-2;
+    @apply text-sm font-medium mb-2 flex items-center;
   }
 
   .parts-list {
-    @apply flex flex-wrap gap-2 max-h-60 overflow-y-auto pb-20;
+    @apply flex flex-wrap gap-2 max-h-60 overflow-y-auto pb-4;
 
     .part-item {
       @apply text-xs mb-2;

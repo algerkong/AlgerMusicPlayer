@@ -2,6 +2,7 @@ import { createDiscreteApi } from 'naive-ui';
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 
 import i18n from '@/../i18n/renderer';
+import { getBilibiliAudioUrl } from '@/api/bilibili';
 import useIndexedDB from '@/hooks/IndexDBHook';
 import { audioService } from '@/services/audioService';
 import pinia, { usePlayerStore } from '@/store';
@@ -233,6 +234,29 @@ watch(
         const savedProgress = JSON.parse(localStorage.getItem('playProgress') || '{}');
         if (savedProgress.songId === playMusic.value.id) {
           initialPosition = savedProgress.progress;
+        }
+
+        // 对于B站视频，检查URL是否有效
+        if (playMusic.value.source === 'bilibili' && (!newVal || newVal === 'undefined')) {
+          console.log('B站视频URL无效，尝试重新获取');
+
+          // 需要重新获取B站视频URL
+          if (playMusic.value.bilibiliData) {
+            try {
+              const proxyUrl = await getBilibiliAudioUrl(
+                playMusic.value.bilibiliData.bvid,
+                playMusic.value.bilibiliData.cid
+              );
+
+              // 设置URL到播放器状态
+              (playMusic.value as any).playMusicUrl = proxyUrl;
+              playerStore.playMusicUrl = proxyUrl;
+              newVal = proxyUrl;
+            } catch (error) {
+              console.error('获取B站音频URL失败:', error);
+              return;
+            }
+          }
         }
 
         // 播放新音频，传递是否应该播放的状态

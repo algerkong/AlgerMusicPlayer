@@ -71,7 +71,7 @@ const getHistorySongs = async () => {
     const endIndex = startIndex + pageSize;
     const currentPageItems = musicList.value.slice(startIndex, endIndex);
 
-    const currentIds = currentPageItems.map((item) => item.id);
+    const currentIds = currentPageItems.map((item) => item.id as number);
     const res = await getMusicDetail(currentIds);
 
     if (res.data.songs) {

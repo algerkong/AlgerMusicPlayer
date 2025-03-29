@@ -2,6 +2,7 @@ import { cloneDeep } from 'lodash';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
+import { getBilibiliAudioUrl } from '@/api/bilibili';
 import { getLikedList, getMusicLrc, getMusicUrl, getParsingMusicUrl } from '@/api/music';
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';
 import type { ILyric, ILyricText, SongResult } from '@/type/music';
@@ -24,6 +25,8 @@ function getLocalStorageItem<T>(key: string, defaultValue: T): T {
   }
 }
 
+// 提取公共函数：获取B站视频URL
+
 export const getSongUrl = async (
   id: string | number,
   songData: SongResult,
@@ -35,6 +38,18 @@ export const getSongUrl = async (
 
   if (songData.source === 'bilibili' && songData.bilibiliData) {
     console.log('加载B站音频URL');
+    if (!songData.playMusicUrl && songData.bilibiliData.bvid && songData.bilibiliData.cid) {
+      try {
+        songData.playMusicUrl = await getBilibiliAudioUrl(
+          songData.bilibiliData.bvid,
+          songData.bilibiliData.cid
+        );
+        return songData.playMusicUrl;
+      } catch (error) {
+        console.error('重启后获取B站音频URL失败:', error);
+        return '';
+      }
+    }
     return songData.playMusicUrl || '';
   }
 
@@ -249,6 +264,27 @@ export const usePlayerStore = defineStore('player', () => {
   const currentPlayListIndex = computed(() => playListIndex.value);
 
   const handlePlayMusic = async (music: SongResult, isPlay: boolean = true) => {
+    // 处理B站视频，确保URL有效
+    if (music.source === 'bilibili' && music.bilibiliData) {
+      try {
+        console.log('处理B站视频，检查URL有效性');
+        // 清除之前的URL，强制重新获取
+        music.playMusicUrl = undefined;
+
+        // 重新获取B站视频URL
+        if (music.bilibiliData.bvid && music.bilibiliData.cid) {
+          music.playMusicUrl = await getBilibiliAudioUrl(
+            music.bilibiliData.bvid,
+            music.bilibiliData.cid
+          );
+          console.log('获取B站URL成功:', music.playMusicUrl);
+        }
+      } catch (error) {
+        console.error('获取B站音频URL失败:', error);
+        throw error; // 向上抛出错误，让调用者处理
+      }
+    }
+
     const updatedPlayMusic = await getSongDetail(music);
     playMusic.value = updatedPlayMusic;
     playMusicUrl.value = updatedPlayMusic.playMusicUrl as string;
@@ -284,9 +320,15 @@ export const usePlayerStore = defineStore('player', () => {
   };
 
   const setPlay = async (song: SongResult) => {
-    await handlePlayMusic(song);
-    localStorage.setItem('currentPlayMusic', JSON.stringify(playMusic.value));
-    localStorage.setItem('currentPlayMusicUrl', playMusicUrl.value);
+    try {
+      await handlePlayMusic(song);
+      localStorage.setItem('currentPlayMusic', JSON.stringify(playMusic.value));
+      localStorage.setItem('currentPlayMusicUrl', playMusicUrl.value);
+      return true;
+    } catch (error) {
+      console.error('设置播放失败:', error);
+      return false;
+    }
   };
 
   const setIsPlay = (value: boolean) => {
@@ -349,7 +391,18 @@ export const usePlayerStore = defineStore('player', () => {
     }
 
     playListIndex.value = nowPlayListIndex;
-    await handlePlayMusic(playList.value[playListIndex.value]);
+
+    // 获取下一首歌曲
+    const nextSong = playList.value[playListIndex.value];
+
+    // 如果是B站视频，确保重新获取URL
+    if (nextSong.source === 'bilibili' && nextSong.bilibiliData) {
+      // 清除之前的URL，确保重新获取
+      nextSong.playMusicUrl = undefined;
+      console.log('下一首是B站视频，已清除URL强制重新获取');
+    }
+
+    await handlePlayMusic(nextSong);
   };
 
   const prevPlay = async () => {
@@ -359,7 +412,18 @@ export const usePlayerStore = defineStore('player', () => {
     }
     const nowPlayListIndex =
       (playListIndex.value - 1 + playList.value.length) % playList.value.length;
-    await handlePlayMusic(playList.value[nowPlayListIndex]);
+
+    // 获取上一首歌曲
+    const prevSong = playList.value[nowPlayListIndex];
+
+    // 如果是B站视频，确保重新获取URL
+    if (prevSong.source === 'bilibili' && prevSong.bilibiliData) {
+      // 清除之前的URL，确保重新获取
+      prevSong.playMusicUrl = undefined;
+      console.log('上一首是B站视频，已清除URL强制重新获取');
+    }
+
+    await handlePlayMusic(prevSong);
     await fetchSongs(playList.value, playListIndex.value - 5, nowPlayListIndex);
   };
 
@@ -392,8 +456,17 @@ export const usePlayerStore = defineStore('player', () => {
 
     if (savedPlayMusic && Object.keys(savedPlayMusic).length > 0) {
       try {
+        console.log('恢复上次播放的音乐:', savedPlayMusic.name);
         console.log('settingStore.setData', settingStore.setData);
         const isPlaying = settingStore.setData.autoPlay;
+
+        // 如果是B站视频，确保播放URL能够在重启后正确恢复
+        if (savedPlayMusic.source === 'bilibili' && savedPlayMusic.bilibiliData) {
+          console.log('恢复B站视频播放', savedPlayMusic.bilibiliData);
+          // 清除之前可能存在的播放URL，确保重新获取
+          savedPlayMusic.playMusicUrl = undefined;
+        }
+
         await handlePlayMusic({ ...savedPlayMusic, playMusicUrl: undefined }, isPlaying);
 
         if (savedProgress) {

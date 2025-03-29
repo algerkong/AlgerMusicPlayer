@@ -6,6 +6,9 @@ export interface IBilibiliSearchResult {
   duration: number | string;
   pubdate: number;
   ctime: number;
+  author: string;
+  view: number;
+  danmaku: number;
   owner: {
     mid: number;
     name: string;

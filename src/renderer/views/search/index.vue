@@ -118,8 +118,6 @@
         </template>
       </div>
     </n-layout>
-    <!-- 添加B站视频播放器组件 -->
-    <bilibili-player v-model:show="showBilibiliPlayer" :bvid="currentBvid" />
   </div>
 </template>
 
@@ -127,12 +125,11 @@
 import { useDateFormat } from '@vueuse/core';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import { getBilibiliProxyUrl, searchBilibili } from '@/api/bilibili';
 import { getHotSearch } from '@/api/home';
 import { getSearch } from '@/api/search';
-import BilibiliPlayer from '@/components/BilibiliPlayer.vue';
 import BilibiliItem from '@/components/common/BilibiliItem.vue';
 import SearchItem from '@/components/common/SearchItem.vue';
 import SongItem from '@/components/common/SongItem.vue';
@@ -149,6 +146,7 @@ defineOptions({
 
 const { t } = useI18n();
 const route = useRoute();
+const router = useRouter();
 const playerStore = usePlayerStore();
 const searchStore = useSearchStore();
 
@@ -215,10 +213,6 @@ onMounted(() => {
 });
 
 const hotKeyword = ref(route.query.keyword || t('search.title.searchList'));
-
-// 显示B站视频播放器
-const showBilibiliPlayer = ref(false);
-const currentBvid = ref('');
 
 const loadSearch = async (keywords: any, type: any = null, isLoadMore = false) => {
   if (!keywords) return;
@@ -421,8 +415,8 @@ const handleSearchHistory = (item: { keyword: string; type: number }) => {
 
 // 处理B站视频播放
 const handlePlayBilibili = (item: IBilibiliSearchResult) => {
-  currentBvid.value = item.bvid;
-  showBilibiliPlayer.value = true;
+  // 使用路由导航到B站播放页面
+  router.push(`/bilibili/${item.bvid}`);
 };
 </script>
 
