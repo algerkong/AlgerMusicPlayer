@@ -47,13 +47,12 @@
     </div>
     <install-app-modal v-if="!isElectron"></install-app-modal>
     <update-modal v-if="isElectron" />
-    <artist-drawer ref="artistDrawerRef" :show="artistDrawerShow" />
     <playlist-drawer v-model="showPlaylistDrawer" :song-id="currentSongId" />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, defineAsyncComponent, nextTick, onMounted, provide, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, onMounted, provide, ref } from 'vue';
 import { useRoute } from 'vue-router';
 
 import DownloadDrawer from '@/components/common/DownloadDrawer.vue';
@@ -82,7 +81,6 @@ const MobilePlayBar = defineAsyncComponent(() => import('./components/MobilePlay
 const SearchBar = defineAsyncComponent(() => import('./components/SearchBar.vue'));
 const TitleBar = defineAsyncComponent(() => import('./components/TitleBar.vue'));
 
-const ArtistDrawer = defineAsyncComponent(() => import('@/components/common/ArtistDrawer.vue'));
 const PlaylistDrawer = defineAsyncComponent(() => import('@/components/common/PlaylistDrawer.vue'));
 
 const playerStore = usePlayerStore();
@@ -97,26 +95,6 @@ onMounted(() => {
   settingsStore.initializeSettings();
   settingsStore.initializeTheme();
 });
-
-const artistDrawerRef = ref<InstanceType<typeof ArtistDrawer>>();
-const artistDrawerShow = computed({
-  get: () => settingsStore.showArtistDrawer,
-  set: (val) => settingsStore.setShowArtistDrawer(val)
-});
-
-// 监听歌手ID变化
-watch(
-  () => settingsStore.currentArtistId,
-  (newId) => {
-    if (newId) {
-      console.log('newId', newId);
-      artistDrawerShow.value = true;
-      nextTick(() => {
-        artistDrawerRef.value?.loadArtistInfo(newId);
-      });
-    }
-  }
-);
 
 const showPlaylistDrawer = ref(false);
 const currentSongId = ref<number | undefined>();

@@ -31,6 +31,17 @@ const otherRouter = [
       back: true
     },
     component: () => import('@/views/user/detail.vue')
+  },
+  {
+    path: '/artist/detail/:id',
+    name: 'artistDetail',
+    meta: {
+      title: '歌手详情',
+      keepAlive: true,
+      showInMenu: false,
+      back: true
+    },
+    component: () => import('@/views/artist/detail.vue')
   }
 ];
 export default otherRouter;

@@ -92,8 +92,9 @@ import { computed, h, inject, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { getSongUrl } from '@/hooks/MusicListHook';
+import { useArtist } from '@/hooks/useArtist';
 import { audioService } from '@/services/audioService';
-import { usePlayerStore, useSettingsStore } from '@/store';
+import { usePlayerStore } from '@/store';
 import type { SongResult } from '@/type/music';
 import { getImgUrl, isElectron } from '@/utils';
 import { getImageBackground } from '@/utils/linearColor';
@@ -121,7 +122,6 @@ const props = withDefaults(
 );
 
 const playerStore = usePlayerStore();
-const settingsStore = useSettingsStore();
 
 const message = useMessage();
 
@@ -141,6 +141,8 @@ const dropdownY = ref(0);
 const isDownloading = ref(false);
 
 const openPlaylistDrawer = inject<(songId: number) => void>('openPlaylistDrawer');
+
+const { navigateToArtist } = useArtist();
 
 const renderSongPreview = () => {
   return h(
@@ -392,8 +394,7 @@ const toggleSelect = () => {
 };
 
 const handleArtistClick = (id: number) => {
-  settingsStore.setCurrentArtistId(id);
-  settingsStore.setShowArtistDrawer(true);
+  navigateToArtist(id);
 };
 
 // 获取歌手列表（最多显示5个）

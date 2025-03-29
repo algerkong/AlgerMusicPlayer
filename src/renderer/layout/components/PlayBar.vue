@@ -191,6 +191,7 @@ import {
   sound,
   textColors
 } from '@/hooks/MusicHook';
+import { useArtist } from '@/hooks/useArtist';
 import { audioService } from '@/services/audioService';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
@@ -381,9 +382,11 @@ const openLyricWindow = () => {
   openLyric();
 };
 
+const { navigateToArtist } = useArtist();
+
 const handleArtistClick = (id: number) => {
   musicFullVisible.value = false;
-  settingsStore.currentArtistId = id;
+  navigateToArtist(id);
 };
 
 // 添加全局快捷键处理

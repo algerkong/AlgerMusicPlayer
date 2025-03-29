@@ -88,7 +88,7 @@
             class="recommend-singer-item relative"
             :class="setAnimationClass('animate__backInRight')"
             :style="setAnimationDelay(index + 2, 100)"
-            @click="handleOpenSinger(item.id)"
+            @click="handleArtistClick(item.id)"
           >
             <div
               :style="setBackgroundImg(getImgUrl(item.picUrl, '500y500'))"
@@ -103,7 +103,10 @@
               </div>
             </div>
             <!-- 播放按钮(hover时显示) -->
-            <div class="recommend-singer-item-play-overlay" @click.stop="handleOpenSinger(item.id)">
+            <div
+              class="recommend-singer-item-play-overlay"
+              @click.stop="handleArtistClick(item.id)"
+            >
               <div class="recommend-singer-item-play-btn">
                 <i class="iconfont icon-playfill text-4xl"></i>
               </div>
@@ -140,7 +143,8 @@ import { getDayRecommend, getHotSinger } from '@/api/home';
 import { getListDetail } from '@/api/list';
 import { getUserPlaylist } from '@/api/user';
 import MusicList from '@/components/MusicList.vue';
-import { useSettingsStore, useUserStore } from '@/store';
+import { useArtist } from '@/hooks/useArtist';
+import { useUserStore } from '@/store';
 import { IDayRecommend } from '@/type/day_recommend';
 import { Playlist } from '@/type/list';
 import type { IListDetail } from '@/type/listDetail';
@@ -168,6 +172,8 @@ const showPlaylist = ref(false);
 const playlistLoading = ref(false);
 const playlistItem = ref<Playlist | null>(null);
 const playlistDetail = ref<IListDetail | null>(null);
+
+const { navigateToArtist } = useArtist();
 
 /**
  * 获取轮播项的样式
@@ -259,11 +265,8 @@ const loadData = async () => {
   }
 };
 
-const settingsStore = useSettingsStore();
-
-const handleOpenSinger = (id: number) => {
-  settingsStore.setCurrentArtistId(id);
-  settingsStore.setShowArtistDrawer(true);
+const handleArtistClick = (id: number) => {
+  navigateToArtist(id);
 };
 
 const toPlaylist = async (id: number) => {
