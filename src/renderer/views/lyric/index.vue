@@ -11,12 +11,12 @@
     <div class="control-bar" :class="{ 'control-bar-show': showControls }">
       <div class="font-size-controls">
         <n-button-group>
-          <n-button quaternary size="small" :disabled="fontSize <= 12" @click="decreaseFontSize">
+          <div class="control-button" @click="decreaseFontSize">
             <i class="ri-subtract-line"></i>
-          </n-button>
-          <n-button quaternary size="small" :disabled="fontSize >= 48" @click="increaseFontSize">
+          </div>
+          <div class="control-button" @click="increaseFontSize">
             <i class="ri-add-line"></i>
-          </n-button>
+          </div>
         </n-button-group>
         <div>{{ staticData.playMusic.name }}</div>
       </div>
