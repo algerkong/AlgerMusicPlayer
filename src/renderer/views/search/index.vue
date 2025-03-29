@@ -111,7 +111,7 @@
                 @click="handleSearchHistory(item)"
                 @close="handleCloseSearchHistory(item)"
               >
-                {{ item }}
+                {{ item.keyword }}
               </n-tag>
             </div>
           </div>
@@ -155,7 +155,7 @@ const searchStore = useSearchStore();
 const searchDetail = ref<any>();
 const searchType = computed(() => searchStore.searchType as number);
 const searchDetailLoading = ref(false);
-const searchHistory = ref<string[]>([]);
+const searchHistory = ref<Array<{ keyword: string; type: number }>>([]);
 
 // 添加分页相关的状态
 const ITEMS_PER_PAGE = 30; // 每页数量
@@ -170,17 +170,17 @@ const loadSearchHistory = () => {
   searchHistory.value = history ? JSON.parse(history) : [];
 };
 
-// 保存搜索历史
-const saveSearchHistory = (keyword: string) => {
+// 保存搜索历史，改为保存关键词和类型
+const saveSearchHistory = (keyword: string, type: number) => {
   if (!keyword) return;
   const history = searchHistory.value;
   // 移除重复的关键词
-  const index = history.indexOf(keyword);
+  const index = history.findIndex((item) => item.keyword === keyword);
   if (index > -1) {
     history.splice(index, 1);
   }
   // 添加到开头
-  history.unshift(keyword);
+  history.unshift({ keyword, type });
   // 只保留最近的20条记录
   if (history.length > 20) {
     history.pop();
@@ -196,8 +196,8 @@ const clearSearchHistory = () => {
 };
 
 // 删除搜索历史
-const handleCloseSearchHistory = (keyword: string) => {
-  searchHistory.value = searchHistory.value.filter((item) => item !== keyword);
+const handleCloseSearchHistory = (item: { keyword: string; type: number }) => {
+  searchHistory.value = searchHistory.value.filter((h) => h.keyword !== item.keyword);
   localStorage.setItem('searchHistory', JSON.stringify(searchHistory.value));
 };
 
@@ -211,7 +211,7 @@ const loadHotSearch = async () => {
 onMounted(() => {
   loadHotSearch();
   loadSearchHistory();
-  loadSearch(route.query.keyword);
+  // 注意：路由参数的处理已经在 watch route.query 中处理了
 });
 
 const hotKeyword = ref(route.query.keyword || t('search.title.searchList'));
@@ -223,19 +223,24 @@ const currentBvid = ref('');
 const loadSearch = async (keywords: any, type: any = null, isLoadMore = false) => {
   if (!keywords) return;
 
+  // 使用传入的类型或当前类型
+  const searchTypeToUse = type !== null ? type : searchType.value;
+
   if (!isLoadMore) {
     hotKeyword.value = keywords;
     searchDetail.value = undefined;
     page.value = 0;
     hasMore.value = true;
     currentKeyword.value = keywords;
+
+    // 保存搜索历史
+    saveSearchHistory(keywords, searchTypeToUse);
+
+    // 始终更新搜索框内容和类型
+    searchStore.searchType = searchTypeToUse;
+    searchStore.searchValue = keywords;
   } else if (isLoadingMore.value || !hasMore.value) {
     return;
-  }
-
-  // 保存搜索历史
-  if (!isLoadMore) {
-    saveSearchHistory(keywords);
   }
 
   if (isLoadMore) {
@@ -246,7 +251,7 @@ const loadSearch = async (keywords: any, type: any = null, isLoadMore = false) =
 
   try {
     // B站搜索
-    if ((type || searchType.value) === SEARCH_TYPE.BILIBILI) {
+    if (searchTypeToUse === SEARCH_TYPE.BILIBILI) {
       const response = await searchBilibili({
         keyword: currentKeyword.value,
         page: page.value + 1,
@@ -283,7 +288,7 @@ const loadSearch = async (keywords: any, type: any = null, isLoadMore = false) =
     else {
       const { data } = await getSearch({
         keywords: currentKeyword.value,
-        type: type || searchType.value,
+        type: searchTypeToUse,
         limit: ITEMS_PER_PAGE,
         offset: page.value * ITEMS_PER_PAGE
       });
@@ -382,12 +387,21 @@ const handleScroll = (e: any) => {
 };
 
 watch(
-  () => route.path,
-  async (path) => {
-    if (path === '/search') {
-      searchStore.searchValue = route.query.keyword as string;
+  () => route.query,
+  (query) => {
+    if (route.path === '/search' && query.keyword) {
+      const routeKeyword = query.keyword as string;
+      const routeType = query.type ? Number(query.type) : searchType.value;
+
+      // 更新搜索类型和值
+      searchStore.searchType = routeType;
+      searchStore.searchValue = routeKeyword;
+
+      // 加载搜索结果
+      loadSearch(routeKeyword, routeType);
     }
-  }
+  },
+  { immediate: true }
 );
 
 const handlePlay = () => {
@@ -396,8 +410,13 @@ const handlePlay = () => {
 };
 
 // 点击搜索历史
-const handleSearchHistory = (keyword: string) => {
-  loadSearch(keyword, 1);
+const handleSearchHistory = (item: { keyword: string; type: number }) => {
+  // 更新搜索类型
+  searchStore.searchType = item.type;
+  // 先更新搜索值到 store
+  searchStore.searchValue = item.keyword;
+  // 使用关键词和类型加载搜索
+  loadSearch(item.keyword, item.type);
 };
 
 // 处理B站视频播放
