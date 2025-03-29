@@ -344,6 +344,21 @@ export const usePlayerStore = defineStore('player', () => {
     localStorage.setItem('favoriteList', JSON.stringify(favoriteList.value));
   };
 
+  const removeFromPlayList = (id: number) => {
+    const index = playList.value.findIndex((item) => item.id === id);
+    if (index === -1) return;
+
+    // 如果删除的是当前播放的歌曲，先切换到下一首
+    if (id === playMusic.value.id) {
+      nextPlay();
+    }
+
+    // 从播放列表中移除，使用不可变的方式
+    const newPlayList = [...playList.value];
+    newPlayList.splice(index, 1);
+    setPlayList(newPlayList);
+  };
+
   // 初始化播放状态
   const initializePlayState = async () => {
     const settingStore = useSettingsStore();
@@ -450,6 +465,7 @@ export const usePlayerStore = defineStore('player', () => {
     initializePlayState,
     initializeFavoriteList,
     addToFavorite,
-    removeFromFavorite
+    removeFromFavorite,
+    removeFromPlayList
   };
 });
