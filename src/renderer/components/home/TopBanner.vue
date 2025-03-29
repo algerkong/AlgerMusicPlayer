@@ -2,6 +2,7 @@
   <div class="recommend-singer">
     <div class="recommend-singer-list">
       <n-carousel
+        v-if="hotSingerData?.artists.length"
         slides-per-view="auto"
         :show-dots="false"
         :space-between="20"
@@ -239,10 +240,7 @@ onMounted(async () => {
 
 const loadData = async () => {
   try {
-    // 第一个请求：获取热门歌手
-    const { data: singerData } = await getHotSinger({ offset: 0, limit: 5 });
-
-    // 第二个请求：获取每日推荐
+    // 获取每日推荐
     try {
       const {
         data: { data: dayRecommend }
@@ -252,7 +250,6 @@ const loadData = async () => {
       console.error('error', error);
     }
 
-    hotSingerData.value = singerData;
     if (userStore.user) {
       const { data: playlistData } = await getUserPlaylist(userStore.user?.userId);
       // 确保最多只显示4个歌单，并按播放次数排序
@@ -260,6 +257,10 @@ const loadData = async () => {
         .sort((a, b) => b.playCount - a.playCount)
         .slice(0, 4);
     }
+
+    // 获取热门歌手
+    const { data: singerData } = await getHotSinger({ offset: 0, limit: 5 });
+    hotSingerData.value = singerData;
   } catch (error) {
     console.error('error', error);
   }
