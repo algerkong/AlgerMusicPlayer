@@ -1,0 +1,128 @@
+import type { IBilibiliPlayUrl, IBilibiliVideoDetail } from '@/types/bilibili';
+import request from '@/utils/request';
+
+interface ISearchParams {
+  keyword: string;
+  page?: number;
+  pagesize?: number;
+  search_type?: string;
+}
+
+/**
+ * 搜索B站视频
+ * @param params 搜索参数
+ */
+export const searchBilibili = (params: ISearchParams) => {
+  console.log('调用B站搜索API，参数:', params);
+  return request.get('/bilibili/search', {
+    params
+  });
+};
+
+interface IBilibiliResponse<T> {
+  code: number;
+  message: string;
+  ttl: number;
+  data: T;
+}
+
+/**
+ * 获取B站视频详情
+ * @param bvid B站视频BV号
+ * @returns 视频详情响应
+ */
+export const getBilibiliVideoDetail = (
+  bvid: string
+): Promise<IBilibiliResponse<IBilibiliVideoDetail>> => {
+  console.log('调用B站视频详情API，bvid:', bvid);
+  return new Promise((resolve, reject) => {
+    request
+      .get('/bilibili/video/detail', {
+        params: { bvid }
+      })
+      .then((response) => {
+        console.log('B站视频详情API响应:', response.status);
+
+        // 检查响应状态和数据格式
+        if (response.status === 200 && response.data && response.data.data) {
+          console.log('B站视频详情API成功，标题:', response.data.data.title);
+          resolve(response.data);
+        } else {
+          console.error('B站视频详情API响应格式不正确:', response.data);
+          reject(new Error('获取视频详情响应格式不正确'));
+        }
+      })
+      .catch((error) => {
+        console.error('B站视频详情API错误:', error);
+        reject(error);
+      });
+  });
+};
+
+/**
+ * 获取B站视频播放地址
+ * @param bvid B站视频BV号
+ * @param cid 视频分P的id
+ * @param qn 视频质量，默认为0
+ * @param fnval 视频格式标志，默认为80
+ * @param fnver 视频格式版本，默认为0
+ * @param fourk 是否允许4K视频，默认为1
+ * @returns 视频播放地址响应
+ */
+export const getBilibiliPlayUrl = (
+  bvid: string,
+  cid: number,
+  qn: number = 0,
+  fnval: number = 80,
+  fnver: number = 0,
+  fourk: number = 1
+): Promise<IBilibiliResponse<IBilibiliPlayUrl>> => {
+  console.log('调用B站视频播放地址API，bvid:', bvid, 'cid:', cid);
+  return new Promise((resolve, reject) => {
+    request
+      .get('/bilibili/playurl', {
+        params: {
+          bvid,
+          cid,
+          qn,
+          fnval,
+          fnver,
+          fourk
+        }
+      })
+      .then((response) => {
+        console.log('B站视频播放地址API响应:', response.status);
+
+        // 检查响应状态和数据格式
+        if (response.status === 200 && response.data && response.data.data) {
+          if (response.data.data.dash?.audio?.length > 0) {
+            console.log(
+              'B站视频播放地址API成功，获取到',
+              response.data.data.dash.audio.length,
+              '个音频地址'
+            );
+          } else if (response.data.data.durl?.length > 0) {
+            console.log(
+              'B站视频播放地址API成功，获取到',
+              response.data.data.durl.length,
+              '个播放地址'
+            );
+          }
+          resolve(response.data);
+        } else {
+          console.error('B站视频播放地址API响应格式不正确:', response.data);
+          reject(new Error('获取视频播放地址响应格式不正确'));
+        }
+      })
+      .catch((error) => {
+        console.error('B站视频播放地址API错误:', error);
+        reject(error);
+      });
+  });
+};
+
+// `http://127.0.0.1:30666/bilibili/stream-proxy?url=${encodeURIComponent(`https:${item.pic}`)}`,
+export const getBilibiliProxyUrl = (url: string) => {
+  const AUrl = url.startsWith('http') ? url : `https:${url}`;
+  return `${import.meta.env.VITE_API}/bilibili/stream-proxy?url=${encodeURIComponent(AUrl)}`;
+};

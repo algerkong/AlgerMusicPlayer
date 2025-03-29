@@ -45,6 +45,10 @@ export const SEARCH_TYPES = [
   {
     label: 'MV',
     key: 1004
+  },
+  {
+    label: 'B站',
+    key: 2000
   }
   // {
   //   label: '歌词',
@@ -63,3 +67,12 @@ export const SEARCH_TYPES = [
   //   key: 1018,
   // },
 ];
+
+export const SEARCH_TYPE = {
+  MUSIC: 1, // 单曲
+  ALBUM: 10, // 专辑
+  ARTIST: 100, // 歌手
+  PLAYLIST: 1000, // 歌单
+  MV: 1004, // MV
+  BILIBILI: 2000 // B站视频
+} as const;

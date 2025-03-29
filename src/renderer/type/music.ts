@@ -13,23 +13,26 @@ export interface ILyric {
 }
 
 export interface SongResult {
-  id: number;
-  type: number;
+  id: string | number;
   name: string;
-  copywriter?: any;
   picUrl: string;
-  canDislike: boolean;
-  trackNumberUpdateTime?: any;
-  song: Song;
-  alg: string;
-  count?: number;
+  playCount?: number;
+  song?: any;
+  copywriter?: string;
+  type?: number;
+  canDislike?: boolean;
+  program?: any;
+  alg?: string;
+  playMusicUrl?: string;
   playLoading?: boolean;
-  ar?: Artist[];
-  al?: Album;
+  lyric?: ILyric;
   backgroundColor?: string;
   primaryColor?: string;
-  playMusicUrl?: string;
-  lyric?: ILyric;
+  bilibiliData?: {
+    bvid: string;
+    cid: number;
+  };
+  source?: 'netease' | 'bilibili';
 }
 
 export interface Song {
@@ -213,4 +216,17 @@ interface FreeTimeTrialPrivilege {
 interface FreeTrialPrivilege {
   resConsumable: boolean;
   userConsumable: boolean;
+}
+
+export interface IArtists {
+  id: number;
+  name: string;
+  picUrl: string | null;
+  alias: string[];
+  albumSize: number;
+  picId: number;
+  fansGroup: null;
+  img1v1Url: string;
+  img1v1: number;
+  trans: null;
 }
