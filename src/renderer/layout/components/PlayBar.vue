@@ -162,7 +162,14 @@
           <n-virtual-list ref="palyListRef" :item-size="62" item-resizable :items="playList">
             <template #default="{ item }">
               <div class="music-play-list-content">
-                <song-item :key="item.id" :item="item" mini></song-item>
+                <div class="flex items-center justify-between">
+                  <song-item :key="item.id" class="flex-1" :item="item" mini></song-item>
+                  <div class="delete-btn" @click.stop="handleDeleteSong(item)">
+                    <i
+                      class="iconfont ri-delete-bin-line text-gray-400 hover:text-red-500 transition-colors"
+                    ></i>
+                  </div>
+                </div>
               </div>
             </template>
           </n-virtual-list>
@@ -454,6 +461,15 @@ watch(
 );
 
 const isEQVisible = ref(false);
+
+// 在 script setup 部分添加删除歌曲的处理函数
+const handleDeleteSong = (song: SongResult) => {
+  // 如果删除的是当前播放的歌曲，先切换到下一首
+  if (song.id === playMusic.value.id) {
+    playerStore.nextPlay();
+  }
+  playerStore.removeFromPlayList(song.id);
+};
 </script>
 
 <style lang="scss" scoped>
@@ -707,5 +723,18 @@ const isEQVisible = ref(false);
   @apply p-4 rounded-3xl;
   backdrop-filter: blur(20px);
   @apply bg-light dark:bg-black bg-opacity-75;
+}
+
+.music-play-list-content {
+  @apply mx-2;
+
+  .delete-btn {
+    @apply p-2 rounded-full transition-colors duration-200 cursor-pointer;
+    @apply hover:bg-red-50 dark:hover:bg-red-900/20;
+
+    .iconfont {
+      @apply text-lg;
+    }
+  }
 }
 </style>
