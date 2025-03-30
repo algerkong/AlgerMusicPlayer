@@ -422,6 +422,8 @@ class AudioService {
                 console.log(`Retrying playback (${retryCount}/${maxRetries})...`);
                 setTimeout(tryPlay, 1000 * retryCount);
               } else {
+                // 发送URL过期事件，通知外部需要重新获取URL
+                this.emit('url_expired', this.currentTrack);
                 reject(new Error('音频加载失败，请尝试切换其他歌曲'));
               }
             },
@@ -432,6 +434,8 @@ class AudioService {
                 console.log(`Retrying playback (${retryCount}/${maxRetries})...`);
                 setTimeout(tryPlay, 1000 * retryCount);
               } else {
+                // 发送URL过期事件，通知外部需要重新获取URL
+                this.emit('url_expired', this.currentTrack);
                 reject(new Error('音频播放失败，请尝试切换其他歌曲'));
               }
             },

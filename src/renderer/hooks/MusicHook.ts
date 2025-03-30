@@ -866,3 +866,97 @@ export const initAudioListeners = async () => {
     console.error('初始化音频监听器失败:', error);
   }
 };
+
+// 监听URL过期事件，自动重新获取URL并恢复播放
+audioService.on('url_expired', async (expiredTrack) => {
+  if (!expiredTrack) return;
+
+  console.log('检测到URL过期事件，准备重新获取URL', expiredTrack.name);
+
+  try {
+    const currentPosition = nowTime.value; // 保存当前播放进度
+    console.log('保存当前播放进度:', currentPosition);
+
+    // 处理B站视频
+    if (expiredTrack.source === 'bilibili' && expiredTrack.bilibiliData) {
+      console.log('重新获取B站视频URL');
+      try {
+        // 使用API中的函数获取B站音频URL
+        const newUrl = await getBilibiliAudioUrl(
+          expiredTrack.bilibiliData.bvid,
+          expiredTrack.bilibiliData.cid
+        );
+
+        console.log('成功获取新的B站URL:', newUrl);
+
+        // 更新存储
+        (expiredTrack as any).playMusicUrl = newUrl;
+        playerStore.playMusicUrl = newUrl;
+
+        // 重新播放并设置进度
+        const newSound = await audioService.play(newUrl, expiredTrack);
+        sound.value = newSound as Howl;
+
+        // 恢复播放进度
+        if (currentPosition > 0) {
+          newSound.seek(currentPosition);
+          nowTime.value = currentPosition;
+          console.log('恢复播放进度:', currentPosition);
+        }
+
+        // 如果之前是播放状态，继续播放
+        if (playerStore.play) {
+          newSound.play();
+          playerStore.setIsPlay(true);
+        }
+
+        message.success('已自动恢复播放');
+      } catch (error) {
+        console.error('重新获取B站URL失败:', error);
+        message.error('重新获取音频地址失败，请手动点击播放');
+      }
+    } else if (expiredTrack.source === 'netease') {
+      // 处理网易云音乐，重新获取URL
+      console.log('重新获取网易云音乐URL');
+      try {
+        const { getSongUrl } = await import('@/store/modules/player');
+        const newUrl = await getSongUrl(expiredTrack.id, expiredTrack as any);
+
+        if (newUrl) {
+          console.log('成功获取新的网易云URL:', newUrl);
+
+          // 更新存储
+          (expiredTrack as any).playMusicUrl = newUrl;
+          playerStore.playMusicUrl = newUrl;
+
+          // 重新播放并设置进度
+          const newSound = await audioService.play(newUrl, expiredTrack);
+          sound.value = newSound as Howl;
+
+          // 恢复播放进度
+          if (currentPosition > 0) {
+            newSound.seek(currentPosition);
+            nowTime.value = currentPosition;
+            console.log('恢复播放进度:', currentPosition);
+          }
+
+          // 如果之前是播放状态，继续播放
+          if (playerStore.play) {
+            newSound.play();
+            playerStore.setIsPlay(true);
+          }
+
+          message.success('已自动恢复播放');
+        } else {
+          throw new Error('获取URL失败');
+        }
+      } catch (error) {
+        console.error('重新获取网易云URL失败:', error);
+        message.error('重新获取音频地址失败，请手动点击播放');
+      }
+    }
+  } catch (error) {
+    console.error('处理URL过期事件失败:', error);
+    message.error('恢复播放失败，请手动点击播放');
+  }
+});
