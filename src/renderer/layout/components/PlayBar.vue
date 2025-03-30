@@ -25,6 +25,9 @@
         :max="allTime"
         :min="0"
         :format-tooltip="formatTooltip"
+        :show-tooltip="showSliderTooltip"
+        @mouseenter="showSliderTooltip = true"
+        @mouseleave="showSliderTooltip = false"
       ></n-slider>
     </div>
     <div class="play-bar-img-wrapper" @click="setMusicFull">
@@ -313,6 +316,7 @@ function handlePrev() {
 }
 
 const MusicFullRef = ref<any>(null);
+const showSliderTooltip = ref(false);
 
 // 播放暂停按钮事件
 const playMusicEvent = async () => {
@@ -657,8 +661,16 @@ const isEQVisible = ref(false);
       opacity: 0;
     }
 
-    &:hover .n-slider-handle {
-      opacity: 1;
+    &:hover {
+      .n-slider-handle {
+        opacity: 1;
+      }
+    }
+
+    // 确保悬停时提示样式正确
+    .n-slider-tooltip {
+      @apply bg-gray-800 text-white text-xs py-1 px-2 rounded;
+      z-index: 999999;
     }
   }
 }
