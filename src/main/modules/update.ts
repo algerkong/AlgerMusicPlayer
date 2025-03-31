@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { exec } from 'child_process';
+import { spawn } from 'child_process';
 import { app, BrowserWindow, ipcMain } from 'electron';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -53,38 +53,49 @@ export function setupUpdateHandlers(_mainWindow: BrowserWindow) {
 
     const { platform } = process;
 
-    // 关闭当前应用
-    app.quit();
-
-    // 根据不同平台执行安装
-    if (platform === 'win32') {
-      exec(`"${filePath}"`, (error) => {
-        if (error) {
-          console.error('Error starting installer:', error);
-        }
-      });
-    } else if (platform === 'darwin') {
-      // 挂载 DMG 文件
-      exec(`open "${filePath}"`, (error) => {
-        if (error) {
-          console.error('Error opening DMG:', error);
-        }
-      });
-    } else if (platform === 'linux') {
-      const ext = path.extname(filePath);
-      if (ext === '.AppImage') {
-        exec(`chmod +x "${filePath}" && "${filePath}"`, (error) => {
-          if (error) {
-            console.error('Error running AppImage:', error);
-          }
+    // 先启动安装程序，再退出应用
+    try {
+      if (platform === 'win32') {
+        // 使用spawn替代exec，并使用detached选项确保子进程独立运行
+        const child = spawn(filePath, [], {
+          detached: true,
+          stdio: 'ignore'
         });
-      } else if (ext === '.deb') {
-        exec(`pkexec dpkg -i "${filePath}"`, (error) => {
-          if (error) {
-            console.error('Error installing deb package:', error);
-          }
+        child.unref();
+      } else if (platform === 'darwin') {
+        // 挂载 DMG 文件
+        const child = spawn('open', [filePath], {
+          detached: true,
+          stdio: 'ignore'
         });
+        child.unref();
+      } else if (platform === 'linux') {
+        const ext = path.extname(filePath);
+        if (ext === '.AppImage') {
+          // 先添加执行权限
+          fs.chmodSync(filePath, '755');
+          const child = spawn(filePath, [], {
+            detached: true,
+            stdio: 'ignore'
+          });
+          child.unref();
+        } else if (ext === '.deb') {
+          const child = spawn('pkexec', ['dpkg', '-i', filePath], {
+            detached: true,
+            stdio: 'ignore'
+          });
+          child.unref();
+        }
       }
+
+      // 给安装程序一点时间启动
+      setTimeout(() => {
+        app.quit();
+      }, 500);
+    } catch (error) {
+      console.error('启动安装程序失败:', error);
+      // 尽管出错，仍然尝试退出应用
+      app.quit();
     }
   });
 }
