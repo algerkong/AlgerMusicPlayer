@@ -87,7 +87,7 @@ const handleAction = (action: 'minimize' | 'close') => {
   }
 
   if (action === 'minimize') {
-    window.api.minimize();
+    window.api.miniTray();
   } else {
     window.api.close();
   }
@@ -98,7 +98,7 @@ const handleClose = () => {
   const { closeAction } = settingsStore.setData;
 
   if (closeAction === 'minimize') {
-    window.api.minimize();
+    window.api.miniTray();
   } else if (closeAction === 'close') {
     window.api.close();
   } else {
