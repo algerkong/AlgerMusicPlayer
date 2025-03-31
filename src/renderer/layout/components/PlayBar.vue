@@ -25,6 +25,9 @@
         :max="allTime"
         :min="0"
         :format-tooltip="formatTooltip"
+        :show-tooltip="showSliderTooltip"
+        @mouseenter="showSliderTooltip = true"
+        @mouseleave="showSliderTooltip = false"
       ></n-slider>
     </div>
     <div class="play-bar-img-wrapper" @click="setMusicFull">
@@ -183,6 +186,7 @@
 
 <script lang="ts" setup>
 import { useThrottleFn } from '@vueuse/core';
+import { useMessage } from 'naive-ui';
 import { computed, ref, useTemplateRef, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -211,6 +215,7 @@ import MusicFull from './MusicFull.vue';
 const playerStore = usePlayerStore();
 const settingsStore = useSettingsStore();
 const { t } = useI18n();
+const message = useMessage();
 // 是否播放
 const play = computed(() => playerStore.isPlay);
 // 播放列表
@@ -318,37 +323,48 @@ function handlePrev() {
 }
 
 const MusicFullRef = ref<any>(null);
+const showSliderTooltip = ref(false);
 
 // 播放暂停按钮事件
 const playMusicEvent = async () => {
   try {
-    // 检查是否有有效的音乐对象和 URL
-    if (!playMusic.value?.id || !playerStore.playMusicUrl) {
-      console.warn('No valid music or URL available');
-      playerStore.setPlay(playMusic.value);
+    // 检查是否有有效的音乐对象
+    if (!playMusic.value?.id) {
+      console.warn('没有有效的播放对象');
       return;
     }
 
+    // 当前处于播放状态 -> 暂停
     if (play.value) {
-      // 暂停播放
       if (audioService.getCurrentSound()) {
         audioService.pause();
         playerStore.setPlayMusic(false);
       }
-    } else {
-      // 开始播放
-      if (audioService.getCurrentSound()) {
-        // 如果已经有音频实例，直接播放
-        audioService.play();
-      } else {
-        // 如果没有音频实例，重新创建并播放
-        await audioService.play(playerStore.playMusicUrl, playMusic.value);
-      }
+      return;
+    }
+
+    // 当前处于暂停状态 -> 播放
+    // 有音频实例，直接播放
+    if (audioService.getCurrentSound()) {
+      audioService.play();
       playerStore.setPlayMusic(true);
+      return;
+    }
+
+    // 没有音频实例，重新获取并播放（包括重新获取B站视频URL）
+    try {
+      // 复用当前播放对象，但强制重新获取URL
+      const result = await playerStore.setPlay({ ...playMusic.value, playMusicUrl: undefined });
+      if (result) {
+        playerStore.setPlayMusic(true);
+      }
+    } catch (error) {
+      console.error('重新获取播放链接失败:', error);
+      message.error(t('player.playFailed'));
     }
   } catch (error) {
     console.error('播放出错:', error);
-    playerStore.nextPlay();
+    message.error(t('player.playFailed'));
   }
 };
 
@@ -373,15 +389,22 @@ const scrollToPlayList = (val: boolean) => {
 };
 
 const isFavorite = computed(() => {
-  return playerStore.favoriteList.includes(playMusic.value.id);
+  // 将id转换为number，兼容B站视频ID
+  const numericId =
+    typeof playMusic.value.id === 'string' ? parseInt(playMusic.value.id, 10) : playMusic.value.id;
+  return playerStore.favoriteList.includes(numericId);
 });
 
 const toggleFavorite = async (e: Event) => {
   e.stopPropagation();
+  // 将id转换为number，兼容B站视频ID
+  const numericId =
+    typeof playMusic.value.id === 'string' ? parseInt(playMusic.value.id, 10) : playMusic.value.id;
+
   if (isFavorite.value) {
-    playerStore.removeFromFavorite(playMusic.value.id);
+    playerStore.removeFromFavorite(numericId);
   } else {
-    playerStore.addToFavorite(playMusic.value.id);
+    playerStore.addToFavorite(numericId);
   }
 };
 
@@ -654,8 +677,16 @@ const handleDeleteSong = (song: SongResult) => {
       opacity: 0;
     }
 
-    &:hover .n-slider-handle {
-      opacity: 1;
+    &:hover {
+      .n-slider-handle {
+        opacity: 1;
+      }
+    }
+
+    // 确保悬停时提示样式正确
+    .n-slider-tooltip {
+      @apply bg-gray-800 text-white text-xs py-1 px-2 rounded;
+      z-index: 999999;
     }
   }
 }

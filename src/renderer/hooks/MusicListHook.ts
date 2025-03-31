@@ -12,7 +12,7 @@ import { getImageLinearBackground } from '@/utils/linearColor';
 const musicHistory = useMusicHistory();
 
 // 获取歌曲url
-export const getSongUrl = async (id: number, songData: any, isDownloaded: boolean = false) => {
+export const getSongUrl = async (id: any, songData: any, isDownloaded: boolean = false) => {
   const { data } = await getMusicUrl(id, isDownloaded);
   let url = '';
   let songDetail = null;
@@ -247,7 +247,7 @@ export const useMusicListHook = () => {
   };
 
   // 异步加载歌词的方法
-  const loadLrcAsync = async (state: any, playMusicId: number) => {
+  const loadLrcAsync = async (state: any, playMusicId: any) => {
     if (state.playMusic.lyric && state.playMusic.lyric.lrcTimeArray.length > 0) {
       return;
     }

@@ -105,7 +105,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, watchEffect } from 'vue';
+import { computed, onMounted, ref, watch, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
@@ -191,6 +191,18 @@ const isDark = computed({
 
 // 搜索词
 const searchValue = ref('');
+
+// 使用 watch 代替 watchEffect 监听搜索值变化，确保深度监听
+watch(
+  () => searchStore.searchValue,
+  (newValue) => {
+    if (newValue) {
+      searchValue.value = newValue;
+    }
+  },
+  { immediate: true }
+);
+
 const search = () => {
   const { value } = searchValue;
   if (value === '') {
@@ -215,7 +227,17 @@ const search = () => {
 const selectSearchType = (key: number) => {
   searchStore.searchType = key;
   if (searchValue.value) {
-    search();
+    if (router.currentRoute.value.path === '/search') {
+      search();
+    } else {
+      router.push({
+        path: '/search',
+        query: {
+          keyword: searchValue.value,
+          type: key
+        }
+      });
+    }
   }
 };
 

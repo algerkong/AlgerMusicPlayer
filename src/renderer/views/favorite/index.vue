@@ -63,7 +63,7 @@
             :class="setAnimationClass('animate__bounceInLeft')"
             :style="getItemAnimationDelay(index)"
             :selectable="isSelecting"
-            :selected="selectedSongs.includes(song.id)"
+            :selected="selectedSongs.includes(song.id as number)"
             @play="handlePlay"
             @select="handleSelect"
           />
@@ -319,7 +319,7 @@ const isIndeterminate = computed(() => {
 // 处理全选/取消全选
 const handleSelectAll = (checked: boolean) => {
   if (checked) {
-    selectedSongs.value = favoriteSongs.value.map((song) => song.id);
+    selectedSongs.value = favoriteSongs.value.map((song) => song.id as number);
   } else {
     selectedSongs.value = [];
   }

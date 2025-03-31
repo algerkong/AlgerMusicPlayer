@@ -11,7 +11,7 @@
 }
 
 .n-slider-handle-indicator--top {
-  @apply bg-transparent text-2xl px-2 py-1 shadow-none mb-0 dark:text-[#ffffffdd] text-[#000000dd]  !important;
+  @apply bg-transparent text-2xl px-2 py-1 shadow-none mb-0 text-white bg-dark-300 dark:bg-gray-800 bg-opacity-80 rounded-lg  !important;
   mix-blend-mode: difference !important;
 }
 

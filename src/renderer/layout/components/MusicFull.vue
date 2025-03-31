@@ -112,7 +112,7 @@
             </div>
 
             <!-- 无歌词 -->
-            <div v-if="!lrcArray.length" class="music-lrc-text mt-40">
+            <div v-if="!lrcArray.length" class="music-lrc-text">
               <span>{{ t('player.lrc.noLrc') }}</span>
             </div>
           </div>

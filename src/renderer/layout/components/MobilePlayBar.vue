@@ -217,15 +217,15 @@ const scrollToPlayList = (val: boolean) => {
 
 // 收藏功能
 const isFavorite = computed(() => {
-  return playerStore.favoriteList.includes(playMusic.value.id);
+  return playerStore.favoriteList.includes(playMusic.value.id as number);
 });
 
 const toggleFavorite = () => {
   console.log('isFavorite.value', isFavorite.value);
   if (isFavorite.value) {
-    playerStore.removeFromFavorite(playMusic.value.id);
+    playerStore.removeFromFavorite(playMusic.value.id as number);
   } else {
-    playerStore.addToFavorite(playMusic.value.id);
+    playerStore.addToFavorite(playMusic.value.id as number);
   }
 };
 

@@ -2,6 +2,7 @@ import { cloneDeep } from 'lodash';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
+import { getBilibiliAudioUrl } from '@/api/bilibili';
 import { getLikedList, getMusicLrc, getMusicUrl, getParsingMusicUrl } from '@/api/music';
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';
 import type { ILyric, ILyricText, SongResult } from '@/type/music';
@@ -24,13 +25,41 @@ function getLocalStorageItem<T>(key: string, defaultValue: T): T {
   }
 }
 
-export const getSongUrl = async (id: number, songData: any, isDownloaded: boolean = false) => {
-  const { data } = await getMusicUrl(id, isDownloaded);
+// 提取公共函数：获取B站视频URL
+
+export const getSongUrl = async (
+  id: string | number,
+  songData: SongResult,
+  isDownloaded: boolean = false
+) => {
+  if (songData.playMusicUrl) {
+    return songData.playMusicUrl;
+  }
+
+  if (songData.source === 'bilibili' && songData.bilibiliData) {
+    console.log('加载B站音频URL');
+    if (!songData.playMusicUrl && songData.bilibiliData.bvid && songData.bilibiliData.cid) {
+      try {
+        songData.playMusicUrl = await getBilibiliAudioUrl(
+          songData.bilibiliData.bvid,
+          songData.bilibiliData.cid
+        );
+        return songData.playMusicUrl;
+      } catch (error) {
+        console.error('重启后获取B站音频URL失败:', error);
+        return '';
+      }
+    }
+    return songData.playMusicUrl || '';
+  }
+
+  const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+  const { data } = await getMusicUrl(numericId, isDownloaded);
   let url = '';
   let songDetail = null;
   try {
     if (data.data[0].freeTrialInfo || !data.data[0].url) {
-      const res = await getParsingMusicUrl(id, songData);
+      const res = await getParsingMusicUrl(numericId, cloneDeep(songData));
       url = res.data.data.url;
       songDetail = res.data.data;
     } else {
@@ -45,6 +74,7 @@ export const getSongUrl = async (id: number, songData: any, isDownloaded: boolea
   url = url || data.data[0].url;
   return url;
 };
+
 const parseTime = (timeString: string): number => {
   const [minutes, seconds] = timeString.split(':');
   return Number(minutes) * 60 + Number(seconds);
@@ -71,9 +101,18 @@ const parseLyrics = (lyricsString: string): { lyrics: ILyricText[]; times: numbe
   return { lyrics, times };
 };
 
-export const loadLrc = async (playMusicId: number): Promise<ILyric> => {
+export const loadLrc = async (id: string | number): Promise<ILyric> => {
+  if (typeof id === 'string' && id.includes('--')) {
+    console.log('B站音频，无需加载歌词');
+    return {
+      lrcTimeArray: [],
+      lrcArray: []
+    };
+  }
+
   try {
-    const { data } = await getMusicLrc(playMusicId);
+    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+    const { data } = await getMusicLrc(numericId);
     const { lyrics, times } = parseLyrics(data.lrc.lyric);
     const tlyric: Record<string, string> = {};
 
@@ -102,8 +141,19 @@ export const loadLrc = async (playMusicId: number): Promise<ILyric> => {
 
 const getSongDetail = async (playMusic: SongResult) => {
   playMusic.playLoading = true;
-  const playMusicUrl =
-    playMusic.playMusicUrl || (await getSongUrl(playMusic.id, cloneDeep(playMusic)));
+
+  if (playMusic.source === 'bilibili') {
+    console.log('处理B站音频详情');
+    const { backgroundColor, primaryColor } =
+      playMusic.backgroundColor && playMusic.primaryColor
+        ? playMusic
+        : await getImageLinearBackground(getImgUrl(playMusic?.picUrl, '30y30'));
+
+    playMusic.playLoading = false;
+    return { ...playMusic, backgroundColor, primaryColor } as SongResult;
+  }
+
+  const playMusicUrl = playMusic.playMusicUrl || (await getSongUrl(playMusic.id, playMusic));
   const { backgroundColor, primaryColor } =
     playMusic.backgroundColor && playMusic.primaryColor
       ? playMusic
@@ -115,7 +165,6 @@ const getSongDetail = async (playMusic: SongResult) => {
 
 const preloadNextSong = (nextSongUrl: string) => {
   try {
-    // 限制同时预加载的数量
     if (preloadingSounds.value.length >= 2) {
       const oldestSound = preloadingSounds.value.shift();
       if (oldestSound) {
@@ -132,7 +181,6 @@ const preloadNextSong = (nextSongUrl: string) => {
 
     preloadingSounds.value.push(sound);
 
-    // 添加加载错误处理
     sound.on('loaderror', () => {
       console.error('预加载音频失败:', nextSongUrl);
       const index = preloadingSounds.value.indexOf(sound);
@@ -156,8 +204,7 @@ const fetchSongs = async (playList: SongResult[], startIndex: number, endIndex: 
     const detailedSongs = await Promise.all(
       songs.map(async (song: SongResult) => {
         try {
-          // 如果歌曲详情已经存在，就不重复请求
-          if (!song.playMusicUrl) {
+          if (!song.playMusicUrl || (song.source === 'netease' && !song.backgroundColor)) {
             return await getSongDetail(song);
           }
           return song;
@@ -168,7 +215,6 @@ const fetchSongs = async (playList: SongResult[], startIndex: number, endIndex: 
       })
     );
 
-    // 加载下一首的歌词
     const nextSong = detailedSongs[0];
     if (nextSong && !(nextSong.lyric && nextSong.lyric.lrcTimeArray.length > 0)) {
       try {
@@ -178,14 +224,12 @@ const fetchSongs = async (playList: SongResult[], startIndex: number, endIndex: 
       }
     }
 
-    // 更新播放列表中的歌曲详情
     detailedSongs.forEach((song, index) => {
       if (song && startIndex + index < playList.length) {
         playList[startIndex + index] = song;
       }
     });
 
-    // 只预加载下一首歌曲
     if (nextSong && nextSong.playMusicUrl) {
       preloadNextSong(nextSong.playMusicUrl);
     }
@@ -194,7 +238,6 @@ const fetchSongs = async (playList: SongResult[], startIndex: number, endIndex: 
   }
 };
 
-// 异步加载歌词的方法
 const loadLrcAsync = async (playMusic: SongResult) => {
   if (playMusic.lyric && playMusic.lyric.lrcTimeArray.length > 0) {
     return;
@@ -204,7 +247,6 @@ const loadLrcAsync = async (playMusic: SongResult) => {
 };
 
 export const usePlayerStore = defineStore('player', () => {
-  // 状态
   const play = ref(false);
   const isPlay = ref(false);
   const playMusic = ref<SongResult>(getLocalStorageItem('currentPlayMusic', {} as SongResult));
@@ -216,39 +258,77 @@ export const usePlayerStore = defineStore('player', () => {
   const favoriteList = ref<number[]>(getLocalStorageItem('favoriteList', []));
   const savedPlayProgress = ref<number | undefined>();
 
-  // 计算属性
   const currentSong = computed(() => playMusic.value);
   const isPlaying = computed(() => isPlay.value);
   const currentPlayList = computed(() => playList.value);
   const currentPlayListIndex = computed(() => playListIndex.value);
 
   const handlePlayMusic = async (music: SongResult, isPlay: boolean = true) => {
+    // 处理B站视频，确保URL有效
+    if (music.source === 'bilibili' && music.bilibiliData) {
+      try {
+        console.log('处理B站视频，检查URL有效性');
+        // 清除之前的URL，强制重新获取
+        music.playMusicUrl = undefined;
+
+        // 重新获取B站视频URL
+        if (music.bilibiliData.bvid && music.bilibiliData.cid) {
+          music.playMusicUrl = await getBilibiliAudioUrl(
+            music.bilibiliData.bvid,
+            music.bilibiliData.cid
+          );
+          console.log('获取B站URL成功:', music.playMusicUrl);
+        }
+      } catch (error) {
+        console.error('获取B站音频URL失败:', error);
+        throw error; // 向上抛出错误，让调用者处理
+      }
+    }
+
     const updatedPlayMusic = await getSongDetail(music);
     playMusic.value = updatedPlayMusic;
     playMusicUrl.value = updatedPlayMusic.playMusicUrl as string;
 
-    // 记录当前设置的播放状态
     play.value = isPlay;
 
-    // 每次设置新歌曲时，立即更新 localStorage
     localStorage.setItem('currentPlayMusic', JSON.stringify(playMusic.value));
     localStorage.setItem('currentPlayMusicUrl', playMusicUrl.value);
     localStorage.setItem('isPlaying', play.value.toString());
 
-    // 设置网页标题
-    document.title = `${updatedPlayMusic.name} - ${updatedPlayMusic?.song?.artists?.reduce((prev, curr) => `${prev}${curr.name}/`, '')}`;
+    let title = updatedPlayMusic.name;
+
+    if (updatedPlayMusic.source === 'netease' && updatedPlayMusic?.song?.artists) {
+      title += ` - ${updatedPlayMusic.song.artists.reduce(
+        (prev: string, curr: any) => `${prev}${curr.name}/`,
+        ''
+      )}`;
+    } else if (updatedPlayMusic.source === 'bilibili' && updatedPlayMusic?.song?.ar?.[0]) {
+      title += ` - ${updatedPlayMusic.song.ar[0].name}`;
+    }
+
+    document.title = title;
+
     loadLrcAsync(playMusic.value);
+
     musicHistory.addMusic(playMusic.value);
-    playListIndex.value = playList.value.findIndex((item: SongResult) => item.id === music.id);
-    // 请求后续五首歌曲的详情
+
+    playListIndex.value = playList.value.findIndex(
+      (item: SongResult) => item.id === music.id && item.source === music.source
+    );
+
     fetchSongs(playList.value, playListIndex.value + 1, playListIndex.value + 6);
   };
 
-  // 方法
   const setPlay = async (song: SongResult) => {
-    await handlePlayMusic(song);
-    localStorage.setItem('currentPlayMusic', JSON.stringify(playMusic.value));
-    localStorage.setItem('currentPlayMusicUrl', playMusicUrl.value);
+    try {
+      await handlePlayMusic(song);
+      localStorage.setItem('currentPlayMusic', JSON.stringify(playMusic.value));
+      localStorage.setItem('currentPlayMusicUrl', playMusicUrl.value);
+      return true;
+    } catch (error) {
+      console.error('设置播放失败:', error);
+      return false;
+    }
   };
 
   const setIsPlay = (value: boolean) => {
@@ -303,17 +383,26 @@ export const usePlayerStore = defineStore('player', () => {
     let nowPlayListIndex: number;
 
     if (playMode.value === 2) {
-      // 随机播放模式
       do {
         nowPlayListIndex = Math.floor(Math.random() * playList.value.length);
       } while (nowPlayListIndex === playListIndex.value && playList.value.length > 1);
     } else {
-      // 列表循环模式
       nowPlayListIndex = (playListIndex.value + 1) % playList.value.length;
     }
 
     playListIndex.value = nowPlayListIndex;
-    await handlePlayMusic(playList.value[playListIndex.value]);
+
+    // 获取下一首歌曲
+    const nextSong = playList.value[playListIndex.value];
+
+    // 如果是B站视频，确保重新获取URL
+    if (nextSong.source === 'bilibili' && nextSong.bilibiliData) {
+      // 清除之前的URL，确保重新获取
+      nextSong.playMusicUrl = undefined;
+      console.log('下一首是B站视频，已清除URL强制重新获取');
+    }
+
+    await handlePlayMusic(nextSong);
   };
 
   const prevPlay = async () => {
@@ -323,7 +412,18 @@ export const usePlayerStore = defineStore('player', () => {
     }
     const nowPlayListIndex =
       (playListIndex.value - 1 + playList.value.length) % playList.value.length;
-    await handlePlayMusic(playList.value[nowPlayListIndex]);
+
+    // 获取上一首歌曲
+    const prevSong = playList.value[nowPlayListIndex];
+
+    // 如果是B站视频，确保重新获取URL
+    if (prevSong.source === 'bilibili' && prevSong.bilibiliData) {
+      // 清除之前的URL，确保重新获取
+      prevSong.playMusicUrl = undefined;
+      console.log('上一首是B站视频，已清除URL强制重新获取');
+    }
+
+    await handlePlayMusic(prevSong);
     await fetchSongs(playList.value, playListIndex.value - 5, nowPlayListIndex);
   };
 
@@ -372,8 +472,17 @@ export const usePlayerStore = defineStore('player', () => {
 
     if (savedPlayMusic && Object.keys(savedPlayMusic).length > 0) {
       try {
+        console.log('恢复上次播放的音乐:', savedPlayMusic.name);
         console.log('settingStore.setData', settingStore.setData);
         const isPlaying = settingStore.setData.autoPlay;
+
+        // 如果是B站视频，确保播放URL能够在重启后正确恢复
+        if (savedPlayMusic.source === 'bilibili' && savedPlayMusic.bilibiliData) {
+          console.log('恢复B站视频播放', savedPlayMusic.bilibiliData);
+          // 清除之前可能存在的播放URL，确保重新获取
+          savedPlayMusic.playMusicUrl = undefined;
+        }
+
         await handlePlayMusic({ ...savedPlayMusic, playMusicUrl: undefined }, isPlaying);
 
         if (savedProgress) {
@@ -405,16 +514,13 @@ export const usePlayerStore = defineStore('player', () => {
 
   const initializeFavoriteList = async () => {
     const userStore = useUserStore();
-    // 先获取本地收藏列表
     const localFavoriteList = localStorage.getItem('favoriteList');
     const localList: number[] = localFavoriteList ? JSON.parse(localFavoriteList) : [];
 
-    // 如果用户已登录，尝试获取服务器收藏列表并合并
     if (userStore.user && userStore.user.userId) {
       try {
         const res = await getLikedList(userStore.user.userId);
         if (res.data?.ids) {
-          // 合并本地和服务器的收藏列表，去重
           const serverList = res.data.ids.reverse();
           const mergedList = Array.from(new Set([...localList, ...serverList]));
           favoriteList.value = mergedList;
@@ -429,12 +535,10 @@ export const usePlayerStore = defineStore('player', () => {
       favoriteList.value = localList;
     }
 
-    // 更新本地存储
     localStorage.setItem('favoriteList', JSON.stringify(favoriteList.value));
   };
 
   return {
-    // 状态
     play,
     isPlay,
     playMusic,
@@ -446,13 +550,11 @@ export const usePlayerStore = defineStore('player', () => {
     savedPlayProgress,
     favoriteList,
 
-    // 计算属性
     currentSong,
     isPlaying,
     currentPlayList,
     currentPlayListIndex,
 
-    // 方法
     setPlay,
     setIsPlay,
     nextPlay,

@@ -40,33 +40,52 @@
       </div>
       <div v-loading="searchDetailLoading" class="search-list-box">
         <template v-if="searchDetail">
-          <div
-            v-for="(item, index) in searchDetail?.songs"
-            :key="item.id"
-            :class="setAnimationClass('animate__bounceInRight')"
-            :style="setAnimationDelay(index, 50)"
-          >
-            <song-item :item="item" @play="handlePlay" />
-          </div>
-          <template v-for="(list, key) in searchDetail">
-            <template v-if="key.toString() !== 'songs'">
-              <div
-                v-for="(item, index) in list"
-                :key="item.id"
-                class="mb-3"
-                :class="setAnimationClass('animate__bounceInRight')"
-                :style="setAnimationDelay(index, 50)"
-              >
-                <search-item :item="item" />
-              </div>
-            </template>
+          <!-- B站视频搜索结果 -->
+          <template v-if="searchType === SEARCH_TYPE.BILIBILI">
+            <div
+              v-for="(item, index) in searchDetail?.bilibili"
+              :key="item.bvid"
+              :class="setAnimationClass('animate__bounceInRight')"
+              :style="setAnimationDelay(index, 50)"
+            >
+              <bilibili-item :item="item" @play="handlePlayBilibili" />
+            </div>
+            <div v-if="isLoadingMore" class="loading-more">
+              <n-spin size="small" />
+              <span class="ml-2">{{ t('search.loading.more') }}</span>
+            </div>
+            <div v-if="!hasMore && searchDetail" class="no-more">{{ t('search.noMore') }}</div>
           </template>
-          <!-- 加载状态 -->
-          <div v-if="isLoadingMore" class="loading-more">
-            <n-spin size="small" />
-            <span class="ml-2">{{ t('search.loading.more') }}</span>
-          </div>
-          <div v-if="!hasMore && searchDetail" class="no-more">{{ t('search.noMore') }}</div>
+          <!-- 原有音乐搜索结果 -->
+          <template v-else>
+            <div
+              v-for="(item, index) in searchDetail?.songs"
+              :key="item.id"
+              :class="setAnimationClass('animate__bounceInRight')"
+              :style="setAnimationDelay(index, 50)"
+            >
+              <song-item :item="item" @play="handlePlay" />
+            </div>
+            <template v-for="(list, key) in searchDetail">
+              <template v-if="key.toString() !== 'songs'">
+                <div
+                  v-for="(item, index) in list"
+                  :key="item.id"
+                  class="mb-3"
+                  :class="setAnimationClass('animate__bounceInRight')"
+                  :style="setAnimationDelay(index, 50)"
+                >
+                  <search-item :item="item" />
+                </div>
+              </template>
+            </template>
+            <!-- 加载状态 -->
+            <div v-if="isLoadingMore" class="loading-more">
+              <n-spin size="small" />
+              <span class="ml-2">{{ t('search.loading.more') }}</span>
+            </div>
+            <div v-if="!hasMore && searchDetail" class="no-more">{{ t('search.noMore') }}</div>
+          </template>
         </template>
         <!-- 搜索历史 -->
         <template v-else>
@@ -92,7 +111,7 @@
                 @click="handleSearchHistory(item)"
                 @close="handleCloseSearchHistory(item)"
               >
-                {{ item }}
+                {{ item.keyword }}
               </n-tag>
             </div>
           </div>
@@ -104,17 +123,21 @@
 
 <script lang="ts" setup>
 import { useDateFormat } from '@vueuse/core';
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
+import { getBilibiliProxyUrl, searchBilibili } from '@/api/bilibili';
 import { getHotSearch } from '@/api/home';
 import { getSearch } from '@/api/search';
+import BilibiliItem from '@/components/common/BilibiliItem.vue';
 import SearchItem from '@/components/common/SearchItem.vue';
 import SongItem from '@/components/common/SongItem.vue';
+import { SEARCH_TYPE } from '@/const/bar-const';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSearchStore } from '@/store/modules/search';
 import type { IHotSearch } from '@/type/search';
+import type { IBilibiliSearchResult } from '@/types/bilibili';
 import { isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
 
 defineOptions({
@@ -123,13 +146,14 @@ defineOptions({
 
 const { t } = useI18n();
 const route = useRoute();
+const router = useRouter();
 const playerStore = usePlayerStore();
 const searchStore = useSearchStore();
 
 const searchDetail = ref<any>();
 const searchType = computed(() => searchStore.searchType as number);
 const searchDetailLoading = ref(false);
-const searchHistory = ref<string[]>([]);
+const searchHistory = ref<Array<{ keyword: string; type: number }>>([]);
 
 // 添加分页相关的状态
 const ITEMS_PER_PAGE = 30; // 每页数量
@@ -144,17 +168,17 @@ const loadSearchHistory = () => {
   searchHistory.value = history ? JSON.parse(history) : [];
 };
 
-// 保存搜索历史
-const saveSearchHistory = (keyword: string) => {
+// 保存搜索历史，改为保存关键词和类型
+const saveSearchHistory = (keyword: string, type: number) => {
   if (!keyword) return;
   const history = searchHistory.value;
   // 移除重复的关键词
-  const index = history.indexOf(keyword);
+  const index = history.findIndex((item) => item.keyword === keyword);
   if (index > -1) {
     history.splice(index, 1);
   }
   // 添加到开头
-  history.unshift(keyword);
+  history.unshift({ keyword, type });
   // 只保留最近的20条记录
   if (history.length > 20) {
     history.pop();
@@ -170,8 +194,8 @@ const clearSearchHistory = () => {
 };
 
 // 删除搜索历史
-const handleCloseSearchHistory = (keyword: string) => {
-  searchHistory.value = searchHistory.value.filter((item) => item !== keyword);
+const handleCloseSearchHistory = (item: { keyword: string; type: number }) => {
+  searchHistory.value = searchHistory.value.filter((h) => h.keyword !== item.keyword);
   localStorage.setItem('searchHistory', JSON.stringify(searchHistory.value));
 };
 
@@ -185,7 +209,7 @@ const loadHotSearch = async () => {
 onMounted(() => {
   loadHotSearch();
   loadSearchHistory();
-  loadSearch(route.query.keyword);
+  // 注意：路由参数的处理已经在 watch route.query 中处理了
 });
 
 const hotKeyword = ref(route.query.keyword || t('search.title.searchList'));
@@ -193,19 +217,24 @@ const hotKeyword = ref(route.query.keyword || t('search.title.searchList'));
 const loadSearch = async (keywords: any, type: any = null, isLoadMore = false) => {
   if (!keywords) return;
 
+  // 使用传入的类型或当前类型
+  const searchTypeToUse = type !== null ? type : searchType.value;
+
   if (!isLoadMore) {
     hotKeyword.value = keywords;
     searchDetail.value = undefined;
     page.value = 0;
     hasMore.value = true;
     currentKeyword.value = keywords;
+
+    // 保存搜索历史
+    saveSearchHistory(keywords, searchTypeToUse);
+
+    // 始终更新搜索框内容和类型
+    searchStore.searchType = searchTypeToUse;
+    searchStore.searchValue = keywords;
   } else if (isLoadingMore.value || !hasMore.value) {
     return;
-  }
-
-  // 保存搜索历史
-  if (!isLoadMore) {
-    saveSearchHistory(keywords);
   }
 
   if (isLoadMore) {
@@ -215,61 +244,98 @@ const loadSearch = async (keywords: any, type: any = null, isLoadMore = false) =
   }
 
   try {
-    const { data } = await getSearch({
-      keywords: currentKeyword.value,
-      type: type || searchType.value,
-      limit: ITEMS_PER_PAGE,
-      offset: page.value * ITEMS_PER_PAGE
-    });
+    // B站搜索
+    if (searchTypeToUse === SEARCH_TYPE.BILIBILI) {
+      const response = await searchBilibili({
+        keyword: currentKeyword.value,
+        page: page.value + 1,
+        pagesize: ITEMS_PER_PAGE
+      });
+      console.log('response', response);
 
-    const songs = data.result.songs || [];
-    const albums = data.result.albums || [];
-    const mvs = (data.result.mvs || []).map((item: any) => ({
-      ...item,
-      picUrl: item.cover,
-      playCount: item.playCount,
-      desc: item.artists.map((artist: any) => artist.name).join('/'),
-      type: 'mv'
-    }));
+      const bilibiliVideos = response.data.data.result.map((item: any) => ({
+        id: item.aid,
+        bvid: item.bvid,
+        title: item.title,
+        author: item.author,
+        pic: getBilibiliProxyUrl(item.pic),
+        duration: item.duration,
+        pubdate: item.pubdate,
+        description: item.description,
+        view: item.play,
+        danmaku: item.video_review
+      }));
 
-    const playlists = (data.result.playlists || []).map((item: any) => ({
-      ...item,
-      picUrl: item.coverImgUrl,
-      playCount: item.playCount,
-      desc: item.creator.nickname,
-      type: 'playlist'
-    }));
+      if (isLoadMore && searchDetail.value) {
+        // 合并数据
+        searchDetail.value.bilibili = [...searchDetail.value.bilibili, ...bilibiliVideos];
+      } else {
+        searchDetail.value = {
+          bilibili: bilibiliVideos
+        };
+      }
 
-    // songs map 替换属性
-    songs.forEach((item: any) => {
-      item.picUrl = item.al.picUrl;
-      item.artists = item.ar;
-    });
-    albums.forEach((item: any) => {
-      item.desc = `${item.artist.name} ${item.company} ${dateFormat(item.publishTime)}`;
-    });
-
-    if (isLoadMore && searchDetail.value) {
-      // 合并数据
-      searchDetail.value.songs = [...searchDetail.value.songs, ...songs];
-      searchDetail.value.albums = [...searchDetail.value.albums, ...albums];
-      searchDetail.value.mvs = [...searchDetail.value.mvs, ...mvs];
-      searchDetail.value.playlists = [...searchDetail.value.playlists, ...playlists];
-    } else {
-      searchDetail.value = {
-        songs,
-        albums,
-        mvs,
-        playlists
-      };
+      // 判断是否还有更多数据
+      hasMore.value = bilibiliVideos.length === ITEMS_PER_PAGE;
     }
+    // 音乐搜索
+    else {
+      const { data } = await getSearch({
+        keywords: currentKeyword.value,
+        type: searchTypeToUse,
+        limit: ITEMS_PER_PAGE,
+        offset: page.value * ITEMS_PER_PAGE
+      });
 
-    // 判断是否还有更多数据
-    hasMore.value =
-      songs.length === ITEMS_PER_PAGE ||
-      albums.length === ITEMS_PER_PAGE ||
-      mvs.length === ITEMS_PER_PAGE ||
-      playlists.length === ITEMS_PER_PAGE;
+      const songs = data.result.songs || [];
+      const albums = data.result.albums || [];
+      const mvs = (data.result.mvs || []).map((item: any) => ({
+        ...item,
+        picUrl: item.cover,
+        playCount: item.playCount,
+        desc: item.artists.map((artist: any) => artist.name).join('/'),
+        type: 'mv'
+      }));
+
+      const playlists = (data.result.playlists || []).map((item: any) => ({
+        ...item,
+        picUrl: item.coverImgUrl,
+        playCount: item.playCount,
+        desc: item.creator.nickname,
+        type: 'playlist'
+      }));
+
+      // songs map 替换属性
+      songs.forEach((item: any) => {
+        item.picUrl = item.al.picUrl;
+        item.artists = item.ar;
+      });
+      albums.forEach((item: any) => {
+        item.desc = `${item.artist.name} ${item.company} ${dateFormat(item.publishTime)}`;
+      });
+
+      if (isLoadMore && searchDetail.value) {
+        // 合并数据
+        searchDetail.value.songs = [...searchDetail.value.songs, ...songs];
+        searchDetail.value.albums = [...searchDetail.value.albums, ...albums];
+        searchDetail.value.mvs = [...searchDetail.value.mvs, ...mvs];
+        searchDetail.value.playlists = [...searchDetail.value.playlists, ...playlists];
+      } else {
+        searchDetail.value = {
+          songs,
+          albums,
+          mvs,
+          playlists
+        };
+      }
+
+      // 判断是否还有更多数据
+      hasMore.value =
+        songs.length === ITEMS_PER_PAGE ||
+        albums.length === ITEMS_PER_PAGE ||
+        mvs.length === ITEMS_PER_PAGE ||
+        playlists.length === ITEMS_PER_PAGE;
+    }
 
     page.value++;
   } catch (error) {
@@ -315,12 +381,21 @@ const handleScroll = (e: any) => {
 };
 
 watch(
-  () => route.path,
-  async (path) => {
-    if (path === '/search') {
-      searchStore.searchValue = route.query.keyword as string;
+  () => route.query,
+  (query) => {
+    if (route.path === '/search' && query.keyword) {
+      const routeKeyword = query.keyword as string;
+      const routeType = query.type ? Number(query.type) : searchType.value;
+
+      // 更新搜索类型和值
+      searchStore.searchType = routeType;
+      searchStore.searchValue = routeKeyword;
+
+      // 加载搜索结果
+      loadSearch(routeKeyword, routeType);
     }
-  }
+  },
+  { immediate: true }
 );
 
 const handlePlay = () => {
@@ -329,8 +404,19 @@ const handlePlay = () => {
 };
 
 // 点击搜索历史
-const handleSearchHistory = (keyword: string) => {
-  loadSearch(keyword, 1);
+const handleSearchHistory = (item: { keyword: string; type: number }) => {
+  // 更新搜索类型
+  searchStore.searchType = item.type;
+  // 先更新搜索值到 store
+  searchStore.searchValue = item.keyword;
+  // 使用关键词和类型加载搜索
+  loadSearch(item.keyword, item.type);
+};
+
+// 处理B站视频播放
+const handlePlayBilibili = (item: IBilibiliSearchResult) => {
+  // 使用路由导航到B站播放页面
+  router.push(`/bilibili/${item.bvid}`);
 };
 </script>
 

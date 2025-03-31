@@ -1,5 +1,5 @@
 import { is } from '@electron-toolkit/utils';
-import { app, BrowserWindow, ipcMain, session, shell } from 'electron';
+import { app, BrowserWindow, globalShortcut, ipcMain, session, shell } from 'electron';
 import Store from 'electron-store';
 import { join } from 'path';
 
@@ -112,6 +112,11 @@ export function createMainWindow(icon: Electron.NativeImage): BrowserWindow {
   if (is.dev && process.env.ELECTRON_RENDERER_URL) {
     mainWindow.webContents.openDevTools({ mode: 'detach' });
     mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
+
+    // 注册快捷键 打开开发者工具
+    globalShortcut.register('CommandOrControl+Shift+I', () => {
+      mainWindow.webContents.openDevTools({ mode: 'detach' });
+    });
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
   }
