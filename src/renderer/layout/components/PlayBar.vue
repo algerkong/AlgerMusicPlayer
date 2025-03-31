@@ -28,6 +28,8 @@
         :show-tooltip="showSliderTooltip"
         @mouseenter="showSliderTooltip = true"
         @mouseleave="showSliderTooltip = false"
+        @dragstart="handleSliderDragStart"
+        @dragend="handleSliderDragEnd"
       ></n-slider>
     </div>
     <div class="play-bar-img-wrapper" @click="setMusicFull">
@@ -199,7 +201,6 @@ import {
   nowTime,
   openLyric,
   playMusic,
-  sound,
   textColors
 } from '@/hooks/MusicHook';
 import { useArtist } from '@/hooks/useArtist';
@@ -233,17 +234,47 @@ watch(
 
 // 节流版本的 seek 函数
 const throttledSeek = useThrottleFn((value: number) => {
-  if (!sound.value) return;
-  sound.value.seek(value);
+  audioService.seek(value);
   nowTime.value = value;
 }, 50); // 50ms 的节流延迟
 
+// 拖动时的临时值，避免频繁更新 nowTime 触发重渲染
+const dragValue = ref(0);
+
+// 为滑块拖动添加状态跟踪
+const isDragging = ref(false);
+
 // 修改 timeSlider 计算属性
 const timeSlider = computed({
-  get: () => nowTime.value,
-  set: throttledSeek
+  get: () => (isDragging.value ? dragValue.value : nowTime.value),
+  set: (value) => {
+    if (isDragging.value) {
+      // 拖动中只更新临时值，不触发 nowTime 更新和 seek 操作
+      dragValue.value = value;
+      return;
+    }
+
+    // 点击操作 (非拖动)，可以直接 seek
+    throttledSeek(value);
+  }
 });
 
+// 添加滑块拖动开始和结束事件处理
+const handleSliderDragStart = () => {
+  isDragging.value = true;
+  // 初始化拖动值为当前时间
+  dragValue.value = nowTime.value;
+};
+
+const handleSliderDragEnd = () => {
+  isDragging.value = false;
+
+  // 直接应用最终的拖动值
+  audioService.seek(dragValue.value);
+  nowTime.value = dragValue.value;
+};
+
+// 格式化提示文本，根据拖动状态显示不同的时间
 const formatTooltip = (value: number) => {
   return `${secondToMinute(value)} / ${secondToMinute(allTime.value)}`;
 };
@@ -266,9 +297,8 @@ const getVolumeIcon = computed(() => {
 const volumeSlider = computed({
   get: () => audioVolume.value * 100,
   set: (value) => {
-    if (!sound.value) return;
     localStorage.setItem('volume', (value / 100).toString());
-    sound.value.volume(value / 100);
+    audioService.setVolume(value / 100);
     audioVolume.value = value / 100;
   }
 });

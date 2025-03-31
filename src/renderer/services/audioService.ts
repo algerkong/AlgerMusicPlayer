@@ -37,6 +37,10 @@ class AudioService {
 
   private retryCount = 0;
 
+  private seekLock = false;
+
+  private seekDebounceTimer: NodeJS.Timeout | null = null;
+
   constructor() {
     if ('mediaSession' in navigator) {
       this.initMediaSession();
@@ -61,21 +65,22 @@ class AudioService {
 
     navigator.mediaSession.setActionHandler('seekto', (event) => {
       if (event.seekTime && this.currentSound) {
-        this.currentSound.seek(event.seekTime);
+        // this.currentSound.seek(event.seekTime);
+        this.seek(event.seekTime);
       }
     });
 
     navigator.mediaSession.setActionHandler('seekbackward', (event) => {
       if (this.currentSound) {
         const currentTime = this.currentSound.seek() as number;
-        this.currentSound.seek(currentTime - (event.seekOffset || 10));
+        this.seek(currentTime - (event.seekOffset || 10));
       }
     });
 
     navigator.mediaSession.setActionHandler('seekforward', (event) => {
       if (this.currentSound) {
         const currentTime = this.currentSound.seek() as number;
-        this.currentSound.seek(currentTime + (event.seekOffset || 10));
+        this.seek(currentTime + (event.seekOffset || 10));
       }
     });
 
@@ -355,6 +360,11 @@ class AudioService {
   play(url?: string, track?: SongResult, isPlay: boolean = true): Promise<Howl> {
     // 如果没有提供新的 URL 和 track，且当前有音频实例，则继续播放
     if (this.currentSound && !url && !track) {
+      // 如果有进行中的seek操作，等待其完成
+      if (this.seekLock && this.seekDebounceTimer) {
+        clearTimeout(this.seekDebounceTimer);
+        this.seekLock = false;
+      }
       this.currentSound.play();
       return Promise.resolve(this.currentSound);
     }
@@ -396,6 +406,11 @@ class AudioService {
           // 先停止并清理现有的音频实例
           if (this.currentSound) {
             console.log('audioService: 停止并清理现有的音频实例');
+            // 确保任何进行中的seek操作被取消
+            if (this.seekLock && this.seekDebounceTimer) {
+              clearTimeout(this.seekDebounceTimer);
+              this.seekLock = false;
+            }
             this.currentSound.stop();
             this.currentSound.unload();
             this.currentSound = null;
@@ -511,6 +526,11 @@ class AudioService {
   stop() {
     if (this.currentSound) {
       try {
+        // 确保任何进行中的seek操作被取消
+        if (this.seekLock && this.seekDebounceTimer) {
+          clearTimeout(this.seekDebounceTimer);
+          this.seekLock = false;
+        }
         this.currentSound.stop();
         this.currentSound.unload();
       } catch (error) {
@@ -534,14 +554,26 @@ class AudioService {
 
   seek(time: number) {
     if (this.currentSound) {
-      this.currentSound.seek(time);
-      this.updateMediaSessionPositionState();
+      try {
+        // 直接执行seek操作，避免任何过滤或判断
+        this.currentSound.seek(time);
+        // 触发seek事件
+        this.updateMediaSessionPositionState();
+        this.emit('seek', time);
+      } catch (error) {
+        console.error('Seek操作失败:', error);
+      }
     }
   }
 
   pause() {
     if (this.currentSound) {
       try {
+        // 如果有进行中的seek操作，等待其完成
+        if (this.seekLock && this.seekDebounceTimer) {
+          clearTimeout(this.seekDebounceTimer);
+          this.seekLock = false;
+        }
         this.currentSound.pause();
       } catch (error) {
         console.error('Error pausing audio:', error);

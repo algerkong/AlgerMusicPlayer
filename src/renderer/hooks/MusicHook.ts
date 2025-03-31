@@ -60,6 +60,7 @@ const { message } = createDiscreteApi(['message']);
 // 全局变量
 let progressAnimationInitialized = false;
 let globalAnimationFrameId: number | null = null;
+const lastSavedTime = ref(0);
 
 // 全局停止函数
 const stopProgressAnimation = () => {
@@ -104,10 +105,21 @@ const updateProgress = () => {
 
     let currentTime;
     try {
+      // 获取当前播放位置
       currentTime = currentSound.seek() as number;
 
+      // 减少更新频率，避免频繁更新UI
+      const timeDiff = Math.abs(currentTime - nowTime.value);
+      if (timeDiff > 0.2 || Math.floor(currentTime) !== Math.floor(nowTime.value)) {
+        nowTime.value = currentTime;
+      }
+
       // 保存当前播放进度到 localStorage (每秒保存一次，避免频繁写入)
-      if (Math.floor(currentTime) % 2 === 0) {
+      if (
+        Math.floor(currentTime) % 2 === 0 &&
+        Math.floor(currentTime) !== Math.floor(lastSavedTime.value)
+      ) {
+        lastSavedTime.value = currentTime;
         if (playerStore.playMusic && playerStore.playMusic.id) {
           localStorage.setItem(
             'playProgress',
@@ -140,8 +152,10 @@ const updateProgress = () => {
     console.error('更新进度出错:', error);
   }
 
-  // 继续下一帧更新
-  globalAnimationFrameId = requestAnimationFrame(updateProgress);
+  // 继续下一帧更新，但降低更新频率为60帧中更新10帧
+  globalAnimationFrameId = setTimeout(() => {
+    requestAnimationFrame(updateProgress);
+  }, 100) as unknown as number;
 };
 
 // 全局启动函数
@@ -325,6 +339,37 @@ const setupAudioListeners = () => {
 
   // 清理所有事件监听器
   audioService.clearAllListeners();
+
+  // 监听seek开始事件，立即更新UI
+  audioService.on('seek_start', (time) => {
+    // 直接更新显示位置，不检查拖动状态
+    nowTime.value = time;
+  });
+
+  // 监听seek完成事件
+  audioService.on('seek', () => {
+    try {
+      const currentSound = sound.value;
+      if (currentSound) {
+        // 立即更新显示时间，不进行任何检查
+        const currentTime = currentSound.seek() as number;
+        if (typeof currentTime === 'number' && !Number.isNaN(currentTime)) {
+          nowTime.value = currentTime;
+
+          // 检查是否需要更新歌词
+          const newIndex = getLrcIndex(nowTime.value);
+          if (newIndex !== nowIndex.value) {
+            nowIndex.value = newIndex;
+            if (isElectron && isLyricWindowOpen.value) {
+              sendLyricToWin();
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('处理seek事件出错:', error);
+    }
+  });
 
   // 立即更新一次时间和进度（解决初始化时进度条不显示问题）
   const updateCurrentTimeAndDuration = () => {
