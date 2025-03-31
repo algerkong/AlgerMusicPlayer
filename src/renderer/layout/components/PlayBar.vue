@@ -521,7 +521,7 @@ const handleDeleteSong = (song: SongResult) => {
   if (song.id === playMusic.value.id) {
     playerStore.nextPlay();
   }
-  playerStore.removeFromPlayList(song.id);
+  playerStore.removeFromPlayList(song.id as number);
 };
 </script>
 
