@@ -165,11 +165,26 @@ const getSongDetail = async (playMusic: SongResult) => {
 
 const preloadNextSong = (nextSongUrl: string) => {
   try {
-    if (preloadingSounds.value.length >= 2) {
+    // 清理多余的预加载实例，确保最多只有2个预加载音频
+    while (preloadingSounds.value.length >= 2) {
       const oldestSound = preloadingSounds.value.shift();
       if (oldestSound) {
-        oldestSound.unload();
+        try {
+          oldestSound.stop();
+          oldestSound.unload();
+        } catch (e) {
+          console.error('清理预加载音频实例失败:', e);
+        }
       }
+    }
+
+    // 检查这个URL是否已经在预加载列表中
+    const existingPreload = preloadingSounds.value.find(
+      (sound) => (sound as any)._src === nextSongUrl
+    );
+    if (existingPreload) {
+      console.log('该音频已在预加载列表中，跳过:', nextSongUrl);
+      return existingPreload;
     }
 
     const sound = new Howl({
@@ -187,7 +202,12 @@ const preloadNextSong = (nextSongUrl: string) => {
       if (index > -1) {
         preloadingSounds.value.splice(index, 1);
       }
-      sound.unload();
+      try {
+        sound.stop();
+        sound.unload();
+      } catch (e) {
+        console.error('卸载预加载音频失败:', e);
+      }
     });
 
     return sound;
