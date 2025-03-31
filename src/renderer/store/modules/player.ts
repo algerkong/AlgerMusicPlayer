@@ -353,14 +353,15 @@ export const usePlayerStore = defineStore('player', () => {
 
   const setIsPlay = (value: boolean) => {
     isPlay.value = value;
+    play.value = value;
     localStorage.setItem('isPlaying', value.toString());
+    // 通知主进程播放状态变化
+    window.electron?.ipcRenderer.send('update-play-state', value);
   };
 
   const setPlayMusic = async (value: boolean | SongResult) => {
     if (typeof value === 'boolean') {
-      play.value = value;
-      isPlay.value = value;
-      localStorage.setItem('isPlaying', value.toString());
+      setIsPlay(value);
     } else {
       await handlePlayMusic(value);
       play.value = true;

@@ -11,6 +11,7 @@ const api = {
   restart: () => ipcRenderer.send('restart'),
   openLyric: () => ipcRenderer.send('open-lyric'),
   sendLyric: (data) => ipcRenderer.send('send-lyric', data),
+  sendSong: (data) => ipcRenderer.send('update-current-song', data),
   unblockMusic: (id) => ipcRenderer.invoke('unblock-music', id),
   // 歌词窗口关闭事件
   onLyricWindowClosed: (callback: () => void) => {

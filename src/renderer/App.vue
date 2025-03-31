@@ -11,6 +11,7 @@
 </template>
 
 <script setup lang="ts">
+import { cloneDeep } from 'lodash';
 import { darkTheme, lightTheme } from 'naive-ui';
 import { computed, nextTick, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -90,6 +91,7 @@ onMounted(async () => {
     // 使用 nextTick 确保 DOM 更新后再初始化
     await nextTick();
     initAudioListeners();
+    window.api.sendSong(cloneDeep(playerStore.playMusic));
   }
 });
 </script>

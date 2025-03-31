@@ -20,6 +20,7 @@ declare global {
       removeDownloadListeners: () => void;
       onLanguageChanged: (callback: (locale: string) => void) => void;
       invoke: (channel: string, ...args: any[]) => Promise<any>;
+      sendSong: (data: any) => void;
     };
     $message: any;
   }

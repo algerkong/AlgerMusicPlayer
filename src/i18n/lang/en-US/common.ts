@@ -41,7 +41,12 @@ export default {
   songCount: '{count} songs',
   tray: {
     show: 'Show',
-    quit: 'Quit'
+    quit: 'Quit',
+    playPause: 'Play/Pause',
+    prev: 'Previous',
+    next: 'Next',
+    pause: 'Pause',
+    play: 'Play'
   },
   language: 'Language'
 };

@@ -1,3 +1,4 @@
+import { cloneDeep } from 'lodash';
 import { createDiscreteApi } from 'naive-ui';
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 
@@ -394,6 +395,7 @@ const setupAudioListeners = () => {
   // 监听播放
   audioService.on('play', () => {
     playerStore.setPlayMusic(true);
+    window.api.sendSong(cloneDeep(playerStore.playMusic));
     clearInterval();
     interval = window.setInterval(() => {
       try {

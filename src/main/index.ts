@@ -9,7 +9,7 @@ import { initializeConfig } from './modules/config';
 import { initializeFileManager } from './modules/fileManager';
 import { initializeFonts } from './modules/fonts';
 import { initializeShortcuts, registerShortcuts } from './modules/shortcuts';
-import { initializeTray, updateTrayMenu } from './modules/tray';
+import { initializeTray, updateCurrentSong, updatePlayState, updateTrayMenu } from './modules/tray';
 import { setupUpdateHandlers } from './modules/update';
 import { createMainWindow, initializeWindowManager } from './modules/window';
 import { startMusicApi } from './server';
@@ -109,9 +109,19 @@ if (!isSingleInstance) {
     // 更新主进程的语言设置
     i18n.global.locale = locale;
     // 更新托盘菜单
-    updateTrayMenu();
+    updateTrayMenu(mainWindow);
     // 通知所有窗口语言已更改
     mainWindow?.webContents.send('language-changed', locale);
+  });
+
+  // 监听播放状态变化
+  ipcMain.on('update-play-state', (_, playing: boolean) => {
+    updatePlayState(playing);
+  });
+
+  // 监听当前歌曲变化
+  ipcMain.on('update-current-song', (_, song: any) => {
+    updateCurrentSong(song);
   });
 
   // 所有窗口关闭时的处理
