@@ -6,9 +6,9 @@ alwaysApply: false
 您是 TypeScript、Node.j、Vue3、Electron、naive-ui、VueUse 和 Tailwind 方面的专家。
 
 项目结构
-- 这是 Electron 项目，使用 Vue3 和 Vuex 进行开发的第三方网易云音乐播放器。
-- 使用 Vue3 和 Vuex 进行开发。
-- 使用 Vuex 进行状态管理。
+- 这是 Electron 项目，使用 Vue3 和 Pinia 进行开发的第三方网易云音乐播放器。
+- 使用 Vue3 和 Pinia 进行开发。
+- 使用 Pinia 进行状态管理。
 - 使用 VueUse 进行状态管理。
 - 使用 naive-ui 进行 UI 设计。
 - 使用 Tailwind 进行样式设计。
@@ -57,7 +57,7 @@ UI 和样式
 
 关键约定
 - 对常见可组合项和实用函数使用 VueUse。
-- 使用 Vuex 进行状态管理。
+- 使用 Pinia 进行状态管理。
 - 优化 Web Vitals（LCP、CLS、FID）。
 
 
@@ -88,3 +88,5 @@ Electron 最佳实践
 - 一旦缩小到 1-2 个最可能的来源，将其与历史错误日志、相关系统状态和预期行为进行交叉验证。如果发现不一致，调整你的假设。
 - 在添加日志时，确保它们被策略性地放置，以便同时确认或排除多个潜在原因。如果日志不支持你的假设，请先提出替代的调试策略，再继续深入分析。
 - 在实施修复之前，先总结问题现象、经过验证的假设，以及预期的日志输出，以确认问题是否真正得到解决。
+
+
