@@ -27,6 +27,16 @@
         <n-switch v-model:value="config.hidePlayBar" />
       </div>
 
+      <div class="settings-item">
+        <span>{{ t('settings.lyricSettings.hideMiniPlayBar') }}</span>
+        <n-switch v-model:value="config.hideMiniPlayBar" />
+      </div>
+
+      <div class="settings-item">
+        <span>{{ t('settings.lyricSettings.hideLyrics') }}</span>
+        <n-switch v-model:value="config.hideLyrics" />
+      </div>
+
       <div class="settings-slider">
         <span>{{ t('settings.lyricSettings.fontSize') }}</span>
         <n-slider
@@ -99,7 +109,9 @@ interface LyricConfig {
   showTranslation: boolean;
   theme: 'default' | 'light' | 'dark';
   hidePlayBar: boolean;
+  hideMiniPlayBar: boolean;
   pureModeEnabled: boolean;
+  hideLyrics: boolean;
 }
 
 const config = ref<LyricConfig>({
@@ -111,7 +123,9 @@ const config = ref<LyricConfig>({
   showTranslation: true,
   theme: 'default',
   hidePlayBar: false,
-  pureModeEnabled: false
+  hideMiniPlayBar: false,
+  pureModeEnabled: false,
+  hideLyrics: false
 });
 
 const emit = defineEmits(['themeChange']);

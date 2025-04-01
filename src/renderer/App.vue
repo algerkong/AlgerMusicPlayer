@@ -13,8 +13,9 @@
 <script setup lang="ts">
 import { cloneDeep } from 'lodash';
 import { darkTheme, lightTheme } from 'naive-ui';
-import { computed, nextTick, watch } from 'vue';
+import { computed, nextTick, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 
 import homeRouter from '@/router/home';
 import { useMenuStore } from '@/store/modules/menu';
@@ -24,11 +25,13 @@ import { isElectron, isLyricWindow } from '@/utils';
 
 import { initAudioListeners } from './hooks/MusicHook';
 import { isMobile } from './utils';
+import { initShortcut } from './utils/shortcut';
 
 const { locale } = useI18n();
 const settingsStore = useSettingsStore();
 const menuStore = useMenuStore();
 const playerStore = usePlayerStore();
+const router = useRouter();
 
 // 监听语言变化
 watch(
@@ -76,8 +79,26 @@ if (!isLyricWindow.value) {
 
 handleSetLanguage(settingsStore.setData.language);
 
+// 监听迷你模式状态
 if (isElectron) {
   window.api.onLanguageChanged(handleSetLanguage);
+  window.electron.ipcRenderer.on('mini-mode', (_, value) => {
+    settingsStore.setMiniMode(value);
+    if (value) {
+      // 存储当前路由
+      localStorage.setItem('currentRoute', router.currentRoute.value.path);
+      router.push('/mini');
+    } else {
+      // 恢复当前路由
+      const currentRoute = localStorage.getItem('currentRoute');
+      if (currentRoute) {
+        router.push(currentRoute);
+        localStorage.removeItem('currentRoute');
+      } else {
+        router.push('/');
+      }
+    }
+  });
 }
 
 onMounted(async () => {
@@ -93,6 +114,8 @@ onMounted(async () => {
     initAudioListeners();
     window.api.sendSong(cloneDeep(playerStore.playMusic));
   }
+  // 初始化快捷键
+  initShortcut();
 });
 </script>
 

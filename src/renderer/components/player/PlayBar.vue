@@ -204,14 +204,12 @@ import {
   textColors
 } from '@/hooks/MusicHook';
 import { useArtist } from '@/hooks/useArtist';
+import MusicFull from '@/layout/components/MusicFull.vue';
 import { audioService } from '@/services/audioService';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 import type { SongResult } from '@/type/music';
 import { getImgUrl, isElectron, isMobile, secondToMinute, setAnimationClass } from '@/utils';
-import { showShortcutToast } from '@/utils/shortcutToast';
-
-import MusicFull from './MusicFull.vue';
 
 const playerStore = usePlayerStore();
 const settingsStore = useSettingsStore();
@@ -448,60 +446,6 @@ const handleArtistClick = (id: number) => {
   musicFullVisible.value = false;
   navigateToArtist(id);
 };
-
-// 添加全局快捷键处理
-if (isElectron) {
-  window.electron.ipcRenderer.on('global-shortcut', (_, action: string) => {
-    console.log('action', action);
-    switch (action) {
-      case 'togglePlay':
-        playMusicEvent();
-        showShortcutToast(
-          play.value ? t('player.playBar.play') : t('player.playBar.pause'),
-          play.value ? 'ri-pause-circle-line' : 'ri-play-circle-line'
-        );
-        break;
-      case 'prevPlay':
-        handlePrev();
-        showShortcutToast(t('player.playBar.prev'), 'ri-skip-back-line');
-        break;
-      case 'nextPlay':
-        handleNext();
-        showShortcutToast(t('player.playBar.next'), 'ri-skip-forward-line');
-        break;
-      case 'volumeUp':
-        if (volumeSlider.value < 100) {
-          volumeSlider.value = Math.min(volumeSlider.value + 10, 100);
-          showShortcutToast(
-            `${t('player.playBar.volume')}${volumeSlider.value}%`,
-            'ri-volume-up-line'
-          );
-        }
-        break;
-      case 'volumeDown':
-        if (volumeSlider.value > 0) {
-          volumeSlider.value = Math.max(volumeSlider.value - 10, 0);
-          showShortcutToast(
-            `${t('player.playBar.volume')}${volumeSlider.value}%`,
-            'ri-volume-down-line'
-          );
-        }
-        break;
-      case 'toggleFavorite':
-        toggleFavorite(new Event('click'));
-        showShortcutToast(
-          isFavorite.value
-            ? t('player.playBar.favorite', { name: playMusic.value.name })
-            : t('player.playBar.unFavorite', { name: playMusic.value.name }),
-          isFavorite.value ? 'ri-heart-fill' : 'ri-heart-line'
-        );
-        break;
-      default:
-        console.log('未知的快捷键动作:', action);
-        break;
-    }
-  });
-}
 
 // 监听播放栏显示状态
 watch(

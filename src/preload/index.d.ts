@@ -11,7 +11,11 @@ declare global {
       close: () => void;
       dragStart: (data: string) => void;
       miniTray: () => void;
+      miniWindow: () => void;
+      restore: () => void;
       restart: () => void;
+      resizeWindow: (width: number, height: number) => void;
+      resizeMiniWindow: (showPlaylist: boolean) => void;
       unblockMusic: (id: number, data: any) => Promise<any>;
       onLyricWindowClosed: (callback: () => void) => void;
       startDownload: (url: string) => void;

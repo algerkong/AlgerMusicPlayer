@@ -535,7 +535,7 @@ export const pause = () => {
         );
       }
 
-      currentSound.pause();
+      audioService.pause();
     } catch (error) {
       console.error('暂停播放出错:', error);
     }

@@ -14,6 +14,9 @@
         下载桌面版
       </n-button>
       <template v-if="isElectron">
+        <div class="button" @click="miniWindow">
+          <i class="iconfont ri-picture-in-picture-line"></i>
+        </div>
         <div class="button" @click="minimize">
           <i class="iconfont icon-minisize"></i>
         </div>
@@ -76,6 +79,11 @@ const minimize = () => {
     return;
   }
   window.api.minimize();
+};
+
+const miniWindow = () => {
+  if (!isElectron) return;
+  window.api.miniWindow();
 };
 
 const handleAction = (action: 'minimize' | 'close') => {

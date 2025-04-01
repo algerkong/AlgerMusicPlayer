@@ -181,7 +181,9 @@ export default {
       default: 'Default',
       light: 'Light',
       dark: 'Dark'
-    }
+    },
+    hideMiniPlayBar: 'Hide Mini Play Bar',
+    hideLyrics: 'Hide Lyrics'
   },
   shortcutSettings: {
     title: 'Shortcut Settings',

@@ -1,9 +1,18 @@
 import { is } from '@electron-toolkit/utils';
-import { app, BrowserWindow, globalShortcut, ipcMain, session, shell } from 'electron';
+import { app, BrowserWindow, globalShortcut, ipcMain, screen, session, shell } from 'electron';
 import Store from 'electron-store';
 import { join } from 'path';
 
 const store = new Store();
+
+// 保存主窗口的大小和位置
+let mainWindowState = {
+  width: 1200,
+  height: 780,
+  x: undefined as number | undefined,
+  y: undefined as number | undefined,
+  isMaximized: false
+};
 
 /**
  * 初始化代理设置
@@ -71,9 +80,108 @@ export function initializeWindowManager() {
     }
   });
 
+  ipcMain.on('mini-window', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      // 保存当前窗口状态
+      const [width, height] = win.getSize();
+      const [x, y] = win.getPosition();
+      mainWindowState = {
+        width,
+        height,
+        x,
+        y,
+        isMaximized: win.isMaximized()
+      };
+
+      // 获取屏幕尺寸
+      const { width: screenWidth } = screen.getPrimaryDisplay().workAreaSize;
+
+      // 设置迷你窗口的大小和位置
+      win.unmaximize();
+      win.setMinimumSize(340, 64);
+      win.setMaximumSize(340, 64);
+      win.setSize(340, 64);
+      win.setPosition(screenWidth - 340, 20);
+      win.setAlwaysOnTop(true);
+      win.setSkipTaskbar(false);
+      win.setResizable(false);
+
+      // 导航到迷你模式路由
+      win.webContents.send('navigate', '/mini');
+
+      // 发送事件到渲染进程，通知切换到迷你模式
+      win.webContents.send('mini-mode', true);
+    }
+  });
+
+  // 恢复窗口
+  ipcMain.on('restore-window', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      // 恢复窗口的大小调整功能
+      win.setResizable(true);
+      win.setMaximumSize(0, 0);
+
+      // 恢复窗口的最小尺寸限制
+      win.setMinimumSize(1200, 780);
+
+      // 恢复窗口状态
+      if (mainWindowState.isMaximized) {
+        win.maximize();
+      } else {
+        win.setSize(mainWindowState.width, mainWindowState.height);
+        if (mainWindowState.x !== undefined && mainWindowState.y !== undefined) {
+          win.setPosition(mainWindowState.x, mainWindowState.y);
+        }
+      }
+
+      win.setAlwaysOnTop(false);
+      win.setSkipTaskbar(false);
+
+      // 导航回主页面
+      win.webContents.send('navigate', '/');
+
+      // 发送事件到渲染进程，通知退出迷你模式
+      win.webContents.send('mini-mode', false);
+    }
+  });
+
   // 监听代理设置变化
   store.onDidChange('set.proxyConfig', () => {
     initializeProxy();
+  });
+
+  // 监听窗口大小调整事件
+  ipcMain.on('resize-window', (event, width, height) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      // 设置窗口的大小
+      console.log(`调整窗口大小: ${width} x ${height}`);
+      win.setSize(width, height);
+    }
+  });
+
+  // 专门用于迷你模式下调整窗口大小的事件
+  ipcMain.on('resize-mini-window', (event, showPlaylist) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      if (showPlaylist) {
+        console.log('主进程: 扩大迷你窗口至 340 x 400');
+        // 调整最大尺寸限制，允许窗口变大
+        win.setMinimumSize(340, 64);
+        win.setMaximumSize(340, 400);
+        // 调整窗口尺寸
+        win.setSize(340, 400);
+      } else {
+        console.log('主进程: 缩小迷你窗口至 340 x 64');
+        // 强制重置尺寸限制，确保窗口可以缩小
+        win.setMaximumSize(340, 64);
+        win.setMinimumSize(340, 64);
+        // 调整窗口尺寸
+        win.setSize(340, 64);
+      }
+    }
   });
 }
 

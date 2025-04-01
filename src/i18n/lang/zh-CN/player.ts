@@ -48,7 +48,8 @@ export default {
     next: '下一首',
     volume: '音量',
     favorite: '已收藏{name}',
-    unFavorite: '已取消收藏{name}'
+    unFavorite: '已取消收藏{name}',
+    miniPlayBar: '迷你播放栏'
   },
   eq: {
     title: '均衡器',

@@ -181,7 +181,9 @@ export default {
       default: '默认',
       light: '亮色',
       dark: '暗色'
-    }
+    },
+    hideMiniPlayBar: '隐藏迷你播放栏',
+    hideLyrics: '隐藏歌词'
   },
   shortcutSettings: {
     title: '快捷键设置',

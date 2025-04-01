@@ -1,5 +1,6 @@
 body {
   /* background-color: #000; */
+  overflow: hidden;
 }
 
 .n-popover:has(.music-play) {

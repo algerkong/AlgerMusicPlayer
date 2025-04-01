@@ -20,6 +20,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const setData = ref(getInitialSettings());
   const theme = ref<ThemeType>(getCurrentTheme());
   const isMobile = ref(false);
+  const isMiniMode = ref(false);
   const showUpdateModal = ref(false);
   const showArtistDrawer = ref(false);
   const currentArtistId = ref<number | null>(null);
@@ -46,6 +47,10 @@ export const useSettingsStore = defineStore('settings', () => {
   const toggleTheme = () => {
     theme.value = theme.value === 'dark' ? 'light' : 'dark';
     applyTheme(theme.value);
+  };
+
+  const setMiniMode = (value: boolean) => {
+    isMiniMode.value = value;
   };
 
   const setShowUpdateModal = (value: boolean) => {
@@ -109,6 +114,7 @@ export const useSettingsStore = defineStore('settings', () => {
     setData,
     theme,
     isMobile,
+    isMiniMode,
     showUpdateModal,
     showArtistDrawer,
     currentArtistId,
@@ -116,6 +122,7 @@ export const useSettingsStore = defineStore('settings', () => {
     showDownloadDrawer,
     setSetData,
     toggleTheme,
+    setMiniMode,
     setShowUpdateModal,
     setShowArtistDrawer,
     setCurrentArtistId,

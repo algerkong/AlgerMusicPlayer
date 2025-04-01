@@ -25,16 +25,18 @@
         </div>
       </div>
       <!-- 底部音乐播放 -->
-      <play-bar
-        v-if="!isMobile"
-        v-show="isPlay"
-        :style="playerStore.musicFull ? 'bottom: 0;' : ''"
-      />
-      <mobile-play-bar
-        v-else
-        v-show="isPlay"
-        :style="isMobile && playerStore.musicFull ? 'bottom: 0;' : ''"
-      />
+      <template v-if="!settingsStore.isMiniMode">
+        <play-bar
+          v-if="!isMobile"
+          v-show="isPlay"
+          :style="playerStore.musicFull ? 'bottom: 0;' : ''"
+        />
+        <mobile-play-bar
+          v-else
+          v-show="isPlay"
+          :style="isMobile && playerStore.musicFull ? 'bottom: 0;' : ''"
+        />
+      </template>
       <!-- 下载管理抽屉 -->
       <download-drawer
         v-if="
@@ -76,8 +78,8 @@ const keepAliveInclude = computed(() =>
 );
 
 const AppMenu = defineAsyncComponent(() => import('./components/AppMenu.vue'));
-const PlayBar = defineAsyncComponent(() => import('./components/PlayBar.vue'));
-const MobilePlayBar = defineAsyncComponent(() => import('./components/MobilePlayBar.vue'));
+const PlayBar = defineAsyncComponent(() => import('@/components/player/PlayBar.vue'));
+const MobilePlayBar = defineAsyncComponent(() => import('@/components/player/MobilePlayBar.vue'));
 const SearchBar = defineAsyncComponent(() => import('./components/SearchBar.vue'));
 const TitleBar = defineAsyncComponent(() => import('./components/TitleBar.vue'));
 

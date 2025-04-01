@@ -29,8 +29,8 @@
       </n-popover>
 
       <div
-        v-show="!config.hideCover"
         class="music-img"
+        :class="{ 'only-cover': config.hideLyrics }"
         :style="{ color: textColors.theme === 'dark' ? '#000000' : '#ffffff' }"
       >
         <n-image
@@ -40,7 +40,7 @@
           lazy
           preview-disabled
         />
-        <div>
+        <div class="music-info">
           <div class="music-content-name">{{ playMusic.name }}</div>
           <div class="music-content-singer">
             <n-ellipsis
@@ -62,9 +62,21 @@
               </span>
             </n-ellipsis>
           </div>
+          <mini-play-bar
+            v-if="!config.hideMiniPlayBar"
+            class="mt-4"
+            :pure-mode-enabled="config.pureModeEnabled"
+          />
         </div>
       </div>
-      <div class="music-content" :class="{ center: config.centerLyrics && config.hideCover }">
+
+      <div
+        class="music-content"
+        :class="{
+          center: config.centerLyrics && config.hideCover,
+          hide: config.hideLyrics
+        }"
+      >
         <n-layout
           ref="lrcSider"
           class="music-lrc"
@@ -133,6 +145,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import LyricSettings from '@/components/lyric/LyricSettings.vue';
+import MiniPlayBar from '@/components/player/MiniPlayBar.vue';
 import {
   artistList,
   lrcArray,
@@ -169,6 +182,8 @@ interface LyricConfig {
   theme: 'default' | 'light' | 'dark';
   hidePlayBar: boolean;
   pureModeEnabled: boolean;
+  hideMiniPlayBar: boolean;
+  hideLyrics: boolean;
 }
 
 // 移除 computed 配置
@@ -181,7 +196,9 @@ const config = ref<LyricConfig>({
   showTranslation: true,
   theme: 'default',
   hidePlayBar: false,
-  pureModeEnabled: false
+  pureModeEnabled: false,
+  hideMiniPlayBar: false,
+  hideLyrics: false
 });
 
 // 监听设置组件的配置变化
@@ -545,17 +562,58 @@ defineExpose({
   animation-duration: 300ms;
 
   .music-img {
-    @apply flex-1 flex justify-center mr-16 flex-col;
+    @apply flex-1 flex justify-center mr-16 flex-col items-center;
     max-width: 360px;
     max-height: 360px;
+    transition: all 0.3s ease;
+
+    &.only-cover {
+      @apply mr-0 flex-initial;
+      max-width: none;
+      max-height: none;
+
+      .img {
+        @apply w-[50vh] h-[50vh] mb-8;
+      }
+
+      .music-info {
+        @apply text-center w-[600px];
+
+        .music-content-name {
+          @apply text-4xl mb-4;
+          color: var(--text-color-active);
+        }
+
+        .music-content-singer {
+          @apply text-xl mb-8 opacity-80;
+          color: var(--text-color-primary);
+        }
+      }
+    }
+
     .img {
-      @apply rounded-xl w-full h-full shadow-2xl;
+      @apply rounded-xl w-full h-full shadow-2xl transition-all duration-300;
+    }
+
+    .music-info {
+      @apply w-full mt-4;
+
+      .music-content-name {
+        @apply text-2xl font-bold;
+        color: var(--text-color-active);
+      }
+
+      .music-content-singer {
+        @apply text-base mt-2 opacity-80;
+        color: var(--text-color-primary);
+      }
     }
   }
 
   .music-content {
     @apply flex flex-col justify-center items-center relative;
     width: 500px;
+    transition: all 0.3s ease;
 
     &.center {
       @apply w-full;
@@ -567,12 +625,8 @@ defineExpose({
       }
     }
 
-    &-name {
-      @apply font-bold text-2xl pb-1 pt-4;
-    }
-
-    &-singer {
-      @apply text-base;
+    &.hide {
+      @apply hidden;
     }
   }
 
