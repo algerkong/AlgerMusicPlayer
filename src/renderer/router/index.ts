@@ -60,7 +60,7 @@ const router = createRouter({
 });
 
 // 添加全局前置守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _, next) => {
   const settingsStore = getSettingsStore();
 
   // 如果是迷你模式

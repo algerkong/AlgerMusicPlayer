@@ -117,7 +117,6 @@
 
 <script setup lang="ts">
 import { computed, provide, ref, useTemplateRef } from 'vue';
-import { useI18n } from 'vue-i18n';
 
 import SongItem from '@/components/common/SongItem.vue';
 import { allTime, artistList, nowTime, playMusic } from '@/hooks/MusicHook';
@@ -129,7 +128,6 @@ import { getImgUrl } from '@/utils';
 
 const playerStore = usePlayerStore();
 const settingsStore = useSettingsStore();
-const { t } = useI18n();
 const { navigateToArtist } = useArtist();
 
 withDefaults(

@@ -153,13 +153,12 @@ import { computed, ref, watch } from 'vue';
 
 import SongItem from '@/components/common/SongItem.vue';
 import { allTime, artistList, nowTime, playMusic, sound, textColors } from '@/hooks/MusicHook';
+import MusicFull from '@/layout/components/MusicFull.vue';
 import { audioService } from '@/services/audioService';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 import type { SongResult } from '@/type/music';
 import { getImgUrl, secondToMinute, setAnimationClass } from '@/utils';
-
-import MusicFull from './MusicFull.vue';
 
 const playerStore = usePlayerStore();
 const settingsStore = useSettingsStore();
