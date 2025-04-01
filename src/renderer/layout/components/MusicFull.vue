@@ -66,6 +66,7 @@
             v-if="!config.hideMiniPlayBar"
             class="mt-4"
             :pure-mode-enabled="config.pureModeEnabled"
+            component
           />
         </div>
       </div>

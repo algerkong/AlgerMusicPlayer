@@ -69,13 +69,13 @@
         </n-popover>
 
         <!-- 播放列表按钮 -->
-        <button class="function-button" @click="togglePlaylist">
+        <button v-if="!component" class="function-button" @click="togglePlaylist">
           <i class="iconfont icon-list"></i>
         </button>
       </div>
 
       <!-- 关闭按钮 -->
-      <button class="close-button" @click="handleClose">
+      <button v-if="!component" class="close-button" @click="handleClose">
         <i class="iconfont ri-close-line"></i>
       </button>
     </div>
@@ -93,6 +93,7 @@
 
     <!-- 播放列表 - 单独放在外层，不再使用 popover -->
     <div
+      v-if="!component"
       v-show="isPlaylistOpen"
       class="playlist-container"
       :class="{ 'mini-mode-list': settingsStore.isMiniMode }"
@@ -133,10 +134,10 @@ const { navigateToArtist } = useArtist();
 withDefaults(
   defineProps<{
     pureModeEnabled?: boolean;
-    showInfo?: boolean;
+    component?: boolean;
   }>(),
   {
-    showInfo: false
+    component: false
   }
 );
 
@@ -144,8 +145,6 @@ withDefaults(
 const handleClose = () => {
   if (settingsStore.isMiniMode) {
     window.api.restore();
-  } else {
-    window.api.close();
   }
 };
 
@@ -335,7 +334,7 @@ const setMusicFull = () => {
 
 <style lang="scss" scoped>
 .mini-play-bar {
-  @apply w-full flex flex-col bg-white dark:bg-dark-200 shadow-md bg-opacity-50 backdrop-blur dark:bg-opacity-50;
+  @apply w-full flex flex-col bg-light-200 dark:bg-dark-200 shadow-md bg-opacity-60 backdrop-blur dark:bg-opacity-60;
   height: 64px;
   border-radius: 8px;
   position: relative;
@@ -425,7 +424,7 @@ const setMusicFull = () => {
   height: 40px;
 
   .cover-img {
-    @apply w-full h-full rounded-md object-cover;
+    @apply w-full h-full rounded-md object-cover pointer-events-none;
   }
 }
 
@@ -449,7 +448,7 @@ const setMusicFull = () => {
 }
 
 .control-button {
-  @apply flex items-center justify-center rounded-full transition-all duration-200 border-0 bg-transparent cursor-pointer text-gray-400;
+  @apply flex items-center justify-center rounded-full transition-all duration-200 border-0 bg-transparent cursor-pointer text-gray-600;
   width: 32px;
   height: 32px;
 
