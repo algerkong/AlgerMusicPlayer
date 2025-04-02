@@ -101,3 +101,14 @@ export const isElectron = (window as any).electron !== undefined;
 export const isLyricWindow = computed(() => {
   return window.location.hash.includes('lyric');
 });
+
+export const getSetData = (): any => {
+  let setData = null;
+  if (window.electron) {
+    setData = window.electron.ipcRenderer.sendSync('get-store-value', 'set');
+  } else {
+    const settingsStore = useSettingsStore();
+    setData = settingsStore.setData;
+  }
+  return setData;
+};

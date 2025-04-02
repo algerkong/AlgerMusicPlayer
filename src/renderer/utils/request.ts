@@ -1,20 +1,10 @@
 import axios, { InternalAxiosRequestConfig } from 'axios';
 
-import { useSettingsStore } from '@/store/modules/settings';
 import { useUserStore } from '@/store/modules/user';
 
-import { isElectron } from '.';
+import { getSetData, isElectron } from '.';
 
 let setData: any = null;
-const getSetData = () => {
-  if (window.electron) {
-    setData = window.electron.ipcRenderer.sendSync('get-store-value', 'set');
-  } else {
-    const settingsStore = useSettingsStore();
-    setData = settingsStore.setData;
-  }
-  return setData;
-};
 
 // 扩展请求配置接口
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
@@ -39,7 +29,7 @@ const RETRY_DELAY = 500;
 // 请求拦截器
 request.interceptors.request.use(
   (config: CustomAxiosRequestConfig) => {
-    getSetData();
+    setData = getSetData();
     config.baseURL = window.electron
       ? `http://127.0.0.1:${setData?.musicApiPort}`
       : import.meta.env.VITE_API;

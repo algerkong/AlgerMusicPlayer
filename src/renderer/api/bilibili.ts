@@ -1,4 +1,5 @@
 import type { IBilibiliPlayUrl, IBilibiliVideoDetail } from '@/types/bilibili';
+import { getSetData, isElectron } from '@/utils';
 import request from '@/utils/request';
 
 interface ISearchParams {
@@ -121,10 +122,13 @@ export const getBilibiliPlayUrl = (
   });
 };
 
-// `http://127.0.0.1:30666/bilibili/stream-proxy?url=${encodeURIComponent(`https:${item.pic}`)}`,
 export const getBilibiliProxyUrl = (url: string) => {
+  const setData = getSetData();
+  const baseURL = isElectron
+    ? `http://127.0.0.1:${setData?.musicApiPort}`
+    : import.meta.env.VITE_API;
   const AUrl = url.startsWith('http') ? url : `https:${url}`;
-  return `${import.meta.env.VITE_API}/bilibili/stream-proxy?url=${encodeURIComponent(AUrl)}`;
+  return `${baseURL}/bilibili/stream-proxy?url=${encodeURIComponent(AUrl)}`;
 };
 
 export const getBilibiliAudioUrl = async (bvid: string, cid: number): Promise<string> => {
