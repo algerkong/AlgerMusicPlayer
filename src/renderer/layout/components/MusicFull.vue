@@ -29,6 +29,7 @@
       </n-popover>
 
       <div
+        v-if="!config.hideCover"
         class="music-img"
         :class="{ 'only-cover': config.hideLyrics }"
         :style="{ color: textColors.theme === 'dark' ? '#000000' : '#ffffff' }"
@@ -74,7 +75,7 @@
       <div
         class="music-content"
         :class="{
-          center: config.centerLyrics && config.hideCover,
+          center: config.centerLyrics,
           hide: config.hideLyrics
         }"
       >
@@ -159,6 +160,7 @@ import {
 import { useArtist } from '@/hooks/useArtist';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
+import { DEFAULT_LYRIC_CONFIG, LyricConfig } from '@/types/lyric';
 import { getImgUrl, isMobile } from '@/utils';
 import { animateGradient, getHoverBackgroundColor, getTextColors } from '@/utils/linearColor';
 
@@ -173,34 +175,8 @@ const isDark = ref(false);
 const showStickyHeader = ref(false);
 const lyricSettingsRef = ref<InstanceType<typeof LyricSettings>>();
 
-interface LyricConfig {
-  hideCover: boolean;
-  centerLyrics: boolean;
-  fontSize: number;
-  letterSpacing: number;
-  lineHeight: number;
-  showTranslation: boolean;
-  theme: 'default' | 'light' | 'dark';
-  hidePlayBar: boolean;
-  pureModeEnabled: boolean;
-  hideMiniPlayBar: boolean;
-  hideLyrics: boolean;
-}
-
 // 移除 computed 配置
-const config = ref<LyricConfig>({
-  hideCover: false,
-  centerLyrics: false,
-  fontSize: 22,
-  letterSpacing: 0,
-  lineHeight: 1.5,
-  showTranslation: true,
-  theme: 'default',
-  hidePlayBar: false,
-  pureModeEnabled: false,
-  hideMiniPlayBar: false,
-  hideLyrics: false
-});
+const config = ref<LyricConfig>({ ...DEFAULT_LYRIC_CONFIG });
 
 // 监听设置组件的配置变化
 watch(
@@ -617,7 +593,7 @@ defineExpose({
     transition: all 0.3s ease;
 
     &.center {
-      @apply w-full;
+      @apply w-auto;
       .music-lrc {
         @apply w-full max-w-3xl mx-auto;
       }

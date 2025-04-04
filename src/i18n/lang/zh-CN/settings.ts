@@ -183,7 +183,12 @@ export default {
       dark: '暗色'
     },
     hideMiniPlayBar: '隐藏迷你播放栏',
-    hideLyrics: '隐藏歌词'
+    hideLyrics: '隐藏歌词',
+    tabs: {
+      interface: '界面',
+      typography: '文字',
+      display: '显示'
+    }
   },
   shortcutSettings: {
     title: '快捷键设置',

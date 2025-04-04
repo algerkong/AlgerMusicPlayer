@@ -183,7 +183,12 @@ export default {
       dark: 'Dark'
     },
     hideMiniPlayBar: 'Hide Mini Play Bar',
-    hideLyrics: 'Hide Lyrics'
+    hideLyrics: 'Hide Lyrics',
+    tabs: {
+      interface: 'Interface',
+      display: 'Display',
+      typography: 'Typography'
+    }
   },
   shortcutSettings: {
     title: 'Shortcut Settings',

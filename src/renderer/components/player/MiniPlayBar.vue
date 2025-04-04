@@ -585,4 +585,16 @@ const setMusicFull = () => {
 .playlist-items {
   padding: 4px 0;
 }
+
+.dark {
+  .song-info {
+    .song-title {
+      color: var(--text-color-1, #fff);
+    }
+
+    .song-artist {
+      color: var(--text-color-2, #fff);
+    }
+  }
+}
 </style>
