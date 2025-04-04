@@ -59,7 +59,7 @@
               v-for="(line, index) in staticData.lrcArray"
               :key="index"
               class="lyric-line"
-              :style="lyricLineStyle"
+              :style="getDynamicLineStyle(line)"
               :class="{
                 'lyric-line-current': index === currentIndex,
                 'lyric-line-passed': index < currentIndex,
@@ -207,16 +207,41 @@ const wrapperStyle = computed(() => {
   // 计算容器中心点
   const containerCenter = containerHeight.value / 2;
 
-  // 计算当前行到顶部的距离（包含padding）
-  const currentLineTop =
-    currentIndex.value * lineHeight.value + containerHeight.value * 0.2 + lineHeight.value; // 加上顶部padding
+  // 计算每行的实际高度
+  const getLineHeight = (line: { text: string; trText: string }) => {
+    const baseHeight = lineHeight.value;
+    if (line.trText) {
+      const extraHeight = Math.round(fontSize.value * 0.6 * 1.4);
+      return baseHeight + extraHeight;
+    }
+    return baseHeight;
+  };
+
+  // 计算当前行之前所有行的累积高度
+  let accumulatedHeight = containerHeight.value * 0.2; // 顶部padding
+  for (let i = 0; i < currentIndex.value; i++) {
+    if (i < staticData.value.lrcArray.length) {
+      accumulatedHeight += getLineHeight(staticData.value.lrcArray[i]);
+    } else {
+      accumulatedHeight += lineHeight.value;
+    }
+  }
+
+  // 加上当前行的一半高度，使其居中
+  const currentLineHeight =
+    currentIndex.value < staticData.value.lrcArray.length
+      ? getLineHeight(staticData.value.lrcArray[currentIndex.value])
+      : lineHeight.value;
+  accumulatedHeight += currentLineHeight;
 
   // 计算偏移量，使当前行居中
-  const targetOffset = containerCenter - currentLineTop;
+  const targetOffset = containerCenter - accumulatedHeight;
 
   // 计算内容总高度（包含padding）
-  const contentHeight =
-    staticData.value.lrcArray.length * lineHeight.value + containerHeight.value * 0.4; // 上下padding各20vh
+  let contentHeight = containerHeight.value * 0.4; // 上下padding总和
+  for (const line of staticData.value.lrcArray) {
+    contentHeight += getLineHeight(line);
+  }
 
   // 计算最小和最大偏移量
   const minOffset = -(contentHeight - containerHeight.value);
@@ -231,9 +256,25 @@ const wrapperStyle = computed(() => {
   };
 });
 
-const lyricLineStyle = computed(() => ({
-  height: `${lineHeight.value}px`
-}));
+// 新增：根据是否有翻译文本动态计算每行的样式
+const getDynamicLineStyle = (line: { text: string; trText: string }) => {
+  // 默认行高
+  const defaultHeight = lineHeight.value;
+
+  // 如果有翻译文本，增加额外高度
+  if (line.trText) {
+    // 计算翻译文本的额外高度 (字体大小的0.6倍 * 行高比例1.4)
+    const extraHeight = Math.round(fontSize.value * 0.6 * 1.4);
+    return {
+      height: `${defaultHeight + extraHeight}px`
+    };
+  }
+
+  return {
+    height: `${defaultHeight}px`
+  };
+};
+
 // 更新容器高度和行高
 const updateContainerHeight = () => {
   if (!containerRef.value) return;
@@ -625,16 +666,22 @@ body {
 
   &.dark {
     --text-color: #ffffff;
-    --text-secondary: rgba(255, 255, 255, 0.6);
+    --text-secondary: #ffffffea;
     --highlight-color: #1db954;
     --control-bg: rgba(124, 124, 124, 0.3);
+    &:hover {
+      background: rgba(44, 44, 44, 0.466);
+    }
   }
 
   &.light {
     --text-color: #333333;
-    --text-secondary: rgba(51, 51, 51, 0.6);
+    --text-secondary: #39393989;
     --highlight-color: #1db954;
     --control-bg: rgba(255, 255, 255, 0.3);
+    &:hover {
+      background: rgba(0, 0, 0, 0.434);
+    }
   }
 }
 
