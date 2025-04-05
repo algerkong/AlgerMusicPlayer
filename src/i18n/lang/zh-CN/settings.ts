@@ -197,6 +197,8 @@ export default {
     shortcutConflict: '快捷键冲突',
     inputPlaceholder: '点击输入快捷键',
     resetShortcuts: '恢复默认',
+    disableAll: '全部禁用',
+    enableAll: '全部启用',
     togglePlay: '播放/暂停',
     prevPlay: '上一首',
     nextPlay: '下一首',
@@ -204,12 +206,18 @@ export default {
     volumeDown: '音量减少',
     toggleFavorite: '收藏/取消收藏',
     toggleWindow: '显示/隐藏窗口',
+    scopeGlobal: '全局',
+    scopeApp: '应用内',
+    enabled: '启用',
+    disabled: '禁用',
     messages: {
       resetSuccess: '已恢复默认快捷键，请记得保存',
       conflict: '存在冲突的快捷键，请重新设置',
       saveSuccess: '快捷键设置已保存',
       saveError: '保存快捷键失败，请重试',
-      cancelEdit: '已取消修改'
+      cancelEdit: '已取消修改',
+      disableAll: '已禁用所有快捷键，请记得保存',
+      enableAll: '已启用所有快捷键，请记得保存'
     }
   }
 };

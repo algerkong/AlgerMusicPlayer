@@ -197,6 +197,8 @@ export default {
     shortcutConflict: 'Shortcut Conflict',
     inputPlaceholder: 'Click to input shortcut',
     resetShortcuts: 'Reset',
+    disableAll: 'Disable All',
+    enableAll: 'Enable All',
     togglePlay: 'Play/Pause',
     prevPlay: 'Previous',
     nextPlay: 'Next',
@@ -204,12 +206,18 @@ export default {
     volumeDown: 'Volume Down',
     toggleFavorite: 'Favorite/Unfavorite',
     toggleWindow: 'Show/Hide Window',
+    scopeGlobal: 'Global',
+    scopeApp: 'App Only',
+    enabled: 'Enabled',
+    disabled: 'Disabled',
     messages: {
       resetSuccess: 'Shortcuts reset successfully, please save',
       conflict: 'Shortcut conflict, please reset',
       saveSuccess: 'Shortcuts saved successfully',
       saveError: 'Failed to save shortcuts',
-      cancelEdit: 'Edit cancelled'
+      cancelEdit: 'Edit cancelled',
+      disableAll: 'All shortcuts disabled, please save to apply',
+      enableAll: 'All shortcuts enabled, please save to apply'
     }
   }
 };

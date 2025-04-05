@@ -25,6 +25,7 @@ import { isElectron, isLyricWindow } from '@/utils';
 
 import { initAudioListeners } from './hooks/MusicHook';
 import { isMobile } from './utils';
+import { useAppShortcuts } from './utils/appShortcuts';
 import { initShortcut } from './utils/shortcut';
 
 const { locale } = useI18n();
@@ -100,6 +101,9 @@ if (isElectron) {
     }
   });
 }
+
+// 使用应用内快捷键
+useAppShortcuts();
 
 onMounted(async () => {
   if (isLyricWindow.value) {
