@@ -7,66 +7,93 @@ ipcMain.on('get-platform', (event) => {
   event.returnValue = process.platform;
 });
 
+// 定义快捷键配置接口
+export interface ShortcutConfig {
+  key: string;
+  enabled: boolean;
+  scope: 'global' | 'app';
+}
+
+export interface ShortcutsConfig {
+  [key: string]: ShortcutConfig;
+}
+
 // 定义默认快捷键
-export const defaultShortcuts = {
-  togglePlay: 'CommandOrControl+Alt+P',
-  prevPlay: 'CommandOrControl+Alt+Left',
-  nextPlay: 'CommandOrControl+Alt+Right',
-  volumeUp: 'CommandOrControl+Alt+Up',
-  volumeDown: 'CommandOrControl+Alt+Down',
-  toggleFavorite: 'CommandOrControl+Alt+L',
-  toggleWindow: 'CommandOrControl+Alt+Shift+M'
+export const defaultShortcuts: ShortcutsConfig = {
+  togglePlay: { key: 'CommandOrControl+Alt+P', enabled: true, scope: 'global' },
+  prevPlay: { key: 'Alt+Left', enabled: true, scope: 'global' },
+  nextPlay: { key: 'Alt+Right', enabled: true, scope: 'global' },
+  volumeUp: { key: 'Alt+Up', enabled: true, scope: 'app' },
+  volumeDown: { key: 'Alt+Down', enabled: true, scope: 'app' },
+  toggleFavorite: { key: 'CommandOrControl+Alt+L', enabled: true, scope: 'app' },
+  toggleWindow: { key: 'CommandOrControl+Alt+Shift+M', enabled: true, scope: 'global' }
 };
 
 let mainWindowRef: Electron.BrowserWindow | null = null;
 
 // 注册快捷键
-export function registerShortcuts(mainWindow: Electron.BrowserWindow) {
+export function registerShortcuts(
+  mainWindow: Electron.BrowserWindow,
+  shortcutsConfig?: ShortcutsConfig
+) {
   mainWindowRef = mainWindow;
   const store = getStore();
-  const shortcuts = store.get('shortcuts');
+  const shortcuts =
+    shortcutsConfig || (store.get('shortcuts') as ShortcutsConfig) || defaultShortcuts;
 
   // 注销所有已注册的快捷键
   globalShortcut.unregisterAll();
 
-  // 显示/隐藏主窗口
-  globalShortcut.register(shortcuts.toggleWindow, () => {
-    if (mainWindow.isVisible()) {
-      mainWindow.hide();
-    } else {
-      mainWindow.show();
+  // 对旧格式数据进行兼容处理
+  if (shortcuts && typeof shortcuts.togglePlay === 'string') {
+    // 将 shortcuts 强制转换为 unknown，再转为 Record<string, string>
+    const oldShortcuts = { ...shortcuts } as unknown as Record<string, string>;
+    const newShortcuts: ShortcutsConfig = {};
+
+    Object.entries(oldShortcuts).forEach(([key, value]) => {
+      newShortcuts[key] = {
+        key: value,
+        enabled: true,
+        scope: ['volumeUp', 'volumeDown', 'toggleFavorite'].includes(key) ? 'app' : 'global'
+      };
+    });
+
+    store.set('shortcuts', newShortcuts);
+    registerShortcuts(mainWindow, newShortcuts);
+    return;
+  }
+
+  // 注册全局快捷键
+  Object.entries(shortcuts).forEach(([action, config]) => {
+    const { key, enabled, scope } = config as ShortcutConfig;
+
+    // 只注册启用且作用域为全局的快捷键
+    if (!enabled || scope !== 'global') return;
+
+    try {
+      switch (action) {
+        case 'toggleWindow':
+          globalShortcut.register(key, () => {
+            if (mainWindow.isVisible()) {
+              mainWindow.hide();
+            } else {
+              mainWindow.show();
+            }
+          });
+          break;
+        default:
+          globalShortcut.register(key, () => {
+            mainWindow.webContents.send('global-shortcut', action);
+          });
+          break;
+      }
+    } catch (error) {
+      console.error(`注册快捷键 ${key} 失败:`, error);
     }
   });
 
-  // 播放/暂停
-  globalShortcut.register(shortcuts.togglePlay, () => {
-    mainWindow.webContents.send('global-shortcut', 'togglePlay');
-  });
-
-  // 上一首
-  globalShortcut.register(shortcuts.prevPlay, () => {
-    mainWindow.webContents.send('global-shortcut', 'prevPlay');
-  });
-
-  // 下一首
-  globalShortcut.register(shortcuts.nextPlay, () => {
-    mainWindow.webContents.send('global-shortcut', 'nextPlay');
-  });
-
-  // 音量增加
-  globalShortcut.register(shortcuts.volumeUp, () => {
-    mainWindow.webContents.send('global-shortcut', 'volumeUp');
-  });
-
-  // 音量减少
-  globalShortcut.register(shortcuts.volumeDown, () => {
-    mainWindow.webContents.send('global-shortcut', 'volumeDown');
-  });
-
-  // 收藏当前歌曲
-  globalShortcut.register(shortcuts.toggleFavorite, () => {
-    mainWindow.webContents.send('global-shortcut', 'toggleFavorite');
-  });
+  // 通知渲染进程更新应用内快捷键
+  mainWindow.webContents.send('update-app-shortcuts', shortcuts);
 }
 
 // 初始化快捷键
@@ -83,6 +110,13 @@ export function initializeShortcuts(mainWindow: Electron.BrowserWindow) {
   ipcMain.on('enable-shortcuts', () => {
     if (mainWindowRef) {
       registerShortcuts(mainWindowRef);
+    }
+  });
+
+  // 监听快捷键更新事件
+  ipcMain.on('update-shortcuts', (_, shortcutsConfig: ShortcutsConfig) => {
+    if (mainWindowRef) {
+      registerShortcuts(mainWindowRef, shortcutsConfig);
     }
   });
 }
