@@ -253,7 +253,7 @@ const togglePlaylist = () => {
 const scrollToPlayList = () => {
   setTimeout(() => {
     const currentIndex = playerStore.playListIndex;
-    const itemHeight = 52; // 每个列表项的高度
+    const itemHeight = 69; // 每个列表项的高度
     palyListRef.value?.scrollTo({
       top: currentIndex * itemHeight,
       behavior: 'smooth'
