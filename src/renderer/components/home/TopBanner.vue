@@ -61,18 +61,26 @@
               >
                 <div class="user-play-item-img">
                   <img :src="getImgUrl(item.coverImgUrl, '200y200')" alt="" />
-                  <div class="user-play-item-overlay">
-                    <div class="user-play-item-play-btn">
-                      <i class="iconfont icon-playfill text-3xl text-white"></i>
-                    </div>
-                  </div>
                   <div class="user-play-item-title">
                     <div class="user-play-item-title-name">{{ item.name }}</div>
+
+                    <div class="user-play-item-list">
+                      <div
+                        v-for="song in item.tracks"
+                        :key="song.id"
+                        class="user-play-item-list-name"
+                      >
+                        {{ song.name }}
+                      </div>
+                    </div>
                   </div>
                   <div class="user-play-item-count">
                     <div class="user-play-item-count-tag">
                       {{ t('common.songCount', { count: item.trackCount }) }}
                     </div>
+                  </div>
+                  <div class="user-play-item-direct-play" @click.stop="handlePlayPlaylist(item.id)">
+                    <i class="iconfont icon-playfill text-xl text-white"></i>
                   </div>
                 </div>
               </div>
@@ -142,13 +150,15 @@ import { useI18n } from 'vue-i18n';
 
 import { getDayRecommend, getHotSinger } from '@/api/home';
 import { getListDetail } from '@/api/list';
+import { getMusicDetail } from '@/api/music';
 import { getUserPlaylist } from '@/api/user';
 import MusicList from '@/components/MusicList.vue';
 import { useArtist } from '@/hooks/useArtist';
-import { useUserStore } from '@/store';
+import { usePlayerStore, useUserStore } from '@/store';
 import { IDayRecommend } from '@/type/day_recommend';
 import { Playlist } from '@/type/list';
 import type { IListDetail } from '@/type/listDetail';
+import { SongResult } from '@/type/music';
 import type { IHotSinger } from '@/type/singer';
 import {
   getImgUrl,
@@ -159,6 +169,7 @@ import {
 } from '@/utils';
 
 const userStore = useUserStore();
+const playerStore = usePlayerStore();
 
 const { t } = useI18n();
 
@@ -293,6 +304,93 @@ const toPlaylist = async (id: number) => {
   }
 };
 
+// 添加直接播放歌单的方法
+const handlePlayPlaylist = async (id: number) => {
+  try {
+    // 先显示加载状态
+    playlistLoading.value = true;
+
+    // 获取歌单详情
+    const { data } = await getListDetail(id);
+
+    if (data?.playlist) {
+      // 先使用已有的tracks开始播放（这些是已经在歌单详情中返回的前几首歌曲）
+      if (data.playlist.tracks?.length > 0) {
+        // 格式化歌曲列表
+        const initialSongs = data.playlist.tracks.map((track) => ({
+          ...track,
+          source: 'netease',
+          picUrl: track.al.picUrl
+        })) as unknown as SongResult[];
+
+        // 设置播放列表
+        playerStore.setPlayList(initialSongs);
+
+        // 开始播放第一首
+        await playerStore.setPlay(initialSongs[0]);
+
+        // 如果有trackIds，异步加载完整歌单
+        if (data.playlist.trackIds?.length > initialSongs.length) {
+          loadFullPlaylist(data.playlist.trackIds, initialSongs);
+        }
+      }
+    }
+
+    // 关闭加载状态
+    playlistLoading.value = false;
+  } catch (error) {
+    console.error('播放歌单失败:', error);
+    playlistLoading.value = false;
+  }
+};
+
+// 异步加载完整歌单
+const loadFullPlaylist = async (trackIds: { id: number }[], initialSongs: SongResult[]) => {
+  try {
+    // 获取已加载歌曲的ID集合，避免重复加载
+    const loadedIds = new Set(initialSongs.map((song) => song.id));
+
+    // 筛选出未加载的ID
+    const unloadedTrackIds = trackIds
+      .filter((item) => !loadedIds.has(item.id as number))
+      .map((item) => item.id);
+
+    if (unloadedTrackIds.length === 0) return;
+
+    // 分批获取歌曲详情，每批最多获取500首
+    const batchSize = 500;
+    const allSongs = [...initialSongs];
+
+    for (let i = 0; i < unloadedTrackIds.length; i += batchSize) {
+      const batchIds = unloadedTrackIds.slice(i, i + batchSize);
+      if (batchIds.length > 0) {
+        try {
+          const { data: songsData } = await getMusicDetail(batchIds);
+          if (songsData?.songs?.length) {
+            const formattedSongs = songsData.songs.map((item) => ({
+              ...item,
+              source: 'netease',
+              picUrl: item.al.picUrl
+            })) as unknown as SongResult[];
+
+            allSongs.push(...formattedSongs);
+          }
+        } catch (error) {
+          console.error('获取批次歌曲详情失败:', error);
+        }
+      }
+    }
+
+    // 更新完整的播放列表但保持当前播放的歌曲不变
+    if (allSongs.length > initialSongs.length) {
+      console.log('更新播放列表，总歌曲数:', allSongs.length);
+      playerStore.setPlayList(allSongs);
+    }
+  } catch (error) {
+    console.error('加载完整歌单失败:', error);
+  }
+};
+
 // 监听登录状态
 watchEffect(() => {
   if (userStore.user) {
@@ -416,17 +514,11 @@ const getPlaylistGridClass = (length: number) => {
       &:hover {
         transform: translateY(-5px);
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-        .user-play-item-overlay {
-          opacity: 1;
-        }
       }
 
       img {
         @apply absolute inset-0 w-full h-full object-cover;
       }
-    }
-    &-overlay {
-      @apply absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 transition-opacity duration-300;
     }
     &-title {
       @apply absolute top-0 left-0 right-0 p-2 bg-gradient-to-b from-black/70 to-transparent z-10;
@@ -435,9 +527,15 @@ const getPlaylistGridClass = (length: number) => {
       }
     }
     &-count {
-      @apply absolute bottom-2 right-2 z-10;
+      @apply absolute bottom-2 left-2 z-10;
       &-tag {
         @apply px-2 py-0.5 text-xs text-white bg-black/50 backdrop-blur-sm rounded-full;
+      }
+    }
+    &-direct-play {
+      @apply absolute bottom-2 right-2 z-20 w-10 h-10 rounded-full bg-green-600 hover:bg-green-700 flex items-center justify-center cursor-pointer transform scale-90 hover:scale-100 transition-all;
+      &:hover {
+        @apply shadow-lg;
       }
     }
     &-play-btn {
