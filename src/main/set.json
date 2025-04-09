@@ -20,5 +20,6 @@
   "autoPlay": false,
   "downloadPath": "",
   "language": "zh-CN",
-  "alwaysShowDownloadButton": false
+  "alwaysShowDownloadButton": false,
+  "unlimitedDownload": false
 }

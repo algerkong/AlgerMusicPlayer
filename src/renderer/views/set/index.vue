@@ -213,6 +213,19 @@
 
             <div class="set-item">
               <div>
+                <div class="set-item-title">{{ t('settings.application.unlimitedDownload') }}</div>
+                <div class="set-item-content">
+                  <n-switch v-model:value="setData.unlimitedDownload" class="mr-2">
+                    <template #checked>{{ t('common.on') }}</template>
+                    <template #unchecked>{{ t('common.off') }}</template>
+                  </n-switch>
+                  {{ t('settings.application.unlimitedDownloadDesc') }}
+                </div>
+              </div>
+            </div>
+
+            <div class="set-item">
+              <div>
                 <div class="set-item-title">{{ t('settings.application.downloadPath') }}</div>
                 <div class="set-item-content">
                   {{ setData.downloadPath || t('settings.application.downloadPathDesc') }}

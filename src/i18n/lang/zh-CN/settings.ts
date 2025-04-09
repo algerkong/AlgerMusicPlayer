@@ -71,6 +71,8 @@ export default {
     shortcutDesc: '自定义全局快捷键',
     download: '下载管理',
     downloadDesc: '是否始终显示下载列表按钮',
+    unlimitedDownload: '无限制下载',
+    unlimitedDownloadDesc: '开启后将无限制下载音乐（可能出现下载失败的情况）, 默认限制 300 首',
     downloadPath: '下载目录',
     downloadPathDesc: '选择音乐文件的下载位置'
   },

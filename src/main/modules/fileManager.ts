@@ -1,8 +1,13 @@
 import axios from 'axios';
-import { app, dialog, ipcMain, protocol, shell } from 'electron';
+import { app, dialog, ipcMain, Notification, protocol, shell } from 'electron';
 import Store from 'electron-store';
 import * as fs from 'fs';
+import * as http from 'http';
+import * as https from 'https';
+import * as NodeID3 from 'node-id3';
 import * as path from 'path';
+
+import { getStore } from './config';
 
 const MAX_CONCURRENT_DOWNLOADS = 3;
 const downloadQueue: { url: string; filename: string; songInfo: any; type?: string }[] = [];
@@ -269,7 +274,7 @@ function sanitizeFilename(filename: string): string {
 }
 
 /**
- * 下载音乐功能
+ * 下载音乐和歌词
  */
 async function downloadMusic(
   event: Electron.IpcMainEvent,
@@ -284,8 +289,11 @@ async function downloadMusic(
   let writer: fs.WriteStream | null = null;
 
   try {
-    const store = new Store();
-    const downloadPath = (store.get('set.downloadPath') as string) || app.getPath('downloads');
+    // 使用配置Store来获取设置
+    const configStore = getStore();
+    const downloadPath =
+      (configStore.get('set.downloadPath') as string) || app.getPath('downloads');
+    const apiPort = configStore.get('set.musicApiPort') || 30488;
 
     // 清理文件名中的非法字符
     const sanitizedFilename = sanitizeFilename(filename);
@@ -313,7 +321,9 @@ async function downloadMusic(
       url,
       method: 'GET',
       responseType: 'stream',
-      timeout: 30000 // 30秒超时
+      timeout: 30000, // 30秒超时
+      httpAgent: new http.Agent({ keepAlive: true }),
+      httpsAgent: new https.Agent({ keepAlive: true })
     });
 
     writer = fs.createWriteStream(finalFilePath);
@@ -351,9 +361,121 @@ async function downloadMusic(
       throw new Error('文件下载不完整');
     }
 
+    // 下载歌词
+    let lyricData = null;
+    let lyricsContent = '';
+    try {
+      if (songInfo?.id) {
+        // 下载歌词，使用配置的端口
+        const lyricsResponse = await axios.get(
+          `http://localhost:${apiPort}/lyric?id=${songInfo.id}`
+        );
+        if (lyricsResponse.data && (lyricsResponse.data.lrc || lyricsResponse.data.tlyric)) {
+          lyricData = lyricsResponse.data;
+
+          // 处理歌词内容
+          if (lyricsResponse.data.lrc && lyricsResponse.data.lrc.lyric) {
+            lyricsContent = lyricsResponse.data.lrc.lyric;
+
+            // 如果有翻译歌词，合并到主歌词中
+            if (lyricsResponse.data.tlyric && lyricsResponse.data.tlyric.lyric) {
+              // 解析原歌词和翻译
+              const originalLyrics = parseLyrics(lyricsResponse.data.lrc.lyric);
+              const translatedLyrics = parseLyrics(lyricsResponse.data.tlyric.lyric);
+
+              // 合并歌词
+              const mergedLyrics = mergeLyrics(originalLyrics, translatedLyrics);
+              lyricsContent = mergedLyrics;
+            }
+          }
+
+          // 不再单独写入歌词文件，只保存在ID3标签中
+          console.log('歌词已准备好，将写入ID3标签');
+        }
+      }
+    } catch (lyricError) {
+      console.error('下载歌词失败:', lyricError);
+      // 继续处理，不影响音乐下载
+    }
+
+    // 下载封面
+    let coverImageBuffer: Buffer | null = null;
+    try {
+      if (songInfo?.picUrl || songInfo?.al?.picUrl) {
+        const picUrl = songInfo.picUrl || songInfo.al?.picUrl;
+        if (picUrl && picUrl !== '/images/default_cover.png') {
+          const coverResponse = await axios({
+            url: picUrl.replace('http://', 'https://'),
+            method: 'GET',
+            responseType: 'arraybuffer',
+            timeout: 10000
+          });
+
+          // 获取封面图片的buffer
+          coverImageBuffer = Buffer.from(coverResponse.data);
+
+          // 不再单独保存封面文件，只保存在ID3标签中
+          console.log('封面已准备好，将写入ID3标签');
+        }
+      }
+    } catch (coverError) {
+      console.error('下载封面失败:', coverError);
+      // 继续处理，不影响音乐下载
+    }
+
+    // 在写入ID3标签前，先移除可能存在的旧标签
+    try {
+      NodeID3.removeTags(finalFilePath);
+    } catch (err) {
+      console.error('Error removing existing ID3 tags:', err);
+    }
+
+    // 强化ID3标签的写入格式
+
+    const artistNames =
+      (songInfo?.ar || songInfo?.song?.artists)?.map((a: any) => a.name).join('/ ') || '未知艺术家';
+    const tags = {
+      title: filename,
+      artist: artistNames,
+      TPE1: artistNames,
+      TPE2: artistNames,
+      album: songInfo?.al?.name || songInfo?.song?.album?.name || songInfo?.name || filename,
+      APIC: {
+        // 专辑封面
+        imageBuffer: coverImageBuffer,
+        type: {
+          id: 3,
+          name: 'front cover'
+        },
+        description: 'Album cover',
+        mime: 'image/jpeg'
+      },
+      USLT: {
+        // 歌词
+        language: 'chi',
+        description: 'Lyrics',
+        text: lyricsContent || ''
+      },
+      trackNumber: songInfo?.no || undefined,
+      year: songInfo?.publishTime
+        ? new Date(songInfo.publishTime).getFullYear().toString()
+        : undefined
+    };
+
+    try {
+      const success = NodeID3.write(tags, finalFilePath);
+      if (!success) {
+        console.error('Failed to write ID3 tags');
+      } else {
+        console.log('ID3 tags written successfully');
+      }
+    } catch (err) {
+      console.error('Error writing ID3 tags:', err);
+    }
+
     // 保存下载信息
     try {
-      const songInfos = store.get('downloadedSongs', {}) as Record<string, any>;
+      const songInfos = configStore.get('downloadedSongs', {}) as Record<string, any>;
       const defaultInfo = {
         name: filename,
         ar: [{ name: '本地音乐' }],
@@ -364,23 +486,47 @@ async function downloadMusic(
         id: songInfo?.id || 0,
         name: songInfo?.name || filename,
         filename,
-        picUrl: songInfo?.picUrl || defaultInfo.picUrl,
+        picUrl: songInfo?.picUrl || songInfo?.al?.picUrl || defaultInfo.picUrl,
         ar: songInfo?.ar || defaultInfo.ar,
+        al: songInfo?.al || {
+          picUrl: songInfo?.picUrl || defaultInfo.picUrl,
+          name: songInfo?.name || filename
+        },
         size: totalSize,
         path: finalFilePath,
         downloadTime: Date.now(),
-        al: songInfo?.al || { picUrl: songInfo?.picUrl || defaultInfo.picUrl },
-        type: type || 'mp3'
+        type: type || 'mp3',
+        lyric: lyricData
       };
 
       // 保存到下载记录
       songInfos[finalFilePath] = newSongInfo;
-      store.set('downloadedSongs', songInfos);
+      configStore.set('downloadedSongs', songInfos);
 
       // 添加到下载历史
       const history = downloadStore.get('history', []) as any[];
       history.unshift(newSongInfo);
       downloadStore.set('history', history);
+
+      // 发送桌面通知
+      try {
+        const artistNames =
+          (songInfo?.ar || songInfo?.song?.artists)?.map((a: any) => a.name).join('/') ||
+          '未知艺术家';
+        const notification = new Notification({
+          title: '下载完成',
+          body: `${songInfo?.name || filename} - ${artistNames}`,
+          silent: false
+        });
+
+        notification.on('click', () => {
+          shell.showItemInFolder(finalFilePath);
+        });
+
+        notification.show();
+      } catch (notifyError) {
+        console.error('发送通知失败:', notifyError);
+      }
 
       // 发送下载完成事件
       event.reply('music-download-complete', {
@@ -415,4 +561,57 @@ async function downloadMusic(
       filename
     });
   }
+}
+
+// 辅助函数 - 解析歌词文本成时间戳和内容的映射
+function parseLyrics(lyricsText: string): Map<string, string> {
+  const lyricMap = new Map<string, string>();
+  const lines = lyricsText.split('\n');
+
+  for (const line of lines) {
+    // 匹配时间标签，形如 [00:00.000]
+    const timeTagMatches = line.match(/\[\d{2}:\d{2}(\.\d{1,3})?\]/g);
+    if (!timeTagMatches) continue;
+
+    // 提取歌词内容（去除时间标签）
+    const content = line.replace(/\[\d{2}:\d{2}(\.\d{1,3})?\]/g, '').trim();
+    if (!content) continue;
+
+    // 将每个时间标签与歌词内容关联
+    for (const timeTag of timeTagMatches) {
+      lyricMap.set(timeTag, content);
+    }
+  }
+
+  return lyricMap;
+}
+
+// 辅助函数 - 合并原文歌词和翻译歌词
+function mergeLyrics(
+  originalLyrics: Map<string, string>,
+  translatedLyrics: Map<string, string>
+): string {
+  const mergedLines: string[] = [];
+
+  // 对每个时间戳，组合原始歌词和翻译
+  for (const [timeTag, originalContent] of originalLyrics.entries()) {
+    const translatedContent = translatedLyrics.get(timeTag);
+
+    // 添加原始歌词行
+    mergedLines.push(`${timeTag}${originalContent}`);
+
+    // 如果有翻译，添加翻译行（时间戳相同，这样可以和原歌词同步显示）
+    if (translatedContent) {
+      mergedLines.push(`${timeTag}${translatedContent}`);
+    }
+  }
+
+  // 按时间顺序排序
+  mergedLines.sort((a, b) => {
+    const timeA = a.match(/\[\d{2}:\d{2}(\.\d{1,3})?\]/)?.[0] || '';
+    const timeB = b.match(/\[\d{2}:\d{2}(\.\d{1,3})?\]/)?.[0] || '';
+    return timeA.localeCompare(timeB);
+  });
+
+  return mergedLines.join('\n');
 }

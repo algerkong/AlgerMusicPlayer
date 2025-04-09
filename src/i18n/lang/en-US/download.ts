@@ -1,6 +1,8 @@
 export default {
   title: 'Download Manager',
   localMusic: 'Local Music',
+  count: '{count} songs in total',
+  clearAll: 'Clear All',
   tabs: {
     downloading: 'Downloading',
     downloaded: 'Downloaded'
@@ -27,7 +29,17 @@ export default {
     confirm: 'Delete',
     cancel: 'Cancel',
     success: 'Successfully deleted',
-    failed: 'Failed to delete'
+    failed: 'Failed to delete',
+    fileNotFound: 'File not found or moved, removed from records',
+    recordRemoved: 'Failed to delete file, but removed from records'
+  },
+  clear: {
+    title: 'Clear Download Records',
+    message:
+      'Are you sure you want to clear all download records? This will not delete the actual music files, but will clear all records.',
+    confirm: 'Clear',
+    cancel: 'Cancel',
+    success: 'Download records cleared'
   },
   message: {
     downloadComplete: '{filename} download completed',
