@@ -13,6 +13,6 @@ export default {
     downloadFailed: '下载失败',
     downloadQueued: '已加入下载队列',
     addedToNextPlay: '已添加到下一首播放',
-    getUrlFailed: '获取音乐下载地址失败'
+    getUrlFailed: '获取音乐下载地址失败，请检查是否登录'
   }
 };

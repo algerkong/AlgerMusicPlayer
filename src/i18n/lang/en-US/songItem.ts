@@ -13,6 +13,6 @@ export default {
     downloadFailed: 'Download failed',
     downloadQueued: 'Added to download queue',
     addedToNextPlay: 'Added to play next',
-    getUrlFailed: 'Failed to get music download URL'
+    getUrlFailed: 'Failed to get music download URL, please check if logged in'
   }
 };

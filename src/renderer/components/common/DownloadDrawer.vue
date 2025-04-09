@@ -94,6 +94,17 @@
                 <n-empty :description="t('download.empty.noDownloaded')" />
               </div>
               <div v-else class="downloaded-content">
+                <div class="downloaded-header">
+                  <div class="header-title">
+                    {{ t('download.count', { count: downloadedList.length }) }}
+                  </div>
+                  <n-button secondary size="small" @click="showClearConfirm = true">
+                    <template #icon>
+                      <i class="iconfont ri-delete-bin-line mr-1"></i>
+                    </template>
+                    {{ t('download.clearAll') }}
+                  </n-button>
+                </div>
                 <div class="downloaded-items">
                   <div v-for="item in downList" :key="item.path" class="downloaded-item">
                     <div class="downloaded-item-content">
@@ -172,12 +183,38 @@
       }}</n-button>
     </template>
   </n-modal>
+
+  <!-- 清空确认对话框 -->
+  <n-modal
+    v-model:show="showClearConfirm"
+    preset="dialog"
+    type="warning"
+    :title="t('download.clear.title')"
+  >
+    <template #header>
+      <div class="flex items-center">
+        <i class="iconfont ri-delete-bin-line mr-2 text-xl"></i>
+        <span>{{ t('download.clear.title') }}</span>
+      </div>
+    </template>
+    <div class="delete-confirm-content">
+      {{ t('download.clear.message') }}
+    </div>
+    <template #action>
+      <n-button size="small" @click="showClearConfirm = false">{{
+        t('download.clear.cancel')
+      }}</n-button>
+      <n-button size="small" type="warning" @click="clearDownloadRecords">{{
+        t('download.clear.confirm')
+      }}</n-button>
+    </template>
+  </n-modal>
 </template>
 
 <script setup lang="ts">
 import type { ProgressStatus } from 'naive-ui';
 import { useMessage } from 'naive-ui';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { getMusicDetail } from '@/api/music';
@@ -320,27 +357,47 @@ const confirmDelete = async () => {
       'delete-downloaded-music',
       itemToDelete.value.path
     );
+
+    // 无论删除文件是否成功，都从记录中移除
+    localStorage.setItem(
+      'downloadedList',
+      JSON.stringify(
+        downloadedList.value.filter((item) => item.id !== (itemToDelete.value as DownloadedItem).id)
+      )
+    );
+    await refreshDownloadedList();
+
     if (success) {
-      localStorage.setItem(
-        'downloadedList',
-        JSON.stringify(
-          downloadedList.value.filter(
-            (item) => item.id !== (itemToDelete.value as DownloadedItem).id
-          )
-        )
-      );
-      await refreshDownloadedList();
       message.success(t('download.delete.success'));
     } else {
-      message.error(t('download.delete.failed'));
+      message.warning(t('download.delete.fileNotFound'));
     }
   } catch (error) {
     console.error('Failed to delete music:', error);
-    message.error(t('download.delete.failed'));
+    // 即使删除文件出错，也从记录中移除
+    localStorage.setItem(
+      'downloadedList',
+      JSON.stringify(
+        downloadedList.value.filter((item) => item.id !== (itemToDelete.value as DownloadedItem).id)
+      )
+    );
+    await refreshDownloadedList();
+    message.warning(t('download.delete.recordRemoved'));
   } finally {
     showDeleteConfirm.value = false;
     itemToDelete.value = null;
   }
+};
+
+// 清空下载记录相关
+const showClearConfirm = ref(false);
+
+// 清空下载记录
+const clearDownloadRecords = () => {
+  localStorage.setItem('downloadedList', '[]');
+  downloadedList.value = [];
+  message.success(t('download.clear.success'));
+  showClearConfirm.value = false;
 };
 
 // 播放音乐
@@ -421,6 +478,12 @@ onMounted(() => {
   // 监听下载进度
   window.electron.ipcRenderer.on('music-download-progress', (_, data) => {
     const existingItem = downloadList.value.find((item) => item.filename === data.filename);
+
+    // 如果进度为100%，将状态设置为已完成
+    if (data.progress === 100) {
+      data.status = 'completed';
+    }
+
     if (existingItem) {
       Object.assign(existingItem, {
         ...data,
@@ -523,9 +586,18 @@ const handleDrawerClose = () => {
   @apply flex-1 overflow-hidden pb-40;
 }
 
+.downloaded-header {
+  @apply flex items-center justify-between p-4 bg-light-100 dark:bg-dark-200 sticky top-0 z-10;
+  @apply border-b border-gray-100 dark:border-gray-800;
+
+  .header-title {
+    @apply text-sm font-medium text-gray-600 dark:text-gray-400;
+  }
+}
+
 .download-items,
 .downloaded-items {
-  @apply space-y-3;
+  @apply space-y-3 p-4;
 }
 
 .total-progress {

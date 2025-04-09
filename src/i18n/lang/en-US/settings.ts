@@ -71,6 +71,8 @@ export default {
     shortcutDesc: 'Customize global shortcuts',
     download: 'Download Management',
     downloadDesc: 'Always show download list button',
+    unlimitedDownload: 'Unlimited Download',
+    unlimitedDownloadDesc: 'Enable unlimited download mode for music , default limit 300 songs',
     downloadPath: 'Download Directory',
     downloadPathDesc: 'Choose download location for music files'
   },

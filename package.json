@@ -28,6 +28,7 @@
     "electron-updater": "^6.1.7",
     "font-list": "^1.5.1",
     "netease-cloud-music-api-alger": "^4.26.1",
+    "node-id3": "^0.2.9",
     "vue-i18n": "9"
   },
   "devDependencies": {

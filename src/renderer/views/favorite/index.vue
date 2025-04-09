@@ -193,11 +193,18 @@ const handleBatchDownload = async () => {
         failCount++;
         return;
       }
-
+      const songData = cloneDeep(song);
+      const songInfo = {
+        ...songData,
+        ar: songData.ar || songData.song?.artists,
+        downloadTime: Date.now()
+      };
+      console.log('songInfo', songInfo);
+      console.log('song', song);
       window.electron.ipcRenderer.send('download-music', {
         url,
         filename: `${song.name} - ${(song.ar || song.song?.artists)?.map((a) => a.name).join(',')}`,
-        songInfo: cloneDeep(song),
+        songInfo,
         type
       });
     });

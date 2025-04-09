@@ -95,6 +95,7 @@ import { getSongUrl } from '@/hooks/MusicListHook';
 import { useArtist } from '@/hooks/useArtist';
 import { audioService } from '@/services/audioService';
 import { usePlayerStore } from '@/store';
+import { useSettingsStore } from '@/store/modules/settings';
 import type { SongResult } from '@/type/music';
 import { getImgUrl, isElectron } from '@/utils';
 import { getImageBackground } from '@/utils/linearColor';
@@ -285,7 +286,14 @@ const downloadMusic = async () => {
   try {
     isDownloading.value = true;
 
-    const data = (await getSongUrl(props.item.id as number, cloneDeep(props.item), true)) as any;
+    const settingsStore = useSettingsStore();
+    const { unlimitedDownload } = settingsStore.setData;
+
+    const data = (await getSongUrl(
+      props.item.id as number,
+      cloneDeep(props.item),
+      unlimitedDownload
+    )) as any;
     if (!data || !data.url) {
       throw new Error(t('songItem.message.getUrlFailed'));
     }
@@ -293,14 +301,17 @@ const downloadMusic = async () => {
     // 构建文件名
     const artistNames = (props.item.ar || props.item.song?.artists)?.map((a) => a.name).join(',');
     const filename = `${props.item.name} - ${artistNames}`;
+    console.log('props.item', props.item);
 
+    const songData = cloneDeep(props.item);
+    songData.ar = songData.ar || songData.song?.artists;
     // 发送下载请求
     window.electron.ipcRenderer.send('download-music', {
       url: data.url,
       type: data.type,
       filename,
       songInfo: {
-        ...cloneDeep(props.item),
+        ...songData,
         downloadTime: Date.now()
       }
     });

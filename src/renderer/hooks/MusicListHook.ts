@@ -5,6 +5,7 @@ import { ref } from 'vue';
 import { getMusicLrc, getMusicUrl, getParsingMusicUrl } from '@/api/music';
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';
 import { audioService } from '@/services/audioService';
+import { useSettingsStore } from '@/store';
 import type { ILyric, ILyricText, SongResult } from '@/type/music';
 import { getImgUrl } from '@/utils';
 import { getImageLinearBackground } from '@/utils/linearColor';
@@ -13,12 +14,16 @@ const musicHistory = useMusicHistory();
 
 // 获取歌曲url
 export const getSongUrl = async (id: any, songData: any, isDownloaded: boolean = false) => {
-  const { data } = await getMusicUrl(id, isDownloaded);
+  const settingsStore = useSettingsStore();
+  const { unlimitedDownload } = settingsStore.setData;
+
+  const { data } = await getMusicUrl(id, !unlimitedDownload);
   let url = '';
   let songDetail = null;
+
   try {
     if (data.data[0].freeTrialInfo || !data.data[0].url) {
-      const res = await getParsingMusicUrl(id, songData);
+      const res = await getParsingMusicUrl(id, cloneDeep(songData));
       url = res.data.data.url;
       songDetail = res.data.data;
     } else {
