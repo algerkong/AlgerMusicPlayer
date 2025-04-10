@@ -95,7 +95,6 @@ import { getSongUrl } from '@/hooks/MusicListHook';
 import { useArtist } from '@/hooks/useArtist';
 import { audioService } from '@/services/audioService';
 import { usePlayerStore } from '@/store';
-import { useSettingsStore } from '@/store/modules/settings';
 import type { SongResult } from '@/type/music';
 import { getImgUrl, isElectron } from '@/utils';
 import { getImageBackground } from '@/utils/linearColor';
@@ -286,14 +285,7 @@ const downloadMusic = async () => {
   try {
     isDownloading.value = true;
 
-    const settingsStore = useSettingsStore();
-    const { unlimitedDownload } = settingsStore.setData;
-
-    const data = (await getSongUrl(
-      props.item.id as number,
-      cloneDeep(props.item),
-      unlimitedDownload
-    )) as any;
+    const data = (await getSongUrl(props.item.id as number, cloneDeep(props.item), true)) as any;
     if (!data || !data.url) {
       throw new Error(t('songItem.message.getUrlFailed'));
     }
