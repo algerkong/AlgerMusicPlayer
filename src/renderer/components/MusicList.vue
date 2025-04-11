@@ -12,15 +12,33 @@
   >
     <div class="music-page">
       <div class="music-header h-12 flex items-center justify-between">
-        <n-ellipsis :line-clamp="1">
+        <n-ellipsis :line-clamp="1" class="flex-shrink-0 mr-3">
           <div class="music-title">
             {{ name }}
           </div>
         </n-ellipsis>
-        <div class="music-close">
+
+        <!-- 搜索框 -->
+        <div class="flex-grow flex-1 flex items-center justify-end">
+          <div class="search-container">
+            <n-input
+              v-model:value="searchKeyword"
+              :placeholder="t('comp.musicList.searchSongs')"
+              clearable
+              round
+              size="small"
+            >
+              <template #prefix>
+                <i class="icon iconfont ri-search-line text-sm"></i>
+              </template>
+            </n-input>
+          </div>
+        </div>
+        <div class="music-close flex-shrink-0 ml-3">
           <i class="icon iconfont ri-close-line" @click="close"></i>
         </div>
       </div>
+
       <div class="music-content">
         <!-- 左侧歌单信息 -->
         <div class="music-info">
@@ -49,33 +67,36 @@
         <!-- 右侧歌曲列表 -->
         <div class="music-list-container">
           <div class="music-list">
-            <n-scrollbar @scroll="handleScroll">
-              <n-spin :show="loadingList || loading">
-                <div class="music-list-content">
-                  <div
-                    v-for="(item, index) in displayedSongs"
-                    :key="item.id"
-                    class="double-item"
-                    :class="setAnimationClass('animate__bounceInUp')"
-                    :style="getItemAnimationDelay(index)"
-                  >
-                    <song-item
-                      :item="formatSong(item)"
-                      :can-remove="canRemove"
-                      @play="handlePlay"
-                      @remove-song="(id) => emit('remove-song', id)"
-                    />
-                  </div>
-                  <div v-if="isLoadingMore" class="loading-more">
-                    {{ t('common.loadingMore') }}
-                  </div>
-                  <div v-if="!hasMore" class="loading-more">
-                    {{ t('common.noMore') }}
-                  </div>
-                  <play-bottom />
+            <n-spin :show="loadingList || loading">
+              <div class="music-list-content">
+                <div v-if="filteredSongs.length === 0 && searchKeyword" class="no-result">
+                  {{ t('comp.musicList.noSearchResults') }}
                 </div>
-              </n-spin>
-            </n-scrollbar>
+
+                <!-- 虚拟列表，设置正确的固定高度 -->
+                <n-virtual-list
+                  ref="songListRef"
+                  class="song-virtual-list"
+                  style="height: calc(70vh - 60px)"
+                  :items="filteredSongs"
+                  :item-size="70"
+                  item-resizable
+                  key-field="id"
+                  @scroll="handleVirtualScroll"
+                >
+                  <template #default="{ item }">
+                    <div class="double-item">
+                      <song-item
+                        :item="formatSong(item)"
+                        :can-remove="canRemove"
+                        @play="handlePlay"
+                        @remove-song="(id) => emit('remove-song', id)"
+                      />
+                    </div>
+                  </template>
+                </n-virtual-list>
+              </div>
+            </n-spin>
           </div>
           <play-bottom />
         </div>
@@ -85,19 +106,20 @@
 </template>
 
 <script setup lang="ts">
+import PinyinMatch from 'pinyin-match';
 import { computed, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { getMusicDetail } from '@/api/music';
 import SongItem from '@/components/common/SongItem.vue';
 import { usePlayerStore } from '@/store/modules/player';
-import { getImgUrl, isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
+import { SongResult } from '@/type/music';
+import { getImgUrl, isMobile, setAnimationClass } from '@/utils';
 
 import PlayBottom from './common/PlayBottom.vue';
 
 const { t } = useI18n();
 const playerStore = usePlayerStore();
-
 const props = withDefaults(
   defineProps<{
     show: boolean;
@@ -125,12 +147,14 @@ const emit = defineEmits(['update:show', 'update:loading', 'remove-song']);
 const page = ref(0);
 const pageSize = 40;
 const isLoadingMore = ref(false);
-const displayedSongs = ref<any[]>([]);
+const displayedSongs = ref<SongResult[]>([]);
 const loadingList = ref(false);
 const loadedIds = ref(new Set<number>()); // 用于追踪已加载的歌曲ID
 const isPlaylistLoading = ref(false); // 标记是否正在加载播放列表
-const completePlaylist = ref<any[]>([]); // 存储完整的播放列表
+const completePlaylist = ref<SongResult[]>([]); // 存储完整的播放列表
 const hasMore = ref(true); // 标记是否还有更多数据可加载
+const searchKeyword = ref(''); // 搜索关键词
+const isFullPlaylistLoaded = ref(false); // 标记完整播放列表是否已加载完成
 
 // 计算总数
 const total = computed(() => {
@@ -138,6 +162,43 @@ const total = computed(() => {
     return props.listInfo.trackIds.length;
   }
   return props.songList.length;
+});
+
+// 过滤歌曲列表
+const filteredSongs = computed(() => {
+  if (!searchKeyword.value) {
+    return displayedSongs.value;
+  }
+
+  const keyword = searchKeyword.value.toLowerCase().trim();
+  return displayedSongs.value.filter((song) => {
+    const songName = song.name?.toLowerCase() || '';
+    const albumName = song.al?.name?.toLowerCase() || '';
+    const artists = song.ar || song.artists || [];
+
+    // 原始文本匹配
+    const nameMatch = songName.includes(keyword);
+    const albumMatch = albumName.includes(keyword);
+    const artistsMatch = artists.some((artist: any) => {
+      return artist.name?.toLowerCase().includes(keyword);
+    });
+
+    // 拼音匹配
+    const namePinyinMatch = song.name && PinyinMatch.match(song.name, keyword);
+    const albumPinyinMatch = song.al?.name && PinyinMatch.match(song.al.name, keyword);
+    const artistsPinyinMatch = artists.some((artist: any) => {
+      return artist.name && PinyinMatch.match(artist.name, keyword);
+    });
+
+    return (
+      nameMatch ||
+      albumMatch ||
+      artistsMatch ||
+      namePinyinMatch ||
+      albumPinyinMatch ||
+      artistsPinyinMatch
+    );
+  });
 });
 
 // 格式化歌曲数据
@@ -163,25 +224,44 @@ const loadSongs = async (ids: number[], appendToList = true, updateComplete = fa
   if (ids.length === 0) return [];
 
   try {
+    console.log(`请求歌曲详情，ID数量: ${ids.length}`);
     const { data } = await getMusicDetail(ids);
-    if (data?.songs) {
-      // 更新已加载ID集合
-      const newSongs = data.songs.filter((song: any) => !loadedIds.value.has(song.id));
 
-      newSongs.forEach((song: any) => {
+    if (data?.songs) {
+      console.log(`API返回歌曲数量: ${data.songs.length}`);
+
+      // 直接使用API返回的所有歌曲，不再过滤已加载的歌曲
+      // 因为当需要完整加载列表时，我们希望获取所有歌曲，即使ID可能重复
+      const { songs } = data;
+
+      // 只在非更新完整列表时执行过滤
+      let newSongs = songs;
+      if (!updateComplete) {
+        // 在普通加载模式下继续过滤已加载的歌曲，避免重复
+        newSongs = songs.filter((song: any) => !loadedIds.value.has(song.id));
+        console.log(`过滤已加载ID后剩余歌曲数量: ${newSongs.length}`);
+      }
+
+      // 更新已加载ID集合
+      songs.forEach((song: any) => {
         loadedIds.value.add(song.id);
       });
 
+      // 追加到显示列表 - 仅当appendToList=true时添加到displayedSongs
       if (appendToList) {
         displayedSongs.value.push(...newSongs);
       }
 
+      // 更新完整播放列表 - 仅当updateComplete=true时添加到completePlaylist
       if (updateComplete) {
-        completePlaylist.value.push(...newSongs);
+        completePlaylist.value.push(...songs);
+        console.log(`已添加到完整播放列表，当前完整列表长度: ${completePlaylist.value.length}`);
       }
 
-      return newSongs;
+      return updateComplete ? songs : newSongs;
     }
+    console.log('API返回无歌曲数据');
+    return [];
   } catch (error) {
     console.error('加载歌曲失败:', error);
   }
@@ -191,39 +271,125 @@ const loadSongs = async (ids: number[], appendToList = true, updateComplete = fa
 
 // 加载完整播放列表
 const loadFullPlaylist = async () => {
-  if (isPlaylistLoading.value) return;
+  if (isPlaylistLoading.value || isFullPlaylistLoaded.value) return;
+
   isPlaylistLoading.value = true;
-  completePlaylist.value = [...displayedSongs.value]; // 先用当前已加载的歌曲初始化
+  // 记录开始时间
+  const startTime = Date.now();
+  console.log(`开始加载完整播放列表，当前显示列表长度: ${displayedSongs.value.length}`);
 
   try {
-    // 如果没有trackIds，直接使用当前歌曲列表
+    // 如果没有trackIds，直接使用当前歌曲列表并标记为已完成
     if (!props.listInfo?.trackIds) {
+      isFullPlaylistLoaded.value = true;
+      console.log('无trackIds信息，使用当前列表作为完整列表');
       return;
     }
 
-    // 获取所有未加载的歌曲ID
+    // 获取所有trackIds
     const allIds = props.listInfo.trackIds.map((item) => item.id);
-    const unloadedIds = allIds.filter((id) => !loadedIds.value.has(id));
+    console.log(`歌单共有歌曲ID: ${allIds.length}首`);
 
-    // 如果所有歌曲都已加载，直接返回
+    // 重置completePlaylist和当前显示歌曲ID集合，保证不会重复添加歌曲
+    completePlaylist.value = [];
+
+    // 使用Set记录所有已加载的歌曲ID
+    const loadedSongIds = new Set<number>();
+
+    // 将当前显示列表中的歌曲和ID添加到集合中
+    displayedSongs.value.forEach((song) => {
+      loadedSongIds.add(song.id as number);
+      // 将已有歌曲添加到completePlaylist
+      completePlaylist.value.push(song);
+    });
+
+    console.log(
+      `已有显示歌曲: ${displayedSongs.value.length}首，已有ID数量: ${loadedSongIds.size}`
+    );
+
+    // 过滤出尚未加载的歌曲ID
+    const unloadedIds = allIds.filter((id) => !loadedSongIds.has(id));
+    console.log(`还需要加载的歌曲ID数量: ${unloadedIds.length}`);
+
     if (unloadedIds.length === 0) {
+      console.log('所有歌曲已加载，无需再次加载');
+      isFullPlaylistLoaded.value = true;
+      hasMore.value = false;
       return;
     }
 
-    // 分批加载未加载的歌曲
+    // 分批加载所有未加载的歌曲
     const batchSize = 500; // 每批加载的歌曲数量
+
     for (let i = 0; i < unloadedIds.length; i += batchSize) {
       const batchIds = unloadedIds.slice(i, i + batchSize);
       if (batchIds.length === 0) continue;
 
-      await loadSongs(batchIds, false, true);
+      console.log(`请求第${Math.floor(i / batchSize) + 1}批歌曲，数量: ${batchIds.length}`);
+      // 关键修改: 设置appendToList为false，避免loadSongs直接添加到displayedSongs
+      const loadedBatch = await loadSongs(batchIds, false, false);
+
+      // 添加新加载的歌曲到displayedSongs
+      if (loadedBatch.length > 0) {
+        // 过滤掉已有的歌曲，确保不会重复添加
+        const newSongs = loadedBatch.filter((song) => !loadedSongIds.has(song.id as number));
+
+        // 更新已加载ID集合
+        newSongs.forEach((song) => {
+          loadedSongIds.add(song.id as number);
+        });
+
+        console.log(`新增${newSongs.length}首歌曲到显示列表`);
+
+        // 更新显示列表和完整播放列表
+        if (newSongs.length > 0) {
+          // 添加到显示列表
+          displayedSongs.value = [...displayedSongs.value, ...newSongs];
+
+          // 添加到完整播放列表
+          completePlaylist.value.push(...newSongs);
+
+          // 如果当前正在播放的列表与这个列表匹配，实时更新播放列表
+          const currentPlaylist = playerStore.playList;
+          if (currentPlaylist.length > 0 && currentPlaylist[0].id === displayedSongs.value[0]?.id) {
+            console.log('实时更新当前播放列表');
+            playerStore.setPlayList(displayedSongs.value.map(formatSong));
+          }
+        }
+      }
 
       // 添加小延迟避免请求过于密集
       if (i + batchSize < unloadedIds.length) {
-        // 使用 setTimeout 直接延迟，避免 Promise 相关的 linter 错误
         await new Promise<void>((resolve) => {
-          setTimeout(() => resolve(), 300);
+          setTimeout(() => resolve(), 100);
         });
+      }
+    }
+
+    // 加载完成，更新状态
+    isFullPlaylistLoaded.value = true;
+    hasMore.value = false;
+
+    // 计算加载耗时
+    const endTime = Date.now();
+    const timeUsed = Math.round(((endTime - startTime) / 1000) * 100) / 100;
+
+    console.log(
+      `完整播放列表加载完成，共加载${displayedSongs.value.length}首歌曲，耗时${timeUsed}秒`
+    );
+    console.log(`歌单应有${allIds.length}首歌，实际加载${displayedSongs.value.length}首`);
+
+    // 检查加载的歌曲数量是否与预期相符
+    if (displayedSongs.value.length !== allIds.length) {
+      console.warn(
+        `警告: 加载的歌曲数量(${displayedSongs.value.length})与歌单应有数量(${allIds.length})不符`
+      );
+
+      // 如果数量不符，可能是API未返回所有歌曲，打印缺失的歌曲ID
+      if (displayedSongs.value.length < allIds.length) {
+        const loadedIds = new Set(displayedSongs.value.map((song) => song.id));
+        const missingIds = allIds.filter((id) => !loadedIds.has(id));
+        console.warn(`缺失的歌曲ID: ${missingIds.join(', ')}`);
       }
     }
   } catch (error) {
@@ -234,17 +400,56 @@ const loadFullPlaylist = async () => {
 };
 
 // 处理播放
-const handlePlay = async () => {
-  // 先使用当前已加载的歌曲开始播放
-  playerStore.setPlayList(displayedSongs.value.map(formatSong));
-
-  // 在后台加载完整播放列表
-  loadFullPlaylist().then(() => {
-    // 加载完成后，更新播放列表为完整列表
-    if (completePlaylist.value.length > 0) {
-      playerStore.setPlayList(completePlaylist.value.map(formatSong));
+const handlePlay = async (item: any) => {
+  // 当搜索状态下播放时，只播放过滤后的歌曲
+  if (searchKeyword.value) {
+    playerStore.setPlayList(filteredSongs.value.map(formatSong));
+    // 设置当前歌曲为点击的歌曲
+    if (item) {
+      const index = filteredSongs.value.findIndex((song) => song.id === item.id);
+      if (index !== -1) {
+        // 直接播放对应的歌曲
+        playerStore.setPlay(filteredSongs.value[index]);
+      }
     }
-  });
+    return;
+  }
+
+  // 如果完整播放列表已加载完成
+  if (isFullPlaylistLoaded.value && completePlaylist.value.length > 0) {
+    playerStore.setPlayList(completePlaylist.value.map(formatSong));
+    // 设置当前歌曲为点击的歌曲
+    if (item) {
+      const index = completePlaylist.value.findIndex((song) => song.id === item.id);
+      if (index !== -1) {
+        // 直接播放对应的歌曲
+        playerStore.setPlay(completePlaylist.value[index]);
+      }
+    }
+    return;
+  }
+
+  // 如果完整播放列表未加载完成，先使用当前已加载的歌曲开始播放
+  playerStore.setPlayList(displayedSongs.value.map(formatSong));
+  // 设置当前歌曲为点击的歌曲
+  if (item) {
+    const index = displayedSongs.value.findIndex((song) => song.id === item.id);
+    if (index !== -1) {
+      // 直接播放对应的歌曲
+      playerStore.setPlay(displayedSongs.value[index]);
+    }
+  }
+
+  // 如果完整播放列表正在加载中，不需要重新触发加载
+  if (isPlaylistLoading.value) {
+    return;
+  }
+
+  // 在后台继续加载完整播放列表（如果未加载完成）
+  if (!isFullPlaylistLoaded.value) {
+    console.log('播放时继续在后台加载完整列表');
+    loadFullPlaylist();
+  }
 };
 
 const close = () => {
@@ -253,19 +458,27 @@ const close = () => {
 
 // 加载更多歌曲
 const loadMoreSongs = async () => {
-  // 检查是否正在加载或已经加载完成
+  if (isFullPlaylistLoaded.value) {
+    hasMore.value = false;
+    return;
+  }
+
+  if (searchKeyword.value) {
+    return;
+  }
+
   if (isLoadingMore.value || displayedSongs.value.length >= total.value) {
     hasMore.value = false;
     return;
   }
 
   isLoadingMore.value = true;
+
   try {
     const start = displayedSongs.value.length;
     const end = Math.min(start + pageSize, total.value);
 
     if (props.listInfo?.trackIds) {
-      // 获取这一批次需要加载的所有ID
       const trackIdsToLoad = props.listInfo.trackIds
         .slice(start, end)
         .map((item) => item.id)
@@ -275,7 +488,6 @@ const loadMoreSongs = async () => {
         await loadSongs(trackIdsToLoad, true, false);
       }
     } else if (start < props.songList.length) {
-      // 直接使用 songList 分页
       const newSongs = props.songList.slice(start, end);
       newSongs.forEach((song) => {
         if (!loadedIds.value.has(song.id)) {
@@ -285,7 +497,6 @@ const loadMoreSongs = async () => {
       });
     }
 
-    // 更新是否还有更多数据的状态
     hasMore.value = displayedSongs.value.length < total.value;
   } catch (error) {
     console.error('加载更多歌曲失败:', error);
@@ -295,26 +506,21 @@ const loadMoreSongs = async () => {
   }
 };
 
-// 修改滚动处理函数
-const handleScroll = (e: Event) => {
-  const target = e.target as HTMLElement;
-  if (!target) return;
+// 处理虚拟列表滚动事件
+const handleVirtualScroll = (e: any) => {
+  if (!e || !e.target) return;
 
-  const { scrollTop, scrollHeight, clientHeight } = target;
+  const { scrollTop, scrollHeight, clientHeight } = e.target;
   const threshold = 200;
 
   if (
     scrollHeight - scrollTop - clientHeight < threshold &&
     !isLoadingMore.value &&
-    hasMore.value
+    hasMore.value &&
+    !searchKeyword.value // 搜索状态下不触发加载更多
   ) {
     loadMoreSongs();
   }
-};
-
-const getItemAnimationDelay = (index: number) => {
-  const currentPageIndex = index % pageSize;
-  return setAnimationDelay(currentPageIndex, 20);
 };
 
 // 重置列表状态
@@ -325,6 +531,8 @@ const resetListState = () => {
   completePlaylist.value = [];
   hasMore.value = true;
   loadingList.value = false;
+  searchKeyword.value = ''; // 重置搜索关键词
+  isFullPlaylistLoaded.value = false; // 重置完整播放列表状态
 };
 
 // 初始化歌曲列表
@@ -338,6 +546,19 @@ const initSongList = (songs: any[]) => {
   // 检查是否还有更多数据可加载
   hasMore.value = displayedSongs.value.length < total.value;
 };
+
+// 监听组件显示状态，当显示时自动加载完整播放列表
+watch(
+  () => props.show,
+  (newValue) => {
+    if (newValue && !isFullPlaylistLoaded.value && !isPlaylistLoading.value) {
+      // 延迟一点时间再加载，让界面先渲染完毕
+      setTimeout(() => {
+        loadFullPlaylist();
+      }, 100);
+    }
+  }
+);
 
 // 修改 songList 监听器
 watch(
@@ -358,6 +579,14 @@ watch(
   },
   { immediate: true }
 );
+
+// 监听搜索关键词变化
+watch(searchKeyword, () => {
+  // 当搜索关键词为空时，考虑加载更多歌曲
+  if (!searchKeyword.value && hasMore.value && displayedSongs.value.length < total.value) {
+    loadMoreSongs();
+  }
+});
 
 // 组件卸载时清理状态
 onUnmounted(() => {
@@ -422,12 +651,34 @@ onUnmounted(() => {
     &-content {
       @apply min-h-[calc(80vh-60px)];
     }
+  }
+}
 
-    :deep(.n-virtual-list__scroll) {
-      scrollbar-width: none;
-      &::-webkit-scrollbar {
-        display: none;
-      }
+.search-container {
+  @apply max-w-md;
+
+  :deep(.n-input) {
+    @apply bg-light-200 dark:bg-dark-200;
+  }
+
+  .icon {
+    @apply text-gray-500 dark:text-gray-400;
+  }
+}
+
+.no-result {
+  @apply text-center py-8 text-gray-500 dark:text-gray-400;
+}
+
+/* 虚拟列表样式 */
+.song-virtual-list {
+  :deep(.n-virtual-list__scroll) {
+    scrollbar-width: thin;
+    &::-webkit-scrollbar {
+      width: 4px;
+    }
+    &::-webkit-scrollbar-thumb {
+      @apply bg-gray-400 dark:bg-gray-600 rounded;
     }
   }
 }
@@ -451,6 +702,18 @@ onUnmounted(() => {
     .music-detail {
       @apply flex-1 ml-4;
     }
+  }
+
+  .music-title {
+    @apply text-base;
+  }
+
+  .search-container {
+    @apply max-w-[50%];
+  }
+
+  .song-virtual-list {
+    height: calc(80vh - 120px) !important;
   }
 }
 

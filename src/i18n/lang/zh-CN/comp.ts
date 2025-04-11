@@ -99,5 +99,9 @@ export default {
   },
   userPlayList: {
     title: '{name}的常听'
+  },
+  musicList: {
+    searchSongs: '搜索歌曲',
+    noSearchResults: '没有找到相关歌曲'
   }
 };

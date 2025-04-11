@@ -29,6 +29,7 @@
     "font-list": "^1.5.1",
     "netease-cloud-music-api-alger": "^4.26.1",
     "node-id3": "^0.2.9",
+    "pinyin-match": "^1.2.6",
     "vue-i18n": "9"
   },
   "devDependencies": {
