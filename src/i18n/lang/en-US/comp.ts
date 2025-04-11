@@ -101,5 +101,9 @@ export default {
   },
   userPlayList: {
     title: "{name}'s Playlist"
+  },
+  musicList: {
+    searchSongs: 'Search Songs',
+    noSearchResults: 'No search results'
   }
 };

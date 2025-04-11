@@ -24,7 +24,9 @@ export interface SongResult {
   program?: any;
   alg?: string;
   ar: Artist[];
+  artists?: Artist[];
   al: Album;
+  album?: Album;
   count: number;
   playMusicUrl?: string;
   playLoading?: boolean;
