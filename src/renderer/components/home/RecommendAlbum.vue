@@ -26,7 +26,7 @@
       v-model:show="showMusic"
       :name="albumName"
       :song-list="songList"
-      :cover="false"
+      :cover="true"
       :loading="loadingList"
       :list-info="albumInfo"
     />
@@ -62,17 +62,19 @@ const handleClick = async (item: any) => {
   loadingList.value = true;
   showMusic.value = true;
   const res = await getAlbum(item.id);
-  songList.value = res.data.songs.map((song: any) => {
-    song.al.picUrl = song.al.picUrl || item.picUrl;
+  const { songs, album } = res.data;
+  songList.value = songs.map((song: any) => {
+    song.al.picUrl = song.al.picUrl || album.picUrl;
+    song.picUrl = song.al.picUrl || album.picUrl || song.picUrl;
     return song;
   });
   albumInfo.value = {
-    ...res.data.album,
+    ...album,
     creator: {
-      avatarUrl: res.data.album.artist.img1v1Url,
-      nickname: `${res.data.album.artist.name} - ${res.data.album.company}`
+      avatarUrl: album.artist.img1v1Url,
+      nickname: `${album.artist.name} - ${album.company}`
     },
-    description: res.data.album.description
+    description: album.description
   };
   loadingList.value = false;
 };

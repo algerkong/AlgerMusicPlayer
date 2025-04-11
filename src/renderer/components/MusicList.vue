@@ -44,7 +44,7 @@
         <div class="music-info">
           <div class="music-cover">
             <n-image
-              :src="getImgUrl(cover ? listInfo?.coverImgUrl : displayedSongs[0]?.picUrl, '500y500')"
+              :src="getCoverImgUrl"
               class="cover-img"
               preview-disabled
               :class="setAnimationClass('animate__fadeIn')"
@@ -164,6 +164,24 @@ const total = computed(() => {
   return props.songList.length;
 });
 
+const getCoverImgUrl = computed(() => {
+  if (props.listInfo?.coverImgUrl) {
+    return props.listInfo.coverImgUrl;
+  }
+
+  const song = props.songList[0];
+  if (song?.picUrl) {
+    return song.picUrl;
+  }
+  if (song?.al?.picUrl) {
+    return song.al.picUrl;
+  }
+  if (song?.album?.picUrl) {
+    return song.album.picUrl;
+  }
+  return '';
+});
+
 // 过滤歌曲列表
 const filteredSongs = computed(() => {
   if (!searchKeyword.value) {
@@ -203,6 +221,9 @@ const filteredSongs = computed(() => {
 
 // 格式化歌曲数据
 const formatSong = (item: any) => {
+  if (!item) {
+    return null;
+  }
   return {
     ...item,
     picUrl: item.al?.picUrl || item.picUrl,
