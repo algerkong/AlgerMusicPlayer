@@ -421,45 +421,21 @@ const loadFullPlaylist = async () => {
 };
 
 // 处理播放
-const handlePlay = async (item: any) => {
+const handlePlay = async () => {
   // 当搜索状态下播放时，只播放过滤后的歌曲
   if (searchKeyword.value) {
     playerStore.setPlayList(filteredSongs.value.map(formatSong));
-    // 设置当前歌曲为点击的歌曲
-    if (item) {
-      const index = filteredSongs.value.findIndex((song) => song.id === item.id);
-      if (index !== -1) {
-        // 直接播放对应的歌曲
-        playerStore.setPlay(filteredSongs.value[index]);
-      }
-    }
     return;
   }
 
   // 如果完整播放列表已加载完成
   if (isFullPlaylistLoaded.value && completePlaylist.value.length > 0) {
     playerStore.setPlayList(completePlaylist.value.map(formatSong));
-    // 设置当前歌曲为点击的歌曲
-    if (item) {
-      const index = completePlaylist.value.findIndex((song) => song.id === item.id);
-      if (index !== -1) {
-        // 直接播放对应的歌曲
-        playerStore.setPlay(completePlaylist.value[index]);
-      }
-    }
     return;
   }
 
   // 如果完整播放列表未加载完成，先使用当前已加载的歌曲开始播放
   playerStore.setPlayList(displayedSongs.value.map(formatSong));
-  // 设置当前歌曲为点击的歌曲
-  if (item) {
-    const index = displayedSongs.value.findIndex((song) => song.id === item.id);
-    if (index !== -1) {
-      // 直接播放对应的歌曲
-      playerStore.setPlay(displayedSongs.value[index]);
-    }
-  }
 
   // 如果完整播放列表正在加载中，不需要重新触发加载
   if (isPlaylistLoading.value) {
