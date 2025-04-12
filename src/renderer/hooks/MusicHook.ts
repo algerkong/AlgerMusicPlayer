@@ -395,7 +395,9 @@ const setupAudioListeners = () => {
   // 监听播放
   audioService.on('play', () => {
     playerStore.setPlayMusic(true);
-    window.api.sendSong(cloneDeep(playerStore.playMusic));
+    if (isElectron) {
+      window.api.sendSong(cloneDeep(playerStore.playMusic));
+    }
     clearInterval();
     interval = window.setInterval(() => {
       try {

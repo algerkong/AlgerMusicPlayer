@@ -116,7 +116,9 @@ onMounted(async () => {
     // 使用 nextTick 确保 DOM 更新后再初始化
     await nextTick();
     initAudioListeners();
-    window.api.sendSong(cloneDeep(playerStore.playMusic));
+    if (isElectron) {
+      window.api.sendSong(cloneDeep(playerStore.playMusic));
+    }
   }
   // 初始化快捷键
   initShortcut();
