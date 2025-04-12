@@ -544,19 +544,15 @@ const initSongList = (songs: any[]) => {
   hasMore.value = displayedSongs.value.length < total.value;
 };
 
-// 监听组件显示状态，当显示时自动加载完整播放列表
 watch(
-  () => props.show,
-  (newValue) => {
-    if (newValue && !isFullPlaylistLoaded.value && !isPlaylistLoading.value) {
-      // 延迟一点时间再加载，让界面先渲染完毕
-      setTimeout(() => {
-        loadFullPlaylist();
-      }, 100);
+  () => props.listInfo,
+  (newListInfo) => {
+    if (newListInfo?.trackIds) {
+      loadFullPlaylist();
     }
-  }
+  },
+  { deep: true }
 );
-
 // 修改 songList 监听器
 watch(
   () => props.songList,
