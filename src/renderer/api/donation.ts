@@ -15,6 +15,6 @@ export interface Donor {
  * 获取捐赠列表
  */
 export const getDonationList = async (): Promise<Donor[]> => {
-  const { data } = await axios.get('http://110.42.251.190:8766/api/donations');
+  const { data } = await axios.get('http://donate.alger.fun/api/donations');
   return data;
 };

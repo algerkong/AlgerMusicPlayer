@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 
+import { recordVisit } from '@/api/stats';
 import AppLayout from '@/layout/AppLayout.vue';
 import MiniLayout from '@/layout/MiniLayout.vue';
 import homeRouter from '@/router/home';
@@ -78,6 +79,15 @@ router.beforeEach((to, _, next) => {
     // 其他情况正常导航
     next();
   }
+});
+
+// 添加全局后置钩子，记录页面访问
+router.afterEach((to) => {
+  const pageName = to.name?.toString() || to.path;
+  // 使用setTimeout避免阻塞路由导航
+  setTimeout(() => {
+    recordVisit(pageName).catch((error) => console.error('记录页面访问失败:', error));
+  }, 100);
 });
 
 export default router;
