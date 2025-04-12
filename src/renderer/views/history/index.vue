@@ -56,7 +56,7 @@ const displayList = ref<SongResult[]>([]);
 const playerStore = usePlayerStore();
 
 // 无限滚动相关配置
-const pageSize = 20;
+const pageSize = 100;
 const currentPage = ref(1);
 
 // 获取当前页的音乐详情
