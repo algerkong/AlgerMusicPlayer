@@ -38,6 +38,10 @@ export interface SongResult {
     cid: number;
   };
   source?: 'netease' | 'bilibili';
+  // 过期时间
+  expiredAt?: number;
+  // 获取时间
+  createdAt?: number;
 }
 
 export interface Song {

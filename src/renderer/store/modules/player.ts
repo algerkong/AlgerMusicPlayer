@@ -153,7 +153,15 @@ const getSongDetail = async (playMusic: SongResult) => {
     return { ...playMusic, backgroundColor, primaryColor } as SongResult;
   }
 
+  if (playMusic.expiredAt && playMusic.expiredAt < Date.now()) {
+    console.info(`歌曲已过期，重新获取: ${playMusic.name}`);
+    playMusic.playMusicUrl = undefined;
+  }
+
   const playMusicUrl = playMusic.playMusicUrl || (await getSongUrl(playMusic.id, playMusic));
+  playMusic.createdAt = Date.now();
+  // 半小时后过期
+  playMusic.expiredAt = playMusic.createdAt + 1800000;
   const { backgroundColor, primaryColor } =
     playMusic.backgroundColor && playMusic.primaryColor
       ? playMusic
