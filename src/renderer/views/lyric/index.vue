@@ -172,6 +172,16 @@ const handleMouseLeave = () => {
   if (!lyricSetting.value.isLock) return;
   isHovering.value = false;
   windowData.electron.ipcRenderer.send('set-ignore-mouse', false);
+  
+  // 强制重置背景色
+  const lyricWindow = document.querySelector('.lyric-window') as HTMLElement;
+  if (lyricWindow) {
+    lyricWindow.style.background = 'transparent';
+    // 使用 requestAnimationFrame 确保在下一帧重置
+    requestAnimationFrame(() => {
+      lyricWindow.style.background = 'transparent';
+    });
+  }
 };
 
 // 监听锁定状态变化
@@ -633,8 +643,12 @@ const handleNext = () => {
 </script>
 
 <style scoped>
-body {
+html,
+body,
+#app {
   background-color: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
 }
 </style>
 
@@ -644,14 +658,13 @@ body {
   height: 100vh;
   position: relative;
   overflow: hidden;
-  background: transparent;
+  background: transparent !important;
   user-select: none;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.3s ease;
   cursor: default;
   border-radius: 14px;
 
   &:hover {
-    background: rgba(44, 44, 44, 0.466);
     .control-bar {
       &-show {
         opacity: 1;
@@ -670,7 +683,7 @@ body {
     --highlight-color: #1db954;
     --control-bg: rgba(124, 124, 124, 0.3);
     &:hover {
-      background: rgba(44, 44, 44, 0.466);
+      background: rgba(44, 44, 44, 0.466) !important;
     }
   }
 
@@ -680,7 +693,7 @@ body {
     --highlight-color: #1db954;
     --control-bg: rgba(255, 255, 255, 0.3);
     &:hover {
-      background: rgba(0, 0, 0, 0.434);
+      background: rgba(0, 0, 0, 0.434) !important;
     }
   }
 }

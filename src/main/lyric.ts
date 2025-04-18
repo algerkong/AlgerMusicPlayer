@@ -84,15 +84,18 @@ const createWin = () => {
     frame: false,
     show: false,
     transparent: true,
+    opacity: 1,
     hasShadow: false,
     alwaysOnTop: true,
     resizable: true,
+    roundedCorners: false,
     // 添加跨屏幕支持选项
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
       contextIsolation: true
-    }
+    },
+    backgroundColor: '#00000000'
   });
 
   // 监听窗口关闭事件
