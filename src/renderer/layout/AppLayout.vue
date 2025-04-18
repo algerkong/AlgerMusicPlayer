@@ -146,6 +146,7 @@ provide('openPlaylistDrawer', openPlaylistDrawer);
     overflow: auto;
     display: block;
     flex: none;
+    padding-bottom: 70px;
   }
 }
 </style>
