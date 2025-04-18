@@ -46,7 +46,7 @@
     "@vitejs/plugin-vue": "^5.0.5",
     "@vue/compiler-sfc": "^3.5.0",
     "@vue/eslint-config-prettier": "^9.0.0",
-    "@vue/eslint-config-typescript": "^13.0.0",
+    "@vue/eslint-config-typescript": "^14.5.0",
     "@vue/runtime-core": "^3.5.0",
     "@vueuse/core": "^11.3.0",
     "@vueuse/electron": "^11.3.0",
