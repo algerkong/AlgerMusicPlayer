@@ -3,7 +3,7 @@ description: 这个规则是项目描述
 globs: 
 alwaysApply: false
 ---
-您是 TypeScript、Node.j、Vue3、Electron、naive-ui、VueUse 和 Tailwind 方面的专家。
+您是 TypeScript、Node.js、Vue3、Electron、naive-ui、VueUse 和 Tailwind 方面的专家。
 
 项目结构
 - 这是 Electron 项目，使用 Vue3 和 Pinia 进行开发的第三方网易云音乐播放器。
