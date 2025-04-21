@@ -122,20 +122,37 @@ export function initializeFileManager() {
   });
 
   // 获取已下载音乐列表
-  ipcMain.handle('get-downloaded-music', () => {
+  ipcMain.handle('get-downloaded-music', async () => {
     try {
       const store = new Store();
       const songInfos = store.get('downloadedSongs', {}) as Record<string, any>;
 
-      // 过滤出实际存在的文件
-      const validSongs = Object.entries(songInfos)
-        .filter(([path]) => fs.existsSync(path))
-        .map(([_, info]) => info)
+      // 异步处理文件存在性检查
+      const entriesArray = Object.entries(songInfos);
+      const validEntriesPromises = await Promise.all(
+        entriesArray.map(async ([path, info]) => {
+          try {
+            const exists = await fs.promises.access(path)
+              .then(() => true)
+              .catch(() => false);
+            return exists ? info : null;
+          } catch (error) {
+            console.error('Error checking file existence:', error);
+            return null;
+          }
+        })
+      );
+
+      // 过滤有效的歌曲并排序
+      const validSongs = validEntriesPromises
+        .filter(song => song !== null)
         .sort((a, b) => (b.downloadTime || 0) - (a.downloadTime || 0));
 
       // 更新存储，移除不存在的文件记录
       const newSongInfos = validSongs.reduce((acc, song) => {
-        acc[song.path] = song;
+        if (song && song.path) {
+          acc[song.path] = song;
+        }
         return acc;
       }, {});
       store.set('downloadedSongs', newSongInfos);
@@ -173,6 +190,13 @@ export function initializeFileManager() {
   // 添加清除下载历史的处理函数
   ipcMain.on('clear-downloads-history', () => {
     downloadStore.set('history', []);
+  });
+
+  // 添加清除已下载音乐记录的处理函数
+  ipcMain.handle('clear-downloaded-music', () => {
+    const store = new Store();
+    store.set('downloadedSongs', {});
+    return true;
   });
 
   // 添加清除音频缓存的处理函数

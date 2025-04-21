@@ -90,7 +90,11 @@
           <!-- 已下载列表 -->
           <n-tab-pane name="downloaded" :tab="t('download.tabs.downloaded')" class="h-full">
             <div class="downloaded-list">
-              <div v-if="downloadedList.length === 0" class="empty-tip">
+              <div v-if="isLoadingDownloaded" class="loading-tip">
+                <n-spin size="medium" />
+                <span class="loading-text">{{ t('download.loading') }}</span>
+              </div>
+              <div v-else-if="downloadedList.length === 0" class="empty-tip">
                 <n-empty :description="t('download.empty.noDownloaded')" />
               </div>
               <div v-else class="downloaded-content">
@@ -262,9 +266,7 @@ const downloadedList = ref<DownloadedItem[]>(
   JSON.parse(localStorage.getItem('downloadedList') || '[]')
 );
 
-const downList = computed(() => {
-  return (downloadedList.value as DownloadedItem[]).reverse();
-});
+const downList = computed(() => downloadedList.value);
 
 // 计算下载中的任务数量
 const downloadingCount = computed(() => {
@@ -350,38 +352,25 @@ const handleDelete = (item: DownloadedItem) => {
 
 // 确认删除
 const confirmDelete = async () => {
-  if (!itemToDelete.value) return;
+  const item = itemToDelete.value;
+  if (!item) return;
 
   try {
     const success = await window.electron.ipcRenderer.invoke(
       'delete-downloaded-music',
-      itemToDelete.value.path
+      item.path
     );
-
-    // 无论删除文件是否成功，都从记录中移除
-    localStorage.setItem(
-      'downloadedList',
-      JSON.stringify(
-        downloadedList.value.filter((item) => item.id !== (itemToDelete.value as DownloadedItem).id)
-      )
-    );
-    await refreshDownloadedList();
 
     if (success) {
+      const newList = downloadedList.value.filter(i => i.id !== item.id);
+      downloadedList.value = newList;
+      localStorage.setItem('downloadedList', JSON.stringify(newList));
       message.success(t('download.delete.success'));
     } else {
       message.warning(t('download.delete.fileNotFound'));
     }
   } catch (error) {
     console.error('Failed to delete music:', error);
-    // 即使删除文件出错，也从记录中移除
-    localStorage.setItem(
-      'downloadedList',
-      JSON.stringify(
-        downloadedList.value.filter((item) => item.id !== (itemToDelete.value as DownloadedItem).id)
-      )
-    );
-    await refreshDownloadedList();
     message.warning(t('download.delete.recordRemoved'));
   } finally {
     showDeleteConfirm.value = false;
@@ -393,11 +382,18 @@ const confirmDelete = async () => {
 const showClearConfirm = ref(false);
 
 // 清空下载记录
-const clearDownloadRecords = () => {
-  localStorage.setItem('downloadedList', '[]');
-  downloadedList.value = [];
-  message.success(t('download.clear.success'));
-  showClearConfirm.value = false;
+const clearDownloadRecords = async () => {
+  try {
+    downloadedList.value = [];
+    localStorage.setItem('downloadedList', '[]');
+    await window.electron.ipcRenderer.invoke('clear-downloaded-music');
+    message.success(t('download.clear.success'));
+  } catch (error) {
+    console.error('Failed to clear download records:', error);
+    message.error(t('download.clear.failed'));
+  } finally {
+    showClearConfirm.value = false;
+  }
 };
 
 // 播放音乐
@@ -407,65 +403,64 @@ const clearDownloadRecords = () => {
 //   playerStore.setIsPlay(true);
 // };
 
+// 添加加载状态
+const isLoadingDownloaded = ref(false);
+
 // 获取已下载音乐列表
 const refreshDownloadedList = async () => {
+  if (isLoadingDownloaded.value) return; // 防止重复加载
+  
   try {
-    let saveList: any = [];
+    isLoadingDownloaded.value = true;
     const list = await window.electron.ipcRenderer.invoke('get-downloaded-music');
+    
     if (!Array.isArray(list) || list.length === 0) {
-      saveList = [];
+      downloadedList.value = [];
+      localStorage.setItem('downloadedList', '[]');
       return;
     }
 
-    const songIds = list.filter((item) => item.id).map((item) => item.id);
-
-    // 如果有歌曲ID，获取详细信息
-    if (songIds.length > 0) {
-      try {
-        const detailRes = await getMusicDetail(songIds);
-        const songDetails = detailRes.data.songs.reduce((acc, song) => {
-          acc[song.id] = song;
-          return acc;
-        }, {});
-
-        saveList = list.map((item) => {
-          const songDetail = songDetails[item.id];
-          return {
-            ...item,
-            picUrl: songDetail?.al?.picUrl || item.picUrl || '/images/default_cover.png',
-            ar: songDetail?.ar || item.ar || [{ name: t('download.localMusic') }]
-          };
-        });
-      } catch (detailError) {
-        console.error('Failed to get music details:', detailError);
-        saveList = list;
-      }
-    } else {
-      saveList = list;
+    const songIds = list.filter(item => item.id).map(item => item.id);
+    if (songIds.length === 0) {
+      downloadedList.value = list;
+      localStorage.setItem('downloadedList', JSON.stringify(list));
+      return;
     }
-    setLocalDownloadedList(saveList);
+
+    try {
+      const detailRes = await getMusicDetail(songIds);
+      const songDetails = detailRes.data.songs.reduce((acc, song) => {
+        acc[song.id] = song;
+        return acc;
+      }, {});
+
+      const updatedList = list.map(item => ({
+        ...item,
+        picUrl: songDetails[item.id]?.al?.picUrl || item.picUrl || '/images/default_cover.png',
+        ar: songDetails[item.id]?.ar || item.ar || [{ name: t('download.localMusic') }]
+      }));
+
+      downloadedList.value = updatedList;
+      localStorage.setItem('downloadedList', JSON.stringify(updatedList));
+    } catch (error) {
+      console.error('Failed to get music details:', error);
+      downloadedList.value = list;
+      localStorage.setItem('downloadedList', JSON.stringify(list));
+    }
   } catch (error) {
     console.error('Failed to get downloaded music list:', error);
     downloadedList.value = [];
+    localStorage.setItem('downloadedList', '[]');
+  } finally {
+    isLoadingDownloaded.value = false;
   }
-};
-
-const setLocalDownloadedList = (list: DownloadedItem[]) => {
-  const localList = localStorage.getItem('downloadedList');
-  // 合并 去重
-  const saveList = [...(localList ? JSON.parse(localList) : []), ...list];
-  const uniqueList = saveList.filter(
-    (item, index, self) => index === self.findIndex((t) => t.id === item.id)
-  );
-  localStorage.setItem('downloadedList', JSON.stringify(uniqueList));
-  downloadedList.value = uniqueList;
 };
 
 // 监听抽屉显示状态
 watch(
   () => showDrawer.value,
   (newVal) => {
-    if (newVal) {
+    if (newVal && !isLoadingDownloaded.value) {
       refreshDownloadedList();
     }
   }
@@ -503,15 +498,14 @@ onMounted(() => {
   });
 
   // 监听下载完成
-  window.electron.ipcRenderer.on('music-download-complete', (_, data) => {
+  window.electron.ipcRenderer.on('music-download-complete', async (_, data) => {
     if (data.success) {
-      // 从下载列表中移除
-      downloadList.value = downloadList.value.filter((item) => item.filename !== data.filename);
-      // 刷新已下载列表
-      refreshDownloadedList();
+      downloadList.value = downloadList.value.filter(item => item.filename !== data.filename);
+      // 延迟刷新已下载列表，避免文件系统未完全写入
+      setTimeout(() => refreshDownloadedList(), 500);
       message.success(t('download.message.downloadComplete', { filename: data.filename }));
     } else {
-      const existingItem = downloadList.value.find((item) => item.filename === data.filename);
+      const existingItem = downloadList.value.find(item => item.filename === data.filename);
       if (existingItem) {
         Object.assign(existingItem, {
           status: 'error',
@@ -519,12 +513,10 @@ onMounted(() => {
           progress: 0
         });
         setTimeout(() => {
-          downloadList.value = downloadList.value.filter((item) => item.filename !== data.filename);
+          downloadList.value = downloadList.value.filter(item => item.filename !== data.filename);
         }, 3000);
       }
-      message.error(
-        t('download.message.downloadFailed', { filename: data.filename, error: data.error })
-      );
+      message.error(t('download.message.downloadFailed', { filename: data.filename, error: data.error }));
     }
   });
 
