@@ -43,5 +43,6 @@ export default {
   message: {
     downloadComplete: '{filename} 下载完成',
     downloadFailed: '{filename} 下载失败: {error}'
-  }
+  },
+  loading: '加载中...'
 };

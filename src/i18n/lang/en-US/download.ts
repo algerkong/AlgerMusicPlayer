@@ -44,5 +44,6 @@ export default {
   message: {
     downloadComplete: '{filename} download completed',
     downloadFailed: '{filename} download failed: {error}'
-  }
+  },
+  loading: 'Loading...'
 };
