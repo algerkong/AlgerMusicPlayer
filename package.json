@@ -39,7 +39,7 @@
     "@rushstack/eslint-patch": "^1.10.3",
     "@tailwindcss/postcss7-compat": "^2.2.4",
     "@types/howler": "^2.2.12",
-    "@types/node": "^20.14.8",
+    "@types/node": "^22.14.1",
     "@types/tinycolor2": "^1.4.6",
     "@typescript-eslint/eslint-plugin": "^8.30.1",
     "@typescript-eslint/parser": "^8.30.1",
