@@ -64,6 +64,7 @@ export default {
     configureMusicSources: '配置音源',
     selectedMusicSources: '已选音源：',
     noMusicSources: '未选择音源',
+    gdmusicInfo: 'GD音乐台可自动解析多个平台音源，自动选择最佳结果',
     autoPlay: '自动播放',
     autoPlayDesc: '重新打开应用时是否自动继续播放'
   },

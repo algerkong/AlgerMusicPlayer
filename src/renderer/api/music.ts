@@ -5,6 +5,7 @@ import { isElectron } from '@/utils';
 import request from '@/utils/request';
 import requestMusic from '@/utils/request_music';
 import { cloneDeep } from 'lodash';
+import { parseFromGDMusic, getQualityMapping } from './gdmusic';
 
 const { addData, getData, deleteData } = musicDB;
 
@@ -79,17 +80,39 @@ export const getMusicLrc = async (id: number) => {
   }
 };
 
-export const getParsingMusicUrl = (id: number, data: any) => {
- 
-  if (isElectron) {
-    const settingStore = useSettingsStore();
+export const getParsingMusicUrl = async (id: number, data: any) => {
+  const settingStore = useSettingsStore();
   
-    // 如果禁用了音乐解析功能，则直接返回空结果
-    if (!settingStore.setData.enableMusicUnblock) {
-      return Promise.resolve({ data: { code: 404, message: '音乐解析功能已禁用' } });
-    }
-    return window.api.unblockMusic(id, cloneDeep(data), cloneDeep(settingStore.setData.enabledMusicSources));
+  // 如果禁用了音乐解析功能，则直接返回空结果
+  if (!settingStore.setData.enableMusicUnblock) {
+    return Promise.resolve({ data: { code: 404, message: '音乐解析功能已禁用' } });
   }
+  
+  // 检查是否选择了GD音乐台解析
+  const enabledSources = settingStore.setData.enabledMusicSources || [];
+  if (enabledSources.includes('gdmusic')) {
+    // 获取音质设置并转换为GD音乐台格式
+    try {
+      const quality = getQualityMapping(settingStore.setData.musicQuality || 'higher');
+      
+      // 调用封装的GD音乐台解析服务
+      const gdResult = await parseFromGDMusic(id, data, quality);
+      if (gdResult) {
+        return gdResult;
+      }
+    } catch (error) {
+      console.error('GD音乐台解析失败:', error);
+    }
+      
+    console.log('GD音乐台所有音源均解析失败，尝试使用unblockMusic');
+  }
+  
+  // 如果GD音乐台解析失败或者未启用，尝试使用unblockMusic
+  if (isElectron) {
+    const filteredSources = enabledSources.filter(source => source !== 'gdmusic');
+    return window.api.unblockMusic(id, cloneDeep(data), cloneDeep(filteredSources));
+  }
+  
   return requestMusic.get<any>('/music', { params: { id } });
 };
 

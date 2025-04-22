@@ -239,3 +239,19 @@ export interface IArtists {
   img1v1: number;
   trans: null;
 }
+
+// 音乐源类型定义
+export type MusicSourceType = 
+  | 'tencent' 
+  | 'kugou' 
+  | 'kuwo' 
+  | 'migu' 
+  | 'netease' 
+  | 'joox' 
+  | 'ytmusic' 
+  | 'spotify' 
+  | 'qobuz' 
+  | 'deezer'
+  | 'gdmusic';
+  
+// 更多音乐相关的类型可以在这里定义

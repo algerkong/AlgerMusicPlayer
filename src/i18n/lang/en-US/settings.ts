@@ -64,6 +64,7 @@ export default {
     configureMusicSources: 'Configure Sources',
     selectedMusicSources: 'Selected sources:',
     noMusicSources: 'No sources selected',
+    gdmusicInfo: 'GD Music Station intelligently resolves music from multiple platforms automatically',
     autoPlay: 'Auto Play',
     autoPlayDesc: 'Auto resume playback when reopening the app'
   },

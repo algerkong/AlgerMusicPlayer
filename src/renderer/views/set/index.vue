@@ -521,12 +521,30 @@
             <n-grid-item v-for="source in musicSourceOptions" :key="source.value">
               <n-checkbox :value="source.value">
                 {{ source.label }}
+                <template v-if="source.value === 'gdmusic'">
+                  <n-tooltip>
+                    <template #trigger>
+                      <n-icon size="16" class="ml-1 text-blue-500 cursor-help">
+                        <i class="ri-information-line"></i>
+                      </n-icon>
+                    </template>
+                    {{ t('settings.playback.gdmusicInfo') }}
+                  </n-tooltip>
+                </template>
               </n-checkbox>
             </n-grid-item>
           </n-grid>
         </n-checkbox-group>
         <div v-if="musicSources.length === 0" class="text-red-500 text-sm">
           {{ t('settings.playback.musicSourcesWarning') }}
+        </div>
+
+        <!-- GD音乐台设置 -->
+        <div v-if="musicSources.includes('gdmusic')" class="mt-4 border-t pt-4 border-gray-200 dark:border-gray-700">
+          <h3 class="text-base font-medium mb-2">GD音乐台(music.gdstudio.xyz)设置</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
+            GD音乐台将自动尝试多个音乐平台进行解析，无需额外配置。优先级高于其他解析方式，但是请求可能较慢。感谢（music.gdstudio.xyz）
+          </p>
         </div>
       </n-space>
     </n-modal>
@@ -555,9 +573,9 @@ import { checkUpdate, UpdateResult } from '@/utils/update';
 import config from '../../../../package.json';
 
 // 手动定义Platform类型，避免从主进程导入的问题
-type Platform = 'qq' | 'migu' | 'kugou' | 'pyncmd'| 'kuwo' | 'bilibili' | 'youtube';
+type Platform = 'qq' | 'migu' | 'kugou' | 'pyncmd' | 'joox' | 'kuwo' | 'bilibili' | 'youtube' | 'gdmusic';
 // 所有平台
-const ALL_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd', 'kuwo', 'bilibili', 'youtube'];
+const ALL_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd', 'kuwo', 'bilibili', 'youtube', 'gdmusic'];
 
 const settingsStore = useSettingsStore();
 const userStore = useUserStore();
@@ -1050,7 +1068,8 @@ const musicSourceOptions = ref([
   { label: 'pyncmd', value: 'pyncmd' },
   { label: '酷我音乐', value: 'kuwo' },
   { label: 'Bilibili音乐', value: 'bilibili' },
-  { label: 'YouTube', value: 'youtube' }
+  { label: 'YouTube', value: 'youtube' },
+  { label: 'GD音乐台', value: 'gdmusic' }
 ]);
 
 // 已选择的音源列表
