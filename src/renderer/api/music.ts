@@ -4,6 +4,7 @@ import type { ILyric } from '@/type/lyric';
 import { isElectron } from '@/utils';
 import request from '@/utils/request';
 import requestMusic from '@/utils/request_music';
+import { cloneDeep } from 'lodash';
 
 const { addData, getData, deleteData } = musicDB;
 
@@ -79,8 +80,15 @@ export const getMusicLrc = async (id: number) => {
 };
 
 export const getParsingMusicUrl = (id: number, data: any) => {
+ 
   if (isElectron) {
-    return window.api.unblockMusic(id, data);
+    const settingStore = useSettingsStore();
+  
+    // 如果禁用了音乐解析功能，则直接返回空结果
+    if (!settingStore.setData.enableMusicUnblock) {
+      return Promise.resolve({ data: { code: 404, message: '音乐解析功能已禁用' } });
+    }
+    return window.api.unblockMusic(id, cloneDeep(data), cloneDeep(settingStore.setData.enabledMusicSources));
   }
   return requestMusic.get<any>('/music', { params: { id } });
 };

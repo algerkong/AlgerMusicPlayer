@@ -67,6 +67,7 @@ export const getSongUrl = async (
     }
   } catch (error) {
     console.error('error', error);
+    url = data.data[0].url || '';
   }
   if (isDownloaded) {
     return songDetail;
@@ -344,7 +345,7 @@ export const usePlayerStore = defineStore('player', () => {
       (item: SongResult) => item.id === music.id && item.source === music.source
     );
 
-    fetchSongs(playList.value, playListIndex.value + 1, playListIndex.value + 6);
+    fetchSongs(playList.value, playListIndex.value + 1, playListIndex.value + 3);
   };
 
   const setPlay = async (song: SongResult) => {
@@ -453,7 +454,7 @@ export const usePlayerStore = defineStore('player', () => {
     }
 
     await handlePlayMusic(prevSong);
-    await fetchSongs(playList.value, playListIndex.value - 5, nowPlayListIndex);
+    await fetchSongs(playList.value, playListIndex.value - 3, nowPlayListIndex);
   };
 
   const togglePlayMode = () => {

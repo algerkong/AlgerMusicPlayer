@@ -21,5 +21,7 @@
   "downloadPath": "",
   "language": "zh-CN",
   "alwaysShowDownloadButton": false,
-  "unlimitedDownload": false
+  "unlimitedDownload": false,
+  "enableMusicUnblock": true,
+  "enabledMusicSources": ["migu", "kugou", "pyncmd","bilibili", "youtube"]
 }

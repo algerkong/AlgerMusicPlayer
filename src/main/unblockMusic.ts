@@ -6,6 +6,8 @@ interface SongData {
   name: string;
   artists: Array<{ name: string }>;
   album?: { name: string };
+  ar?: Array<{ name: string }>;
+  al?: { name: string };
 }
 
 interface ResponseData {
@@ -27,24 +29,29 @@ interface UnblockResult {
   };
 }
 
+// 所有可用平台
+export const ALL_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd', 'kuwo', 'bilibili', 'youtube'];
+
 /**
  * 音乐解析函数
  * @param id 歌曲ID
  * @param songData 歌曲信息
  * @param retryCount 重试次数
+ * @param enabledPlatforms 启用的平台列表，默认为所有平台
  * @returns Promise<UnblockResult>
  */
 const unblockMusic = async (
   id: number | string,
   songData: SongData,
-  retryCount = 3
+  retryCount = 1,
+  enabledPlatforms?: Platform[]
 ): Promise<UnblockResult> => {
-  // 所有可用平台
-  const platforms: Platform[] = ['migu', 'kugou', 'pyncmd', 'joox', 'kuwo', 'bilibili', 'youtube'];
-
+  const platforms = enabledPlatforms || ALL_PLATFORMS;
+  songData.album = songData.album || songData.al;
+  songData.artists = songData.artists || songData.ar;
   const retry = async (attempt: number): Promise<UnblockResult> => {
     try {
-      const data = await match(parseInt(String(id), 10), platforms, songData);
+      const data = await match(parseInt(String(id), 10), platforms,songData);
       const result: UnblockResult = {
         data: {
           data,
@@ -58,7 +65,7 @@ const unblockMusic = async (
     } catch (err) {
       if (attempt < retryCount) {
         // 延迟重试，每次重试增加延迟时间
-        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+        await new Promise((resolve) => setTimeout(resolve, 100 * attempt));
         return retry(attempt + 1);
       }
 

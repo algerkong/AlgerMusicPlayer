@@ -5,16 +5,22 @@ import server from 'netease-cloud-music-api-alger/server';
 import os from 'os';
 import path from 'path';
 
-import { unblockMusic } from './unblockMusic';
+import { unblockMusic, type Platform } from './unblockMusic';
 
 const store = new Store();
 if (!fs.existsSync(path.resolve(os.tmpdir(), 'anonymous_token'))) {
   fs.writeFileSync(path.resolve(os.tmpdir(), 'anonymous_token'), '', 'utf-8');
 }
 
-// 处理解锁音乐请求
-ipcMain.handle('unblock-music', async (_, id, data) => {
-  return unblockMusic(id, data);
+// 设置音乐解析的处理程序
+ipcMain.handle('unblock-music', async (_event, id, songData, enabledSources) => {
+  try {
+    const result = await unblockMusic(id, songData, 1, enabledSources as Platform[]);
+    return result;
+  } catch (error) {
+    console.error('音乐解析失败:', error);
+    return { error: (error as Error).message || '未知错误' };
+  }
 });
 
 async function startMusicApi(): Promise<void> {

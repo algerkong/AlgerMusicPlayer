@@ -56,6 +56,14 @@ export default {
       dolby: 'Dolby Atmos',
       jymaster: 'Master'
     },
+    musicSources: 'Music Sources',
+    musicSourcesDesc: 'Select music sources for song resolution',
+    musicSourcesWarning: 'At least one music source must be selected',
+    musicUnblockEnable: 'Enable Music Unblocking',
+    musicUnblockEnableDesc: 'When enabled, attempts to resolve unplayable songs',
+    configureMusicSources: 'Configure Sources',
+    selectedMusicSources: 'Selected sources:',
+    noMusicSources: 'No sources selected',
     autoPlay: 'Auto Play',
     autoPlayDesc: 'Auto resume playback when reopening the app'
   },

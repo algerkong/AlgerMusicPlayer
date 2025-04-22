@@ -56,6 +56,14 @@ export default {
       dolby: '杜比全景声',
       jymaster: '超清母带'
     },
+    musicSources: '音源设置',
+    musicSourcesDesc: '选择音乐解析使用的音源平台',
+    musicSourcesWarning: '至少需要选择一个音源平台',
+    musicUnblockEnable: '启用音乐解析',
+    musicUnblockEnableDesc: '开启后将尝试解析无法播放的音乐',
+    configureMusicSources: '配置音源',
+    selectedMusicSources: '已选音源：',
+    noMusicSources: '未选择音源',
     autoPlay: '自动播放',
     autoPlayDesc: '重新打开应用时是否自动继续播放'
   },

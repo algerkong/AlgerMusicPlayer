@@ -152,6 +152,39 @@
 
             <div class="set-item">
               <div>
+                <div class="set-item-title">{{ t('settings.playback.musicSources') }}</div>
+                <div class="set-item-content">
+                  <div class="flex items-center gap-2">
+                    <n-switch v-model:value="setData.enableMusicUnblock">
+                      <template #checked>{{ t('common.on') }}</template>
+                      <template #unchecked>{{ t('common.off') }}</template>
+                    </n-switch>
+                    <span>{{ t('settings.playback.musicUnblockEnableDesc') }}</span>
+                  </div>
+                  <div v-if="setData.enableMusicUnblock" class="mt-2">
+                    <div class="text-sm">
+                      <span class="text-gray-500">{{ t('settings.playback.selectedMusicSources') }}</span>
+                      <span v-if="musicSources.length > 0" class="text-gray-400">
+                        {{ musicSources.map((source) => getSourceLabel(source)).join(', ') }}
+                      </span>
+                      <span v-else class="text-red-500 text-xs">
+                        {{ t('settings.playback.noMusicSources') }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <n-button 
+                size="small" 
+                :disabled="!setData.enableMusicUnblock"
+                @click="showMusicSourcesModal = true"
+              >
+                {{ t('settings.playback.configureMusicSources') }}
+              </n-button>
+            </div>
+
+            <div class="set-item">
+              <div>
                 <div class="set-item-title">{{ t('settings.playback.autoPlay') }}</div>
                 <div class="set-item-content">{{ t('settings.playback.autoPlayDesc') }}</div>
               </div>
@@ -470,6 +503,33 @@
         </n-checkbox-group>
       </n-space>
     </n-modal>
+
+    <!-- 音源设置弹窗 -->
+    <n-modal
+      v-model:show="showMusicSourcesModal"
+      preset="dialog"
+      :title="t('settings.playback.musicSources')"
+      :positive-text="t('common.confirm')"
+      :negative-text="t('common.cancel')"
+      @positive-click="showMusicSourcesModal = false"
+      @negative-click="showMusicSourcesModal = false"
+    >
+      <n-space vertical>
+        <p>{{ t('settings.playback.musicSourcesDesc') }}</p>
+        <n-checkbox-group v-model:value="musicSources">
+          <n-grid :cols="2" :x-gap="12" :y-gap="8">
+            <n-grid-item v-for="source in musicSourceOptions" :key="source.value">
+              <n-checkbox :value="source.value">
+                {{ source.label }}
+              </n-checkbox>
+            </n-grid-item>
+          </n-grid>
+        </n-checkbox-group>
+        <div v-if="musicSources.length === 0" class="text-red-500 text-sm">
+          {{ t('settings.playback.musicSourcesWarning') }}
+        </div>
+      </n-space>
+    </n-modal>
   </div>
 </template>
 
@@ -493,6 +553,11 @@ import { openDirectory, selectDirectory } from '@/utils/fileOperation';
 import { checkUpdate, UpdateResult } from '@/utils/update';
 
 import config from '../../../../package.json';
+
+// 手动定义Platform类型，避免从主进程导入的问题
+type Platform = 'qq' | 'migu' | 'kugou' | 'pyncmd'| 'kuwo' | 'bilibili' | 'youtube';
+// 所有平台
+const ALL_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd', 'kuwo', 'bilibili', 'youtube'];
 
 const settingsStore = useSettingsStore();
 const userStore = useUserStore();
@@ -977,6 +1042,41 @@ onMounted(() => {
     handleScroll({ target: { scrollTop: 0 } });
   });
 });
+
+// 音源设置相关
+const musicSourceOptions = ref([
+  { label: 'MiGu音乐', value: 'migu' },
+  { label: '酷狗音乐', value: 'kugou' },
+  { label: 'pyncmd', value: 'pyncmd' },
+  { label: '酷我音乐', value: 'kuwo' },
+  { label: 'Bilibili音乐', value: 'bilibili' },
+  { label: 'YouTube', value: 'youtube' }
+]);
+
+// 已选择的音源列表
+const musicSources = computed({
+  get: () => {
+    if (!setData.value.enabledMusicSources) {
+      return ALL_PLATFORMS;
+    }
+    return setData.value.enabledMusicSources as Platform[];
+  },
+  set: (newValue: Platform[]) => {
+    // 确保至少选择一个音源
+    const valuesToSet = newValue.length > 0 ? newValue : ALL_PLATFORMS;
+    setData.value = {
+      ...setData.value,
+      enabledMusicSources: valuesToSet
+    };
+  }
+});
+
+const showMusicSourcesModal = ref(false);
+
+const getSourceLabel = (source: Platform) => {
+  const sourceLabel = musicSourceOptions.value.find(s => s.value === source)?.label;
+  return sourceLabel || source;
+};
 </script>
 
 <style lang="scss" scoped>
