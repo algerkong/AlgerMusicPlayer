@@ -1082,7 +1082,7 @@ const musicSources = computed({
   },
   set: (newValue: Platform[]) => {
     // 确保至少选择一个音源
-    const valuesToSet = newValue.length > 0 ? newValue : ALL_PLATFORMS;
+    const valuesToSet = newValue.length > 0 ? [...new Set(newValue)] : ALL_PLATFORMS;
     setData.value = {
       ...setData.value,
       enabledMusicSources: valuesToSet
