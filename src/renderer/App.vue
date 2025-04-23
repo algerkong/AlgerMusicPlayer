@@ -26,7 +26,6 @@ import { isElectron, isLyricWindow } from '@/utils';
 import { initAudioListeners } from './hooks/MusicHook';
 import { isMobile } from './utils';
 import { useAppShortcuts } from './utils/appShortcuts';
-import { initShortcut } from './utils/shortcut';
 
 const { locale } = useI18n();
 const settingsStore = useSettingsStore();
@@ -120,8 +119,6 @@ onMounted(async () => {
       window.api.sendSong(cloneDeep(playerStore.playMusic));
     }
   }
-  // 初始化快捷键
-  initShortcut();
 });
 </script>
 
