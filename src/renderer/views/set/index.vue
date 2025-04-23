@@ -575,7 +575,7 @@ import config from '../../../../package.json';
 // 手动定义Platform类型，避免从主进程导入的问题
 type Platform = 'qq' | 'migu' | 'kugou' | 'pyncmd' | 'joox' | 'kuwo' | 'bilibili' | 'youtube' | 'gdmusic';
 // 所有平台
-const ALL_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd', 'kuwo', 'bilibili', 'youtube', 'gdmusic'];
+const ALL_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd', 'bilibili', 'youtube'];
 
 const settingsStore = useSettingsStore();
 const userStore = useUserStore();

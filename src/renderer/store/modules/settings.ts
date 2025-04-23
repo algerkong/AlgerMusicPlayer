@@ -1,4 +1,4 @@
-import { cloneDeep } from 'lodash';
+import { cloneDeep, merge } from 'lodash';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
@@ -7,17 +7,6 @@ import { isElectron } from '@/utils';
 import { applyTheme, getCurrentTheme, ThemeType } from '@/utils/theme';
 
 export const useSettingsStore = defineStore('settings', () => {
-  // 初始化时先从存储中读取设置
-  const getInitialSettings = () => {
-    if (isElectron) {
-      const savedSettings = window.electron.ipcRenderer.sendSync('get-store-value', 'set');
-      return savedSettings || setDataDefault;
-    }
-    const savedSettings = localStorage.getItem('appSettings');
-    return savedSettings ? JSON.parse(savedSettings) : setDataDefault;
-  };
-
-  const setData = ref(getInitialSettings());
   const theme = ref<ThemeType>(getCurrentTheme());
   const isMobile = ref(false);
   const isMiniMode = ref(false);
@@ -28,7 +17,11 @@ export const useSettingsStore = defineStore('settings', () => {
     { label: '系统默认', value: 'system-ui' }
   ]);
   const showDownloadDrawer = ref(false);
+  
+  // 先声明 setData ref 但不初始化
+  const setData = ref<any>({});
 
+  // 先定义 setSetData 函数
   const setSetData = (data: any) => {
     // 合并现有设置和新设置
     const mergedData = {
@@ -43,6 +36,24 @@ export const useSettingsStore = defineStore('settings', () => {
     }
     setData.value = cloneDeep(mergedData);
   };
+
+  // 初始化时先从存储中读取设置
+  const getInitialSettings = () => {
+    // 从存储中获取保存的设置
+    const savedSettings = isElectron
+      ? window.electron.ipcRenderer.sendSync('get-store-value', 'set')
+      : JSON.parse(localStorage.getItem('appSettings') || '{}');
+
+    // 合并默认设置和保存的设置
+    const mergedSettings = merge({}, setDataDefault, savedSettings);
+    
+    // 更新设置并返回
+    setSetData(mergedSettings);
+    return mergedSettings;
+  };
+
+  // 初始化 setData
+  setData.value = getInitialSettings();
 
   const toggleTheme = () => {
     theme.value = theme.value === 'dark' ? 'light' : 'dark';
