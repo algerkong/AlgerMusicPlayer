@@ -14,14 +14,14 @@
   - 支持歌单、MV、专辑等完整音乐服务
   - 灰色音乐资源解析（基于 @unblockneteasemusic/server）
   - 高品质音乐试听（需网易云VIP）
-  - 音乐文件下载（支持右键下载和批量下载）
+  - 音乐文件下载（支持右键下载和批量下载, 附带歌词封面等信息）
 - 🚀 技术特性
   - 本地化服务，无需依赖在线API (基于 netease-cloud-music-api)
   - 自动更新检测
-  - 全平台适配（Desktop & Web & Mobile Web）
+  - 全平台适配（Desktop & Web & Mobile Web & Android<后续> & ios<后续>）
 
 ## 项目简介
- 一个基于 electron typescript vue3 的桌面音乐播放器 适配 web端 桌面端 web移动端
+ 一个第三方音乐播放器、本地服务、桌面歌词、音乐下载、最高音质
 
 ## 预览地址
 [http://mc.alger.fun/](http://mc.alger.fun/)
