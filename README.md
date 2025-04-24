@@ -28,6 +28,8 @@
 
 QQ群:789288579
 
+tg群:[AlgerMusic tg](https://t.me/+9efsKRuvKBk2NWVl)
+
 ## 软件截图
 ![首页白](./docs/image.png)
 ![首页黑](./docs/image3.png)
