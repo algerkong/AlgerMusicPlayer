@@ -33,6 +33,7 @@
               @play="handlePlay"
             />
             <div v-if="songLoading" class="loading-more">{{ t('common.loading') }}</div>
+            <div v-else-if="songPage.hasMore" ref="songsLoadMoreRef" class="load-more-trigger"></div>
           </div>
         </div>
       </n-tab-pane>
@@ -54,6 +55,7 @@
               }"
             />
             <div v-if="albumLoading" class="loading-more">{{ t('common.loading') }}</div>
+            <div v-else-if="albumPage.hasMore" ref="albumsLoadMoreRef" class="load-more-trigger"></div>
           </div>
         </div>
       </n-tab-pane>
@@ -114,6 +116,12 @@ const albumPage = ref({
   hasMore: true
 });
 
+// 无限滚动引用
+const songsLoadMoreRef = ref<HTMLElement | null>(null);
+const albumsLoadMoreRef = ref<HTMLElement | null>(null);
+let songsObserver: IntersectionObserver | null = null;
+let albumsObserver: IntersectionObserver | null = null;
+
 // 加载歌手信息
 const loadArtistInfo = async () => {
   if (!artistId.value) return;
@@ -138,12 +146,12 @@ const loadArtistInfo = async () => {
 const resetPagination = () => {
   songPage.value = {
     page: 1,
-    pageSize: 30,
+    pageSize: 50,
     hasMore: true
   };
   albumPage.value = {
     page: 1,
-    pageSize: 30,
+    pageSize: 50,
     hasMore: true
   };
   songs.value = [];
@@ -181,6 +189,8 @@ const loadSongs = async () => {
       songs.value = page === 1 ? newSongs : [...songs.value, ...newSongs];
       songPage.value.hasMore = newSongs.length === pageSize;
       songPage.value.page++;
+    } else {
+      songPage.value.hasMore = false;
     }
   } catch (error) {
     console.error('加载歌曲失败:', error);
@@ -207,6 +217,8 @@ const loadAlbums = async () => {
       albums.value = page === 1 ? newAlbums : [...albums.value, ...newAlbums];
       albumPage.value.hasMore = newAlbums.length === pageSize;
       albumPage.value.page++;
+    } else {
+      albumPage.value.hasMore = false;
     }
   } catch (error) {
     console.error('加载专辑失败:', error);
@@ -229,29 +241,64 @@ const handlePlay = () => {
   );
 };
 
-// 添加滚动处理函数
-const handleScroll = useThrottleFn(() => {
-  const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-  const windowHeight = window.innerHeight;
-  const documentHeight = document.documentElement.scrollHeight;
+// 设置无限滚动观察器
+const setupIntersectionObservers = () => {
+  // 清除现有的观察器
+  if (songsObserver) songsObserver.disconnect();
+  if (albumsObserver) albumsObserver.disconnect();
 
-  if (documentHeight - (scrollTop + windowHeight) < 100) {
-    if (activeTab.value === 'songs') {
+  // 创建歌曲观察器
+  songsObserver = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && !songLoading.value && songPage.value.hasMore) {
       loadSongs();
-    } else if (activeTab.value === 'albums') {
+    }
+  }, { threshold: 0.1 });
+
+  // 创建专辑观察器
+  albumsObserver = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting && !albumLoading.value && albumPage.value.hasMore) {
       loadAlbums();
     }
-  }
-}, 200);
+  }, { threshold: 0.1 });
 
-// 监听页面滚动
+  // 监听标签页更改，重新设置观察器
+  watch(activeTab, (newTab) => {
+    nextTick(() => {
+      if (newTab === 'songs' && songsLoadMoreRef.value && songPage.value.hasMore) {
+        songsObserver?.observe(songsLoadMoreRef.value);
+      } else if (newTab === 'albums' && albumsLoadMoreRef.value && albumPage.value.hasMore) {
+        albumsObserver?.observe(albumsLoadMoreRef.value);
+      }
+    });
+  });
+
+  // 监听引用元素的变化
+  watch(songsLoadMoreRef, (el) => {
+    if (el && activeTab.value === 'songs' && songPage.value.hasMore) {
+      songsObserver?.observe(el);
+    }
+  });
+
+  watch(albumsLoadMoreRef, (el) => {
+    if (el && activeTab.value === 'albums' && albumPage.value.hasMore) {
+      albumsObserver?.observe(el);
+    }
+  });
+};
+
 onMounted(() => {
   loadArtistInfo();
-  window.addEventListener('scroll', handleScroll);
+  
+  // 添加nextTick以确保DOM已更新
+  nextTick(() => {
+    setupIntersectionObservers();
+  });
 });
 
 onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll);
+  // 清理观察器
+  if (songsObserver) songsObserver.disconnect();
+  if (albumsObserver) albumsObserver.disconnect();
 });
 
 // 监听路由参数变化
@@ -260,6 +307,10 @@ watch(
   (newId) => {
     if (newId) {
       loadArtistInfo();
+      // 添加nextTick以确保DOM已更新
+      nextTick(() => {
+        setupIntersectionObservers();
+      });
     }
   }
 );
@@ -323,6 +374,10 @@ watch(
 
   .loading-more {
     @apply text-center py-4 text-gray-500 dark:text-gray-400;
+  }
+
+  .load-more-trigger {
+    @apply h-4 w-full;
   }
 
   .artist-description {
