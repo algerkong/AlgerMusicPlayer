@@ -100,7 +100,7 @@
             @click="handleArtistClick(item.id)"
           >
             <div
-              :style="setBackgroundImg(getImgUrl(item.picUrl, '500y500'))"
+              :style="setBackgroundImg(getImgUrl(item.picUrl || item.avatar || item.cover, '500y500'))"
               class="recommend-singer-item-bg"
             ></div>
             <div class="recommend-singer-item-count p-2 text-base text-gray-200 z-10">
@@ -159,7 +159,7 @@ import { IDayRecommend } from '@/type/day_recommend';
 import { Playlist } from '@/type/list';
 import type { IListDetail } from '@/type/listDetail';
 import { SongResult } from '@/type/music';
-import type { IHotSinger } from '@/type/singer';
+import type { Artist, IHotSinger } from '@/type/singer';
 import {
   getImgUrl,
   isMobile,
@@ -167,6 +167,8 @@ import {
   setAnimationDelay,
   setBackgroundImg
 } from '@/utils';
+import { getArtistDetail } from '@/api/artist';
+import { cloneDeep } from 'lodash';
 
 const userStore = useUserStore();
 const playerStore = usePlayerStore();
@@ -246,21 +248,49 @@ const getCarouselItemStyleForPlaylist = (playlistCount: number) => {
 };
 
 onMounted(async () => {
-  await loadData();
+  loadNonUserData();
 });
 
-const loadData = async () => {
+const JayChouId = 6452;
+const loadArtistData = async () => {
   try {
-    // 获取每日推荐
-    try {
+    const { data: artistData }: { data: { data: { artist: Artist } } } = await getArtistDetail(JayChouId);
+    console.log('artistData', artistData);
+    if (hotSingerData.value) {
+      // 将周杰伦数据放在第一位
+      hotSingerData.value.artists = [artistData.data.artist, ...hotSingerData.value.artists];
+    }
+  } catch (error) {
+    console.error('获取周杰伦数据失败:', error);
+  }
+}
+
+// 加载不需要登录的数据
+const loadNonUserData = async () => {
+  try {
+
+        // 获取每日推荐
+        try {
       const {
         data: { data: dayRecommend }
       } = await getDayRecommend();
       dayRecommendData.value = dayRecommend as unknown as IDayRecommend;
     } catch (error) {
-      console.error('error', error);
+      console.error('获取每日推荐失败:', error);
     }
+    // 获取热门歌手
+    const { data: singerData } = await getHotSinger({ offset: 0, limit: 5 });
+    hotSingerData.value = singerData;
 
+    await loadArtistData();
+  } catch (error) {
+    console.error('加载热门歌手数据失败:', error);
+  }
+};
+
+// 加载需要登录的数据
+const loadUserData = async () => {
+  try {
     if (userStore.user) {
       const { data: playlistData } = await getUserPlaylist(userStore.user?.userId);
       // 确保最多只显示4个歌单，并按播放次数排序
@@ -268,12 +298,8 @@ const loadData = async () => {
         .sort((a, b) => b.playCount - a.playCount)
         .slice(0, 4);
     }
-
-    // 获取热门歌手
-    const { data: singerData } = await getHotSinger({ offset: 0, limit: 5 });
-    hotSingerData.value = singerData;
   } catch (error) {
-    console.error('error', error);
+    console.error('加载用户数据失败:', error);
   }
 };
 
@@ -394,7 +420,7 @@ const loadFullPlaylist = async (trackIds: { id: number }[], initialSongs: SongRe
 // 监听登录状态
 watchEffect(() => {
   if (userStore.user) {
-    loadData();
+    loadUserData();
   }
 });
 

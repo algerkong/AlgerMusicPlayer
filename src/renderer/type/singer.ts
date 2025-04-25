@@ -4,7 +4,7 @@ export interface IHotSinger {
   artists: Artist[];
 }
 
-interface Artist {
+export interface Artist {
   name: string;
   id: number;
   picId: number;
@@ -29,4 +29,6 @@ interface Artist {
   identifyTag?: any;
   alg?: any;
   fansCount?: any;
+  cover?: string;
+  avatar?: string;
 }
