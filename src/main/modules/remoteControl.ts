@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { ipcMain, app as electronApp } from 'electron';
 import express from 'express';
 import cors from 'cors';
 import os from 'os';
@@ -212,12 +212,22 @@ function setupRoutes(app: express.Application) {
   // 提供远程控制界面HTML
   app.get('/', (_, res) => {
     try {
-      const htmlPath = path.join(process.cwd(), 'resources', 'html', 'remote-control.html');
-      if (fs.existsSync(htmlPath)) {
-        res.sendFile(htmlPath);
+      // 使用electronApp.getAppPath()获取应用根目录
+      const appPath = electronApp.getAppPath();
+      
+      // 在开发环境下可能需要不同的路径
+      const isPacked = electronApp.isPackaged;
+      const finalPath = isPacked 
+        ? path.join(path.dirname(appPath), 'resources', 'html', 'remote-control.html') 
+        : path.join(appPath, 'resources', 'html', 'remote-control.html');
+      
+      console.log('远程控制HTML路径:', finalPath);
+      
+      if (fs.existsSync(finalPath)) {
+        res.sendFile(finalPath);
       } else {
         res.status(404).send('远程控制界面文件未找到');
-        console.error('远程控制界面文件不存在:', htmlPath);
+        console.error('远程控制界面文件不存在:', finalPath);
       }
     } catch (error) {
       console.error('加载远程控制界面失败:', error);
