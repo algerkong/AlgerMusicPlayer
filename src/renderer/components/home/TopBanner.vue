@@ -168,7 +168,6 @@ import {
   setBackgroundImg
 } from '@/utils';
 import { getArtistDetail } from '@/api/artist';
-import { cloneDeep } from 'lodash';
 
 const userStore = useUserStore();
 const playerStore = usePlayerStore();

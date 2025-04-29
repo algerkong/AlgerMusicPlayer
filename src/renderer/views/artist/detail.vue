@@ -72,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import { useDateFormat, useThrottleFn } from '@vueuse/core';
+import { useDateFormat } from '@vueuse/core';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';

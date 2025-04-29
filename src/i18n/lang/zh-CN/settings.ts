@@ -83,7 +83,9 @@ export default {
     unlimitedDownload: '无限制下载',
     unlimitedDownloadDesc: '开启后将无限制下载音乐（可能出现下载失败的情况）, 默认限制 300 首',
     downloadPath: '下载目录',
-    downloadPathDesc: '选择音乐文件的下载位置'
+    downloadPathDesc: '选择音乐文件的下载位置',
+    remoteControl: '远程控制',
+    remoteControlDesc: '设置远程控制功能'
   },
   network: {
     apiPort: '音乐API端口',
@@ -230,5 +232,15 @@ export default {
       disableAll: '已禁用所有快捷键，请记得保存',
       enableAll: '已启用所有快捷键，请记得保存'
     }
+  },
+  remoteControl: {
+    title: '远程控制',
+    enable: '启用远程控制',
+    port: '服务端口',
+    allowedIps: '允许的IP地址',
+    addIp: '添加IP',
+    emptyListHint: '空列表表示允许所有IP访问',
+    saveSuccess: '远程控制设置已保存',
+    accessInfo: '远程控制访问地址:',
   }
 };

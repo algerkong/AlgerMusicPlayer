@@ -8,6 +8,7 @@ import { loadLyricWindow } from './lyric';
 import { initializeConfig } from './modules/config';
 import { initializeFileManager } from './modules/fileManager';
 import { initializeFonts } from './modules/fonts';
+import { initializeRemoteControl } from './modules/remoteControl';
 import { initializeShortcuts, registerShortcuts } from './modules/shortcuts';
 import { initializeStats, setupStatsHandlers } from './modules/statsService';
 import { initializeTray, updateCurrentSong, updatePlayState, updateTrayMenu } from './modules/tray';
@@ -65,6 +66,9 @@ function initialize() {
 
   // 初始化快捷键
   initializeShortcuts(mainWindow);
+
+  // 初始化远程控制服务
+  initializeRemoteControl(mainWindow);
 
   // 初始化更新处理程序
   setupUpdateHandlers(mainWindow);

@@ -83,7 +83,9 @@ export default {
     unlimitedDownload: 'Unlimited Download',
     unlimitedDownloadDesc: 'Enable unlimited download mode for music , default limit 300 songs',
     downloadPath: 'Download Directory',
-    downloadPathDesc: 'Choose download location for music files'
+    downloadPathDesc: 'Choose download location for music files',
+    remoteControl: 'Remote Control',
+    remoteControlDesc: 'Set remote control function'
   },
   network: {
     apiPort: 'Music API Port',
@@ -230,5 +232,15 @@ export default {
       disableAll: 'All shortcuts disabled, please save to apply',
       enableAll: 'All shortcuts enabled, please save to apply'
     }
+  },
+  remoteControl: {
+    title: 'Remote Control',
+    enable: 'Enable Remote Control',
+    port: 'Port',
+    allowedIps: 'Allowed IPs',
+    addIp: 'Add IP',
+    emptyListHint: 'Empty list means allow all IPs',
+    saveSuccess: 'Remote control settings saved',
+    accessInfo: 'Remote control access address:',
   }
 };
