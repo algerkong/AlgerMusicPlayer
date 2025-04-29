@@ -1,4 +1,4 @@
-import { ipcMain, app as electronApp } from 'electron';
+import { ipcMain } from 'electron';
 import express from 'express';
 import cors from 'cors';
 import os from 'os';
@@ -212,16 +212,8 @@ function setupRoutes(app: express.Application) {
   // 提供远程控制界面HTML
   app.get('/', (_, res) => {
     try {
-      // 使用electronApp.getAppPath()获取应用根目录
-      const appPath = electronApp.getAppPath();
-      
-      // 在开发环境下可能需要不同的路径
-      const isPacked = electronApp.isPackaged;
-      const finalPath = isPacked 
-        ? path.join(path.dirname(appPath), 'resources', 'html', 'remote-control.html') 
-        : path.join(appPath, 'resources', 'html', 'remote-control.html');
-      
-      console.log('远程控制HTML路径:', finalPath);
+      const resourcesPath = process.resourcesPath || '';
+      const finalPath = path.join(resourcesPath, 'html', 'remote-control.html');
       
       if (fs.existsSync(finalPath)) {
         res.sendFile(finalPath);

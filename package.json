@@ -99,6 +99,13 @@
         "repo": "AlgerMusicPlayer"
       }
     ],
+    "extraResources": [
+      {
+        "from": "resources/html",
+        "to": "html",
+        "filter": ["**/*"]
+      }
+    ],
     "mac": {
       "icon": "resources/icon.icns",
       "target": [
