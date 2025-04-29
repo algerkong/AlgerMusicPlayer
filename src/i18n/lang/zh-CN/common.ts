@@ -26,6 +26,7 @@ export default {
   delete: '删除',
   refresh: '刷新',
   retry: '重试',
+  reset: '重置',
   validation: {
     required: '此项是必填的',
     invalidInput: '输入无效',

@@ -26,6 +26,7 @@ export default {
   delete: 'Delete',
   refresh: 'Refresh',
   retry: 'Retry',
+  reset: 'Reset',
   validation: {
     required: 'This field is required',
     invalidInput: 'Invalid input',

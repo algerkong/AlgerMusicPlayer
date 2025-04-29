@@ -271,6 +271,16 @@
                 }}</n-button>
               </div>
             </div>
+
+            <div class="set-item">
+              <div>
+                <div class="set-item-title">{{ t('settings.application.remoteControl') }}</div>
+                <div class="set-item-content">{{ t('settings.application.remoteControlDesc') }}</div>
+              </div>
+              <n-button size="small" @click="showRemoteControlModal = true">{{
+                t('common.configure')
+              }}</n-button>
+            </div>
           </div>
         </div>
 
@@ -548,6 +558,9 @@
         </div>
       </n-space>
     </n-modal>
+
+    <!-- 远程控制设置弹窗 -->
+    <remote-control-setting v-model:visible="showRemoteControlModal" />
   </div>
 </template>
 
@@ -569,6 +582,7 @@ import { useUserStore } from '@/store/modules/user';
 import { isElectron, isMobile } from '@/utils';
 import { openDirectory, selectDirectory } from '@/utils/fileOperation';
 import { checkUpdate, UpdateResult } from '@/utils/update';
+import RemoteControlSetting from '@/views/setting/ServerSetting.vue';
 
 import config from '../../../../package.json';
 
@@ -1096,6 +1110,9 @@ const getSourceLabel = (source: Platform) => {
   const sourceLabel = musicSourceOptions.value.find(s => s.value === source)?.label;
   return sourceLabel || source;
 };
+
+// 远程控制设置弹窗
+const showRemoteControlModal = ref(false);
 </script>
 
 <style lang="scss" scoped>
