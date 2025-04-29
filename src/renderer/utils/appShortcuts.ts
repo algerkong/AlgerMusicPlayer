@@ -7,6 +7,10 @@ import { usePlayerStore, useSettingsStore } from '@/store';
 import { isElectron } from '.';
 import { showShortcutToast } from './shortcutToast';
 
+// 添加一个简单的防抖机制
+let actionTimeout: NodeJS.Timeout | null = null;
+const ACTION_DELAY = 300; // 毫秒
+
 interface ShortcutConfig {
   key: string;
   enabled: boolean;
@@ -27,6 +31,17 @@ let appShortcuts: ShortcutsConfig = {};
  * @param action 快捷键动作
  */
 export async function handleShortcutAction(action: string) {
+  // 如果存在未完成的动作，则忽略当前请求
+  if (actionTimeout) {
+    console.log('忽略快速连续的动作请求:', action);
+    return;
+  }
+
+  // 设置防抖锁
+  actionTimeout = setTimeout(() => {
+    actionTimeout = null;
+  }, ACTION_DELAY);
+
   const playerStore = usePlayerStore();
   const settingsStore = useSettingsStore();
 
@@ -38,61 +53,71 @@ export async function handleShortcutAction(action: string) {
     showShortcutToast(message, iconName);
   };
 
-  switch (action) {
-    case 'togglePlay':
-      if (playerStore.play) {
-        await audioService.pause();
-        showToast(t('player.playBar.pause'), 'ri-pause-circle-line');
-      } else {
-        await audioService.play();
-        showToast(t('player.playBar.play'), 'ri-play-circle-line');
-      }
-      break;
-    case 'prevPlay':
-      playerStore.prevPlay();
-      showToast(t('player.playBar.prev'), 'ri-skip-back-line');
-      break;
-    case 'nextPlay':
-      playerStore.nextPlay();
-      showToast(t('player.playBar.next'), 'ri-skip-forward-line');
-      break;
-    case 'volumeUp':
-      if (currentSound && currentSound?.volume() < 1) {
-        currentSound?.volume((currentSound?.volume() || 0) + 0.1);
+  try {
+    switch (action) {
+      case 'togglePlay':
+        if (playerStore.play) {
+          await audioService.pause();
+          showToast(t('player.playBar.pause'), 'ri-pause-circle-line');
+        } else {
+          await audioService.play();
+          showToast(t('player.playBar.play'), 'ri-play-circle-line');
+        }
+        break;
+      case 'prevPlay':
+        await playerStore.prevPlay();
+        showToast(t('player.playBar.prev'), 'ri-skip-back-line');
+        break;
+      case 'nextPlay':
+        await playerStore.nextPlay();
+        showToast(t('player.playBar.next'), 'ri-skip-forward-line');
+        break;
+      case 'volumeUp':
+        if (currentSound && currentSound?.volume() < 1) {
+          currentSound?.volume((currentSound?.volume() || 0) + 0.1);
+          showToast(
+            `${t('player.playBar.volume')}${Math.round((currentSound?.volume() || 0) * 100)}%`,
+            'ri-volume-up-line'
+          );
+        }
+        break;
+      case 'volumeDown':
+        if (currentSound && currentSound?.volume() > 0) {
+          currentSound?.volume((currentSound?.volume() || 0) - 0.1);
+          showToast(
+            `${t('player.playBar.volume')}${Math.round((currentSound?.volume() || 0) * 100)}%`,
+            'ri-volume-down-line'
+          );
+        }
+        break;
+      case 'toggleFavorite': {
+        const isFavorite = playerStore.favoriteList.includes(Number(playerStore.playMusic.id));
+        const numericId = Number(playerStore.playMusic.id);
+        if (isFavorite) {
+          playerStore.removeFromFavorite(numericId);
+        } else {
+          playerStore.addToFavorite(numericId);
+        }
         showToast(
-          `${t('player.playBar.volume')}${Math.round((currentSound?.volume() || 0) * 100)}%`,
-          'ri-volume-up-line'
+          isFavorite
+            ? t('player.playBar.favorite', { name: playerStore.playMusic.name })
+            : t('player.playBar.unFavorite', { name: playerStore.playMusic.name }),
+          isFavorite ? 'ri-heart-fill' : 'ri-heart-line'
         );
+        break;
       }
-      break;
-    case 'volumeDown':
-      if (currentSound && currentSound?.volume() > 0) {
-        currentSound?.volume((currentSound?.volume() || 0) - 0.1);
-        showToast(
-          `${t('player.playBar.volume')}${Math.round((currentSound?.volume() || 0) * 100)}%`,
-          'ri-volume-down-line'
-        );
-      }
-      break;
-    case 'toggleFavorite': {
-      const isFavorite = playerStore.favoriteList.includes(Number(playerStore.playMusic.id));
-      const numericId = Number(playerStore.playMusic.id);
-      if (isFavorite) {
-        playerStore.removeFromFavorite(numericId);
-      } else {
-        playerStore.addToFavorite(numericId);
-      }
-      showToast(
-        isFavorite
-          ? t('player.playBar.favorite', { name: playerStore.playMusic.name })
-          : t('player.playBar.unFavorite', { name: playerStore.playMusic.name }),
-        isFavorite ? 'ri-heart-fill' : 'ri-heart-line'
-      );
-      break;
+      default:
+        console.log('未知的快捷键动作:', action);
+        break;
     }
-    default:
-      console.log('未知的快捷键动作:', action);
-      break;
+  } catch (error) {
+    console.error(`执行快捷键动作 ${action} 时出错:`, error);
+  } finally {
+    // 确保在出错时也能清除超时
+    if (actionTimeout) {
+      clearTimeout(actionTimeout);
+      actionTimeout = null;
+    }
   }
 }
 
