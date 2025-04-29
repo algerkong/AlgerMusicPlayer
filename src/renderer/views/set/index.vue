@@ -150,7 +150,7 @@
               />
             </div>
 
-            <div class="set-item">
+            <div class="set-item" v-if="isElectron">
               <div>
                 <div class="set-item-title">{{ t('settings.playback.musicSources') }}</div>
                 <div class="set-item-content">
@@ -165,7 +165,7 @@
                     <div class="text-sm">
                       <span class="text-gray-500">{{ t('settings.playback.selectedMusicSources') }}</span>
                       <span v-if="musicSources.length > 0" class="text-gray-400">
-                        {{ musicSources.map((source) => getSourceLabel(source)).join(', ') }}
+                        {{ musicSources.join(', ') }}
                       </span>
                       <span v-else class="text-red-500 text-xs">
                         {{ t('settings.playback.noMusicSources') }}
@@ -428,145 +428,40 @@
       <play-bottom />
     </n-scrollbar>
 
-    <!-- 快捷键设置弹窗 -->
-    <shortcut-settings v-model:show="showShortcutModal" @change="handleShortcutsChange" />
+    <template v-if="isElectron">
+      <!-- 快捷键设置弹窗 -->
+      <shortcut-settings v-model:show="showShortcutModal" @change="handleShortcutsChange" />
 
-    <!-- 代理设置弹窗 -->
-    <n-modal
-      v-model:show="showProxyModal"
-      preset="dialog"
-      :title="t('settings.network.proxy')"
-      :positive-text="t('common.confirm')"
-      :negative-text="t('common.cancel')"
-      :show-icon="false"
-      @positive-click="handleProxyConfirm"
-      @negative-click="showProxyModal = false"
-    >
-      <n-form
-        ref="formRef"
-        :model="proxyForm"
-        :rules="proxyRules"
-        label-placement="left"
-        label-width="80"
-        require-mark-placement="right-hanging"
-      >
-        <n-form-item :label="t('settings.network.proxy')" path="protocol">
-          <n-select
-            v-model:value="proxyForm.protocol"
-            :options="[
-              { label: 'HTTP', value: 'http' },
-              { label: 'HTTPS', value: 'https' },
-              { label: 'SOCKS5', value: 'socks5' }
-            ]"
-          />
-        </n-form-item>
-        <n-form-item :label="t('settings.network.proxyHost')" path="host">
-          <n-input
-            v-model:value="proxyForm.host"
-            :placeholder="t('settings.network.proxyHostPlaceholder')"
-          />
-        </n-form-item>
-        <n-form-item :label="t('settings.network.proxyPort')" path="port">
-          <n-input-number
-            v-model:value="proxyForm.port"
-            :placeholder="t('settings.network.proxyPortPlaceholder')"
-            :min="1"
-            :max="65535"
-          />
-        </n-form-item>
-      </n-form>
-    </n-modal>
+      <!-- 代理设置弹窗 -->
+      <proxy-settings 
+        v-model:show="showProxyModal" 
+        :config="proxyForm"
+        @confirm="handleProxyConfirm"
+      />
+
+      <!-- 音源设置弹窗 -->
+      <music-source-settings
+        v-model:show="showMusicSourcesModal"
+        v-model:sources="musicSources"
+      />
+
+      <!-- 远程控制设置弹窗 -->
+      <remote-control-setting v-model:visible="showRemoteControlModal" />
+
+    </template>
+
     <!-- 清除缓存弹窗 -->
-    <n-modal
+    <clear-cache-settings
       v-model:show="showClearCacheModal"
-      preset="dialog"
-      :title="t('settings.system.cache')"
-      :positive-text="t('common.confirm')"
-      :negative-text="t('common.cancel')"
-      @positive-click="clearCache"
-      @negative-click="
-        () => {
-          selectedCacheTypes = [];
-        }
-      "
-    >
-      <n-space vertical>
-        <p>{{ t('settings.system.cacheClearTitle') }}</p>
-        <n-checkbox-group v-model:value="selectedCacheTypes">
-          <n-space vertical>
-            <n-checkbox
-              v-for="option in clearCacheOptions"
-              :key="option.key"
-              :value="option.key"
-              :label="option.label"
-            >
-              <template #default>
-                <div>
-                  <div>{{ t(`settings.system.cacheTypes.${option.key}.label`) }}</div>
-                  <div class="text-gray-400 text-sm">
-                    {{ t(`settings.system.cacheTypes.${option.key}.description`) }}
-                  </div>
-                </div>
-              </template>
-            </n-checkbox>
-          </n-space>
-        </n-checkbox-group>
-      </n-space>
-    </n-modal>
+      @confirm="clearCache"
+    />
 
-    <!-- 音源设置弹窗 -->
-    <n-modal
-      v-model:show="showMusicSourcesModal"
-      preset="dialog"
-      :title="t('settings.playback.musicSources')"
-      :positive-text="t('common.confirm')"
-      :negative-text="t('common.cancel')"
-      @positive-click="showMusicSourcesModal = false"
-      @negative-click="showMusicSourcesModal = false"
-    >
-      <n-space vertical>
-        <p>{{ t('settings.playback.musicSourcesDesc') }}</p>
-        <n-checkbox-group v-model:value="musicSources">
-          <n-grid :cols="2" :x-gap="12" :y-gap="8">
-            <n-grid-item v-for="source in musicSourceOptions" :key="source.value">
-              <n-checkbox :value="source.value">
-                {{ source.label }}
-                <template v-if="source.value === 'gdmusic'">
-                  <n-tooltip>
-                    <template #trigger>
-                      <n-icon size="16" class="ml-1 text-blue-500 cursor-help">
-                        <i class="ri-information-line"></i>
-                      </n-icon>
-                    </template>
-                    {{ t('settings.playback.gdmusicInfo') }}
-                  </n-tooltip>
-                </template>
-              </n-checkbox>
-            </n-grid-item>
-          </n-grid>
-        </n-checkbox-group>
-        <div v-if="musicSources.length === 0" class="text-red-500 text-sm">
-          {{ t('settings.playback.musicSourcesWarning') }}
-        </div>
 
-        <!-- GD音乐台设置 -->
-        <div v-if="musicSources.includes('gdmusic')" class="mt-4 border-t pt-4 border-gray-200 dark:border-gray-700">
-          <h3 class="text-base font-medium mb-2">GD音乐台(music.gdstudio.xyz)设置</h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
-            GD音乐台将自动尝试多个音乐平台进行解析，无需额外配置。优先级高于其他解析方式，但是请求可能较慢。感谢（music.gdstudio.xyz）
-          </p>
-        </div>
-      </n-space>
-    </n-modal>
-
-    <!-- 远程控制设置弹窗 -->
-    <remote-control-setting v-model:visible="showRemoteControlModal" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core';
-import type { FormRules } from 'naive-ui';
 import { useMessage } from 'naive-ui';
 import { computed, h, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -577,18 +472,20 @@ import DonationList from '@/components/common/DonationList.vue';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import ShortcutSettings from '@/components/settings/ShortcutSettings.vue';
+import ProxySettings from '@/components/settings/ProxySettings.vue';
+import ClearCacheSettings from '@/components/settings/ClearCacheSettings.vue';
+import MusicSourceSettings from '@/components/settings/MusicSourceSettings.vue';
+import RemoteControlSetting from '@/components/settings/ServerSetting.vue';
 import { useSettingsStore } from '@/store/modules/settings';
 import { useUserStore } from '@/store/modules/user';
 import { isElectron, isMobile } from '@/utils';
 import { openDirectory, selectDirectory } from '@/utils/fileOperation';
 import { checkUpdate, UpdateResult } from '@/utils/update';
-import RemoteControlSetting from '@/views/setting/ServerSetting.vue';
+import { type Platform } from '@/types/music';
 
 import config from '../../../../package.json';
 
-// 手动定义Platform类型，避免从主进程导入的问题
-type Platform = 'qq' | 'migu' | 'kugou' | 'pyncmd' | 'joox' | 'kuwo' | 'bilibili' | 'youtube' | 'gdmusic';
-// 所有平台
+// 所有平台默认值
 const ALL_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd', 'bilibili', 'youtube'];
 
 const settingsStore = useSettingsStore();
@@ -705,40 +602,11 @@ const openDownloadPath = () => {
 };
 
 const showProxyModal = ref(false);
-const formRef = ref();
 const proxyForm = ref({
   protocol: 'http',
   host: '127.0.0.1',
   port: 7890
 });
-
-const proxyRules: FormRules = {
-  protocol: {
-    required: true,
-    message: t('settings.validation.selectProxyProtocol'),
-    trigger: ['blur', 'change']
-  },
-  host: {
-    required: true,
-    message: t('settings.validation.proxyHost'),
-    trigger: ['blur', 'change'],
-    validator: (_rule, value) => {
-      if (!value) return false;
-      // 简单的IP或域名验证
-      const ipRegex =
-        /^(\d{1,3}\.){3}\d{1,3}$|^localhost$|^[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+$/;
-      return ipRegex.test(value);
-    }
-  },
-  port: {
-    required: true,
-    message: t('settings.validation.portNumber'),
-    trigger: ['blur', 'change'],
-    validator: (_rule, value) => {
-      return value >= 1 && value <= 65535;
-    }
-  }
-};
 
 // 使用 store 中的字体列表
 const systemFonts = computed(() => settingsStore.systemFonts);
@@ -817,24 +685,16 @@ watch(
   { immediate: true, deep: true }
 );
 
-const handleProxyConfirm = async () => {
-  try {
-    await formRef.value?.validate();
-    // 保存代理配置时保留enable状态
-    setData.value = {
-      ...setData.value,
-      proxyConfig: {
-        enable: setData.value.proxyConfig?.enable || false,
-        protocol: proxyForm.value.protocol,
-        host: proxyForm.value.host,
-        port: proxyForm.value.port
-      }
-    };
-    showProxyModal.value = false;
-    message.success(t('settings.network.messages.proxySuccess'));
-  } catch (err) {
-    message.error(t('settings.network.messages.proxyError'));
-  }
+const handleProxyConfirm = async (proxyConfig) => {
+  // 保存代理配置时保留enable状态
+  setData.value = {
+    ...setData.value,
+    proxyConfig: {
+      enable: setData.value.proxyConfig?.enable || false,
+      ...proxyConfig
+    }
+  };
+  message.success(t('settings.network.messages.proxySuccess'));
 };
 
 const validateAndSaveRealIP = () => {
@@ -880,48 +740,9 @@ const toggleDonationList = () => {
 
 // 清除缓存相关
 const showClearCacheModal = ref(false);
-const clearCacheOptions = ref([
-  {
-    label: t('settings.system.cacheTypes.history.label'),
-    key: 'history',
-    description: t('settings.system.cacheTypes.history.description')
-  },
-  {
-    label: t('settings.system.cacheTypes.favorite.label'),
-    key: 'favorite',
-    description: t('settings.system.cacheTypes.favorite.description')
-  },
-  {
-    label: t('settings.system.cacheTypes.user.label'),
-    key: 'user',
-    description: t('settings.system.cacheTypes.user.description')
-  },
-  {
-    label: t('settings.system.cacheTypes.settings.label'),
-    key: 'settings',
-    description: t('settings.system.cacheTypes.settings.description')
-  },
-  {
-    label: t('settings.system.cacheTypes.downloads.label'),
-    key: 'downloads',
-    description: t('settings.system.cacheTypes.downloads.description')
-  },
-  {
-    label: t('settings.system.cacheTypes.resources.label'),
-    key: 'resources',
-    description: t('settings.system.cacheTypes.resources.description')
-  },
-  {
-    label: t('settings.system.cacheTypes.lyrics.label'),
-    key: 'lyrics',
-    description: t('settings.system.cacheTypes.lyrics.description')
-  }
-]);
 
-const selectedCacheTypes = ref<string[]>([]);
-
-const clearCache = async () => {
-  const clearTasks = selectedCacheTypes.value.map(async (type) => {
+const clearCache = async (selectedCacheTypes) => {
+  const clearTasks = selectedCacheTypes.map(async (type) => {
     switch (type) {
       case 'history':
         localStorage.removeItem('musicHistory');
@@ -980,8 +801,6 @@ const clearCache = async () => {
 
   await Promise.all(clearTasks);
   message.success(t('settings.system.messages.clearSuccess'));
-  showClearCacheModal.value = false;
-  selectedCacheTypes.value = [];
 };
 
 const showShortcutModal = ref(false);
@@ -1076,17 +895,6 @@ onMounted(() => {
 });
 
 // 音源设置相关
-const musicSourceOptions = ref([
-  { label: 'MiGu音乐', value: 'migu' },
-  { label: '酷狗音乐', value: 'kugou' },
-  { label: 'pyncmd', value: 'pyncmd' },
-  { label: '酷我音乐', value: 'kuwo' },
-  { label: 'Bilibili音乐', value: 'bilibili' },
-  { label: 'YouTube', value: 'youtube' },
-  { label: 'GD音乐台', value: 'gdmusic' }
-]);
-
-// 已选择的音源列表
 const musicSources = computed({
   get: () => {
     if (!setData.value.enabledMusicSources) {
@@ -1105,11 +913,6 @@ const musicSources = computed({
 });
 
 const showMusicSourcesModal = ref(false);
-
-const getSourceLabel = (source: Platform) => {
-  const sourceLabel = musicSourceOptions.value.find(s => s.value === source)?.label;
-  return sourceLabel || source;
-};
 
 // 远程控制设置弹窗
 const showRemoteControlModal = ref(false);
