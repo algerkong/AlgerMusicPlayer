@@ -26,7 +26,7 @@
     "@unblockneteasemusic/server": "^0.27.8-patch.1",
     "cors": "^2.8.5",
     "electron-store": "^8.1.0",
-    "express": "^4.18.2",
+    "express": "^5.1.0",
     "electron-updater": "^6.6.2",
     "font-list": "^1.5.1",
     "netease-cloud-music-api-alger": "^4.26.1",
