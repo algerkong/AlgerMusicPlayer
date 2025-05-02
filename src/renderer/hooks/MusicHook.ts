@@ -2,7 +2,6 @@ import { cloneDeep } from 'lodash';
 import { createDiscreteApi } from 'naive-ui';
 import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
 
-import i18n from '@/../i18n/renderer';
 import { getBilibiliAudioUrl } from '@/api/bilibili';
 import useIndexedDB from '@/hooks/IndexDBHook';
 import { audioService } from '@/services/audioService';
