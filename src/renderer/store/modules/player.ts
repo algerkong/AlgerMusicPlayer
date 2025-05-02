@@ -347,14 +347,21 @@ export const usePlayerStore = defineStore('player', () => {
 
       musicHistory.addMusic(playMusic.value);
 
-      const newIndex = playList.value.findIndex(
+      // 找到歌曲在播放列表中的索引，如果是通过 nextPlay/prevPlay 调用的，不会更新 playListIndex
+      const songIndex = playList.value.findIndex(
         (item: SongResult) => item.id === music.id && item.source === music.source
       );
       
-      // 只有在找到歌曲时才更新索引
-      if (newIndex !== -1) {
-        playListIndex.value = newIndex;
-        fetchSongs(playList.value, playListIndex.value + 1, playListIndex.value + 3);
+      // 只有在 songIndex 有效，并且与当前 playListIndex 不同时才更新
+      // 这样可以避免与 nextPlay/prevPlay 中的索引更新冲突
+      if (songIndex !== -1 && songIndex !== playListIndex.value) {
+        console.log('歌曲索引不匹配，更新为:', songIndex);
+        playListIndex.value = songIndex;
+      }
+      
+      // 无论如何都预加载更多歌曲
+      if (songIndex !== -1) {
+        fetchSongs(playList.value, songIndex + 1, songIndex + 3);
       } else {
         console.warn('当前歌曲未在播放列表中找到');
       }
@@ -390,10 +397,14 @@ export const usePlayerStore = defineStore('player', () => {
 
   const setPlay = async (song: SongResult) => {
     try {
-      await handlePlayMusic(song);
+      // 直接调用 handlePlayMusic，它会处理索引更新和播放逻辑
+      const success = await handlePlayMusic(song);
+      
+      // 记录到本地存储，保持一致性
       localStorage.setItem('currentPlayMusic', JSON.stringify(playMusic.value));
       localStorage.setItem('currentPlayMusicUrl', playMusicUrl.value);
-      return true;
+      
+      return success;
     } catch (error) {
       console.error('设置播放失败:', error);
       return false;
@@ -470,6 +481,9 @@ export const usePlayerStore = defineStore('player', () => {
         nowPlayListIndex = (playListIndex.value + 1) % playList.value.length;
       }
 
+      // 重要：首先更新当前播放索引
+      playListIndex.value = nowPlayListIndex;
+      
       // 获取下一首歌曲
       const nextSong = playList.value[nowPlayListIndex];
 
@@ -526,6 +540,9 @@ export const usePlayerStore = defineStore('player', () => {
       const nowPlayListIndex =
         (playListIndex.value - 1 + playList.value.length) % playList.value.length;
 
+      // 重要：首先更新当前播放索引
+      playListIndex.value = nowPlayListIndex;
+        
       // 获取上一首歌曲
       const prevSong = playList.value[nowPlayListIndex];
 
