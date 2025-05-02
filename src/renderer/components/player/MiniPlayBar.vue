@@ -123,7 +123,7 @@ import SongItem from '@/components/common/SongItem.vue';
 import { allTime, artistList, nowTime, playMusic } from '@/hooks/MusicHook';
 import { useArtist } from '@/hooks/useArtist';
 import { audioService } from '@/services/audioService';
-import { usePlayerStore, useSettingsStore } from '@/store';
+import { isBilibiliIdMatch, usePlayerStore, useSettingsStore } from '@/store';
 import type { SongResult } from '@/type/music';
 import { getImgUrl } from '@/utils';
 
@@ -185,20 +185,31 @@ const mute = () => {
 
 // 收藏相关
 const isFavorite = computed(() => {
-  const numericId =
-    typeof playMusic.value.id === 'string' ? parseInt(playMusic.value.id, 10) : playMusic.value.id;
-  return playerStore.favoriteList.includes(numericId);
+  // 对于B站视频，使用ID匹配函数
+  if (playMusic.value.source === 'bilibili' && playMusic.value.bilibiliData?.bvid) {
+    return playerStore.favoriteList.some(id => isBilibiliIdMatch(id, playMusic.value.id));
+  }
+  
+  // 非B站视频直接比较ID
+  return playerStore.favoriteList.includes(playMusic.value.id);
 });
 
 const toggleFavorite = async (e: Event) => {
   e.stopPropagation();
-  const numericId =
-    typeof playMusic.value.id === 'string' ? parseInt(playMusic.value.id, 10) : playMusic.value.id;
+  
+  // 处理B站视频的收藏ID
+  let favoriteId = playMusic.value.id;
+  if (playMusic.value.source === 'bilibili' && playMusic.value.bilibiliData?.bvid) {
+    // 如果当前播放的是B站视频，且已有ID不包含--格式，则需要构造完整ID
+    if (!String(favoriteId).includes('--')) {
+      favoriteId = `${playMusic.value.bilibiliData.bvid}--${playMusic.value.song?.ar?.[0]?.id || 0}--${playMusic.value.bilibiliData.cid}`;
+    }
+  }
 
   if (isFavorite.value) {
-    playerStore.removeFromFavorite(numericId);
+    playerStore.removeFromFavorite(favoriteId);
   } else {
-    playerStore.addToFavorite(numericId);
+    playerStore.addToFavorite(favoriteId);
   }
 };
 

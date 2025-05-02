@@ -109,7 +109,7 @@ const getHistorySongs = async () => {
         if (!page) continue;
 
         bilibiliSongs.push({
-          id: `${videoDetail.aid}--${page.cid}`,
+          id: `${bvid}--${page.page}--${page.cid}`,
           name: `${page.part || ''} - ${videoDetail.title}`,
           picUrl: getBilibiliProxyUrl(videoDetail.pic),
           ar: [

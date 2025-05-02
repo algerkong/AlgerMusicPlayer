@@ -233,7 +233,7 @@ const loadVideoSource = async () => {
 
         // 其他分P创建占位对象，稍后按需加载
         return {
-          id: `${videoDetail.value!.aid}--${page.cid}`, // 使用aid+cid作为唯一ID
+          id: `${bvid.value}--${page.page}--${page.cid}`, // 使用bvid--pid--cid作为唯一ID
           name: `${page.part || ''} - ${videoDetail.value!.title}`,
           picUrl: getBilibiliProxyUrl(videoDetail.value!.pic),
           type: 0,
@@ -242,7 +242,7 @@ const loadVideoSource = async () => {
           source: 'bilibili', // 设置来源为B站
           song: {
             name: `${page.part || ''} - ${videoDetail.value!.title}`,
-            id: `${videoDetail.value!.aid}--${page.cid}`,
+            id: `${bvid.value}--${page.page}--${page.cid}`,
             ar: [
               {
                 name: videoDetail.value!.owner.name,
@@ -286,7 +286,7 @@ const createSongFromBilibiliVideo = (): SongResult => {
   const title = `${pageName} - ${videoDetail.value.title}`;
 
   return {
-    id: `${videoDetail.value.aid}--${currentPage.value.cid}`, // 使用aid+cid作为唯一ID
+    id: `${bvid.value}--${currentPage.value.page}--${currentPage.value.cid}`, // 使用bvid--pid--cid作为唯一ID
     name: title,
     picUrl: getBilibiliProxyUrl(videoDetail.value.pic),
     type: 0,
@@ -297,7 +297,7 @@ const createSongFromBilibiliVideo = (): SongResult => {
     // playMusicUrl属性稍后通过loadSongUrl函数添加
     song: {
       name: title,
-      id: `${videoDetail.value.aid}--${currentPage.value.cid}`,
+      id: `${bvid.value}--${currentPage.value.page}--${currentPage.value.cid}`,
       ar: [
         {
           name: videoDetail.value.owner.name,
