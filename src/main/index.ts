@@ -21,9 +21,7 @@ const iconPath = join(__dirname, '../../resources');
 const icon = nativeImage.createFromPath(
   process.platform === 'darwin'
     ? join(iconPath, 'icon.icns')
-    : process.platform === 'win32'
-      ? join(iconPath, 'favicon.ico')
-      : join(iconPath, 'icon.png')
+    : join(iconPath, 'icon.png')
 );
 
 let mainWindow: Electron.BrowserWindow;
