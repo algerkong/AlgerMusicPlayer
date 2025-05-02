@@ -43,6 +43,8 @@ class AudioService {
 
   // 添加操作锁防止并发操作
   private operationLock = false;
+  private operationLockTimer: NodeJS.Timeout | null = null;
+  private operationLockTimeout = 5000; // 5秒超时
 
   constructor() {
     if ('mediaSession' in navigator) {
@@ -359,15 +361,46 @@ class AudioService {
     }
   }
 
+  // 设置操作锁，带超时自动释放
+  private setOperationLock(): boolean {
+    if (this.operationLock) {
+      return false;
+    }
+    
+    this.operationLock = true;
+    
+    // 清除之前的定时器
+    if (this.operationLockTimer) {
+      clearTimeout(this.operationLockTimer);
+    }
+    
+    // 设置超时自动释放锁
+    this.operationLockTimer = setTimeout(() => {
+      console.warn('操作锁超时自动释放');
+      this.operationLock = false;
+      this.operationLockTimer = null;
+    }, this.operationLockTimeout);
+    
+    return true;
+  }
+  
+  // 释放操作锁
+  private releaseOperationLock(): void {
+    this.operationLock = false;
+    
+    if (this.operationLockTimer) {
+      clearTimeout(this.operationLockTimer);
+      this.operationLockTimer = null;
+    }
+  }
+
   // 播放控制相关
   play(url?: string, track?: SongResult, isPlay: boolean = true): Promise<Howl> {
     // 如果操作锁已激活，说明有操作正在进行中，直接返回
-    if (this.operationLock) {
+    if (!this.setOperationLock()) {
       console.log('audioService: 操作锁激活，忽略当前播放请求');
       return Promise.reject(new Error('操作锁激活，请等待当前操作完成'));
     }
-
-    this.operationLock = true;
 
     // 如果没有提供新的 URL 和 track，且当前有音频实例，则继续播放
     if (this.currentSound && !url && !track) {
@@ -377,13 +410,13 @@ class AudioService {
         this.seekLock = false;
       }
       this.currentSound.play();
-      this.operationLock = false;
+      this.releaseOperationLock();
       return Promise.resolve(this.currentSound);
     }
 
     // 如果没有提供必要的参数，返回错误
     if (!url || !track) {
-      this.operationLock = false;
+      this.releaseOperationLock();
       return Promise.reject(new Error('Missing required parameters: url and track'));
     }
 
@@ -520,7 +553,7 @@ class AudioService {
           }
         } catch (error) {
           console.error('Error creating audio instance:', error);
-          this.operationLock = false;
+          this.releaseOperationLock();
           reject(error);
         }
       };
@@ -528,7 +561,7 @@ class AudioService {
       tryPlay();
     }).finally(() => {
       // 无论成功或失败都解除操作锁
-      this.operationLock = false;
+      this.releaseOperationLock();
     });
   }
 
@@ -541,12 +574,10 @@ class AudioService {
   }
 
   stop() {
-    if (this.operationLock) {
+    if (!this.setOperationLock()) {
       console.log('audioService: 操作锁激活，忽略当前停止请求');
       return;
     }
-
-    this.operationLock = true;
     
     if (this.currentSound) {
       try {
@@ -569,7 +600,7 @@ class AudioService {
     }
     this.disposeEQ();
     
-    this.operationLock = false;
+    this.releaseOperationLock();
   }
 
   setVolume(volume: number) {
@@ -580,12 +611,10 @@ class AudioService {
   }
 
   seek(time: number) {
-    if (this.operationLock) {
+    if (!this.setOperationLock()) {
       console.log('audioService: 操作锁激活，忽略当前seek请求');
       return;
     }
-
-    this.operationLock = true;
     
     if (this.currentSound) {
       try {
@@ -599,16 +628,14 @@ class AudioService {
       }
     }
     
-    this.operationLock = false;
+    this.releaseOperationLock();
   }
 
   pause() {
-    if (this.operationLock) {
+    if (!this.setOperationLock()) {
       console.log('audioService: 操作锁激活，忽略当前暂停请求');
       return;
     }
-
-    this.operationLock = true;
     
     if (this.currentSound) {
       try {
@@ -623,7 +650,7 @@ class AudioService {
       }
     }
     
-    this.operationLock = false;
+    this.releaseOperationLock();
   }
 
   clearAllListeners() {

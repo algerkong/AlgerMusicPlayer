@@ -235,70 +235,8 @@ const initProgressAnimation = () => {
 // 初始化进度动画
 initProgressAnimation();
 
-// 简化后的 watch 函数，只保留核心逻辑
-watch(
-  () => playerStore.playMusicUrl,
-  async (newVal) => {
-    if (newVal && playMusic.value) {
-      try {
-        // 保存当前播放状态
-        const shouldPlay = playerStore.play;
-
-        // 检查是否有保存的进度
-        let initialPosition = 0;
-        const savedProgress = JSON.parse(localStorage.getItem('playProgress') || '{}');
-        if (savedProgress.songId === playMusic.value.id) {
-          initialPosition = savedProgress.progress;
-        }
-
-        // 对于B站视频，检查URL是否有效
-        if (playMusic.value.source === 'bilibili' && (!newVal || newVal === 'undefined')) {
-          console.log('B站视频URL无效，尝试重新获取');
-
-          // 需要重新获取B站视频URL
-          if (playMusic.value.bilibiliData) {
-            try {
-              const proxyUrl = await getBilibiliAudioUrl(
-                playMusic.value.bilibiliData.bvid,
-                playMusic.value.bilibiliData.cid
-              );
-
-              // 设置URL到播放器状态
-              (playMusic.value as any).playMusicUrl = proxyUrl;
-              playerStore.playMusicUrl = proxyUrl;
-              newVal = proxyUrl;
-            } catch (error) {
-              console.error('获取B站音频URL失败:', error);
-              return;
-            }
-          }
-        }
-
-        // 播放新音频，传递是否应该播放的状态
-        const newSound = await audioService.play(newVal, playMusic.value, shouldPlay);
-        sound.value = newSound as Howl;
-
-        // 如果有保存的进度，设置播放位置
-        if (initialPosition > 0) {
-          newSound.seek(initialPosition);
-          // 同时更新进度条显示
-          nowTime.value = initialPosition;
-        }
-
-        setupAudioListeners();
-
-        // 确保状态与 localStorage 同步
-        localStorage.setItem('currentPlayMusic', JSON.stringify(playerStore.playMusic));
-        localStorage.setItem('currentPlayMusicUrl', newVal);
-      } catch (error) {
-        console.error('播放音频失败:', error);
-        // store.commit('setPlayMusic', false);
-        playerStore.setPlayMusic(false);
-        message.error(i18n.global.t('player.playFailed'));
-      }
-    }
-  }
-);
+// 移除对 playerStore.playMusicUrl 的监听，因为播放逻辑已经在 player.ts 中处理
+// 保留 watch 对 playerStore.playMusic 的监听以更新歌词数据
 
 watch(
   () => playerStore.playMusic,
@@ -1009,3 +947,27 @@ audioService.on('url_expired', async (expiredTrack) => {
     message.error('恢复播放失败，请手动点击播放');
   }
 });
+
+// 添加音频就绪事件监听器
+window.addEventListener('audio-ready', ((event: CustomEvent) => {
+  try {
+    const { sound: newSound } = event.detail;
+    if (newSound) {
+      // 更新本地 sound 引用
+      sound.value = newSound as Howl;
+      
+      // 设置音频监听器
+      setupAudioListeners();
+      
+      // 获取当前播放位置并更新显示
+      const currentPosition = newSound.seek() as number;
+      if (typeof currentPosition === 'number' && !Number.isNaN(currentPosition)) {
+        nowTime.value = currentPosition;
+      }
+      
+      console.log('音频就绪，已设置监听器并更新进度显示');
+    }
+  } catch (error) {
+    console.error('处理音频就绪事件出错:', error);
+  }
+}) as EventListener);
