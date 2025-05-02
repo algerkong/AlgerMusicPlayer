@@ -54,7 +54,7 @@
         <div v-if="favoriteList.length === 0" class="empty-tip">
           <n-empty :description="t('favorite.emptyTip')" />
         </div>
-        <div v-else class="favorite-list">
+        <div v-else class="favorite-list" :class="{ 'max-w-[400px]': isComponent }">
           <song-item
             v-for="(song, index) in favoriteSongs"
             :key="song.id"
