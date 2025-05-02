@@ -213,7 +213,9 @@ function setupRoutes(app: express.Application) {
   app.get('/', (_, res) => {
     try {
       const resourcesPath = process.resourcesPath || '';
-      const finalPath = path.join(resourcesPath, 'html', 'remote-control.html');
+      const isDev = process.env.NODE_ENV === 'development';
+      const htmlPath = path.join(process.cwd(), 'resources', 'html', 'remote-control.html');
+      const finalPath = isDev ? htmlPath : path.join(resourcesPath, 'html', 'remote-control.html');
       
       if (fs.existsSync(finalPath)) {
         res.sendFile(finalPath);
