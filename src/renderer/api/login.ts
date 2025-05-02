@@ -15,7 +15,7 @@ export function createQr(key: any) {
 // 获取二维码状态
 //  /login/qr/check
 export function checkQr(key: any) {
-  return request.get('/login/qr/check', { params: { key } });
+  return request.get('/login/qr/check', { params: { key, noCookie: true } });
 }
 
 // 获取登录状态
