@@ -29,6 +29,50 @@ function getLocalStorageItem<T>(key: string, defaultValue: T): T {
   }
 }
 
+// 比较B站视频ID的辅助函数
+export const isBilibiliIdMatch = (id1: string | number, id2: string | number): boolean => {
+  const str1 = String(id1);
+  const str2 = String(id2);
+  
+  // 如果两个ID都不包含--分隔符，直接比较
+  if (!str1.includes('--') && !str2.includes('--')) {
+    return str1 === str2;
+  }
+  
+  // 处理B站视频ID
+  if (str1.includes('--') || str2.includes('--')) {
+    // 尝试从ID中提取bvid和cid
+    const extractBvIdAndCid = (str: string) => {
+      if (!str.includes('--')) return { bvid: '', cid: '' };
+      const parts = str.split('--');
+      if (parts.length >= 3) {
+        // bvid--pid--cid格式
+        return { bvid: parts[0], cid: parts[2] };
+      } else if (parts.length === 2) {
+        // 旧格式或其他格式
+        return { bvid: '', cid: parts[1] };
+      }
+      return { bvid: '', cid: '' };
+    };
+    
+    const { bvid: bvid1, cid: cid1 } = extractBvIdAndCid(str1);
+    const { bvid: bvid2, cid: cid2 } = extractBvIdAndCid(str2);
+    
+    // 如果两个ID都有bvid，比较bvid和cid
+    if (bvid1 && bvid2) {
+      return bvid1 === bvid2 && cid1 === cid2;
+    }
+    
+    // 其他情况，只比较cid部分
+    if (cid1 && cid2) {
+      return cid1 === cid2;
+    }
+  }
+  
+  // 默认情况，直接比较完整ID
+  return str1 === str2;
+};
+
 // 提取公共函数：获取B站视频URL
 
 export const getSongUrl = async (
@@ -288,7 +332,7 @@ export const usePlayerStore = defineStore('player', () => {
   const playListIndex = ref(getLocalStorageItem('playListIndex', 0));
   const playMode = ref(getLocalStorageItem('playMode', 0));
   const musicFull = ref(false);
-  const favoriteList = ref<number[]>(getLocalStorageItem('favoriteList', []));
+  const favoriteList = ref<Array<number | string>>(getLocalStorageItem('favoriteList', []));
   const savedPlayProgress = ref<number | undefined>();
 
   const currentSong = computed(() => playMusic.value);
@@ -587,19 +631,31 @@ export const usePlayerStore = defineStore('player', () => {
     localStorage.setItem('playMode', JSON.stringify(playMode.value));
   };
 
-  const addToFavorite = async (id: number) => {
-    if (!favoriteList.value.includes(id)) {
+  const addToFavorite = async (id: number | string) => {
+    // 检查是否已存在相同的ID或内容相同的B站视频
+    const isAlreadyInList = favoriteList.value.some(existingId => 
+      typeof id === 'string' && id.includes('--') 
+        ? isBilibiliIdMatch(existingId, id)
+        : existingId === id
+    );
+    
+    if (!isAlreadyInList) {
       favoriteList.value.push(id);
       localStorage.setItem('favoriteList', JSON.stringify(favoriteList.value));
     }
   };
 
-  const removeFromFavorite = async (id: number) => {
-    favoriteList.value = favoriteList.value.filter((item) => item !== id);
+  const removeFromFavorite = async (id: number | string) => {
+    // 对于B站视频，需要根据bvid和cid来匹配
+    if (typeof id === 'string' && id.includes('--')) {
+      favoriteList.value = favoriteList.value.filter(existingId => !isBilibiliIdMatch(existingId, id));
+    } else {
+      favoriteList.value = favoriteList.value.filter(existingId => existingId !== id);
+    }
     localStorage.setItem('favoriteList', JSON.stringify(favoriteList.value));
   };
 
-  const removeFromPlayList = (id: number) => {
+  const removeFromPlayList = (id: number | string) => {
     const index = playList.value.findIndex((item) => item.id === id);
     if (index === -1) return;
 
