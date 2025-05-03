@@ -3,7 +3,7 @@ name: Deploy Web
 on:
   push:
     branches:
-      - dev_electron # 或者您的主分支名称
+      - main # 或者您的主分支名称
   workflow_dispatch: # 允许手动触发
 
 jobs:
