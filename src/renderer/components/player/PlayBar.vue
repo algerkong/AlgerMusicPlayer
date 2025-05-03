@@ -144,6 +144,8 @@
         </template>
         <eq-control />
       </n-popover>
+      <!-- 定时关闭功能 -->
+      <sleep-timer-popover mode="desktop" />
       <n-popover
         trigger="click"
         :z-index="99999999"
@@ -194,6 +196,7 @@ import { useI18n } from 'vue-i18n';
 
 import SongItem from '@/components/common/SongItem.vue';
 import EqControl from '@/components/EQControl.vue';
+import SleepTimerPopover from '@/components/player/SleepTimerPopover.vue';
 import {
   allTime,
   artistList,
@@ -206,7 +209,10 @@ import {
 import { useArtist } from '@/hooks/useArtist';
 import MusicFull from '@/layout/components/MusicFull.vue';
 import { audioService } from '@/services/audioService';
-import { isBilibiliIdMatch, usePlayerStore } from '@/store/modules/player';
+import { 
+  isBilibiliIdMatch, 
+  usePlayerStore 
+} from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 import type { SongResult } from '@/type/music';
 import { getImgUrl, isElectron, isMobile, secondToMinute, setAnimationClass } from '@/utils';

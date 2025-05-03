@@ -323,6 +323,23 @@ const loadLrcAsync = async (playMusic: SongResult) => {
   playMusic.lyric = lyrics;
 };
 
+// 定时关闭类型
+export enum SleepTimerType {
+  NONE = 'none',         // 没有定时
+  TIME = 'time',         // 按时间定时
+  SONGS = 'songs',       // 按歌曲数定时
+  PLAYLIST_END = 'end'   // 播放列表播放完毕定时
+}
+
+// 定时关闭信息
+export interface SleepTimerInfo {
+  type: SleepTimerType;
+  value: number;         // 对于TIME类型，值以分钟为单位；对于SONGS类型，值为歌曲数量
+  endTime?: number;      // 何时结束（仅TIME类型）
+  startSongIndex?: number; // 开始时的歌曲索引（对于SONGS类型）
+  remainingSongs?: number; // 剩余歌曲数（对于SONGS类型）
+}
+
 export const usePlayerStore = defineStore('player', () => {
   const play = ref(false);
   const isPlay = ref(false);
@@ -334,7 +351,38 @@ export const usePlayerStore = defineStore('player', () => {
   const musicFull = ref(false);
   const favoriteList = ref<Array<number | string>>(getLocalStorageItem('favoriteList', []));
   const savedPlayProgress = ref<number | undefined>();
-
+  
+  // 定时关闭相关状态
+  const sleepTimer = ref<SleepTimerInfo>(getLocalStorageItem('sleepTimer', {
+    type: SleepTimerType.NONE,
+    value: 0
+  }));
+  
+  const timerInterval = ref<number | null>(null);
+  
+  // 当前定时关闭状态
+  const currentSleepTimer = computed(() => sleepTimer.value);
+  
+  // 判断是否有活跃的定时关闭
+  const hasSleepTimerActive = computed(() => sleepTimer.value.type !== SleepTimerType.NONE);
+  
+  // 获取剩余时间（用于UI显示）
+  const sleepTimerRemainingTime = computed(() => {
+    if (sleepTimer.value.type === SleepTimerType.TIME && sleepTimer.value.endTime) {
+      const remaining = Math.max(0, sleepTimer.value.endTime - Date.now());
+      return Math.ceil(remaining / 60000); // 转换为分钟并向上取整
+    }
+    return 0;
+  });
+  
+  // 获取剩余歌曲数（用于UI显示）
+  const sleepTimerRemainingSongs = computed(() => {
+    if (sleepTimer.value.type === SleepTimerType.SONGS) {
+      return sleepTimer.value.remainingSongs || 0;
+    }
+    return 0;
+  });
+  
   const currentSong = computed(() => playMusic.value);
   const isPlaying = computed(() => isPlay.value);
   const currentPlayList = computed(() => playList.value);
@@ -499,6 +547,174 @@ export const usePlayerStore = defineStore('player', () => {
     setPlayList(list);
   };
 
+  // 睡眠定时器功能
+  const setSleepTimerByTime = (minutes: number) => {
+    // 清除现有定时器
+    clearSleepTimer();
+    
+    if (minutes <= 0) {
+      return;
+    }
+    
+    const endTime = Date.now() + minutes * 60 * 1000;
+    
+    sleepTimer.value = {
+      type: SleepTimerType.TIME,
+      value: minutes,
+      endTime
+    };
+    
+    // 保存到本地存储
+    localStorage.setItem('sleepTimer', JSON.stringify(sleepTimer.value));
+    
+    // 设置定时器检查
+    timerInterval.value = window.setInterval(() => {
+      checkSleepTimer();
+    }, 1000) as unknown as number; // 每秒检查一次
+    
+    console.log(`设置定时关闭: ${minutes}分钟后`);
+    return true;
+  };
+  
+  // 睡眠定时器功能
+  const setSleepTimerBySongs = (songs: number) => {
+    // 清除现有定时器
+    clearSleepTimer();
+    
+    if (songs <= 0) {
+      return;
+    }
+    
+    sleepTimer.value = {
+      type: SleepTimerType.SONGS,
+      value: songs,
+      startSongIndex: playListIndex.value,
+      remainingSongs: songs
+    };
+    
+    // 保存到本地存储
+    localStorage.setItem('sleepTimer', JSON.stringify(sleepTimer.value));
+    
+    console.log(`设置定时关闭: 再播放${songs}首歌后`);
+    return true;
+  };
+  
+  // 睡眠定时器功能
+  const setSleepTimerAtPlaylistEnd = () => {
+    // 清除现有定时器
+    clearSleepTimer();
+    
+    sleepTimer.value = {
+      type: SleepTimerType.PLAYLIST_END,
+      value: 0
+    };
+    
+    // 保存到本地存储
+    localStorage.setItem('sleepTimer', JSON.stringify(sleepTimer.value));
+    
+    console.log('设置定时关闭: 播放列表结束时');
+    return true;
+  };
+  
+  // 取消定时关闭
+  const clearSleepTimer = () => {
+    if (timerInterval.value) {
+      window.clearInterval(timerInterval.value);
+      timerInterval.value = null;
+    }
+    
+    sleepTimer.value = {
+      type: SleepTimerType.NONE,
+      value: 0
+    };
+    
+    // 保存到本地存储
+    localStorage.setItem('sleepTimer', JSON.stringify(sleepTimer.value));
+    
+    console.log('取消定时关闭');
+    return true;
+  };
+  
+  // 检查定时关闭是否应该触发
+  const checkSleepTimer = () => {
+    if (sleepTimer.value.type === SleepTimerType.NONE) {
+      return;
+    }
+    
+    if (sleepTimer.value.type === SleepTimerType.TIME && sleepTimer.value.endTime) {
+      if (Date.now() >= sleepTimer.value.endTime) {
+        // 时间到，停止播放
+        stopPlayback();
+      }
+    } else if (sleepTimer.value.type === SleepTimerType.PLAYLIST_END) {
+      // 播放列表结束定时由nextPlay方法处理
+    }
+  };
+  
+  // 停止播放并清除定时器
+  const stopPlayback = () => {
+    console.log('定时器触发：停止播放');
+    
+    if (isPlaying.value) {
+      setIsPlay(false);
+      audioService.pause();
+    }
+    
+    // 如果使用Electron，发送通知
+    if (window.electron?.ipcRenderer) {
+      window.electron.ipcRenderer.send('show-notification', {
+        title: i18n.global.t('player.sleepTimer.timerEnded'),
+        body: i18n.global.t('player.sleepTimer.playbackStopped')
+      });
+    }
+    
+    // 清除定时器
+    clearSleepTimer();
+  };
+  
+  // 监听歌曲变化，处理按歌曲数定时和播放列表结束定时
+  const handleSongChange = () => {
+    console.log('歌曲已切换，检查定时器状态:', sleepTimer.value);
+    
+    // 处理按歌曲数定时
+    if (sleepTimer.value.type === SleepTimerType.SONGS && sleepTimer.value.remainingSongs !== undefined) {
+      sleepTimer.value.remainingSongs--;
+      console.log(`剩余歌曲数: ${sleepTimer.value.remainingSongs}`);
+      
+      // 保存到本地存储
+      localStorage.setItem('sleepTimer', JSON.stringify(sleepTimer.value));
+      
+      if (sleepTimer.value.remainingSongs <= 0) {
+        // 歌曲数到达，停止播放
+        console.log('已播放完设定的歌曲数，停止播放');
+        stopPlayback()
+        setTimeout(() => {
+          stopPlayback();
+        }, 1000);
+      }
+    }
+    
+    // 处理播放列表结束定时
+    if (sleepTimer.value.type === SleepTimerType.PLAYLIST_END) {
+      // 检查是否到达播放列表末尾
+      const isLastSong = (playListIndex.value === playList.value.length - 1);
+      
+      // 如果是列表最后一首歌且不是循环模式，则设置为在这首歌结束后停止
+      if (isLastSong && playMode.value !== 1) { // 1 是循环模式
+        console.log('已到达播放列表末尾，将在当前歌曲结束后停止播放');
+        // 转换为按歌曲数定时，剩余1首
+        sleepTimer.value = {
+          type: SleepTimerType.SONGS,
+          value: 1,
+          remainingSongs: 1
+        };
+        // 保存到本地存储
+        localStorage.setItem('sleepTimer', JSON.stringify(sleepTimer.value));
+      }
+    }
+  };
+
+  // 修改nextPlay方法，加入定时关闭检查逻辑
   const nextPlay = async () => {
     // 静态标志，防止多次调用造成递归
     if ((nextPlay as any).isRunning) {
@@ -514,6 +730,19 @@ export const usePlayerStore = defineStore('player', () => {
         (nextPlay as any).isRunning = false;
         return;
       }
+
+      // 检查是否是播放列表的最后一首且设置了播放列表结束定时
+      if (playMode.value === 0 && playListIndex.value === playList.value.length - 1 && 
+          sleepTimer.value.type === SleepTimerType.PLAYLIST_END) {
+        // 已是最后一首且为顺序播放模式，触发停止
+        stopPlayback();
+        (nextPlay as any).isRunning = false;
+        return;
+      }
+
+      // 在切换前保存当前播放状态
+      const shouldPlayNext = play.value;
+      console.log('切换到下一首，当前播放状态:', shouldPlayNext ? '播放' : '暂停');
 
       let nowPlayListIndex: number;
 
@@ -538,8 +767,8 @@ export const usePlayerStore = defineStore('player', () => {
         console.log('下一首是B站视频，已清除URL强制重新获取');
       }
 
-      // 尝试播放，如果失败会返回false
-      const success = await handlePlayMusic(nextSong);
+      // 尝试播放，并明确传递应该播放的状态
+      const success = await handlePlayMusic(nextSong, shouldPlayNext);
       
       if (!success) {
         console.error('播放下一首失败，将从播放列表中移除此歌曲');
@@ -558,6 +787,9 @@ export const usePlayerStore = defineStore('player', () => {
           return;
         }
       }
+      
+      // 歌曲切换成功，触发歌曲变更处理（用于定时关闭功能）
+      handleSongChange();
     } catch (error) {
       console.error('切换下一首出错:', error);
     } finally {
@@ -756,6 +988,7 @@ export const usePlayerStore = defineStore('player', () => {
     try {
       // 保存当前播放状态
       const shouldPlay = play.value;
+      console.log('播放音频，当前播放状态:', shouldPlay ? '播放' : '暂停');
 
       // 检查是否有保存的进度
       let initialPosition = 0;
@@ -788,6 +1021,7 @@ export const usePlayerStore = defineStore('player', () => {
       }
 
       // 播放新音频，传递是否应该播放的状态
+      console.log('调用audioService.play，播放状态:', shouldPlay);
       const newSound = await audioService.play(playMusicUrl.value, playMusic.value, shouldPlay);
 
       // 如果有保存的进度，设置播放位置
@@ -796,7 +1030,7 @@ export const usePlayerStore = defineStore('player', () => {
       }
 
       // 发布音频就绪事件，让 MusicHook.ts 来处理设置监听器
-      window.dispatchEvent(new CustomEvent('audio-ready', { detail: { sound: newSound } }));
+      window.dispatchEvent(new CustomEvent('audio-ready', { detail: { sound: newSound, shouldPlay } }));
 
       // 确保状态与 localStorage 同步
       localStorage.setItem('currentPlayMusic', JSON.stringify(playMusic.value));
@@ -842,6 +1076,17 @@ export const usePlayerStore = defineStore('player', () => {
     musicFull,
     savedPlayProgress,
     favoriteList,
+    
+    // 定时关闭相关
+    sleepTimer,
+    currentSleepTimer,
+    hasSleepTimerActive,
+    sleepTimerRemainingTime,
+    sleepTimerRemainingSongs,
+    setSleepTimerByTime,
+    setSleepTimerBySongs,
+    setSleepTimerAtPlaylistEnd,
+    clearSleepTimer,
 
     currentSong,
     isPlaying,

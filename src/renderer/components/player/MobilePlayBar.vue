@@ -87,6 +87,9 @@
           </div>
         </n-popover>
       </div>
+
+      <!-- 定时关闭按钮 -->
+      <SleepTimerPopover mode="mobile" />
     </template>
 
     <!-- Mini模式 - 在musicFullVisible为false时显示 -->
@@ -152,6 +155,7 @@ import { useThrottleFn } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
 
 import SongItem from '@/components/common/SongItem.vue';
+import SleepTimerPopover from '@/components/player/SleepTimerPopover.vue';
 import { allTime, artistList, nowTime, playMusic, sound, textColors } from '@/hooks/MusicHook';
 import MusicFull from '@/layout/components/MusicFull.vue';
 import { audioService } from '@/services/audioService';
