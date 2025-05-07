@@ -45,6 +45,7 @@ class AudioService {
   private operationLock = false;
   private operationLockTimer: NodeJS.Timeout | null = null;
   private operationLockTimeout = 5000; // 5秒超时
+  private operationLockStartTime: number = 0;
 
   constructor() {
     if ('mediaSession' in navigator) {
@@ -363,11 +364,19 @@ class AudioService {
 
   // 设置操作锁，带超时自动释放
   private setOperationLock(): boolean {
+    // 如果锁已经存在，检查是否超时
     if (this.operationLock) {
+      const currentTime = Date.now();
+      if (currentTime - this.operationLockStartTime > this.operationLockTimeout) {
+        console.warn('操作锁已超时，强制释放');
+        this.releaseOperationLock();
+        return true;
+      }
       return false;
     }
     
     this.operationLock = true;
+    this.operationLockStartTime = Date.now();
     
     // 清除之前的定时器
     if (this.operationLockTimer) {
@@ -377,8 +386,7 @@ class AudioService {
     // 设置超时自动释放锁
     this.operationLockTimer = setTimeout(() => {
       console.warn('操作锁超时自动释放');
-      this.operationLock = false;
-      this.operationLockTimer = null;
+      this.releaseOperationLock();
     }, this.operationLockTimeout);
     
     return true;
@@ -387,6 +395,7 @@ class AudioService {
   // 释放操作锁
   private releaseOperationLock(): void {
     this.operationLock = false;
+    this.operationLockStartTime = 0;
     
     if (this.operationLockTimer) {
       clearTimeout(this.operationLockTimer);
@@ -485,6 +494,7 @@ class AudioService {
               } else {
                 // 发送URL过期事件，通知外部需要重新获取URL
                 this.emit('url_expired', this.currentTrack);
+                this.releaseOperationLock();
                 reject(new Error('音频加载失败，请尝试切换其他歌曲'));
               }
             },
@@ -497,6 +507,7 @@ class AudioService {
               } else {
                 // 发送URL过期事件，通知外部需要重新获取URL
                 this.emit('url_expired', this.currentTrack);
+                this.releaseOperationLock();
                 reject(new Error('音频播放失败，请尝试切换其他歌曲'));
               }
             },
