@@ -26,6 +26,7 @@ import { isElectron, isLyricWindow } from '@/utils';
 import { initAudioListeners } from './hooks/MusicHook';
 import { isMobile } from './utils';
 import { useAppShortcuts } from './utils/appShortcuts';
+import { audioService } from './services/audioService';
 
 const { locale } = useI18n();
 const settingsStore = useSettingsStore();
@@ -119,6 +120,8 @@ onMounted(async () => {
       window.api.sendSong(cloneDeep(playerStore.playMusic));
     }
   }
+
+  audioService.releaseOperationLock();
 });
 </script>
 
