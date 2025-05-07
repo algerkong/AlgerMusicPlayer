@@ -527,8 +527,11 @@ export const usePlayerStore = defineStore('player', () => {
     musicFull.value = value;
   };
 
-  const setPlayList = (list: SongResult[]) => {
-    playListIndex.value = list.findIndex((item) => item.id === playMusic.value.id);
+  const setPlayList = (list: SongResult[], keepIndex: boolean = false) => {
+    // 如果指定保持当前索引，则不重新计算索引
+    if (!keepIndex) {
+      playListIndex.value = list.findIndex((item) => item.id === playMusic.value.id);
+    }
     playList.value = list;
     localStorage.setItem('playList', JSON.stringify(list));
     localStorage.setItem('playListIndex', playListIndex.value.toString());
@@ -714,7 +717,7 @@ export const usePlayerStore = defineStore('player', () => {
     }
   };
 
-  // 修改nextPlay方法，加入定时关闭检查逻辑
+  // 修改nextPlay方法，改进播放失败的处理逻辑
   const nextPlay = async () => {
     // 静态标志，防止多次调用造成递归
     if ((nextPlay as any).isRunning) {
@@ -744,52 +747,114 @@ export const usePlayerStore = defineStore('player', () => {
       const shouldPlayNext = play.value;
       console.log('切换到下一首，当前播放状态:', shouldPlayNext ? '播放' : '暂停');
 
+      // 保存当前索引，用于错误恢复
+      const currentIndex = playListIndex.value;
       let nowPlayListIndex: number;
 
       if (playMode.value === 2) {
+        // 随机播放模式
         do {
           nowPlayListIndex = Math.floor(Math.random() * playList.value.length);
         } while (nowPlayListIndex === playListIndex.value && playList.value.length > 1);
       } else {
+        // 顺序播放或循环播放模式
         nowPlayListIndex = (playListIndex.value + 1) % playList.value.length;
       }
 
-      // 重要：首先更新当前播放索引
+      // 记录尝试播放过的索引，防止无限循环
+      const attemptedIndices = new Set<number>();
+      attemptedIndices.add(nowPlayListIndex);
+
+      // 更新当前播放索引
       playListIndex.value = nowPlayListIndex;
       
       // 获取下一首歌曲
-      const nextSong = playList.value[nowPlayListIndex];
+      let nextSong = playList.value[nowPlayListIndex];
+      let success = false;
+      let retryCount = 0;
+      const maxRetries = Math.min(3, playList.value.length);
 
-      // 如果是B站视频，确保重新获取URL
-      if (nextSong.source === 'bilibili' && nextSong.bilibiliData) {
-        // 清除之前的URL，确保重新获取
-        nextSong.playMusicUrl = undefined;
-        console.log('下一首是B站视频，已清除URL强制重新获取');
-      }
+      // 尝试播放，最多尝试maxRetries次
+      while (!success && retryCount < maxRetries) {
+        // 如果是B站视频，确保重新获取URL
+        if (nextSong.source === 'bilibili' && nextSong.bilibiliData) {
+          // 清除之前的URL，确保重新获取
+          nextSong.playMusicUrl = undefined;
+          console.log(`尝试播放B站视频 (尝试 ${retryCount + 1}/${maxRetries})`);
+        }
 
-      // 尝试播放，并明确传递应该播放的状态
-      const success = await handlePlayMusic(nextSong, shouldPlayNext);
-      
-      if (!success) {
-        console.error('播放下一首失败，将从播放列表中移除此歌曲');
-        // 从播放列表中移除失败的歌曲
-        const newPlayList = [...playList.value];
-        newPlayList.splice(nowPlayListIndex, 1);
+        // 尝试播放，并明确传递应该播放的状态
+        success = await handlePlayMusic(nextSong, shouldPlayNext);
         
-        if (newPlayList.length > 0) {
-          // 更新播放列表后，重新尝试播放下一首
-          setPlayList(newPlayList);
-          // 延迟一点时间再尝试下一首，避免立即触发可能导致的无限循环
-          setTimeout(() => {
-            (nextPlay as any).isRunning = false;
-            nextPlay();
-          }, 300);
-          return;
+        if (!success) {
+          retryCount++;
+          console.error(`播放失败，尝试 ${retryCount}/${maxRetries}`);
+          
+          if (retryCount >= maxRetries) {
+            console.error('多次尝试播放失败，将从播放列表中移除此歌曲');
+            // 从播放列表中移除失败的歌曲
+            const newPlayList = [...playList.value];
+            newPlayList.splice(nowPlayListIndex, 1);
+            
+            if (newPlayList.length > 0) {
+              // 更新播放列表，但保持当前索引不变
+              // 这是关键修改，防止索引重置到-1
+              const keepCurrentIndexPosition = true;
+              setPlayList(newPlayList, keepCurrentIndexPosition);
+              
+              // 继续尝试下一首
+              if (playMode.value === 2) {
+                // 随机模式，随机选择一首未尝试过的
+                const availableIndices = Array.from(
+                  { length: newPlayList.length }, 
+                  (_, i) => i
+                ).filter(i => !attemptedIndices.has(i));
+                
+                if (availableIndices.length > 0) {
+                  // 随机选择一个未尝试过的索引
+                  nowPlayListIndex = availableIndices[Math.floor(Math.random() * availableIndices.length)];
+                } else {
+                  // 如果所有歌曲都尝试过了，选择下一个索引
+                  nowPlayListIndex = (playListIndex.value + 1) % newPlayList.length;
+                }
+              } else {
+                // 顺序播放，选择下一首
+                // 如果当前索引已经是最后一首，循环到第一首
+                nowPlayListIndex = playListIndex.value >= newPlayList.length
+                  ? 0 
+                  : playListIndex.value;
+              }
+              
+              playListIndex.value = nowPlayListIndex;
+              attemptedIndices.add(nowPlayListIndex);
+              
+              if (newPlayList[nowPlayListIndex]) {
+                nextSong = newPlayList[nowPlayListIndex];
+                retryCount = 0; // 重置重试计数器，为新歌曲准备
+              } else {
+                // 处理索引无效的情况
+                console.error('无效的播放索引，停止尝试');
+                break;
+              }
+            } else {
+              // 播放列表为空，停止尝试
+              console.error('播放列表为空，停止尝试');
+              break;
+            }
+          }
         }
       }
       
       // 歌曲切换成功，触发歌曲变更处理（用于定时关闭功能）
-      handleSongChange();
+      if (success) {
+        handleSongChange();
+      } else {
+        console.error('所有尝试都失败，无法播放下一首歌曲');
+        // 如果尝试了所有可能的歌曲仍然失败，恢复到原始索引
+        playListIndex.value = currentIndex;
+        setIsPlay(false); // 停止播放
+        message.error(i18n.global.t('player.playFailed'));
+      }
     } catch (error) {
       console.error('切换下一首出错:', error);
     } finally {
@@ -797,6 +862,7 @@ export const usePlayerStore = defineStore('player', () => {
     }
   };
 
+  // 修改 prevPlay 方法，使用与 nextPlay 相似的逻辑改进
   const prevPlay = async () => {
     // 静态标志，防止多次调用造成递归
     if ((prevPlay as any).isRunning) {
@@ -813,6 +879,8 @@ export const usePlayerStore = defineStore('player', () => {
         return;
       }
       
+      // 保存当前索引，用于错误恢复
+      const currentIndex = playListIndex.value;
       const nowPlayListIndex =
         (playListIndex.value - 1 + playList.value.length) % playList.value.length;
 
@@ -821,6 +889,9 @@ export const usePlayerStore = defineStore('player', () => {
         
       // 获取上一首歌曲
       const prevSong = playList.value[nowPlayListIndex];
+      let success = false;
+      let retryCount = 0;
+      const maxRetries = 2;
 
       // 如果是B站视频，确保重新获取URL
       if (prevSong.source === 'bilibili' && prevSong.bilibiliData) {
@@ -829,27 +900,59 @@ export const usePlayerStore = defineStore('player', () => {
         console.log('上一首是B站视频，已清除URL强制重新获取');
       }
 
-      // 尝试播放，如果失败会返回false
-      const success = await handlePlayMusic(prevSong);
+      // 尝试播放，最多尝试maxRetries次
+      while (!success && retryCount < maxRetries) {
+        success = await handlePlayMusic(prevSong);
+        
+        if (!success) {
+          retryCount++;
+          console.error(`播放上一首失败，尝试 ${retryCount}/${maxRetries}`);
+          
+          // 最后一次尝试失败
+          if (retryCount >= maxRetries) {
+            console.error('多次尝试播放失败，将从播放列表中移除此歌曲');
+            // 从播放列表中移除失败的歌曲
+            const newPlayList = [...playList.value];
+            newPlayList.splice(nowPlayListIndex, 1);
+            
+            if (newPlayList.length > 0) {
+              // 更新播放列表，但保持当前索引不变
+              const keepCurrentIndexPosition = true;
+              setPlayList(newPlayList, keepCurrentIndexPosition);
+              
+              // 恢复到原始索引或继续尝试上一首
+              if (newPlayList.length === 1) {
+                // 只剩一首歌，直接播放它
+                playListIndex.value = 0;
+              } else {
+                // 尝试上上一首
+                const newPrevIndex = (playListIndex.value - 1 + newPlayList.length) % newPlayList.length;
+                playListIndex.value = newPrevIndex;
+              }
+              
+              // 延迟一点时间再尝试，避免可能的无限循环
+              setTimeout(() => {
+                (prevPlay as any).isRunning = false;
+                prevPlay(); // 递归调用，尝试再上一首
+              }, 300);
+              return;
+            } else {
+              // 播放列表为空，停止尝试
+              console.error('播放列表为空，停止尝试');
+              break;
+            }
+          }
+        }
+      }
       
       if (success) {
         await fetchSongs(playList.value, playListIndex.value - 3, nowPlayListIndex);
       } else {
-        console.error('播放上一首失败，将从播放列表中移除此歌曲');
-        // 从播放列表中移除失败的歌曲
-        const newPlayList = [...playList.value];
-        newPlayList.splice(nowPlayListIndex, 1);
-        
-        if (newPlayList.length > 0) {
-          // 更新播放列表后，重新尝试播放上一首
-          setPlayList(newPlayList);
-          // 延迟一点时间再尝试上一首，避免立即触发可能导致的无限循环
-          setTimeout(() => {
-            (prevPlay as any).isRunning = false;
-            prevPlay();
-          }, 300);
-          return;
-        }
+        console.error('所有尝试都失败，无法播放上一首歌曲');
+        // 如果尝试了所有可能的歌曲仍然失败，恢复到原始索引
+        playListIndex.value = currentIndex;
+        setIsPlay(false); // 停止播放
+        message.error(i18n.global.t('player.playFailed'));
       }
     } catch (error) {
       console.error('切换上一首出错:', error);
@@ -981,7 +1084,7 @@ export const usePlayerStore = defineStore('player', () => {
     localStorage.setItem('favoriteList', JSON.stringify(favoriteList.value));
   };
 
-  // 修改：处理音频播放的方法，使用事件触发机制
+  // 修改 playAudio 函数中的错误处理逻辑，避免在操作锁问题时频繁尝试播放
   const playAudio = async () => {
     if (!playMusicUrl.value || !playMusic.value) return null;
     
@@ -1041,23 +1144,40 @@ export const usePlayerStore = defineStore('player', () => {
       console.error('播放音频失败:', error);
       setPlayMusic(false);
       
-      // 避免直接调用 nextPlay，改用延时避免无限循环
       // 检查错误是否是由于操作锁引起的
       const errorMsg = error instanceof Error ? error.message : String(error);
+      
+      // 操作锁错误处理
       if (errorMsg.includes('操作锁激活')) {
-        console.log('由于操作锁正在使用，将在500ms后重试');
-        // 操作锁错误，延迟后再尝试
+        console.log('由于操作锁正在使用，将在1000ms后重试');
+        
+        // 强制重置操作锁并延迟再试
+        try {
+          // 尝试强制重置音频服务的操作锁
+          audioService.forceResetOperationLock();
+          console.log('已强制重置操作锁');
+        } catch (e) {
+          console.error('重置操作锁失败:', e);
+        }
+        
+        // 延迟较长时间，确保锁已完全释放
         setTimeout(() => {
-          // 检查当前播放列表是否有下一首
-          if (playList.value.length > 1) {
-            nextPlay();
-          }
-        }, 500);
+          // 直接重试当前歌曲，而不是切换到下一首
+          playAudio().catch(e => {
+            console.error('重试播放失败，切换到下一首:', e);
+            
+            // 只有再次失败才切换到下一首
+            if (playList.value.length > 1) {
+              nextPlay();
+            }
+          });
+        }, 1000);
       } else {
-        // 其他错误，延迟更短时间后切换
+        // 其他错误，切换到下一首
+        console.log('播放失败，切换到下一首');
         setTimeout(() => {
           nextPlay();
-        }, 100);
+        }, 300);
       }
       
       message.error(i18n.global.t('player.playFailed'));
