@@ -16,5 +16,6 @@ export * from './modules/player';
 export * from './modules/search';
 export * from './modules/settings';
 export * from './modules/user';
+export * from './modules/music';
 
 export default pinia;

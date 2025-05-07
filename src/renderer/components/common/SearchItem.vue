@@ -21,15 +21,6 @@
       <span>{{ item.size }}</span>
     </div>
 
-    <music-list
-      v-if="['专辑', 'playlist'].includes(item.type)"
-      v-model:show="showPop"
-      :name="item.name"
-      :song-list="songList"
-      :list-info="listInfo"
-      :cover="false"
-      :z-index="zIndex"
-    />
     <mv-player
       v-if="item.type === 'mv'"
       v-model:show="showPop"
@@ -46,8 +37,8 @@ import { audioService } from '@/services/audioService';
 import { usePlayerStore } from '@/store/modules/player';
 import { IMvItem } from '@/type/mv';
 import { getImgUrl } from '@/utils';
-
-import MusicList from '../MusicList.vue';
+import { useRouter } from 'vue-router';
+import { useMusicStore } from '@/store/modules/music';
 
 const props = withDefaults(
   defineProps<{
@@ -72,6 +63,8 @@ const showPop = ref(false);
 const listInfo = ref<any>(null);
 
 const playerStore = usePlayerStore();
+const router = useRouter();
+const musicStore = useMusicStore();
 
 const getCurrentMv = () => {
   return {
@@ -83,7 +76,6 @@ const getCurrentMv = () => {
 const handleClick = async () => {
   listInfo.value = null;
   if (props.item.type === '专辑') {
-    showPop.value = true;
     const res = await getAlbum(props.item.id);
     songList.value = res.data.songs.map((song: any) => {
       song.al.picUrl = song.al.picUrl || props.item.picUrl;
@@ -97,16 +89,41 @@ const handleClick = async () => {
       },
       description: res.data.album.description
     };
-  }
-
-  if (props.item.type === 'playlist') {
-    showPop.value = true;
+    
+    // 保存数据到store
+    musicStore.setCurrentMusicList(
+      songList.value, 
+      props.item.name, 
+      listInfo.value, 
+      false
+    );
+    
+    // 使用路由跳转
+    router.push({
+      name: 'musicList',
+      params: { id: props.item.id },
+      query: { type: 'album' }
+    });
+  } else if (props.item.type === 'playlist') {
     const res = await getListDetail(props.item.id);
     songList.value = res.data.playlist.tracks;
     listInfo.value = res.data.playlist;
-  }
-
-  if (props.item.type === 'mv') {
+    
+    // 保存数据到store
+    musicStore.setCurrentMusicList(
+      songList.value, 
+      props.item.name, 
+      listInfo.value, 
+      false
+    );
+    
+    // 使用路由跳转
+    router.push({
+      name: 'musicList',
+      params: { id: props.item.id },
+      query: { type: 'playlist' }
+    });
+  } else if (props.item.type === 'mv') {
     handleShowMv();
   }
 };

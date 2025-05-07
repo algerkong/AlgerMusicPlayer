@@ -63,7 +63,7 @@
                   class="playlist-item"
                   :class="setAnimationClass('animate__fadeInUp')"
                   :style="setAnimationDelay(index, 50)"
-                  @click="showPlaylist(item.id, item.name)"
+                  @click="openPlaylist(item)"
                 >
                   <div class="playlist-cover">
                     <n-image
@@ -120,14 +120,6 @@
         <div class="pb-20"></div>
       </div>
     </n-scrollbar>
-
-    <music-list
-      v-model:show="isShowList"
-      :name="currentList?.name || ''"
-      :song-list="currentList?.tracks || []"
-      :list-info="currentList"
-      :loading="listLoading"
-    />
   </div>
 </template>
 
@@ -140,7 +132,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { getListDetail } from '@/api/list';
 import { getUserDetail, getUserPlaylist, getUserRecord } from '@/api/user';
 import SongItem from '@/components/common/SongItem.vue';
-import MusicList from '@/components/MusicList.vue';
+import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import { usePlayerStore } from '@/store/modules/player';
 import type { Playlist } from '@/type/listDetail';
 import type { IUserDetail } from '@/type/user';
@@ -166,7 +158,6 @@ const recordList = ref<any[]>([]);
 const loading = ref(true);
 
 // 歌单详情相关
-const isShowList = ref(false);
 const currentList = ref<Playlist>();
 const listLoading = ref(false);
 
@@ -208,21 +199,23 @@ const loadUserData = async () => {
   }
 };
 
-// 展示歌单
-const showPlaylist = async (id: number, name: string) => {
-  isShowList.value = true;
+// 替换显示歌单的方法
+const openPlaylist = (item: any) => {
   listLoading.value = true;
-
-  try {
-    currentList.value = { id, name } as Playlist;
-    const { data } = await getListDetail(id);
-    currentList.value = data.playlist;
-  } catch (error) {
-    console.error('加载歌单详情失败:', error);
-    message.error('加载歌单详情失败');
-  } finally {
+  
+  getListDetail(item.id).then(res => {
+    currentList.value = res.data.playlist;
     listLoading.value = false;
-  }
+    
+    navigateToMusicList(router, {
+      id: item.id,
+      type: 'playlist',
+      name: item.name,
+      songList: res.data.playlist.tracks || [],
+      listInfo: res.data.playlist,
+      canRemove: false
+    });
+  });
 };
 
 // 播放歌曲

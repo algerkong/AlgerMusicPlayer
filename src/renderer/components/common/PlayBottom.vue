@@ -1,11 +1,12 @@
 <template>
-  <div v-if="isPlay" class="bottom" :style="{ height }"></div>
+  <div v-if="isPlay && !isMobile" class="bottom" :style="{ height }"></div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
 
 import { usePlayerStore } from '@/store/modules/player';
+import { isMobile } from '@/utils';
 
 const playerStore = usePlayerStore();
 const isPlay = computed(() => playerStore.playMusicUrl);

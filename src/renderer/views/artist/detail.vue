@@ -73,7 +73,7 @@
 
 <script setup lang="ts">
 import { useDateFormat } from '@vueuse/core';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch, nextTick, onActivated, onDeactivated } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 
@@ -85,6 +85,10 @@ import SongItem from '@/components/common/SongItem.vue';
 import { usePlayerStore } from '@/store';
 import { IArtist } from '@/type/artist';
 import { getImgUrl } from '@/utils';
+
+defineOptions({
+  name: 'ArtistDetail'
+});
 
 const { t } = useI18n();
 const route = useRoute();
@@ -122,10 +126,33 @@ const albumsLoadMoreRef = ref<HTMLElement | null>(null);
 let songsObserver: IntersectionObserver | null = null;
 let albumsObserver: IntersectionObserver | null = null;
 
+// 添加上一个ID的引用，用于比较
+const previousId = ref<string | null>(null);
+
+// 简化缓存机制
+const artistDataCache = new Map();
+
+// 单个缓存键函数
+const getCacheKey = (id: string | number) => `artist_${id}`;
+
 // 加载歌手信息
 const loadArtistInfo = async () => {
   if (!artistId.value) return;
 
+  // 简化缓存检查
+  const cacheKey = getCacheKey(artistId.value);
+  if (artistDataCache.has(cacheKey)) {
+    console.log('使用缓存数据');
+    const cachedData = artistDataCache.get(cacheKey);
+    artistInfo.value = cachedData.artistInfo;
+    songs.value = cachedData.songs;
+    albums.value = cachedData.albums;
+    songPage.value = cachedData.songPage;
+    albumPage.value = cachedData.albumPage;
+    return;
+  }
+
+  // 加载新数据
   loading.value = true;
   try {
     const info = await getArtistDetail(artistId.value);
@@ -135,6 +162,15 @@ const loadArtistInfo = async () => {
     // 重置分页并加载初始数据
     resetPagination();
     await Promise.all([loadSongs(), loadAlbums()]);
+    
+    // 保存到缓存
+    artistDataCache.set(cacheKey, {
+      artistInfo: artistInfo.value,
+      songs: [...songs.value],
+      albums: [...albums.value],
+      songPage: { ...songPage.value },
+      albumPage: { ...albumPage.value }
+    });
   } catch (error) {
     console.error('加载歌手信息失败:', error);
   } finally {
@@ -241,79 +277,106 @@ const handlePlay = () => {
   );
 };
 
-// 设置无限滚动观察器
-const setupIntersectionObservers = () => {
-  // 清除现有的观察器
+// 简化观察器设置
+const setupObservers = () => {
+  // 清理之前的观察器
   if (songsObserver) songsObserver.disconnect();
   if (albumsObserver) albumsObserver.disconnect();
-
-  // 创建歌曲观察器
-  songsObserver = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting && !songLoading.value && songPage.value.hasMore) {
-      loadSongs();
-    }
-  }, { threshold: 0.1 });
-
-  // 创建专辑观察器
-  albumsObserver = new IntersectionObserver((entries) => {
-    if (entries[0].isIntersecting && !albumLoading.value && albumPage.value.hasMore) {
-      loadAlbums();
-    }
-  }, { threshold: 0.1 });
-
-  // 监听标签页更改，重新设置观察器
-  watch(activeTab, (newTab) => {
-    nextTick(() => {
-      if (newTab === 'songs' && songsLoadMoreRef.value && songPage.value.hasMore) {
-        songsObserver?.observe(songsLoadMoreRef.value);
-      } else if (newTab === 'albums' && albumsLoadMoreRef.value && albumPage.value.hasMore) {
-        albumsObserver?.observe(albumsLoadMoreRef.value);
-      }
-    });
-  });
-
-  // 监听引用元素的变化
-  watch(songsLoadMoreRef, (el) => {
-    if (el && activeTab.value === 'songs' && songPage.value.hasMore) {
-      songsObserver?.observe(el);
-    }
-  });
-
-  watch(albumsLoadMoreRef, (el) => {
-    if (el && activeTab.value === 'albums' && albumPage.value.hasMore) {
-      albumsObserver?.observe(el);
+  
+  // 创建观察器(如果不存在)
+  if (!songsObserver) {
+    songsObserver = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && songPage.value.hasMore) {
+          loadSongs();
+        }
+      },
+      { threshold: 0.1 }
+    );
+  }
+  
+  if (!albumsObserver) {
+    albumsObserver = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && albumPage.value.hasMore) {
+          loadAlbums();
+        }
+      },
+      { threshold: 0.1 }
+    );
+  }
+  
+  // 观察当前标签页的元素
+  nextTick(() => {
+    if (activeTab.value === 'songs' && songsLoadMoreRef.value) {
+      songsObserver?.observe(songsLoadMoreRef.value);
+    } else if (activeTab.value === 'albums' && albumsLoadMoreRef.value) {
+      albumsObserver?.observe(albumsLoadMoreRef.value);
     }
   });
 };
 
-onMounted(() => {
-  loadArtistInfo();
-  
-  // 添加nextTick以确保DOM已更新
-  nextTick(() => {
-    setupIntersectionObservers();
-  });
+// 监听标签切换
+watch(activeTab, () => {
+  setupObservers();
 });
 
-onUnmounted(() => {
-  // 清理观察器
+// 监听引用元素的变化
+watch([songsLoadMoreRef, albumsLoadMoreRef], () => {
+  setupObservers();
+});
+
+// 监听路由参数变化，避免URL改变但未触发组件重新创建
+watch(
+  () => route.params.id,
+  (newId, oldId) => {
+    if (newId && newId !== oldId) {
+      previousId.value = newId as string;
+      loadArtistInfo();
+    }
+  }
+);
+
+onActivated(() => {
+  const currentId = route.params.id as string;
+  
+  // 首次加载或ID变化时加载数据
+  if (!previousId.value || previousId.value !== currentId) {
+    console.log('ID已变化，加载新数据');
+    previousId.value = currentId;
+    loadArtistInfo();
+  }
+  
+  // 重新设置观察器
+  setupObservers();
+});
+
+onMounted(() => {
+  // 首次挂载时加载数据
+  if (route.params.id) {
+    previousId.value = route.params.id as string;
+    loadArtistInfo();
+    setupObservers();
+  }
+});
+
+onDeactivated(() => {
+  // 断开观察器但不清除引用
   if (songsObserver) songsObserver.disconnect();
   if (albumsObserver) albumsObserver.disconnect();
 });
 
-// 监听路由参数变化
-watch(
-  () => route.params.id,
-  (newId) => {
-    if (newId) {
-      loadArtistInfo();
-      // 添加nextTick以确保DOM已更新
-      nextTick(() => {
-        setupIntersectionObservers();
-      });
-    }
+onUnmounted(() => {
+  // 完全清理观察器
+  if (songsObserver) {
+    songsObserver.disconnect();
+    songsObserver = null;
   }
-);
+  if (albumsObserver) {
+    albumsObserver.disconnect();
+    albumsObserver = null;
+  }
+});
 </script>
 
 <style lang="scss" scoped>

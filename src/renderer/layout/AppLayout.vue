@@ -62,20 +62,26 @@ import InstallAppModal from '@/components/common/InstallAppModal.vue';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import UpdateModal from '@/components/common/UpdateModal.vue';
 import homeRouter from '@/router/home';
+import otherRouter from '@/router/other';
 import { useMenuStore } from '@/store/modules/menu';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 import { isElectron, isMobile } from '@/utils';
 
-const keepAliveInclude = computed(() =>
-  homeRouter
+const keepAliveInclude = computed(() => {
+  const allRoutes = [...homeRouter, ...otherRouter];
+  
+  return allRoutes
     .filter((item) => {
-      return item.meta.keepAlive;
+      return item.meta?.keepAlive;
     })
     .map((item) => {
-      return item.name.charAt(0).toUpperCase() + item.name.slice(1);
+      return typeof item.name === 'string' 
+        ? item.name.charAt(0).toUpperCase() + item.name.slice(1) 
+        : '';
     })
-);
+    .filter(Boolean);
+});
 
 const AppMenu = defineAsyncComponent(() => import('./components/AppMenu.vue'));
 const PlayBar = defineAsyncComponent(() => import('@/components/player/PlayBar.vue'));
@@ -142,7 +148,7 @@ provide('openPlaylistDrawer', openPlaylistDrawer);
 
 .mobile {
   .main-content {
-    height: calc(100vh - 154px);
+    height: calc(100vh - 130px);
     overflow: auto;
     display: block;
     flex: none;

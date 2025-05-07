@@ -141,3 +141,45 @@ export const updatePlaylistTracks = (params: {
 }) => {
   return request.get('/playlist/tracks', { params });
 };
+
+/**
+ * 根据类型获取列表数据
+ * @param type 列表类型 album/playlist
+ * @param id 列表ID
+ */
+export function getMusicListByType(type: string, id: string) {
+  if (type === 'album') {
+    return getAlbumDetail(id);
+  } else if (type === 'playlist') {
+    return getPlaylistDetail(id);
+  }
+  return Promise.reject(new Error('未知列表类型'));
+}
+
+/**
+ * 获取专辑详情
+ * @param id 专辑ID
+ */
+export function getAlbumDetail(id: string) {
+  return request({
+    url: '/album',
+    method: 'get',
+    params: {
+      id
+    }
+  });
+}
+
+/**
+ * 获取歌单详情
+ * @param id 歌单ID
+ */
+export function getPlaylistDetail(id: string) {
+  return request({
+    url: '/playlist/detail',
+    method: 'get',
+    params: {
+      id
+    }
+  });
+}

@@ -31,7 +31,7 @@
           class="recommend-item"
           :class="setAnimationClass('animate__bounceIn')"
           :style="getItemAnimationDelay(index)"
-          @click.stop="selectRecommendItem(item)"
+          @click.stop="openPlaylist(item)"
         >
           <div class="recommend-item-img">
             <n-image
@@ -57,22 +57,15 @@
       </div>
       <div v-if="!hasMore && recommendList.length > 0" class="no-more">没有更多了</div>
     </n-scrollbar>
-    <music-list
-      v-model:show="showMusic"
-      v-model:loading="listLoading"
-      :name="recommendItem?.name || ''"
-      :song-list="listDetail?.playlist.tracks || []"
-      :list-info="listDetail?.playlist"
-    />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import { getPlaylistCategory } from '@/api/home';
 import { getListByCat, getListDetail } from '@/api/list';
-import MusicList from '@/components/MusicList.vue';
+import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import type { IRecommendItem } from '@/type/list';
 import type { IListDetail } from '@/type/listDetail';
 import type { IPlayListSort } from '@/type/playlist';
@@ -85,7 +78,6 @@ defineOptions({
 const TOTAL_ITEMS = 42; // 每页数量
 
 const recommendList = ref<any[]>([]);
-const showMusic = ref(false);
 const page = ref(0);
 const hasMore = ref(true);
 const isLoadingMore = ref(false);
@@ -100,15 +92,25 @@ const recommendItem = ref<IRecommendItem | null>();
 const listDetail = ref<IListDetail | null>();
 const listLoading = ref(true);
 
-const selectRecommendItem = async (item: IRecommendItem) => {
-  listLoading.value = true;
-  recommendItem.value = null;
-  listDetail.value = null;
-  showMusic.value = true;
+const router = useRouter();
+
+const openPlaylist = (item: any) => {
   recommendItem.value = item;
-  const { data } = await getListDetail(item.id);
-  listDetail.value = data;
-  listLoading.value = false;
+  listLoading.value = true;
+  
+  getListDetail(item.id).then(res => {
+    listDetail.value = res.data;
+    listLoading.value = false;
+    
+    navigateToMusicList(router, {
+      id: item.id,
+      type: 'playlist',
+      name: item.name,
+      songList: res.data.playlist.tracks || [],
+      listInfo: res.data.playlist,
+      canRemove: false
+    });
+  });
 };
 
 const route = useRoute();

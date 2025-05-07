@@ -23,7 +23,7 @@
             ></div>
             <div
               class="recommend-singer-item-count p-2 text-base text-gray-200 z-10 cursor-pointer"
-              @click="showMusic = true"
+              @click="showDayRecommend"
             >
               <div class="font-bold text-lg">
                 {{ t('comp.recommendSinger.title') }}
@@ -57,7 +57,7 @@
                 v-for="item in userPlaylist"
                 :key="item.id"
                 class="user-play-item"
-                @click="toPlaylist(item.id)"
+                @click="openPlaylist(item)"
               >
                 <div class="user-play-item-img">
                   <img :src="getImgUrl(item.coverImgUrl, '200y200')" alt="" />
@@ -124,35 +124,18 @@
         </n-carousel-item>
       </n-carousel>
     </div>
-
-    <music-list
-      v-if="dayRecommendData?.dailySongs.length"
-      v-model:show="showMusic"
-      :name="t('comp.recommendSinger.songlist')"
-      :song-list="dayRecommendData?.dailySongs"
-      :cover="false"
-    />
-
-    <!-- 添加用户歌单弹窗 -->
-    <music-list
-      v-model:show="showPlaylist"
-      v-model:loading="playlistLoading"
-      :name="playlistItem?.name || ''"
-      :song-list="playlistDetail?.playlist?.tracks || []"
-      :list-info="playlistDetail?.playlist"
-    />
   </div>
 </template>
 
 <script lang="ts" setup>
 import { onMounted, ref, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 
 import { getDayRecommend, getHotSinger } from '@/api/home';
 import { getListDetail } from '@/api/list';
 import { getMusicDetail } from '@/api/music';
 import { getUserPlaylist } from '@/api/user';
-import MusicList from '@/components/MusicList.vue';
 import { useArtist } from '@/hooks/useArtist';
 import { usePlayerStore, useUserStore } from '@/store';
 import { IDayRecommend } from '@/type/day_recommend';
@@ -168,20 +151,20 @@ import {
   setBackgroundImg
 } from '@/utils';
 import { getArtistDetail } from '@/api/artist';
+import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 
 const userStore = useUserStore();
 const playerStore = usePlayerStore();
+const router = useRouter();
 
 const { t } = useI18n();
 
 // 歌手信息
 const hotSingerData = ref<IHotSinger>();
 const dayRecommendData = ref<IDayRecommend>();
-const showMusic = ref(false);
 const userPlaylist = ref<Playlist[]>([]);
 
 // 为歌单弹窗添加的状态
-const showPlaylist = ref(false);
 const playlistLoading = ref(false);
 const playlistItem = ref<Playlist | null>(null);
 const playlistDetail = ref<IListDetail | null>(null);
@@ -306,27 +289,34 @@ const handleArtistClick = (id: number) => {
   navigateToArtist(id);
 };
 
-const toPlaylist = async (id: number) => {
+const showDayRecommend = () => {
+  if (!dayRecommendData.value?.dailySongs) return;
+  
+  navigateToMusicList(router, {
+    type: 'dailyRecommend',
+    name: t('comp.recommendSinger.songlist'),
+    songList: dayRecommendData.value.dailySongs,
+    canRemove: false
+  });
+};
+
+const openPlaylist = (item: any) => {
+  playlistItem.value = item;
   playlistLoading.value = true;
-  playlistItem.value = null;
-  playlistDetail.value = null;
-  showPlaylist.value = true;
-
-  // 设置当前点击的歌单信息
-  const selectedPlaylist = userPlaylist.value.find((item) => item.id === id);
-  if (selectedPlaylist) {
-    playlistItem.value = selectedPlaylist;
-  }
-
-  try {
-    // 获取歌单详情
-    const { data } = await getListDetail(id);
-    playlistDetail.value = data;
-  } catch (error) {
-    console.error('获取歌单详情失败:', error);
-  } finally {
+  
+  getListDetail(item.id).then(res => {
+    playlistDetail.value = res.data;
     playlistLoading.value = false;
-  }
+    
+    navigateToMusicList(router, {
+      id: item.id,
+      type: 'playlist',
+      name: item.name,
+      songList: res.data.playlist.tracks || [],
+      listInfo: res.data.playlist,
+      canRemove: false
+    });
+  });
 };
 
 // 添加直接播放歌单的方法

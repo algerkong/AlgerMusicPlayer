@@ -22,26 +22,19 @@
         </div>
       </template>
     </div>
-    <music-list
-      v-model:show="showMusic"
-      :name="albumName"
-      :song-list="songList"
-      :cover="true"
-      :loading="loadingList"
-      :list-info="albumInfo"
-    />
   </div>
 </template>
 
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 
 import { getNewAlbum } from '@/api/home';
 import { getAlbum } from '@/api/list';
-import MusicList from '@/components/MusicList.vue';
-import type { IAlbumNew } from '@/type/album';
 import { getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
+import { navigateToMusicList } from '@/components/common/MusicListNavigator';
+import type { IAlbumNew } from '@/type/album';
 
 const { t } = useI18n();
 const albumData = ref<IAlbumNew>();
@@ -50,33 +43,42 @@ const loadAlbumList = async () => {
   albumData.value = data;
 };
 
-const showMusic = ref(false);
-const songList = ref([]);
-const albumName = ref('');
-const loadingList = ref(false);
-const albumInfo = ref<any>({});
+const router = useRouter();
+
 const handleClick = async (item: any) => {
-  songList.value = [];
-  albumInfo.value = {};
-  albumName.value = item.name;
-  loadingList.value = true;
-  showMusic.value = true;
-  const res = await getAlbum(item.id);
-  const { songs, album } = res.data;
-  songList.value = songs.map((song: any) => {
-    song.al.picUrl = song.al.picUrl || album.picUrl;
-    song.picUrl = song.al.picUrl || album.picUrl || song.picUrl;
-    return song;
-  });
-  albumInfo.value = {
-    ...album,
-    creator: {
-      avatarUrl: album.artist.img1v1Url,
-      nickname: `${album.artist.name} - ${album.company}`
-    },
-    description: album.description
-  };
-  loadingList.value = false;
+  openAlbum(item);
+};
+
+const openAlbum = async (album: any) => {
+  if (!album) return;
+  
+  try {
+    const res = await getAlbum(album.id);
+    const { songs, album: albumInfo } = res.data;
+    
+    const formattedSongs = songs.map((song: any) => {
+      song.al.picUrl = song.al.picUrl || albumInfo.picUrl;
+      song.picUrl = song.al.picUrl || albumInfo.picUrl || song.picUrl;
+      return song;
+    });
+    
+    navigateToMusicList(router, {
+      id: album.id,
+      type: 'album',
+      name: album.name,
+      songList: formattedSongs,
+      listInfo: {
+        ...albumInfo,
+        creator: {
+          avatarUrl: albumInfo.artist.img1v1Url,
+          nickname: `${albumInfo.artist.name} - ${albumInfo.company}`
+        },
+        description: albumInfo.description
+      }
+    });
+  } catch (error) {
+    console.error('获取专辑详情失败:', error);
+  }
 };
 
 onMounted(() => {

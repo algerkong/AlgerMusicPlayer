@@ -53,6 +53,17 @@ const otherRouter = [
       back: true
     },
     component: () => import('@/views/bilibili/BilibiliPlayer.vue')
+  },
+  {
+    path: '/music-list/:id?',
+    name: 'musicList',
+    meta: {
+      title: '音乐列表',
+      keepAlive: false,
+      showInMenu: false,
+      back: true
+    },
+    component: () => import('@/views/music/MusicListPage.vue')
   }
 ];
 export default otherRouter;

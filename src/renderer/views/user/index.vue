@@ -34,7 +34,7 @@
               v-for="(item, index) in playList"
               :key="index"
               class="play-list-item"
-              @click="showPlaylist(item.id, item.name)"
+              @click="openPlaylist(item)"
             >
               <n-image
                 :src="getImgUrl(item.coverImgUrl, '50y50')"
@@ -82,15 +82,6 @@
         </n-scrollbar>
       </div>
     </div>
-    <music-list
-      v-model:show="isShowList"
-      :name="list?.name || ''"
-      :song-list="list?.tracks || []"
-      :list-info="list"
-      :loading="listLoading"
-      :can-remove="true"
-      @remove-song="handleRemoveFromPlaylist"
-    />
   </div>
 </template>
 
@@ -101,11 +92,10 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
 import { getListDetail } from '@/api/list';
-import { updatePlaylistTracks } from '@/api/music';
 import { getUserDetail, getUserPlaylist, getUserRecord } from '@/api/user';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import SongItem from '@/components/common/SongItem.vue';
-import MusicList from '@/components/MusicList.vue';
+import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import { usePlayerStore } from '@/store/modules/player';
 import { useUserStore } from '@/store/modules/user';
 import type { Playlist } from '@/type/listDetail';
@@ -125,7 +115,6 @@ const playList = ref<any[]>([]);
 const recordList = ref();
 const infoLoading = ref(false);
 const mounted = ref(true);
-const isShowList = ref(false);
 const list = ref<Playlist>();
 const listLoading = ref(false);
 const message = useMessage();
@@ -234,47 +223,23 @@ onMounted(() => {
   checkLoginStatus() && loadData();
 });
 
-// 展示歌单
-const showPlaylist = async (id: number, name: string) => {
-  isShowList.value = true;
+// 替换显示歌单的方法
+const openPlaylist = (item: any) => {
   listLoading.value = true;
-
-  list.value = {
-    name,
-    id
-  } as Playlist;
-  await loadPlaylistDetail(id);
-  listLoading.value = false;
-};
-
-// 加载歌单详情
-const loadPlaylistDetail = async (id: number) => {
-  const { data } = await getListDetail(id);
-  list.value = data.playlist;
-};
-
-// 从歌单中删除歌曲
-const handleRemoveFromPlaylist = async (songId: number) => {
-  if (!list.value?.id) return;
-
-  try {
-    const res = await updatePlaylistTracks({
-      op: 'del',
-      pid: list.value.id,
-      tracks: songId.toString()
+  
+  getListDetail(item.id).then(res => {
+    list.value = res.data.playlist;
+    listLoading.value = false;
+    
+    navigateToMusicList(router, {
+      id: item.id,
+      type: 'playlist',
+      name: item.name,
+      songList: res.data.playlist.tracks || [],
+      listInfo: res.data.playlist,
+      canRemove: true // 保留可移除功能
     });
-
-    if (res.status === 200) {
-      message.success(t('user.message.deleteSuccess'));
-      // 重新加载歌单详情
-      await loadPlaylistDetail(list.value.id);
-    } else {
-      throw new Error(res.data?.msg || t('user.message.deleteFailed'));
-    }
-  } catch (error: any) {
-    console.error('删除歌曲失败:', error);
-    message.error(error.message || t('user.message.deleteFailed'));
-  }
+  });
 };
 
 const handlePlay = () => {
