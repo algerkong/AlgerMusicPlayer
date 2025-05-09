@@ -139,7 +139,7 @@ export const updatePlaylistTracks = (params: {
   pid: number;
   tracks: string;
 }) => {
-  return request.get('/playlist/tracks', { params });
+  return request.post('/playlist/tracks', params);
 };
 
 /**
