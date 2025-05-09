@@ -89,6 +89,8 @@ const createWin = () => {
     alwaysOnTop: true,
     resizable: true,
     roundedCorners: false,
+    titleBarStyle: 'hidden',
+    titleBarOverlay: false,
     // 添加跨屏幕支持选项
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),

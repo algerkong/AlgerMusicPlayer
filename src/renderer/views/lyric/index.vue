@@ -682,7 +682,7 @@ body,
     --text-secondary: #ffffffea;
     --highlight-color: #1db954;
     --control-bg: rgba(124, 124, 124, 0.3);
-    &:hover {
+    &:hover:not(.lyric_lock) {
       background: rgba(44, 44, 44, 0.466) !important;
     }
   }
@@ -692,7 +692,7 @@ body,
     --text-secondary: #39393989;
     --highlight-color: #1db954;
     --control-bg: rgba(255, 255, 255, 0.3);
-    &:hover {
+    &:hover:not(.lyric_lock) {
       background: rgba(0, 0, 0, 0.434) !important;
     }
   }
