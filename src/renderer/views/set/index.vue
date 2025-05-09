@@ -486,7 +486,7 @@ import { type Platform } from '@/types/music';
 import config from '../../../../package.json';
 
 // 所有平台默认值
-const ALL_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd', 'bilibili', 'youtube'];
+const ALL_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd', 'bilibili', 'kuwo'];
 
 const settingsStore = useSettingsStore();
 const userStore = useUserStore();

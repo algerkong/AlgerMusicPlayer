@@ -23,5 +23,5 @@
   "alwaysShowDownloadButton": false,
   "unlimitedDownload": false,
   "enableMusicUnblock": true,
-  "enabledMusicSources": ["migu", "kugou", "pyncmd", "bilibili", "youtube"]
+  "enabledMusicSources": ["migu", "kugou", "pyncmd", "bilibili", "kuwo"]
 }
