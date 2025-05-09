@@ -130,13 +130,14 @@
       ]
     },
     "win": {
-      "icon": "resources/favicon.ico",
+      "icon": "resources/icon.ico",
       "target": [
         {
           "target": "nsis",
           "arch": [
             "x64",
-            "ia32"
+            "ia32",
+            "arm64"
           ]
         }
       ],
@@ -149,13 +150,15 @@
         {
           "target": "AppImage",
           "arch": [
-            "x64"
+            "x64",
+            "arm64"
           ]
         },
         {
           "target": "deb",
           "arch": [
-            "x64"
+            "x64",
+            "arm64"
           ]
         }
       ],
@@ -166,8 +169,8 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "installerIcon": "resources/favicon.ico",
-      "uninstallerIcon": "resources/favicon.ico",
+      "installerIcon": "resources/icon.ico",
+      "uninstallerIcon": "resources/icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "AlgerMusicPlayer",
