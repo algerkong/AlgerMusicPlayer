@@ -11,6 +11,12 @@ import { showShortcutToast } from './shortcutToast';
 let actionTimeout: NodeJS.Timeout | null = null;
 const ACTION_DELAY = 300; // 毫秒
 
+// 添加一个操作锁，记录最后一次操作的时间和动作
+let lastActionInfo = {
+  action: '',
+  timestamp: 0
+};
+
 interface ShortcutConfig {
   key: string;
   enabled: boolean;
@@ -31,16 +37,32 @@ let appShortcuts: ShortcutsConfig = {};
  * @param action 快捷键动作
  */
 export async function handleShortcutAction(action: string) {
+  const now = Date.now();
+  
   // 如果存在未完成的动作，则忽略当前请求
   if (actionTimeout) {
-    console.log('忽略快速连续的动作请求:', action);
+    console.log('[AppShortcuts] 忽略快速连续的动作请求:', action);
     return;
   }
+  
+  // 检查是否是同一个动作的重复触发（300ms内）
+  if (lastActionInfo.action === action && now - lastActionInfo.timestamp < ACTION_DELAY) {
+    console.log(`[AppShortcuts] 忽略重复的 ${action} 动作，距上次仅 ${now - lastActionInfo.timestamp}ms`);
+    return;
+  }
+  
+  // 更新最后一次操作信息
+  lastActionInfo = {
+    action,
+    timestamp: now
+  };
 
   // 设置防抖锁
   actionTimeout = setTimeout(() => {
     actionTimeout = null;
   }, ACTION_DELAY);
+
+  console.log(`[AppShortcuts] 执行动作: ${action}, 时间戳: ${now}`);
 
   const playerStore = usePlayerStore();
   const settingsStore = useSettingsStore();
@@ -93,16 +115,19 @@ export async function handleShortcutAction(action: string) {
       case 'toggleFavorite': {
         const isFavorite = playerStore.favoriteList.includes(Number(playerStore.playMusic.id));
         const numericId = Number(playerStore.playMusic.id);
+        console.log(`[AppShortcuts] toggleFavorite 当前状态: ${isFavorite}, ID: ${numericId}`);
         if (isFavorite) {
           playerStore.removeFromFavorite(numericId);
+          console.log(`[AppShortcuts] 已从收藏中移除: ${numericId}`);
         } else {
           playerStore.addToFavorite(numericId);
+          console.log(`[AppShortcuts] 已添加到收藏: ${numericId}`);
         }
         showToast(
           isFavorite
-            ? t('player.playBar.favorite', { name: playerStore.playMusic.name })
-            : t('player.playBar.unFavorite', { name: playerStore.playMusic.name }),
-          isFavorite ? 'ri-heart-fill' : 'ri-heart-line'
+            ? t('player.playBar.unFavorite', { name: playerStore.playMusic.name })
+            : t('player.playBar.favorite', { name: playerStore.playMusic.name }),
+          isFavorite ? 'ri-heart-line' : 'ri-heart-fill'
         );
         break;
       }
@@ -114,10 +139,9 @@ export async function handleShortcutAction(action: string) {
     console.error(`执行快捷键动作 ${action} 时出错:`, error);
   } finally {
     // 确保在出错时也能清除超时
-    if (actionTimeout) {
-      clearTimeout(actionTimeout);
-      actionTimeout = null;
-    }
+    clearTimeout(actionTimeout);
+    actionTimeout = null;
+    console.log(`[AppShortcuts] 动作完成: ${action}, 时间戳: ${Date.now()}, 耗时: ${Date.now() - now}ms`);
   }
 }
 

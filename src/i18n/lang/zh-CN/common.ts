@@ -47,6 +47,7 @@ export default {
     prev: '上一首',
     next: '下一首',
     pause: '暂停',
-    play: '播放'
+    play: '播放',
+    favorite: '收藏'
   }
 };

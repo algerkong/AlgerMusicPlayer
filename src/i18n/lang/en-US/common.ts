@@ -47,7 +47,8 @@ export default {
     prev: 'Previous',
     next: 'Next',
     pause: 'Pause',
-    play: 'Play'
+    play: 'Play',
+    favorite: 'Favorite'
   },
   language: 'Language'
 };

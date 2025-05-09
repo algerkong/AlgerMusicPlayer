@@ -174,6 +174,18 @@ export function updateTrayMenu(mainWindow: BrowserWindow) {
       })
     );
 
+    // 收藏
+    menu.append(
+      new MenuItem({
+        label: i18n.global.t('common.tray.favorite'),
+        type: 'normal',
+        click: () => {
+          console.log('[Tray] 发送收藏命令 - macOS菜单');
+          mainWindow.webContents.send('global-shortcut', 'toggleFavorite');
+        }
+      })
+    );
+
     menu.append(
       new MenuItem({
         label: i18n.global.t('common.tray.next'),
@@ -251,6 +263,14 @@ export function updateTrayMenu(mainWindow: BrowserWindow) {
         type: 'normal',
         click: () => {
           mainWindow.show();
+        }
+      },
+      {
+        label: i18n.global.t('common.tray.favorite'),
+        type: 'normal',
+        click: () => {
+          console.log('[Tray] 发送收藏命令 - Windows/Linux菜单');
+          mainWindow.webContents.send('global-shortcut', 'toggleFavorite');
         }
       },
       { type: 'separator' },
