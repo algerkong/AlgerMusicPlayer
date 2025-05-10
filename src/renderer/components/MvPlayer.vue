@@ -359,9 +359,6 @@ const loadMvUrl = async (mv: IMvItem) => {
 
 const handleClose = () => {
   emit('update:show', false);
-  if (playerStore.playMusicUrl) {
-    playerStore.setIsPlay(true);
-  }
 };
 
 const handleEnded = () => {

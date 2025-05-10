@@ -116,8 +116,7 @@ onMounted(async () => {
 
 const handleShowMv = async (item: IMvItem, index: number) => {
   playerStore.setIsPlay(false);
-  playerStore.setPlayMusic(false);
-  audioService.getCurrentSound()?.pause();
+  audioService.pause();
   showMv.value = true;
   currentIndex.value = index;
   playMvItem.value = item;
