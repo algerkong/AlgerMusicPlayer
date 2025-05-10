@@ -31,32 +31,32 @@
 
       <!-- 控制按钮区域 -->
       <div class="control-buttons">
-        <button class="control-button previous" @click="handlePrev">
+        <div class="control-button previous" @click="handlePrev">
           <i class="iconfont icon-prev"></i>
-        </button>
-        <button class="control-button play" @click="playMusicEvent">
+        </div>
+        <div class="control-button play" @click="playMusicEvent">
           <i class="iconfont" :class="play ? 'icon-stop' : 'icon-play'"></i>
-        </button>
-        <button class="control-button next" @click="handleNext">
+        </div>
+        <div class="control-button next" @click="handleNext">
           <i class="iconfont icon-next"></i>
-        </button>
+        </div>
       </div>
 
       <!-- 右侧功能按钮 -->
       <div class="function-buttons">
-        <button class="function-button">
+        <div class="function-button">
           <i
             class="iconfont icon-likefill"
             :class="{ 'like-active': isFavorite }"
             @click="toggleFavorite"
           ></i>
-        </button>
+        </div>
 
         <n-popover trigger="click" :z-index="99999999" placement="top" :show-arrow="false">
           <template #trigger>
-            <button class="function-button" @click="mute">
+            <div class="function-button" @click="mute">
               <i class="iconfont" :class="getVolumeIcon"></i>
-            </button>
+            </div>
           </template>
           <div class="volume-slider-wrapper">
             <n-slider
@@ -69,15 +69,15 @@
         </n-popover>
 
         <!-- 播放列表按钮 -->
-        <button v-if="!component" class="function-button" @click="togglePlaylist">
+        <div v-if="!component" class="function-button" @click="togglePlaylist">
           <i class="iconfont icon-list"></i>
-        </button>
+        </div>
       </div>
 
       <!-- 关闭按钮 -->
-      <button v-if="!component" class="close-button" @click="handleClose">
+      <div v-if="!component" class="close-button" @click="handleClose">
         <i class="iconfont ri-close-line"></i>
-      </button>
+      </div>
     </div>
 
     <!-- 进度条 -->

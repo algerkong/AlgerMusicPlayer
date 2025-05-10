@@ -39,6 +39,9 @@
         lazy
         preview-disabled
       />
+      <div v-if="playMusic?.playLoading" class="loading-overlay">
+        <i class="ri-loader-4-line loading-icon"></i>
+      </div>
       <div class="hover-arrow">
         <div class="hover-content">
           <!-- <i class="ri-arrow-up-s-line text-3xl" :class="{ 'ri-arrow-down-s-line': musicFullVisible }"></i> -->
@@ -757,5 +760,26 @@ const handleDeleteSong = (song: SongResult) => {
       @apply text-lg;
     }
   }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-overlay {
+  @apply absolute inset-0 flex items-center justify-center rounded-2xl;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 2;
+}
+
+.loading-icon {
+  font-size: 24px;
+  color: white;
+  animation: spin 1s linear infinite;
 }
 </style>

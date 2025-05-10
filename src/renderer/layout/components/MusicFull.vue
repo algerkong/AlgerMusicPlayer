@@ -34,13 +34,18 @@
         :class="{ 'only-cover': config.hideLyrics }"
         :style="{ color: textColors.theme === 'dark' ? '#000000' : '#ffffff' }"
       >
-        <n-image
-          ref="PicImgRef"
-          :src="getImgUrl(playMusic?.picUrl, '500y500')"
-          class="img"
-          lazy
-          preview-disabled
-        />
+        <div class="img-container relative">
+          <n-image
+            ref="PicImgRef"
+            :src="getImgUrl(playMusic?.picUrl, '500y500')"
+            class="img"
+            lazy
+            preview-disabled
+          />
+          <div v-if="playMusic?.playLoading" class="loading-overlay">
+            <i class="ri-loader-4-line loading-icon"></i>
+          </div>
+        </div>
         <div class="music-info">
           <div class="music-content-name">{{ playMusic.name }}</div>
           <div class="music-content-singer">
@@ -549,8 +554,12 @@ defineExpose({
       max-width: none;
       max-height: none;
 
-      .img {
+      .img-container {
         @apply w-[50vh] h-[50vh] mb-8;
+      }
+
+      .img {
+        @apply w-full h-full;
       }
 
       .music-info {
@@ -566,6 +575,10 @@ defineExpose({
           color: var(--text-color-primary);
         }
       }
+    }
+
+    .img-container {
+      @apply relative w-full h-full;
     }
 
     .img {
@@ -762,5 +775,26 @@ defineExpose({
       opacity: 1;
     }
   }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-overlay {
+  @apply absolute inset-0 flex items-center justify-center rounded-xl;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 2;
+}
+
+.loading-icon {
+  font-size: 48px;
+  color: white;
+  animation: spin 1s linear infinite;
 }
 </style>

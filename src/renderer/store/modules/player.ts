@@ -189,17 +189,26 @@ export const loadLrc = async (id: string | number): Promise<ILyric> => {
 };
 
 const getSongDetail = async (playMusic: SongResult) => {
-  playMusic.playLoading = true;
-
+  // playMusic.playLoading 在 handlePlayMusic 中已设置，这里不再设置
+  
   if (playMusic.source === 'bilibili') {
     console.log('处理B站音频详情');
-    const { backgroundColor, primaryColor } =
-      playMusic.backgroundColor && playMusic.primaryColor
-        ? playMusic
-        : await getImageLinearBackground(getImgUrl(playMusic?.picUrl, '30y30'));
-
-    playMusic.playLoading = false;
-    return { ...playMusic, backgroundColor, primaryColor } as SongResult;
+    try {
+      // 如果需要获取URL
+      if (!playMusic.playMusicUrl && playMusic.bilibiliData) {
+        playMusic.playMusicUrl = await getBilibiliAudioUrl(
+          playMusic.bilibiliData.bvid,
+          playMusic.bilibiliData.cid
+        );
+      }
+      
+      playMusic.playLoading = false;
+      return { ...playMusic} as SongResult;
+    } catch (error) {
+      console.error('获取B站音频详情失败:', error);
+      playMusic.playLoading = false;
+      throw error;
+    }
   }
 
   if (playMusic.expiredAt && playMusic.expiredAt < Date.now()) {
@@ -207,17 +216,23 @@ const getSongDetail = async (playMusic: SongResult) => {
     playMusic.playMusicUrl = undefined;
   }
 
-  const playMusicUrl = playMusic.playMusicUrl || (await getSongUrl(playMusic.id, playMusic));
-  playMusic.createdAt = Date.now();
-  // 半小时后过期
-  playMusic.expiredAt = playMusic.createdAt + 1800000;
-  const { backgroundColor, primaryColor } =
-    playMusic.backgroundColor && playMusic.primaryColor
-      ? playMusic
-      : await getImageLinearBackground(getImgUrl(playMusic?.picUrl, '30y30'));
+  try {
+    const playMusicUrl = playMusic.playMusicUrl || (await getSongUrl(playMusic.id, playMusic));
+    playMusic.createdAt = Date.now();
+    // 半小时后过期
+    playMusic.expiredAt = playMusic.createdAt + 1800000;
+    const { backgroundColor, primaryColor } =
+      playMusic.backgroundColor && playMusic.primaryColor
+        ? playMusic
+        : await getImageLinearBackground(getImgUrl(playMusic?.picUrl, '30y30'));
 
-  playMusic.playLoading = false;
-  return { ...playMusic, playMusicUrl, backgroundColor, primaryColor } as SongResult;
+    playMusic.playLoading = false;
+    return { ...playMusic, playMusicUrl, backgroundColor, primaryColor } as SongResult;
+  } catch (error) {
+    console.error('获取音频URL失败:', error);
+    playMusic.playLoading = false;
+    throw error;
+  }
 };
 
 const preloadNextSong = (nextSongUrl: string) => {
@@ -389,71 +404,72 @@ export const usePlayerStore = defineStore('player', () => {
   const currentPlayListIndex = computed(() => playListIndex.value);
 
   const handlePlayMusic = async (music: SongResult, isPlay: boolean = true) => {
-    // 处理B站视频，确保URL有效
-    if (music.source === 'bilibili' && music.bilibiliData) {
-      try {
-        console.log('处理B站视频，检查URL有效性');
-        // 清除之前的URL，强制重新获取
-        music.playMusicUrl = undefined;
-
-        // 重新获取B站视频URL
-        if (music.bilibiliData.bvid && music.bilibiliData.cid) {
-          music.playMusicUrl = await getBilibiliAudioUrl(
-            music.bilibiliData.bvid,
-            music.bilibiliData.cid
-          );
-          console.log('获取B站URL成功:', music.playMusicUrl);
-        }
-      } catch (error) {
-        console.error('获取B站音频URL失败:', error);
-        message.error(i18n.global.t('player.playFailed'));
-        return false; // 返回失败状态
-      }
+    const currentSound = audioService.getCurrentSound();
+    if (currentSound) {
+      console.log('主动停止并卸载当前音频实例');
+      currentSound.stop();
+      currentSound.unload();
     }
+    // 先切换歌曲数据，更新播放状态
+    // 加载歌词
+    await loadLrcAsync(music);
+    const originalMusic = { ...music };
+    // 获取背景色
+    const { backgroundColor, primaryColor } =
+    music.backgroundColor && music.primaryColor
+      ? music
+      : await getImageLinearBackground(getImgUrl(music?.picUrl, '30y30'));
+    music.backgroundColor = backgroundColor;
+    music.primaryColor = primaryColor;
+    music.playLoading = true; // 设置加载状态
+    playMusic.value = music;
+    
+    // 更新播放相关状态
+    play.value = isPlay;
+    
+    // 更新标题
+    let title = music.name;
+    if (music.source === 'netease' && music?.song?.artists) {
+      title += ` - ${music.song.artists.reduce(
+        (prev: string, curr: any) => `${prev}${curr.name}/`,
+        ''
+      )}`;
+    } else if (music.source === 'bilibili' && music?.song?.ar?.[0]) {
+      title += ` - ${music.song.ar[0].name}`;
+    }
+    document.title = 'AlgerMusic - ' + title;
 
     try {
-      const updatedPlayMusic = await getSongDetail(music);
-      playMusic.value = updatedPlayMusic;
-      playMusicUrl.value = updatedPlayMusic.playMusicUrl as string;
-
-      play.value = isPlay;
-
-      localStorage.setItem('currentPlayMusic', JSON.stringify(playMusic.value));
-      localStorage.setItem('currentPlayMusicUrl', playMusicUrl.value);
-      localStorage.setItem('isPlaying', play.value.toString());
-
-      let title = updatedPlayMusic.name;
-
-      if (updatedPlayMusic.source === 'netease' && updatedPlayMusic?.song?.artists) {
-        title += ` - ${updatedPlayMusic.song.artists.reduce(
-          (prev: string, curr: any) => `${prev}${curr.name}/`,
-          ''
-        )}`;
-      } else if (updatedPlayMusic.source === 'bilibili' && updatedPlayMusic?.song?.ar?.[0]) {
-        title += ` - ${updatedPlayMusic.song.ar[0].name}`;
-      }
-
-      document.title = title;
-
-      loadLrcAsync(playMusic.value);
-
-      musicHistory.addMusic(playMusic.value);
-
-      // 找到歌曲在播放列表中的索引，如果是通过 nextPlay/prevPlay 调用的，不会更新 playListIndex
+      
+      // 添加到历史记录
+      musicHistory.addMusic(music);
+      
+      // 查找歌曲在播放列表中的索引
       const songIndex = playList.value.findIndex(
         (item: SongResult) => item.id === music.id && item.source === music.source
       );
       
       // 只有在 songIndex 有效，并且与当前 playListIndex 不同时才更新
-      // 这样可以避免与 nextPlay/prevPlay 中的索引更新冲突
       if (songIndex !== -1 && songIndex !== playListIndex.value) {
         console.log('歌曲索引不匹配，更新为:', songIndex);
         playListIndex.value = songIndex;
       }
       
+      // 获取歌曲详情，包括URL
+      const updatedPlayMusic = await getSongDetail(originalMusic);
+      playMusic.value = updatedPlayMusic;
+      playMusicUrl.value = updatedPlayMusic.playMusicUrl as string;
+
+      // 保存到本地存储
+      localStorage.setItem('currentPlayMusic', JSON.stringify(playMusic.value));
+      localStorage.setItem('currentPlayMusicUrl', playMusicUrl.value);
+      localStorage.setItem('isPlaying', play.value.toString());
+      
       // 无论如何都预加载更多歌曲
       if (songIndex !== -1) {
-        fetchSongs(playList.value, songIndex + 1, songIndex + 3);
+        setTimeout(() => {
+          fetchSongs(playList.value, songIndex + 1, songIndex + 2);
+        }, 3000);
       } else {
         console.warn('当前歌曲未在播放列表中找到');
       }
@@ -461,7 +477,7 @@ export const usePlayerStore = defineStore('player', () => {
       // 使用标记防止循环调用
       let playInProgress = false;
       
-      // 直接调用 playAudio 方法播放音频，不需要依赖外部监听
+      // 直接调用 playAudio 方法播放音频
       try {
         if (playInProgress) {
           console.warn('播放操作正在进行中，避免重复调用');
@@ -469,8 +485,6 @@ export const usePlayerStore = defineStore('player', () => {
         }
         
         playInProgress = true;
-        
-        // 因为调用 playAudio 前我们已经设置了 play.value，所以不需要额外传递 shouldPlay 参数
         const result = await playAudio();
         
         playInProgress = false;
@@ -483,6 +497,10 @@ export const usePlayerStore = defineStore('player', () => {
     } catch (error) {
       console.error('处理播放音乐失败:', error);
       message.error(i18n.global.t('player.playFailed'));
+      // 出现错误时，更新加载状态
+      if (playMusic.value) {
+        playMusic.value.playLoading = false;
+      }
       return false;
     }
   };
@@ -717,20 +735,13 @@ export const usePlayerStore = defineStore('player', () => {
     }
   };
 
-  // 修改nextPlay方法，改进播放失败的处理逻辑
+  // 修改nextPlay方法，改进播放逻辑
   const nextPlay = async () => {
-    // 静态标志，防止多次调用造成递归
-    if ((nextPlay as any).isRunning) {
-      console.log('下一首播放正在执行中，忽略重复调用');
-      return;
-    }
-    
+
     try {
-      (nextPlay as any).isRunning = true;
       
       if (playList.value.length === 0) {
         play.value = true;
-        (nextPlay as any).isRunning = false;
         return;
       }
 
@@ -739,7 +750,6 @@ export const usePlayerStore = defineStore('player', () => {
           sleepTimer.value.type === SleepTimerType.PLAYLIST_END) {
         // 已是最后一首且为顺序播放模式，触发停止
         stopPlayback();
-        (nextPlay as any).isRunning = false;
         return;
       }
 
@@ -761,29 +771,23 @@ export const usePlayerStore = defineStore('player', () => {
         nowPlayListIndex = (playListIndex.value + 1) % playList.value.length;
       }
 
+      // 获取下一首歌曲
+      let nextSong = { ...playList.value[nowPlayListIndex] };
+      
       // 记录尝试播放过的索引，防止无限循环
       const attemptedIndices = new Set<number>();
       attemptedIndices.add(nowPlayListIndex);
 
-      // 更新当前播放索引
+      // 先更新当前播放索引
       playListIndex.value = nowPlayListIndex;
       
-      // 获取下一首歌曲
-      let nextSong = playList.value[nowPlayListIndex];
+      // 尝试播放
       let success = false;
       let retryCount = 0;
       const maxRetries = Math.min(3, playList.value.length);
 
       // 尝试播放，最多尝试maxRetries次
       while (!success && retryCount < maxRetries) {
-        // 如果是B站视频，确保重新获取URL
-        if (nextSong.source === 'bilibili' && nextSong.bilibiliData) {
-          // 清除之前的URL，确保重新获取
-          nextSong.playMusicUrl = undefined;
-          console.log(`尝试播放B站视频 (尝试 ${retryCount + 1}/${maxRetries})`);
-        }
-
-        // 尝试播放，并明确传递应该播放的状态
         success = await handlePlayMusic(nextSong, shouldPlayNext);
         
         if (!success) {
@@ -798,7 +802,6 @@ export const usePlayerStore = defineStore('player', () => {
             
             if (newPlayList.length > 0) {
               // 更新播放列表，但保持当前索引不变
-              // 这是关键修改，防止索引重置到-1
               const keepCurrentIndexPosition = true;
               setPlayList(newPlayList, keepCurrentIndexPosition);
               
@@ -829,7 +832,7 @@ export const usePlayerStore = defineStore('player', () => {
               attemptedIndices.add(nowPlayListIndex);
               
               if (newPlayList[nowPlayListIndex]) {
-                nextSong = newPlayList[nowPlayListIndex];
+                nextSong = { ...newPlayList[nowPlayListIndex] };
                 retryCount = 0; // 重置重试计数器，为新歌曲准备
               } else {
                 // 处理索引无效的情况
@@ -857,25 +860,17 @@ export const usePlayerStore = defineStore('player', () => {
       }
     } catch (error) {
       console.error('切换下一首出错:', error);
-    } finally {
-      (nextPlay as any).isRunning = false;
     }
   };
 
   // 修改 prevPlay 方法，使用与 nextPlay 相似的逻辑改进
   const prevPlay = async () => {
-    // 静态标志，防止多次调用造成递归
-    if ((prevPlay as any).isRunning) {
-      console.log('上一首播放正在执行中，忽略重复调用');
-      return;
-    }
+
     
     try {
-      (prevPlay as any).isRunning = true;
-      
+
       if (playList.value.length === 0) {
         play.value = true;
-        (prevPlay as any).isRunning = false;
         return;
       }
       
@@ -884,21 +879,16 @@ export const usePlayerStore = defineStore('player', () => {
       const nowPlayListIndex =
         (playListIndex.value - 1 + playList.value.length) % playList.value.length;
 
+      // 获取上一首歌曲
+      const prevSong = { ...playList.value[nowPlayListIndex] };
+      
       // 重要：首先更新当前播放索引
       playListIndex.value = nowPlayListIndex;
-        
-      // 获取上一首歌曲
-      const prevSong = playList.value[nowPlayListIndex];
+      
+      // 尝试播放
       let success = false;
       let retryCount = 0;
       const maxRetries = 2;
-
-      // 如果是B站视频，确保重新获取URL
-      if (prevSong.source === 'bilibili' && prevSong.bilibiliData) {
-        // 清除之前的URL，确保重新获取
-        prevSong.playMusicUrl = undefined;
-        console.log('上一首是B站视频，已清除URL强制重新获取');
-      }
 
       // 尝试播放，最多尝试maxRetries次
       while (!success && retryCount < maxRetries) {
@@ -932,7 +922,6 @@ export const usePlayerStore = defineStore('player', () => {
               
               // 延迟一点时间再尝试，避免可能的无限循环
               setTimeout(() => {
-                (prevPlay as any).isRunning = false;
                 prevPlay(); // 递归调用，尝试再上一首
               }, 300);
               return;
@@ -945,9 +934,7 @@ export const usePlayerStore = defineStore('player', () => {
         }
       }
       
-      if (success) {
-        await fetchSongs(playList.value, playListIndex.value - 3, nowPlayListIndex);
-      } else {
+      if (!success) {
         console.error('所有尝试都失败，无法播放上一首歌曲');
         // 如果尝试了所有可能的歌曲仍然失败，恢复到原始索引
         playListIndex.value = currentIndex;
@@ -956,8 +943,6 @@ export const usePlayerStore = defineStore('player', () => {
       }
     } catch (error) {
       console.error('切换上一首出错:', error);
-    } finally {
-      (prevPlay as any).isRunning = false;
     }
   };
 
