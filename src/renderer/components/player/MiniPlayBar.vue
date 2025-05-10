@@ -52,13 +52,13 @@
           ></i>
         </div>
 
-        <n-popover trigger="click" :z-index="99999999" placement="top" :show-arrow="false">
+        <n-popover trigger="hover" :z-index="99999999" placement="top" :show-arrow="false">
           <template #trigger>
             <div class="function-button" @click="mute">
               <i class="iconfont" :class="getVolumeIcon"></i>
             </div>
           </template>
-          <div class="volume-slider-wrapper">
+          <div class="volume-slider-wrapper transparent-popover">
             <n-slider
               v-model:value="volumeSlider"
               :step="0.01"
@@ -459,7 +459,7 @@ const setMusicFull = () => {
 }
 
 .control-button {
-  @apply flex items-center justify-center rounded-full transition-all duration-200 border-0 bg-transparent cursor-pointer text-gray-600;
+  @apply flex items-center justify-center rounded-full transition-all duration-200 border-0 bg-transparent cursor-pointer text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200;
   width: 32px;
   height: 32px;
 
@@ -484,10 +484,9 @@ const setMusicFull = () => {
 }
 
 .function-button {
-  @apply flex items-center justify-center rounded-full transition-all duration-200 border-0 bg-transparent cursor-pointer;
+  @apply flex items-center justify-center rounded-full transition-all duration-200 border-0 bg-transparent cursor-pointer text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200;
   width: 32px;
   height: 32px;
-  color: var(--text-color-2, #666);
 
   &:hover {
     @apply bg-gray-100 dark:bg-dark-300;
@@ -546,8 +545,7 @@ const setMusicFull = () => {
 }
 
 .volume-slider-wrapper {
-  @apply p-4 rounded-xl bg-white dark:bg-dark-100 shadow-lg;
-  width: 40px;
+  @apply p-2 py-4 rounded-xl bg-white dark:bg-dark-100 shadow-lg bg-opacity-90 backdrop-blur;
   height: 160px;
 }
 
@@ -607,5 +605,9 @@ const setMusicFull = () => {
       color: var(--text-color-2, #fff);
     }
   }
+}
+
+:deep(.n-popover){
+  background-color: transparent !important;
 }
 </style>
