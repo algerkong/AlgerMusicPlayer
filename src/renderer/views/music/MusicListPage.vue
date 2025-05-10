@@ -30,7 +30,7 @@
       <div class="music-info">
         <div class="music-cover">
           <n-image
-            :src="getCoverImgUrl"
+            :src="getImgUrl(getCoverImgUrl, '500y500')"
             class="cover-img"
             preview-disabled
             :class="setAnimationClass('animate__fadeIn')"
@@ -216,8 +216,9 @@ const loadDataByType = async (type: string, id: string) => {
 };
 
 const getCoverImgUrl = computed(() => {
-  if (listInfo.value?.coverImgUrl) {
-    return listInfo.value.coverImgUrl;
+  const coverImgUrl = listInfo.value?.coverImgUrl;
+  if (coverImgUrl) {
+    return coverImgUrl;
   }
 
   const song = songList.value[0];
