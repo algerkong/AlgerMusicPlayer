@@ -6,7 +6,8 @@ export default {
   },
   button: {
     clear: 'Clear',
-    back: 'Back'
+    back: 'Back',
+    playAll: 'Play All'
   },
   loading: {
     more: 'Loading...',

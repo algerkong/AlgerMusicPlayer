@@ -61,6 +61,14 @@
           @click.stop="toggleFavorite"
         ></i>
       </div>
+      <n-tooltip  v-if="isNext" trigger="hover" :z-index="9999999" :delay="400">
+        <template #trigger>
+          <div class="song-item-operating-next" @click.stop="handlePlayNext">
+            <i class="iconfont ri-skip-forward-fill"></i>
+          </div>
+        </template>
+        {{ t('songItem.menu.playNext') }}
+      </n-tooltip>
       <div
         class="song-item-operating-play bg-gray-300 dark:bg-gray-800 animate__animated"
         :class="{ 'bg-green-600': isPlaying, animate__flipInY: playLoading }"
@@ -110,6 +118,7 @@ const props = withDefaults(
     selectable?: boolean;
     selected?: boolean;
     canRemove?: boolean;
+    isNext?: boolean;
   }>(),
   {
     mini: false,
@@ -117,7 +126,8 @@ const props = withDefaults(
     favorite: true,
     selectable: false,
     selected: false,
-    canRemove: false
+    canRemove: false,
+    isNext: false
   }
 );
 
@@ -473,6 +483,14 @@ const handlePlayNext = () => {
 
     &-like {
       @apply mr-2 cursor-pointer ml-4 transition-all;
+    }
+
+    &-next {
+      @apply mr-2 cursor-pointer transition-all;
+      
+      .iconfont {
+        @apply text-xl transition text-gray-500 dark:text-gray-400 hover:text-green-500;
+      }
     }
 
     .like-active {
