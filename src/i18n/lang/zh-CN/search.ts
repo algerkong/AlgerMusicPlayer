@@ -6,7 +6,8 @@ export default {
   },
   button: {
     clear: '清空',
-    back: '返回'
+    back: '返回',
+    playAll: '播放列表'
   },
   loading: {
     more: '加载中...',

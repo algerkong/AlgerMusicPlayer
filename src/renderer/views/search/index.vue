@@ -37,6 +37,12 @@
           @click="searchDetail = null"
         ></i>
         {{ hotKeyword }}
+        <div v-if="searchDetail?.songs?.length" class="title-play-all">
+          <div class="play-all-btn" @click="handlePlayAll">
+            <i class="ri-play-circle-fill"></i>
+            <span>{{ t('search.button.playAll') }}</span>
+          </div>
+        </div>
       </div>
       <div v-loading="searchDetailLoading" class="search-list-box">
         <template v-if="searchDetail">
@@ -46,7 +52,7 @@
               v-for="(item, index) in searchDetail?.bilibili"
               :key="item.bvid"
               :class="setAnimationClass('animate__bounceInRight')"
-              :style="setAnimationDelay(index, 50)"
+              :style="getSearchListAnimation(index)"
             >
               <bilibili-item :item="item" @play="handlePlayBilibili" />
             </div>
@@ -62,9 +68,9 @@
               v-for="(item, index) in searchDetail?.songs"
               :key="item.id"
               :class="setAnimationClass('animate__bounceInRight')"
-              :style="setAnimationDelay(index, 50)"
+              :style="getSearchListAnimation(index)"
             >
-              <song-item :item="item" @play="handlePlay" />
+              <song-item :item="item" @play="handlePlay" :is-next="true" />
             </div>
             <template v-for="(list, key) in searchDetail">
               <template v-if="key.toString() !== 'songs'">
@@ -73,7 +79,7 @@
                   :key="item.id"
                   class="mb-3"
                   :class="setAnimationClass('animate__bounceInRight')"
-                  :style="setAnimationDelay(index, 50)"
+                  :style="getSearchListAnimation(index)"
                 >
                   <search-item :item="item" />
                 </div>
@@ -104,7 +110,7 @@
                 v-for="(item, index) in searchHistory"
                 :key="index"
                 :class="setAnimationClass('animate__bounceIn')"
-                :style="setAnimationDelay(index, 50)"
+                :style="getSearchListAnimation(index)"
                 class="search-history-item"
                 round
                 closable
@@ -161,6 +167,10 @@ const page = ref(0);
 const hasMore = ref(true);
 const isLoadingMore = ref(false);
 const currentKeyword = ref('');
+
+const getSearchListAnimation = (index: number) => {
+  return setAnimationDelay(index % ITEMS_PER_PAGE, 50);
+};
 
 // 从 localStorage 加载搜索历史
 const loadSearchHistory = () => {
@@ -398,9 +408,9 @@ watch(
   { immediate: true }
 );
 
-const handlePlay = () => {
-  const tracks = searchDetail.value?.songs || [];
-  playerStore.setPlayList(tracks);
+const handlePlay = (item: any) => {
+  // 添加到下一首
+  playerStore.addToNextPlay(item);
 };
 
 // 点击搜索历史
@@ -417,6 +427,18 @@ const handleSearchHistory = (item: { keyword: string; type: number }) => {
 const handlePlayBilibili = (item: IBilibiliSearchResult) => {
   // 使用路由导航到B站播放页面
   router.push(`/bilibili/${item.bvid}`);
+};
+
+const handlePlayAll = () => {
+  if (!searchDetail.value?.songs?.length) return;
+  
+  // 设置播放列表为搜索结果中的所有歌曲
+  playerStore.setPlayList(searchDetail.value.songs);
+  
+  // 开始播放第一首歌
+  if (searchDetail.value.songs[0]) {
+    playerStore.setPlay(searchDetail.value.songs[0]);
+  }
 };
 </script>
 
@@ -469,8 +491,21 @@ const handlePlayBilibili = (item: IBilibiliSearchResult) => {
 }
 
 .title {
-  @apply text-xl font-bold my-2 mx-4;
+  @apply text-xl font-bold my-2 mx-4 flex items-center;
   @apply text-gray-900 dark:text-white;
+  
+  &-play-all {
+    @apply ml-auto;
+  }
+}
+
+.play-all-btn {
+  @apply flex items-center gap-1 px-3 py-1 rounded-full cursor-pointer transition-all;
+  @apply text-sm font-normal text-gray-900 dark:text-white hover:bg-light-300 dark:hover:bg-dark-300 hover:text-green-500;
+  
+  i {
+    @apply text-xl;
+  }
 }
 
 .search-history {
