@@ -127,6 +127,12 @@
         </template>
         {{ playMusic.id ? t('player.playBar.lyric') : t('player.playBar.noSongPlaying') }}
       </n-tooltip>
+      <n-tooltip v-if="playMusic.id && isElectron" trigger="hover" :z-index="9999999">
+        <template #trigger>
+          <reparse-popover v-if="playMusic.id" />
+        </template>
+        {{ t('player.playBar.reparse') }}
+      </n-tooltip>
       <n-popover
         v-if="isElectron"
         trigger="click"
@@ -200,6 +206,7 @@ import { useI18n } from 'vue-i18n';
 import SongItem from '@/components/common/SongItem.vue';
 import EqControl from '@/components/EQControl.vue';
 import SleepTimerPopover from '@/components/player/SleepTimerPopover.vue';
+import ReparsePopover from '@/components/player/ReparsePopover.vue';
 import {
   allTime,
   artistList,
@@ -576,10 +583,10 @@ const handleDeleteSong = (song: SongResult) => {
 }
 
 .audio-button {
-  @apply flex items-center mx-4;
+  @apply flex items-center;
 
   .iconfont {
-    @apply text-2xl transition cursor-pointer m-4;
+    @apply text-2xl transition cursor-pointer mx-3;
     @apply hover:text-green-500;
   }
 }

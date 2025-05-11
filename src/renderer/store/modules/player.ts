@@ -14,6 +14,7 @@ import { createDiscreteApi } from 'naive-ui';
 
 import { useSettingsStore } from './settings';
 import { useUserStore } from './user';
+import { type Platform } from '@/types/music';
 
 const musicHistory = useMusicHistory();
 const { message } = createDiscreteApi(['message']);
@@ -102,6 +103,27 @@ export const getSongUrl = async (
   }
 
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+  
+  // 检查是否有自定义音源设置
+  const songId = String(id);
+  const savedSource = localStorage.getItem(`song_source_${songId}`);
+  
+  // 如果有自定义音源设置，直接使用getParsingMusicUrl获取URL
+  if (savedSource && songData.source !== 'bilibili') {
+    try {
+      console.log(`使用自定义音源解析歌曲 ID: ${songId}`);
+      const res = await getParsingMusicUrl(numericId, cloneDeep(songData));
+      if (res && res.data && res.data.data && res.data.data.url) {
+        return res.data.data.url;
+      }
+      // 如果自定义音源解析失败，继续使用正常的获取流程
+      console.warn('自定义音源解析失败，使用默认音源');
+    } catch (error) {
+      console.error('自定义音源解析出错:', error);
+    }
+  }
+  
+  // 正常获取URL流程
   const { data } = await getMusicUrl(numericId, isDownloaded);
   let url = '';
   let songDetail = null;
@@ -1170,6 +1192,62 @@ export const usePlayerStore = defineStore('player', () => {
     }
   };
 
+  // 使用指定的音源重新解析当前播放的歌曲
+  const reparseCurrentSong = async (sourcePlatform: Platform) => {
+    try {
+      const currentSong = playMusic.value;
+      if (!currentSong || !currentSong.id) {
+        console.warn('没有有效的播放对象');
+        return false;
+      }
+
+      // B站视频不支持重新解析
+      if (currentSong.source === 'bilibili') {
+        console.warn('B站视频不支持重新解析');
+        return false;
+      }
+
+      // 保存用户选择的音源
+      const songId = String(currentSong.id);
+      localStorage.setItem(`song_source_${songId}`, JSON.stringify([sourcePlatform]));
+      
+      // 停止当前播放
+      const currentSound = audioService.getCurrentSound();
+      if (currentSound) {
+        currentSound.pause();
+      }
+      
+      // 重新获取歌曲URL
+      const numericId = typeof currentSong.id === 'string' 
+        ? parseInt(currentSong.id, 10) 
+        : currentSong.id;
+      
+      const res = await getParsingMusicUrl(numericId, cloneDeep(currentSong));
+      if (res && res.data && res.data.data && res.data.data.url) {
+        // 更新URL
+        const newUrl = res.data.data.url;
+        
+        // 使用新URL更新播放
+        const updatedMusic = { 
+          ...currentSong, 
+          playMusicUrl: newUrl,
+          expiredAt: Date.now() + 1800000  // 半小时后过期
+        };
+        
+        // 更新播放器状态并开始播放
+        await setPlay(updatedMusic);
+        setPlayMusic(true);
+        
+        return true;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      console.error('重新解析失败:', error);
+      return false;
+    }
+  };
+
   return {
     play,
     isPlay,
@@ -1212,6 +1290,7 @@ export const usePlayerStore = defineStore('player', () => {
     addToFavorite,
     removeFromFavorite,
     removeFromPlayList,
-    playAudio
+    playAudio,
+    reparseCurrentSong
   };
 });

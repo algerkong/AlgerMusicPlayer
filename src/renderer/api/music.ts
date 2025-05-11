@@ -88,8 +88,26 @@ export const getParsingMusicUrl = async (id: number, data: any) => {
     return Promise.resolve({ data: { code: 404, message: '音乐解析功能已禁用' } });
   }
   
+  // 获取音源设置，优先使用歌曲自定义音源
+  const songId = String(id);
+  const savedSource = localStorage.getItem(`song_source_${songId}`);
+  let enabledSources: any[] = [];
+  
+  // 如果有歌曲自定义音源，使用自定义音源
+  if (savedSource) {
+    try {
+      enabledSources = JSON.parse(savedSource);
+      console.log(`使用歌曲 ${id} 自定义音源:`, enabledSources);
+    } catch (e) {
+      console.error('解析自定义音源失败, 使用全局设置', e);
+      enabledSources = settingStore.setData.enabledMusicSources || [];
+    }
+  } else {
+    // 没有自定义音源，使用全局音源设置
+    enabledSources = settingStore.setData.enabledMusicSources || [];
+  }
+  
   // 检查是否选择了GD音乐台解析
-  const enabledSources = settingStore.setData.enabledMusicSources || [];
   if (enabledSources.includes('gdmusic')) {
     // 获取音质设置并转换为GD音乐台格式
     try {

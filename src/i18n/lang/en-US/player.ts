@@ -29,6 +29,15 @@ export default {
   lrc: {
     noLrc: 'No lyrics, please enjoy'
   },
+  reparse: {
+    title: 'Select Music Source',
+    desc: 'Click a source to directly reparse the current song. This source will be used next time this song plays.',
+    success: 'Reparse successful',
+    failed: 'Reparse failed',
+    warning: 'Please select a music source',
+    bilibiliNotSupported: 'Bilibili videos do not support reparsing',
+    processing: 'Processing...'
+  },
   playBar: {
     expand: 'Expand Lyrics',
     collapse: 'Collapse Lyrics',
@@ -37,6 +46,7 @@ export default {
     noSongPlaying: 'No song playing',
     eq: 'Equalizer',
     playList: 'Play List',
+    reparse: 'Reparse',
     playMode: {
       sequence: 'Sequence',
       loop: 'Loop',
