@@ -326,29 +326,22 @@ watch([songsLoadMoreRef, albumsLoadMoreRef], () => {
   setupObservers();
 });
 
-// 监听路由参数变化，避免URL改变但未触发组件重新创建
-watch(
-  () => route.params.id,
-  (newId, oldId) => {
-    if (newId && newId !== oldId) {
-      previousId.value = newId as string;
+onActivated(() => {
+  // 确保当前路由是艺术家详情页
+  if (route.name === 'artistDetail') {
+    const currentId = route.params.id as string;
+    
+    // 首次加载或ID变化时加载数据
+    if (!previousId.value || previousId.value !== currentId) {
+      console.log('ID已变化，加载新数据');
+      previousId.value = currentId;
+      activeTab.value = 'songs';
       loadArtistInfo();
     }
+    
+    // 重新设置观察器
+    setupObservers();
   }
-);
-
-onActivated(() => {
-  const currentId = route.params.id as string;
-  
-  // 首次加载或ID变化时加载数据
-  if (!previousId.value || previousId.value !== currentId) {
-    console.log('ID已变化，加载新数据');
-    previousId.value = currentId;
-    loadArtistInfo();
-  }
-  
-  // 重新设置观察器
-  setupObservers();
 });
 
 onMounted(() => {
