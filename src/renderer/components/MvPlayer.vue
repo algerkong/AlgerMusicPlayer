@@ -193,7 +193,6 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { getMvUrl } from '@/api/mv';
-import { usePlayerStore } from '@/store/modules/player';
 import { IMvItem } from '@/type/mv';
 
 const { t } = useI18n();
@@ -222,7 +221,6 @@ const emit = defineEmits<{
   (e: 'prev', loading: (value: boolean) => void): void;
 }>();
 
-const playerStore = usePlayerStore();
 const mvUrl = ref<string>();
 const playMode = ref<PlayMode>(PLAY_MODE.Auto);
 
