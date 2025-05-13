@@ -129,20 +129,13 @@ export const getLatestReleaseInfo = async (): Promise<GithubReleaseInfo | null> 
   try {
     const token = import.meta.env.VITE_GITHUB_TOKEN;
     const headers = {};
-
-    // 获取代理节点列表
-    const proxyHosts = await getProxyNodes();
-
     // 构建 API URL 列表
     const apiUrls = [
       // 原始地址
       'https://api.github.com/repos/algerkong/AlgerMusicPlayer/releases/latest',
 
       // 使用代理节点
-      ...proxyHosts.map(
-        (host) =>
-          `${host}/https://raw.githubusercontent.com/algerkong/AlgerMusicPlayer/dev_electron/package.json`
-      )
+      'https://mc.alger.fun/package.json',
     ];
 
     if (token) {
