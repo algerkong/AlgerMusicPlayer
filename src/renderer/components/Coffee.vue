@@ -71,8 +71,8 @@ const { t } = useI18n();
 
 const message = useMessage();
 const copyQQ = () => {
-  navigator.clipboard.writeText('789288579');
-  message.success('已复制到剪贴板');
+  navigator.clipboard.writeText('algermusic');
+  message.success(t('common.copySuccess'));
 };
 
 const toDonateList = () => {

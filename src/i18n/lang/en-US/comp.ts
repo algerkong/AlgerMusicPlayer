@@ -60,7 +60,7 @@ export default {
     wechatQR: 'Wechat QR code',
     coffeeDesc: 'A cup of coffee, a support',
     coffeeDescLinkText: 'View more',
-    qqGroup: 'QQ group: 789288579',
+    qqGroup: 'QQ group: algermusic',
     messages: {
       copySuccess: 'Copied to clipboard'
     },

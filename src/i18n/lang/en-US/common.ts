@@ -27,6 +27,8 @@ export default {
   refresh: 'Refresh',
   retry: 'Retry',
   reset: 'Reset',
+  copySuccess: 'Copied to clipboard',
+  copyFailed: 'Copy failed',
   validation: {
     required: 'This field is required',
     invalidInput: 'Invalid input',

@@ -58,7 +58,7 @@ export default {
     wechatQR: '微信收款码',
     coffeeDesc: '一杯咖啡，一份支持',
     coffeeDescLinkText: '查看更多',
-    qqGroup: 'QQ群：789288579',
+    qqGroup: 'QQ频道：algermusic',
     messages: {
       copySuccess: '已复制到剪贴板'
     },

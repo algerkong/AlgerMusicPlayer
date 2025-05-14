@@ -5,20 +5,24 @@
 - 📝 功能
   - 播放历史记录
   - 歌曲收藏管理
-  - 自定义快捷键配置
+  - 自定义快捷键配置（全局或应用内）
 - 🎨 界面与交互
   - 沉浸式歌词显示（点击左下角封面进入）
   - 独立桌面歌词窗口
   - 明暗主题切换
+  - 可远程控制播放
 - 🎼 音乐功能
   - 支持歌单、MV、专辑等完整音乐服务
   - 灰色音乐资源解析（基于 @unblockneteasemusic/server）
+  - 音乐单独解析
+  - EQ均衡器
+  - 定时播放
   - 高品质音乐试听（需网易云VIP）
   - 音乐文件下载（支持右键下载和批量下载, 附带歌词封面等信息）
 - 🚀 技术特性
   - 本地化服务，无需依赖在线API (基于 netease-cloud-music-api)
   - 自动更新检测
-  - 全平台适配（Desktop & Web & Mobile Web & Android<后续> & ios<后续>）
+  - 全平台适配（Desktop & Web & Mobile Web & Android<测试> & ios<后续>）
 
 ## 项目简介
  一个第三方音乐播放器、本地服务、桌面歌词、音乐下载、最高音质
@@ -26,7 +30,7 @@
 ## 预览地址
 [http://mc.alger.fun/](http://mc.alger.fun/)
 
-QQ群:789288579
+[QQ频道（algermusic）](https://pd.qq.com/s/cs056n33q?b=5)
 
 tg群:[AlgerMusic tg](https://t.me/+9efsKRuvKBk2NWVl)
 

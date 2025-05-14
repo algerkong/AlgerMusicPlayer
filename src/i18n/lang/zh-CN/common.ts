@@ -27,6 +27,8 @@ export default {
   refresh: '刷新',
   retry: '重试',
   reset: '重置',
+  copySuccess: '已复制到剪贴板',
+  copyFailed: '复制失败',
   validation: {
     required: '此项是必填的',
     invalidInput: '输入无效',
