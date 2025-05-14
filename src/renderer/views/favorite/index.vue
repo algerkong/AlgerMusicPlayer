@@ -514,7 +514,7 @@
               }
               
               &.active {
-                @apply bg-green-400 text-primary dark:text-gray-200;
+                @apply bg-green-500 text-white dark:text-gray-100;
                 @apply font-medium;
               }
               
