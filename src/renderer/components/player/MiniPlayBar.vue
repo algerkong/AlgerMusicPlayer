@@ -52,7 +52,7 @@
           ></i>
         </div>
 
-        <n-popover trigger="hover" :z-index="99999999" placement="top" :show-arrow="false">
+        <n-popover v-if="component" trigger="hover" :z-index="99999999" placement="top" :show-arrow="false">
           <template #trigger>
             <div class="function-button" @click="mute">
               <i class="iconfont" :class="getVolumeIcon"></i>
