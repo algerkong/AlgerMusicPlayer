@@ -7,5 +7,7 @@ export default {
   downloadSuccess: '下载完成',
   downloadFailed: '下载失败',
   downloading: '正在下载中，请稍候...',
-  selectSongsFirst: '请先选择要下载的歌曲'
+  selectSongsFirst: '请先选择要下载的歌曲',
+  descending: '降',
+  ascending: '升'
 };

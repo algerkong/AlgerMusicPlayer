@@ -11,5 +11,7 @@ export default {
   downloadSuccess: 'Download completed',
   downloadFailed: 'Download failed',
   downloading: 'Downloading, please wait...',
-  selectSongsFirst: 'Please select songs to download first'
+  selectSongsFirst: 'Please select songs to download first',
+  descending: 'Descending',
+  ascending: 'Ascending'
 };
