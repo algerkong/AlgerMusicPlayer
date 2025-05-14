@@ -4,7 +4,7 @@ import { computed, ref } from 'vue';
 
 import i18n from '@/../i18n/renderer';
 import { getBilibiliAudioUrl } from '@/api/bilibili';
-import { getLikedList, getMusicLrc, getMusicUrl, getParsingMusicUrl } from '@/api/music';
+import { getLikedList, getMusicLrc, getMusicUrl, getParsingMusicUrl, likeSong } from '@/api/music';
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';
 import { audioService } from '@/services/audioService';
 import type { ILyric, ILyricText, SongResult } from '@/type/music';
@@ -984,6 +984,7 @@ export const usePlayerStore = defineStore('player', () => {
     if (!isAlreadyInList) {
       favoriteList.value.push(id);
       localStorage.setItem('favoriteList', JSON.stringify(favoriteList.value));
+      typeof id === 'number' && likeSong(id, true);
     }
   };
 
@@ -993,6 +994,7 @@ export const usePlayerStore = defineStore('player', () => {
       favoriteList.value = favoriteList.value.filter(existingId => !isBilibiliIdMatch(existingId, id));
     } else {
       favoriteList.value = favoriteList.value.filter(existingId => existingId !== id);
+      likeSong(Number(id), false);
     }
     localStorage.setItem('favoriteList', JSON.stringify(favoriteList.value));
   };
