@@ -36,6 +36,8 @@ export const useUserStore = defineStore('user', () => {
       user.value = null;
       localStorage.removeItem('user');
       localStorage.removeItem('token');
+      // 刷新
+      window.location.reload();
     } catch (error) {
       console.error('登出失败:', error);
     }
