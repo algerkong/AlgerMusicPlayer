@@ -1,6 +1,6 @@
 export default {
   installApp: {
-    description: 'Install the application on the desktop for a better experience',
+    description: 'Install the application for a better experience',
     noPrompt: 'Do not prompt again',
     install: 'Install now',
     cancel: 'Cancel',

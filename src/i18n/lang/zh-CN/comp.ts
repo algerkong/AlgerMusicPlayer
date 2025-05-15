@@ -1,6 +1,6 @@
 export default {
   installApp: {
-    description: '在桌面安装应用，获得更好的体验',
+    description: '安装应用程序，获得更好的体验',
     noPrompt: '不再提示',
     install: '立即安装',
     cancel: '暂不安装',
