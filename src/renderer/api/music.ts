@@ -201,3 +201,11 @@ export function getPlaylistDetail(id: string) {
     }
   });
 }
+
+export function subscribePlaylist(params: { t: number; id: number }) {
+  return request({
+    url: '/playlist/subscribe',
+    method: 'post',
+    params
+  });
+}

@@ -102,6 +102,17 @@ export default {
   },
   musicList: {
     searchSongs: '搜索歌曲',
-    noSearchResults: '没有找到相关歌曲'
+    noSearchResults: '没有找到相关歌曲',
+    switchToNormal: '切换到默认布局',
+    switchToCompact: '切换到紧凑布局',
+    playAll: '播放全部',
+    collect: '收藏',
+    collectSuccess: '收藏成功',
+    cancelCollectSuccess: '取消收藏成功',
+    operationFailed: '操作失败',
+    cancelCollect: '取消收藏',
+    addToPlaylist: '添加到播放列表',
+    addToPlaylistSuccess: '添加到播放列表成功',
+    songsAlreadyInPlaylist: '歌曲已存在于播放列表中'
   }
 };

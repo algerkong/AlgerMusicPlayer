@@ -535,7 +535,9 @@ export const usePlayerStore = defineStore('player', () => {
       // 记录到本地存储，保持一致性
       localStorage.setItem('currentPlayMusic', JSON.stringify(playMusic.value));
       localStorage.setItem('currentPlayMusicUrl', playMusicUrl.value);
-      
+      if (success) {
+        isPlay.value = true;
+      }
       return success;
     } catch (error) {
       console.error('设置播放失败:', error);

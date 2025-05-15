@@ -1,14 +1,19 @@
 <template>
   <div
     class="song-item"
-    :class="{ 'song-mini': mini, 'song-list': list }"
+    :class="{ 'song-mini': mini, 'song-list': list, 'song-compact': compact }"
     @contextmenu.prevent="handleContextMenu"
+    @mouseenter="handleMouseEnter"
+    @mouseleave="handleMouseLeave"
   >
+    <div v-if="compact && index !== undefined" class="song-item-index" :class="{ 'text-green-500': isPlaying }">
+      {{ index + 1 }}
+    </div>
     <div v-if="selectable" class="song-item-select" @click.stop="toggleSelect">
       <n-checkbox :checked="selected" />
     </div>
     <n-image
-      v-if="item.picUrl"
+      v-if="item.picUrl && !compact"
       ref="songImg"
       :src="getImgUrl(item.picUrl, '100y100')"
       class="song-item-img"
@@ -18,9 +23,9 @@
       }"
       @load="imageLoad"
     />
-    <div class="song-item-content">
+    <div class="song-item-content" :class="{ 'song-item-content-compact': compact }">
       <div v-if="list" class="song-item-content-wrapper">
-        <n-ellipsis class="song-item-content-title text-ellipsis" line-clamp="1">{{
+        <n-ellipsis class="song-item-content-title text-ellipsis" line-clamp="1" :class="{ 'text-green-500': isPlaying }">{{
           item.name
         }}</n-ellipsis>
         <div class="song-item-content-divider">-</div>
@@ -35,9 +40,36 @@
           </template>
         </n-ellipsis>
       </div>
+      <template v-else-if="compact">
+        <div class="song-item-content-compact-wrapper">
+          <div class="w-60 flex-shrink-0 flex items-center" @dblclick="playMusicEvent(item)">
+            <n-ellipsis class="song-item-content-title text-ellipsis" line-clamp="1" :class="{ 'text-green-500': isPlaying }">
+              {{ item.name }}
+            </n-ellipsis>
+          </div>
+          <div class="w-40 flex-shrink-0 song-item-content-compact-artist flex items-center">
+            <n-ellipsis line-clamp="1">
+              <template v-for="(artist, index) in artists" :key="index">
+                <span
+                  class="cursor-pointer hover:text-green-500"
+                  @click.stop="handleArtistClick(artist.id)"
+                  >{{ artist.name }}</span
+                >
+                <span v-if="index < artists.length - 1"> / </span>
+              </template>
+            </n-ellipsis>
+          </div>
+        </div>
+        <div class="song-item-content-album flex items-center">
+          <n-ellipsis line-clamp="1">{{ item.al?.name || '-' }}</n-ellipsis>
+        </div>
+        <div class="song-item-content-duration flex items-center">
+          {{ formatDuration(getDuration(item)) }}
+        </div>
+      </template>
       <template v-else>
-        <div class="song-item-content-title">
-          <n-ellipsis class="text-ellipsis" line-clamp="1">{{ item.name }}</n-ellipsis>
+        <div class="song-item-content-title" @dblclick="playMusicEvent(item)">
+          <n-ellipsis class="text-ellipsis" line-clamp="1" :class="{ 'text-green-500': isPlaying }">{{ item.name }}</n-ellipsis>
         </div>
         <div class="song-item-content-name">
           <n-ellipsis class="text-ellipsis" line-clamp="1">
@@ -53,15 +85,18 @@
         </div>
       </template>
     </div>
-    <div class="song-item-operating" :class="{ 'song-item-operating-list': list }">
-      <div v-if="favorite" class="song-item-operating-like">
+    <div class="song-item-operating" :class="{ 
+      'song-item-operating-list': list,
+      'song-item-operating-compact': compact 
+    }">
+      <div v-if="favorite" class="song-item-operating-like" :class="{ 'opacity-0': compact && !isHovering && !isFavorite }">
         <i
           class="iconfont icon-likefill"
           :class="{ 'like-active': isFavorite }"
           @click.stop="toggleFavorite"
         ></i>
       </div>
-      <n-tooltip  v-if="isNext" trigger="hover" :z-index="9999999" :delay="400">
+      <n-tooltip v-if="isNext" trigger="hover" :z-index="9999999" :delay="400">
         <template #trigger>
           <div class="song-item-operating-next" @click.stop="handlePlayNext">
             <i class="iconfont ri-skip-forward-fill"></i>
@@ -71,11 +106,14 @@
       </n-tooltip>
       <div
         class="song-item-operating-play bg-gray-300 dark:bg-gray-800 animate__animated"
-        :class="{ 'bg-green-600': isPlaying, animate__flipInY: playLoading }"
+        :class="{ 'bg-green-600': isPlaying, 'animate__flipInY': playLoading, 'opacity-0': compact && !isHovering && !isPlaying }"
         @click="playMusicEvent(item)"
       >
         <i v-if="isPlaying && play" class="iconfont icon-stop"></i>
         <i v-else class="iconfont icon-playfill"></i>
+      </div>
+      <div v-if="compact" class="song-item-operating-menu" @click.stop="handleMenuClick" :class="{ 'opacity-0': compact && !isHovering && !isPlaying }">
+        <i class="iconfont ri-more-fill"></i>
       </div>
     </div>
     <n-dropdown
@@ -95,7 +133,7 @@
 <script lang="ts" setup>
 import { cloneDeep } from 'lodash';
 import type { MenuOption } from 'naive-ui';
-import { NImage, NText, useMessage } from 'naive-ui';
+import { NEllipsis, NImage, useMessage } from 'naive-ui';
 import { computed, h, inject, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -114,20 +152,24 @@ const props = withDefaults(
     item: SongResult;
     mini?: boolean;
     list?: boolean;
+    compact?: boolean;
     favorite?: boolean;
     selectable?: boolean;
     selected?: boolean;
     canRemove?: boolean;
     isNext?: boolean;
+    index?: number;
   }>(),
   {
     mini: false,
     list: false,
+    compact: false,
     favorite: true,
     selectable: false,
     selected: false,
     canRemove: false,
-    isNext: false
+    isNext: false,
+    index: undefined
   }
 );
 
@@ -147,6 +189,7 @@ const isPlaying = computed(() => {
 const showDropdown = ref(false);
 const dropdownX = ref(0);
 const dropdownY = ref(0);
+const isHovering = ref(false);
 
 const isDownloading = ref(false);
 
@@ -172,23 +215,46 @@ const renderSongPreview = () => {
       h(
         'div',
         {
-          class: 'flex-1 min-w-0 py-1'
+          class: 'flex-1 min-w-0 py-1 overflow-hidden'
         },
         [
           h(
             'div',
             {
-              class: 'mb-1'
+              class: 'mb-1 overflow-hidden'
             },
             [
               h(
-                NText,
+                NEllipsis,
                 {
+                  lineClamp: 1,
                   depth: 1,
-                  class: 'text-sm font-medium'
+                  class: 'text-sm font-medium w-full',
+                  style: 'max-width: 150px; min-width: 120px;'
                 },
                 {
                   default: () => props.item.name
+                }
+              )
+            ]
+          ),
+          h(
+            'div',
+            {
+              class: 'text-xs text-gray-500 dark:text-gray-400 overflow-hidden'
+            },
+            [
+              h(
+                NEllipsis,
+                {
+                  lineClamp: 1,
+                  style: 'max-width: 150px;'
+                },
+                {
+                  default: () => {
+                    const artistNames = (props.item.ar || props.item.song?.artists)?.map((a) => a.name).join(' / ');
+                    return artistNames || '未知艺术家';
+                  }
                 }
               )
             ]
@@ -262,6 +328,13 @@ const dropdownOptions = computed<MenuOption[]>(() => {
 });
 
 const handleContextMenu = (e: MouseEvent) => {
+  e.preventDefault();
+  showDropdown.value = true;
+  dropdownX.value = e.clientX;
+  dropdownY.value = e.clientY;
+};
+
+const handleMenuClick = (e: MouseEvent) => {
   e.preventDefault();
   showDropdown.value = true;
   dropdownX.value = e.clientX;
@@ -435,6 +508,33 @@ const handlePlayNext = () => {
   playerStore.addToNextPlay(props.item);
   message.success(t('songItem.message.addedToNextPlay'));
 };
+
+// 获取歌曲时长
+const getDuration = (item: SongResult): number => {
+  // 检查各种可能的时长属性路径
+  if (item.duration) return item.duration;
+  if (typeof item.dt === 'number') return item.dt;
+  // 遍历可能存在的其他时长属性路径
+  return 0;
+};
+
+// 格式化时长
+const formatDuration = (ms: number): string => {
+  if (!ms) return '--:--';
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+};
+
+// 鼠标悬停事件
+const handleMouseEnter = () => {
+  isHovering.value = true;
+};
+
+const handleMouseLeave = () => {
+  isHovering.value = false;
+};
 </script>
 
 <style lang="scss" scoped>
@@ -452,10 +552,21 @@ const handlePlayNext = () => {
 
   &:hover {
     @apply bg-gray-100 dark:bg-gray-800;
+
+    .song-item-operating-compact {
+      .song-item-operating-like,
+      .song-item-operating-play {
+        @apply opacity-100;
+      }
+    }
   }
 
   &-img {
     @apply w-12 h-12 rounded-2xl mr-4;
+  }
+
+  &-index {
+    @apply w-8 text-center text-gray-500 dark:text-gray-400 text-sm;
   }
 
   &-content {
@@ -467,6 +578,26 @@ const handlePlayNext = () => {
 
     &-name {
       @apply text-xs text-gray-500 dark:text-gray-400;
+    }
+
+    &-compact {
+      @apply flex items-center gap-4;
+
+      &-wrapper {
+        @apply flex-1 min-w-0;
+      }
+
+      &-artist {
+        @apply text-sm text-gray-500 dark:text-gray-400 ml-2;
+      }
+    }
+
+    &-album {
+      @apply w-32 text-sm text-gray-500 dark:text-gray-400;
+    }
+
+    &-duration {
+      @apply w-16 text-sm text-gray-500 dark:text-gray-400 text-right;
     }
   }
 
@@ -514,10 +645,73 @@ const handlePlayNext = () => {
         @apply text-xl transition text-gray-500 dark:text-gray-400 hover:text-green-500;
       }
     }
+
+    &-menu {
+      @apply cursor-pointer flex items-center justify-center px-2;
+
+      .iconfont {
+        @apply text-xl transition text-gray-500 dark:text-gray-400 hover:text-green-500;
+      }
+    }
   }
 
   &-select {
     @apply mr-3 cursor-pointer;
+  }
+}
+
+.song-compact {
+  @apply rounded-lg p-2 h-12 mb-1 border-b dark:border-gray-800 border-gray-100;
+
+  &:hover {
+    @apply bg-gray-50 dark:bg-gray-700;
+
+    .opacity-0 {
+      opacity: 1;
+    }
+  }
+
+  .song-item-content {
+    &-title {
+      @apply text-sm cursor-pointer;
+    }
+  }
+  
+  .song-item-content-compact-wrapper {
+    @apply flex items-center;
+  }
+
+  .song-item-content-compact-artist {
+    @apply w-40;
+  }
+
+  .song-item-operating-compact {
+    @apply border-none bg-transparent gap-2 flex items-center;
+
+    .song-item-operating-like,
+    .song-item-operating-play {
+      @apply transition-opacity duration-200;
+    }
+
+    .song-item-operating-play {
+      @apply w-7 h-7;
+
+      .iconfont {
+        @apply text-base;
+      }
+    }
+
+    .song-item-operating-like {
+      @apply mr-1 ml-0;
+
+      .iconfont {
+        @apply text-base;
+      }
+    }
+
+    .opacity-0 {
+      opacity: 0;
+    }
   }
 }
 

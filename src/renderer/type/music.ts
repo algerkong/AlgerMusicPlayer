@@ -42,6 +42,9 @@ export interface SongResult {
   expiredAt?: number;
   // 获取时间
   createdAt?: number;
+  // 时长
+  duration?: number;
+  dt?: number;
 }
 
 export interface Song {

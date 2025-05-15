@@ -7,20 +7,75 @@
         </div>
       </n-ellipsis>
 
-      <!-- 搜索框 -->
-      <div class="flex-grow flex-1 flex items-center justify-end">
-        <div class="search-container">
-          <n-input
-            v-model:value="searchKeyword"
-            :placeholder="t('comp.musicList.searchSongs')"
-            clearable
-            round
-            size="small"
-          >
-            <template #prefix>
-              <i class="icon iconfont ri-search-line text-sm"></i>
+      <!-- 搜索框和布局切换 -->
+      <div class="flex-grow flex-1 flex items-center justify-end gap-2">
+        <!-- 操作按钮组 -->
+        <n-tooltip placement="bottom" trigger="hover">
+          <template #trigger>
+            <div class="action-button hover-green" @click="handlePlayAll">
+              <i class="icon iconfont ri-play-fill"></i>
+            </div>
+          </template>
+          {{ t('comp.musicList.playAll') }}
+        </n-tooltip>
+
+        <n-tooltip v-if="canCollect" placement="bottom" trigger="hover">
+          <template #trigger>
+            <div class="action-button" :class="isCollected ? 'collected' : 'hover-green'" @click="toggleCollect">
+              <i class="icon iconfont" :class="isCollected ? 'ri-heart-fill' : 'ri-heart-line'"></i>
+            </div>
+          </template>
+          {{ isCollected ? t('comp.musicList.cancelCollect') : t('comp.musicList.collect') }}
+        </n-tooltip>
+
+        <n-tooltip placement="bottom" trigger="hover">
+          <template #trigger>
+            <div class="action-button hover-green" @click="addToPlaylist">
+              <i class="icon iconfont ri-add-line"></i>
+            </div>
+          </template>
+          {{ t('comp.musicList.addToPlaylist') }}
+        </n-tooltip>
+        <!-- 布局切换按钮 -->
+        <div class="layout-toggle">
+          <n-tooltip placement="bottom" trigger="hover">
+            <template #trigger>
+              <div class="toggle-button hover-green" @click="toggleLayout">
+                <i class="icon iconfont" :class="isCompactLayout ? 'ri-list-check-2' : 'ri-grid-line'"></i>
+              </div>
             </template>
-          </n-input>
+            {{ isCompactLayout ? t('comp.musicList.switchToNormal') : t('comp.musicList.switchToCompact') }}
+          </n-tooltip>
+        </div>
+
+        <div class="search-container" :class="{ 'search-expanded': isSearchVisible }">
+          <template v-if="isSearchVisible">
+            <n-input
+              v-model:value="searchKeyword"
+              :placeholder="t('comp.musicList.searchSongs')"
+              clearable
+              round
+              size="small"
+              @blur="handleSearchBlur"
+            >
+              <template #prefix>
+                <i class="icon iconfont ri-search-line text-sm"></i>
+              </template>
+              <template #suffix>
+                <i class="icon iconfont ri-close-line text-sm cursor-pointer" @click="closeSearch"></i>
+              </template>
+            </n-input>
+          </template>
+          <template v-else>
+            <n-tooltip placement="bottom" trigger="hover">
+              <template #trigger>
+                <div class="search-button" @click="showSearch">
+                  <i class="icon iconfont ri-search-line"></i>
+                </div>
+              </template>
+              {{ t('comp.musicList.searchSongs') }}
+            </n-tooltip>
+          </template>
         </div>
       </div>
     </div>
@@ -65,14 +120,16 @@
                 class="song-virtual-list"
                 style="height: calc(80vh - 60px)"
                 :items="filteredSongs"
-                :item-size="70"
+                :item-size="isCompactLayout ? 50 : 70"
                 item-resizable
                 key-field="id"
                 @scroll="handleVirtualScroll"
               >
-                <template #default="{ item }">
+                <template #default="{ item, index }">
                   <div class="double-item">
-                    <song-item
+                    <song-item  
+                      :index="index"
+                      :compact="isCompactLayout"
                       :item="formatSong(item)"
                       :can-remove="canRemove"
                       @play="handlePlay"
@@ -97,10 +154,10 @@ defineOptions({
 });
 
 import PinyinMatch from 'pinyin-match';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
-import { updatePlaylistTracks } from '@/api/music';
+import { updatePlaylistTracks, subscribePlaylist } from '@/api/music';
 import { useMessage } from 'naive-ui';
 
 import { getMusicDetail, getMusicListByType } from '@/api/music';
@@ -122,6 +179,8 @@ const loading = ref(false);
 const songList = ref<any[]>([]);
 const listInfo = ref<any>(null);
 const canRemove = ref(false);
+const canCollect = ref(false);
+const isCollected = ref(false);
 
 const page = ref(0);
 const pageSize = 40;
@@ -135,6 +194,35 @@ const hasMore = ref(true); // 标记是否还有更多数据可加载
 const searchKeyword = ref(''); // 搜索关键词
 const isFullPlaylistLoaded = ref(false); // 标记完整播放列表是否已加载完成
 
+// 添加搜索相关的状态和方法
+const isSearchVisible = ref(false);
+const isCompactLayout = ref(localStorage.getItem('musicListLayout') === 'compact'); // 默认使用紧凑布局
+
+const showSearch = () => {
+  isSearchVisible.value = true;
+  // 添加一个小延迟后聚焦搜索框
+  nextTick(() => {
+    const inputEl = document.querySelector('.search-container input');
+    if (inputEl) {
+      (inputEl as HTMLInputElement).focus();
+    }
+  });
+};
+
+const closeSearch = () => {
+  isSearchVisible.value = false;
+  searchKeyword.value = '';
+};
+
+const handleSearchBlur = () => {
+  // 如果搜索框为空，则在失焦时关闭搜索框
+  if (!searchKeyword.value) {
+    setTimeout(() => {
+      isSearchVisible.value = false;
+    }, 200);
+  }
+};
+
 // 计算总数
 const total = computed(() => {
   if (listInfo.value?.trackIds) {
@@ -146,6 +234,7 @@ const total = computed(() => {
 // 初始化数据
 onMounted(() => {
   initData();
+  checkCollectionStatus();
 });
 
 // 从 pinia 或路由参数获取数据
@@ -639,6 +728,105 @@ watch(searchKeyword, () => {
 onUnmounted(() => {
   isPlaylistLoading.value = false;
 });
+
+// 切换布局
+const toggleLayout = () => {
+  isCompactLayout.value = !isCompactLayout.value;
+  localStorage.setItem('musicListLayout', isCompactLayout.value ? 'compact' : 'normal');
+};
+
+// 初始化歌单收藏状态
+const checkCollectionStatus = () => {
+  // 只有歌单类型才能收藏
+  if (route.query.type === 'playlist' && listInfo.value?.id) {
+    canCollect.value = true;
+    // 检查是否已收藏
+    isCollected.value = listInfo.value.subscribed || false;
+  } else {
+    canCollect.value = false;
+  }
+};
+
+// 切换收藏状态
+const toggleCollect = async () => {
+  if (!listInfo.value?.id) return;
+  
+  try {
+    loadingList.value = true;
+    const tVal = isCollected.value ? 2 : 1; // 1:收藏, 2:取消收藏
+    const response = await subscribePlaylist({
+      t: tVal,
+      id: listInfo.value.id
+    });
+    
+    // 假设API返回格式是 { data: { code: number, msg?: string } }
+    const res = response.data;
+    
+    if (res.code === 200) {
+      isCollected.value = !isCollected.value;
+      const msgKey = isCollected.value 
+        ? 'comp.musicList.collectSuccess'
+        : 'comp.musicList.cancelCollectSuccess';
+      message.success(t(msgKey));
+      // 更新歌单信息
+      listInfo.value.subscribed = isCollected.value;
+    } else {
+      throw new Error(res.msg || t('comp.musicList.operationFailed'));
+    }
+  } catch (error) {
+    console.error('收藏歌单失败:', error);
+    message.error(t('comp.musicList.operationFailed'));
+  } finally {
+    loadingList.value = false;
+  }
+};
+
+// 播放全部
+const handlePlayAll = () => {
+  if (displayedSongs.value.length === 0) return;
+  
+  // 如果有搜索关键词，只播放过滤后的歌曲
+  if (searchKeyword.value) {
+    playerStore.setPlayList(filteredSongs.value.map(formatSong));
+    playerStore.setPlay(formatSong(filteredSongs.value[0]));
+    return;
+  }
+  
+  // 否则播放全部歌曲
+  // 使用setPlayList设置播放列表
+  playerStore.setPlayList(displayedSongs.value.map(formatSong));
+  // 使用setPlay开始播放第一首
+  playerStore.setPlay(formatSong(displayedSongs.value[0]));
+};
+
+// 添加到播放列表末尾
+const addToPlaylist = () => {
+  if (displayedSongs.value.length === 0) return;
+  
+  // 获取当前播放列表
+  const currentList = playerStore.playList;
+  
+  // 如果有搜索关键词，只添加过滤后的歌曲
+  const songsToAdd = searchKeyword.value 
+    ? filteredSongs.value 
+    : displayedSongs.value;
+  
+  // 添加歌曲到播放列表(避免重复添加)
+  const newSongs = songsToAdd.filter(song => 
+    !currentList.some(item => item.id === song.id)
+  );
+  
+  if (newSongs.length === 0) {
+    message.info(t('comp.musicList.songsAlreadyInPlaylist'));
+    return;
+  }
+  
+  // 合并到当前播放列表末尾
+  const newList = [...currentList, ...newSongs.map(formatSong)];
+  playerStore.setPlayList(newList);
+  
+  message.success(t('comp.musicList.addToPlaylistSuccess', { count: newSongs.length }));
+};
 </script>
 
 <style scoped lang="scss">
@@ -701,15 +889,24 @@ onUnmounted(() => {
 }
 
 .search-container {
-  @apply max-w-md;
+  @apply max-w-md transition-all duration-300 ease-in-out;
+
+  &.search-expanded {
+    @apply w-52;
+  }
+
+  .search-button {
+    @apply w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-light-300 dark:hover:bg-dark-300 transition-colors text-gray-500 dark:text-gray-400 hover:text-green-500;
+    
+    .icon {
+      @apply text-lg;
+    }
+  }
 
   :deep(.n-input) {
     @apply bg-light-200 dark:bg-dark-200;
   }
 
-  .icon {
-    @apply text-gray-500 dark:text-gray-400;
-  }
 }
 
 .no-result {
@@ -769,6 +966,37 @@ onUnmounted(() => {
 .mobile {
   .music-info {
     @apply hidden;
+  }
+}
+
+.layout-toggle {
+  .toggle-button {
+    @apply w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-light-300 dark:hover:bg-dark-300 transition-colors;
+    
+    .icon {
+      @apply text-lg text-gray-500 dark:text-gray-400 transition-colors;
+    }
+  }
+}
+
+.layout-toggle .toggle-button,
+.action-button {
+  @apply w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-light-300 dark:hover:bg-dark-300 transition-colors text-gray-500 dark:text-gray-400;
+  
+  .icon {
+    @apply text-lg;
+  }
+
+  &.collected {
+    .icon {
+      @apply text-red-500;
+    }
+  }
+  
+  &.hover-green:hover {
+    .icon {
+      @apply text-green-500;
+    }
   }
 }
 </style> 

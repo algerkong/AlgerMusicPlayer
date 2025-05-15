@@ -104,6 +104,17 @@ export default {
   },
   musicList: {
     searchSongs: 'Search Songs',
-    noSearchResults: 'No search results'
+    noSearchResults: 'No search results',
+    switchToNormal: 'Switch to normal layout',
+    switchToCompact: 'Switch to compact layout',
+    playAll: 'Play All',
+    collect: 'Collect',
+    collectSuccess: 'Collect Success',
+    cancelCollectSuccess: 'Cancel Collect Success',
+    cancelCollect: 'Cancel Collect',
+    addToPlaylist: 'Add to Playlist',
+    addToPlaylistSuccess: 'Add to Playlist Success',
+    operationFailed: 'Operation Failed',
+    songsAlreadyInPlaylist: 'Songs already in playlist'
   }
 };
