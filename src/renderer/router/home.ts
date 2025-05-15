@@ -34,6 +34,17 @@ const layoutRouter = [
     component: () => import('@/views/list/index.vue')
   },
   {
+    path: '/toplist',
+    name: 'toplist',
+    meta: {
+      title: '排行榜',
+      icon: 'ri-bar-chart-grouped-fill',
+      keepAlive: true,
+      isMobile: true
+    },
+    component: () => import('@/views/toplist/index.vue')
+  },
+  {
     path: '/mv',
     name: 'mv',
     meta: {
