@@ -1,4 +1,25 @@
-# Alger Music Player
+
+<h2 align="center">🎵 Alger Music Player</h2>
+<div align="center">
+<div align="center">
+  <a href="https://github.com/algerkong/AlgerMusicPlayer/stargazers">
+    <img src="https://img.shields.io/github/stars/algerkong/AlgerMusicPlayer?style=for-the-badge&logo=github&label=Stars&logoColor=white&color=22c55e" alt="GitHub stars">
+  </a>
+  <a href="https://github.com/algerkong/AlgerMusicPlayer/releases">
+    <img src="https://img.shields.io/github/v/release/algerkong/AlgerMusicPlayer?style=for-the-badge&logo=github&label=Release&logoColor=white&color=1a67af" alt="GitHub release">
+  </a>
+  <a href="https://pd.qq.com/s/cs056n33q?b=5">
+    <img src="https://img.shields.io/badge/QQ%E9%A2%91%E9%81%93-algermusic-blue?style=for-the-badge" alt="QQ频道">
+  </a>
+  <a href="https://t.me/+9efsKRuvKBk2NWVl">
+    <img src="https://img.shields.io/badge/AlgerMusic-blue?style=for-the-badge&logo=telegram&logoColor=white&label=Telegram" alt="Telegram">
+  </a>
+</div>
+</div>
+<div align="center">
+  <a href="https://hellogithub.com/repository/607b849c598d48e08fe38789d156ebdc" target="_blank"><img src="https://api.hellogithub.com/v1/widgets/recommend.svg?rid=607b849c598d48e08fe38789d156ebdc&claim_uid=ObuMXUfeHBmk9TI&theme=neutral" alt="Featured｜HelloGitHub" width="160" height="32" /></a>
+</div>
+
 主要功能如下
 - 🎵 音乐推荐
 - 🔐 网易云账号登录与同步
@@ -29,10 +50,6 @@
 
 ## 预览地址
 [http://mc.alger.fun/](http://mc.alger.fun/)
-
-[QQ频道（algermusic）](https://pd.qq.com/s/cs056n33q?b=5)
-
-tg群:[AlgerMusic tg](https://t.me/+9efsKRuvKBk2NWVl)
 
 ## 软件截图
 ![首页白](./docs/image.png)
