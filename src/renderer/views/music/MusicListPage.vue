@@ -37,7 +37,7 @@
           {{ t('comp.musicList.addToPlaylist') }}
         </n-tooltip>
         <!-- 布局切换按钮 -->
-        <div class="layout-toggle">
+        <div class="layout-toggle" v-if="!isMobile">
           <n-tooltip placement="bottom" trigger="hover">
             <template #trigger>
               <div class="toggle-button hover-green" @click="toggleLayout">
@@ -165,7 +165,7 @@ import SongItem from '@/components/common/SongItem.vue';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import { useMusicStore, usePlayerStore } from '@/store';
 import { SongResult } from '@/type/music';
-import { getImgUrl, setAnimationClass } from '@/utils';
+import { getImgUrl, isMobile, setAnimationClass } from '@/utils';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -196,7 +196,7 @@ const isFullPlaylistLoaded = ref(false); // 标记完整播放列表是否已加
 
 // 添加搜索相关的状态和方法
 const isSearchVisible = ref(false);
-const isCompactLayout = ref(localStorage.getItem('musicListLayout') === 'compact'); // 默认使用紧凑布局
+const isCompactLayout = ref(isMobile.value ? false : localStorage.getItem('musicListLayout') === 'compact'); // 默认使用紧凑布局
 
 const showSearch = () => {
   isSearchVisible.value = true;
