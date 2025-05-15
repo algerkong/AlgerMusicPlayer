@@ -254,7 +254,7 @@ watch(
 }
 
 .playlist-drawer {
-  @apply flex flex-col gap-6;
+  @apply flex flex-col gap-6 py-6;
 }
 
 .create-playlist-section {
@@ -335,7 +335,7 @@ watch(
 }
 
 .playlist-list {
-  @apply flex flex-col gap-2;
+  @apply flex flex-col gap-2 pb-40;
 }
 
 .playlist-item {
@@ -366,5 +366,10 @@ watch(
       @apply text-xl;
     }
   }
+}
+
+:deep(.n-drawer-body-content-wrapper) {
+  padding-bottom: 0 !important;
+  padding-top: 0 !important;
 }
 </style>
