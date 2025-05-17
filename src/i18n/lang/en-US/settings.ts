@@ -66,7 +66,9 @@ export default {
     noMusicSources: 'No sources selected',
     gdmusicInfo: 'GD Music Station intelligently resolves music from multiple platforms automatically',
     autoPlay: 'Auto Play',
-    autoPlayDesc: 'Auto resume playback when reopening the app'
+    autoPlayDesc: 'Auto resume playback when reopening the app',
+    showStatusBar: "Show Status Bar",
+    showStatusBarContent: "You can display the music control function in your mac status bar (effective after a restart)"
   },
   application: {
     closeAction: 'Close Action',
