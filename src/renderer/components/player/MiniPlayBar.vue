@@ -312,25 +312,7 @@ const handleNext = () => playerStore.nextPlay();
 
 const playMusicEvent = async () => {
   try {
-    if (!playerStore.playMusic?.id || !playerStore.playMusicUrl) {
-      console.warn('No valid music or URL available');
-      playerStore.setPlay(playerStore.playMusic);
-      return;
-    }
-
-    if (play.value) {
-      if (audioService.getCurrentSound()) {
-        audioService.pause();
-        playerStore.setPlayMusic(false);
-      }
-    } else {
-      if (audioService.getCurrentSound()) {
-        audioService.play();
-      } else {
-        await audioService.play(playerStore.playMusicUrl, playerStore.playMusic);
-      }
-      playerStore.setPlayMusic(true);
-    }
+    playerStore.setPlay(playerStore.playMusic);
   } catch (error) {
     console.error('播放出错:', error);
     playerStore.nextPlay();

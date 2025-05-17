@@ -158,7 +158,6 @@ import SongItem from '@/components/common/SongItem.vue';
 import SleepTimerPopover from '@/components/player/SleepTimerPopover.vue';
 import { allTime, artistList, nowTime, playMusic, sound, textColors } from '@/hooks/MusicHook';
 import MusicFull from '@/layout/components/MusicFull.vue';
-import { audioService } from '@/services/audioService';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 import type { SongResult } from '@/type/music';
@@ -235,25 +234,7 @@ const toggleFavorite = () => {
 // 播放暂停按钮事件
 const playMusicEvent = async () => {
   try {
-    if (!playMusic.value?.id || !playerStore.playMusicUrl) {
-      console.warn('No valid music or URL available');
-      playerStore.setPlay(playMusic.value);
-      return;
-    }
-
-    if (play.value) {
-      if (audioService.getCurrentSound()) {
-        audioService.pause();
-        playerStore.setPlayMusic(false);
-      }
-    } else {
-      if (audioService.getCurrentSound()) {
-        audioService.play();
-      } else {
-        await audioService.play(playerStore.playMusicUrl, playMusic.value);
-      }
-      playerStore.setPlayMusic(true);
-    }
+    playerStore.setPlay(playMusic.value);
   } catch (error) {
     console.error('播放出错:', error);
     playerStore.nextPlay();

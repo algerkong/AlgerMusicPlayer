@@ -20,7 +20,7 @@
               </keep-alive>
             </router-view>
           </div>
-          <play-bottom height="5rem" />
+          <play-bottom />
           <app-menu v-if="isMobile && !playerStore.musicFull" class="menu" :menus="menus" />
         </div>
       </div>
@@ -46,6 +46,8 @@
             settingsStore.setData?.hasDownloadingTasks)
         "
       />
+      <!-- 播放列表抽屉 -->
+      <play-list-drawer />
     </div>
     <install-app-modal v-if="!isElectron"></install-app-modal>
     <update-modal v-if="isElectron" />
@@ -88,7 +90,7 @@ const PlayBar = defineAsyncComponent(() => import('@/components/player/PlayBar.v
 const MobilePlayBar = defineAsyncComponent(() => import('@/components/player/MobilePlayBar.vue'));
 const SearchBar = defineAsyncComponent(() => import('./components/SearchBar.vue'));
 const TitleBar = defineAsyncComponent(() => import('./components/TitleBar.vue'));
-
+const PlayListDrawer = defineAsyncComponent(() => import('@/components/player/PlayListDrawer.vue'));
 const PlaylistDrawer = defineAsyncComponent(() => import('@/components/common/PlaylistDrawer.vue'));
 
 const playerStore = usePlayerStore();

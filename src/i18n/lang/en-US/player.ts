@@ -105,5 +105,13 @@ export default {
     playbackStopped: 'Music playback stopped',
     minutesRemaining: '{minutes} min remaining',
     songsRemaining: '{count} songs remaining'
+  },
+  playList: {
+    clearAll: 'Clear Playlist',
+    alreadyEmpty: 'Playlist is already empty',
+    cleared: 'Playlist cleared',
+    empty: 'Playlist is empty',
+    clearConfirmTitle: 'Clear Playlist',
+    clearConfirmContent: 'This will clear all songs in the playlist and stop the current playback. Continue?'
   }
 };

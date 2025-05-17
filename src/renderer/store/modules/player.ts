@@ -389,11 +389,29 @@ export const usePlayerStore = defineStore('player', () => {
   const favoriteList = ref<Array<number | string>>(getLocalStorageItem('favoriteList', []));
   const savedPlayProgress = ref<number | undefined>();
   
+  // 添加播放列表抽屉状态
+  const playListDrawerVisible = ref(false);
+  
   // 定时关闭相关状态
   const sleepTimer = ref<SleepTimerInfo>(getLocalStorageItem('sleepTimer', {
     type: SleepTimerType.NONE,
     value: 0
   }));
+
+  // 清空播放列表
+  const clearPlayAll = async () => {
+    audioService.pause()
+    setTimeout(() => {
+      playMusic.value = {} as SongResult;
+      playMusicUrl.value = '';
+      playList.value = [];
+      playListIndex.value = 0;
+      localStorage.removeItem('currentPlayMusic');
+      localStorage.removeItem('currentPlayMusicUrl');
+      localStorage.removeItem('playList');
+      localStorage.removeItem('playListIndex');
+    }, 500);
+  };
   
   const timerInterval = ref<number | null>(null);
   
@@ -529,6 +547,17 @@ export const usePlayerStore = defineStore('player', () => {
 
   const setPlay = async (song: SongResult) => {
     try {
+    // 如果是当前正在播放的音乐，则切换播放/暂停状态
+    if (playMusic.value.id === song.id) {
+      if (play.value) {
+          setPlayMusic(false);
+          audioService.getCurrentSound()?.pause();
+        } else {
+          setPlayMusic(true);
+          audioService.getCurrentSound()?.play();
+        }
+        return;
+      }
       // 直接调用 handlePlayMusic，它会处理索引更新和播放逻辑
       const success = await handlePlayMusic(song);
       
@@ -986,7 +1015,7 @@ export const usePlayerStore = defineStore('player', () => {
     if (!isAlreadyInList) {
       favoriteList.value.push(id);
       localStorage.setItem('favoriteList', JSON.stringify(favoriteList.value));
-      typeof id === 'number' && likeSong(id, true);
+      typeof id === 'number' && useUserStore().user && likeSong(id, true);
     }
   };
 
@@ -996,7 +1025,7 @@ export const usePlayerStore = defineStore('player', () => {
       favoriteList.value = favoriteList.value.filter(existingId => !isBilibiliIdMatch(existingId, id));
     } else {
       favoriteList.value = favoriteList.value.filter(existingId => existingId !== id);
-      likeSong(Number(id), false);
+      useUserStore().user && likeSong(Number(id), false);
     }
     localStorage.setItem('favoriteList', JSON.stringify(favoriteList.value));
   };
@@ -1252,6 +1281,24 @@ export const usePlayerStore = defineStore('player', () => {
     }
   };
 
+  // 设置播放列表抽屉显示状态
+  const setPlayListDrawerVisible = (value: boolean) => {
+    playListDrawerVisible.value = value;
+  };
+
+  // 播放
+  const handlePause = async () => {
+    try {
+      const currentSound = audioService.getCurrentSound();
+      if (currentSound) {
+        currentSound.pause();
+      }
+      setPlayMusic(false);
+    } catch (error) {
+      console.error('暂停播放失败:', error);
+    }
+  }
+
   return {
     play,
     isPlay,
@@ -1263,6 +1310,7 @@ export const usePlayerStore = defineStore('player', () => {
     musicFull,
     savedPlayProgress,
     favoriteList,
+    playListDrawerVisible,
     
     // 定时关闭相关
     sleepTimer,
@@ -1280,6 +1328,7 @@ export const usePlayerStore = defineStore('player', () => {
     currentPlayList,
     currentPlayListIndex,
 
+    clearPlayAll,
     setPlay,
     setIsPlay,
     nextPlay,
@@ -1295,6 +1344,8 @@ export const usePlayerStore = defineStore('player', () => {
     removeFromFavorite,
     removeFromPlayList,
     playAudio,
-    reparseCurrentSong
+    reparseCurrentSong,
+    setPlayListDrawerVisible,
+    handlePause
   };
 });

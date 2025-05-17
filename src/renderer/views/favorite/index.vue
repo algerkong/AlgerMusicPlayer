@@ -112,7 +112,7 @@
   import { getMusicDetail } from '@/api/music';
   import { getBilibiliProxyUrl, getBilibiliVideoDetail } from '@/api/bilibili';
   import SongItem from '@/components/common/SongItem.vue';
-  import { getSongUrl } from '@/hooks/MusicListHook';
+  import { getSongUrl } from '@/store/modules/player';
   import { usePlayerStore } from '@/store';
   import type { SongResult } from '@/type/music';
   import { isElectron, setAnimationClass, setAnimationDelay } from '@/utils';

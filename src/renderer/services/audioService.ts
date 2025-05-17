@@ -720,7 +720,6 @@ class AudioService {
   }
 
   pause() {
-    // 直接强制重置操作锁
     this.forceResetOperationLock();
     
     if (this.currentSound) {

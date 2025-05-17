@@ -155,42 +155,12 @@
       </n-popover>
       <!-- 定时关闭功能 -->
       <sleep-timer-popover mode="desktop" />
-      <n-popover
-        trigger="click"
-        :z-index="99999999"
-        content-class="music-play"
-        raw
-        :show-arrow="false"
-        :delay="200"
-        arrow-wrapper-style=" border-radius:1.5rem"
-        @update-show="scrollToPlayList"
-      >
+      <n-tooltip trigger="hover" :z-index="9999999">
         <template #trigger>
-          <n-tooltip trigger="manual" :z-index="9999999">
-            <template #trigger>
-              <i class="iconfont icon-list"></i>
-            </template>
-            {{ t('player.playBar.playList') }}
-          </n-tooltip>
+          <i class="iconfont icon-list text-2xl hover:text-green-500 transition-colors cursor-pointer" @click="openPlayListDrawer"></i>
         </template>
-        <div class="music-play-list">
-          <div class="music-play-list-back"></div>
-          <n-virtual-list ref="palyListRef" :item-size="62" item-resizable :items="playList">
-            <template #default="{ item }">
-              <div class="music-play-list-content">
-                <div class="flex items-center justify-between">
-                  <song-item :key="item.id" class="flex-1" :item="item" mini></song-item>
-                  <div class="delete-btn" @click.stop="handleDeleteSong(item)">
-                    <i
-                      class="iconfont ri-delete-bin-line text-gray-400 hover:text-red-500 transition-colors"
-                    ></i>
-                  </div>
-                </div>
-              </div>
-            </template>
-          </n-virtual-list>
-        </div>
-      </n-popover>
+        {{ t('player.playBar.playList') }}
+      </n-tooltip>
     </div>
     <!-- 播放音乐 -->
     <music-full ref="MusicFullRef" v-model="musicFullVisible" :background="background" />
@@ -200,10 +170,9 @@
 <script lang="ts" setup>
 import { useThrottleFn } from '@vueuse/core';
 import { useMessage } from 'naive-ui';
-import { computed, ref, useTemplateRef, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import SongItem from '@/components/common/SongItem.vue';
 import EqControl from '@/components/EQControl.vue';
 import SleepTimerPopover from '@/components/player/SleepTimerPopover.vue';
 import ReparsePopover from '@/components/player/ReparsePopover.vue';
@@ -224,7 +193,6 @@ import {
   usePlayerStore 
 } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
-import type { SongResult } from '@/type/music';
 import { getImgUrl, isElectron, isMobile, secondToMinute, setAnimationClass } from '@/utils';
 
 const playerStore = usePlayerStore();
@@ -233,8 +201,6 @@ const { t } = useI18n();
 const message = useMessage();
 // 是否播放
 const play = computed(() => playerStore.isPlay);
-// 播放列表
-const playList = computed(() => playerStore.playList as SongResult[]);
 // 背景颜色
 const background = ref('#000');
 
@@ -372,42 +338,12 @@ const showSliderTooltip = ref(false);
 // 播放暂停按钮事件
 const playMusicEvent = async () => {
   try {
-    // 检查是否有有效的音乐对象
-    if (!playMusic.value?.id) {
-      console.warn('没有有效的播放对象');
-      return;
-    }
-
-    // 当前处于播放状态 -> 暂停
-    if (play.value) {
-      if (audioService.getCurrentSound()) {
-        audioService.pause();
-        playerStore.setPlayMusic(false);
-      }
-      return;
-    }
-
-    // 当前处于暂停状态 -> 播放
-    // 有音频实例，直接播放
-    if (audioService.getCurrentSound()) {
-      audioService.play();
+    const result = await playerStore.setPlay({ ...playMusic.value});
+    if (result) {
       playerStore.setPlayMusic(true);
-      return;
-    }
-
-    // 没有音频实例，重新获取并播放（包括重新获取B站视频URL）
-    try {
-      // 复用当前播放对象，但强制重新获取URL
-      const result = await playerStore.setPlay({ ...playMusic.value, playMusicUrl: undefined });
-      if (result) {
-        playerStore.setPlayMusic(true);
-      }
-    } catch (error) {
-      console.error('重新获取播放链接失败:', error);
-      message.error(t('player.playFailed'));
     }
   } catch (error) {
-    console.error('播放出错:', error);
+    console.error('重新获取播放链接失败:', error);
     message.error(t('player.playFailed'));
   }
 };
@@ -421,15 +357,6 @@ const setMusicFull = () => {
   if (musicFullVisible.value) {
     settingsStore.showArtistDrawer = false;
   }
-};
-
-const palyListRef = useTemplateRef('palyListRef') as any;
-
-const scrollToPlayList = (val: boolean) => {
-  if (!val) return;
-  setTimeout(() => {
-    palyListRef.value?.scrollTo({ top: playerStore.playListIndex * 62 });
-  }, 50);
 };
 
 const isFavorite = computed(() => {
@@ -473,25 +400,11 @@ const handleArtistClick = (id: number) => {
   navigateToArtist(id);
 };
 
-// 监听播放栏显示状态
-watch(
-  () => MusicFullRef.value?.config?.hidePlayBar,
-  (newVal) => {
-    if (newVal && musicFullVisible.value) {
-      // 使用 animate.css 动画，不需要手动设置样式
-    }
-  }
-);
-
 const isEQVisible = ref(false);
 
-// 在 script setup 部分添加删除歌曲的处理函数
-const handleDeleteSong = (song: SongResult) => {
-  // 如果删除的是当前播放的歌曲，先切换到下一首
-  if (song.id === playMusic.value.id) {
-    playerStore.nextPlay();
-  }
-  playerStore.removeFromPlayList(song.id as number);
+// 打开播放列表抽屉
+const openPlayListDrawer = () => {
+  playerStore.setPlayListDrawerVisible(true);
 };
 </script>
 

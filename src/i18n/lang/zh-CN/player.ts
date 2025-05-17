@@ -106,5 +106,13 @@ export default {
     playbackStopped: '音乐播放已停止',
     minutesRemaining: '剩余{minutes}分钟',
     songsRemaining: '剩余{count}首歌'
+  },
+  playList: {
+    clearAll: '清空播放列表',
+    alreadyEmpty: '播放列表已经为空',
+    cleared: '已清空播放列表',
+    empty: '播放列表为空',
+    clearConfirmTitle: '清空播放列表',
+    clearConfirmContent: '这将清空所有播放列表中的歌曲并停止当前播放。是否继续？'
   }
 };

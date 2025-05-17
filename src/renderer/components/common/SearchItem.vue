@@ -33,7 +33,6 @@
 <script setup lang="ts">
 import { getAlbum, getListDetail } from '@/api/list';
 import MvPlayer from '@/components/MvPlayer.vue';
-import { audioService } from '@/services/audioService';
 import { usePlayerStore } from '@/store/modules/player';
 import { IMvItem } from '@/type/mv';
 import { getImgUrl } from '@/utils';
@@ -129,9 +128,7 @@ const handleClick = async () => {
 };
 
 const handleShowMv = async () => {
-  playerStore.setIsPlay(false);
-  playerStore.setPlayMusic(false);
-  audioService.getCurrentSound()?.pause();
+  playerStore.handlePause();
   showPop.value = true;
 };
 </script>

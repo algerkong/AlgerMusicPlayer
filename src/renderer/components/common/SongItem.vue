@@ -122,7 +122,7 @@
       :x="dropdownX"
       :y="dropdownY"
       :options="dropdownOptions"
-      :z-index="99999"
+      :z-index="99999999"
       placement="bottom-start"
       @clickoutside="showDropdown = false"
       @select="handleSelect"
@@ -137,9 +137,8 @@ import { NEllipsis, NImage, useMessage } from 'naive-ui';
 import { computed, h, inject, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import { getSongUrl } from '@/hooks/MusicListHook';
+import { getSongUrl } from '@/store/modules/player';
 import { useArtist } from '@/hooks/useArtist';
-import { audioService } from '@/services/audioService';
 import { usePlayerStore } from '@/store';
 import type { SongResult } from '@/type/music';
 import { getImgUrl, isElectron } from '@/utils';
@@ -444,18 +443,6 @@ const imageLoad = async () => {
 
 // 播放音乐 设置音乐详情 打开音乐底栏
 const playMusicEvent = async (item: SongResult) => {
-  // 如果是当前正在播放的音乐，则切换播放/暂停状态
-  if (playMusic.value.id === item.id) {
-    if (play.value) {
-      playerStore.setPlayMusic(false);
-      audioService.getCurrentSound()?.pause();
-    } else {
-      playerStore.setPlayMusic(true);
-      audioService.getCurrentSound()?.play();
-    }
-    return;
-  }
-
   try {
     // 使用store的setPlay方法，该方法已经包含了B站视频URL处理逻辑
     const result = await playerStore.setPlay(item);
@@ -551,7 +538,7 @@ const handleMouseLeave = () => {
   @apply rounded-3xl p-3 flex items-center transition bg-transparent dark:text-white text-gray-900;
 
   &:hover {
-    @apply bg-gray-100 dark:bg-gray-800;
+    @apply bg-light-100 dark:bg-dark-100;
 
     .song-item-operating-compact {
       .song-item-operating-like,

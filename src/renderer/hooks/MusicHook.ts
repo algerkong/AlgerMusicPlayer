@@ -9,6 +9,7 @@ import pinia, { usePlayerStore } from '@/store';
 import type { Artist, ILyricText, SongResult } from '@/type/music';
 import { isElectron } from '@/utils';
 import { getTextColors } from '@/utils/linearColor';
+import { getSongUrl } from '@/store/modules/player';
 
 const windowData = window as any;
 
@@ -905,7 +906,7 @@ audioService.on('url_expired', async (expiredTrack) => {
       // 处理网易云音乐，重新获取URL
       console.log('重新获取网易云音乐URL');
       try {
-        const { getSongUrl } = await import('@/store/modules/player');
+        
         const newUrl = await getSongUrl(expiredTrack.id, expiredTrack as any);
 
         if (newUrl) {
