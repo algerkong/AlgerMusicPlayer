@@ -183,6 +183,17 @@
               </n-button>
             </div>
 
+            <div class="set-item" v-if="platform === 'darwin'">
+              <div>
+                <div class="set-item-title">{{ t('settings.playback.showStatusBar') }}</div>
+                <div class="set-item-content">{{ t('settings.playback.showStatusBarContent') }}</div>
+              </div>
+              <n-switch v-model:value="setData.showTopAction">
+                <template #checked>{{ t('common.on') }}</template>
+                <template #unchecked>{{ t('common.off') }}</template>
+              </n-switch>
+            </div>
+
             <div class="set-item">
               <div>
                 <div class="set-item-title">{{ t('settings.playback.autoPlay') }}</div>
@@ -487,6 +498,8 @@ import config from '../../../../package.json';
 
 // 所有平台默认值
 const ALL_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd', 'bilibili', 'kuwo'];
+
+const platform = window.electron.ipcRenderer.sendSync('get-platform');
 
 const settingsStore = useSettingsStore();
 const userStore = useUserStore();

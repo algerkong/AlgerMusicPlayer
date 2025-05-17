@@ -24,6 +24,7 @@ type SetConfig = {
   fontFamily: string;
   fontScope: 'global' | 'lyric';
   language: string;
+  showTopAction: boolean;
 };
 interface StoreType {
   set: SetConfig;

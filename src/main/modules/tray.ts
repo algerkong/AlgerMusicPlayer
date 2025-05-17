@@ -11,6 +11,7 @@ import { join } from 'path';
 
 import type { Language } from '../../i18n/main';
 import i18n from '../../i18n/main';
+import { getStore } from './config';
 
 // 歌曲信息接口定义
 interface SongInfo {
@@ -327,7 +328,8 @@ export function updateTrayMenu(mainWindow: BrowserWindow) {
 
 // 初始化状态栏Tray
 function initializeStatusBarTray(mainWindow: BrowserWindow) {
-  if (process.platform !== 'darwin') return;
+  const store = getStore()
+  if (process.platform !== 'darwin' || !store.get('set.showTopAction')) return;
 
   const iconSize = getProperIconSize();
 
