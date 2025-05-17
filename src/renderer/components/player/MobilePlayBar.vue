@@ -155,7 +155,6 @@ import { useThrottleFn } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
 
 import SongItem from '@/components/common/SongItem.vue';
-import SleepTimerPopover from '@/components/player/SleepTimerPopover.vue';
 import { allTime, artistList, nowTime, playMusic, sound, textColors } from '@/hooks/MusicHook';
 import MusicFull from '@/layout/components/MusicFull.vue';
 import { usePlayerStore } from '@/store/modules/player';
