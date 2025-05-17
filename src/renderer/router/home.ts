@@ -51,20 +51,10 @@ const layoutRouter = [
       title: 'MV',
       icon: 'icon-recordfill',
       keepAlive: true,
-      isMobile: true
+      isMobile: false
     },
     component: () => import('@/views/mv/index.vue')
   },
-  // {
-  //   path: '/history',
-  //   name: 'history',
-  //   meta: {
-  //     title: '历史',
-  //     icon: 'icon-a-TicketStar',
-  //     keepAlive: true,
-  //   },
-  //   component: () => import('@/views/history/index.vue'),
-  // },
   {
     path: '/history',
     name: 'history',
