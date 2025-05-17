@@ -806,10 +806,6 @@ export const usePlayerStore = defineStore('player', () => {
         return;
       }
 
-      // 在切换前保存当前播放状态
-      const shouldPlayNext = play.value;
-      console.log('切换到下一首，当前播放状态:', shouldPlayNext ? '播放' : '暂停');
-
       // 保存当前索引，用于错误恢复
       const currentIndex = playListIndex.value;
       let nowPlayListIndex: number;
@@ -841,7 +837,7 @@ export const usePlayerStore = defineStore('player', () => {
 
       // 尝试播放，最多尝试maxRetries次
       while (!success && retryCount < maxRetries) {
-        success = await handlePlayMusic(nextSong, shouldPlayNext);
+        success = await handlePlayMusic(nextSong, true);
         
         if (!success) {
           retryCount++;
