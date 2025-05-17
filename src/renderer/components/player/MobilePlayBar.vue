@@ -89,7 +89,7 @@
       </div>
 
       <!-- 定时关闭按钮 -->
-      <SleepTimerPopover mode="mobile" />
+      <!-- <SleepTimerPopover mode="mobile" /> -->
     </template>
 
     <!-- Mini模式 - 在musicFullVisible为false时显示 -->
