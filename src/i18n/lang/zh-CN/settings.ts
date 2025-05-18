@@ -44,7 +44,7 @@ export default {
   },
   playback: {
     quality: '音质设置',
-    qualityDesc: '选择音乐播放音质（VIP）',
+    qualityDesc: '选择音乐播放音质（网易云VIP）',
     qualityOptions: {
       standard: '标准',
       higher: '较高',

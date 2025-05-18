@@ -40,7 +40,7 @@
               <language-switcher />
             </div>
 
-            <div class="set-item">
+            <div class="set-item" v-if="isElectron">
               <div>
                 <div class="set-item-title">{{ t('settings.basic.font') }}</div>
                 <div class="set-item-content">{{ t('settings.basic.fontDesc') }}</div>
@@ -103,9 +103,9 @@
                 </div>
               </div>
               <div class="flex items-center gap-2">
-                <span class="text-sm text-gray-400">{{ setData.animationSpeed }}x</span>
-                <div class="w-60">
-                  <n-slider
+                <span class="text-sm text-gray-400" v-if="!isMobile">{{ setData.animationSpeed }}x</span>
+                <div>
+                  <template v-if="!isMobile"><n-slider
                     v-model:value="setData.animationSpeed"
                     :min="0.1"
                     :max="3"
@@ -117,7 +117,19 @@
                     }"
                     :disabled="setData.noAnimate"
                     class="w-40"
-                  />
+                  /></template>
+                  <template v-else>
+                    <n-input-number
+                      v-model:value="setData.animationSpeed"
+                      :min="0.1"
+                      :max="3"
+                      :step="0.1"
+                      :placeholder="t('settings.basic.animationSpeedPlaceholder')"
+                      :disabled="setData.noAnimate"
+                      button-placement="both"
+                      style="width: 100px"
+                    />
+                  </template>
                 </div>
               </div>
             </div>
@@ -128,28 +140,42 @@
         <div id="playback" ref="playbackRef" class="settings-section">
           <div class="settings-section-title">{{ t('settings.sections.playback') }}</div>
           <div class="settings-section-content">
-            <div class="set-item">
-              <div>
-                <div class="set-item-title">{{ t('settings.playback.quality') }}</div>
-                <div class="set-item-content">{{ t('settings.playback.qualityDesc') }}</div>
+            <div>
+              <div class="set-item">
+                <div>
+                  <div class="set-item-title">{{ t('settings.playback.quality') }}</div>
+                  <div class="set-item-content">
+                    {{ t('settings.playback.qualityDesc') }}
+                  </div>
+                </div>
+                <n-select
+                  v-model:value="setData.musicQuality"
+                  :options="[
+                    { label: t('settings.playback.qualityOptions.standard'), value: 'standard' },
+                    { label: t('settings.playback.qualityOptions.higher'), value: 'higher' },
+                    { label: t('settings.playback.qualityOptions.exhigh'), value: 'exhigh' },
+                    { label: t('settings.playback.qualityOptions.lossless'), value: 'lossless' },
+                    { label: t('settings.playback.qualityOptions.hires'), value: 'hires' },
+                    { label: t('settings.playback.qualityOptions.jyeffect'), value: 'jyeffect' },
+                    { label: t('settings.playback.qualityOptions.sky'), value: 'sky' },
+                    { label: t('settings.playback.qualityOptions.dolby'), value: 'dolby' },
+                    { label: t('settings.playback.qualityOptions.jymaster'), value: 'jymaster' }
+                  ]"
+                  style="width: 160px"
+                />
               </div>
-              <n-select
-                v-model:value="setData.musicQuality"
-                :options="[
-                  { label: t('settings.playback.qualityOptions.standard'), value: 'standard' },
-                  { label: t('settings.playback.qualityOptions.higher'), value: 'higher' },
-                  { label: t('settings.playback.qualityOptions.exhigh'), value: 'exhigh' },
-                  { label: t('settings.playback.qualityOptions.lossless'), value: 'lossless' },
-                  { label: t('settings.playback.qualityOptions.hires'), value: 'hires' },
-                  { label: t('settings.playback.qualityOptions.jyeffect'), value: 'jyeffect' },
-                  { label: t('settings.playback.qualityOptions.sky'), value: 'sky' },
-                  { label: t('settings.playback.qualityOptions.dolby'), value: 'dolby' },
-                  { label: t('settings.playback.qualityOptions.jymaster'), value: 'jymaster' }
-                ]"
-                style="width: 160px"
-              />
+              <!-- 网易云 QQ 音乐 酷我 酷狗 会员购买链接 -->
+            <div class="p-2 bg-light-100 dark:bg-dark-100 rounded-lg mt-2">
+              <div>大家还是需要支持正版，本软件只做开源探讨</div>
+                <div class="mt-2">各大音乐会员购买链接</div>
+                <div class="flex gap-5 flex-wrap">
+                  <a class="text-green-400 hover:text-green-500" href="https://music.163.com/store/vip" target="_blank">网易云音乐会员</a>
+                  <a class="text-green-400 hover:text-green-500" href="https://y.qq.com/portal/vipportal/" target="_blank">QQ音乐会员</a>
+                  <a class="text-green-400 hover:text-green-500" href="https://vip.kugou.com/" target="_blank">酷狗音乐会员</a>
+                  <a class="text-green-400 hover:text-green-500" href="https://vip1.kuwo.cn/" target="_blank">酷我音乐会员</a>
+                </div>
+              </div>
             </div>
-
             <div class="set-item" v-if="isElectron">
               <div>
                 <div class="set-item-title">{{ t('settings.playback.musicSources') }}</div>
@@ -418,7 +444,7 @@
 
         <!-- 捐赠支持 -->
         <div id="donation" ref="donationRef" class="settings-section">
-          <div class="settings-section-title">{{ t('settings.sections.donation') }}</div>
+          <div class="settings-section-title">{{ t('settings.sectio ns.donation') }}</div>
           <div class="settings-section-content">
             <div class="set-item">
               <div>
@@ -499,7 +525,7 @@ import config from '../../../../package.json';
 // 所有平台默认值
 const ALL_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd', 'bilibili', 'kuwo'];
 
-const platform = window.electron.ipcRenderer.sendSync('get-platform');
+const platform = window.electron ? window.electron.ipcRenderer.sendSync('get-platform') : 'web';
 
 const settingsStore = useSettingsStore();
 const userStore = useUserStore();

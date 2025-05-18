@@ -266,7 +266,7 @@ const selectItem = async (key: string) => {
 };
 
 const toGithub = () => {
-  window.open('http://donate.alger.fun', '_blank');
+  window.open('http://donate.alger.fun/download', '_blank');
 };
 
 const updateInfo = ref<UpdateResult>({
