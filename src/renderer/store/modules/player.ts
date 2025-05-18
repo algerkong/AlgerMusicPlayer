@@ -119,6 +119,7 @@ export const getSongUrl = async (
       // 如果自定义音源解析失败，继续使用正常的获取流程
       console.warn('自定义音源解析失败，使用默认音源');
     } catch (error) {
+      console.error('error',error)
       console.error('自定义音源解析出错:', error);
     }
   }
@@ -548,7 +549,7 @@ export const usePlayerStore = defineStore('player', () => {
   const setPlay = async (song: SongResult) => {
     try {
     // 如果是当前正在播放的音乐，则切换播放/暂停状态
-    if (playMusic.value.id === song.id) {
+    if (playMusic.value.id === song.id && playMusic.value.playMusicUrl === song.playMusicUrl) {
       if (play.value) {
           setPlayMusic(false);
           audioService.getCurrentSound()?.pause();
