@@ -135,7 +135,7 @@ export const getLatestReleaseInfo = async (): Promise<GithubReleaseInfo | null> 
       'https://api.github.com/repos/algerkong/AlgerMusicPlayer/releases/latest',
 
       // 使用代理节点
-      'https://mc.alger.fun/package.json',
+      'https://music.alger.fun/package.json',
     ];
 
     if (token) {

@@ -49,7 +49,7 @@
  一个第三方音乐播放器、本地服务、桌面歌词、音乐下载、最高音质
 
 ## 预览地址
-[http://mc.alger.fun/](http://mc.alger.fun/)
+[http://music.alger.fun/](http://music.alger.fun/)
 
 ## 软件截图
 ![首页白](./docs/image.png)
