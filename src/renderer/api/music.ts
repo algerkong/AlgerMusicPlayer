@@ -5,7 +5,9 @@ import { isElectron } from '@/utils';
 import request from '@/utils/request';
 import requestMusic from '@/utils/request_music';
 import { cloneDeep } from 'lodash';
-import { parseFromGDMusic, getQualityMapping } from './gdmusic';
+import { parseFromGDMusic } from './gdmusic';
+import type { SongResult } from '@/type/music';
+import { searchAndGetBilibiliAudioUrl } from './bilibili';
 
 const { addData, getData, deleteData } = musicDB;
 
@@ -80,7 +82,7 @@ export const getMusicLrc = async (id: number) => {
   }
 };
 
-export const getParsingMusicUrl = async (id: number, data: any) => {
+export const getParsingMusicUrl = async (id: number, data: SongResult) => {
   const settingStore = useSettingsStore();
   
   // 如果禁用了音乐解析功能，则直接返回空结果
@@ -98,7 +100,25 @@ export const getParsingMusicUrl = async (id: number, data: any) => {
     try {
       enabledSources = JSON.parse(savedSource);
       console.log(`使用歌曲 ${id} 自定义音源:`, enabledSources);
+      if(enabledSources.includes('bilibili')){
+        // 构建搜索关键词，依次判断歌曲名称、歌手名称和专辑名称是否存在
+        const songName = data?.name || '';
+        const artistName = Array.isArray(data?.ar) && data.ar.length > 0 && data.ar[0]?.name ? data.ar[0].name : '';
+        const albumName = data?.al && typeof data.al === 'object' && data.al?.name ? data.al.name : '';
+        const name = [songName, artistName, albumName].filter(Boolean).join(' ').trim();
+        console.log('开始搜索bilibili音频', name);
+       return {
+        data: {
+          code: 200,
+          message: 'success',
+          data: {
+            url: await searchAndGetBilibiliAudioUrl(name)
+          }
+        }
+       }
+      }
     } catch (e) {
+      console.error('e',e)
       console.error('解析自定义音源失败, 使用全局设置', e);
       enabledSources = settingStore.setData.enabledMusicSources || [];
     }
@@ -108,13 +128,11 @@ export const getParsingMusicUrl = async (id: number, data: any) => {
   }
   
   // 检查是否选择了GD音乐台解析
+  
   if (enabledSources.includes('gdmusic')) {
     // 获取音质设置并转换为GD音乐台格式
     try {
-      const quality = getQualityMapping(settingStore.setData.musicQuality || 'higher');
-      
-      // 调用封装的GD音乐台解析服务
-      const gdResult = await parseFromGDMusic(id, data, quality);
+      const gdResult = await parseFromGDMusic(id, data, '999');
       if (gdResult) {
         return gdResult;
       }
