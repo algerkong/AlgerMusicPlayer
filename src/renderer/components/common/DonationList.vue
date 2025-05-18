@@ -4,6 +4,12 @@
       <div class="description">
         <p>{{ t('donation.description') }}</p>
         <p>{{ t('donation.message') }}</p>
+          <n-button type="primary" @click="toDonateList">
+            <template #icon>
+              <i class="ri-cup-line"></i>
+            </template>
+            {{ t('donation.toDonateList') }}
+          </n-button> 
       </div>
       <div class="qrcode-grid">
         <div class="qrcode-item">
@@ -14,15 +20,6 @@
             preview-disabled
           />
           <span class="qrcode-label">{{ t('common.alipay') }}</span>
-        </div>
-        
-        <div class="donate-button">
-          <n-button type="primary" @click="toDonateList">
-            <template #icon>
-              <i class="ri-cup-line"></i>
-            </template>
-            {{ t('donation.toDonateList') }}
-          </n-button>
         </div>
         
         <div class="qrcode-item">
@@ -66,7 +63,7 @@
           <div class="donor-info">
             <div class="donor-meta">
               <div class="donor-name">{{ donor.name }}</div>
-              <div class="price-tag">￥{{ donor.amount }}</div>
+              <!-- <div class="price-tag">￥{{ donor.amount }}</div> -->
             </div>
             <div class="donation-date">{{ donor.date }}</div>
           </div>
@@ -172,7 +169,7 @@ const toggleExpand = () => {
 };
 
 const toDonateList = () => {
-  window.open('http://donate.alger.fun', '_blank');
+  window.open('http://donate.alger.fun/download', '_blank');
 };
 </script>
 
@@ -211,12 +208,8 @@ const toDonateList = () => {
   @apply rounded-lg p-2.5 transition-all duration-200 hover:shadow-md;
   @apply bg-light-100 dark:bg-gray-800/5 backdrop-blur-sm;
   @apply border border-gray-200 dark:border-gray-700/10;
-  @apply flex flex-col justify-between;
+  @apply flex flex-col;
   min-height: 100px;
-  
-  &.no-message {
-    @apply justify-between;
-  }
   
   .card-content {
     @apply flex items-start gap-2 mb-2;
@@ -327,7 +320,7 @@ const toDonateList = () => {
   }
   
   .qrcode-grid {
-    @apply flex justify-between items-center gap-4;
+    @apply flex justify-between items-center gap-4 flex-wrap;
     
     .qrcode-item {
       @apply flex flex-col items-center gap-2;

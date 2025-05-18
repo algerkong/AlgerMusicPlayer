@@ -76,7 +76,7 @@ const copyQQ = () => {
 };
 
 const toDonateList = () => {
-  window.open('http://donate.alger.fun', '_blank');
+  window.open('http://donate.alger.fun/download', '_blank');
 };
 
 defineProps({

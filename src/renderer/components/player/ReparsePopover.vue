@@ -84,12 +84,12 @@ const isReparse = computed(() => {
 
 // 可选音源列表
 const musicSourceOptions = ref([
-  { label: 'MiGu音乐', value: 'migu' as Platform },
-  { label: '酷狗音乐', value: 'kugou' as Platform },
+  { label: 'MiGu', value: 'migu' as Platform },
+  { label: 'KuGou', value: 'kugou' as Platform },
   { label: 'pyncmd', value: 'pyncmd' as Platform },
-  { label: '酷我音乐', value: 'kuwo' as Platform },
-  { label: 'Bilibili音乐', value: 'bilibili' as Platform },
-  { label: 'GD音乐台', value: 'gdmusic' as Platform }
+  { label: 'KuWo', value: 'kuwo' as Platform },
+  { label: 'Bilibili', value: 'bilibili' as Platform },
+  { label: 'GdMuisc', value: 'gdmusic' as Platform }
 ]);
 
 // 检查音源是否被选中

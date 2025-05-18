@@ -152,3 +152,32 @@ export const getBilibiliAudioUrl = async (bvid: string, cid: number): Promise<st
     throw error;
   }
 };
+
+
+// 根据音乐名称搜索并直接返回音频URL
+export const searchAndGetBilibiliAudioUrl = async (
+  keyword: string
+): Promise<string> => {
+  try {
+    // 搜索B站视频，取第一页第一个结果
+    const res = await searchBilibili({ keyword, page: 1, pagesize: 1 });
+    const result = res.data?.data?.result;
+    if (!result || result.length === 0) {
+      throw new Error('未找到相关B站视频');
+    }
+    const first = result[0];
+    const bvid = first.bvid;
+    // 需要获取视频详情以获得cid
+    const detailRes = await getBilibiliVideoDetail(bvid);
+    const pages = detailRes.data.pages;
+    if (!pages || pages.length === 0) {
+      throw new Error('未找到视频分P信息');
+    }
+    const cid = pages[0].cid;
+    // 获取音频URL
+    return await getBilibiliAudioUrl(bvid, cid);
+  } catch (error) {
+    console.error('根据名称搜索B站音频URL失败:', error);
+    throw error;
+  }
+}

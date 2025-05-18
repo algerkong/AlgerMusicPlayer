@@ -126,26 +126,6 @@ export const parseFromGDMusic = async (
   }
 };
 
-/**
- * 获取音质映射
- * @param qualitySetting 设置中的音质选项
- * @returns 映射到GD音乐台的音质参数
- */
-export const getQualityMapping = (qualitySetting: string): string => {
-  const qualityMap: Record<string, string> = {
-    standard: '128',
-    higher: '320',
-    exhigh: '320',
-    lossless: '740',
-    hires: '999',
-    jyeffect: '999',
-    sky: '999',
-    dolby: '999',
-    jymaster: '999'
-  };
-  return qualityMap[qualitySetting] || '320';
-};
-
 interface GDMusicUrlResult {
   url: string;
   br: string;
