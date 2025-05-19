@@ -389,7 +389,7 @@ export const usePlayerStore = defineStore('player', () => {
   const musicFull = ref(false);
   const favoriteList = ref<Array<number | string>>(getLocalStorageItem('favoriteList', []));
   const savedPlayProgress = ref<number | undefined>();
-  
+  const showSleepTimer = ref(false); // 定时弹窗
   // 添加播放列表抽屉状态
   const playListDrawerVisible = ref(false);
   
@@ -399,8 +399,8 @@ export const usePlayerStore = defineStore('player', () => {
     value: 0
   }));
 
-  // 添加播放速度状态
-  const playbackRate = ref(1.0);
+  // 播放速度状态
+  const playbackRate = ref(parseFloat(getLocalStorageItem('playbackRate', '1.0')));
 
   // 清空播放列表
   const clearPlayAll = async () => {
@@ -1053,15 +1053,6 @@ export const usePlayerStore = defineStore('player', () => {
     localStorage.setItem('playbackRate', rate.toString());
   };
 
-  // 初始化播放速度
-  const initializePlaybackRate = () => {
-    const savedRate = localStorage.getItem('playbackRate');
-    if (savedRate) {
-      playbackRate.value = parseFloat(savedRate);
-      audioService.setPlaybackRate(playbackRate.value);
-    }
-  };
-
   // 初始化播放状态
   const initializePlayState = async () => {
     const settingStore = useSettingsStore();
@@ -1113,7 +1104,11 @@ export const usePlayerStore = defineStore('player', () => {
         localStorage.removeItem('playProgress');
       }
     }
-    initializePlaybackRate();
+
+    setTimeout(() => {
+      audioService.setPlaybackRate(playbackRate.value);
+    }, 2000);
+
   };
 
   const initializeFavoriteList = async () => {
@@ -1332,6 +1327,7 @@ export const usePlayerStore = defineStore('player', () => {
     
     // 定时关闭相关
     sleepTimer,
+    showSleepTimer,
     currentSleepTimer,
     hasSleepTimerActive,
     sleepTimerRemainingTime,

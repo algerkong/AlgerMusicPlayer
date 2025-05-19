@@ -56,10 +56,13 @@
       </div>
     </div>
     <div class="music-content">
-      <div class="music-content-title">
+      <div class="music-content-title flex items-center">
         <n-ellipsis class="text-ellipsis" line-clamp="1">
           {{ playMusic.name }}
         </n-ellipsis>
+        <span v-if="playbackRate !== 1.0" class="playback-rate-badge">
+            {{ playbackRate }}x
+        </span>
       </div>
       <div class="music-content-name">
         <n-ellipsis
@@ -133,51 +136,16 @@
         </template>
         {{ t('player.playBar.reparse') }}
       </n-tooltip>
-      <n-popover
-        v-if="isElectron"
-        trigger="click"
-        :z-index="99999999"
-        content-class="music-eq"
-        raw
-        :show-arrow="false"
-        :delay="200"
-        placement="top"
-      >
-        <template #trigger>
-          <n-tooltip trigger="hover" :z-index="9999999">
-            <template #trigger>
-              <i class="iconfont ri-equalizer-line" :class="{ 'text-green-500': isEQVisible }"></i>
-            </template>
-            {{ t('player.playBar.eq') }}
-          </n-tooltip>
-        </template>
-        <eq-control />
-      </n-popover>
-      <!-- 定时关闭功能 -->
-      <sleep-timer-popover mode="desktop" />
+      
+      <!-- 高级控制菜单按钮（整合了 EQ、定时关闭、播放速度） -->
+      <advanced-controls-popover />
+      
       <n-tooltip trigger="hover" :z-index="9999999">
         <template #trigger>
           <i class="iconfont icon-list text-2xl hover:text-green-500 transition-colors cursor-pointer" @click="openPlayListDrawer"></i>
         </template>
         {{ t('player.playBar.playList') }}
       </n-tooltip>
-      <!-- 添加播放速度控制按钮 -->
-      <n-dropdown
-        v-if="!isMobile"
-        :options="playbackRateOptions"
-        @select="handlePlaybackRateChange"
-        trigger="click"
-        :z-index="9999999"
-      >
-        <n-tooltip trigger="hover" :z-index="9999999">
-          <template #trigger>
-            <div class="play-speed">
-              <span class="speed-button">{{ playbackRate }}x</span>
-            </div>
-          </template>
-          {{ t('player.playBar.playbackSpeed') }}
-        </n-tooltip>
-      </n-dropdown>
     </div>
     <!-- 播放音乐 -->
     <music-full ref="MusicFullRef" v-model="musicFullVisible" :background="background" />
@@ -189,9 +157,6 @@ import { useThrottleFn } from '@vueuse/core';
 import { useMessage } from 'naive-ui';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-
-import EqControl from '@/components/EQControl.vue';
-import SleepTimerPopover from '@/components/player/SleepTimerPopover.vue';
 import ReparsePopover from '@/components/player/ReparsePopover.vue';
 import {
   allTime,
@@ -207,10 +172,12 @@ import MusicFull from '@/layout/components/MusicFull.vue';
 import { audioService } from '@/services/audioService';
 import { 
   isBilibiliIdMatch, 
-  usePlayerStore 
+  usePlayerStore
 } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 import { getImgUrl, isElectron, isMobile, secondToMinute, setAnimationClass } from '@/utils';
+import AdvancedControlsPopover from '@/components/player/AdvancedControlsPopover.vue';
+import { storeToRefs } from 'pinia';
 
 const playerStore = usePlayerStore();
 const settingsStore = useSettingsStore();
@@ -337,22 +304,7 @@ const playModeText = computed(() => {
 });
 
 // 播放速度控制
-const playbackRate = ref(1.0);
-const playbackRateOptions = [
-  { label: '0.5x', key: 0.5 },
-  { label: '0.75x', key: 0.75 },
-  { label: '1.0x', key: 1.0 },
-  { label: '1.25x', key: 1.25 },
-  { label: '1.5x', key: 1.5 },
-  { label: '2.0x', key: 2.0 }
-];
-
-
-const handlePlaybackRateChange = (rate: number) => {
-  playbackRate.value = rate;
-  audioService.setPlaybackRate(rate);
-};
-
+const {playbackRate} = storeToRefs(playerStore);
 // 切换播放模式
 const togglePlayMode = () => {
   playerStore.togglePlayMode();
@@ -434,8 +386,6 @@ const handleArtistClick = (id: number) => {
   navigateToArtist(id);
 };
 
-const isEQVisible = ref(false);
-
 // 打开播放列表抽屉
 const openPlayListDrawer = () => {
   playerStore.setPlayListDrawerVisible(true);
@@ -464,7 +414,7 @@ const openPlayListDrawer = () => {
   }
 
   .music-content {
-    width: 160px;
+    width: 200px;
     @apply ml-4;
 
     &-title {
@@ -755,5 +705,12 @@ const openPlayListDrawer = () => {
 
 .speed-button:hover {
   background: var(--hover-color-dark);
+}
+
+
+.playback-rate-badge {
+  @apply ml-2 px-1.5 h-4 flex items-center text-xs rounded bg-green-500 bg-opacity-15 text-green-600 dark:text-green-400;
+  font-weight: 500;
+  vertical-align: 1px;
 }
 </style>

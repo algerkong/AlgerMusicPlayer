@@ -264,7 +264,6 @@ const formatFreq = (freq: number) => {
 .eq-control {
   @apply p-6 rounded-lg;
   @apply bg-light dark:bg-dark;
-  @apply shadow-lg dark:shadow-none;
   width: 100%;
   max-width: 700px;
 

@@ -52,6 +52,7 @@
     <install-app-modal v-if="!isElectron"></install-app-modal>
     <update-modal v-if="isElectron" />
     <playlist-drawer v-model="showPlaylistDrawer" :song-id="currentSongId" />
+    <SleepTimerTop v-if="!isMobile"/>
   </div>
 </template>
 
@@ -69,6 +70,7 @@ import { useMenuStore } from '@/store/modules/menu';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 import { isElectron, isMobile } from '@/utils';
+import SleepTimerTop from '@/components/player/SleepTimerTop.vue';
 
 const keepAliveInclude = computed(() => {
   const allRoutes = [...homeRouter, ...otherRouter];
