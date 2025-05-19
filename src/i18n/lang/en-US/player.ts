@@ -58,7 +58,8 @@ export default {
     next: 'Next',
     volume: 'Volume',
     favorite: 'Favorite {name}',
-    unFavorite: 'Unfavorite {name}'
+    unFavorite: 'Unfavorite {name}',
+    playbackSpeed: 'Playback Speed'
   },
   eq: {
     title: 'Equalizer',

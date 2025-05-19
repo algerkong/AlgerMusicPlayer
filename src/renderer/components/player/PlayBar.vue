@@ -161,6 +161,23 @@
         </template>
         {{ t('player.playBar.playList') }}
       </n-tooltip>
+      <!-- 添加播放速度控制按钮 -->
+      <n-dropdown
+        v-if="!isMobile"
+        :options="playbackRateOptions"
+        @select="handlePlaybackRateChange"
+        trigger="click"
+        :z-index="9999999"
+      >
+        <n-tooltip trigger="hover" :z-index="9999999">
+          <template #trigger>
+            <div class="play-speed">
+              <span class="speed-button">{{ playbackRate }}x</span>
+            </div>
+          </template>
+          {{ t('player.playBar.playbackSpeed') }}
+        </n-tooltip>
+      </n-dropdown>
     </div>
     <!-- 播放音乐 -->
     <music-full ref="MusicFullRef" v-model="musicFullVisible" :background="background" />
@@ -318,6 +335,23 @@ const playModeText = computed(() => {
       return t('player.playBar.playMode.sequence');
   }
 });
+
+// 播放速度控制
+const playbackRate = ref(1.0);
+const playbackRateOptions = [
+  { label: '0.5x', key: 0.5 },
+  { label: '0.75x', key: 0.75 },
+  { label: '1.0x', key: 1.0 },
+  { label: '1.25x', key: 1.25 },
+  { label: '1.5x', key: 1.5 },
+  { label: '2.0x', key: 2.0 }
+];
+
+
+const handlePlaybackRateChange = (rate: number) => {
+  playbackRate.value = rate;
+  audioService.setPlaybackRate(rate);
+};
 
 // 切换播放模式
 const togglePlayMode = () => {
@@ -701,5 +735,25 @@ const openPlayListDrawer = () => {
   font-size: 24px;
   color: white;
   animation: spin 1s linear infinite;
+}
+
+.play-speed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0 8px;
+}
+
+.speed-button {
+  font-size: 14px;
+  color: var(--text-color);
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: var(--hover-color);
+}
+
+.speed-button:hover {
+  background: var(--hover-color-dark);
 }
 </style>
