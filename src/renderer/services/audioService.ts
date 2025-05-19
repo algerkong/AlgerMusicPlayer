@@ -18,6 +18,8 @@ class AudioService {
 
   private bypass = false;
 
+  private playbackRate = 1.0; // 添加播放速度属性
+
   // 预设的 EQ 频段
   private readonly frequencies = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 
@@ -143,7 +145,7 @@ class AudioService {
     if ('setPositionState' in navigator.mediaSession) {
       navigator.mediaSession.setPositionState({
         duration: this.currentSound.duration(),
-        playbackRate: 1.0,
+        playbackRate: this.playbackRate,
         position: this.currentSound.seek() as number
       });
     }
@@ -565,6 +567,7 @@ class AudioService {
             volume: localStorage.getItem('volume')
               ? parseFloat(localStorage.getItem('volume') as string)
               : 1,
+            rate: this.playbackRate, // 设置初始播放速度
             format: ['mp3', 'aac'],
             onloaderror: (_, error) => {
               console.error('Audio load error:', error);
@@ -746,6 +749,35 @@ class AudioService {
 
   public setCurrentPreset(preset: string): void {
     localStorage.setItem('currentPreset', preset);
+  }
+
+  public setPlaybackRate(rate: number) {
+    if (!this.currentSound) return;
+    this.playbackRate = rate;
+
+    // Howler 的 rate() 在 html5 模式下不生效
+    this.currentSound.rate(rate);
+
+    // 取出底层 HTMLAudioElement，改原生 playbackRate
+    const sounds = (this.currentSound as any)._sounds as any[];
+    sounds.forEach(({ _node }) => {
+      if (_node instanceof HTMLAudioElement) {
+        _node.playbackRate = rate;
+      }
+    });
+
+    // 同步给 Media Session UI
+    if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
+      navigator.mediaSession.setPositionState({
+        duration: this.currentSound.duration(),
+        playbackRate: rate,
+        position: this.currentSound.seek() as number
+      });
+    }
+  }
+
+  public getPlaybackRate(): number {
+    return this.playbackRate;
   }
 }
 
