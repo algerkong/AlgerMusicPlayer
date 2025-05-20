@@ -112,7 +112,7 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 
 .sleep-timer-countdown {
-  @apply fixed top-[28px] left-1/2 transform -translate-x-1/2 -translate-y-full py-1 px-3 rounded-b-lg bg-green-500 text-white text-sm flex items-center;
+  @apply fixed top-[28px] left-1/2 transform -translate-x-1/2 -translate-y-full py-1 px-3 rounded-b-lg bg-green-500 text-white text-sm flex items-center hover:scale-110 transition-all cursor-pointer;
   box-shadow: 0 2px 10px rgba(0,0,0,0.15);
   z-index: 9998;
   min-width: 80px;
