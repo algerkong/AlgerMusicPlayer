@@ -20,6 +20,22 @@ const { sleepTimer } = storeToRefs(playerStore);
 const hasActiveSleepTimer = computed(() => playerStore.hasSleepTimerActive);
 const refreshTrigger = ref(0);
 
+// 检查定时器是否已结束
+const checkTimerExpired = () => {
+  if (sleepTimer.value.type === 'time' && sleepTimer.value.endTime) {
+    const now = Date.now();
+    if (now >= sleepTimer.value.endTime) {
+      playerStore.clearSleepTimer();
+    }
+  }
+}
+
+// 在组件挂载时检查定时器状态
+onMounted(() => {
+  checkTimerExpired();
+});
+
+
 // 倒计时显示
 const formattedRemainingTime = computed(() => {
   // 依赖刷新触发器强制更新
@@ -84,7 +100,7 @@ function stopTimerUpdate() {
 }
 
 const handleShowTimer = () => {
-  playerStore.showSleepTimer = true;
+  playerStore.showSleepTimer = !playerStore.showSleepTimer;
 };
 
 // 播放器卸载时清除定时器
