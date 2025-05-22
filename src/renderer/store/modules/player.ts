@@ -81,70 +81,76 @@ export const getSongUrl = async (
   songData: SongResult,
   isDownloaded: boolean = false
 ) => {
-  if (songData.playMusicUrl) {
-    return songData.playMusicUrl;
-  }
-
-  if (songData.source === 'bilibili' && songData.bilibiliData) {
-    console.log('加载B站音频URL');
-    if (!songData.playMusicUrl && songData.bilibiliData.bvid && songData.bilibiliData.cid) {
-      try {
-        songData.playMusicUrl = await getBilibiliAudioUrl(
-          songData.bilibiliData.bvid,
-          songData.bilibiliData.cid
-        );
-        return songData.playMusicUrl;
-      } catch (error) {
-        console.error('重启后获取B站音频URL失败:', error);
-        return '';
-      }
-    }
-    return songData.playMusicUrl || '';
-  }
-
-  const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
-  
-  // 检查是否有自定义音源设置
-  const songId = String(id);
-  const savedSource = localStorage.getItem(`song_source_${songId}`);
-  
-  // 如果有自定义音源设置，直接使用getParsingMusicUrl获取URL
-  if (savedSource && songData.source !== 'bilibili') {
-    try {
-      console.log(`使用自定义音源解析歌曲 ID: ${songId}`);
-      const res = await getParsingMusicUrl(numericId, cloneDeep(songData));
-      if (res && res.data && res.data.data && res.data.data.url) {
-        return res.data.data.url;
-      }
-      // 如果自定义音源解析失败，继续使用正常的获取流程
-      console.warn('自定义音源解析失败，使用默认音源');
-    } catch (error) {
-      console.error('error',error)
-      console.error('自定义音源解析出错:', error);
-    }
-  }
-  
-  // 正常获取URL流程
-  const { data } = await getMusicUrl(numericId, isDownloaded);
-  let url = '';
-  let songDetail = null;
   try {
-    if (data.data[0].freeTrialInfo || !data.data[0].url) {
-      const res = await getParsingMusicUrl(numericId, cloneDeep(songData));
-      url = res.data.data.url;
-      songDetail = res.data.data;
-    } else {
-      songDetail = data.data[0] as any;
+    if (songData.playMusicUrl) {
+      return songData.playMusicUrl;
     }
+
+    if (songData.source === 'bilibili' && songData.bilibiliData) {
+      console.log('加载B站音频URL');
+      if (!songData.playMusicUrl && songData.bilibiliData.bvid && songData.bilibiliData.cid) {
+        try {
+          songData.playMusicUrl = await getBilibiliAudioUrl(
+            songData.bilibiliData.bvid,
+            songData.bilibiliData.cid
+          );
+          return songData.playMusicUrl;
+        } catch (error) {
+          console.error('重启后获取B站音频URL失败:', error);
+          return '';
+        }
+      }
+      return songData.playMusicUrl || '';
+    }
+
+    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+    
+    // 检查是否有自定义音源设置
+    const songId = String(id);
+    const savedSource = localStorage.getItem(`song_source_${songId}`);
+    
+    // 如果有自定义音源设置，直接使用getParsingMusicUrl获取URL
+    if (savedSource && songData.source !== 'bilibili') {
+      try {
+        console.log(`使用自定义音源解析歌曲 ID: ${songId}`);
+        const res = await getParsingMusicUrl(numericId, cloneDeep(songData));
+        console.log('res',res)
+        if (res && res.data && res.data.data && res.data.data.url) {
+          return res.data.data.url;
+        }
+        // 如果自定义音源解析失败，继续使用正常的获取流程
+        console.warn('自定义音源解析失败，使用默认音源');
+      } catch (error) {
+        console.error('error',error)
+        console.error('自定义音源解析出错:', error);
+      }
+    }
+    
+    // 正常获取URL流程
+    const { data } = await getMusicUrl(numericId, isDownloaded);
+    let url = '';
+    let songDetail = null;
+    try {
+      if (data.data[0].freeTrialInfo || !data.data[0].url) {
+        const res = await getParsingMusicUrl(numericId, cloneDeep(songData));
+        url = res.data.data.url;
+        songDetail = res.data.data;
+      } else {
+        songDetail = data.data[0] as any;
+      }
+    } catch (error) {
+      console.error('error', error);
+      url = data.data[0].url || '';
+    }
+    if (isDownloaded) {
+      return songDetail;
+    }
+    url = url || data.data[0].url;
+    return url;
   } catch (error) {
-    console.error('error', error);
-    url = data.data[0].url || '';
+    console.error('error',error)
+    return null;
   }
-  if (isDownloaded) {
-    return songDetail;
-  }
-  url = url || data.data[0].url;
-  return url;
 };
 
 const parseTime = (timeString: string): number => {
