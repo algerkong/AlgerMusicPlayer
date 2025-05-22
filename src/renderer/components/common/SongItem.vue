@@ -5,6 +5,7 @@
     @contextmenu.prevent="handleContextMenu"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
+    @dblclick.stop="playMusicEvent(item)"
   >
     <div v-if="compact && index !== undefined" class="song-item-index" :class="{ 'text-green-500': isPlaying }">
       {{ index + 1 }}
@@ -42,7 +43,7 @@
       </div>
       <template v-else-if="compact">
         <div class="song-item-content-compact-wrapper">
-          <div class="w-60 flex-shrink-0 flex items-center" @dblclick="playMusicEvent(item)">
+          <div class="w-60 flex-shrink-0 flex items-center">
             <n-ellipsis class="song-item-content-title text-ellipsis" line-clamp="1" :class="{ 'text-green-500': isPlaying }">
               {{ item.name }}
             </n-ellipsis>
@@ -68,7 +69,7 @@
         </div>
       </template>
       <template v-else>
-        <div class="song-item-content-title" @dblclick="playMusicEvent(item)">
+        <div class="song-item-content-title">
           <n-ellipsis class="text-ellipsis" line-clamp="1" :class="{ 'text-green-500': isPlaying }">{{ item.name }}</n-ellipsis>
         </div>
         <div class="song-item-content-name">
@@ -449,7 +450,6 @@ const playMusicEvent = async (item: SongResult) => {
     if (!result) {
       throw new Error('播放失败');
     }
-    playerStore.isPlay = true;
     emits('play', item);
   } catch (error) {
     console.error('播放出错:', error);
