@@ -1,4 +1,4 @@
-  <template>
+<template>
     <div v-if="isComponent ? favoriteSongs.length : true" class="favorite-page">
       <div class="favorite-header" :class="setAnimationClass('animate__fadeInLeft')">
         <div class="favorite-header-left">
@@ -104,18 +104,18 @@
 
   <script setup lang="ts">
   import { cloneDeep } from 'lodash';
-  import { useMessage } from 'naive-ui';
-  import { computed, onMounted, ref, watch } from 'vue';
-  import { useI18n } from 'vue-i18n';
-  import { useRouter } from 'vue-router';
+import { useMessage } from 'naive-ui';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 
-  import { getMusicDetail } from '@/api/music';
-  import { getBilibiliProxyUrl, getBilibiliVideoDetail } from '@/api/bilibili';
-  import SongItem from '@/components/common/SongItem.vue';
-  import { getSongUrl } from '@/store/modules/player';
-  import { usePlayerStore } from '@/store';
-  import type { SongResult } from '@/type/music';
-  import { isElectron, setAnimationClass, setAnimationDelay } from '@/utils';
+import { getMusicDetail } from '@/api/music';
+import { getBilibiliProxyUrl, getBilibiliVideoDetail } from '@/api/bilibili';
+import SongItem from '@/components/common/SongItem.vue';
+import { useDownload } from '@/hooks/useDownload';
+import { usePlayerStore } from '@/store';
+import type { SongResult } from '@/type/music';
+import { isElectron, setAnimationClass, setAnimationDelay } from '@/utils';
 
   const { t } = useI18n();
   const playerStore = usePlayerStore();
@@ -127,9 +127,9 @@
   const scrollbarRef = ref();
 
   // 多选相关
-  const isSelecting = ref(false);
-  const selectedSongs = ref<number[]>([]);
-  const isDownloading = ref(false);
+const isSelecting = ref(false);
+const selectedSongs = ref<number[]>([]);
+const { isDownloading, batchDownloadMusic } = useDownload();
 
   // 开始多选
   const startSelect = () => {
@@ -153,89 +153,18 @@
   };
 
   // 批量下载
-  const handleBatchDownload = async () => {
-    if (isDownloading.value) {
-      message.warning(t('favorite.downloading'));
-      return;
-    }
-
-    if (selectedSongs.value.length === 0) {
-      message.warning(t('favorite.selectSongsFirst'));
-      return;
-    }
-
-    try {
-      isDownloading.value = true;
-      message.success(t('favorite.downloading'));
-
-      // 移除旧的监听器
-      window.electron.ipcRenderer.removeAllListeners('music-download-complete');
-
-      let successCount = 0;
-      let failCount = 0;
-
-      // 添加新的监听器
-      window.electron.ipcRenderer.on('music-download-complete', (_, result) => {
-        if (result.success) {
-          successCount++;
-        } else {
-          failCount++;
-        }
-
-        // 当所有下载完成时
-        if (successCount + failCount === selectedSongs.value.length) {
-          isDownloading.value = false;
-          message.success(t('favorite.downloadSuccess'));
-          cancelSelect();
-        }
-      });
-
-      // 获取选中歌曲的信息
-      const selectedSongsList = selectedSongs.value
-        .map((songId) => favoriteSongs.value.find((s) => s.id === songId))
-        .filter((song) => song) as SongResult[];
-
-      // 并行获取所有歌曲的下载链接
-      const downloadUrls = await Promise.all(
-        selectedSongsList.map(async (song) => {
-          try {
-            const data = (await getSongUrl(song.id, song, true)) as any;
-            return { song, ...data };
-          } catch (error) {
-            console.error(`获取歌曲 ${song.name} 下载链接失败:`, error);
-            return { song, url: null };
-          }
-        })
-      );
-
-      // 开始下载有效的链接
-      downloadUrls.forEach(({ song, url, type }) => {
-        if (!url) {
-          failCount++;
-          return;
-        }
-        const songData = cloneDeep(song);
-        const songInfo = {
-          ...songData,
-          ar: songData.ar || songData.song?.artists,
-          downloadTime: Date.now()
-        };
-        console.log('songInfo', songInfo);
-        console.log('song', song);
-        window.electron.ipcRenderer.send('download-music', {
-          url,
-          filename: `${song.name} - ${(song.ar || song.song?.artists)?.map((a) => a.name).join(',')}`,
-          songInfo,
-          type
-        });
-      });
-    } catch (error) {
-      console.error('下载失败:', error);
-      isDownloading.value = false;
-      message.destroyAll();
-      message.error(t('favorite.downloadFailed'));
-    }
-  };
+const handleBatchDownload = async () => {
+  // 获取选中歌曲的信息
+  const selectedSongsList = selectedSongs.value
+    .map((songId) => favoriteSongs.value.find((s) => s.id === songId))
+    .filter((song) => song) as SongResult[];
+  
+  // 使用hook中的批量下载功能
+  await batchDownloadMusic(selectedSongsList);
+  
+  // 下载完成后取消选择
+  cancelSelect();
+};
 
   // 排序相关
   const isDescending = ref(true); // 默认倒序显示
@@ -290,17 +219,11 @@
     loading.value = true;
     try {
       const currentIds = getCurrentPageIds();
-      console.log('currentIds', currentIds);
       
       // 分离网易云音乐ID和B站视频ID
       const musicIds = currentIds.filter((id) => typeof id === 'number') as number[];
       // B站ID可能是字符串格式（包含"--"）或特定数字ID，如113911642789603
       const bilibiliIds = currentIds.filter((id) => typeof id === 'string');
-      
-      console.log('处理数据:', {
-        musicIds,
-        bilibiliIds
-      });
       
       // 处理网易云音乐数据
       let neteaseSongs: SongResult[] = [];

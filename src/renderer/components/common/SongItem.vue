@@ -144,6 +144,7 @@ import { usePlayerStore } from '@/store';
 import type { SongResult } from '@/type/music';
 import { getImgUrl, isElectron } from '@/utils';
 import { getImageBackground } from '@/utils/linearColor';
+import { useDownload } from '@/hooks/useDownload';
 
 const { t } = useI18n();
 
@@ -190,8 +191,6 @@ const showDropdown = ref(false);
 const dropdownX = ref(0);
 const dropdownY = ref(0);
 const isHovering = ref(false);
-
-const isDownloading = ref(false);
 
 const openPlaylistDrawer = inject<(songId: number | string) => void>('openPlaylistDrawer');
 
@@ -344,7 +343,7 @@ const handleMenuClick = (e: MouseEvent) => {
 const handleSelect = (key: string | number) => {
   showDropdown.value = false;
   if (key === 'download') {
-    downloadMusic();
+    downloadMusic(props.item);
   } else if (key === 'playNext') {
     handlePlayNext();
   } else if (key === 'addToPlaylist') {
@@ -359,74 +358,7 @@ const handleSelect = (key: string | number) => {
 };
 
 // 下载音乐
-const downloadMusic = async () => {
-  if (isDownloading.value) {
-    message.warning(t('songItem.message.downloading'));
-    return;
-  }
-
-  try {
-    isDownloading.value = true;
-
-    const data = (await getSongUrl(props.item.id as number, cloneDeep(props.item), true)) as any;
-    if (!data || !data.url) {
-      throw new Error(t('songItem.message.getUrlFailed'));
-    }
-
-    // 构建文件名
-    const artistNames = (props.item.ar || props.item.song?.artists)?.map((a) => a.name).join(',');
-    const filename = `${props.item.name} - ${artistNames}`;
-    console.log('props.item', props.item);
-
-    const songData = cloneDeep(props.item);
-    songData.ar = songData.ar || songData.song?.artists;
-    // 发送下载请求
-    window.electron.ipcRenderer.send('download-music', {
-      url: data.url,
-      type: data.type,
-      filename,
-      songInfo: {
-        ...songData,
-        downloadTime: Date.now()
-      }
-    });
-
-    message.success(t('songItem.message.downloadQueued'));
-
-    // 监听下载完成事件
-    const handleDownloadComplete = (_, result) => {
-      if (result.filename === filename) {
-        isDownloading.value = false;
-        removeListeners();
-      }
-    };
-
-    // 监听下载错误事件
-    const handleDownloadError = (_, result) => {
-      if (result.filename === filename) {
-        isDownloading.value = false;
-        removeListeners();
-      }
-    };
-
-    // 移除监听器函数
-    const removeListeners = () => {
-      window.electron.ipcRenderer.removeListener('music-download-complete', handleDownloadComplete);
-      window.electron.ipcRenderer.removeListener('music-download-error', handleDownloadError);
-    };
-
-    // 添加事件监听器
-    window.electron.ipcRenderer.once('music-download-complete', handleDownloadComplete);
-    window.electron.ipcRenderer.once('music-download-error', handleDownloadError);
-
-    // 30秒后自动清理监听器（以防下载过程中出现未知错误）
-    setTimeout(removeListeners, 30000);
-  } catch (error: any) {
-    console.error('Download error:', error);
-    isDownloading.value = false;
-    message.error(error.message || t('songItem.message.downloadFailed'));
-  }
-};
+const { isDownloading, downloadMusic } = useDownload();
 
 const emits = defineEmits(['play', 'select', 'remove-song']);
 const songImageRef = useTemplateRef('songImg');
