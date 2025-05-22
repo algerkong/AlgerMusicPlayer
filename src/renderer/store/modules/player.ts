@@ -503,6 +503,7 @@ export const usePlayerStore = defineStore('player', () => {
       const updatedPlayMusic = await getSongDetail(originalMusic);
       playMusic.value = updatedPlayMusic;
       playMusicUrl.value = updatedPlayMusic.playMusicUrl as string;
+      music.playMusicUrl = updatedPlayMusic.playMusicUrl as string;
 
       // 保存到本地存储
       localStorage.setItem('currentPlayMusic', JSON.stringify(playMusic.value));
