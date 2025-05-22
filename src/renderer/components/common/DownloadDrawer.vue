@@ -17,7 +17,7 @@
   >
     <n-drawer-content :title="t('download.title')" closable :native-scrollbar="false">
       <div class="drawer-container">
-        <n-tabs type="line" animated class="h-full">
+        <n-tabs type="line" animated class="h-full" v-model:value="tabName">
           <!-- 下载列表 -->
           <n-tab-pane name="downloading" :tab="t('download.tabs.downloading')" class="h-full">
             <div class="download-list">
@@ -249,7 +249,7 @@ interface DownloadedItem {
   picUrl: string;
   ar: { name: string }[];
 }
-
+const tabName = ref('downloading');
 const message = useMessage();
 // const playerStore = usePlayerStore();
 const settingsStore = useSettingsStore();
@@ -540,6 +540,16 @@ onMounted(() => {
 const handleDrawerClose = () => {
   settingsStore.showDownloadDrawer = false;
 };
+
+
+watch(
+  () => tabName.value,
+  (newVal) => {
+    if (newVal) {
+      refreshDownloadedList();
+    }
+  }
+);
 </script>
 
 <style lang="scss" scoped>
