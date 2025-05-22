@@ -238,6 +238,11 @@ onMounted(() => {
 });
 
 // 从 pinia 或路由参数获取数据
+
+  // 从路由参数获取
+const routeId = route.params.id as string;
+const routeType = route.query.type as string;
+
 const initData = () => {
   // 优先从 pinia 获取数据
   if (musicStore.currentMusicList) {
@@ -251,9 +256,7 @@ const initData = () => {
     return;
   }
   
-  // 从路由参数获取
-  const routeId = route.params.id as string;
-  const routeType = route.query.type as string;
+
   
   if (routeId) {
     // 这里根据 type 和 id 加载数据
@@ -323,14 +326,22 @@ const getCoverImgUrl = computed(() => {
   return '';
 });
 
+const getDisplaySongs = computed(() => {
+  if(routeType === 'dailyRecommend') {
+    return displayedSongs.value.filter((song) => !playerStore.dislikeList.includes(song.id));
+  }else {
+    return displayedSongs.value;
+  }
+})
+
 // 过滤歌曲列表
 const filteredSongs = computed(() => {
   if (!searchKeyword.value) {
-    return displayedSongs.value;
+    return getDisplaySongs.value;
   }
 
   const keyword = searchKeyword.value.toLowerCase().trim();
-  return displayedSongs.value.filter((song) => {
+  return getDisplaySongs.value.filter((song) => {
     const songName = song.name?.toLowerCase() || '';
     const albumName = song.al?.name?.toLowerCase() || '';
     const artists = song.ar || song.artists || [];
