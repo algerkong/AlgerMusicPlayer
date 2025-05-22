@@ -394,6 +394,7 @@ export const usePlayerStore = defineStore('player', () => {
   const playMode = ref(getLocalStorageItem('playMode', 0));
   const musicFull = ref(false);
   const favoriteList = ref<Array<number | string>>(getLocalStorageItem('favoriteList', []));
+  const dislikeList = ref<Array<number | string>>(getLocalStorageItem('dislikeList', []));
   const savedPlayProgress = ref<number | undefined>();
   const showSleepTimer = ref(false); // 定时弹窗
   // 添加播放列表抽屉状态
@@ -1037,6 +1038,16 @@ export const usePlayerStore = defineStore('player', () => {
     localStorage.setItem('favoriteList', JSON.stringify(favoriteList.value));
   };
 
+  const addToDislikeList = (id: number | string) => {
+    dislikeList.value.push(id);
+    localStorage.setItem('dislikeList', JSON.stringify(dislikeList.value));
+  }
+
+  const removeFromDislikeList = (id: number | string) => {
+    dislikeList.value = dislikeList.value.filter(existingId => existingId!== id);
+    localStorage.setItem('dislikeList', JSON.stringify(dislikeList.value));
+  }
+
   const removeFromPlayList = (id: number | string) => {
     const index = playList.value.findIndex((item) => item.id === id);
     if (index === -1) return;
@@ -1330,6 +1341,7 @@ export const usePlayerStore = defineStore('player', () => {
     musicFull,
     savedPlayProgress,
     favoriteList,
+    dislikeList,
     playListDrawerVisible,
     
     // 定时关闭相关
@@ -1364,6 +1376,8 @@ export const usePlayerStore = defineStore('player', () => {
     addToFavorite,
     removeFromFavorite,
     removeFromPlayList,
+    addToDislikeList,
+    removeFromDislikeList,
     playAudio,
     reparseCurrentSong,
     setPlayListDrawerVisible,

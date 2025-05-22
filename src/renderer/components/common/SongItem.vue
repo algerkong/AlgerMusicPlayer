@@ -134,7 +134,7 @@
 <script lang="ts" setup>
 import { cloneDeep } from 'lodash';
 import type { MenuOption } from 'naive-ui';
-import { NEllipsis, NImage, useMessage } from 'naive-ui';
+import { NEllipsis, NImage, useMessage, useDialog } from 'naive-ui';
 import { computed, h, inject, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -306,7 +306,13 @@ const dropdownOptions = computed<MenuOption[]>(() => {
         h('i', {
           class: `iconfont ${isFavorite.value ? 'ri-heart-fill text-red-500' : 'ri-heart-line'}`
         })
-    }
+    },
+    // 不喜欢
+    {
+      label: isDislike.value ? t('songItem.menu.undislike') : t('songItem.menu.dislike'),
+      key: 'dislike',
+      icon: () => h('i', { class: `iconfont  ${isDislike.value ? 'ri-dislike-fill text-green-500': 'ri-dislike-line'}` })
+    },
   ];
 
   if (props.canRemove) {
@@ -342,18 +348,30 @@ const handleMenuClick = (e: MouseEvent) => {
 
 const handleSelect = (key: string | number) => {
   showDropdown.value = false;
-  if (key === 'download') {
-    downloadMusic(props.item);
-  } else if (key === 'playNext') {
-    handlePlayNext();
-  } else if (key === 'addToPlaylist') {
-    openPlaylistDrawer?.(props.item.id);
-  } else if (key === 'favorite') {
-    toggleFavorite(new Event('click'));
-  } else if (key === 'play') {
-    playMusicEvent(props.item);
-  } else if (key === 'remove') {
-    emits('remove-song', props.item.id);
+  switch (key) {
+    case 'download':
+      downloadMusic();
+      break;
+    case 'playNext':
+      handlePlayNext();
+      break;
+    case 'addToPlaylist':
+      openPlaylistDrawer?.(props.item.id);
+      break;
+    case 'favorite':
+      toggleFavorite(new Event('click'));
+      break;
+    case 'play':
+      playMusicEvent(props.item);
+      break;
+    case 'remove':
+      emits('remove-song', props.item.id);
+      break;
+    case 'dislike':
+      toggleDislike(new Event('click'));
+      break;
+    default:
+      break;
   }
 };
 
@@ -395,6 +413,12 @@ const isFavorite = computed(() => {
   return playerStore.favoriteList.includes(numericId);
 });
 
+const isDislike = computed(() => {
+  // 将id转换为number，兼容B站视频ID
+  const numericId = typeof props.item.id ==='string'? parseInt(props.item.id, 10) : props.item.id;
+  return playerStore.dislikeList.includes(numericId);
+})
+
 // 切换收藏状态
 const toggleFavorite = async (e: Event) => {
   e.stopPropagation();
@@ -407,6 +431,24 @@ const toggleFavorite = async (e: Event) => {
     playerStore.addToFavorite(numericId);
   }
 };
+const dialog = useDialog();
+const toggleDislike = async (e: Event) => {
+  e.stopPropagation();
+  if (isDislike.value) {
+    playerStore.removeFromDislikeList(props.item.id);
+    return;
+  }
+  dialog.warning({
+    title: t('songItem.dialog.dislike.title'),
+    content: t('songItem.dialog.dislike.content'),
+    positiveText: t('songItem.dialog.dislike.positiveText'),
+    negativeText: t('songItem.dialog.dislike.negativeText'),
+    onPositiveClick: () => {
+      playerStore.addToDislikeList(props.item.id);
+    }
+  });
+ 
+}
 
 // 切换选择状态
 const toggleSelect = () => {

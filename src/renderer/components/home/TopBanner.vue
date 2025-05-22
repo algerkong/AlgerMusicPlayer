@@ -31,7 +31,7 @@
 
               <div class="mt-2">
                 <p
-                  v-for="item in dayRecommendData?.dailySongs.slice(0, 5)"
+                  v-for="item in getDisplayDaySongs.slice(0, 5)"
                   :key="item.id"
                   class="text-el"
                 >
@@ -250,13 +250,16 @@ const loadArtistData = async () => {
 // 加载不需要登录的数据
 const loadNonUserData = async () => {
   try {
-
-        // 获取每日推荐
-        try {
+    // 获取每日推荐
+    try {
       const {
         data: { data: dayRecommend }
       } = await getDayRecommend();
-      dayRecommendData.value = dayRecommend as unknown as IDayRecommend;
+      const dayRecommendSource = dayRecommend as unknown as IDayRecommend;
+      dayRecommendData.value = {
+        ...dayRecommendSource,
+        dailySongs: dayRecommendSource.dailySongs.filter((song: any) =>!playerStore.dislikeList.includes(song.id))
+      };
     } catch (error) {
       console.error('获取每日推荐失败:', error);
     }
@@ -288,6 +291,12 @@ const loadUserData = async () => {
 const handleArtistClick = (id: number) => {
   navigateToArtist(id);
 };
+const getDisplayDaySongs = computed(() => {
+  if(!dayRecommendData.value){
+    return [];
+  }
+  return dayRecommendData.value.dailySongs.filter((song) => !playerStore.dislikeList.includes(song.id));
+})
 
 const showDayRecommend = () => {
   if (!dayRecommendData.value?.dailySongs) return;
@@ -295,7 +304,7 @@ const showDayRecommend = () => {
   navigateToMusicList(router, {
     type: 'dailyRecommend',
     name: t('comp.recommendSinger.songlist'),
-    songList: dayRecommendData.value.dailySongs,
+    songList: getDisplayDaySongs.value,
     canRemove: false
   });
 };
