@@ -132,13 +132,11 @@
 </template>
 
 <script lang="ts" setup>
-import { cloneDeep } from 'lodash';
 import type { MenuOption } from 'naive-ui';
 import { NEllipsis, NImage, useMessage, useDialog } from 'naive-ui';
 import { computed, h, inject, ref, useTemplateRef } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import { getSongUrl } from '@/store/modules/player';
 import { useArtist } from '@/hooks/useArtist';
 import { usePlayerStore } from '@/store';
 import type { SongResult } from '@/type/music';
@@ -350,7 +348,7 @@ const handleSelect = (key: string | number) => {
   showDropdown.value = false;
   switch (key) {
     case 'download':
-      downloadMusic();
+      downloadMusic(props.item);
       break;
     case 'playNext':
       handlePlayNext();
@@ -376,7 +374,7 @@ const handleSelect = (key: string | number) => {
 };
 
 // 下载音乐
-const { isDownloading, downloadMusic } = useDownload();
+const { downloadMusic } = useDownload();
 
 const emits = defineEmits(['play', 'select', 'remove-song']);
 const songImageRef = useTemplateRef('songImg');

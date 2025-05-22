@@ -1,110 +1,108 @@
 <template>
-    <div v-if="isComponent ? favoriteSongs.length : true" class="favorite-page">
-      <div class="favorite-header" :class="setAnimationClass('animate__fadeInLeft')">
-        <div class="favorite-header-left">
-          <h2>{{ t('favorite.title') }}</h2>
-          <div class="favorite-count">{{ t('favorite.count', { count: favoriteList.length }) }}</div>
-        </div>
-        <div v-if="!isComponent && isElectron" class="favorite-header-right">
-          <div class="sort-controls" v-if="!isSelecting">
-            <div class="sort-buttons">
-              <div 
-                class="sort-button" 
-                :class="{ active: isDescending }"
-                @click="toggleSort(true)"
-              >
-                <i class="iconfont ri-sort-desc"></i>
-                {{ t('favorite.descending') }}
-              </div>
-              <div 
-                class="sort-button" 
-                :class="{ active: !isDescending }"
-                @click="toggleSort(false)"
-              >
-                <i class="iconfont ri-sort-asc"></i>
-                {{ t('favorite.ascending') }}
-              </div>
-            </div>
-          </div>
-          <n-button
-            v-if="!isSelecting"
-            secondary
-            type="primary"
-            size="small"
-            class="select-btn"
-            @click="startSelect"
-          >
-            <template #icon>
-              <i class="iconfont ri-checkbox-multiple-line"></i>
-            </template>
-            {{ t('favorite.batchDownload') }}
-          </n-button>
-          <div v-else class="select-controls">
-            <n-checkbox
-              class="select-all-checkbox"
-              :checked="isAllSelected"
-              :indeterminate="isIndeterminate"
-              @update:checked="handleSelectAll"
-            >
-              {{ t('common.selectAll') }}
-            </n-checkbox>
-            <n-button-group class="operation-btns">
-              <n-button
-                type="primary"
-                size="small"
-                :loading="isDownloading"
-                :disabled="selectedSongs.length === 0"
-                class="download-btn"
-                @click="handleBatchDownload"
-              >
-                <template #icon>
-                  <i class="iconfont ri-download-line"></i>
-                </template>
-                {{ t('favorite.download', { count: selectedSongs.length }) }}
-              </n-button>
-              <n-button size="small" class="cancel-btn" @click="cancelSelect">
-                {{ t('common.cancel') }}
-              </n-button>
-            </n-button-group>
-          </div>
-        </div>
+  <div v-if="isComponent ? favoriteSongs.length : true" class="favorite-page">
+    <div class="favorite-header" :class="setAnimationClass('animate__fadeInLeft')">
+      <div class="favorite-header-left">
+        <h2>{{ t('favorite.title') }}</h2>
+        <div class="favorite-count">{{ t('favorite.count', { count: favoriteList.length }) }}</div>
       </div>
-      <div class="favorite-main" :class="setAnimationClass('animate__bounceInRight')">
-        <n-scrollbar ref="scrollbarRef" class="favorite-content" @scroll="handleScroll">
-          <div v-if="favoriteList.length === 0" class="empty-tip">
-            <n-empty :description="t('favorite.emptyTip')" />
-          </div>
-          <div v-else class="favorite-list" :class="{ 'max-w-[400px]': isComponent }">
-            <song-item
-              v-for="(song, index) in favoriteSongs"
-              :key="song.id"
-              :item="song"
-              :favorite="false"
-              :class="setAnimationClass('animate__bounceInLeft')"
-              :style="getItemAnimationDelay(index)"
-              :selectable="isSelecting"
-              :selected="selectedSongs.includes(song.id as number)"
-              @play="handlePlay"
-              @select="handleSelect"
-            />
-            <div v-if="isComponent" class="favorite-list-more text-center">
-              <n-button text type="primary" @click="handleMore">{{ t('common.viewMore') }}</n-button>
+      <div v-if="!isComponent && isElectron" class="favorite-header-right">
+        <div class="sort-controls" v-if="!isSelecting">
+          <div class="sort-buttons">
+            <div 
+              class="sort-button" 
+              :class="{ active: isDescending }"
+              @click="toggleSort(true)"
+            >
+              <i class="iconfont ri-sort-desc"></i>
+              {{ t('favorite.descending') }}
             </div>
-
-            <div v-if="loading" class="loading-wrapper">
-              <n-spin size="large" />
+            <div 
+              class="sort-button" 
+              :class="{ active: !isDescending }"
+              @click="toggleSort(false)"
+            >
+              <i class="iconfont ri-sort-asc"></i>
+              {{ t('favorite.ascending') }}
             </div>
-
-            <div v-if="noMore" class="no-more-tip">{{ t('common.noMore') }}</div>
           </div>
-        </n-scrollbar>
+        </div>
+        <n-button
+          v-if="!isSelecting"
+          secondary
+          type="primary"
+          size="small"
+          class="select-btn"
+          @click="startSelect"
+        >
+          <template #icon>
+            <i class="iconfont ri-checkbox-multiple-line"></i>
+          </template>
+          {{ t('favorite.batchDownload') }}
+        </n-button>
+        <div v-else class="select-controls">
+          <n-checkbox
+            class="select-all-checkbox"
+            :checked="isAllSelected"
+            :indeterminate="isIndeterminate"
+            @update:checked="handleSelectAll"
+          >
+            {{ t('common.selectAll') }}
+          </n-checkbox>
+          <n-button-group class="operation-btns">
+            <n-button
+              type="primary"
+              size="small"
+              :loading="isDownloading"
+              :disabled="selectedSongs.length === 0"
+              class="download-btn"
+              @click="handleBatchDownload"
+            >
+              <template #icon>
+                <i class="iconfont ri-download-line"></i>
+              </template>
+              {{ t('favorite.download', { count: selectedSongs.length }) }}
+            </n-button>
+            <n-button size="small" class="cancel-btn" @click="cancelSelect">
+              {{ t('common.cancel') }}
+            </n-button>
+          </n-button-group>
+        </div>
       </div>
     </div>
-  </template>
+    <div class="favorite-main" :class="setAnimationClass('animate__bounceInRight')">
+      <n-scrollbar ref="scrollbarRef" class="favorite-content" @scroll="handleScroll">
+        <div v-if="favoriteList.length === 0" class="empty-tip">
+          <n-empty :description="t('favorite.emptyTip')" />
+        </div>
+        <div v-else class="favorite-list" :class="{ 'max-w-[400px]': isComponent }">
+          <song-item
+            v-for="(song, index) in favoriteSongs"
+            :key="song.id"
+            :item="song"
+            :favorite="false"
+            :class="setAnimationClass('animate__bounceInLeft')"
+            :style="getItemAnimationDelay(index)"
+            :selectable="isSelecting"
+            :selected="selectedSongs.includes(song.id as number)"
+            @play="handlePlay"
+            @select="handleSelect"
+          />
+          <div v-if="isComponent" class="favorite-list-more text-center">
+            <n-button text type="primary" @click="handleMore">{{ t('common.viewMore') }}</n-button>
+          </div>
 
-  <script setup lang="ts">
-  import { cloneDeep } from 'lodash';
-import { useMessage } from 'naive-ui';
+          <div v-if="loading" class="loading-wrapper">
+            <n-spin size="large" />
+          </div>
+
+          <div v-if="noMore" class="no-more-tip">{{ t('common.noMore') }}</div>
+        </div>
+      </n-scrollbar>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
@@ -119,7 +117,6 @@ import { isElectron, setAnimationClass, setAnimationDelay } from '@/utils';
 
   const { t } = useI18n();
   const playerStore = usePlayerStore();
-  const message = useMessage();
   const favoriteList = computed(() => playerStore.favoriteList);
   const favoriteSongs = ref<SongResult[]>([]);
   const loading = ref(false);
