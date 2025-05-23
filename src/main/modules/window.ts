@@ -14,6 +14,9 @@ let mainWindowState = {
   isMaximized: false
 };
 
+// 保存主窗口引用，以便在 activate 事件中使用
+let mainWindowInstance: BrowserWindow | null = null;
+
 /**
  * 初始化代理设置
  */
@@ -183,6 +186,17 @@ export function initializeWindowManager() {
       }
     }
   });
+
+  // 监听 macOS 下点击 Dock 图标的事件
+  app.on('activate', () => {
+    // 当应用被激活时，检查主窗口是否存在
+    if (mainWindowInstance && !mainWindowInstance.isDestroyed()) {
+      // 如果窗口存在但被隐藏，则显示窗口
+      if (!mainWindowInstance.isVisible()) {
+        mainWindowInstance.show();
+      }
+    }
+  });
 }
 
 /**
@@ -205,6 +219,7 @@ export function createMainWindow(icon: Electron.NativeImage): BrowserWindow {
   });
 
   mainWindow.setMinimumSize(1200, 780);
+  mainWindow.removeMenu();
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show();
@@ -228,6 +243,9 @@ export function createMainWindow(icon: Electron.NativeImage): BrowserWindow {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
   }
+
+  // 保存主窗口引用
+  mainWindowInstance = mainWindow;
 
   return mainWindow;
 }
