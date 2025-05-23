@@ -6,6 +6,7 @@
   "main": "./out/main/index.js",
   "homepage": "https://github.com/algerkong/AlgerMusicPlayer",
   "scripts": {
+    "prepare": "husky",
     "format": "prettier --write .",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts,.vue --fix",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
@@ -26,9 +27,10 @@
     "@unblockneteasemusic/server": "^0.27.8-patch.1",
     "cors": "^2.8.5",
     "electron-store": "^8.1.0",
-    "express": "^4.18.2",
     "electron-updater": "^6.6.2",
+    "express": "^4.18.2",
     "font-list": "^1.5.1",
+    "husky": "^9.1.7",
     "netease-cloud-music-api-alger": "^4.26.1",
     "node-id3": "^0.2.9",
     "node-machine-id": "^1.1.12",
@@ -103,7 +105,9 @@
       {
         "from": "resources/html",
         "to": "html",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "mac": {
