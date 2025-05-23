@@ -96,11 +96,12 @@
       </div>
     </div>
     <div class="audio-button">
-      <div class="audio-volume custom-slider">
+      <div class="audio-volume custom-slider" @wheel.prevent="handleVolumeWheel">
         <div class="volume-icon" @click="mute">
           <i class="iconfont" :class="getVolumeIcon"></i>
         </div>
         <div class="volume-slider">
+          <div class="volume-percentage">{{ Math.round(volumeSlider) }}%</div>
           <n-slider v-model:value="volumeSlider" :step="0.01" :tooltip="false" vertical></n-slider>
         </div>
       </div>
@@ -274,6 +275,14 @@ const mute = () => {
   } else {
     volumeSlider.value = 0;
   }
+};
+
+// 鼠标滚轮调整音量
+const handleVolumeWheel = (e: WheelEvent) => {
+  // 向上滚动增加音量，向下滚动减少音量
+  const delta = e.deltaY < 0 ? 5 : -5;
+  const newValue = Math.min(Math.max(volumeSlider.value + delta, 0), 100);
+  volumeSlider.value = newValue;
 };
 
 // 播放模式
@@ -476,6 +485,12 @@ const openPlayListDrawer = () => {
     @apply absolute opacity-0 invisible transition-all duration-300 bottom-[30px] left-1/2 -translate-x-1/2 h-[180px] px-2 py-4 rounded-xl;
     @apply bg-light dark:bg-gray-800;
     @apply border border-gray-200 dark:border-gray-700;
+    
+    .volume-percentage {
+      @apply absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-medium bg-light dark:bg-gray-800 px-2 py-1 rounded-md;
+      @apply border border-gray-200 dark:border-gray-700;
+      white-space: nowrap;
+    }
   }
 }
 
