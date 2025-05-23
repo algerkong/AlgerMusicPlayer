@@ -6,9 +6,9 @@
     :can-remove="canRemove"
     :is-next="isNext"
     :index="index"
-    @play="$emit('play', $event)"
-    @select="$emit('select', $event)"
-    @remove-song="$emit('remove-song', $event)"
+    @play="(...args) => $emit('play', ...args)"
+    @select="(...args) => $emit('select', ...args)"
+    @remove-song="(...args) => $emit('remove-song', ...args)"
     class="compact-song-item"
     ref="baseItem"
   >
@@ -112,7 +112,7 @@ const props = withDefaults(
   }
 );
 
-defineEmits(['play', 'select', 'remove-song']);
+const emit = defineEmits(['play', 'select', 'remove-song']);
 const baseItem = ref<InstanceType<typeof BaseSongItem>>();
 
 // 从基础组件获取响应式状态
@@ -124,10 +124,19 @@ const isHovering = computed(() => baseItem.value?.isHovering || false);
 const artists = computed(() => baseItem.value?.artists || []);
 
 // 包装方法，避免直接访问可能为undefined的ref
-const onToggleSelect = () => baseItem.value?.toggleSelect();
+const onToggleSelect = () => {
+  baseItem.value?.toggleSelect();
+  emit('select', props.item.id, !props.selected);
+};
 const onArtistClick = (id: number) => baseItem.value?.handleArtistClick(id);
-const onToggleFavorite = (event: Event) => baseItem.value?.toggleFavorite(event);
-const onPlayMusic = () => baseItem.value?.playMusicEvent(props.item);
+const onToggleFavorite = (event: Event) => {
+  baseItem.value?.toggleFavorite(event);
+  // 可选：emit 收藏事件
+};
+const onPlayMusic = () => {
+  baseItem.value?.playMusicEvent(props.item);
+  emit('play', props.item);
+};
 const onMenuClick = (event: MouseEvent) => baseItem.value?.handleMenuClick(event);
 
 // 从useSongItem.ts导入格式化时长和获取时长方法

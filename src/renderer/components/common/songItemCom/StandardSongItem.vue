@@ -6,9 +6,9 @@
     :can-remove="canRemove"
     :is-next="isNext"
     :index="index"
-    @play="$emit('play', $event)"
-    @select="$emit('select', $event)"
-    @remove-song="$emit('remove-song', $event)"
+    @play="(...args) => $emit('play', ...args)"
+    @select="(...args) => $emit('select', ...args)"
+    @remove-song="(...args) => $emit('remove-song', ...args)"
     class="standard-song-item"
     ref="baseItem"
   >
@@ -118,7 +118,7 @@ const props = withDefaults(
   }
 );
 
-defineEmits(['play', 'select', 'remove-song']);
+const emit = defineEmits(['play', 'select', 'remove-song']);
 const baseItem = ref<InstanceType<typeof BaseSongItem>>();
 
 // 从playerStore和baseItem获取响应式状态
@@ -129,12 +129,22 @@ const isFavorite = computed(() => baseItem.value?.isFavorite || false);
 const artists = computed(() => baseItem.value?.artists || []);
 
 // 包装方法，避免直接访问可能为undefined的ref
-const onToggleSelect = () => baseItem.value?.toggleSelect();
+const onToggleSelect = () => {
+  baseItem.value?.toggleSelect();
+  emit('select', props.item.id, !props.selected);
+};
 const onImageLoad = (event: Event) => baseItem.value?.imageLoad(event);
 const onArtistClick = (id: number) => baseItem.value?.handleArtistClick(id);
-const onToggleFavorite = (event: Event) => baseItem.value?.toggleFavorite(event);
-const onPlayMusic = () => baseItem.value?.playMusicEvent(props.item);
-const onPlayNext = () => baseItem.value?.handlePlayNext();
+const onToggleFavorite = (event: Event) => {
+  baseItem.value?.toggleFavorite(event);
+};
+const onPlayMusic = () => {
+  baseItem.value?.playMusicEvent(props.item);
+  emit('play', props.item);
+};
+const onPlayNext = () => {
+  baseItem.value?.handlePlayNext();
+};
 </script>
 
 <style lang="scss" scoped>

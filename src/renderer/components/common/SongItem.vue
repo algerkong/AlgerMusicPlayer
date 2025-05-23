@@ -8,9 +8,9 @@
     :can-remove="canRemove"
     :is-next="isNext"
     :index="index"
-    @play="$emit('play', $event)"
-    @select="$emit('select', $event)"
-    @remove-song="$emit('remove-song', $event)"
+    @play="(...args) => $emit('play', ...args)"
+    @select="(...args) => $emit('select', ...args)"
+    @remove-song="(...args) => $emit('remove-song', ...args)"
   />
 </template>
 
