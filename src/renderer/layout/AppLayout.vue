@@ -37,22 +37,22 @@
           :style="isMobile && playerStore.musicFull ? 'bottom: 0;' : ''"
         />
       </template>
-      <!-- 下载管理抽屉 -->
-      <download-drawer
-        v-if="
-          isElectron &&
-          (settingsStore.setData?.alwaysShowDownloadButton ||
-            settingsStore.showDownloadDrawer ||
-            settingsStore.setData?.hasDownloadingTasks)
-        "
-      />
-      <!-- 播放列表抽屉 -->
-      <play-list-drawer />
     </div>
     <install-app-modal v-if="!isElectron"></install-app-modal>
     <update-modal v-if="isElectron" />
     <playlist-drawer v-model="showPlaylistDrawer" :song-id="currentSongId" />
     <SleepTimerTop v-if="!isMobile"/>
+    <!-- 下载管理抽屉 -->
+    <download-drawer
+      v-if="
+        isElectron &&
+        (settingsStore.setData?.alwaysShowDownloadButton ||
+          settingsStore.showDownloadDrawer ||
+          settingsStore.setData?.hasDownloadingTasks)
+      "
+    />
+    <!-- 播放列表抽屉 -->
+    <playing-list-drawer />
   </div>
 </template>
 
@@ -92,7 +92,7 @@ const PlayBar = defineAsyncComponent(() => import('@/components/player/PlayBar.v
 const MobilePlayBar = defineAsyncComponent(() => import('@/components/player/MobilePlayBar.vue'));
 const SearchBar = defineAsyncComponent(() => import('./components/SearchBar.vue'));
 const TitleBar = defineAsyncComponent(() => import('./components/TitleBar.vue'));
-const PlayListDrawer = defineAsyncComponent(() => import('@/components/player/PlayListDrawer.vue'));
+const PlayingListDrawer = defineAsyncComponent(() => import('@/components/player/PlayingListDrawer.vue'));
 const PlaylistDrawer = defineAsyncComponent(() => import('@/components/common/PlaylistDrawer.vue'));
 
 const playerStore = usePlayerStore();
@@ -112,9 +112,9 @@ const showPlaylistDrawer = ref(false);
 const currentSongId = ref<number | undefined>();
 
 // 提供一个方法来打开歌单抽屉
-const openPlaylistDrawer = (songId: number) => {
+const openPlaylistDrawer = (songId: number, isOpen: boolean = true) => {
   currentSongId.value = songId;
-  showPlaylistDrawer.value = true;
+  showPlaylistDrawer.value = isOpen;
 };
 
 // 将方法提供给全局
