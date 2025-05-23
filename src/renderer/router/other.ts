@@ -4,7 +4,7 @@ const otherRouter = [
     name: 'userFollows',
     meta: {
       title: '关注列表',
-      keepAlive: true,
+      keepAlive: false,
       showInMenu: false,
       back: true
     },
@@ -15,7 +15,7 @@ const otherRouter = [
     name: 'userFollowers',
     meta: {
       title: '粉丝列表',
-      keepAlive: true,
+      keepAlive: false,
       showInMenu: false,
       back: true
     },
@@ -26,7 +26,7 @@ const otherRouter = [
     name: 'userDetail',
     meta: {
       title: '用户详情',
-      keepAlive: true,
+      keepAlive: false,
       showInMenu: false,
       back: true
     },

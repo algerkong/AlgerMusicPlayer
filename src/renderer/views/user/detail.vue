@@ -26,11 +26,11 @@
                     </n-tooltip>
                   </div>
                   <div class="user-info-stats">
-                    <div class="user-info-stat-item">
+                    <div class="user-info-stat-item" @click="showFollowerList">
                       <div class="label">{{ userDetail.profile.followeds }}</div>
                       <div>{{ t('user.profile.followers') }}</div>
                     </div>
-                    <div class="user-info-stat-item">
+                    <div class="user-info-stat-item" @click="showFollowList">
                       <div class="label">{{ userDetail.profile.follows }}</div>
                       <div>{{ t('user.profile.following') }}</div>
                     </div>
@@ -50,10 +50,7 @@
           <n-tabs type="line" animated>
             <!-- 歌单列表 -->
             <n-tab-pane name="playlists" :tab="t('user.detail.playlists')">
-              <div v-if="loading" class="loading-container">
-                <n-spin size="medium" />
-              </div>
-              <div v-else-if="playList.length === 0" class="empty-message">
+              <div v-if="playList.length === 0" class="empty-message">
                 {{ t('user.detail.noPlaylists') }}
               </div>
               <div v-else class="playlist-grid" :class="setAnimationClass('animate__fadeInUp')">
@@ -89,8 +86,11 @@
 
             <!-- 听歌排行 -->
             <n-tab-pane name="records" :tab="t('user.detail.records')">
-              <div v-if="loading" class="loading-container">
-                <n-spin size="medium" />
+              <div v-if="!hasRecordPermission" class="empty-message">
+                <div class="no-permission">
+                  <i class="ri-lock-line text-2xl mr-2"></i>
+                  {{ t('user.detail.noRecordPermission', { name: userDetail.profile.nickname }) }}
+                </div>
               </div>
               <div v-else-if="!recordList || recordList.length === 0" class="empty-message">
                 {{ t('user.detail.noRecords') }}
@@ -103,10 +103,7 @@
                   :class="setAnimationClass('animate__bounceInUp')"
                   :style="setAnimationDelay(index, 25)"
                 >
-                  <div class="play-score">
-                    {{ index + 1 }}
-                  </div>
-                  <song-item class="song-item" :item="item" mini @play="handlePlay" />
+                  <song-item class="song-item" :index="index" :item="item" compact @play="handlePlay" />
                 </div>
               </div>
             </n-tab-pane>
@@ -125,7 +122,7 @@
 
 <script lang="ts" setup>
 import { useMessage } from 'naive-ui';
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
@@ -150,12 +147,12 @@ const playerStore = usePlayerStore();
 
 // 获取路由参数中的用户ID
 const userId = ref<number>(Number(route.params.uid));
-
 // 用户数据
 const userDetail = ref<IUserDetail>();
 const playList = ref<any[]>([]);
 const recordList = ref<any[]>([]);
 const loading = ref(true);
+const hasRecordPermission = ref(true); // 是否有权限查看听歌记录
 
 // 歌单详情相关
 const currentList = ref<Playlist>();
@@ -171,33 +168,67 @@ const loadUserData = async () => {
 
   try {
     loading.value = true;
+    recordList.value = []; // 清空之前的记录
+    hasRecordPermission.value = true; // 重置权限状态
 
-    // 使用 Promise.all 并行请求提高效率
-    const [userDetailRes, playlistRes, recordRes] = await Promise.all([
-      getUserDetail(userId.value),
-      getUserPlaylist(userId.value),
-      getUserRecord(userId.value)
-    ]);
+    // 分开处理请求，处理可能的错误
+    // 1. 获取用户详情和歌单列表
+    try {
+      const [userDetailRes, playlistRes] = await Promise.all([
+        getUserDetail(userId.value),
+        getUserPlaylist(userId.value)
+      ]);
 
-    userDetail.value = userDetailRes.data;
-    playList.value = playlistRes.data.playlist;
+      userDetail.value = userDetailRes.data;
+      playList.value = playlistRes.data.playlist;
+    } catch (error) {
+      console.error('加载用户基本信息失败:', error);
+      message.error(t('user.message.loadBasicInfoFailed'));
+      return; // 如果基本信息加载失败，直接返回
+    }
 
-    if (recordRes.data && recordRes.data.allData) {
-      recordList.value = recordRes.data.allData.map((item: any) => ({
-        ...item,
-        ...item.song,
-        picUrl: item.song.al.picUrl
-      }));
-    } else {
-      recordList.value = [];
+    // 2. 单独处理听歌记录请求，这个请求可能会无权限
+    try {
+      const recordRes = await getUserRecord(userId.value);
+      
+      if (recordRes.data && recordRes.data.allData) {
+        recordList.value = recordRes.data.allData.map((item: any) => ({
+          ...item,
+          ...item.song,
+          picUrl: item.song.al.picUrl
+        }));
+      }
+    } catch (error: any) {
+      console.error('加载听歌记录失败:', error);
+      // 判断是否是无权限错误
+      if (error.response?.data?.code === -2 || error.data?.code === -2) {
+        hasRecordPermission.value = false;
+      }
+      // 不显示错误消息，因为这是预期的情况
     }
   } catch (error) {
     console.error('加载用户数据失败:', error);
-    message.error('加载用户数据失败');
+    message.error(t('user.message.loadFailed'));
   } finally {
     loading.value = false;
   }
 };
+
+// 使用onMounted和watch结合的方式解决路由变化问题
+onMounted(() => {
+  loadUserData();
+});
+
+// 监听路由参数变化
+watch(
+  () => route.params.uid,
+  (newUid) => {
+    if (newUid && Number(newUid) !== userId.value) {
+      userId.value = Number(newUid);
+      loadUserData();
+    }
+  }
+);
 
 // 替换显示歌单的方法
 const openPlaylist = (item: any) => {
@@ -226,15 +257,36 @@ const handlePlay = () => {
   playerStore.setPlayList(tracks);
 };
 
+// 显示关注列表
+const showFollowList = () => {
+  if (!userDetail.value) return;
+  
+  router.push({
+    path: `/user/follows`,
+    query: { 
+      uid: userId.value.toString(),
+      name: userDetail.value.profile.nickname 
+    }
+  });
+};
+
+// 显示粉丝列表
+const showFollowerList = () => {
+  if (!userDetail.value) return;
+  
+  router.push({
+    path: `/user/followers`,
+    query: { 
+      uid: userId.value.toString(),
+      name: userDetail.value.profile.nickname 
+    }
+  });
+};
+
 // 判断是否为歌手
 const isArtist = (profile: any) => {
   return profile.userType === 4 || profile.userType === 2 || profile.accountType === 2;
 };
-
-// 页面挂载时加载数据
-onMounted(() => {
-  loadUserData();
-});
 </script>
 
 <style lang="scss" scoped>
@@ -287,6 +339,11 @@ onMounted(() => {
 
         .label {
           @apply text-lg font-bold;
+        }
+        
+        &:nth-child(1), &:nth-child(2) {
+          @apply cursor-pointer transition-all duration-200;
+          @apply hover:bg-black hover:bg-opacity-20 rounded-lg px-2;
         }
       }
     }
@@ -365,5 +422,14 @@ onMounted(() => {
 
 .empty-message {
   @apply flex justify-center items-center p-8;
+
+  .no-permission {
+    @apply flex flex-col items-center justify-center text-gray-500 dark:text-gray-400;
+    @apply p-4 rounded-lg;
+    
+    i {
+      @apply text-3xl mb-2;
+    }
+  }
 }
 </style>

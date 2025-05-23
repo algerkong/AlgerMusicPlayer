@@ -18,12 +18,16 @@ export default {
     viewPlaylist: '查看歌单',
     noFollowings: '暂无关注',
     loadMore: '加载更多',
-    noSignature: '这个家伙很懒，什么都没留下'
+    noSignature: '这个家伙很懒，什么都没留下',
+    userFollowsTitle: '的关注',
+    myFollowsTitle: '我的关注'
   },
   follower: {
     title: '粉丝列表',
     noFollowers: '暂无粉丝',
-    loadMore: '加载更多'
+    loadMore: '加载更多',
+    userFollowersTitle: '的粉丝',
+    myFollowersTitle: '我的粉丝'
   },
   detail: {
     playlists: '歌单',
@@ -32,7 +36,8 @@ export default {
     noRecords: '暂无听歌记录',
     artist: '歌手',
     noSignature: '这个人很懒，什么都没留下',
-    invalidUserId: '用户ID无效'
+    invalidUserId: '用户ID无效',
+    noRecordPermission: '{name}不让你看听歌排行'
   },
   message: {
     loadFailed: '加载用户页面失败',

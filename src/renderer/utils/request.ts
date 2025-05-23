@@ -2,13 +2,14 @@ import axios, { InternalAxiosRequestConfig } from 'axios';
 
 import { useUserStore } from '@/store/modules/user';
 
-import { getSetData, isElectron } from '.';
+import { getSetData, isElectron, isMobile } from '.';
 
 let setData: any = null;
 
 // 扩展请求配置接口
 interface CustomAxiosRequestConfig extends InternalAxiosRequestConfig {
   retryCount?: number;
+  noRetry?: boolean;
 }
 
 const baseURL = window.electron
@@ -22,7 +23,7 @@ const request = axios.create({
 });
 
 // 最大重试次数
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 1;
 // 重试延迟（毫秒）
 const RETRY_DELAY = 500;
 
@@ -42,7 +43,8 @@ request.interceptors.request.use(
     // 在get请求params中添加timestamp
     config.params = {
       ...config.params,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      device: isElectron ? 'pc' : isMobile ? 'mobile' : 'web'
     };
     const token = localStorage.getItem('token');
     if (token && config.method !== 'post') {
@@ -100,7 +102,8 @@ request.interceptors.response.use(
     if (
       config.retryCount !== undefined &&
       config.retryCount < MAX_RETRIES &&
-      !NO_RETRY_URLS.includes(config.url as string)
+      !NO_RETRY_URLS.includes(config.url as string) &&
+      !config.noRetry
     ) {
       config.retryCount++;
       console.error(`请求重试第 ${config.retryCount} 次`);

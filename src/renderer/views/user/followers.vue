@@ -1,6 +1,13 @@
 <template>
   <div class="followers-page">
     <div class="content-wrapper">
+      <div class="page-title" v-if="targetUserName">
+        {{ targetUserName + t('user.follower.userFollowersTitle') }}
+      </div>
+      <div class="page-title" v-else>
+        {{ t('user.follower.myFollowersTitle') }}
+      </div>
+      
       <n-spin v-if="followerListLoading && followerList.length === 0" size="large" />
       <n-scrollbar v-else class="scrollbar-container">
         <div v-if="followerList.length === 0" class="empty-follower">
@@ -60,9 +67,9 @@
 
 <script lang="ts" setup>
 import { useMessage } from 'naive-ui';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 
 import { getUserFollowers } from '@/api/user';
 import { useUserStore } from '@/store/modules/user';
@@ -77,6 +84,7 @@ const { t } = useI18n();
 const userStore = useUserStore();
 const router = useRouter();
 const message = useMessage();
+const route = useRoute();
 
 // 粉丝列表相关
 const followerList = ref<IUserFollow[]>([]);
@@ -84,8 +92,25 @@ const followerOffset = ref(0);
 const followerLimit = ref(30);
 const hasMoreFollowers = ref(false);
 const followerListLoading = ref(false);
+const targetUserId = ref<number | null>(null);
+const targetUserName = ref<string>('');
 
 const user = computed(() => userStore.user);
+
+// 检查是否有指定用户ID
+const checkTargetUser = () => {
+  const uid = route.query.uid;
+  const name = route.query.name;
+  
+  if (uid && typeof uid === 'string') {
+    targetUserId.value = parseInt(uid);
+    targetUserName.value = typeof name === 'string' ? name : '';
+    return true;
+  }
+  
+  // 如果没有指定用户ID，则显示当前登录用户的粉丝列表
+  return checkLoginStatus();
+};
 
 // 检查登录状态
 const checkLoginStatus = () => {
@@ -107,12 +132,15 @@ const checkLoginStatus = () => {
 
 // 加载粉丝列表
 const loadFollowerList = async () => {
-  if (!user.value) return;
+  // 确定要加载哪个用户的粉丝列表
+  const userId = targetUserId.value || (user.value?.userId);
+  
+  if (!userId) return;
 
   try {
     followerListLoading.value = true;
     const { data } = await getUserFollowers(
-      user.value.userId,
+      userId,
       followerLimit.value,
       followerOffset.value
     );
@@ -129,7 +157,7 @@ const loadFollowerList = async () => {
     hasMoreFollowers.value = newFollowers.length >= followerLimit.value;
   } catch (error) {
     console.error('加载粉丝列表失败:', error);
-    message.error('加载粉丝列表失败');
+    message.error(t('user.follower.loadFailed'));
   } finally {
     followerListLoading.value = false;
   }
@@ -157,7 +185,17 @@ const isArtist = (user: IUserFollow) => {
 
 // 页面挂载时加载数据
 onMounted(() => {
-  if (checkLoginStatus()) {
+  if (checkTargetUser()) {
+    loadFollowerList();
+  }
+});
+
+// 监听路由变化重新加载数据
+watch(() => route.query, (newQuery) => {
+  if (newQuery.uid && newQuery.uid !== targetUserId.value?.toString()) {
+    followerList.value = []; // 清空列表
+    followerOffset.value = 0; // 重置偏移量
+    checkTargetUser();
     loadFollowerList();
   }
 });
@@ -237,5 +275,10 @@ onMounted(() => {
 
 .loading-more {
   @apply my-4;
+}
+
+.page-title {
+  @apply text-xl font-bold mb-4;
+  @apply text-gray-900 dark:text-white;
 }
 </style>
