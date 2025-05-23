@@ -9,6 +9,7 @@
     placement="bottom-start"
     @clickoutside="$emit('update:show', false)"
     @select="handleSelect"
+    class="rounded-xl"
   />
 </template>
 
@@ -52,7 +53,7 @@ const renderSongPreview = () => {
   return h(
     'div',
     {
-      class: 'flex items-center gap-3 px-2 py-1 dark:border-gray-800'
+      class: 'flex items-center gap-3 px-2 dark:border-gray-800 dark:text-white'
     },
     [
       h(NImage, {
