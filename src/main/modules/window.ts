@@ -247,5 +247,7 @@ export function createMainWindow(icon: Electron.NativeImage): BrowserWindow {
   // 保存主窗口引用
   mainWindowInstance = mainWindow;
 
+  mainWindow.on('blur', () => mainWindow && mainWindow.setMaximizable(false))
+
   return mainWindow;
 }
