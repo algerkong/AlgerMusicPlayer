@@ -6,6 +6,7 @@ export default {
   },
   playlist: {
     created: 'Created Playlists',
+    mine: 'Mine',
     trackCount: '{count} tracks',
     playCount: 'Played {count} times'
   },

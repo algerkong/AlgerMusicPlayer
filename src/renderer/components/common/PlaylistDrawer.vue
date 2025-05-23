@@ -159,9 +159,9 @@ const fetchUserPlaylists = async () => {
       return;
     }
 
-    const res = await getUserPlaylist(user.userId);
+    const res = await getUserPlaylist(user.userId, 999);
     if (res.data?.playlist) {
-      playlists.value = res.data.playlist;
+      playlists.value = res.data.playlist.filter((item: any) => item.userId === user.userId);
     }
   } catch (error) {
     console.error('获取歌单失败:', error);

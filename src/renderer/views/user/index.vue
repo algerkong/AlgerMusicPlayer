@@ -43,7 +43,12 @@
                 preview-disabled
               />
               <div class="play-list-item-info">
-                <div class="play-list-item-name">{{ item.name }}</div>
+                <div class="play-list-item-name">
+                  {{ item.name }}
+                  <div v-if="item.creator.userId === user.userId" class="playlist-creator-tag">
+                    {{ t('user.playlist.mine') }}
+                  </div>
+                </div>
                 <div class="play-list-item-count">
                   {{ t('user.playlist.trackCount', { count: item.trackCount }) }}，{{
                     t('user.playlist.playCount', { count: item.playCount })
@@ -353,11 +358,22 @@ const showFollowList = () => {
     }
 
     &-info {
-      @apply ml-2;
+      @apply ml-2 flex-1;
     }
 
     &-name {
-      @apply text-gray-900 dark:text-white text-base;
+      @apply text-gray-900 dark:text-white text-base flex items-center gap-2;
+      
+      .playlist-creator-tag {
+        @apply inline-flex items-center justify-center px-2 rounded-full text-xs;
+        @apply bg-light-300 text-primary dark:bg-dark-300 dark:text-white;
+        @apply border border-primary/20 dark:border-primary/30;
+        height: 18px;
+        font-size: 10px;
+        font-weight: 500;
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+      }
     }
 
     &-count {

@@ -6,6 +6,7 @@ export default {
   },
   playlist: {
     created: '创建的歌单',
+    mine: '我创建的',
     trackCount: '{count}首',
     playCount: '播放{count}次'
   },
