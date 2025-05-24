@@ -38,7 +38,7 @@ export const useDownload = () => {
       songData.ar = songData.ar || songData.song?.artists;
       // 发送下载请求
       window.electron.ipcRenderer.send('download-music', {
-        url: musicUrl,
+        url: typeof musicUrl === 'string' ? musicUrl : musicUrl.url,
         filename,
         songInfo: {
           ...songData,
