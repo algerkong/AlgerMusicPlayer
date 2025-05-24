@@ -32,7 +32,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { getBilibiliProxyUrl, getBilibiliVideoDetail } from '@/api/bilibili';
@@ -42,11 +42,6 @@ import { useMusicHistory } from '@/hooks/MusicHistoryHook';
 import { usePlayerStore } from '@/store/modules/player';
 import type { SongResult } from '@/type/music';
 import { setAnimationClass, setAnimationDelay } from '@/utils';
-
-defineOptions({
-  name: 'History'
-});
-
 const { t } = useI18n();
 const { delMusic, musicList } = useMusicHistory();
 const scrollbarRef = ref();
@@ -54,6 +49,7 @@ const loading = ref(false);
 const noMore = ref(false);
 const displayList = ref<SongResult[]>([]);
 const playerStore = usePlayerStore();
+const hasLoaded = ref(false);
 
 // 无限滚动相关配置
 const pageSize = 100;
@@ -178,9 +174,25 @@ const handlePlay = () => {
   playerStore.setPlayList(displayList.value);
 };
 
-onMounted(() => {
-  getHistorySongs();
+onMounted(async () => {
+  if (!hasLoaded.value) {
+    await getHistorySongs();
+    hasLoaded.value = true;
+  }
 });
+
+// 监听历史列表变化，变化时重置并重新加载
+watch(
+  musicList,
+  async () => {
+    hasLoaded.value = false;
+    currentPage.value = 1;
+    noMore.value = false;
+    await getHistorySongs();
+    hasLoaded.value = true;
+  },
+  { deep: true }
+);
 
 // 重写删除方法，需要同时更新 displayList
 const handleDelMusic = async (item: SongResult) => {
@@ -205,7 +217,7 @@ const handleDelMusic = async (item: SongResult) => {
     .history-item {
       @apply flex items-center justify-between;
       &-content {
-        @apply flex-1;
+        @apply flex-1 bg-light-100 dark:bg-dark-100 hover:bg-light-200 dark:hover:bg-dark-200 transition-all;
       }
       &-count {
         @apply px-4 text-lg text-center;

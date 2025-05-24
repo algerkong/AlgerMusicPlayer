@@ -80,6 +80,7 @@
             :key="song.id"
             :item="song"
             :favorite="false"
+            class="favorite-list-item"
             :class="setAnimationClass('animate__bounceInLeft')"
             :style="getItemAnimationDelay(index)"
             :selectable="isSelecting"
@@ -103,7 +104,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, ref, watch, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
@@ -339,20 +340,27 @@ const handleBatchDownload = async () => {
     }
   };
 
+  const hasLoaded = ref(false);
+
   onMounted(async () => {
-    await playerStore.initializeFavoriteList();
-    await getFavoriteSongs();
+    if (!hasLoaded.value) {
+      await playerStore.initializeFavoriteList();
+      await getFavoriteSongs();
+      hasLoaded.value = true;
+    }
   });
 
-  // 监听收藏列表变化
+  // 监听收藏列表变化，变化时重置并重新加载
   watch(
     favoriteList,
-    () => {
+    async () => {
+      hasLoaded.value = false;
       currentPage.value = 1;
       noMore.value = false;
-      getFavoriteSongs();
+      await getFavoriteSongs();
+      hasLoaded.value = true;
     },
-    { deep: true, immediate: true }
+    { deep: true }
   );
 
   const handlePlay = () => {
@@ -505,7 +513,9 @@ const handleBatchDownload = async () => {
 
         .favorite-list {
           @apply space-y-2 pb-4 px-4;
-
+          &-item {
+            @apply bg-light-100 dark:bg-dark-100 hover:bg-light-200 dark:hover:bg-dark-200 transition-all;
+          }
           &-more {
             @apply mt-4;
 

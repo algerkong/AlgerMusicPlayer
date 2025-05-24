@@ -1,13 +1,17 @@
 <template>
   <div class="flex gap-4 h-full pb-4">
     <favorite class="flex-item" />
-    <history class="flex-item" />
+    <history-list class="flex-item" />
   </div>
 </template>
 
 <script setup lang="ts">
+defineOptions({
+  name: 'History'
+});
+
 import Favorite from '@/views/favorite/index.vue';
-import History from '@/views/history/index.vue';
+import HistoryList from '@/views/history/index.vue';
 </script>
 
 <style scoped>
