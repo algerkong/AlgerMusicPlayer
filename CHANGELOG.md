@@ -9,6 +9,9 @@
 
 > QQ频道 <a href="https://pd.qq.com/s/cs056n33q?b=5" target="_blank">加入频道</a>
 
+### 4.7.1
+- 修复下载歌曲时歌曲URL获取BUG，导致下载失败的问题
+
 ### ✨ 新功能
 - 替换扁平风格图标 ([c8e6db1](https://github.com/algerkong/AlgerMusicPlayer/commit/c8e6db1))
 - 添加双击歌曲播放功能 ([258828f](https://github.com/algerkong/AlgerMusicPlayer/commit/258828f))
