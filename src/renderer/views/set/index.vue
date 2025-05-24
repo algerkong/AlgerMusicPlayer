@@ -104,7 +104,7 @@
               </div>
               <div class="flex items-center gap-2">
                 <span class="text-sm text-gray-400" v-if="!isMobile">{{ setData.animationSpeed }}x</span>
-                <div>
+                <div class="w-40 flex justify-end">
                   <template v-if="!isMobile"><n-slider
                     v-model:value="setData.animationSpeed"
                     :min="0.1"
@@ -116,7 +116,6 @@
                       3: t('settings.basic.animationSpeed.fast')
                     }"
                     :disabled="setData.noAnimate"
-                    class="w-40"
                   /></template>
                   <template v-else>
                     <n-input-number
@@ -444,7 +443,7 @@
 
         <!-- 捐赠支持 -->
         <div id="donation" ref="donationRef" class="settings-section">
-          <div class="settings-section-title">{{ t('settings.sectio ns.donation') }}</div>
+          <div class="settings-section-title">{{ t('settings.sections.donation') }}</div>
           <div class="settings-section-content">
             <div class="set-item">
               <div>
