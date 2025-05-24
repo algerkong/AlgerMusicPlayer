@@ -74,7 +74,7 @@ export function useSongItem(props: {
   
   // 切换收藏状态
   const toggleFavorite = async (e: Event) => {
-    e.stopPropagation();
+    e && e.stopPropagation();
     const numericId = typeof props.item.id === 'string' ? parseInt(props.item.id, 10) : props.item.id;
 
     if (isFavorite.value) {
@@ -86,7 +86,7 @@ export function useSongItem(props: {
   
   // 切换不喜欢状态
   const toggleDislike = async (e: Event) => {
-    e.stopPropagation();
+    e && e.stopPropagation();
     if (isDislike.value) {
       playerStore.removeFromDislikeList(props.item.id);
       return;
