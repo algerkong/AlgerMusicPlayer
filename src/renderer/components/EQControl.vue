@@ -1,7 +1,11 @@
 <template>
   <div class="eq-control">
     <div class="eq-header">
-      <h3>{{ t('player.eq.title') }}</h3>
+      <h3>{{ t('player.eq.title') }}
+        <n-tag type="warning" size="small" round>
+          桌面版可用，网页端不支持
+        </n-tag>
+      </h3>
       <div class="eq-controls">
         <n-switch v-model:value="isEnabled" @update:value="toggleEQ">
           <template #checked>{{ t('player.eq.on') }}</template>
