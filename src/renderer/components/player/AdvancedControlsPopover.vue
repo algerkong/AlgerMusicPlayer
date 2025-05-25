@@ -26,7 +26,7 @@
   </n-dropdown>
 
   <!-- EQ 均衡器弹窗 -->
-  <n-modal v-model:show="showEQModal" :mask-closable="true" :unstable-show-mask="false">
+  <n-modal v-model:show="showEQModal" :mask-closable="true" :unstable-show-mask="false" :z-index="9999999">
     <div class="eq-modal-content">
       <div class="modal-close" @click="showEQModal = false">
         <i class="ri-close-line"></i>
@@ -36,7 +36,7 @@
   </n-modal>
 
   <!-- 定时关闭弹窗 -->
-  <n-modal v-model:show="playerStore.showSleepTimer" :mask-closable="true" :unstable-show-mask="false">
+  <n-modal v-model:show="playerStore.showSleepTimer" :mask-closable="true" :unstable-show-mask="false" :z-index="9999999">
     <div class="timer-modal-content">
       <div class="modal-close" @click="playerStore.showSleepTimer = false">
         <i class="ri-close-line"></i>
@@ -46,7 +46,7 @@
   </n-modal>
 
   <!-- 播放速度设置弹窗 -->
-  <n-modal v-model:show="showSpeedModal" :mask-closable="true" :unstable-show-mask="false">
+  <n-modal v-model:show="showSpeedModal" :mask-closable="true" :unstable-show-mask="false" :z-index="9999999">
     <div class="speed-modal-content">
       <div class="modal-close" @click="showSpeedModal = false">
         <i class="ri-close-line"></i>
@@ -68,7 +68,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, h } from 'vue';
+import { ref, computed, h, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { DropdownOption } from 'naive-ui';
 import { usePlayerStore } from '@/store/modules/player';
@@ -84,9 +84,33 @@ const showEQModal = ref(false);
 const showSpeedModal = ref(false);
 const isEQVisible = ref(false);
 
+// 监听弹窗状态，确保互斥
+watch(showEQModal, (newValue) => {
+  if (newValue) {
+    // 如果EQ弹窗打开，关闭其他弹窗
+    playerStore.showSleepTimer = false;
+    showSpeedModal.value = false;
+  }
+});
+
+watch(() => playerStore.showSleepTimer, (newValue) => {
+  if (newValue) {
+    // 如果睡眠定时器弹窗打开，关闭其他弹窗
+    showEQModal.value = false;
+    showSpeedModal.value = false;
+  }
+});
+
+watch(showSpeedModal, (newValue) => {
+  if (newValue) {
+    // 如果播放速度弹窗打开，关闭其他弹窗
+    showEQModal.value = false;
+    playerStore.showSleepTimer = false;
+  }
+});
+
 // 播放速度状态
 const playbackRate = computed(() => playerStore.playbackRate);
-
 
 // 播放速度选项
 const playbackRateOptions = [
@@ -131,6 +155,12 @@ const dropdownOptions = computed<DropdownOption[]>(() => [
 
 // 处理菜单选择
 const handleSelect = (key: string) => {
+  // 先关闭所有弹窗
+  showEQModal.value = false;
+  playerStore.showSleepTimer = false;
+  showSpeedModal.value = false;
+  
+  // 然后仅打开所选弹窗
   switch (key) {
     case 'eq':
       showEQModal.value = true;
@@ -212,9 +242,13 @@ const selectSpeed = (speed: number) => {
 .eq-modal-content,
 .timer-modal-content,
 .speed-modal-content {
-  @apply p-6 rounded-3xl bg-white dark:bg-dark;
+  @apply p-6 rounded-3xl bg-light-100 dark:bg-dark-100 bg-opacity-80 filter backdrop-blur-sm;
   max-width: 600px;
   margin: 0 auto;
+}
+
+.eq-modal-content {
+  @apply p-10 max-w-[800px];
 }
 
 .speed-modal-content {

@@ -2,7 +2,7 @@
   <div class="eq-control">
     <div class="eq-header">
       <h3>{{ t('player.eq.title') }}
-        <n-tag type="warning" size="small" round>
+        <n-tag type="warning" size="small" round v-if="!isElectron">
           桌面版可用，网页端不支持
         </n-tag>
       </h3>
@@ -56,6 +56,7 @@ import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { audioService } from '@/services/audioService';
+import { isElectron } from '@/utils';
 
 const { t } = useI18n();
 
