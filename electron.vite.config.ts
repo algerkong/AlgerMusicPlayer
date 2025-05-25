@@ -37,6 +37,7 @@ export default defineConfig({
         resolvers: [NaiveUiResolver()]
       })
     ],
+    publicDir: resolve('resources'),
     server: {
       proxy: {
         // with options
