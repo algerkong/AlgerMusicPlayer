@@ -11,6 +11,8 @@ export default {
   mute: 'Mute',
   unmute: 'Unmute',
   songNum: 'Song Number: {num}',
+  addCorrection: 'Add {num} seconds',
+  subtractCorrection: 'Subtract {num} seconds',
   playFailed: 'Play Failed, Play Next Song',
   playMode: {
     sequence: 'Sequence',

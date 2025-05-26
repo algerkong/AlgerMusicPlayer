@@ -135,12 +135,13 @@
               <span>{{ t('player.lrc.noLrc') }}</span>
             </div>
           </div>
+          <!-- 歌词右下角矫正按钮组件 -->
+          <LyricCorrectionControl
+            v-if="!isMobile"
+            :correction-time="correctionTime"
+            @adjust="adjustCorrectionTime"
+          />
         </n-layout>
-        <!-- 时间矫正 -->
-        <!-- <div class="music-content-time">
-          <n-button @click="reduceCorrectionTime(0.2)">-</n-button>
-          <n-button @click="addCorrectionTime(0.2)">+</n-button>
-        </div> -->
       </div>
     </div>
   </n-drawer>
@@ -153,6 +154,7 @@ import { useI18n } from 'vue-i18n';
 
 import LyricSettings from '@/components/lyric/LyricSettings.vue';
 import MiniPlayBar from '@/components/player/MiniPlayBar.vue';
+import LyricCorrectionControl from '@/components/lyric/LyricCorrectionControl.vue';
 import {
   artistList,
   lrcArray,
@@ -160,7 +162,9 @@ import {
   playMusic,
   setAudioTime,
   textColors,
-  useLyricProgress
+  useLyricProgress,
+  correctionTime,
+  adjustCorrectionTime
 } from '@/hooks/MusicHook';
 import { useArtist } from '@/hooks/useArtist';
 import { usePlayerStore } from '@/store/modules/player';
@@ -796,5 +800,13 @@ defineExpose({
   font-size: 48px;
   color: white;
   animation: spin 1s linear infinite;
+}
+
+.lyric-correction-btns-mac {
+  /* 仅在 hover 歌词区域时显示 */
+  .music-lrc:hover & {
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
 }
 </style>

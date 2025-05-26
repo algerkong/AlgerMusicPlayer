@@ -19,7 +19,6 @@ export const lrcTimeArray = ref<number[]>([]); // 歌词时间数组
 export const nowTime = ref(0); // 当前播放时间
 export const allTime = ref(0); // 总播放时间
 export const nowIndex = ref(0); // 当前播放歌词
-export const correctionTime = ref(0.4); // 歌词矫正时间Correction time
 export const currentLrcProgress = ref(0); // 来存储当前歌词的进度
 export const playMusic = computed(() => playerStore.playMusic as SongResult); // 当前播放歌曲
 export const sound = ref<Howl | null>(audioService.getCurrentSound());
@@ -482,25 +481,64 @@ export const pause = () => {
   }
 };
 
-// 增加矫正时间
-export const addCorrectionTime = (time: number) => (correctionTime.value += time);
+// 歌词矫正时间映射（每首歌独立）
+const CORRECTION_KEY = 'lyric-correction-map';
+const correctionTimeMap = ref<Record<string, number>>({});
 
-// 减少矫正时间
-export const reduceCorrectionTime = (time: number) => (correctionTime.value -= time);
+// 初始化 correctionTimeMap
+const loadCorrectionMap = () => {
+  try {
+    const raw = localStorage.getItem(CORRECTION_KEY);
+    correctionTimeMap.value = raw ? JSON.parse(raw) : {};
+  } catch {
+    correctionTimeMap.value = {};
+  }
+};
+const saveCorrectionMap = () => {
+  localStorage.setItem(CORRECTION_KEY, JSON.stringify(correctionTimeMap.value));
+};
+
+loadCorrectionMap();
+
+// 歌词矫正时间，当前歌曲
+export const correctionTime = ref(0);
+
+// 切歌时自动读取矫正时间
+watch(
+  () => playMusic.value?.id,
+  (id) => {
+    if (!id) return;
+    correctionTime.value = correctionTimeMap.value[id] ?? 0;
+  },
+  { immediate: true }
+);
+
+/**
+ * 调整歌词矫正时间（每首歌独立）
+ * @param delta 增加/减少的秒数（正为加，负为减）
+ */
+export const adjustCorrectionTime = (delta: number) => {
+  const id = playMusic.value?.id;
+  if (!id) return;
+  const newVal = Math.max(-10, Math.min(10, (correctionTime.value ?? 0) + delta));
+  correctionTime.value = newVal;
+  correctionTimeMap.value[id] = newVal;
+  saveCorrectionMap();
+};
 
 // 获取当前播放歌词
 export const isCurrentLrc = (index: number, time: number): boolean => {
   const currentTime = lrcTimeArray.value[index];
   const nextTime = lrcTimeArray.value[index + 1];
-  const nowTime = time + correctionTime.value;
-  const isTrue = nowTime > currentTime && nowTime < nextTime;
-  return isTrue;
+  const correctedTime = time + correctionTime.value;
+  return correctedTime > currentTime && correctedTime < nextTime;
 };
 
 // 获取当前播放歌词INDEX
 export const getLrcIndex = (time: number): number => {
+  const correctedTime = time + correctionTime.value;
   for (let i = 0; i < lrcTimeArray.value.length; i++) {
-    if (isCurrentLrc(i, time)) {
+    if (isCurrentLrc(i, correctedTime - correctionTime.value)) {
       nowIndex.value = i;
       return i;
     }
@@ -517,15 +555,22 @@ const currentLrcTiming = computed(() => {
 
 // 获取歌词样式
 export const getLrcStyle = (index: number) => {
-  if (index === nowIndex.value) {
+  const currentTime = nowTime.value + correctionTime.value;
+  const start = lrcTimeArray.value[index];
+  const end = lrcTimeArray.value[index + 1] ?? (start + 1);
+
+  if (currentTime >= start && currentTime < end) {
+    // 当前句，显示进度
+    const progress = ((currentTime - start) / (end - start)) * 100;
     return {
-      backgroundImage: `linear-gradient(to right, #ffffff ${currentLrcProgress.value}%, #ffffff8a ${currentLrcProgress.value}%)`,
+      backgroundImage: `linear-gradient(to right, #ffffff ${progress}%, #ffffff8a ${progress}%)`,
       backgroundClip: 'text',
       WebkitBackgroundClip: 'text',
       color: 'transparent',
       transition: 'background-image 0.1s linear'
     };
   }
+  // 其它句
   return {};
 };
 
