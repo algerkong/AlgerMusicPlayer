@@ -88,7 +88,11 @@ export default {
     restart: '重启',
     refresh: '刷新',
     currentVersion: '当前版本',
-    searchPlaceholder: '搜索点什么吧...'
+    searchPlaceholder: '搜索点什么吧...',
+    zoom: '页面缩放',
+    zoom100: '标准缩放100%',
+    resetZoom: '点击重置缩放',
+    zoomDefault: '标准缩放'
   },
   titleBar: {
     closeTitle: '请选择关闭方式',
