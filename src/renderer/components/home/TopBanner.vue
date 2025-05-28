@@ -128,7 +128,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref, watchEffect } from 'vue';
+import { onMounted, ref, watchEffect, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
@@ -247,22 +247,31 @@ const loadArtistData = async () => {
   }
 }
 
+
+// 提取每日推荐加载逻辑到单独的函数
+const loadDayRecommendData = async () => {
+  try {
+    const {
+      data: { data: dayRecommend }
+    } = await getDayRecommend();
+    const dayRecommendSource = dayRecommend as unknown as IDayRecommend;
+    dayRecommendData.value = {
+      ...dayRecommendSource,
+      dailySongs: dayRecommendSource.dailySongs.filter((song: any) => !playerStore.dislikeList.includes(song.id))
+    };
+  } catch (error) {
+    console.error('获取每日推荐失败:', error);
+  }
+};
+
 // 加载不需要登录的数据
 const loadNonUserData = async () => {
   try {
-    // 获取每日推荐
-    try {
-      const {
-        data: { data: dayRecommend }
-      } = await getDayRecommend();
-      const dayRecommendSource = dayRecommend as unknown as IDayRecommend;
-      dayRecommendData.value = {
-        ...dayRecommendSource,
-        dailySongs: dayRecommendSource.dailySongs.filter((song: any) =>!playerStore.dislikeList.includes(song.id))
-      };
-    } catch (error) {
-      console.error('获取每日推荐失败:', error);
+    // 获取每日推荐（仅在用户未登录时加载，已登录用户会通过watchEffect触发loadDayRecommendData）
+    if (!userStore.user) {
+      await loadDayRecommendData();
     }
+    
     // 获取热门歌手
     const { data: singerData } = await getHotSinger({ offset: 0, limit: 5 });
     hotSingerData.value = singerData;
@@ -419,8 +428,10 @@ const loadFullPlaylist = async (trackIds: { id: number }[], initialSongs: SongRe
 watchEffect(() => {
   if (userStore.user) {
     loadUserData();
+    loadDayRecommendData();
   }
 });
+
 
 const getPlaylistGridClass = (length: number) => {
   switch (length) {
