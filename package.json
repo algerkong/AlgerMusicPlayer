@@ -28,6 +28,7 @@
     "cors": "^2.8.5",
     "electron-store": "^8.1.0",
     "electron-updater": "^6.6.2",
+    "electron-window-state": "^5.0.3",
     "express": "^4.18.2",
     "font-list": "^1.5.1",
     "husky": "^9.1.7",

@@ -24,5 +24,6 @@
   "unlimitedDownload": false,
   "enableMusicUnblock": true,
   "enabledMusicSources": ["migu", "kugou", "pyncmd", "bilibili", "kuwo"],
-  "showTopAction": false
+  "showTopAction": false,
+  "contentZoomFactor": 1
 }

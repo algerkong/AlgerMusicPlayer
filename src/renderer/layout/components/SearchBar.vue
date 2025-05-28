@@ -62,6 +62,24 @@
             <i class="iconfont ri-settings-3-line"></i>
             <span>{{ t('comp.searchBar.set') }}</span>
           </div>
+          <div class="menu-item" v-if="isElectron">
+            <i class="iconfont ri-zoom-in-line"></i>
+            <span>{{ t('comp.searchBar.zoom')}}</span>
+            <div class="zoom-controls ml-auto">
+              <n-button quaternary circle size="tiny" @click="decreaseZoom">
+                <i class="ri-subtract-line"></i>
+              </n-button>
+              <n-tooltip trigger="hover">
+                <template #trigger>
+                  <span class="zoom-value" :class="{'zoom-100': isZoom100()}" @click="resetZoom">{{ Math.round(zoomFactor * 100) }}%</span>
+                </template>
+                {{ isZoom100() ? t('comp.searchBar.zoom100'): t('comp.searchBar.resetZoom')}}
+              </n-tooltip>
+              <n-button quaternary circle size="tiny" @click="increaseZoom">
+                <i class="ri-add-line"></i>
+              </n-button>
+            </div>
+          </div>
           <div class="menu-item">
             <i class="iconfont" :class="isDark ? 'ri-moon-line' : 'ri-sun-line'"></i>
             <span>{{ t('comp.searchBar.theme') }}</span>
@@ -114,11 +132,12 @@ import { getUserDetail } from '@/api/login';
 import alipay from '@/assets/alipay.png';
 import wechat from '@/assets/wechat.png';
 import Coffee from '@/components/Coffee.vue';
+import { useZoom } from '@/hooks/useZoom';
 import { SEARCH_TYPES, USER_SET_OPTIONS } from '@/const/bar-const';
 import { useSearchStore } from '@/store/modules/search';
 import { useSettingsStore } from '@/store/modules/settings';
 import { useUserStore } from '@/store/modules/user';
-import { getImgUrl } from '@/utils';
+import { getImgUrl, isElectron } from '@/utils';
 import { checkUpdate, UpdateResult } from '@/utils/update';
 
 import config from '../../../../package.json';
@@ -129,6 +148,16 @@ const settingsStore = useSettingsStore();
 const userStore = useUserStore();
 const userSetOptions = ref(USER_SET_OPTIONS);
 const { t } = useI18n();
+
+// 使用缩放hook
+const { 
+  zoomFactor, 
+  initZoomFactor, 
+  increaseZoom, 
+  decreaseZoom, 
+  resetZoom, 
+  isZoom100 
+} = useZoom();
 
 // 显示返回按钮
 const showBackButton = computed(() => {
@@ -182,6 +211,7 @@ onMounted(() => {
   loadHotSearchKeyword();
   loadPage();
   checkForUpdates();
+  isElectron && initZoomFactor();
 });
 
 const isDark = computed({
@@ -379,6 +409,23 @@ const toGithubRelease = () => {
         .version-number {
           @apply text-xs px-2 py-0.5 rounded;
           @apply bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300;
+        }
+      }
+      
+      // 缩放控制样式
+      .zoom-controls {
+        @apply flex items-center gap-1;
+        
+        .zoom-value {
+          @apply text-xs px-2 py-0.5 rounded cursor-pointer;
+          @apply bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300;
+          @apply hover:bg-gray-200 dark:hover:bg-gray-600;
+          transition: all 0.2s ease;
+          
+          &.zoom-100 {
+            @apply bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 font-bold;
+            @apply hover:bg-green-200 dark:hover:bg-green-800;
+          }
         }
       }
     }

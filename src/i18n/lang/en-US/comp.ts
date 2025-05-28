@@ -90,7 +90,11 @@ export default {
     restart: 'Restart',
     refresh: 'Refresh',
     currentVersion: 'Current Version',
-    searchPlaceholder: 'Search for something...'
+    searchPlaceholder: 'Search for something...',
+    zoom: 'Zoom',
+    zoom100: 'Zoom 100%',
+    resetZoom: 'Reset Zoom',
+    zoomDefault: 'Default Zoom'
   },
   titleBar: {
     closeTitle: 'Choose how to close',
