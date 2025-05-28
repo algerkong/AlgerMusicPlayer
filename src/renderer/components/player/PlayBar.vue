@@ -483,12 +483,13 @@ const openPlayListDrawer = () => {
 
   .volume-slider {
     @apply absolute opacity-0 invisible transition-all duration-300 bottom-[30px] left-1/2 -translate-x-1/2 h-[180px] px-2 py-4 rounded-xl;
-    @apply bg-light dark:bg-gray-800;
+    @apply bg-light dark:bg-dark-200;
     @apply border border-gray-200 dark:border-gray-700;
     
     .volume-percentage {
-      @apply absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-medium bg-light dark:bg-gray-800 px-2 py-1 rounded-md;
+      @apply absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-medium bg-light dark:bg-dark-200 px-2 py-1 rounded-md;
       @apply border border-gray-200 dark:border-gray-700;
+      @apply text-gray-800 dark:text-white;
       white-space: nowrap;
     }
   }
@@ -597,7 +598,7 @@ const openPlayListDrawer = () => {
 
     // 确保悬停时提示样式正确
     .n-slider-tooltip {
-      @apply bg-gray-800 text-white text-xs py-1 px-2 rounded;
+      @apply bg-dark-200 text-white text-xs py-1 px-2 rounded;
       z-index: 999999;
     }
   }
