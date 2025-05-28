@@ -54,7 +54,7 @@
 
         <n-popover v-if="component" trigger="hover" :z-index="99999999" placement="top" :show-arrow="false">
           <template #trigger>
-            <div class="function-button" @click="mute">
+            <div class="function-button" @click="mute" @wheel.prevent="handleVolumeWheel">
               <i class="iconfont" :class="getVolumeIcon"></i>
             </div>
           </template>
@@ -64,6 +64,7 @@
               :step="0.01"
               :tooltip="false"
               vertical
+              @wheel.prevent="handleVolumeWheel"
             ></n-slider>
           </div>
         </n-popover>
@@ -181,6 +182,14 @@ const mute = () => {
   } else {
     volumeSlider.value = 0;
   }
+};
+
+// 鼠标滚轮调整音量
+const handleVolumeWheel = (e: WheelEvent) => {
+  // 向上滚动增加音量，向下滚动减少音量
+  const delta = e.deltaY < 0 ? 5 : -5;
+  const newValue = Math.min(Math.max(volumeSlider.value + delta, 0), 100);
+  volumeSlider.value = newValue;
 };
 
 // 收藏相关
@@ -529,6 +538,50 @@ const setMusicFull = () => {
 .volume-slider-wrapper {
   @apply p-2 py-4 rounded-xl bg-white dark:bg-dark-100 shadow-lg bg-opacity-90 backdrop-blur;
   height: 160px;
+  
+  :deep(.n-slider) {
+    --n-rail-height: 4px;
+    --n-rail-color: theme('colors.gray.200');
+    --n-rail-color-dark: theme('colors.gray.700');
+    --n-fill-color: theme('colors.green.500');
+    --n-handle-size: 12px;
+    --n-handle-color: theme('colors.green.500');
+
+    &.n-slider--vertical {
+      height: 100%;
+
+      .n-slider-rail {
+        width: 4px;
+      }
+
+      &:hover {
+        .n-slider-rail {
+          width: 6px;
+        }
+
+        .n-slider-handle {
+          width: 14px;
+          height: 14px;
+        }
+      }
+    }
+
+    .n-slider-rail {
+      @apply overflow-hidden transition-all duration-200;
+      @apply bg-gray-500 dark:bg-dark-300 bg-opacity-10 !important;
+    }
+
+    .n-slider-handle {
+      @apply transition-all duration-200;
+      opacity: 0;
+    }
+
+    &:hover {
+      .n-slider-handle {
+        opacity: 1;
+      }
+    }
+  }
 }
 
 // 播放列表样式
