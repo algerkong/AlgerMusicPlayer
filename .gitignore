@@ -27,3 +27,5 @@ out
 .github/deploy_keys
 
 resources/android/**/*
+
+.cursor
