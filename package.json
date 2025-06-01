@@ -54,7 +54,7 @@
     "@vue/eslint-config-typescript": "^14.5.0",
     "@vue/runtime-core": "^3.5.0",
     "@vueuse/core": "^11.3.0",
-    "@vueuse/electron": "^11.3.0",
+    "@vueuse/electron": "^13.3.0",
     "animate.css": "^4.1.1",
     "autoprefixer": "^10.4.20",
     "axios": "^1.7.7",
