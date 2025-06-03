@@ -6,6 +6,11 @@ import * as http from 'http';
 import * as https from 'https';
 import * as NodeID3 from 'node-id3';
 import * as path from 'path';
+import * as os from 'os';
+import * as mm from 'music-metadata';
+// 导入文件类型库，这里使用CommonJS兼容方式导入
+// 对于file-type v21.0.0需要这样导入
+import { fileTypeFromFile } from 'file-type';
 
 import { getStore } from './config';
 
@@ -36,9 +41,18 @@ export function initializeFileManager() {
   // 注册本地文件协议
   protocol.registerFileProtocol('local', (request, callback) => {
     try {
-      const decodedUrl = decodeURIComponent(request.url);
-      const filePath = decodedUrl.replace('local://', '');
-
+      let url = request.url;
+      // local://C:/Users/xxx.mp3
+      let filePath = decodeURIComponent(url.replace('local:///', ''));
+      
+      // 兼容 local:///C:/Users/xxx.mp3 这种情况
+      if (/^\/[a-zA-Z]:\//.test(filePath)) {
+        filePath = filePath.slice(1);
+      }
+      
+      // 还原为系统路径格式
+      filePath = path.normalize(filePath);
+      
       // 检查文件是否存在
       if (!fs.existsSync(filePath)) {
         console.error('File not found:', filePath);
@@ -51,6 +65,31 @@ export function initializeFileManager() {
       console.error('Error handling local protocol:', error);
       callback({ error: -2 }); // net::FAILED
     }
+  });
+
+  // 检查文件是否存在
+  ipcMain.handle('check-file-exists', (_, filePath) => {
+    try {
+      return fs.existsSync(filePath);
+    } catch (error) {
+      console.error('Error checking if file exists:', error);
+      return false;
+    }
+  });
+
+  // 获取支持的音频格式列表
+  ipcMain.handle('get-supported-audio-formats', () => {
+    return {
+      formats: [
+        { ext: 'mp3', name: 'MP3' },
+        { ext: 'm4a', name: 'M4A/AAC' },
+        { ext: 'flac', name: 'FLAC' },
+        { ext: 'wav', name: 'WAV' },
+        { ext: 'ogg', name: 'OGG Vorbis' },
+        { ext: 'aac', name: 'AAC' }
+      ],
+      default: 'mp3'
+    };
   });
 
   // 通用的选择目录处理
@@ -311,6 +350,7 @@ async function downloadMusic(
 ) {
   let finalFilePath = '';
   let writer: fs.WriteStream | null = null;
+  let tempFilePath = '';
 
   try {
     // 使用配置Store来获取设置
@@ -322,25 +362,21 @@ async function downloadMusic(
     // 清理文件名中的非法字符
     const sanitizedFilename = sanitizeFilename(filename);
 
-    // 从URL中获取文件扩展名，如果没有则使用传入的type或默认mp3
-    const urlExt = type ? `.${type}` : '.mp3';
-    const filePath = path.join(downloadPath, `${sanitizedFilename}${urlExt}`);
-
-    // 检查文件是否已存在，如果存在则添加序号
-    finalFilePath = filePath;
-    let counter = 1;
-    while (fs.existsSync(finalFilePath)) {
-      const ext = path.extname(filePath);
-      const nameWithoutExt = filePath.slice(0, -ext.length);
-      finalFilePath = `${nameWithoutExt} (${counter})${ext}`;
-      counter++;
+    // 创建临时文件路径 (在系统临时目录中创建)
+    const tempDir = path.join(os.tmpdir(), 'AlgerMusicPlayerTemp');
+    
+    // 确保临时目录存在
+    if (!fs.existsSync(tempDir)) {
+      fs.mkdirSync(tempDir, { recursive: true });
     }
+    
+    tempFilePath = path.join(tempDir, `${Date.now()}_${sanitizedFilename}.tmp`);
 
     // 先获取文件大小
     const headResponse = await axios.head(url);
     const totalSize = parseInt(headResponse.headers['content-length'] || '0', 10);
 
-    // 开始下载
+    // 开始下载到临时文件
     const response = await axios({
       url,
       method: 'GET',
@@ -350,7 +386,7 @@ async function downloadMusic(
       httpsAgent: new https.Agent({ keepAlive: true })
     });
 
-    writer = fs.createWriteStream(finalFilePath);
+    writer = fs.createWriteStream(tempFilePath);
     let downloadedSize = 0;
 
     // 使用 data 事件来跟踪下载进度
@@ -362,7 +398,7 @@ async function downloadMusic(
         progress,
         loaded: downloadedSize,
         total: totalSize,
-        path: finalFilePath,
+        path: tempFilePath,
         status: progress === 100 ? 'completed' : 'downloading',
         songInfo: songInfo || {
           name: filename,
@@ -380,10 +416,76 @@ async function downloadMusic(
     });
 
     // 验证文件是否完整下载
-    const stats = fs.statSync(finalFilePath);
+    const stats = fs.statSync(tempFilePath);
     if (stats.size !== totalSize) {
       throw new Error('文件下载不完整');
     }
+
+    // 检测文件类型
+    let fileExtension = '';
+    
+    try {
+      // 首先尝试使用file-type库检测
+      const fileType = await fileTypeFromFile(tempFilePath);
+      if (fileType && fileType.ext) {
+        fileExtension = `.${fileType.ext}`;
+        console.log(`文件类型检测结果: ${fileType.mime}, 扩展名: ${fileExtension}`);
+      } else {
+        // 如果file-type无法识别，尝试使用music-metadata
+        const metadata = await mm.parseFile(tempFilePath);
+        if (metadata && metadata.format) {
+          // 根据format.container或codec判断扩展名
+          const formatInfo = metadata.format;
+          const container = formatInfo.container || '';
+          const codec = formatInfo.codec || '';
+          
+          // 音频格式映射表
+          const formatMap = {
+            'mp3': ['MPEG', 'MP3', 'mp3'],
+            'aac': ['AAC'],
+            'flac': ['FLAC'],
+            'ogg': ['Ogg', 'Vorbis'],
+            'wav': ['WAV', 'PCM'],
+            'm4a': ['M4A', 'MP4']
+          };
+          
+          // 查找匹配的格式
+          const format = Object.entries(formatMap).find(([_, keywords]) => 
+            keywords.some(keyword => container.includes(keyword) || codec.includes(keyword))
+          );
+          
+          // 设置文件扩展名，如果没找到则默认为mp3
+          fileExtension = format ? `.${format[0]}` : '.mp3';
+          
+          console.log(`music-metadata检测结果: 容器:${container}, 编码:${codec}, 扩展名: ${fileExtension}`);
+        } else {
+          // 两种方法都失败，使用传入的type或默认mp3
+          fileExtension = type ? `.${type}` : '.mp3';
+          console.log(`无法检测文件类型，使用默认扩展名: ${fileExtension}`);
+        }
+      }
+    } catch (err) {
+      console.error('检测文件类型失败:', err);
+      // 检测失败，使用传入的type或默认mp3
+      fileExtension = type ? `.${type}` : '.mp3';
+    }
+
+    // 使用检测到的文件扩展名创建最终文件路径
+    const filePath = path.join(downloadPath, `${sanitizedFilename}${fileExtension}`);
+
+    // 检查文件是否已存在，如果存在则添加序号
+    finalFilePath = filePath;
+    let counter = 1;
+    while (fs.existsSync(finalFilePath)) {
+      const ext = path.extname(filePath);
+      const nameWithoutExt = filePath.slice(0, -ext.length);
+      finalFilePath = `${nameWithoutExt} (${counter})${ext}`;
+      counter++;
+    }
+
+    // 将临时文件移动到最终位置
+    fs.copyFileSync(tempFilePath, finalFilePath);
+    fs.unlinkSync(tempFilePath); // 删除临时文件
 
     // 下载歌词
     let lyricData = null;
@@ -413,8 +515,7 @@ async function downloadMusic(
             }
           }
 
-          // 不再单独写入歌词文件，只保存在ID3标签中
-          console.log('歌词已准备好，将写入ID3标签');
+          console.log('歌词已准备好，将写入元数据');
         }
       }
     } catch (lyricError) {
@@ -437,9 +538,7 @@ async function downloadMusic(
 
           // 获取封面图片的buffer
           coverImageBuffer = Buffer.from(coverResponse.data);
-
-          // 不再单独保存封面文件，只保存在ID3标签中
-          console.log('封面已准备好，将写入ID3标签');
+          console.log('封面已准备好，将写入元数据');
         }
       }
     } catch (coverError) {
@@ -447,54 +546,58 @@ async function downloadMusic(
       // 继续处理，不影响音乐下载
     }
 
-    // 在写入ID3标签前，先移除可能存在的旧标签
-    try {
-      NodeID3.removeTags(finalFilePath);
-    } catch (err) {
-      console.error('Error removing existing ID3 tags:', err);
-    }
-
-    // 强化ID3标签的写入格式
-
+    const fileFormat = fileExtension.toLowerCase();
     const artistNames =
       (songInfo?.ar || songInfo?.song?.artists)?.map((a: any) => a.name).join('/ ') || '未知艺术家';
-    const tags = {
-      title: filename,
-      artist: artistNames,
-      TPE1: artistNames,
-      TPE2: artistNames,
-      album: songInfo?.al?.name || songInfo?.song?.album?.name || songInfo?.name || filename,
-      APIC: {
-        // 专辑封面
-        imageBuffer: coverImageBuffer,
-        type: {
-          id: 3,
-          name: 'front cover'
-        },
-        description: 'Album cover',
-        mime: 'image/jpeg'
-      },
-      USLT: {
-        // 歌词
-        language: 'chi',
-        description: 'Lyrics',
-        text: lyricsContent || ''
-      },
-      trackNumber: songInfo?.no || undefined,
-      year: songInfo?.publishTime
-        ? new Date(songInfo.publishTime).getFullYear().toString()
-        : undefined
-    };
 
-    try {
-      const success = NodeID3.write(tags, finalFilePath);
-      if (!success) {
-        console.error('Failed to write ID3 tags');
-      } else {
-        console.log('ID3 tags written successfully');
+    // 根据文件类型处理元数据
+    if (['.mp3'].includes(fileFormat)) {
+      // 对MP3文件使用NodeID3处理ID3标签
+      try {
+        // 在写入ID3标签前，先移除可能存在的旧标签
+        NodeID3.removeTags(finalFilePath);
+        
+        const tags = {
+          title: filename,
+          artist: artistNames,
+          TPE1: artistNames,
+          TPE2: artistNames,
+          album: songInfo?.al?.name || songInfo?.song?.album?.name || songInfo?.name || filename,
+          APIC: {
+            // 专辑封面
+            imageBuffer: coverImageBuffer,
+            type: {
+              id: 3,
+              name: 'front cover'
+            },
+            description: 'Album cover',
+            mime: 'image/jpeg'
+          },
+          USLT: {
+            // 歌词
+            language: 'chi',
+            description: 'Lyrics',
+            text: lyricsContent || ''
+          },
+          trackNumber: songInfo?.no || undefined,
+          year: songInfo?.publishTime
+            ? new Date(songInfo.publishTime).getFullYear().toString()
+            : undefined
+        };
+
+        const success = NodeID3.write(tags, finalFilePath);
+        if (!success) {
+          console.error('Failed to write ID3 tags');
+        } else {
+          console.log('ID3 tags written successfully');
+        }
+      } catch (err) {
+        console.error('Error writing ID3 tags:', err);
       }
-    } catch (err) {
-      console.error('Error writing ID3 tags:', err);
+    } else {
+      // 对于非MP3文件，使用music-metadata来写入元数据可能需要专门的库
+      // 或者根据不同文件类型使用专用工具，暂时只记录但不处理
+      console.log(`文件类型 ${fileFormat} 不支持使用NodeID3写入标签，跳过元数据写入`);
     }
 
     // 保存下载信息
@@ -519,7 +622,7 @@ async function downloadMusic(
         size: totalSize,
         path: finalFilePath,
         downloadTime: Date.now(),
-        type: type || 'mp3',
+        type: fileExtension.substring(1), // 去掉前面的点号，只保留扩展名
         lyric: lyricData
       };
 
@@ -571,6 +674,17 @@ async function downloadMusic(
     if (writer) {
       writer.end();
     }
+    
+    // 清理临时文件
+    if (tempFilePath && fs.existsSync(tempFilePath)) {
+      try {
+        fs.unlinkSync(tempFilePath);
+      } catch (e) {
+        console.error('Failed to delete temporary file:', e);
+      }
+    }
+    
+    // 清理未完成的最终文件
     if (finalFilePath && fs.existsSync(finalFilePath)) {
       try {
         fs.unlinkSync(finalFilePath);

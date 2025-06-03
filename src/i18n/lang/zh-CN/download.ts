@@ -44,5 +44,11 @@ export default {
     downloadComplete: '{filename} 下载完成',
     downloadFailed: '{filename} 下载失败: {error}'
   },
-  loading: '加载中...'
+  loading: '加载中...',
+  playStarted: '开始播放: {name}',
+  playFailed: '播放失败: {name}',
+  path: {
+    copied: '路径已复制到剪贴板',
+    copyFailed: '复制路径失败'
+  }
 };

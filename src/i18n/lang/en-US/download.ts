@@ -45,5 +45,11 @@ export default {
     downloadComplete: '{filename} download completed',
     downloadFailed: '{filename} download failed: {error}'
   },
-  loading: 'Loading...'
+  loading: 'Loading...',
+  playStarted: 'Play started: {name}',
+  playFailed: 'Play failed: {name}',
+  path: {
+    copied: 'Path copied to clipboard',
+    copyFailed: 'Failed to copy path'
+  }
 };

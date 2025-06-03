@@ -22,6 +22,18 @@ const otherRouter = [
     component: () => import('@/views/user/followers.vue')
   },
   {
+    path: '/downloads',
+    name: 'downloads',
+    meta: {
+      title: '下载管理',
+      keepAlive: true,
+      showInMenu: true,
+      back: true,
+      icon: 'ri-download-cloud-2-line'
+    },
+    component: () => import('@/views/download/DownloadPage.vue')
+  },
+  {
     path: '/user/detail/:uid',
     name: 'userDetail',
     meta: {
