@@ -38,7 +38,7 @@
         </n-tooltip>
 
         <!-- 多选/下载操作 -->
-        <div v-if="filteredSongs.length > 0" class="flex items-center gap-2">
+        <div v-if="filteredSongs.length > 0 && isElectron" class="flex items-center gap-2">
           <n-tooltip v-if="!isSelecting" placement="bottom" trigger="hover">
             <template #trigger>
               <div class="action-button hover-green" @click="startSelect">
@@ -210,7 +210,7 @@ import SongItem from '@/components/common/SongItem.vue';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import { useMusicStore, usePlayerStore } from '@/store';
 import { SongResult } from '@/type/music';
-import { getImgUrl, isMobile, setAnimationClass } from '@/utils';
+import { getImgUrl, isElectron, isMobile, setAnimationClass } from '@/utils';
 import { useDownload } from '@/hooks/useDownload';
 
 const { t } = useI18n();
