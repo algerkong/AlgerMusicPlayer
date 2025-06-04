@@ -76,6 +76,16 @@ const otherRouter = [
       back: true
     },
     component: () => import('@/views/music/MusicListPage.vue')
-  }
+  },
+  {
+    path: '/playlist/import',
+    name: 'playlistImport',
+    meta: {
+      title: '歌单导入',
+      keepAlive: true,
+      back: true
+    },
+    component: () => import('@/views/playlist/ImportPlaylist.vue')
+  },
 ];
 export default otherRouter;

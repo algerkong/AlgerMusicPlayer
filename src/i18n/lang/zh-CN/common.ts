@@ -27,6 +27,7 @@ export default {
   refresh: '刷新',
   retry: '重试',
   reset: '重置',
+  back: '返回',
   copySuccess: '已复制到剪贴板',
   copyFailed: '复制失败',
   validation: {

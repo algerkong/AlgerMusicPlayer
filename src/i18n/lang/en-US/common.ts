@@ -27,6 +27,7 @@ export default {
   refresh: 'Refresh',
   retry: 'Retry',
   reset: 'Reset',
+  back: 'Back',
   copySuccess: 'Copied to clipboard',
   copyFailed: 'Copy failed',
   validation: {

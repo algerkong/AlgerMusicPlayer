@@ -28,7 +28,10 @@
         <div class="uesr-signature">{{ userDetail.profile.signature }}</div>
 
         <div class="play-list" :class="setAnimationClass('animate__fadeInLeft')">
-          <div class="title">{{ t('user.playlist.created') }}</div>
+          <div class="title">
+            <div>{{ t('user.playlist.created') }}</div>
+            <div class="import-btn" @click="goToImportPlaylist" v-if="isElectron">{{ t('comp.playlist.import.button') }}</div>
+          </div>
           <n-scrollbar>
             <div
               v-for="(item, index) in playList"
@@ -105,7 +108,7 @@ import { usePlayerStore } from '@/store/modules/player';
 import { useUserStore } from '@/store/modules/user';
 import type { Playlist } from '@/type/listDetail';
 import type { IUserDetail } from '@/type/user';
-import { getImgUrl, isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
+import { getImgUrl, isElectron, isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
 
 defineOptions({
   name: 'User'
@@ -125,6 +128,10 @@ const listLoading = ref(false);
 const message = useMessage();
 
 const user = computed(() => userStore.user);
+
+const goToImportPlaylist = () => {
+  router.push('/playlist/import');
+};
 
 onBeforeUnmount(() => {
   mounted.value = false;
@@ -278,8 +285,13 @@ const showFollowList = () => {
       @apply bg-black bg-opacity-40;
     }
     .title {
-      @apply text-lg font-bold;
+      @apply text-lg font-bold flex items-center justify-between;
       @apply text-gray-900 dark:text-white;
+     .import-btn {
+      @apply bg-light-100 font-normal rounded-lg px-2 py-1 text-opacity-70 text-sm hover:bg-light-200 hover:text-green-500 dark:bg-dark-200 dark:hover:bg-dark-300 dark:hover:text-green-400;
+      @apply cursor-pointer;
+      @apply transition-all duration-200;
+     }
     }
 
     .user-name {
