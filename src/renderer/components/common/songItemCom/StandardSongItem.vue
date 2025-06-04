@@ -131,7 +131,6 @@ const artists = computed(() => baseItem.value?.artists || []);
 // 包装方法，避免直接访问可能为undefined的ref
 const onToggleSelect = () => {
   baseItem.value?.toggleSelect();
-  emit('select', props.item.id, !props.selected);
 };
 const onImageLoad = (event: Event) => baseItem.value?.imageLoad(event);
 const onArtistClick = (id: number) => baseItem.value?.handleArtistClick(id);

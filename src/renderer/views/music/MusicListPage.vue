@@ -36,6 +36,48 @@
           </template>
           {{ t('comp.musicList.addToPlaylist') }}
         </n-tooltip>
+
+        <!-- 多选/下载操作 -->
+        <div v-if="filteredSongs.length > 0" class="flex items-center gap-2">
+          <n-tooltip v-if="!isSelecting" placement="bottom" trigger="hover">
+            <template #trigger>
+              <div class="action-button hover-green" @click="startSelect">
+                <i class="icon iconfont ri-checkbox-multiple-line"></i>
+              </div>
+            </template>
+            {{ t('favorite.batchDownload')}}
+          </n-tooltip>
+          <div v-else class="flex items-center gap-2">
+            <n-checkbox
+              :checked="isAllSelected"
+              :indeterminate="isIndeterminate"
+              @update:checked="handleSelectAll"
+            >
+              {{ t('common.selectAll') }}
+            </n-checkbox>
+            <n-tooltip placement="bottom" trigger="hover">
+              <template #trigger>
+                <div
+                  class="action-button hover-green"
+                  :class="{ 'opacity-50 pointer-events-none': selectedSongs.length === 0 || isDownloading }"
+                  @click="selectedSongs.length && !isDownloading && handleBatchDownload()"
+                >
+                  <i class="icon iconfont ri-download-line" :class="{ 'animate-spin': isDownloading }"></i>
+                </div>
+              </template>
+              {{ t('favorite.download', { count: selectedSongs.length }) }}
+            </n-tooltip>
+            <n-tooltip placement="bottom" trigger="hover">
+              <template #trigger>
+                <div class="action-button" @click="cancelSelect">
+                  <i class="icon iconfont ri-close-line"></i>
+                </div>
+              </template>
+              {{ t('common.cancel') }}
+            </n-tooltip>
+          </div>
+        </div>
+
         <!-- 布局切换按钮 -->
         <div class="layout-toggle" v-if="!isMobile">
           <n-tooltip placement="bottom" trigger="hover">
@@ -132,8 +174,11 @@
                       :compact="isCompactLayout"
                       :item="formatSong(item)"
                       :can-remove="canRemove"
+                      :selectable="isSelecting"
+                      :selected="selectedSongs.includes(item.id as number)"
                       @play="handlePlay"
                       @remove-song="handleRemoveSong"
+                      @select="(id, selected) => handleSelect(id, selected)"
                     />
                   </div>
                 </template>
@@ -166,6 +211,7 @@ import PlayBottom from '@/components/common/PlayBottom.vue';
 import { useMusicStore, usePlayerStore } from '@/store';
 import { SongResult } from '@/type/music';
 import { getImgUrl, isMobile, setAnimationClass } from '@/utils';
+import { useDownload } from '@/hooks/useDownload';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -837,6 +883,53 @@ const addToPlaylist = () => {
   playerStore.setPlayList(newList);
   
   message.success(t('comp.musicList.addToPlaylistSuccess', { count: newSongs.length }));
+};
+
+// 多选下载相关状态和方法
+const isSelecting = ref(false);
+const selectedSongs = ref<number[]>([]);
+const { isDownloading, batchDownloadMusic } = useDownload();
+
+const startSelect = () => {
+  isSelecting.value = true;
+  selectedSongs.value = [];
+};
+const cancelSelect = () => {
+  isSelecting.value = false;
+  selectedSongs.value = [];
+};
+const handleSelect = (songId: number, selected: boolean) => {
+  if (selected) {
+    selectedSongs.value.push(songId);
+  } else {
+    selectedSongs.value = selectedSongs.value.filter((id) => id !== songId);
+  }
+};
+const isAllSelected = computed(() => {
+  return (
+    filteredSongs.value.length > 0 &&
+    selectedSongs.value.length === filteredSongs.value.length
+  );
+});
+const isIndeterminate = computed(() => {
+  return (
+    selectedSongs.value.length > 0 &&
+    selectedSongs.value.length < filteredSongs.value.length
+  );
+});
+const handleSelectAll = (checked: boolean) => {
+  if (checked) {
+    selectedSongs.value = filteredSongs.value.map((song) => song.id as number);
+  } else {
+    selectedSongs.value = [];
+  }
+};
+const handleBatchDownload = async () => {
+  const selectedSongsList = selectedSongs.value
+    .map((songId) => filteredSongs.value.find((s) => s.id === songId))
+    .filter((song) => song) as SongResult[];
+  await batchDownloadMusic(selectedSongsList);
+  cancelSelect();
 };
 </script>
 
