@@ -6,10 +6,144 @@ import { useMessage } from 'naive-ui';
 import { getSongUrl } from '@/store/modules/player';
 import type { SongResult } from '@/type/music';
 
+// 全局下载管理（闭包模式）
+const createDownloadManager = () => {
+  // 正在下载的文件集合
+  const activeDownloads = new Set<string>();
+  
+  // 已经发送了通知的文件集合（避免重复通知）
+  const notifiedDownloads = new Set<string>();
+  
+  // 事件监听器是否已初始化
+  let isInitialized = false;
+  
+  // 监听器引用（用于清理）
+  let completeListener: ((event: any, data: any) => void) | null = null;
+  let errorListener: ((event: any, data: any) => void) | null = null;
+  
+  return {
+    // 添加下载
+    addDownload: (filename: string) => {
+      activeDownloads.add(filename);
+    },
+    
+    // 移除下载
+    removeDownload: (filename: string) => {
+      activeDownloads.delete(filename);
+      // 延迟清理通知记录
+      setTimeout(() => {
+        notifiedDownloads.delete(filename);
+      }, 5000);
+    },
+    
+    // 标记文件已通知
+    markNotified: (filename: string) => {
+      notifiedDownloads.add(filename);
+    },
+    
+    // 检查文件是否已通知
+    isNotified: (filename: string) => {
+      return notifiedDownloads.has(filename);
+    },
+    
+    // 清理所有下载
+    clearDownloads: () => {
+      activeDownloads.clear();
+      notifiedDownloads.clear();
+    },
+    
+    // 初始化事件监听器
+    initEventListeners: (message: any, t: any) => {
+      if (isInitialized) return;
+      
+      // 移除可能存在的旧监听器
+      if (completeListener) {
+        window.electron.ipcRenderer.removeListener('music-download-complete', completeListener);
+      }
+      
+      if (errorListener) {
+        window.electron.ipcRenderer.removeListener('music-download-error', errorListener);
+      }
+      
+      // 创建新的监听器
+      completeListener = (_event, data) => {
+        if (!data.filename || !activeDownloads.has(data.filename)) return;
+        
+        // 如果该文件已经通知过，则跳过
+        if (notifiedDownloads.has(data.filename)) return;
+        
+        // 标记为已通知
+        notifiedDownloads.add(data.filename);
+        
+        // 从活动下载移除
+        activeDownloads.delete(data.filename);
+      };
+      
+      errorListener = (_event, data) => {
+        if (!data.filename || !activeDownloads.has(data.filename)) return;
+        
+        // 如果该文件已经通知过，则跳过
+        if (notifiedDownloads.has(data.filename)) return;
+        
+        // 标记为已通知
+        notifiedDownloads.add(data.filename);
+        
+        // 显示失败通知
+        message.error(t('songItem.message.downloadFailed', { 
+          filename: data.filename,
+          error: data.error || '未知错误'
+        }));
+        
+        // 从活动下载移除
+        activeDownloads.delete(data.filename);
+      };
+      
+      // 添加监听器
+      window.electron.ipcRenderer.on('music-download-complete', completeListener);
+      window.electron.ipcRenderer.on('music-download-error', errorListener);
+      
+      isInitialized = true;
+    },
+    
+    // 清理事件监听器
+    cleanupEventListeners: () => {
+      if (!isInitialized) return;
+      
+      if (completeListener) {
+        window.electron.ipcRenderer.removeListener('music-download-complete', completeListener);
+        completeListener = null;
+      }
+      
+      if (errorListener) {
+        window.electron.ipcRenderer.removeListener('music-download-error', errorListener);
+        errorListener = null;
+      }
+      
+      isInitialized = false;
+    },
+    
+    // 获取活跃下载数量
+    getActiveDownloadCount: () => {
+      return activeDownloads.size;
+    },
+    
+    // 检查是否有特定文件正在下载
+    hasDownload: (filename: string) => {
+      return activeDownloads.has(filename);
+    }
+  };
+};
+
+// 创建单例下载管理器
+const downloadManager = createDownloadManager();
+
 export const useDownload = () => {
   const { t } = useI18n();
   const message = useMessage();
   const isDownloading = ref(false);
+
+  // 初始化事件监听器
+  downloadManager.initEventListeners(message, t);
 
   /**
    * 下载单首音乐
@@ -33,9 +167,19 @@ export const useDownload = () => {
       // 构建文件名
       const artistNames = (song.ar || song.song?.artists)?.map((a) => a.name).join(',');
       const filename = `${song.name} - ${artistNames}`;
+      
+      // 检查是否已在下载
+      if (downloadManager.hasDownload(filename)) {
+        isDownloading.value = false;
+        return;
+      }
+
+      // 添加到活动下载集合
+      downloadManager.addDownload(filename);
 
       const songData = cloneDeep(song);
       songData.ar = songData.ar || songData.song?.artists;
+      
       // 发送下载请求
       window.electron.ipcRenderer.send('download-music', {
         url: typeof musicUrl === 'string' ? musicUrl : musicUrl.url,
@@ -43,39 +187,16 @@ export const useDownload = () => {
         songInfo: {
           ...songData,
           downloadTime: Date.now()
-        }
+        },
+        type: musicUrl.type
       });
 
       message.success(t('songItem.message.downloadQueued'));
-
-      // 监听下载完成事件
-      const handleDownloadComplete = (_, result) => {
-        if (result.filename === filename) {
-          isDownloading.value = false;
-          removeListeners();
-        }
-      };
-
-      // 监听下载错误事件
-      const handleDownloadError = (_, result) => {
-        if (result.filename === filename) {
-          isDownloading.value = false;
-          removeListeners();
-        }
-      };
-
-      // 移除监听器函数
-      const removeListeners = () => {
-        window.electron.ipcRenderer.removeListener('music-download-complete', handleDownloadComplete);
-        window.electron.ipcRenderer.removeListener('music-download-error', handleDownloadError);
-      };
-
-      // 添加事件监听器
-      window.electron.ipcRenderer.once('music-download-complete', handleDownloadComplete);
-      window.electron.ipcRenderer.once('music-download-error', handleDownloadError);
-
-      // 30秒后自动清理监听器（以防下载过程中出现未知错误）
-      setTimeout(removeListeners, 30000);
+      
+      // 简化的监听逻辑，基本通知由全局监听器处理
+      setTimeout(() => {
+        isDownloading.value = false;
+      }, 2000);
     } catch (error: any) {
       console.error('Download error:', error);
       isDownloading.value = false;
@@ -103,27 +224,17 @@ export const useDownload = () => {
       isDownloading.value = true;
       message.success(t('favorite.downloading'));
 
-      // 移除旧的监听器
-      window.electron.ipcRenderer.removeAllListeners('music-download-complete');
-
       let successCount = 0;
       let failCount = 0;
-
-      // 添加新的监听器
-      window.electron.ipcRenderer.on('music-download-complete', (_, result) => {
-        if (result.success) {
-          successCount++;
-        } else {
-          failCount++;
-        }
-
-        // 当所有下载完成时
-        if (successCount + failCount === songs.length) {
+      const totalCount = songs.length;
+      
+      // 下载进度追踪
+      const trackProgress = () => {
+        if (successCount + failCount === totalCount) {
           isDownloading.value = false;
           message.success(t('favorite.downloadSuccess'));
-          window.electron.ipcRenderer.removeAllListeners('music-download-complete');
         }
-      });
+      };
 
       // 并行获取所有歌曲的下载链接
       const downloadUrls = await Promise.all(
@@ -133,6 +244,7 @@ export const useDownload = () => {
             return { song, ...data };
           } catch (error) {
             console.error(`获取歌曲 ${song.name} 下载链接失败:`, error);
+            failCount++;
             return { song, url: null };
           }
         })
@@ -142,21 +254,41 @@ export const useDownload = () => {
       downloadUrls.forEach(({ song, url, type }) => {
         if (!url) {
           failCount++;
+          trackProgress();
           return;
         }
+        
         const songData = cloneDeep(song);
+        const filename = `${song.name} - ${(song.ar || song.song?.artists)?.map((a) => a.name).join(',')}`;
+        
+        // 检查是否已在下载
+        if (downloadManager.hasDownload(filename)) {
+          failCount++;
+          trackProgress();
+          return;
+        }
+        
+        // 添加到活动下载集合
+        downloadManager.addDownload(filename);
+        
         const songInfo = {
           ...songData,
           ar: songData.ar || songData.song?.artists,
           downloadTime: Date.now()
         };
+        
         window.electron.ipcRenderer.send('download-music', {
           url,
-          filename: `${song.name} - ${(song.ar || song.song?.artists)?.map((a) => a.name).join(',')}`,
+          filename,
           songInfo,
           type
         });
+        
+        successCount++;
       });
+      
+      // 所有下载开始后，检查进度
+      trackProgress();
     } catch (error) {
       console.error('下载失败:', error);
       isDownloading.value = false;

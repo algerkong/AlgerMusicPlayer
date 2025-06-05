@@ -34,6 +34,9 @@ const audioCacheStore = new Store({
   }
 });
 
+// 保存已发送通知的文件，避免重复通知
+const sentNotifications = new Map();
+
 /**
  * 初始化文件管理相关的IPC监听
  */
@@ -121,6 +124,23 @@ export function initializeFileManager() {
     } catch (error) {
       console.error('打开路径失败:', error);
     }
+  });
+
+  // 获取默认下载路径
+  ipcMain.handle('get-downloads-path', () => {
+    return app.getPath('downloads');
+  });
+  
+  // 获取存储的配置值
+  ipcMain.handle('get-store-value', (_, key) => {
+    const store = new Store();
+    return store.get(key);
+  });
+  
+  // 设置存储的配置值
+  ipcMain.on('set-store-value', (_, key, value) => {
+    const store = new Store();
+    store.set(key, value);
   });
 
   // 下载音乐处理
@@ -358,9 +378,28 @@ async function downloadMusic(
     const downloadPath =
       (configStore.get('set.downloadPath') as string) || app.getPath('downloads');
     const apiPort = configStore.get('set.musicApiPort') || 30488;
+    
+    // 获取文件名格式设置
+    const nameFormat = 
+      (configStore.get('set.downloadNameFormat') as string) || '{songName} - {artistName}';
+
+    // 根据格式创建文件名
+    let formattedFilename = filename;
+    if (songInfo) {
+      // 准备替换变量
+      const artistName = songInfo.ar?.map((a: any) => a.name).join('/') || '未知艺术家';
+      const songName = songInfo.name || filename;
+      const albumName = songInfo.al?.name || '未知专辑';
+      
+      // 应用自定义格式
+      formattedFilename = nameFormat
+        .replace(/\{songName\}/g, songName)
+        .replace(/\{artistName\}/g, artistName)
+        .replace(/\{albumName\}/g, albumName);
+    }
 
     // 清理文件名中的非法字符
-    const sanitizedFilename = sanitizeFilename(filename);
+    const sanitizedFilename = sanitizeFilename(formattedFilename);
 
     // 创建临时文件路径 (在系统临时目录中创建)
     const tempDir = path.join(os.tmpdir(), 'AlgerMusicPlayerTemp');
@@ -635,27 +674,38 @@ async function downloadMusic(
       history.unshift(newSongInfo);
       downloadStore.set('history', history);
 
-      // 发送桌面通知
-      try {
-        const artistNames =
-          (songInfo?.ar || songInfo?.song?.artists)?.map((a: any) => a.name).join('/') ||
-          '未知艺术家';
-        const notification = new Notification({
-          title: '下载完成',
-          body: `${songInfo?.name || filename} - ${artistNames}`,
-          silent: false
-        });
-
-        notification.on('click', () => {
-          shell.showItemInFolder(finalFilePath);
-        });
-
-        notification.show();
-      } catch (notifyError) {
-        console.error('发送通知失败:', notifyError);
+      // 避免重复发送通知
+      const notificationId = `download-${finalFilePath}`;
+      if (!sentNotifications.has(notificationId)) {
+        sentNotifications.set(notificationId, true);
+        
+        // 发送桌面通知
+        try {
+          const artistNames =
+            (songInfo?.ar || songInfo?.song?.artists)?.map((a: any) => a.name).join('/') ||
+            '未知艺术家';
+          const notification = new Notification({
+            title: '下载完成',
+            body: `${songInfo?.name || filename} - ${artistNames}`,
+            silent: false
+          });
+  
+          notification.on('click', () => {
+            shell.showItemInFolder(finalFilePath);
+          });
+  
+          notification.show();
+          
+          // 60秒后清理通知记录，释放内存
+          setTimeout(() => {
+            sentNotifications.delete(notificationId);
+          }, 60000);
+        } catch (notifyError) {
+          console.error('发送通知失败:', notifyError);
+        }
       }
 
-      // 发送下载完成事件
+      // 发送下载完成事件，确保只发送一次
       event.reply('music-download-complete', {
         success: true,
         path: finalFilePath,

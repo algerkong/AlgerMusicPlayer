@@ -3,6 +3,7 @@ export default {
   localMusic: '本地音乐',
   count: '共 {count} 首歌曲',
   clearAll: '清空记录',
+  settings: '设置',
   tabs: {
     downloading: '下载中',
     downloaded: '已下载'
@@ -50,5 +51,37 @@ export default {
   path: {
     copied: '路径已复制到剪贴板',
     copyFailed: '复制路径失败'
+  },
+  settingsPanel: {
+    title: '下载设置',
+    path: '下载位置',
+    pathDesc: '设置音乐文件下载保存的位置',
+    pathPlaceholder: '请选择下载路径',
+    noPathSelected: '请先选择下载路径',
+    select: '选择文件夹',
+    open: '打开文件夹',
+    fileFormat: '文件名格式',
+    fileFormatDesc: '设置下载音乐时的文件命名格式',
+    customFormat: '自定义格式',
+    separator: '分隔符',
+    separators: {
+      dash: '空格-空格',
+      underscore: '下划线',
+      space: '空格'
+    },
+    dragToArrange: '拖动排序或使用箭头按钮调整顺序：',
+    formatVariables: '可用变量',
+    preview: '预览效果：',
+    saveSuccess: '下载设置已保存',
+    presets: {
+      songArtist: '歌曲名 - 歌手名',
+      artistSong: '歌手名 - 歌曲名',
+      songOnly: '仅歌曲名'
+    },
+    components: {
+      songName: '歌曲名',
+      artistName: '歌手名',
+      albumName: '专辑名'
+    }
   }
 };
