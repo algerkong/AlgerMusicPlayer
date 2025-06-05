@@ -194,7 +194,7 @@ const handleDeleteSong = (song: SongResult) => {
     }
     
     .title {
-      @apply text-base font-medium;
+      @apply text-base font-medium text-gray-800 dark:text-gray-200;
     }
     
     .header-actions {
@@ -203,7 +203,7 @@ const handleDeleteSong = (song: SongResult) => {
     
     .action-btn,
     .close-btn {
-      @apply w-8 h-8 flex items-center justify-center rounded-full cursor-pointer mx-1;
+      @apply w-8 h-8 flex items-center justify-center rounded-full cursor-pointer mx-1 text-gray-800 dark:text-gray-200;
       @apply hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors;
       
       .iconfont {
