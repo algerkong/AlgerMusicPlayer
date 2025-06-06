@@ -1,8 +1,8 @@
 <template>
   <transition name="shortcut-toast">
-    <div v-if="visible" class="shortcut-toast">
+    <div v-if="visible" class="shortcut-toast" :class="`shortcut-toast-${position}`">
       <div class="shortcut-toast-content">
-        <div class="shortcut-toast-icon">
+        <div v-if="showIcon" class="shortcut-toast-icon">
           <i :class="icon"></i>
         </div>
         <div class="shortcut-toast-text">{{ text }}</div>
@@ -14,12 +14,24 @@
 <script lang="ts" setup>
 import { onBeforeUnmount, ref } from 'vue';
 
+defineProps({
+  position: {
+    type: String,
+    default: 'center',
+    validator: (val: string) => ['top', 'center', 'bottom'].includes(val)
+  },
+  showIcon: {
+    type: Boolean,
+    default: true
+  }
+});
+
 const visible = ref(false);
 const text = ref('');
 const icon = ref('');
 let timer: NodeJS.Timeout | null = null;
 
-const show = (message: string, iconName: string) => {
+const show = (message: string, iconName = '') => {
   if (timer) {
     clearTimeout(timer);
   }
@@ -54,8 +66,27 @@ defineExpose({
 
 <style lang="scss" scoped>
 .shortcut-toast {
-  @apply fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999];
+  @apply fixed left-1/2 z-[9999];
   @apply flex items-center justify-center;
+
+  // 位置变体
+  &-center {
+    @apply top-1/2 -translate-y-1/2;
+    .shortcut-toast-content {
+      @apply p-2;
+    }
+  }
+
+  &-top {
+    @apply top-20;
+  }
+
+  &-bottom {
+    @apply bottom-40;
+  }
+
+  // 水平居中
+  @apply -translate-x-1/2;
 
   &-content {
     @apply flex flex-col items-center gap-2 p-4 rounded-lg;
