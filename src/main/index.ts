@@ -15,6 +15,7 @@ import { initializeTray, updateCurrentSong, updatePlayState, updateTrayMenu } fr
 import { setupUpdateHandlers } from './modules/update';
 import { createMainWindow, initializeWindowManager } from './modules/window';
 import { startMusicApi } from './server';
+import { initWindowSizeManager } from './modules/window-size';
 
 // 导入所有图标
 const iconPath = join(__dirname, '../../resources');
@@ -98,6 +99,9 @@ if (!isSingleInstance) {
     app.on('browser-window-created', (_, window) => {
       optimizer.watchWindowShortcuts(window);
     });
+
+    // 初始化窗口大小管理器
+    initWindowSizeManager();
 
     // 初始化应用
     initialize();

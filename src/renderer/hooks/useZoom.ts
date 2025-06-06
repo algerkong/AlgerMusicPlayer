@@ -54,10 +54,7 @@ export function useZoom() {
   // 重置缩放比例到系统建议值
   const resetZoom = async () => {
     try {
-      window.ipcRenderer.send('reset-content-zoom');
-      // 重置后重新获取系统计算的缩放比例
-      const newZoom = await window.ipcRenderer.invoke('get-content-zoom');
-      zoomFactor.value = newZoom;
+      setZoomFactor(1);
     } catch (error) {
       console.error('重置缩放比例失败:', error);
     }

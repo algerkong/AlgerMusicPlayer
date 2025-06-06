@@ -8,8 +8,6 @@ import * as NodeID3 from 'node-id3';
 import * as path from 'path';
 import * as os from 'os';
 import * as mm from 'music-metadata';
-// 导入文件类型库，这里使用CommonJS兼容方式导入
-// 对于file-type v21.0.0需要这样导入
 import { fileTypeFromFile } from 'file-type';
 
 import { getStore } from './config';
