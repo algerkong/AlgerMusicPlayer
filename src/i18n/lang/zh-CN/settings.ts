@@ -167,19 +167,33 @@ export default {
     portNumber: '请输入有效的端口号(1-65535)'
   },
   lyricSettings: {
-    title: '页面设置',
+    title: '歌词设置',
+    tabs: {
+      display: '显示',
+      interface: '界面',
+      typography: '文字',
+      mobile: '移动端'
+    },
     pureMode: '纯净模式',
     hideCover: '隐藏封面',
     centerDisplay: '居中显示',
     showTranslation: '显示翻译',
+    hideLyrics: '隐藏歌词',
     hidePlayBar: '隐藏播放栏',
+    hideMiniPlayBar: '隐藏迷你播放栏',
+    backgroundTheme: '背景主题',
+    themeOptions: {
+      default: '默认',
+      light: '亮色',
+      dark: '暗色'
+    },
     fontSize: '字体大小',
     fontSizeMarks: {
       small: '小',
       medium: '中',
       large: '大'
     },
-    letterSpacing: '文字间距',
+    letterSpacing: '字间距',
     letterSpacingMarks: {
       compact: '紧凑',
       default: '默认',
@@ -191,19 +205,20 @@ export default {
       default: '默认',
       loose: '宽松'
     },
-    backgroundTheme: '背景主题',
-    themeOptions: {
+    mobileLayout: '移动端布局',
+    layoutOptions: {
       default: '默认',
-      light: '亮色',
-      dark: '暗色'
+      ios: 'iOS风格',
+      android: '安卓风格'
     },
-    hideMiniPlayBar: '隐藏迷你播放栏',
-    hideLyrics: '隐藏歌词',
-    tabs: {
-      interface: '界面',
-      typography: '文字',
-      display: '显示'
-    }
+    mobileCoverStyle: '封面样式',
+    coverOptions: {
+      record: '唱片',
+      square: '方形',
+      full: '全屏'
+    },
+    lyricLines: '歌词行数',
+    mobileUnavailable: '此设置仅在移动端可用'
   },
   shortcutSettings: {
     title: '快捷键设置',

@@ -539,7 +539,7 @@ const handleBatchDownload = async () => {
 
   .mobile {
     .favorite-page {
-      @apply p-4;
+      @apply p-4 m-0;
 
       .favorite-header {
         @apply mb-4;

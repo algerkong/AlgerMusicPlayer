@@ -1,0 +1,15 @@
+<template>
+  <component :is="componentToUse" v-bind="$attrs" />
+</template>
+
+<script setup lang="ts">
+import { computed } from 'vue';
+import { isMobile } from '@/utils';
+import MusicFull from '@/layout/components/MusicFull.vue';
+import MusicFullMobile from '@/components/lyric/MusicFullMobile.vue';
+
+// 根据当前设备类型选择需要显示的组件
+const componentToUse = computed(() => {
+  return isMobile.value ? MusicFullMobile : MusicFull;
+});
+</script> 

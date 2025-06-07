@@ -20,10 +20,11 @@ const getSettingsStore = () => {
 const loginRouter = {
   path: '/login',
   name: 'login',
-  mate: {
+  meta: {
     keepAlive: true,
     title: '登录',
-    icon: 'icon-Home'
+    icon: 'icon-Home',
+    back: true
   },
   component: () => import('@/views/login/index.vue')
 };
@@ -31,7 +32,7 @@ const loginRouter = {
 const setRouter = {
   path: '/set',
   name: 'set',
-  mate: {
+  meta: {
     keepAlive: true,
     title: '设置',
     icon: 'icon-Home'

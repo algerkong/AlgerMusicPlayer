@@ -53,9 +53,9 @@ export function useSongItem(props: {
   const handleImageLoad = async (imageElement: HTMLImageElement) => {
     if (!imageElement) return;
     
-    const { backgroundColor } = await getImageBackground(imageElement);
-    // eslint-disable-next-line vue/no-mutating-props
+    const { backgroundColor, primaryColor } = await getImageBackground(imageElement);
     props.item.backgroundColor = backgroundColor;
+    props.item.primaryColor = primaryColor;
   };
   
   // 播放音乐

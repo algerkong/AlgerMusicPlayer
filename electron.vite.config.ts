@@ -39,6 +39,7 @@ export default defineConfig({
     ],
     publicDir: resolve('resources'),
     server: {
+      host: '0.0.0.0',
       proxy: {
         // with options
         [process.env.VITE_API_LOCAL as string]: {

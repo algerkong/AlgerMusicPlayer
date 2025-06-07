@@ -90,6 +90,10 @@
         </n-scrollbar>
       </div>
     </div>
+    <!-- 未登录时显示登录组件 -->
+    <div v-if="!isLoggedIn && isMobile" class="login-container" :class="setAnimationClass('animate__fadeIn')">
+      <login-component @login-success="handleLoginSuccess" />
+    </div>
   </div>
 </template>
 
@@ -109,6 +113,7 @@ import { useUserStore } from '@/store/modules/user';
 import type { Playlist } from '@/type/listDetail';
 import type { IUserDetail } from '@/type/user';
 import { getImgUrl, isElectron, isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
+import LoginComponent from '@/views/login/index.vue';
 
 defineOptions({
   name: 'User'
@@ -143,7 +148,7 @@ const checkLoginStatus = () => {
   const userData = localStorage.getItem('user');
 
   if (!token || !userData) {
-    router.push('/login');
+    !isMobile.value && router.push('/login');
     return false;
   }
 
@@ -270,6 +275,14 @@ const showFollowList = () => {
 //   if (!user.value) return;
 //   router.push('/user/followers');
 // };
+
+const handleLoginSuccess = () => {
+  // 处理登录成功后的逻辑
+  checkLoginStatus();
+  loadData();
+};
+
+const isLoggedIn = computed(() => userStore.user);
 </script>
 
 <style lang="scss" scoped>
@@ -397,6 +410,10 @@ const showFollowList = () => {
 .mobile {
   .user-page {
     @apply px-4;
+  }
+
+  .login-container {
+    @apply flex justify-center items-center h-full w-full;
   }
 }
 </style>

@@ -117,6 +117,10 @@ const handleClearPlaylist = () => {
     message.info(t('player.playList.alreadyEmpty'));
     return;
   }
+
+  if(isMobile.value){
+    closePanel();
+  }
   
   dialog.warning({
     title: t('player.playList.clearConfirmTitle'),
@@ -254,17 +258,18 @@ const handleDeleteSong = (song: SongResult) => {
 // 移动端适配
 @media (max-width: 768px) {
   .playlist-panel {
+    position: fixed;
     width: 100%;
-    height: 60vh;
+    height: 80vh;
     top: auto;
-    bottom: 56px; // 移动端底部留出导航栏高度
-    border-radius: 16px 16px 0 0;
+    bottom: 0; // 移动端底部留出导航栏高度
+    border-radius: 30px 30px 0 0;
     border-left: none;
     border-top: 1px solid theme('colors.gray.200');
     box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1);
     
     &-header {
-      @apply text-center relative;
+      @apply text-center relative px-4;
       
       &::before {
         content: '';
@@ -280,7 +285,11 @@ const handleDeleteSong = (song: SongResult) => {
     }
     
     &-content {
-      height: calc(60vh - 60px);
+      height: calc(80vh - 60px);
+      @apply px-4;
+      .delete-btn{
+        @apply visible;
+      }
     }
   }
 }

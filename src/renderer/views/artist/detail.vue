@@ -115,6 +115,7 @@
                     :compact="isCompactLayout"
                     :item="formatSong(item)"
                     @play="handlePlay"
+                    :style="{paddingBottom: index === filteredSongs.length - 1 ? '100px' : '0'}"
                   />
                 </div>
               </template>
@@ -697,7 +698,7 @@ const handleVirtualScroll = (e: any) => {
   }
 
   .albums-grid {
-    @apply grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6;
+    @apply grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 pb-40;
   }
 
   .loading-more {

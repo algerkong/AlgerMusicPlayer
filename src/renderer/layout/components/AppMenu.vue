@@ -27,6 +27,7 @@
 
 <script lang="ts" setup>
 import { useRoute } from 'vue-router';
+import { ref, watch } from 'vue';
 
 import icon from '@/assets/icon.png';
 
@@ -115,7 +116,7 @@ const isText = ref(false);
     bottom: 0;
     left: 0;
     z-index: 99999;
-    @apply bg-light dark:bg-black border-t border-gray-200 dark:border-gray-700;
+    @apply bg-light dark:bg-black border-none border-gray-200 dark:border-gray-700;
 
     &-header {
       display: none;
@@ -127,8 +128,15 @@ const isText = ref(false);
 
     &-item {
       &-link {
-        @apply my-2 w-auto;
+        @apply my-2 w-auto px-2;
+        width: auto !important;
+        margin-top: 8px;
+        margin-bottom: 8px;
       }
+    }
+
+    &-expanded {
+      @apply w-full;
     }
   }
 }

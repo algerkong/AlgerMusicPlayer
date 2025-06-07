@@ -114,6 +114,47 @@
             </div>
           </div>
         </n-tab-pane>
+
+        <!-- 移动端设置 -->
+        <n-tab-pane :name="'mobile'" :tab="t('settings.lyricSettings.tabs.mobile')">
+          <div class="tab-content" v-if="isMobile">
+            <div class="section-title">{{ t('settings.lyricSettings.mobileLayout') }}</div>
+            <n-radio-group v-model:value="config.mobileLayout" name="mobileLayout" class="mb-4">
+              <n-space>
+                <n-radio value="default">{{ t('settings.lyricSettings.layoutOptions.default') }}</n-radio>
+                <n-radio value="ios">{{ t('settings.lyricSettings.layoutOptions.ios') }}</n-radio>
+                <n-radio value="android">{{ t('settings.lyricSettings.layoutOptions.android') }}</n-radio>
+              </n-space>
+            </n-radio-group>
+            
+            <div class="section-title">{{ t('settings.lyricSettings.mobileCoverStyle') }}</div>
+            <n-radio-group v-model:value="config.mobileCoverStyle" name="mobileCoverStyle" class="mb-4">
+              <n-space>
+                <n-radio value="record">{{ t('settings.lyricSettings.coverOptions.record') }}</n-radio>
+                <n-radio value="square">{{ t('settings.lyricSettings.coverOptions.square') }}</n-radio>
+                <n-radio value="full">{{ t('settings.lyricSettings.coverOptions.full') }}</n-radio>
+              </n-space>
+            </n-radio-group>
+            
+            <div class="slider-item">
+              <span>{{ t('settings.lyricSettings.lyricLines') }}</span>
+              <n-slider
+                v-model:value="config.mobileShowLyricLines"
+                :step="1"
+                :min="1"
+                :max="5"
+                :marks="{
+                  1: '1',
+                  3: '3',
+                  5: '5'
+                }"
+              />
+            </div>
+          </div>
+          <div v-else class="mobile-unavailable">
+            {{ t('settings.lyricSettings.mobileUnavailable') }}
+          </div>
+        </n-tab-pane>
       </n-tabs>
     </div>
   </div>
@@ -124,6 +165,7 @@ import { onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { DEFAULT_LYRIC_CONFIG, LyricConfig } from '@/types/lyric';
+import { isMobile } from '@/utils';
 
 const { t } = useI18n();
 const config = ref<LyricConfig>({ ...DEFAULT_LYRIC_CONFIG });
@@ -252,5 +294,9 @@ defineExpose({
 :deep(.n-radio__label) {
   color: var(--text-color-active) !important;
   @apply text-xs;
+}
+
+.mobile-unavailable {
+  @apply text-center py-4 text-gray-500 text-sm;
 }
 </style>

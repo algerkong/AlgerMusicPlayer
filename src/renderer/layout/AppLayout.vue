@@ -9,7 +9,7 @@
           <!-- 搜索栏 -->
           <search-bar />
           <!-- 主页面路由 -->
-          <div class="main-content" :native-scrollbar="false">
+          <div class="main-content" :native-scrollbar="false" :class="{'mobile-content': !shouldShowMobileMenu}">
             <router-view
               v-slot="{ Component }"
               class="main-page"
@@ -21,7 +21,7 @@
             </router-view>
           </div>
           <play-bottom />
-          <app-menu v-if="isMobile && !playerStore.musicFull" class="menu" :menus="menus" />
+          <app-menu v-if="shouldShowMobileMenu" class="menu" :menus="menus" />
         </div>
       </div>
       <!-- 底部音乐播放 -->
@@ -103,6 +103,16 @@ const isPlay = computed(() => playerStore.playMusic && playerStore.playMusic.id)
 const { menus } = menuStore;
 const route = useRoute();
 
+// 判断当前路由是否应该在移动端显示AppMenu
+const shouldShowMobileMenu = computed(() => {
+  // 过滤出在menus中定义的路径
+  const menuPaths = menus.map((item: any) => item.path);
+  // 检查当前路由路径是否在menus中
+  return menuPaths.includes(route.path) && isMobile.value && !playerStore.musicFull;
+});
+
+provide('shouldShowMobileMenu', shouldShowMobileMenu);
+
 onMounted(() => {
   settingsStore.initializeSettings();
   settingsStore.initializeTheme();
@@ -156,7 +166,10 @@ provide('openPlaylistDrawer', openPlaylistDrawer);
     overflow: auto;
     display: block;
     flex: none;
-    padding-bottom: 70px;
+  }
+
+  .mobile-content {
+    height: calc(100vh - 75px);
   }
 }
 </style>

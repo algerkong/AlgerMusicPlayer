@@ -148,8 +148,8 @@
         {{ t('player.playBar.playList') }}
       </n-tooltip>
     </div>
-    <!-- 播放音乐 -->
-    <music-full ref="MusicFullRef" v-model="musicFullVisible" :background="background" />
+    <!-- 全屏播放器 -->
+    <music-full-wrapper ref="MusicFullRef" v-model="musicFullVisible" :background="background" />
   </div>
 </template>
 
@@ -169,7 +169,7 @@ import {
   textColors
 } from '@/hooks/MusicHook';
 import { useArtist } from '@/hooks/useArtist';
-import MusicFull from '@/layout/components/MusicFull.vue';
+import MusicFullWrapper from '@/layout/components/MusicFullWrapper.vue';
 import { audioService } from '@/services/audioService';
 import { 
   isBilibiliIdMatch, 

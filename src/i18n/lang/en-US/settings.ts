@@ -168,42 +168,57 @@ export default {
   },
   lyricSettings: {
     title: 'Lyric Settings',
+    tabs: {
+      display: 'Display',
+      interface: 'Interface',
+      typography: 'Typography',
+      mobile: 'Mobile'
+    },
     pureMode: 'Pure Mode',
     hideCover: 'Hide Cover',
     centerDisplay: 'Center Display',
     showTranslation: 'Show Translation',
+    hideLyrics: 'Hide Lyrics',
     hidePlayBar: 'Hide Play Bar',
-    fontSize: 'Font Size',
-    letterSpacing: 'Letter Spacing',
-    lineHeight: 'Line Height',
+    hideMiniPlayBar: 'Hide Mini Play Bar',
     backgroundTheme: 'Background Theme',
-    fontSizeMarks: {
-      small: 'Small',
-      medium: 'Medium',
-      large: 'Large'
-    },
-    letterSpacingMarks: {
-      compact: 'Compact',
-      default: 'Default',
-      loose: 'Loose'
-    },
-    lineHeightMarks: {
-      compact: 'Compact',
-      default: 'Default',
-      loose: 'Loose'
-    },
     themeOptions: {
       default: 'Default',
       light: 'Light',
       dark: 'Dark'
     },
-    hideMiniPlayBar: 'Hide Mini Play Bar',
-    hideLyrics: 'Hide Lyrics',
-    tabs: {
-      interface: 'Interface',
-      display: 'Display',
-      typography: 'Typography'
-    }
+    fontSize: 'Font Size',
+    fontSizeMarks: {
+      small: 'Small',
+      medium: 'Medium',
+      large: 'Large'
+    },
+    letterSpacing: 'Letter Spacing',
+    letterSpacingMarks: {
+      compact: 'Compact',
+      default: 'Default',
+      loose: 'Loose'
+    },
+    lineHeight: 'Line Height',
+    lineHeightMarks: {
+      compact: 'Compact',
+      default: 'Default',
+      loose: 'Loose'
+    },
+    mobileLayout: 'Mobile Layout',
+    layoutOptions: {
+      default: 'Default',
+      ios: 'iOS Style',
+      android: 'Android Style'
+    },
+    mobileCoverStyle: 'Cover Style',
+    coverOptions: {
+      record: 'Record',
+      square: 'Square',
+      full: 'Full Screen'
+    },
+    lyricLines: 'Lyric Lines',
+    mobileUnavailable: 'This setting is only available on mobile devices'
   },
   shortcutSettings: {
     title: 'Shortcut Settings',

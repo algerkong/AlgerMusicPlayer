@@ -3,7 +3,8 @@
     class="mobile-play-bar"
     :class="[
       setAnimationClass('animate__fadeInUp'),
-      musicFullVisible ? 'play-bar-expanded' : 'play-bar-mini'
+      musicFullVisible ? 'play-bar-expanded' : 'play-bar-mini',
+      !shouldShowMobileMenu ? 'mobile-play-bar-no-menu' : ''
     ]"
     :style="{
       color: musicFullVisible
@@ -16,7 +17,7 @@
     }"
   >
     <!-- 完整模式 - 在musicFullVisible为true时显示 -->
-    <template v-if="musicFullVisible">
+    <template v-if="false">
       <!-- 顶部信息区域 -->
       <div class="music-info-header">
         <div class="music-info-main">
@@ -61,31 +62,9 @@
         <div class="control-btn next" @click="handleNext">
           <i class="iconfont ri-skip-forward-fill"></i>
         </div>
-        <n-popover
-          trigger="click"
-          :z-index="99999999"
-          content-class="mobile-play-list"
-          raw
-          :show-arrow="false"
-          placement="top"
-          @update-show="scrollToPlayList"
-        >
-          <template #trigger>
-            <div class="control-btn list">
-              <i class="iconfont ri-menu-line"></i>
-            </div>
-          </template>
-          <div class="mobile-play-list-container">
-            <div class="mobile-play-list-back"></div>
-            <n-virtual-list ref="playListRef" :item-size="56" item-resizable :items="playList">
-              <template #default="{ item }">
-                <div class="mobile-play-list-item">
-                  <song-item :key="item.id" :item="item" mini></song-item>
-                </div>
-              </template>
-            </n-virtual-list>
-          </div>
-        </n-popover>
+        <div class="control-btn list" @click="openPlayListDrawer">
+          <i class="iconfont ri-menu-line"></i>
+        </div>
       </div>
 
       <!-- 定时关闭按钮 -->
@@ -93,7 +72,7 @@
     </template>
 
     <!-- Mini模式 - 在musicFullVisible为false时显示 -->
-    <div v-else class="mobile-mini-controls">
+    <div v-if="!musicFullVisible" class="mobile-mini-controls">
       <!-- 歌曲信息 -->
       <div class="mini-song-info" @click="setMusicFull">
         <n-image
@@ -103,12 +82,13 @@
           preview-disabled
         />
         <div class="mini-song-text">
-          <n-ellipsis class="mini-song-title" line-clamp="1">
-            {{ playMusic.name }}
-          </n-ellipsis>
-          <n-ellipsis class="mini-song-artist" line-clamp="1">
-            <span v-for="(artists, artistsindex) in artistList" :key="artistsindex">
-              {{ artists.name }}{{ artistsindex < artistList.length - 1 ? ' / ' : '' }}
+          <n-ellipsis line-clamp="1">
+            <span class="mini-song-title">{{ playMusic.name }}</span>
+            <span class="mx-2 text-gray-500 dark:text-gray-400">-</span>
+            <span class="mini-song-artist">
+              <span v-for="(artists, artistsindex) in artistList" :key="artistsindex">
+                {{ artists.name }}{{ artistsindex < artistList.length - 1 ? ' / ' : '' }}
+              </span>
             </span>
           </n-ellipsis>
         </div>
@@ -119,34 +99,12 @@
         <div class="mini-control-btn play" @click="playMusicEvent">
           <i class="iconfont icon" :class="play ? 'icon-stop' : 'icon-play'"></i>
         </div>
-        <n-popover
-          trigger="click"
-          :z-index="99999999"
-          content-class="mobile-play-list"
-          raw
-          :show-arrow="false"
-          placement="top"
-          @update-show="scrollToPlayList"
-        >
-          <template #trigger>
-            <i class="iconfont icon-list mini-list-icon"></i>
-          </template>
-          <div class="mobile-play-list-container">
-            <div class="mobile-play-list-back"></div>
-            <n-virtual-list ref="playListRef" :item-size="56" item-resizable :items="playList">
-              <template #default="{ item }">
-                <div class="mobile-play-list-item">
-                  <song-item :key="item.id" :item="item" mini></song-item>
-                </div>
-              </template>
-            </n-virtual-list>
-          </div>
-        </n-popover>
+        <i class="iconfont icon-list mini-list-icon" @click="openPlayListDrawer"></i>
       </div>
     </div>
 
     <!-- 全屏播放器 -->
-    <music-full ref="MusicFullRef" v-model="musicFullVisible" :background="background" />
+    <music-full-wrapper ref="MusicFullRef" v-model="musicFullVisible" :background="background" />
   </div>
 </template>
 
@@ -154,21 +112,19 @@
 import { useThrottleFn } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
 
-import SongItem from '@/components/common/SongItem.vue';
 import { allTime, artistList, nowTime, playMusic, sound, textColors } from '@/hooks/MusicHook';
-import MusicFull from '@/layout/components/MusicFull.vue';
+import MusicFullWrapper from '@/layout/components/MusicFullWrapper.vue';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
-import type { SongResult } from '@/type/music';
 import { getImgUrl, secondToMinute, setAnimationClass } from '@/utils';
+
+const shouldShowMobileMenu = inject('shouldShowMobileMenu');
 
 const playerStore = usePlayerStore();
 const settingsStore = useSettingsStore();
 
 // 是否播放
 const play = computed(() => playerStore.isPlay);
-// 播放列表
-const playList = computed(() => playerStore.playList as SongResult[]);
 // 背景颜色
 const background = ref('#000');
 
@@ -206,14 +162,9 @@ const setMusicFull = () => {
   }
 };
 
-// 播放列表引用
-const playListRef = ref<any>(null);
-
-const scrollToPlayList = (val: boolean) => {
-  if (!val) return;
-  setTimeout(() => {
-    playListRef.value?.scrollTo({ top: playerStore.playListIndex * 56 });
-  }, 50);
+// 打开播放列表抽屉
+const openPlayListDrawer = () => {
+  playerStore.setPlayListDrawerVisible(true);
 };
 
 // 收藏功能
@@ -251,10 +202,14 @@ watch(
 
 <style lang="scss" scoped>
 .mobile-play-bar {
-  @apply fixed bottom-[56px] left-0 w-full flex flex-col shadow-lg;
+  @apply fixed bottom-[56px] left-0 w-full flex flex-col;
   z-index: 10000;
   animation-duration: 0.3s !important;
   transition: all 0.3s ease;
+
+  &.mobile-play-bar-no-menu {
+    @apply bottom-[10px];
+  }
 
   &.play-bar-expanded {
     @apply bg-transparent;
@@ -285,7 +240,7 @@ watch(
   }
 
   &.play-bar-mini {
-    @apply h-14 py-0 bg-light dark:bg-dark;
+    @apply h-14 py-0;
   }
 
   // 顶部信息区域
@@ -423,13 +378,13 @@ watch(
 
   // Mini模式样式
   .mobile-mini-controls {
-    @apply flex items-center justify-between px-4 h-14;
+    @apply flex items-center justify-between pr-4 mx-3 h-12 rounded-full bg-light-100 dark:bg-dark-100 shadow-lg;
 
     .mini-song-info {
       @apply flex items-center flex-1 min-w-0 cursor-pointer;
 
       .mini-song-cover {
-        @apply w-8 h-8 rounded-md;
+        @apply w-12 h-12 rounded-full border-8 border-dark-300 dark:border-light-300;
       }
 
       .mini-song-text {
@@ -440,7 +395,7 @@ watch(
         }
 
         .mini-song-artist {
-          @apply text-xs text-gray-500 dark:text-gray-400 mt-0.5;
+          @apply text-xs text-gray-500 dark:text-gray-400;
         }
       }
     }

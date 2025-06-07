@@ -146,7 +146,7 @@ const loginPhone = async () => {
 
 <style lang="scss" scoped>
 .login-page {
-  @apply flex flex-col items-center justify-center p-20 pt-20;
+  @apply flex flex-col items-center justify-center pt-20;
   @apply bg-light dark:bg-black;
 }
 
@@ -214,6 +214,12 @@ const loginPhone = async () => {
       @apply mt-10 text-white rounded-xl;
       @apply bg-green-600 hover:bg-green-700 transition-colors;
     }
+  }
+}
+
+.mobile {
+  .login-page {
+    @apply pt-0;
   }
 }
 </style>

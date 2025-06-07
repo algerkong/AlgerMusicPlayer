@@ -160,7 +160,7 @@
               <n-virtual-list
                 ref="songListRef"
                 class="song-virtual-list"
-                style="height: calc(80vh - 60px)"
+                style="max-height: calc(100vh - 130px);"
                 :items="filteredSongs"
                 :item-size="isCompactLayout ? 50 : 70"
                 item-resizable
@@ -179,6 +179,7 @@
                       @play="handlePlay"
                       @remove-song="handleRemoveSong"
                       @select="(id, selected) => handleSelect(id, selected)"
+                      :style="{paddingBottom: index === filteredSongs.length - 1 ? '100px' : '0'}"
                     />
                   </div>
                 </template>

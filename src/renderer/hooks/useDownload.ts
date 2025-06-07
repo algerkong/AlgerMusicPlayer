@@ -5,6 +5,9 @@ import { useMessage } from 'naive-ui';
 
 import { getSongUrl } from '@/store/modules/player';
 import type { SongResult } from '@/type/music';
+import { isElectron } from '@/utils';
+
+const ipcRenderer = isElectron ? window.electron.ipcRenderer : null;
 
 // 全局下载管理（闭包模式）
 const createDownloadManager = () => {
@@ -58,11 +61,11 @@ const createDownloadManager = () => {
       
       // 移除可能存在的旧监听器
       if (completeListener) {
-        window.electron.ipcRenderer.removeListener('music-download-complete', completeListener);
+        ipcRenderer?.removeListener('music-download-complete', completeListener);
       }
       
       if (errorListener) {
-        window.electron.ipcRenderer.removeListener('music-download-error', errorListener);
+        ipcRenderer?.removeListener('music-download-error', errorListener);
       }
       
       // 创建新的监听器
@@ -99,8 +102,8 @@ const createDownloadManager = () => {
       };
       
       // 添加监听器
-      window.electron.ipcRenderer.on('music-download-complete', completeListener);
-      window.electron.ipcRenderer.on('music-download-error', errorListener);
+      ipcRenderer?.on('music-download-complete', completeListener);
+      ipcRenderer?.on('music-download-error', errorListener);
       
       isInitialized = true;
     },
@@ -110,12 +113,12 @@ const createDownloadManager = () => {
       if (!isInitialized) return;
       
       if (completeListener) {
-        window.electron.ipcRenderer.removeListener('music-download-complete', completeListener);
+        ipcRenderer?.removeListener('music-download-complete', completeListener);
         completeListener = null;
       }
       
       if (errorListener) {
-        window.electron.ipcRenderer.removeListener('music-download-error', errorListener);
+        ipcRenderer?.removeListener('music-download-error', errorListener);
         errorListener = null;
       }
       
@@ -181,7 +184,7 @@ export const useDownload = () => {
       songData.ar = songData.ar || songData.song?.artists;
       
       // 发送下载请求
-      window.electron.ipcRenderer.send('download-music', {
+      ipcRenderer?.send('download-music', {
         url: typeof musicUrl === 'string' ? musicUrl : musicUrl.url,
         filename,
         songInfo: {
@@ -277,7 +280,7 @@ export const useDownload = () => {
           downloadTime: Date.now()
         };
         
-        window.electron.ipcRenderer.send('download-music', {
+        ipcRenderer?.send('download-music', {
           url,
           filename,
           songInfo,
