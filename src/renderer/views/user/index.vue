@@ -47,7 +47,7 @@
               />
               <div class="play-list-item-info">
                 <div class="play-list-item-name">
-                  {{ item.name }}
+                  <n-ellipsis :line-clamp="1">{{ item.name }}</n-ellipsis>
                   <div v-if="item.creator.userId === user.userId" class="playlist-creator-tag">
                     {{ t('user.playlist.mine') }}
                   </div>
@@ -396,6 +396,7 @@ const isLoggedIn = computed(() => userStore.user);
         height: 18px;
         font-size: 10px;
         font-weight: 500;
+        min-width: 60px;
         backdrop-filter: blur(4px);
         -webkit-backdrop-filter: blur(4px);
       }

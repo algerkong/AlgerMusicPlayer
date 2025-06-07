@@ -168,19 +168,21 @@
                 @scroll="handleVirtualScroll"
               >
                 <template #default="{ item, index }">
-                  <div class="double-item">
-                    <song-item  
-                      :index="index"
-                      :compact="isCompactLayout"
-                      :item="formatSong(item)"
-                      :can-remove="canRemove"
-                      :selectable="isSelecting"
-                      :selected="selectedSongs.includes(item.id as number)"
-                      @play="handlePlay"
-                      @remove-song="handleRemoveSong"
-                      @select="(id, selected) => handleSelect(id, selected)"
-                      :style="{paddingBottom: index === filteredSongs.length - 1 ? '100px' : '0'}"
-                    />
+                  <div>
+                    <div class="double-item">
+                      <song-item  
+                        :index="index"
+                        :compact="isCompactLayout"
+                        :item="formatSong(item)"
+                        :can-remove="canRemove"
+                        :selectable="isSelecting"
+                        :selected="selectedSongs.includes(item.id as number)"
+                        @play="handlePlay"
+                        @remove-song="handleRemoveSong"
+                        @select="(id, selected) => handleSelect(id, selected)"
+                      />
+                    </div>
+                    <div v-if="index === filteredSongs.length - 1" class="h-36"></div>
                   </div>
                 </template>
               </n-virtual-list>

@@ -109,14 +109,16 @@
               @scroll="handleVirtualScroll"
             >
               <template #default="{ item, index }">
-                <div class="double-item">
-                  <song-item
-                    :index="index"
-                    :compact="isCompactLayout"
-                    :item="formatSong(item)"
-                    @play="handlePlay"
-                    :style="{paddingBottom: index === filteredSongs.length - 1 ? '100px' : '0'}"
-                  />
+                <div>
+                  <div class="double-item">
+                    <song-item
+                      :index="index"
+                      :compact="isCompactLayout"
+                      :item="formatSong(item)"
+                      @play="handlePlay"
+                    />
+                  </div>
+                  <div v-if="index === filteredSongs.length - 1" class="h-36"></div>
                 </div>
               </template>
             </n-virtual-list>
