@@ -21,18 +21,6 @@
         <i class="ri-arrow-down-s-line"></i>
       </div>
 
-      <n-popover trigger="click" placement="bottom">
-        <template #trigger>
-          <div
-            class="control-btn absolute top-5 right-5"
-            :class="{ 'pure-mode': config.pureModeEnabled }"
-          >
-            <i class="ri-settings-3-line"></i>
-          </div>
-        </template>
-        <lyric-settings ref="lyricSettingsRef" />
-      </n-popover>
-
       <!-- 全屏歌词页面 -->
       <transition name="fade">
         <div 
@@ -102,7 +90,7 @@
             </div>
           </div>
 
-          <div class="px-2">
+          <div class="px-2 flex-1 flex flex-col justify-around">
             <!-- 歌曲信息 -->
             <div class="song-info">
               <h1 class="song-title">{{ playMusic.name }}</h1>
@@ -128,9 +116,6 @@
               <div v-if="lrcArray.length > 0" class="lyrics-wrapper">
                 <div v-for="(line, idx) in visibleLyrics" :key="idx" class="lyric-line">
                   {{ line.text }}
-                  <div v-if="config.showTranslation && line.trText" class="translation">
-                    {{ line.trText }}
-                  </div>
                 </div>
               </div>
               <div v-else class="no-lyrics">
@@ -198,7 +183,6 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import LyricSettings from '@/components/lyric/LyricSettings.vue';
 import {
   allTime,
   artistList,
@@ -459,13 +443,12 @@ const handleThumbTouchEnd = () => {
 const currentBackground = ref('');
 const animationFrame = ref<number | null>(null);
 const isDark = ref(false);
-const lyricSettingsRef = ref<InstanceType<typeof LyricSettings>>();
 const config = ref<LyricConfig>({ ...DEFAULT_LYRIC_CONFIG });
 
 // 可见歌词计算
 const visibleLyrics = computed(() => {
-  const centerIndex = nowIndex.value + 1;
-  const numLines = config.value.mobileShowLyricLines;
+  const centerIndex = nowIndex.value;
+  const numLines = 3;
   const halfLines = Math.floor(numLines / 2);
   
   let startIdx = centerIndex - halfLines;
@@ -489,29 +472,6 @@ const visibleLyrics = computed(() => {
   
   return lrcArray.value.slice(startIdx, endIdx + 1);
 });
-
-// 监听设置组件的配置变化
-watch(
-  () => lyricSettingsRef.value?.config,
-  (newConfig) => {
-    if (newConfig) {
-      config.value = newConfig;
-    }
-  },
-  { deep: true, immediate: true }
-);
-
-// 监听本地配置变化，保存到 localStorage
-watch(
-  () => config.value,
-  (newConfig) => {
-    localStorage.setItem('music-full-config', JSON.stringify(newConfig));
-    if (lyricSettingsRef.value) {
-      lyricSettingsRef.value.config = newConfig;
-    }
-  },
-  { deep: true }
-);
 
 const props = defineProps({
   modelValue: {
@@ -802,6 +762,7 @@ defineExpose({
       padding-top: 100px;
       padding-bottom: 200px;
       margin-bottom: 180px; /* 确保底部留出足够空间 */
+      margin-top: 90px;
       
       .lyrics-padding-top {
         height: 70px;
@@ -911,11 +872,11 @@ defineExpose({
         @apply w-10 h-10 flex items-center justify-center cursor-pointer transition-all duration-200;
         
         i {
-          @apply text-xl;
+          @apply text-2xl;
           color: var(--text-color-primary);
           
           &.favorite {
-            @apply text-red-500;
+            @apply text-red-500 !important;
           }
         }
         
@@ -930,7 +891,7 @@ defineExpose({
         @apply w-14 h-14 flex items-center justify-center cursor-pointer transition-all duration-200;
         
         i {
-          @apply text-2xl;
+          @apply text-3xl;
           color: var(--text-color-primary);
         }
         
@@ -963,7 +924,7 @@ defineExpose({
     
     // 封面样式
     .cover-container {
-      @apply relative mb-6 transition-all duration-500;
+      @apply relative mb-6 transition-all duration-500 border-gray-900;
       
       &.style-changing {
         animation: styleChange 0.5s ease;
@@ -974,10 +935,58 @@ defineExpose({
       }
       
       &.record-style {
-        @apply w-72 h-72 rounded-full overflow-hidden;
+        @apply w-72 h-72 rounded-full overflow-hidden relative;
+        
+        // 唱片外圈装饰
+        &::before {
+          content: '';
+          @apply absolute top-0 left-0 w-full h-full rounded-full z-10;
+          background: radial-gradient(circle at center, 
+                                     transparent 38%, 
+                                     rgba(0, 0, 0, 0.15) 38%, 
+                                     rgba(0, 0, 0, 0.15) 39%, 
+                                     rgba(255, 255, 255, 0.1) 39%, 
+                                     rgba(255, 255, 255, 0.1) 39.5%,
+                                     rgba(0, 0, 0, 0.08) 39.5%,
+                                     rgba(0, 0, 0, 0.08) 40.5%,
+                                     rgba(0, 0, 0, 0.2) 40.5%,
+                                     rgba(0, 0, 0, 0.2) 41.5%,
+                                     rgba(0, 0, 0, 0.6) 41.5%,
+                                     rgba(0, 0, 0, 0.6) 100%);
+          pointer-events: none;
+          animation: spin 20s linear infinite;
+          animation-play-state: running;
+        }
+        
+        &.paused {
+          &::before, &::after {
+            animation-play-state: paused;
+          }
+        }
+        
+        .img-wrapper {
+          @apply rounded-full overflow-hidden border-[40px] border-solid border-black z-0;
+          width: 90%;
+          height: 90%;
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          
+          // 光泽效果
+          &::after {
+            content: '';
+            @apply absolute top-0 left-0 w-full h-full rounded-full z-[2];
+            background: linear-gradient(135deg, 
+                                      rgba(255, 255, 255, 0.05) 0%, 
+                                      rgba(255, 255, 255, 0) 50%, 
+                                      rgba(0, 0, 0, 0.05) 100%);
+            pointer-events: none;
+          }
+        }
         
         .cover-image {
-          @apply w-full h-full rounded-full;
+          @apply w-full h-full rounded-full border-[5px] border-gray-900;
           animation: spin 20s linear infinite;
           animation-play-state: running;
         }
@@ -988,10 +997,10 @@ defineExpose({
       }
       
       &.square-style {
-        @apply w-72 h-72;
+        @apply w-72 h-72 shadow-lg rounded-xl overflow-hidden mt-8;
         
         .cover-image {
-          @apply w-full h-full rounded-xl shadow-lg;
+          @apply w-full h-full;
           transition: transform 0.3s ease-out;
           
           &:active {

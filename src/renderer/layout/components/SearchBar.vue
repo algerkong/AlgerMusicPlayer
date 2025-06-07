@@ -203,7 +203,7 @@ const restartApp = () => {
 };
 
 const toLogin = () => {
-  router.push('/login');
+  router.push('/user');
 };
 
 // 页面初始化

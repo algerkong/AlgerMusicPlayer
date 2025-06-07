@@ -169,7 +169,7 @@ import {
   textColors
 } from '@/hooks/MusicHook';
 import { useArtist } from '@/hooks/useArtist';
-import MusicFullWrapper from '@/layout/components/MusicFullWrapper.vue';
+import MusicFullWrapper from '@/components/lyric/MusicFullWrapper.vue';
 import { audioService } from '@/services/audioService';
 import { 
   isBilibiliIdMatch, 

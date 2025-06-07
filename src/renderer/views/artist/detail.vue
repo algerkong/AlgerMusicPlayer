@@ -783,4 +783,10 @@ const handleVirtualScroll = (e: any) => {
     @apply mb-2 bg-light-100 bg-opacity-30 dark:bg-dark-100 dark:bg-opacity-20 rounded-3xl;
   }
 }
+
+.mobile {
+  .songs-toolbar{
+    @apply mb-0;
+  }
+}
 </style>

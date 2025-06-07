@@ -84,7 +84,8 @@ const layoutRouter = [
       title: '设置',
       icon: 'ri-settings-3-fill',
       keepAlive: true,
-      noScroll: true
+      noScroll: true,
+      back: true
     },
     component: () => import('@/views/set/index.vue')
   }

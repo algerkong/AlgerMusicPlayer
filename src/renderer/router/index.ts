@@ -29,22 +29,11 @@ const loginRouter = {
   component: () => import('@/views/login/index.vue')
 };
 
-const setRouter = {
-  path: '/set',
-  name: 'set',
-  meta: {
-    keepAlive: true,
-    title: '设置',
-    icon: 'icon-Home'
-  },
-  component: () => import('@/views/set/index.vue')
-};
-
 const routes = [
   {
     path: '/',
     component: AppLayout,
-    children: [...homeRouter, loginRouter, setRouter, ...otherRouter]
+    children: [...homeRouter, loginRouter, ...otherRouter]
   },
   {
     path: '/lyric',
