@@ -560,7 +560,7 @@ export const usePlayerStore = defineStore('player', () => {
   const setPlay = async (song: SongResult) => {
     try {
     // 如果是当前正在播放的音乐，则切换播放/暂停状态
-    if (playMusic.value.id === song.id && playMusic.value.playMusicUrl === song.playMusicUrl) {
+    if (playMusic.value.id === song.id && playMusic.value.playMusicUrl === song.playMusicUrl && !song.isFirstPlay) {
       if (play.value) {
           setPlayMusic(false);
           audioService.getCurrentSound()?.pause();
@@ -569,6 +569,10 @@ export const usePlayerStore = defineStore('player', () => {
           audioService.getCurrentSound()?.play();
         }
         return;
+      }
+
+      if(song.isFirstPlay) {
+        song.isFirstPlay = false;
       }
       // 直接调用 handlePlayMusic，它会处理索引更新和播放逻辑
       const success = await handlePlayMusic(song);
@@ -1095,7 +1099,7 @@ export const usePlayerStore = defineStore('player', () => {
           savedPlayMusic.playMusicUrl = undefined;
         }
 
-        await handlePlayMusic({ ...savedPlayMusic, playMusicUrl: undefined }, isPlaying);
+        await handlePlayMusic({ ...savedPlayMusic, isFirstPlay: true, playMusicUrl: undefined }, isPlaying);
 
         if (savedProgress) {
           try {

@@ -45,6 +45,7 @@ export interface SongResult {
   // 时长
   duration?: number;
   dt?: number;
+  isFirstPlay?: boolean;
 }
 
 export interface Song {
