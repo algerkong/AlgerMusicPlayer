@@ -16,5 +16,12 @@ export default {
   noMore: 'No more results',
   error: {
     searchFailed: 'Search failed'
+  },
+  search: {
+    single: 'Single',
+    album: 'Album',
+    playlist: 'Playlist',
+    mv: 'MV',
+    bilibili: 'Bilibili'
   }
 };

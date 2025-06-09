@@ -19,7 +19,7 @@
           <n-dropdown trigger="hover" :options="searchTypeOptions" @select="selectSearchType">
             <div class="w-20 px-3 flex justify-between items-center">
               <div>
-                {{ searchTypeOptions.find((item) => item.key === searchStore.searchType)?.label }}
+                {{ searchTypeOptions.find(item => item.key === searchStore.searchType)?.label }}
               </div>
               <i class="iconfont icon-xiasanjiaoxing"></i>
             </div>
@@ -126,7 +126,6 @@
 import { computed, onMounted, ref, watch, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-
 import { getSearchKeyword } from '@/api/home';
 import { getUserDetail } from '@/api/login';
 import alipay from '@/assets/alipay.png';
@@ -147,7 +146,7 @@ const searchStore = useSearchStore();
 const settingsStore = useSettingsStore();
 const userStore = useUserStore();
 const userSetOptions = ref(USER_SET_OPTIONS);
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 // 使用缩放hook
 const { 
@@ -271,7 +270,15 @@ const selectSearchType = (key: number) => {
   }
 };
 
-const searchTypeOptions = ref(SEARCH_TYPES);
+const rawSearchTypes = ref(SEARCH_TYPES)
+const searchTypeOptions = computed(() => {
+  // 引用 locale 以创建响应式依赖
+  locale.value;
+  return rawSearchTypes.value.map(type => ({
+    label: t(type.label),
+    key: type.key
+  }))
+});
 
 const selectItem = async (key: string) => {
   // switch 判断
