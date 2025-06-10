@@ -13,11 +13,10 @@
             <template #trigger>
               <router-link class="app-menu-item-link" :to="item.path">
                 <i class="iconfont app-menu-item-icon" :style="iconStyle(index)" :class="item.meta.icon"></i>
-                <span v-if="isText" class="app-menu-item-text ml-3" :class="isChecked(index) ? 'text-green-500' : ''">{{
-                  item.meta.title }}</span>
+                <span v-if="isText" class="app-menu-item-text ml-3" :class="isChecked(index) ? 'text-green-500' : ''">{{ t(item.meta.title) }}</span>
               </router-link>
             </template>
-            <div v-if="!isText">{{ item.meta.title }}</div>
+            <div v-if="!isText">{{ t(item.meta.title) }}</div>
           </n-tooltip>
         </div>
       </div>
@@ -28,6 +27,7 @@
 <script lang="ts" setup>
 import { useRoute } from 'vue-router';
 import { ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import icon from '@/assets/icon.png';
 
@@ -58,6 +58,8 @@ watch(
     path.value = newParams;
   }
 );
+
+const { t } = useI18n();
 
 const isChecked = (index: number) => {
   return path.value === props.menus[index].path;
