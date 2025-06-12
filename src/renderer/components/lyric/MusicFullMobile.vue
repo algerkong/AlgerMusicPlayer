@@ -8,7 +8,7 @@
     :z-index="9998"
   >
   
-    <div id="mobile-drawer-target" :class="[config.theme, `cover-style-${config.mobileCoverStyle}`, {'is-landscape': isLandscape}]">
+    <div id="mobile-drawer-target" :class="[config.theme, `cover-style-${config.mobileCoverStyle}`, {'is-landscape': isLandscape}, {'is-dark': isDark}]">
       <!-- 顶部控制按钮 -->
       <div v-if="playMusic?.playLoading" class="loading-overlay">
         <i class="ri-loader-4-line loading-icon"></i>
@@ -90,10 +90,12 @@
             </div>
           </div>
 
-          <div class="px-2 flex-1 flex flex-col justify-around">
+          <div class="px-2 flex-1 flex flex-col justify-around w-[85%]">
             <!-- 歌曲信息 -->
             <div class="song-info">
-              <h1 class="song-title">{{ playMusic.name }}</h1>
+              <div class="song-title-container">
+                <h1 class="song-title">{{ playMusic.name }}</h1>
+              </div>
               <p class="song-artist">
                 <span
                   v-for="(item, index) in artistList"
@@ -105,6 +107,9 @@
                   {{ index < artistList.length - 1 ? ' / ' : '' }}
                 </span>
               </p>
+              <div class="favorite-icon" @click="toggleFavorite">
+                <i class="ri-heart-3-fill" :class="{ 'favorite': isFavorite }"></i>
+              </div>
             </div>
 
             <!-- 歌词区域 -->
@@ -131,7 +136,7 @@
         <!-- 左侧封面和进度条 -->
         <div class="landscape-left-section">
           <div
-            class="landscape-cover-container"
+            class="landscape-cover-container cover-container"
             :class="{ 
               'record-style': config.mobileCoverStyle === 'record',
               'square-style': config.mobileCoverStyle === 'square',
@@ -150,10 +155,6 @@
               />
             </div>
           </div>
-          
-          <!-- 音频频谱可视化 -->
-          <div class="spectrum-container">
-          </div>
 
           <!-- 左侧进度条 -->
           <div class="landscape-progress-container">
@@ -161,7 +162,9 @@
               <span class="current-time">{{ secondToMinute(nowTime) }}</span>
               <span class="total-time">{{ secondToMinute(allTime) }}</span>
             </div>
-            <div class="apple-style-progress" @click="handleProgressBarClick">
+            <div class="apple-style-progress" 
+              @click="handleProgressBarClick"
+              @mousedown="handleMouseDown">
               <div class="progress-track">
                 <div 
                   class="progress-fill" 
@@ -169,11 +172,12 @@
                 ></div>
                 <div 
                   class="progress-thumb"
-                  :class="{ 'active': isThumbDragging }"
+                  :class="{ 'active': isThumbDragging || isMouseDragging }"
                   :style="{ left: `${(nowTime / Math.max(1, allTime)) * 100}%` }"
                   @touchstart="handleThumbTouchStart"
                   @touchmove="handleThumbTouchMove"
                   @touchend="handleThumbTouchEnd"
+                  @mousedown="handleMouseDown"
                 ></div>
               </div>
             </div>
@@ -184,18 +188,22 @@
         <div class="landscape-lyrics-section">
           <!-- 歌曲信息放置在顶部 -->
           <div class="landscape-song-info">
-            <h1 class="song-title">{{ playMusic.name }}</h1>
-            <p class="song-artist">
-              <span
-                v-for="(item, index) in artistList"
-                :key="index"
-                class="artist-name"
-                @click="handleArtistClick(item.id)"
-              >
-                {{ item.name }}
-                {{ index < artistList.length - 1 ? ' / ' : '' }}
-              </span>
-            </p>
+            <div class="flex flex-col flex-1">
+              <h1 class="song-title">{{ playMusic.name }}</h1>
+              <p class="song-artist">
+                <span
+                  v-for="(item, index) in artistList"
+                  :key="index"
+                  class="artist-name"
+                  @click="handleArtistClick(item.id)"
+                >
+                  {{ item.name }}{{ index < artistList.length - 1 ? ' / ' : '' }}
+                </span>
+              </p>
+            </div>
+            <div class="favorite-icon landscape" @click="toggleFavorite">
+              <i class="ri-heart-3-fill" :class="{ 'favorite': isFavorite }"></i>
+            </div>
           </div>
           
           <!-- 歌词滚动区域 -->
@@ -247,7 +255,9 @@
             <span class="current-time">{{ secondToMinute(nowTime) }}</span>
             <span class="total-time">{{ secondToMinute(allTime) }}</span>
           </div>
-          <div class="apple-style-progress" @click="handleProgressBarClick">
+          <div class="apple-style-progress" 
+            @click="handleProgressBarClick"
+            @mousedown="handleMouseDown">
             <div class="progress-track">
               <div 
                 class="progress-fill" 
@@ -255,11 +265,12 @@
               ></div>
               <div 
                 class="progress-thumb"
-                :class="{ 'active': isThumbDragging }"
+                :class="{ 'active': isThumbDragging || isMouseDragging }"
                 :style="{ left: `${(nowTime / Math.max(1, allTime)) * 100}%` }"
                 @touchstart="handleThumbTouchStart"
                 @touchmove="handleThumbTouchMove"
                 @touchend="handleThumbTouchEnd"
+                @mousedown="handleMouseDown"
               ></div>
             </div>
           </div>
@@ -283,8 +294,8 @@
           <div class="main-button next" @click="nextSong">
             <i class="ri-skip-forward-fill"></i>
           </div>
-          <div class="side-button" @click="toggleFavorite">
-            <i class="ri-heart-3-fill" :class="{ 'favorite': isFavorite }"></i>
+          <div class="side-button" @click="showPlaylist">
+            <i class="iconfont icon-list"></i>
           </div>
         </div>
       </div>
@@ -334,6 +345,10 @@ const playModeIcon = computed(() => {
       return 'ri-repeat-line';
   }
 });
+// 打开播放列表
+const showPlaylist = () => {
+  playerStore.setPlayListDrawerVisible(true);
+};
 
 // 喜欢歌曲
 const isFavorite = computed(() => {
@@ -404,21 +419,30 @@ const closeFullLyrics = () => {
 const scrollToCurrentLyric = (immediate = false, customScrollerRef?: HTMLElement | null) => {
   try {
     const scrollerRef = customScrollerRef || lyricsScrollerRef.value;
-    if (!scrollerRef || !isAutoScrollEnabled.value || isTouchScrolling.value) return;
+    if (!scrollerRef) {
+      console.log('歌词容器引用不存在');
+      return;
+    }
+    
+    // 如果用户正在手动滚动，不打断他们的操作
+    if (isTouchScrolling.value && !immediate) {
+      return;
+    }
     
     const prefix = customScrollerRef ? 'landscape-' : '';
     const activeEl = document.getElementById(`${prefix}lyric-line-${nowIndex.value}`);
     if (!activeEl) {
-      console.log('找不到当前歌词元素');
+      console.log(`找不到当前歌词元素: ${prefix}lyric-line-${nowIndex.value}`);
       return;
     }
     
     const containerRect = scrollerRef.getBoundingClientRect();
     const lineRect = activeEl.getBoundingClientRect();
     
+    // 优化滚动位置计算，确保当前歌词在视图中央
     const scrollTop = scrollerRef.scrollTop + (lineRect.top - containerRect.top) - (containerRect.height / 2) + (lineRect.height / 2);
     
-    console.log('滚动到位置:', scrollTop);
+    console.log(`滚动到歌词 #${nowIndex.value}, 位置: ${scrollTop}px`);
     
     scrollerRef.scrollTo({
       top: scrollTop,
@@ -430,12 +454,17 @@ const scrollToCurrentLyric = (immediate = false, customScrollerRef?: HTMLElement
 };
 
 // 监听歌词变化，自动滚动
-watch(nowIndex, () => {
-  if (showFullLyrics.value && isAutoScrollEnabled.value && !isTouchScrolling.value) {
+watch(nowIndex, (newIndex, oldIndex) => {
+  console.log(`歌词索引变化: ${oldIndex} -> ${newIndex}`);
+  
+  // 在竖屏全屏歌词模式下滚动
+  if (showFullLyrics.value) {
     nextTick(() => {
-      scrollToCurrentLyric();
+      scrollToCurrentLyric(false);
     });
-  } else if (isLandscape.value && !showFullLyrics.value) {
+  } 
+  // 在横屏模式下滚动
+  else if (isLandscape.value) {
     nextTick(() => {
       scrollToCurrentLyric(false, landscapeLyricsRef.value);
     });
@@ -453,11 +482,26 @@ watch(showFullLyrics, (newVal) => {
   }
 });
 
+// 监听音乐播放时间变化，触发歌词滚动更新
+watch(nowTime, () => {
+  // 只有当系统不是由于用户手动拖动进度条而更新时间时才触发滚动
+  if (!isThumbDragging.value && !isTouchScrolling.value) {
+    // 在竖屏全屏歌词模式下滚动
+    if (showFullLyrics.value) {
+      scrollToCurrentLyric(false);
+    } 
+    // 在横屏模式下滚动
+    else if (isLandscape.value) {
+      scrollToCurrentLyric(false, landscapeLyricsRef.value);
+    }
+  }
+});
+
 // 处理滚动事件
 const handleScroll = () => {
   if (!isTouchScrolling.value) return;
   
-  // 用户手动滚动时，停止自动滚动
+  // 用户手动滚动时，临时停止自动滚动
   isAutoScrollEnabled.value = false;
   
   // 清除之前的计时器
@@ -465,31 +509,48 @@ const handleScroll = () => {
     clearTimeout(autoScrollTimer.value);
   }
   
-  // 设置新的计时器，5秒后恢复自动滚动
+  // 设置新的计时器，3秒后恢复自动滚动
   autoScrollTimer.value = window.setTimeout(() => {
     isAutoScrollEnabled.value = true;
     isTouchScrolling.value = false;
-    scrollToCurrentLyric();
-  }, 5000);
+    
+    // 滚动到当前歌词
+    if (showFullLyrics.value) {
+      scrollToCurrentLyric(false);
+    } else if (isLandscape.value) {
+      scrollToCurrentLyric(false, landscapeLyricsRef.value);
+    }
+  }, 3000);
 };
 
 // 触摸相关事件
 const handleTouchStart = (e: TouchEvent) => {
   touchStartY.value = e.touches[0].clientY;
-  lastScrollTop.value = lyricsScrollerRef.value?.scrollTop || 0;
+  
+  // 根据当前模式获取正确的滚动容器
+  const scrollerRef = showFullLyrics.value ? lyricsScrollerRef.value : 
+                     (isLandscape.value ? landscapeLyricsRef.value : lyricsScrollerRef.value);
+                     
+  lastScrollTop.value = scrollerRef?.scrollTop || 0;
   isTouchScrolling.value = true;
   
   // 用户开始触摸时，暂时停止自动滚动
   isAutoScrollEnabled.value = false;
+  
+  // 清除之前可能存在的计时器
+  if (autoScrollTimer.value) {
+    clearTimeout(autoScrollTimer.value);
+    autoScrollTimer.value = null;
+  }
 };
 
 const handleTouchMove = () => {
-  if (!isTouchScrolling.value || !lyricsScrollerRef.value) return;
+  if (!isTouchScrolling.value) return;
   // 实际的滚动处理由浏览器默认行为完成
 };
 
 const handleTouchEnd = () => {
-  // 设置计时器，5秒后恢复自动滚动
+  // 设置计时器，3秒后恢复自动滚动
   if (autoScrollTimer.value) {
     clearTimeout(autoScrollTimer.value);
   }
@@ -497,8 +558,14 @@ const handleTouchEnd = () => {
   autoScrollTimer.value = window.setTimeout(() => {
     isAutoScrollEnabled.value = true;
     isTouchScrolling.value = false;
-    scrollToCurrentLyric();
-  }, 5000);
+    
+    // 恢复自动滚动到当前歌词
+    if (showFullLyrics.value) {
+      scrollToCurrentLyric(true);
+    } else if (isLandscape.value) {
+      scrollToCurrentLyric(true, landscapeLyricsRef.value);
+    }
+  }, 3000);
 };
 
 // 封面样式循环切换
@@ -522,10 +589,14 @@ const cycleCoverStyle = () => {
 const isThumbDragging = ref(false);
 const progressContainerWidth = ref(0);
 
+// 鼠标拖动进度条相关变量
+const isMouseDragging = ref(false);
+
 // 处理进度条点击
 const handleProgressBarClick = (e: MouseEvent) => {
   if (!sound.value) return;
   
+  e.stopPropagation(); // 阻止事件冒泡
   const progressBar = e.currentTarget as HTMLElement;
   const rect = progressBar.getBoundingClientRect();
   const offsetX = e.clientX - rect.left;
@@ -534,13 +605,80 @@ const handleProgressBarClick = (e: MouseEvent) => {
   const percentage = offsetX / rect.width;
   const newTime = Math.max(0, Math.min(percentage * allTime.value, allTime.value));
   
+  console.log(`进度条点击: ${percentage.toFixed(2)}, 新时间: ${newTime.toFixed(2)}`);
+  
   sound.value.seek(newTime);
   nowTime.value = newTime;
 };
 
+// 鼠标按下事件
+const handleMouseDown = (e: MouseEvent) => {
+  if (e.button !== 0) return; // 只处理左键点击
+  
+  e.preventDefault();
+  e.stopPropagation();
+  isMouseDragging.value = true;
+  
+  // 立即更新位置
+  const progressBar = (e.currentTarget as HTMLElement).closest('.apple-style-progress') as HTMLElement;
+  if (progressBar) {
+    const rect = progressBar.getBoundingClientRect();
+    const offsetX = e.clientX - rect.left;
+    const percentage = Math.max(0, Math.min(1, offsetX / rect.width));
+    const newTime = percentage * allTime.value;
+    
+    nowTime.value = newTime;
+    console.log(`鼠标按下，位置: ${percentage.toFixed(2)}, 时间: ${newTime.toFixed(2)}秒`);
+  }
+  
+  // 添加全局鼠标事件监听
+  document.addEventListener('mousemove', handleMouseMove);
+  document.addEventListener('mouseup', handleMouseUp);
+};
+
+// 鼠标移动事件
+const handleMouseMove = (e: MouseEvent) => {
+  if (!isMouseDragging.value || !sound.value) return;
+  
+  e.preventDefault();
+  
+  // 查找当前视图中的进度条元素
+  const progressBar = isLandscape.value 
+    ? document.querySelector('.landscape-left-section .apple-style-progress')
+    : document.querySelector('.unified-controls .apple-style-progress');
+  
+  if (!progressBar) return;
+  
+  const rect = (progressBar as HTMLElement).getBoundingClientRect();
+  const offsetX = e.clientX - rect.left;
+  const percentage = Math.max(0, Math.min(1, offsetX / rect.width));
+  const newTime = percentage * allTime.value;
+  
+  nowTime.value = newTime;
+  console.log(`鼠标移动，位置: ${percentage.toFixed(2)}, 时间: ${newTime.toFixed(2)}秒`);
+};
+
+// 鼠标释放事件
+const handleMouseUp = (e: MouseEvent) => {
+  if (!isMouseDragging.value || !sound.value) return;
+  
+  e.preventDefault();
+  
+  // 释放时跳转到指定位置
+  sound.value.seek(nowTime.value);
+  console.log(`鼠标释放，跳转到: ${nowTime.value.toFixed(2)}秒`);
+  
+  isMouseDragging.value = false;
+  
+  // 移除全局事件监听
+  document.removeEventListener('mousemove', handleMouseMove);
+  document.removeEventListener('mouseup', handleMouseUp);
+};
+
 // 处理滑块拖动
 const handleThumbTouchStart = (e: TouchEvent) => {
-  e.stopPropagation();
+  e.preventDefault(); // 阻止默认行为
+  e.stopPropagation(); // 阻止事件冒泡
   isThumbDragging.value = true;
   
   // 获取进度条宽度
@@ -548,11 +686,14 @@ const handleThumbTouchStart = (e: TouchEvent) => {
   const progressBar = target.parentElement?.parentElement as HTMLElement;
   if (progressBar) {
     progressContainerWidth.value = progressBar.getBoundingClientRect().width;
+    console.log(`进度条宽度: ${progressContainerWidth.value}px`);
   }
 };
 
 const handleThumbTouchMove = (e: TouchEvent) => {
   if (!isThumbDragging.value || !sound.value) return;
+  
+  e.preventDefault(); // 阻止默认行为
   
   const touch = e.touches[0];
   const target = e.currentTarget as HTMLElement;
@@ -566,12 +707,18 @@ const handleThumbTouchMove = (e: TouchEvent) => {
   
   // 实时更新UI，但不频繁seek
   nowTime.value = newTime;
+  
+  console.log(`thumb拖动: ${percentage.toFixed(2)}, 时间: ${newTime.toFixed(2)}`);
 };
 
-const handleThumbTouchEnd = () => {
+const handleThumbTouchEnd = (e: TouchEvent) => {
   if (!isThumbDragging.value || !sound.value) return;
   
+  e.preventDefault(); // 阻止默认行为
+  e.stopPropagation(); // 阻止事件冒泡
+  
   // 拖动结束时执行seek操作
+  console.log(`拖动结束，跳转到: ${nowTime.value.toFixed(2)}秒`);
   sound.value.seek(nowTime.value);
   isThumbDragging.value = false;
 };
@@ -697,6 +844,10 @@ onBeforeUnmount(() => {
   if (autoScrollTimer.value) {
     clearTimeout(autoScrollTimer.value);
   }
+  
+  // 清理鼠标事件监听
+  document.removeEventListener('mousemove', handleMouseMove);
+  document.removeEventListener('mouseup', handleMouseUp);
 });
 
 const { navigateToArtist } = useArtist();
@@ -753,6 +904,28 @@ onMounted(() => {
   if (savedConfig) {
     config.value = { ...config.value, ...JSON.parse(savedConfig) };
   }
+  
+  // 初始化自动滚动状态
+  isAutoScrollEnabled.value = true;
+  isTouchScrolling.value = false;
+  
+  // 等待DOM元素渲染完成后初始化歌词滚动
+  nextTick(() => {
+    if (isVisible.value) {
+      // 在横屏模式下
+      if (isLandscape.value) {
+        setTimeout(() => {
+          scrollToCurrentLyric(true, landscapeLyricsRef.value);
+        }, 500);
+      }
+      // 在全屏歌词模式下
+      else if (showFullLyrics.value) {
+        setTimeout(() => {
+          scrollToCurrentLyric(true);
+        }, 500);
+      }
+    }
+  });
 });
 
 // 当显示状态变化时，更新封面与背景融合效果
@@ -775,16 +948,32 @@ const jumpToLyricTime = (index: number) => {
     // 使用类型断言确保time属性存在
     const lrcItem = lrcArray.value[index] as { time: number; text: string; trText?: string };
     const time = lrcItem.time / 1000;
+    
+    // 更新播放位置
     sound.value.seek(time);
     nowTime.value = time;
     
-    // 显示反馈动画
-    const activeEl = document.getElementById(`lyric-line-${index}`);
+    // 显示反馈动画 - 处理两种模式下的歌词行
+    const normalEl = document.getElementById(`lyric-line-${index}`);
+    const landscapeEl = document.getElementById(`landscape-lyric-line-${index}`);
+    
+    // 根据当前模式获取正确的元素并添加动画效果
+    const activeEl = isLandscape.value ? landscapeEl : normalEl;
+    
     if (activeEl) {
       activeEl.classList.add('clicked');
       setTimeout(() => {
         activeEl.classList.remove('clicked');
       }, 300);
+    }
+    
+    // 如果歌词索引没有变化（例如点击当前行），手动触发滚动
+    if (nowIndex.value === index) {
+      if (isLandscape.value && !showFullLyrics.value) {
+        scrollToCurrentLyric(true, landscapeLyricsRef.value);
+      } else if (showFullLyrics.value) {
+        scrollToCurrentLyric(true);
+      }
     }
   }
 };
@@ -822,191 +1011,260 @@ const getLrcStyle = (index: number) => {
   @apply top-0 left-0 absolute overflow-hidden flex flex-col w-full h-full;
   animation-duration: 300ms;
   
+  // 通用控制按钮样式
+  .main-button {
+    @apply flex items-center justify-center cursor-pointer transition-all duration-200 rounded-full;
+
+    i {
+      @apply text-2xl;
+      color: var(--text-color-active);
+    }
+    
+    &.play-pause {
+      i {
+        @apply text-4xl;
+      }
+    }
+    
+    &:hover {
+      transform: scale(1.05);
+    }
+    
+    &:active {
+      transform: scale(0.95);
+    }
+  }
+  
+  // 通用进度条样式
+  .apple-style-progress {
+    @apply relative flex items-center cursor-pointer;
+    touch-action: none; // 确保触摸事件正常工作
+    
+    .progress-track {
+      @apply relative w-full h-2 bg-white bg-opacity-20 rounded-full;
+      
+      .progress-fill {
+        @apply absolute top-0 left-0 h-full bg-white rounded-full;
+        box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+        z-index: 1;
+        transition: width 0.1s linear;
+      }
+      
+      .progress-thumb {
+        @apply absolute top-1/2 -translate-y-1/2 -translate-x-1/2 rounded-full bg-white;
+        box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+        z-index: 2;
+        transition: transform 0.15s ease-out;
+        
+        &.active {
+          transform: translate(-50%, -50%) scale(1.3);
+          box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
+        }
+        
+        &:active {
+          transform: translate(-50%, -50%) scale(1.3);
+        }
+      }
+    }
+  }
+
+  // 通用唱片样式
+  .record-style-common {
+    @apply rounded-full overflow-hidden relative;
+    aspect-ratio: 1/1;
+    
+    &::before {
+      content: '';
+      @apply absolute top-0 left-0 w-full h-full rounded-full z-10;
+      background: radial-gradient(circle at center, 
+                               transparent 38%, 
+                               rgba(0, 0, 0, 0.15) 38%, 
+                               rgba(0, 0, 0, 0.15) 39%, 
+                               rgba(255, 255, 255, 0.1) 39%, 
+                               rgba(255, 255, 255, 0.1) 39.5%,
+                               rgba(0, 0, 0, 0.08) 39.5%,
+                               rgba(0, 0, 0, 0.08) 40.5%,
+                               rgba(0, 0, 0, 0.2) 40.5%,
+                               rgba(0, 0, 0, 0.2) 41.5%,
+                               rgba(0, 0, 0, 0.6) 41.5%,
+                               rgba(0, 0, 0, 0.6) 100%);
+      pointer-events: none;
+      animation: spin 20s linear infinite;
+      animation-play-state: running;
+    }
+    
+    &::after {
+      content: '';
+      @apply absolute w-6 h-6 rounded-full bg-gray-900 z-20;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.4);
+    }
+    
+    &.paused {
+      &::before, &::after {
+        animation-play-state: paused;
+      }
+    }
+    
+    .img-wrapper {
+      @apply rounded-full overflow-hidden border-solid border-black z-0;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      
+      &::after {
+        content: '';
+        @apply absolute top-0 left-0 w-full h-full rounded-full z-[2];
+        background: linear-gradient(135deg, 
+                                  rgba(255, 255, 255, 0.05) 0%, 
+                                  rgba(255, 255, 255, 0) 50%, 
+                                  rgba(0, 0, 0, 0.05) 100%);
+        pointer-events: none;
+      }
+    }
+    
+    .cover-image {
+      @apply w-full h-full rounded-full border-[2px] border-gray-900;
+      animation: spin 20s linear infinite;
+      animation-play-state: running;
+    }
+    
+    &.paused .cover-image {
+      animation-play-state: paused;
+    }
+  }
+  
+  // 通用时间显示样式
+  .time-info {
+    @apply flex justify-between items-center mb-2;
+    
+    .current-time, .total-time {
+      @apply text-sm;
+      color: var(--text-color-primary);
+      opacity: 0.8;
+    }
+  }
+  
+  // 通用收藏按钮样式
+  .favorite-icon {
+    @apply cursor-pointer transition-all duration-200;
+    
+    i {
+      @apply text-xl;
+      color: var(--text-color-primary);
+      
+      &.favorite {
+        @apply text-red-500 !important;
+      }
+    }
+    
+    &:hover {
+      transform: scale(1.1);
+    }
+    
+    &:active {
+      transform: scale(0.9);
+    }
+    
+    &.landscape {
+      i {
+        @apply text-3xl;
+      }
+    }
+  }
+  
+  // 通用歌曲信息样式
+  .song-info-common {
+    @apply z-[9995];
+    
+    .song-title {
+      @apply font-bold line-clamp-1;
+      color: var(--text-color-active);
+    }
+    
+    .song-artist {
+      @apply font-medium line-clamp-1;
+      color: var(--text-color-primary);
+      opacity: 0.9;
+      
+      .artist-name {
+        @apply cursor-pointer;
+        
+        &:hover {
+          @apply underline;
+        }
+      }
+    }
+  }
+  
   // 横屏模式布局
   &.is-landscape {
     .landscape-layout {
-      @apply flex flex-row w-full h-full overflow-hidden px-8;
+      @apply flex flex-row w-full h-full overflow-hidden px-8 gap-4;
       
-      // 左侧区域 - 封面和进度条
+      // 左侧区域
       .landscape-left-section {
         @apply h-full flex flex-col items-center justify-center pt-6 pb-6 px-3 relative;
-        width: 40%;
-        min-width: 380px;
+        width: 35%; 
+        min-width: 320px;
         max-width: 480px;
         
         // 封面
         .landscape-cover-container {
-          @apply flex-shrink-0 mx-auto mb-8;
-          width: 90%;
-          max-width: 280px;
-          min-width: 200px;
+          @apply flex-shrink-0 mx-auto mb-4 z-[9995];
+          width: 85%;
+          max-width: 260px;
+          min-width: 180px;
           
           &.record-style {
-            @apply rounded-full overflow-hidden relative;
-            aspect-ratio: 1/1;
-            
-            // 唱片外圈装饰
-            &::before {
-              content: '';
-              @apply absolute top-0 left-0 w-full h-full rounded-full z-10;
-              background: radial-gradient(circle at center, 
-                                         transparent 38%, 
-                                         rgba(0, 0, 0, 0.15) 38%, 
-                                         rgba(0, 0, 0, 0.15) 39%, 
-                                         rgba(255, 255, 255, 0.1) 39%, 
-                                         rgba(255, 255, 255, 0.1) 39.5%,
-                                         rgba(0, 0, 0, 0.08) 39.5%,
-                                         rgba(0, 0, 0, 0.08) 40.5%,
-                                         rgba(0, 0, 0, 0.2) 40.5%,
-                                         rgba(0, 0, 0, 0.2) 41.5%,
-                                         rgba(0, 0, 0, 0.6) 41.5%,
-                                         rgba(0, 0, 0, 0.6) 100%);
-              pointer-events: none;
-              animation: spin 20s linear infinite;
-              animation-play-state: running;
-            }
-            
-            &.paused {
-              &::before, &::after {
-                animation-play-state: paused;
-              }
-            }
+            @extend .record-style-common;
             
             .img-wrapper {
-              @apply rounded-full overflow-hidden border-[20px] border-solid border-black z-0;
+              @apply border-[20px];
               width: 90%;
               height: 90%;
-              position: absolute;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%);
-              
-              // 光泽效果
-              &::after {
-                content: '';
-                @apply absolute top-0 left-0 w-full h-full rounded-full z-[2];
-                background: linear-gradient(135deg, 
-                                          rgba(255, 255, 255, 0.05) 0%, 
-                                          rgba(255, 255, 255, 0) 50%, 
-                                          rgba(0, 0, 0, 0.05) 100%);
-                pointer-events: none;
-              }
-            }
-            
-            .cover-image {
-              @apply w-full h-full rounded-full border-[3px] border-gray-900;
-              animation: spin 20s linear infinite;
-              animation-play-state: running;
-            }
-            
-            &.paused .cover-image {
-              animation-play-state: paused;
             }
           }
-          
-          &.square-style {
-            @apply shadow-lg rounded-xl overflow-hidden;
-            aspect-ratio: 1/1;
-            
-            .cover-image {
-              @apply w-full h-full;
-            }
-          }
-          
-          &.full-style {
-            @apply relative;
-            aspect-ratio: 1/1;
-            
-            .cover-image {
-              @apply w-full h-auto shadow-lg rounded-xl;
-            }
-          }
-        }
-        
-        // 频谱容器
-        .spectrum-container {
-          @apply w-full max-w-md mb-3 px-2;
-          height: 60px;
         }
         
         // 左侧进度条
         .landscape-progress-container {
           @apply mt-0 mb-2 px-2 w-full max-w-md;
           
-          .time-info {
-            @apply flex justify-between items-center mb-2;
-            
-            .current-time, .total-time {
-              @apply text-sm;
-              color: var(--text-color-primary);
-              opacity: 0.8;
-            }
-          }
-          
           .apple-style-progress {
-            @apply relative h-8 flex items-center cursor-pointer;
+            height: 48px; // 增加高度使更容易点击
             
-            .progress-track {
-              @apply relative w-full h-2 bg-white bg-opacity-20 rounded-full;
-              
-              .progress-fill {
-                @apply absolute top-0 left-0 h-full bg-white rounded-full;
-                box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
-                z-index: 1;
-                transition: width 0.1s linear;
-              }
-              
-              .progress-thumb {
-                @apply absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-white;
-                box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
-                z-index: 2;
-                transition: transform 0.15s ease-out;
-                
-                &.active {
-                  transform: translate(-50%, -50%) scale(1.3);
-                  box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
-                }
-                
-                &:active {
-                  transform: translate(-50%, -50%) scale(1.3);
-                }
-              }
+            .progress-thumb {
+              @apply w-5 h-5;
             }
           }
         }
       }
       
-      // 右侧区域 - 歌词和主要控制按钮
+      // 右侧区域
       .landscape-lyrics-section {
         @apply h-full flex-1 flex flex-col relative;
         
-        // 歌曲信息 - 现在在歌词顶部
+        // 歌曲信息
         .landscape-song-info {
-          @apply flex flex-col pt-5 px-6 z-10;
+          @apply flex justify-between items-center pt-5 z-[9995] px-4;
+          @extend .song-info-common;
           
           .song-title {
-            @apply text-2xl font-bold mb-1 line-clamp-1;
-            color: var(--text-color-active);
+            @apply text-2xl mb-1;
           }
           
           .song-artist {
-            @apply text-base font-medium line-clamp-1;
-            color: var(--text-color-primary);
-            opacity: 0.9;
-            
-            .artist-name {
-              @apply cursor-pointer;
-              
-              &:hover {
-                @apply underline;
-              }
-            }
+            @apply text-base;
           }
         }
         
         // 歌词滚动区域
         .landscape-lyrics-scroller {
-          @apply h-full w-full overflow-y-auto px-6 pt-24 pb-24;
+          @apply h-full w-full overflow-y-auto pt-24 pb-24;
           scroll-behavior: smooth;
           -webkit-overflow-scrolling: touch;
           mask-image: linear-gradient(to bottom, transparent 5%, black 15%, black 85%, transparent 95%);
@@ -1017,76 +1275,24 @@ const getLrcStyle = (index: number) => {
             black 85%,
             transparent 95%
           );
-          
-          .lyrics-padding-top {
-            height: 30px;
-            min-height: 30px;
-          }
-          
-          .lyrics-padding-bottom {
-            height: 100px;
-            min-height: 100px;
-          }
-          
-          .lyric-line {
-            @apply px-4 py-3 cursor-pointer text-left transition-all duration-300;
-            font-size:  26px;
-            font-weight: 500;
-            letter-spacing: var(--lyric-letter-spacing, 0);
-            line-height: var(--lyric-line-height, 1.6);
-            color: var(--text-color-primary);
-            opacity: 0.8;
-            
-            span {
-              background-clip: text !important;
-              -webkit-background-clip: text !important;
-            }
-            
-            &.now-text {
-              @apply font-bold text-3xl py-4;
-              color: var(--text-color-active);
-              opacity: 1;
-            }
-            
-            .translation {
-              @apply font-normal opacity-70 mt-1 text-base;
-            }
-          }
         }
         
-        // 主要控制按钮 - 右下角
+        // 控制按钮
         .landscape-main-controls {
-          @apply fixed bottom-6 right-6 flex items-center z-10;
+          @apply fixed bottom-6 right-6 flex items-center z-[10000];
           
           .main-button {
-            @apply mx-2 flex items-center justify-center cursor-pointer transition-all duration-200 rounded-full;
+            @apply mx-2;
             width: 54px;
             height: 54px;
             background-color: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(8px);
-            
-            i {
-              @apply text-2xl;
-              color: var(--text-color-active);
-            }
+            border-radius: 50%;
             
             &.play-pause {
               width: 70px;
               height: 70px;
               background-color: rgba(255, 255, 255, 0.25);
-              
-              i {
-                @apply text-4xl;
-              }
-            }
-            
-            &:hover {
-              background-color: rgba(255, 255, 255, 0.3);
-              transform: scale(1.05);
-            }
-            
-            &:active {
-              transform: scale(0.95);
             }
           }
         }
@@ -1094,400 +1300,118 @@ const getLrcStyle = (index: number) => {
     }
   }
   
-  .control-btn {
-    @apply w-9 h-9 flex items-center justify-center rounded cursor-pointer transition-all duration-300 z-[9999];
-    background: rgba(142, 142, 142, 0.192);
-    backdrop-filter: blur(12px);
-
-    i {
-      @apply text-xl;
-      color: var(--text-color-active);
-    }
-
-    &.pure-mode {
-      background: transparent;
-      backdrop-filter: none;
-
-      &:not(:hover) {
-        i {
-          opacity: 0;
-        }
-      }
-    }
-
-    &:hover {
-      background: rgba(126, 121, 121, 0.2);
-      i {
-        opacity: 1;
-      }
-    }
-  }
-  
-  // 全屏歌词样式
-  .fullscreen-lyrics {
-    @apply flex flex-col w-full h-full relative;
-    
-    &.light {
-      background: linear-gradient(to bottom, #ffffff, #f5f5f5);
-    }
-    
-    &.dark {
-      background: linear-gradient(to bottom, #1a1a1a, #000000);
-    }
-    
-    .fullscreen-header {
-      @apply pt-8 pb-4 px-6 flex flex-col items-center fixed top-0 left-0 w-full z-10;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 100%);
-      height: 100px;
-      pointer-events: auto;
+  // 竖屏模式布局
+  &:not(.is-landscape) {
+    .ios-layout-container {
+      @apply flex flex-col items-center justify-between w-full h-full pt-10;
+      padding-bottom: 180px; // 为控制区域留出空间
       
-      .song-title {
-        @apply text-xl font-semibold text-white text-center mb-1 max-w-full line-clamp-1;
-        color: var(--text-color-active);
-      }
-      
-      .artist-name {
-        @apply text-sm text-opacity-80 text-center;
-        color: var(--text-color-primary);
-      }
-    }
-    
-    .lyrics-scroller {
-      @apply flex-1 overflow-y-auto px-4;
-      scroll-behavior: smooth;
-      -webkit-overflow-scrolling: touch;
-      mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
-      -webkit-mask-image: linear-gradient(
-        to bottom,
-        transparent 0%,
-        black 10%,
-        black 90%,
-        transparent 100%
-      );
-      padding-top: 100px;
-      padding-bottom: 200px;
-      margin-bottom: 180px; /* 确保底部留出足够空间 */
-      margin-top: 90px;
-      
-      .lyrics-padding-top {
-        height: 70px;
-        min-height: 70px;
-      }
-      
-      .lyrics-padding-bottom {
-        height: 150px;
-        min-height: 150px;
-      }
-      
-      .lyric-line {
-        @apply px-6 py-4 cursor-pointer font-bold text-center transition-all duration-300;
-        font-size: var(--lyric-font-size, 22px);
-        letter-spacing: var(--lyric-letter-spacing, 0);
-        line-height: var(--lyric-line-height, 2);
+      // 封面样式
+      .cover-container {
+        @apply relative mb-6 transition-all duration-500 border-gray-900 z-[9995];
         
-        span {
-          background-clip: text !important;
-          -webkit-background-clip: text !important;
-          padding-right: 10px;
+        &.style-changing {
+          animation: styleChange 0.5s ease;
         }
         
-        .translation {
-          @apply font-normal opacity-70;
-          color: var(--text-color-primary);
-        }
-      }
-      
-      .now-text {
-        @apply text-2xl font-semibold;
-        
-        span {
-          background-clip: text !important;
-          -webkit-background-clip: text !important;
-        }
-      }
-    }
-  }
-  
-  // 统一的控制区域样式
-  .unified-controls {
-    @apply fixed bottom-0 left-0 right-0 px-6 pt-6 pb-8 z-[9999];
-    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
-    height: 210px;
-    pointer-events: auto;
-    
-    &.landscape-mode {
-      background: linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
-    }
-    
-    .progress-container {
-      @apply w-full mb-6;
-      pointer-events: auto;
-      
-      .time-info {
-        @apply flex justify-between items-center mb-2;
-        
-        .current-time, .total-time {
-          @apply text-xs;
-          color: var(--text-color-primary);
-          opacity: 0.7;
-        }
-      }
-      
-      .apple-style-progress {
-        @apply w-full h-10 flex items-center relative cursor-pointer;
-        
-        .progress-track {
-          @apply relative w-full h-1.5 bg-white bg-opacity-20 rounded-full;
+        &.record-style {
+          @extend .record-style-common;
+          @apply w-72 h-72;
           
-          .progress-fill {
-            @apply absolute top-0 left-0 h-full bg-white rounded-full;
-            box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
-            z-index: 1;
-            transition: width 0.1s linear;
+          .img-wrapper {
+            @apply border-[40px];
+            width: 90%;
+            height: 90%;
           }
+        }
+      }
+      
+      // 歌曲信息
+      .song-info {
+        @apply flex flex-col items-center mb-5 w-full z-[9995];
+        @extend .song-info-common;
+        
+        .song-title-container {
+          @apply w-full text-center;
+          
+          .song-title {
+            @apply text-2xl inline-block;
+          }
+        }
+        
+        .song-artist {
+          @apply text-base mb-2;
+        }
+
+        .ri-heart-3-fill{
+          @apply text-2xl;
+        }
+      }
+    }
+    
+    // 统一控制区域
+    .unified-controls {
+      @apply fixed bottom-0 left-0 right-0 px-6 pt-6 pb-6;
+      background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 100%);
+      height: 230px;
+      pointer-events: auto;
+      z-index: 10000 !important;
+      
+      .progress-container {
+        @apply w-full mb-6;
+        
+        .apple-style-progress {
+          height: 40px;
           
           .progress-thumb {
-            @apply absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-4 h-4 rounded-full bg-white;
-            box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
-            z-index: 2;
-            transition: transform 0.15s ease-out;
-            
-            &.active {
-              transform: translate(-50%, -50%) scale(1.3);
-              box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
-            }
-            
-            &:active {
-              transform: translate(-50%, -50%) scale(1.3);
-            }
-          }
-        }
-      }
-    }
-    
-    .control-buttons {
-      @apply flex items-center justify-between w-full px-4;
-      
-      .back-button{
-        @apply absolute top-4 left-1/2 -translate-x-1/2 w-10 h-10 flex items-center justify-center bg-black bg-opacity-30 rounded-2xl;
-
-        i{
-          @apply text-4xl;
-          color: var(--text-color-primary);
-        }
-      }
-      
-      .side-button {
-        @apply w-10 h-10 flex items-center justify-center cursor-pointer transition-all duration-200;
-        
-        i {
-          @apply text-2xl;
-          color: var(--text-color-primary);
-          
-          &.favorite {
-            @apply text-red-500 !important;
-          }
-        }
-        
-        &:hover {
-          i {
-            color: var(--text-color-active);
+            @apply w-4 h-4;
           }
         }
       }
       
-      .main-button {
-        @apply w-14 h-14 flex items-center justify-center cursor-pointer transition-all duration-200;
+      .control-buttons {
+        @apply flex items-center justify-between w-full px-4;
         
-        i {
-          @apply text-3xl;
-          color: var(--text-color-primary);
-        }
-        
-        &.play-pause {
-          @apply w-16 h-16 bg-white/20 rounded-full;
+        .side-button {
+          @apply w-10 h-10 flex items-center justify-center cursor-pointer transition-all duration-200;
           
           i {
-            @apply text-4xl;
-            color: var(--text-color-active);
+            @apply text-2xl;
+            color: var(--text-color-primary);
           }
-        }
-        
-        &:hover:not(.play-pause) {
-          i {
-            color: var(--text-color-active);
-          }
-        }
-        
-        &.play-pause:hover {
-          @apply bg-white/30;
-        }
-      }
-    }
-  }
-  
-  // iOS风格布局容器
-  .ios-layout-container {
-    @apply flex flex-col items-center justify-between w-full h-full pt-10;
-    padding-bottom: 180px; /* 为统一控制区域留出空间 */
-    
-    // 封面样式
-    .cover-container {
-      @apply relative mb-6 transition-all duration-500 border-gray-900;
-      
-      &.style-changing {
-        animation: styleChange 0.5s ease;
-      }
-      
-      .img-wrapper {
-        @apply relative overflow-hidden;
-      }
-      
-      &.record-style {
-        @apply w-72 h-72 rounded-full overflow-hidden relative;
-        
-        // 唱片外圈装饰
-        &::before {
-          content: '';
-          @apply absolute top-0 left-0 w-full h-full rounded-full z-10;
-          background: radial-gradient(circle at center, 
-                                     transparent 38%, 
-                                     rgba(0, 0, 0, 0.15) 38%, 
-                                     rgba(0, 0, 0, 0.15) 39%, 
-                                     rgba(255, 255, 255, 0.1) 39%, 
-                                     rgba(255, 255, 255, 0.1) 39.5%,
-                                     rgba(0, 0, 0, 0.08) 39.5%,
-                                     rgba(0, 0, 0, 0.08) 40.5%,
-                                     rgba(0, 0, 0, 0.2) 40.5%,
-                                     rgba(0, 0, 0, 0.2) 41.5%,
-                                     rgba(0, 0, 0, 0.6) 41.5%,
-                                     rgba(0, 0, 0, 0.6) 100%);
-          pointer-events: none;
-          animation: spin 20s linear infinite;
-          animation-play-state: running;
-        }
-        
-        &.paused {
-          &::before, &::after {
-            animation-play-state: paused;
-          }
-        }
-        
-        .img-wrapper {
-          @apply rounded-full overflow-hidden border-[40px] border-solid border-black z-0;
-          width: 90%;
-          height: 90%;
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          
-          // 光泽效果
-          &::after {
-            content: '';
-            @apply absolute top-0 left-0 w-full h-full rounded-full z-[2];
-            background: linear-gradient(135deg, 
-                                      rgba(255, 255, 255, 0.05) 0%, 
-                                      rgba(255, 255, 255, 0) 50%, 
-                                      rgba(0, 0, 0, 0.05) 100%);
-            pointer-events: none;
-          }
-        }
-        
-        .cover-image {
-          @apply w-full h-full rounded-full border-[5px] border-gray-900;
-          animation: spin 20s linear infinite;
-          animation-play-state: running;
-        }
-        
-        &.paused .cover-image {
-          animation-play-state: paused;
-        }
-      }
-      
-      &.square-style {
-        @apply w-72 h-72 shadow-lg rounded-xl overflow-hidden mt-8;
-        
-        .cover-image {
-          @apply w-full h-full;
-          transition: transform 0.3s ease-out;
-          
-          &:active {
-            transform: scale(0.95);
-          }
-        }
-      }
-      
-      &.full-style {
-        @apply w-full max-h-[50vh] relative overflow-hidden;
-        
-        &::after {
-          content: '';
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          height: 40%;
-          background: linear-gradient(transparent, var(--bg-color, rgba(25, 25, 25, 1)) 70%, var(--bg-color, rgba(25, 25, 25, 1)));
-          z-index: 1;
-          pointer-events: none;
-        }
-        
-        .cover-image {
-          @apply w-full h-auto shadow-lg;
-        }
-      }
-    }
-    
-    // 歌曲信息
-    .song-info {
-      @apply flex flex-col items-center mb-5 w-full;
-      
-      .song-title {
-        @apply text-center text-2xl font-bold mb-1 max-w-full;
-        color: var(--text-color-active);
-      }
-      
-      .song-artist {
-        @apply text-center text-base mb-0;
-        color: var(--text-color-primary);
-        opacity: 0.8;
-        
-        .artist-name {
-          @apply cursor-pointer;
           
           &:hover {
-            @apply underline;
+            i {
+              color: var(--text-color-active);
+            }
           }
         }
-      }
-    }
-    
-    // 歌词区域
-    .lyrics-container {
-      @apply w-full flex-grow flex flex-col items-center justify-center mb-6 overflow-hidden cursor-pointer;
-      
-      .lyrics-wrapper {
-        @apply w-full flex flex-col items-center justify-center;
         
-        .lyric-line {
-          @apply text-center py-1 transition-all duration-300 opacity-70;
-          color: var(--text-color-primary);
+        .main-button {
+          @apply w-14 h-14;
           
-          &:nth-child(2) {
-            @apply text-lg font-medium opacity-100;
-            color: var(--text-color-active);
+          i {
+            @apply text-3xl;
           }
           
-          .translation {
-            @apply text-sm opacity-60 mt-1;
+          &.play-pause {
+            @apply w-16 h-16 bg-white/15 rounded-full backdrop-blur-sm;
+            
+            i {
+              @apply text-4xl;
+            }
+          }
+          
+          &:hover:not(.play-pause) {
+            i {
+              color: var(--text-color-active);
+            }
+          }
+          
+          &.play-pause:hover {
+            @apply bg-white/30;
           }
         }
-      }
-      
-      .no-lyrics {
-        @apply text-center text-base opacity-60;
-        color: var(--text-color-primary);
       }
     }
   }
@@ -1507,7 +1431,7 @@ const getLrcStyle = (index: number) => {
 .loading-overlay {
   @apply absolute top-0 left-0 w-full h-full flex items-center justify-center;
   background-color: rgba(0, 0, 0, 0.5);
-  z-index: 2;
+  z-index: 9999999999;
   
   .loading-icon {
     font-size: 36px;
@@ -1581,4 +1505,291 @@ const getLrcStyle = (index: number) => {
     opacity: 0.9;
   }
 }
+
+.favorite-icon {
+  @apply cursor-pointer transition-all duration-200;
+  
+  i {
+    @apply text-xl;
+    color: var(--text-color-primary);
+    
+    &.favorite {
+      @apply text-red-500 !important;
+    }
+  }
+  
+  &:hover {
+    transform: scale(1.1);
+  }
+  
+  &:active {
+    transform: scale(0.9);
+  }
+  
+  &.landscape {
+    @apply mt-2;
+    i {
+      @apply text-2xl;
+    }
+  }
+}
+
+// 歌曲标题容器样式
+.song-title-container {
+  @apply w-full flex items-center justify-center relative;
+  
+  .song-title {
+    @apply text-center text-2xl font-bold max-w-[80%] truncate;
+    color: var(--text-color-active);
+  }
+}
+
+// 通用歌词样式
+.lyric-line {
+  @apply cursor-pointer transition-all duration-300;
+  font-weight: 500;
+  letter-spacing: var(--lyric-letter-spacing, 0);
+  line-height: var(--lyric-line-height, 1.6);
+  color: var(--text-color-primary);
+  opacity: 0.8;
+  
+  span {
+    background-clip: text !important;
+    -webkit-background-clip: text !important;
+  }
+  
+  &.now-text {
+    @apply font-bold py-4;
+    color: var(--text-color-active);
+    opacity: 1;
+  }
+  
+  &.clicked {
+    animation: clickPulse 0.3s ease-in-out;
+  }
+  
+  .translation {
+    @apply font-normal opacity-70 mt-1 text-base;
+  }
+}
+
+// 全屏歌词相关样式
+.fullscreen-lyrics {
+  @apply flex flex-col w-full h-full relative;
+  
+  &.light {
+    background: linear-gradient(to bottom, #ffffff, #f5f5f5);
+  }
+  
+  &.dark {
+    background: linear-gradient(to bottom, #1a1a1a, #000000);
+  }
+  
+  .fullscreen-header {
+    @apply pt-8 pb-4 px-6 flex flex-col items-center fixed top-0 left-0 w-full z-10;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 100%);
+    height: 100px;
+    pointer-events: auto;
+    
+    .song-title {
+      @apply text-xl font-semibold text-center mb-1 max-w-full line-clamp-1;
+      color: var(--text-color-active);
+    }
+    
+    .artist-name {
+      @apply text-sm text-opacity-80 text-center;
+      color: var(--text-color-primary);
+    }
+  }
+  
+  .lyrics-scroller {
+    @apply flex-1 overflow-y-auto px-4;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      black 10%,
+      black 90%,
+      transparent 100%
+    );
+    padding-top: 100px;
+    padding-bottom: 200px;
+    margin-bottom: 180px;
+    margin-top: 90px;
+    
+    .lyrics-padding-top {
+      height: 70px;
+      min-height: 70px;
+    }
+    
+    .lyrics-padding-bottom {
+      height: 150px;
+      min-height: 150px;
+    }
+    
+    .lyric-line {
+      @apply px-6 py-4 text-center;
+      font-size: var(--lyric-font-size, 22px);
+      
+      span {
+        padding-right: 10px;
+      }
+    }
+    
+    .now-text {
+      @apply text-2xl;
+    }
+  }
+}
+
+// 必要的控制按钮样式
+.control-btn {
+  @apply w-9 h-9 flex items-center justify-center rounded cursor-pointer transition-all duration-300 z-[9999];
+  background: rgba(142, 142, 142, 0.192);
+  backdrop-filter: blur(12px);
+
+  i {
+    @apply text-xl;
+    color: var(--text-color-active);
+  }
+
+  &.pure-mode {
+    background: transparent;
+    backdrop-filter: none;
+
+    &:not(:hover) {
+      i {
+        opacity: 0;
+      }
+    }
+  }
+
+  &:hover {
+    background: rgba(126, 121, 121, 0.2);
+    i {
+      opacity: 1;
+    }
+  }
+}
+
+#mobile-drawer-target{
+  // 横屏模式下的歌词样式
+  &.is-landscape {
+    .landscape-lyrics-section {
+      .landscape-lyrics-scroller {
+        .lyrics-padding-top {
+          height: 30px;
+          min-height: 30px;
+        }
+        
+        .lyrics-padding-bottom {
+          height: 100px;
+          min-height: 100px;
+        }
+        
+        .lyric-line {
+          @apply px-4 py-3 text-left;
+          font-size: 26px;
+        }
+        
+        .now-text {
+          @apply text-3xl;
+        }
+      }
+    }
+  }
+
+  .unified-controls {
+    &.fullscreen-mode {
+      background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+    }
+    
+    .back-button {
+      @apply absolute top-4 left-1/2 -translate-x-1/2 w-10 h-10 flex items-center justify-center bg-black bg-opacity-30 rounded-2xl;
+
+      i {
+        @apply text-4xl;
+        color: var(--text-color-primary);
+      }
+    }
+  }
+  
+  .ios-layout-container {
+    .lyrics-container {
+      @apply w-full flex-grow flex flex-col items-center justify-center mb-6 overflow-hidden cursor-pointer;
+      
+      .lyrics-wrapper {
+        @apply w-full flex flex-col items-center justify-center;
+        
+        .lyric-line {
+          @apply text-center py-1 transition-all duration-300 opacity-70;
+          
+          &:nth-child(2) {
+            @apply text-lg font-medium opacity-100;
+            color: var(--text-color-active);
+          }
+          
+          .translation {
+            @apply text-sm opacity-60 mt-1;
+          }
+        }
+      }
+      
+      .no-lyrics {
+        @apply text-center text-base opacity-60;
+        color: var(--text-color-primary);
+      }
+    }
+  }
+}
+
+.cover-container {
+  // 方形封面样式
+  &.square-style {
+    @apply w-[85%] shadow-2xl shadow-black/50 rounded-xl overflow-hidden mt-8 aspect-square;
+
+    .cover-image {
+      @apply w-full h-full;
+      transition: transform 0.3s ease-out;
+      
+      &:active {
+        transform: scale(0.95);
+      }
+    }
+  }
+  
+  // 全屏封面样式
+  &.full-style {
+    @apply w-full max-h-[50vh] relative overflow-hidden;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 40%;
+      background: linear-gradient(transparent, var(--bg-color, rgba(25, 25, 25, 1)) 70%, var(--bg-color, rgba(25, 25, 25, 1)));
+      z-index: 1;
+      pointer-events: none;
+    }
+    
+    .cover-image {
+      @apply w-full h-auto shadow-lg;
+      
+      &.full-blend {
+        mix-blend-mode: luminosity;
+      }
+    }
+  }
+}
+
+.is-dark{
+  .square-style{
+    @apply shadow-2xl shadow-black/50; 
+  }
+}
+
 </style> 
