@@ -8,7 +8,7 @@
     :z-index="9998"
   >
   
-    <div id="mobile-drawer-target" :class="[config.theme, `cover-style-${config.mobileCoverStyle}`]">
+    <div id="mobile-drawer-target" :class="[config.theme, `cover-style-${config.mobileCoverStyle}`, {'is-landscape': isLandscape}]">
       <!-- 顶部控制按钮 -->
       <div v-if="playMusic?.playLoading" class="loading-overlay">
         <i class="ri-loader-4-line loading-icon"></i>
@@ -21,10 +21,10 @@
         <i class="ri-arrow-down-s-line"></i>
       </div>
 
-      <!-- 全屏歌词页面 -->
+      <!-- 全屏歌词页面 - 竖屏模式下 -->
       <transition name="fade">
         <div 
-          v-if="showFullLyrics" 
+          v-if="showFullLyrics && !isLandscape" 
           class="fullscreen-lyrics"
           :class="config.theme"
         >
@@ -64,9 +64,9 @@
         </div>
       </transition>
 
-      <!-- 主要内容区域 -->
+      <!-- 主要内容区域 - 竖屏模式下的普通布局 -->
       <transition name="fade">
-        <div v-if="!showFullLyrics" class="ios-layout-container">
+        <div v-if="!showFullLyrics && !isLandscape" class="ios-layout-container">
           <!-- 封面区域 -->
           <div
             class="cover-container"
@@ -126,8 +126,121 @@
         </div>
       </transition>
 
-      <!-- 统一的控制区域 -->
-      <div class="unified-controls" :class="{ 'fullscreen-mode': showFullLyrics }">
+      <!-- 横屏模式布局 -->
+      <div v-if="isLandscape" class="landscape-layout">
+        <!-- 左侧封面和进度条 -->
+        <div class="landscape-left-section">
+          <div
+            class="landscape-cover-container"
+            :class="{ 
+              'record-style': config.mobileCoverStyle === 'record',
+              'square-style': config.mobileCoverStyle === 'square',
+              'full-style': config.mobileCoverStyle === 'full',
+              'paused': !play
+            }"
+            @click="cycleCoverStyle"
+          >
+            <div class="img-wrapper">
+              <n-image
+                :src="getImgUrl(playMusic?.picUrl, '500y500')"
+                lazy
+                preview-disabled
+                class="cover-image"
+                :class="{ 'full-blend': config.mobileCoverStyle === 'full' }"
+              />
+            </div>
+          </div>
+          
+          <!-- 音频频谱可视化 -->
+          <div class="spectrum-container">
+          </div>
+
+          <!-- 左侧进度条 -->
+          <div class="landscape-progress-container">
+            <div class="time-info">
+              <span class="current-time">{{ secondToMinute(nowTime) }}</span>
+              <span class="total-time">{{ secondToMinute(allTime) }}</span>
+            </div>
+            <div class="apple-style-progress" @click="handleProgressBarClick">
+              <div class="progress-track">
+                <div 
+                  class="progress-fill" 
+                  :style="{ width: `${(nowTime / Math.max(1, allTime)) * 100}%` }"
+                ></div>
+                <div 
+                  class="progress-thumb"
+                  :class="{ 'active': isThumbDragging }"
+                  :style="{ left: `${(nowTime / Math.max(1, allTime)) * 100}%` }"
+                  @touchstart="handleThumbTouchStart"
+                  @touchmove="handleThumbTouchMove"
+                  @touchend="handleThumbTouchEnd"
+                ></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧歌词区域 -->
+        <div class="landscape-lyrics-section">
+          <!-- 歌曲信息放置在顶部 -->
+          <div class="landscape-song-info">
+            <h1 class="song-title">{{ playMusic.name }}</h1>
+            <p class="song-artist">
+              <span
+                v-for="(item, index) in artistList"
+                :key="index"
+                class="artist-name"
+                @click="handleArtistClick(item.id)"
+              >
+                {{ item.name }}
+                {{ index < artistList.length - 1 ? ' / ' : '' }}
+              </span>
+            </p>
+          </div>
+          
+          <!-- 歌词滚动区域 -->
+          <div
+            ref="landscapeLyricsRef"
+            class="landscape-lyrics-scroller"
+            @touchstart="handleTouchStart"
+            @touchmove="handleTouchMove"
+            @touchend="handleTouchEnd"
+            @scroll="handleScroll"
+          >
+            <div class="lyrics-padding-top"></div>
+            <div 
+              v-for="(item, index) in lrcArray" 
+              :key="index"
+              :id="`landscape-lyric-line-${index}`"
+              class="lyric-line"
+              :class="{ 'now-text': index === nowIndex, 'hover-text': item.text }"
+              @click="jumpToLyricTime(index)"
+            >
+              <span :style="getLrcStyle(index)">{{ item.text }}</span>
+              <div v-if="config.showTranslation && item.trText" class="translation">
+                {{ item.trText }}
+              </div>
+            </div>
+            <div class="lyrics-padding-bottom"></div>
+          </div>
+          
+          <!-- 右下角控制按钮 -->
+          <div class="landscape-main-controls">
+            <div class="main-button prev" @click="prevSong">
+              <i class="ri-skip-back-fill"></i>
+            </div>
+            <div class="main-button play-pause" @click="togglePlay">
+              <i :class="playIcon"></i>
+            </div>
+            <div class="main-button next" @click="nextSong">
+              <i class="ri-skip-forward-fill"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 竖屏模式的控制区域 -->
+      <div v-if="!isLandscape" class="unified-controls" :class="{ 'fullscreen-mode': showFullLyrics }">
         <!-- 进度条 (苹果风格) -->
         <div class="progress-container">
           <div class="time-info">
@@ -182,6 +295,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useWindowSize } from '@vueuse/core';
 
 import {
   allTime,
@@ -243,6 +357,23 @@ const touchStartY = ref(0);
 const lastScrollTop = ref(0);
 const autoScrollTimer = ref<number | null>(null);
 
+// 横屏检测相关
+const { width, height } = useWindowSize();
+const isLandscape = computed(() => width.value > height.value);
+const landscapeLyricsRef = ref<HTMLElement | null>(null);
+
+// 监听横屏变化
+watch(isLandscape, (newVal) => {
+  if (newVal) {
+    // 横屏模式下，确保歌词容器可见并滚动到当前歌词
+    nextTick(() => {
+      setTimeout(() => {
+        scrollToCurrentLyric(true, landscapeLyricsRef.value);
+      }, 300);
+    });
+  }
+});
+
 // 显示全屏歌词
 const showFullLyricScreen = () => {
   showFullLyrics.value = true;
@@ -270,24 +401,26 @@ const closeFullLyrics = () => {
 };
 
 // 滚动到当前歌词，添加错误处理和日志
-const scrollToCurrentLyric = (immediate = false) => {
+const scrollToCurrentLyric = (immediate = false, customScrollerRef?: HTMLElement | null) => {
   try {
-    if (!lyricsScrollerRef.value || !isAutoScrollEnabled.value || isTouchScrolling.value) return;
+    const scrollerRef = customScrollerRef || lyricsScrollerRef.value;
+    if (!scrollerRef || !isAutoScrollEnabled.value || isTouchScrolling.value) return;
     
-    const activeEl = document.getElementById(`lyric-line-${nowIndex.value}`);
+    const prefix = customScrollerRef ? 'landscape-' : '';
+    const activeEl = document.getElementById(`${prefix}lyric-line-${nowIndex.value}`);
     if (!activeEl) {
       console.log('找不到当前歌词元素');
       return;
     }
     
-    const containerRect = lyricsScrollerRef.value.getBoundingClientRect();
+    const containerRect = scrollerRef.getBoundingClientRect();
     const lineRect = activeEl.getBoundingClientRect();
     
-    const scrollTop = lyricsScrollerRef.value.scrollTop + (lineRect.top - containerRect.top) - (containerRect.height / 2) + (lineRect.height / 2);
+    const scrollTop = scrollerRef.scrollTop + (lineRect.top - containerRect.top) - (containerRect.height / 2) + (lineRect.height / 2);
     
     console.log('滚动到位置:', scrollTop);
     
-    lyricsScrollerRef.value.scrollTo({
+    scrollerRef.scrollTo({
       top: scrollTop,
       behavior: immediate ? 'auto' : 'smooth'
     });
@@ -301,6 +434,10 @@ watch(nowIndex, () => {
   if (showFullLyrics.value && isAutoScrollEnabled.value && !isTouchScrolling.value) {
     nextTick(() => {
       scrollToCurrentLyric();
+    });
+  } else if (isLandscape.value && !showFullLyrics.value) {
+    nextTick(() => {
+      scrollToCurrentLyric(false, landscapeLyricsRef.value);
     });
   }
 });
@@ -678,16 +815,284 @@ const getLrcStyle = (index: number) => {
     color: colors.primary
   };
 };
-
-defineExpose({
-  config
-});
 </script>
 
 <style scoped lang="scss">
 #mobile-drawer-target {
   @apply top-0 left-0 absolute overflow-hidden flex flex-col w-full h-full;
   animation-duration: 300ms;
+  
+  // 横屏模式布局
+  &.is-landscape {
+    .landscape-layout {
+      @apply flex flex-row w-full h-full overflow-hidden px-8;
+      
+      // 左侧区域 - 封面和进度条
+      .landscape-left-section {
+        @apply h-full flex flex-col items-center justify-center pt-6 pb-6 px-3 relative;
+        width: 40%;
+        min-width: 380px;
+        max-width: 480px;
+        
+        // 封面
+        .landscape-cover-container {
+          @apply flex-shrink-0 mx-auto mb-8;
+          width: 90%;
+          max-width: 280px;
+          min-width: 200px;
+          
+          &.record-style {
+            @apply rounded-full overflow-hidden relative;
+            aspect-ratio: 1/1;
+            
+            // 唱片外圈装饰
+            &::before {
+              content: '';
+              @apply absolute top-0 left-0 w-full h-full rounded-full z-10;
+              background: radial-gradient(circle at center, 
+                                         transparent 38%, 
+                                         rgba(0, 0, 0, 0.15) 38%, 
+                                         rgba(0, 0, 0, 0.15) 39%, 
+                                         rgba(255, 255, 255, 0.1) 39%, 
+                                         rgba(255, 255, 255, 0.1) 39.5%,
+                                         rgba(0, 0, 0, 0.08) 39.5%,
+                                         rgba(0, 0, 0, 0.08) 40.5%,
+                                         rgba(0, 0, 0, 0.2) 40.5%,
+                                         rgba(0, 0, 0, 0.2) 41.5%,
+                                         rgba(0, 0, 0, 0.6) 41.5%,
+                                         rgba(0, 0, 0, 0.6) 100%);
+              pointer-events: none;
+              animation: spin 20s linear infinite;
+              animation-play-state: running;
+            }
+            
+            &.paused {
+              &::before, &::after {
+                animation-play-state: paused;
+              }
+            }
+            
+            .img-wrapper {
+              @apply rounded-full overflow-hidden border-[20px] border-solid border-black z-0;
+              width: 90%;
+              height: 90%;
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              
+              // 光泽效果
+              &::after {
+                content: '';
+                @apply absolute top-0 left-0 w-full h-full rounded-full z-[2];
+                background: linear-gradient(135deg, 
+                                          rgba(255, 255, 255, 0.05) 0%, 
+                                          rgba(255, 255, 255, 0) 50%, 
+                                          rgba(0, 0, 0, 0.05) 100%);
+                pointer-events: none;
+              }
+            }
+            
+            .cover-image {
+              @apply w-full h-full rounded-full border-[3px] border-gray-900;
+              animation: spin 20s linear infinite;
+              animation-play-state: running;
+            }
+            
+            &.paused .cover-image {
+              animation-play-state: paused;
+            }
+          }
+          
+          &.square-style {
+            @apply shadow-lg rounded-xl overflow-hidden;
+            aspect-ratio: 1/1;
+            
+            .cover-image {
+              @apply w-full h-full;
+            }
+          }
+          
+          &.full-style {
+            @apply relative;
+            aspect-ratio: 1/1;
+            
+            .cover-image {
+              @apply w-full h-auto shadow-lg rounded-xl;
+            }
+          }
+        }
+        
+        // 频谱容器
+        .spectrum-container {
+          @apply w-full max-w-md mb-3 px-2;
+          height: 60px;
+        }
+        
+        // 左侧进度条
+        .landscape-progress-container {
+          @apply mt-0 mb-2 px-2 w-full max-w-md;
+          
+          .time-info {
+            @apply flex justify-between items-center mb-2;
+            
+            .current-time, .total-time {
+              @apply text-sm;
+              color: var(--text-color-primary);
+              opacity: 0.8;
+            }
+          }
+          
+          .apple-style-progress {
+            @apply relative h-8 flex items-center cursor-pointer;
+            
+            .progress-track {
+              @apply relative w-full h-2 bg-white bg-opacity-20 rounded-full;
+              
+              .progress-fill {
+                @apply absolute top-0 left-0 h-full bg-white rounded-full;
+                box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+                z-index: 1;
+                transition: width 0.1s linear;
+              }
+              
+              .progress-thumb {
+                @apply absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-5 h-5 rounded-full bg-white;
+                box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
+                z-index: 2;
+                transition: transform 0.15s ease-out;
+                
+                &.active {
+                  transform: translate(-50%, -50%) scale(1.3);
+                  box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
+                }
+                
+                &:active {
+                  transform: translate(-50%, -50%) scale(1.3);
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      // 右侧区域 - 歌词和主要控制按钮
+      .landscape-lyrics-section {
+        @apply h-full flex-1 flex flex-col relative;
+        
+        // 歌曲信息 - 现在在歌词顶部
+        .landscape-song-info {
+          @apply flex flex-col pt-5 px-6 z-10;
+          
+          .song-title {
+            @apply text-2xl font-bold mb-1 line-clamp-1;
+            color: var(--text-color-active);
+          }
+          
+          .song-artist {
+            @apply text-base font-medium line-clamp-1;
+            color: var(--text-color-primary);
+            opacity: 0.9;
+            
+            .artist-name {
+              @apply cursor-pointer;
+              
+              &:hover {
+                @apply underline;
+              }
+            }
+          }
+        }
+        
+        // 歌词滚动区域
+        .landscape-lyrics-scroller {
+          @apply h-full w-full overflow-y-auto px-6 pt-24 pb-24;
+          scroll-behavior: smooth;
+          -webkit-overflow-scrolling: touch;
+          mask-image: linear-gradient(to bottom, transparent 5%, black 15%, black 85%, transparent 95%);
+          -webkit-mask-image: linear-gradient(
+            to bottom,
+            transparent 5%,
+            black 15%,
+            black 85%,
+            transparent 95%
+          );
+          
+          .lyrics-padding-top {
+            height: 30px;
+            min-height: 30px;
+          }
+          
+          .lyrics-padding-bottom {
+            height: 100px;
+            min-height: 100px;
+          }
+          
+          .lyric-line {
+            @apply px-4 py-3 cursor-pointer text-left transition-all duration-300;
+            font-size:  26px;
+            font-weight: 500;
+            letter-spacing: var(--lyric-letter-spacing, 0);
+            line-height: var(--lyric-line-height, 1.6);
+            color: var(--text-color-primary);
+            opacity: 0.8;
+            
+            span {
+              background-clip: text !important;
+              -webkit-background-clip: text !important;
+            }
+            
+            &.now-text {
+              @apply font-bold text-3xl py-4;
+              color: var(--text-color-active);
+              opacity: 1;
+            }
+            
+            .translation {
+              @apply font-normal opacity-70 mt-1 text-base;
+            }
+          }
+        }
+        
+        // 主要控制按钮 - 右下角
+        .landscape-main-controls {
+          @apply fixed bottom-6 right-6 flex items-center z-10;
+          
+          .main-button {
+            @apply mx-2 flex items-center justify-center cursor-pointer transition-all duration-200 rounded-full;
+            width: 54px;
+            height: 54px;
+            background-color: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            
+            i {
+              @apply text-2xl;
+              color: var(--text-color-active);
+            }
+            
+            &.play-pause {
+              width: 70px;
+              height: 70px;
+              background-color: rgba(255, 255, 255, 0.25);
+              
+              i {
+                @apply text-4xl;
+              }
+            }
+            
+            &:hover {
+              background-color: rgba(255, 255, 255, 0.3);
+              transform: scale(1.05);
+            }
+            
+            &:active {
+              transform: scale(0.95);
+            }
+          }
+        }
+      }
+    }
+  }
   
   .control-btn {
     @apply w-9 h-9 flex items-center justify-center rounded cursor-pointer transition-all duration-300 z-[9999];
@@ -809,6 +1214,10 @@ defineExpose({
     background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
     height: 210px;
     pointer-events: auto;
+    
+    &.landscape-mode {
+      background: linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+    }
     
     .progress-container {
       @apply w-full mb-6;
@@ -1010,7 +1419,7 @@ defineExpose({
       }
       
       &.full-style {
-        @apply w-full max-h-[50vh] relative;
+        @apply w-full max-h-[50vh] relative overflow-hidden;
         
         &::after {
           content: '';
