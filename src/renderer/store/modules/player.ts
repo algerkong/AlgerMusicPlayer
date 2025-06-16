@@ -395,7 +395,6 @@ export const usePlayerStore = defineStore('player', () => {
   const musicFull = ref(false);
   const favoriteList = ref<Array<number | string>>(getLocalStorageItem('favoriteList', []));
   const dislikeList = ref<Array<number | string>>(getLocalStorageItem('dislikeList', []));
-  const savedPlayProgress = ref<number | undefined>();
   const showSleepTimer = ref(false); // 定时弹窗
   // 添加播放列表抽屉状态
   const playListDrawerVisible = ref(false);
@@ -1080,7 +1079,6 @@ export const usePlayerStore = defineStore('player', () => {
     const settingStore = useSettingsStore();
     const savedPlayList = getLocalStorageItem('playList', []);
     const savedPlayMusic = getLocalStorageItem<SongResult | null>('currentPlayMusic', null);
-    const savedProgress = localStorage.getItem('playProgress');
 
     if (savedPlayList.length > 0) {
       setPlayList(savedPlayList);
@@ -1100,20 +1098,6 @@ export const usePlayerStore = defineStore('player', () => {
         }
 
         await handlePlayMusic({ ...savedPlayMusic, isFirstPlay: true, playMusicUrl: undefined }, isPlaying);
-
-        if (savedProgress) {
-          try {
-            const progress = JSON.parse(savedProgress);
-            if (progress && progress.songId === savedPlayMusic.id) {
-              savedPlayProgress.value = progress.progress;
-            } else {
-              localStorage.removeItem('playProgress');
-            }
-          } catch (e) {
-            console.error('解析保存的播放进度失败', e);
-            localStorage.removeItem('playProgress');
-          }
-        }
       } catch (error) {
         console.error('重新获取音乐链接失败:', error);
         play.value = false;
@@ -1200,13 +1184,7 @@ export const usePlayerStore = defineStore('player', () => {
 
       // 播放新音频，传递是否应该播放的状态
       console.log('调用audioService.play，播放状态:', shouldPlay);
-      const newSound = await audioService.play(playMusicUrl.value, playMusic.value, shouldPlay);
-
-      // 如果有保存的进度，设置播放位置
-      if (initialPosition > 0) {
-        newSound.seek(initialPosition);
-      }
-
+      const newSound = await audioService.play(playMusicUrl.value, playMusic.value, shouldPlay, initialPosition || 0);
       // 发布音频就绪事件，让 MusicHook.ts 来处理设置监听器
       window.dispatchEvent(new CustomEvent('audio-ready', { detail: { sound: newSound, shouldPlay } }));
 
@@ -1343,7 +1321,6 @@ export const usePlayerStore = defineStore('player', () => {
     playListIndex,
     playMode,
     musicFull,
-    savedPlayProgress,
     favoriteList,
     dislikeList,
     playListDrawerVisible,

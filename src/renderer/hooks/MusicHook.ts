@@ -873,24 +873,6 @@ export const initAudioListeners = async () => {
     if (finalSound) {
       // 更新全局 sound 引用
       sound.value = finalSound;
-
-      // 如果当前处于播放状态，启动进度更新
-      if (playerStore.play) {
-        // 如果有保存的播放进度，应用它
-        if (playerStore.savedPlayProgress !== undefined) {
-          try {
-            // 设置音频位置
-            finalSound.seek(playerStore.savedPlayProgress);
-            // 同时更新时间显示
-            nowTime.value = playerStore.savedPlayProgress;
-            console.log('恢复播放进度:', playerStore.savedPlayProgress);
-          } catch (e) {
-            console.error('恢复播放进度失败:', e);
-          }
-        }
-
-        startProgressAnimation();
-      }
     } else {
       console.warn('无法获取音频实例，跳过进度更新初始化');
     }

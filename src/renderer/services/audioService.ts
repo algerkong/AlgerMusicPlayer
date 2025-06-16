@@ -456,7 +456,7 @@ class AudioService {
   }
 
   // 播放控制相关
-  play(url?: string, track?: SongResult, isPlay: boolean = true): Promise<Howl> {
+  play(url?: string, track?: SongResult, isPlay: boolean = true, seekTime: number = 0): Promise<Howl> {
     // 每次调用play方法时，尝试强制重置锁（注意：仅在页面刷新后的第一次播放时应用）
     if (!this.currentSound) {
       console.log('首次播放请求，强制重置操作锁');
@@ -599,6 +599,9 @@ class AudioService {
               // 音频加载成功后设置 EQ 和更新媒体会话
               if (this.currentSound) {
                 try {
+                  if (seekTime > 0) {
+                    this.currentSound.seek(seekTime);
+                  }
                   console.log('audioService: 音频加载成功，设置 EQ');
                   await this.setupEQ(this.currentSound);
                   this.updateMediaSessionMetadata(track);

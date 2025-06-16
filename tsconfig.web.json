@@ -22,8 +22,8 @@
     "baseUrl": ".",
     "types": [
       "naive-ui/volar",
-      "./auto-imports.d.ts",
-      "./components.d.ts"
+      "./src/renderer/auto-imports.d.ts",
+      "./src/renderer/components.d.ts"
     ],
     "paths": {
       "@/*": ["src/renderer/*"],

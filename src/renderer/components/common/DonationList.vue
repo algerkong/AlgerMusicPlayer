@@ -99,7 +99,7 @@
       </div>
     </div>
 
-    <div v-if="sortedDonors.length > 8" class="expand-button">
+    <div v-if="donors.length > 8" class="expand-button">
       <n-button text @click="toggleExpand">
         <template #icon>
           <i :class="isExpanded ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line'"></i>
@@ -150,18 +150,13 @@ onActivated(() => {
   fetchDonors();
 });
 
-// 只按金额排序的捐赠列表
-const sortedDonors = computed(() => {
-  return [...donors.value].sort((a, b) => b.amount - a.amount);
-});
-
 const isExpanded = ref(false);
 
 const displayDonors = computed(() => {
   if (isExpanded.value) {
-    return sortedDonors.value;
+    return donors.value;
   }
-  return sortedDonors.value.slice(0, 8);
+  return donors.value.slice(0, 8);
 });
 
 const toggleExpand = () => {
