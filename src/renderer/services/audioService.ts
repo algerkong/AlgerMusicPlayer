@@ -612,19 +612,23 @@ class AudioService {
                     if (seekTime > 0) {
                       this.currentSound.seek(seekTime);
                     }
-                  console.log('audioService: 音频加载成功，设置 EQ');
-                  this.updateMediaSessionMetadata(track);
-                  this.updateMediaSessionPositionState();
-                  this.emit('load');
+                    console.log('audioService: 音频加载成功，设置 EQ');
+                    this.updateMediaSessionMetadata(track);
+                    this.updateMediaSessionPositionState();
+                    this.emit('load');
 
-                  // 此时音频已完全初始化，根据 isPlay 参数决定是否播放
-                  console.log('audioService: 音频完全初始化，isPlay =', isPlay);
-                  if (isPlay) {
-                    console.log('audioService: 开始播放');
-                    this.currentSound.play();
+                    // 此时音频已完全初始化，根据 isPlay 参数决定是否播放
+                    console.log('audioService: 音频完全初始化，isPlay =', isPlay);
+                    if (isPlay) {
+                      console.log('audioService: 开始播放');
+                      this.currentSound.play();
+                    }
+
+                    resolve(this.currentSound);
+                  } catch (error) {
+                    console.error('Audio initialization failed:', error);
+                    reject(error);
                   }
-
-                  resolve(this.currentSound);
                 }
               } catch (error) {
                 console.error('Audio initialization failed:', error);
