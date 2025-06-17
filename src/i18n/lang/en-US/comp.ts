@@ -85,7 +85,7 @@ export default {
     login: 'Login',
     toLogin: 'To Login',
     logout: 'Logout',
-    set: 'Set',
+    set: 'Settings',
     theme: 'Theme',
     restart: 'Restart',
     refresh: 'Refresh',
@@ -180,5 +180,13 @@ export default {
       clearTasksSuccess: 'Task list cleared',
       clearTasksFailed: 'Failed to clear task list'
     }
-  }
+  },
+  settings: 'Settings',
+  user: 'User',
+  toplist: 'Toplist',
+  history: 'History',
+  list: 'Playlist',
+  mv: 'MV',
+  home: 'Home',
+  search: 'Search'
 };

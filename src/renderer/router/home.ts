@@ -3,7 +3,7 @@ const layoutRouter = [
     path: '/',
     name: 'home',
     meta: {
-      title: '首页',
+      title: 'comp.home',
       icon: 'icon-Home',
       keepAlive: true,
       isMobile: true
@@ -14,7 +14,7 @@ const layoutRouter = [
     path: '/search',
     name: 'search',
     meta: {
-      title: '搜索',
+      title: 'comp.search',
       noScroll: true,
       icon: 'icon-Search',
       keepAlive: true,
@@ -26,7 +26,7 @@ const layoutRouter = [
     path: '/list',
     name: 'list',
     meta: {
-      title: '歌单',
+      title: 'comp.list',
       icon: 'icon-Paper',
       keepAlive: true,
       isMobile: true
@@ -37,7 +37,7 @@ const layoutRouter = [
     path: '/toplist',
     name: 'toplist',
     meta: {
-      title: '排行榜',
+      title: 'comp.toplist',
       icon: 'ri-bar-chart-grouped-fill',
       keepAlive: true,
       isMobile: true
@@ -48,7 +48,7 @@ const layoutRouter = [
     path: '/mv',
     name: 'mv',
     meta: {
-      title: 'MV',
+      title: 'comp.mv',
       icon: 'icon-recordfill',
       keepAlive: true,
       isMobile: false
@@ -60,7 +60,7 @@ const layoutRouter = [
     name: 'history',
     component: () => import('@/views/historyAndFavorite/index.vue'),
     meta: {
-      title: '收藏历史',
+      title: 'comp.history',
       icon: 'icon-a-TicketStar',
       keepAlive: true
     }
@@ -69,7 +69,7 @@ const layoutRouter = [
     path: '/user',
     name: 'user',
     meta: {
-      title: '用户',
+      title: 'comp.user',
       icon: 'icon-Profile',
       keepAlive: true,
       noScroll: true,
@@ -81,7 +81,7 @@ const layoutRouter = [
     path: '/set',
     name: 'set',
     meta: {
-      title: '设置',
+      title: 'comp.settings',
       icon: 'ri-settings-3-fill',
       keepAlive: true,
       noScroll: true,

@@ -178,5 +178,13 @@ export default {
       clearTasksSuccess: '任务列表已清除',
       clearTasksFailed: '清除任务列表失败'
     }
-  }
+  },
+  settings: '设置',
+  user: '用户',
+  toplist: '排行榜',
+  history: '收藏历史',
+  list: '歌单',
+  mv: 'MV',
+  home: '首页',
+  search: '搜索'
 };

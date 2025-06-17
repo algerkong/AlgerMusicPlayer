@@ -330,15 +330,17 @@ class AudioService {
       // 应用EQ状态
       this.applyBypassState();
 
-      // 设置音量
-      const volume = localStorage.getItem('volume');
-      if (this.gainNode) {
-        this.gainNode.gain.value = volume ? parseFloat(volume) : 1;
+      // 从 localStorage 应用音量到增益节点
+      const savedVolume = localStorage.getItem('volume');
+      if (savedVolume) {
+        this.applyVolume(parseFloat(savedVolume));
+      } else {
+        this.applyVolume(1);
       }
 
-      console.log('EQ初始化成功');
+      console.log('EQ initialization successful');
     } catch (error) {
-      console.error('EQ初始化失败:', error);
+      console.error('EQ initialization failed:', error);
       await this.disposeEQ();
       throw error;
     }
@@ -563,11 +565,9 @@ class AudioService {
           this.currentSound = new Howl({
             src: [url],
             html5: true,
-            autoplay: false, // 修改为 false，不自动播放，等待完全初始化后手动播放
-            volume: localStorage.getItem('volume')
-              ? parseFloat(localStorage.getItem('volume') as string)
-              : 1,
-            rate: this.playbackRate, // 设置初始播放速度
+            autoplay: false,
+            volume: 1, // 禁用 Howler.js 音量控制
+            rate: this.playbackRate,
             format: ['mp3', 'aac'],
             onloaderror: (_, error) => {
               console.error('Audio load error:', error);
@@ -596,34 +596,43 @@ class AudioService {
               }
             },
             onload: async () => {
-              // 音频加载成功后设置 EQ 和更新媒体会话
-              if (this.currentSound) {
-                try {
-                  if (seekTime > 0) {
-                    this.currentSound.seek(seekTime);
-                  }
-                  console.log('audioService: 音频加载成功，设置 EQ');
-                  await this.setupEQ(this.currentSound);
-                  this.updateMediaSessionMetadata(track);
-                  this.updateMediaSessionPositionState();
-                  this.emit('load');
-
-                  // 此时音频已完全初始化，根据 isPlay 参数决定是否播放
-                  console.log('audioService: 音频完全初始化，isPlay =', isPlay);
-                  if (isPlay) {
-                    console.log('audioService: 开始播放');
-                    this.currentSound.play();
-                  }
-
-                  resolve(this.currentSound);
-                } catch (error) {
-                  console.error('设置 EQ 失败:', error);
-                  // 即使 EQ 设置失败，也继续播放（如果需要）
-                  if (isPlay) {
-                    this.currentSound.play();
-                  }
-                  resolve(this.currentSound);
+              try {
+                // 初始化音频管道
+                await this.setupEQ(this.currentSound!);
+                
+                // 重新应用已保存的音量
+                const savedVolume = localStorage.getItem('volume');
+                if (savedVolume) {
+                  this.applyVolume(parseFloat(savedVolume));
                 }
+                
+                // 音频加载成功后设置 EQ 和更新媒体会话
+                if (this.currentSound) {
+                  try {
+                    if (seekTime > 0) {
+                      this.currentSound.seek(seekTime);
+                    }
+                    console.log('audioService: 音频加载成功，设置 EQ');
+                    this.updateMediaSessionMetadata(track);
+                    this.updateMediaSessionPositionState();
+                    this.emit('load');
+
+                    // 此时音频已完全初始化，根据 isPlay 参数决定是否播放
+                    console.log('audioService: 音频完全初始化，isPlay =', isPlay);
+                    if (isPlay) {
+                      console.log('audioService: 开始播放');
+                      this.currentSound.play();
+                    }
+
+                    resolve(this.currentSound);
+                  } catch (error) {
+                    console.error('Audio initialization failed:', error);
+                    reject(error);
+                  }
+                }
+              } catch (error) {
+                console.error('Audio initialization failed:', error);
+                reject(error);
               }
             }
           });
@@ -702,10 +711,7 @@ class AudioService {
   }
 
   setVolume(volume: number) {
-    if (this.currentSound) {
-      this.currentSound.volume(volume);
-      localStorage.setItem('volume', volume.toString());
-    }
+    this.applyVolume(volume);
   }
 
   seek(time: number) {
@@ -781,6 +787,27 @@ class AudioService {
 
   public getPlaybackRate(): number {
     return this.playbackRate;
+  }
+
+  // 新的音量调节方法
+  private applyVolume(volume: number) {
+    // 确保值在0到1之间
+    const normalizedVolume = Math.max(0, Math.min(1, volume));
+    
+    // 使用线性缩放音量
+    const linearVolume = normalizedVolume;
+    
+    // 将音量应用到所有相关节点
+    if (this.gainNode) {
+      // 立即设置音量
+      this.gainNode.gain.cancelScheduledValues(this.context!.currentTime);
+      this.gainNode.gain.setValueAtTime(linearVolume, this.context!.currentTime);
+    }
+    
+    // 保存值
+    localStorage.setItem('volume', linearVolume.toString());
+    
+    console.log('Volume applied (linear):', linearVolume);
   }
 }
 
