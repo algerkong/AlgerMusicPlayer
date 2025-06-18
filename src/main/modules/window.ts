@@ -1,5 +1,5 @@
 import { is } from '@electron-toolkit/utils';
-import { app, BrowserWindow, globalShortcut, ipcMain, screen, session, shell } from 'electron';
+import { app, BrowserWindow, nativeImage, globalShortcut, ipcMain, screen, session, shell } from 'electron';
 import Store from 'electron-store';
 import { join } from 'path';
 import {
@@ -189,11 +189,29 @@ export function initializeWindowManager() {
     }
   });
 
+
+  ipcMain.on('update-play-state', (_, playing: boolean) => {
+    let isPlaying = playing;
+    if (mainWindowInstance) {
+      let mainWindow = mainWindowInstance;
+      mainWindow.setThumbarButtons([
+        {
+          tooltip: isPlaying ? 'pause' : 'play',
+          icon: nativeImage
+            .createFromPath(join(app.getAppPath(), 'resources/icons', isPlaying ? 'pause.png' : 'play.png')),
+          click() {
+            mainWindow.webContents.send('global-shortcut', 'togglePlay');
+          },
+        }
+      ]);
+    }
+  });
+
   // 监听代理设置变化
   store.onDidChange('set.proxyConfig', () => {
     initializeProxy();
   });
-  
+
   // 初始化窗口大小和缩放相关的IPC处理程序
   initWindowSizeHandlers(mainWindowInstance);
   // 监听 macOS 下点击 Dock 图标的事件
