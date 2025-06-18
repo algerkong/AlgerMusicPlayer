@@ -20,7 +20,7 @@ const store = new Store();
 
 // 保存主窗口引用，以便在 activate 事件中使用
 let mainWindowInstance: BrowserWindow | null = null;
-
+let isPlaying = false;
 // 保存迷你模式前的窗口状态
 let preMiniModeState: WindowState = {
   width: DEFAULT_MAIN_WIDTH,
@@ -55,6 +55,38 @@ function initializeProxy() {
     session.defaultSession.setProxy({ proxyRules: '' });
   }
 }
+
+function setThumbarButtons(window: BrowserWindow) {
+  window.setThumbarButtons([
+    {
+      tooltip: 'prev',
+      icon: nativeImage
+        .createFromPath(join(app.getAppPath(), 'resources/icons', 'prev.png')),
+      click() {
+        window.webContents.send('global-shortcut', 'prevPlay');
+      },
+    },
+
+    {
+      tooltip: isPlaying ? 'pause' : 'play',
+      icon: nativeImage
+        .createFromPath(join(app.getAppPath(), 'resources/icons', isPlaying ? 'pause.png' : 'play.png')),
+      click() {
+        window.webContents.send('global-shortcut', 'togglePlay');
+      },
+    },
+
+    {
+      tooltip: 'next',
+      icon: nativeImage
+        .createFromPath(join(app.getAppPath(), 'resources/icons', 'next.png')),
+      click() {
+        window.webContents.send('global-shortcut', 'nextPlay');
+      },
+    }
+  ]);
+}
+
 
 /**
  * 初始化窗口管理相关的IPC监听
@@ -107,7 +139,7 @@ export function initializeWindowManager() {
       // 获取屏幕工作区尺寸
       const display = screen.getDisplayMatching(win.getBounds());
       const { width: screenWidth, x: screenX } = display.workArea;
-      
+
       // 设置迷你窗口的大小和位置
       win.unmaximize();
       win.setMinimumSize(DEFAULT_MINI_WIDTH, DEFAULT_MINI_HEIGHT);
@@ -124,7 +156,7 @@ export function initializeWindowManager() {
 
       // 发送事件到渲染进程，通知切换到迷你模式
       win.webContents.send('mini-mode', true);
-      
+
       // 迷你窗口使用默认的缩放比
       win.webContents.setZoomFactor(1);
     }
@@ -137,22 +169,22 @@ export function initializeWindowManager() {
       // 恢复窗口的大小调整功能
       win.setResizable(true);
       win.setMaximumSize(0, 0); // 取消最大尺寸限制
-      
+
       console.log('从迷你模式恢复，使用保存的状态:', JSON.stringify(preMiniModeState));
-      
+
       // 设置适当的最小尺寸
       win.setMinimumSize(Math.max(DEFAULT_MAIN_WIDTH * 0.5, 600), Math.max(DEFAULT_MAIN_HEIGHT * 0.5, 400));
-      
+
       // 恢复窗口状态
       win.setAlwaysOnTop(false);
       win.setSkipTaskbar(false);
-      
+
       // 导航回主页面
       win.webContents.send('navigate', '/');
-      
+
       // 发送事件到渲染进程，通知退出迷你模式
       win.webContents.send('mini-mode', false);
-      
+
       // 应用保存的状态
       setTimeout(() => {
         // 如果有保存的位置，则应用
@@ -161,7 +193,7 @@ export function initializeWindowManager() {
         } else {
           win.center();
         }
-        
+
         // 使用存储的迷你模式前的状态
         if (preMiniModeState.isMaximized) {
           win.maximize();
@@ -169,17 +201,17 @@ export function initializeWindowManager() {
           // 设置正确的窗口大小
           win.setSize(preMiniModeState.width, preMiniModeState.height, false);
         }
-        
+
         // 应用页面缩放
         applyContentZoom(win);
-        
+
         // 确保窗口大小被正确应用
         setTimeout(() => {
           if (!win.isDestroyed() && !win.isMaximized() && !win.isMinimized()) {
             // 再次验证窗口大小
             const [width, height] = win.getSize();
-            if (Math.abs(width - preMiniModeState.width) > 2 || 
-                Math.abs(height - preMiniModeState.height) > 2) {
+            if (Math.abs(width - preMiniModeState.width) > 2 ||
+              Math.abs(height - preMiniModeState.height) > 2) {
               console.log(`恢复后窗口大小不一致，再次调整: 当前=${width}x${height}, 目标=${preMiniModeState.width}x${preMiniModeState.height}`);
               win.setSize(preMiniModeState.width, preMiniModeState.height, false);
             }
@@ -191,19 +223,9 @@ export function initializeWindowManager() {
 
 
   ipcMain.on('update-play-state', (_, playing: boolean) => {
-    let isPlaying = playing;
+    isPlaying = playing;
     if (mainWindowInstance) {
-      let mainWindow = mainWindowInstance;
-      mainWindow.setThumbarButtons([
-        {
-          tooltip: isPlaying ? 'pause' : 'play',
-          icon: nativeImage
-            .createFromPath(join(app.getAppPath(), 'resources/icons', isPlaying ? 'pause.png' : 'play.png')),
-          click() {
-            mainWindow.webContents.send('global-shortcut', 'togglePlay');
-          },
-        }
-      ]);
+      setThumbarButtons(mainWindowInstance);
     }
   });
 
@@ -231,10 +253,10 @@ export function initializeWindowManager() {
  */
 export function createMainWindow(icon: Electron.NativeImage): BrowserWindow {
   console.log('开始创建主窗口...');
-  
+
   // 获取窗口创建选项
   const options = getWindowOptions();
-  
+
   // 添加图标和预加载脚本
   options.icon = icon;
   options.webPreferences = {
@@ -243,7 +265,7 @@ export function createMainWindow(icon: Electron.NativeImage): BrowserWindow {
     contextIsolation: true,
     webSecurity: false
   };
-  
+
   console.log(`创建窗口，使用选项: ${JSON.stringify({
     width: options.width,
     height: options.height,
@@ -252,44 +274,47 @@ export function createMainWindow(icon: Electron.NativeImage): BrowserWindow {
     minWidth: options.minWidth,
     minHeight: options.minHeight
   })}`);
-  
+
   // 创建窗口
   const mainWindow = new BrowserWindow(options);
-  
+
   // 移除菜单
   mainWindow.removeMenu();
-  
+
   // 应用初始状态 (例如最大化状态)
   applyInitialState(mainWindow);
-  
+
   // 更新 preMiniModeState，以便迷你模式可以正确恢复
   const savedState = getWindowState();
   if (savedState) {
     preMiniModeState = { ...savedState };
   }
 
+  mainWindow.on('show', () => {
+    setThumbarButtons(mainWindow);
+  });
+
   mainWindow.on('ready-to-show', () => {
     const [width, height] = mainWindow.getSize();
     console.log(`窗口显示前的大小: ${width}x${height}`);
-    
+
     // 强制确保窗口使用正确的大小
     if (savedState && !savedState.isMaximized) {
       mainWindow.setSize(savedState.width, savedState.height, false);
     }
-    
+
     // 显示窗口
     mainWindow.show();
-    
     // 应用页面内容缩放
     applyContentZoom(mainWindow);
-    
+
     // 再次检查窗口大小是否正确应用
     setTimeout(() => {
       if (!mainWindow.isDestroyed() && !mainWindow.isMaximized()) {
         const [currentWidth, currentHeight] = mainWindow.getSize();
         if (savedState && !savedState.isMaximized) {
-          if (Math.abs(currentWidth - savedState.width) > 2 || 
-              Math.abs(currentHeight - savedState.height) > 2) {
+          if (Math.abs(currentWidth - savedState.width) > 2 ||
+            Math.abs(currentHeight - savedState.height) > 2) {
             console.log(`窗口大小不匹配，再次调整: 当前=${currentWidth}x${currentHeight}, 目标=${savedState.width}x${savedState.height}`);
             mainWindow.setSize(savedState.width, savedState.height, false);
           }
@@ -322,6 +347,6 @@ export function createMainWindow(icon: Electron.NativeImage): BrowserWindow {
 
   // 保存主窗口引用
   mainWindowInstance = mainWindow;
-  
+
   return mainWindow;
 }
