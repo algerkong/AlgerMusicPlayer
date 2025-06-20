@@ -802,7 +802,7 @@ defineExpose({
   animation: spin 1s linear infinite;
 }
 
-.lyric-correction-btns-mac {
+.lyric-correction {
   /* 仅在 hover 歌词区域时显示 */
   .music-lrc:hover & {
     opacity: 1 !important;
