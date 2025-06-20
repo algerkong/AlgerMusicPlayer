@@ -27,6 +27,7 @@ out
 .github/deploy_keys
 
 resources/android/**/*
+android/app/release
 
 .cursor
 
