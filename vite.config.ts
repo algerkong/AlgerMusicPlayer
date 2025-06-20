@@ -37,22 +37,6 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     proxy: {
-      // with options
-      [process.env.VITE_API_LOCAL as string]: {
-        target: process.env.VITE_API,
-        changeOrigin: true,
-        rewrite: (path) => path.replace(new RegExp(`^${process.env.VITE_API_LOCAL}`), '')
-      },
-      [process.env.VITE_API_MUSIC_PROXY as string]: {
-        target: process.env.VITE_API_MUSIC,
-        changeOrigin: true,
-        rewrite: (path) => path.replace(new RegExp(`^${process.env.VITE_API_MUSIC_PROXY}`), '')
-      },
-      [process.env.VITE_API_PROXY_MUSIC as string]: {
-        target: process.env.VITE_API_PROXY,
-        changeOrigin: true,
-        rewrite: (path) => path.replace(new RegExp(`^${process.env.VITE_API_PROXY_MUSIC}`), '')
-      }
     }
   }
 });
