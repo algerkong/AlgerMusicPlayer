@@ -184,6 +184,27 @@ export const formatDate = (dateStr: string): string => {
 };
 
 /**
+ * 比较两个版本号
+ * @param v1 版本号1
+ * @param v2 版本号2
+ * @returns 如果v1大于v2返回1，如果v1小于v2返回-1，如果相等返回0
+ */
+export const compareVersions = (v1: string, v2: string): number => {
+  const v1Parts = v1.split('.').map(Number);
+  const v2Parts = v2.split('.').map(Number);
+  
+  for (let i = 0; i < Math.max(v1Parts.length, v2Parts.length); i++) {
+    const v1Part = v1Parts[i] || 0;
+    const v2Part = v2Parts[i] || 0;
+    
+    if (v1Part > v2Part) return 1;
+    if (v1Part < v2Part) return -1;
+  }
+  
+  return 0;
+};
+
+/**
  * 检查更新
  */
 export const checkUpdate = async (
@@ -197,7 +218,8 @@ export const checkUpdate = async (
     }
 
     const latestVersion = releaseInfo.tag_name.replace('v', '');
-    if (latestVersion === currentVersion) {
+    // 比较版本号，只有当新版本大于当前版本时才返回更新信息
+    if (compareVersions(latestVersion, currentVersion) <= 0) {
       return null;
     }
     console.log('latestVersion', latestVersion);
