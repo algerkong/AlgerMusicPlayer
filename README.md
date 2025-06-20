@@ -75,17 +75,10 @@
 npm install
 npm run dev
 ```
-## 项目打包
-```bash
-# web
-npm run build 
-# win
-npm run build:win
-# mac
-npm run build:mac
-# linux
-npm run build:linux
-```
+## 开发文档
+点击这里[开发文档](./DEV.md)
+
+
 
 
 ## 赞赏☕️
@@ -103,5 +96,6 @@ npm run build:linux
 
 ## 欢迎提Issues
 
-## 免责声明
+## 声明
 本软件仅用于学习交流，禁止用于商业用途，否则后果自负。
+希望大家还是要多多支持官方正版，此软件仅用作开发教学。
