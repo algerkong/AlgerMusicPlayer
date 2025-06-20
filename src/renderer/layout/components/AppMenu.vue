@@ -9,7 +9,7 @@
       </div>
       <div class="app-menu-list">
         <div v-for="(item, index) in menus" :key="item.path" class="app-menu-item">
-          <n-tooltip :delay="200" :disabled="isText" placement="bottom">
+          <n-tooltip :delay="200" :disabled="isText || isMobile" placement="bottom">
             <template #trigger>
               <router-link class="app-menu-item-link" :to="item.path">
                 <i class="iconfont app-menu-item-icon" :style="iconStyle(index)" :class="item.meta.icon"></i>
@@ -30,6 +30,7 @@ import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import icon from '@/assets/icon.png';
+import { isMobile } from '@/utils';
 
 const props = defineProps({
   size: {
