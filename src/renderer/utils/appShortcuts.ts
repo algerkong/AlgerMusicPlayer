@@ -67,7 +67,6 @@ export async function handleShortcutAction(action: string) {
   const playerStore = usePlayerStore();
   const settingsStore = useSettingsStore();
 
-  const currentSound = audioService.getCurrentSound();
   const showToast = (message: string, iconName: string) => {
     if (settingsStore.isMiniMode) {
       return;
@@ -95,19 +94,25 @@ export async function handleShortcutAction(action: string) {
         showToast(t('player.playBar.next'), 'ri-skip-forward-line');
         break;
       case 'volumeUp':
-        if (currentSound && currentSound?.volume() < 1) {
-          currentSound?.volume((currentSound?.volume() || 0) + 0.1);
+        // 从localStorage获取当前音量
+        const currentVolumeUp = parseFloat(localStorage.getItem('volume') || '1');
+        if (currentVolumeUp < 1) {
+          const newVolume = Math.min(1, currentVolumeUp + 0.1);
+          await audioService.setVolume(newVolume);
           showToast(
-            `${t('player.playBar.volume')}${Math.round((currentSound?.volume() || 0) * 100)}%`,
+            `${t('player.playBar.volume')}${Math.round(newVolume * 100)}%`,
             'ri-volume-up-line'
           );
         }
         break;
       case 'volumeDown':
-        if (currentSound && currentSound?.volume() > 0) {
-          currentSound?.volume((currentSound?.volume() || 0) - 0.1);
+        // 从localStorage获取当前音量
+        const currentVolumeDown = parseFloat(localStorage.getItem('volume') || '1');
+        if (currentVolumeDown > 0) {
+          const newVolume = Math.max(0, currentVolumeDown - 0.1);
+          await audioService.setVolume(newVolume);
           showToast(
-            `${t('player.playBar.volume')}${Math.round((currentSound?.volume() || 0) * 100)}%`,
+            `${t('player.playBar.volume')}${Math.round(newVolume * 100)}%`,
             'ri-volume-down-line'
           );
         }

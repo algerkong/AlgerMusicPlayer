@@ -802,6 +802,8 @@ class AudioService {
       // 立即设置音量
       this.gainNode.gain.cancelScheduledValues(this.context!.currentTime);
       this.gainNode.gain.setValueAtTime(linearVolume, this.context!.currentTime);
+    } else {
+      this.currentSound?.volume(linearVolume);
     }
     
     // 保存值
