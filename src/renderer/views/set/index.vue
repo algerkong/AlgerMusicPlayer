@@ -171,7 +171,6 @@
                   <a class="text-green-400 hover:text-green-500" href="https://music.163.com/store/vip" target="_blank">网易云音乐会员</a>
                   <a class="text-green-400 hover:text-green-500" href="https://y.qq.com/portal/vipportal/" target="_blank">QQ音乐会员</a>
                   <a class="text-green-400 hover:text-green-500" href="https://vip.kugou.com/" target="_blank">酷狗音乐会员</a>
-                  <a class="text-green-400 hover:text-green-500" href="https://vip1.kuwo.cn/" target="_blank">酷我音乐会员</a>
                 </div>
               </div>
             </div>
@@ -522,7 +521,7 @@ import { type Platform } from '@/types/music';
 import config from '../../../../package.json';
 
 // 所有平台默认值
-const ALL_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd', 'bilibili', 'kuwo'];
+const ALL_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd', 'bilibili'];
 
 const platform = window.electron ? window.electron.ipcRenderer.sendSync('get-platform') : 'web';
 

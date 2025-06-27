@@ -10,7 +10,6 @@ import { initializeFileManager } from './modules/fileManager';
 import { initializeFonts } from './modules/fonts';
 import { initializeRemoteControl } from './modules/remoteControl';
 import { initializeShortcuts, registerShortcuts } from './modules/shortcuts';
-import { initializeStats, setupStatsHandlers } from './modules/statsService';
 import { initializeTray, updateCurrentSong, updatePlayState, updateTrayMenu } from './modules/tray';
 import { setupUpdateHandlers } from './modules/update';
 import { createMainWindow, initializeWindowManager } from './modules/window';
@@ -50,12 +49,6 @@ function initialize() {
 
   // 初始化托盘
   initializeTray(iconPath, mainWindow);
-
-  // 初始化统计服务
-  initializeStats();
-
-  // 设置统计相关的IPC处理程序
-  setupStatsHandlers(ipcMain);
 
   // 启动音乐API
   startMusicApi();

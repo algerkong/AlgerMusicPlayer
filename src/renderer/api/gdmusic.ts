@@ -73,9 +73,8 @@ export const parseFromGDMusic = async (
           throw new Error('搜索查询过短');
         }
         
-        // 所有可用的音乐源 netease、kuwo、joox、tidal
-        const allSources = [
-          'kuwo', 'joox', 'tidal', 'netease'
+        // 所有可用的音乐源 netease、joox、tidal
+        const allSources = ['joox', 'tidal', 'netease'
         ] as MusicSourceType[];
         
         console.log('GD音乐台开始搜索:', searchQuery);

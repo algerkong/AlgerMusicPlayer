@@ -87,7 +87,6 @@ const musicSourceOptions = ref([
   { label: 'MiGu', value: 'migu' as Platform },
   { label: 'KuGou', value: 'kugou' as Platform },
   { label: 'pyncmd', value: 'pyncmd' as Platform },
-  { label: 'KuWo', value: 'kuwo' as Platform },
   { label: 'Bilibili', value: 'bilibili' as Platform },
   { label: 'GdMuisc', value: 'gdmusic' as Platform }
 ]);
@@ -102,7 +101,6 @@ const getSourceIcon = (source: Platform) => {
   const iconMap: Record<Platform, string> = {
     'migu': 'ri-music-2-fill',
     'kugou': 'ri-music-fill',
-    'kuwo': 'ri-album-fill',
     'qq': 'ri-qq-fill',
     'joox': 'ri-disc-fill',
     'pyncmd': 'ri-netease-cloud-music-fill',

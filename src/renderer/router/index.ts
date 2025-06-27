@@ -1,11 +1,16 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 
-import { recordVisit } from '@/api/stats';
+import { useUserStore } from '../store/modules/user';
 import AppLayout from '@/layout/AppLayout.vue';
 import MiniLayout from '@/layout/MiniLayout.vue';
 import homeRouter from '@/router/home';
 import otherRouter from '@/router/other';
 import { useSettingsStore } from '@/store/modules/settings';
+
+function getUserId(): string | null {
+  const userStore = useUserStore();
+  return userStore.user?.userId?.toString() || null;
+}
 
 // 由于 Vue Router 守卫在创建前不能直接使用组合式 API
 // 我们创建一个辅助函数来获取 store 实例
@@ -76,7 +81,8 @@ router.afterEach((to) => {
   const pageName = to.name?.toString() || to.path;
   // 使用setTimeout避免阻塞路由导航
   setTimeout(() => {
-    recordVisit(pageName).catch((error) => console.error('记录页面访问失败:', error));
+    const userId = getUserId();
+    console.log('pageName', pageName, userId);
   }, 100);
 });
 

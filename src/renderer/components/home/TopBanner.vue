@@ -142,7 +142,7 @@ import { IDayRecommend } from '@/type/day_recommend';
 import { Playlist } from '@/type/list';
 import type { IListDetail } from '@/type/listDetail';
 import { SongResult } from '@/type/music';
-import type { Artist, IHotSinger } from '@/type/singer';
+import type { IHotSinger } from '@/type/singer';
 import {
   getImgUrl,
   isMobile,
@@ -150,7 +150,6 @@ import {
   setAnimationDelay,
   setBackgroundImg
 } from '@/utils';
-import { getArtistDetail } from '@/api/artist';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 
 const userStore = useUserStore();
@@ -233,20 +232,6 @@ onMounted(async () => {
   loadNonUserData();
 });
 
-const JayChouId = 6452;
-const loadArtistData = async () => {
-  try {
-    const { data: artistData }: { data: { data: { artist: Artist } } } = await getArtistDetail(JayChouId);
-    console.log('artistData', artistData);
-    if (hotSingerData.value) {
-      // 将周杰伦数据放在第一位
-      hotSingerData.value.artists = [artistData.data.artist, ...hotSingerData.value.artists];
-    }
-  } catch (error) {
-    console.error('获取周杰伦数据失败:', error);
-  }
-}
-
 
 // 提取每日推荐加载逻辑到单独的函数
 const loadDayRecommendData = async () => {
@@ -276,7 +261,6 @@ const loadNonUserData = async () => {
     const { data: singerData } = await getHotSinger({ offset: 0, limit: 5 });
     hotSingerData.value = singerData;
 
-    await loadArtistData();
   } catch (error) {
     console.error('加载热门歌手数据失败:', error);
   }

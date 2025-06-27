@@ -47,11 +47,7 @@ const api = {
       'get-system-fonts',
       'get-cached-lyric',
       'cache-lyric',
-      'clear-lyric-cache',
-      // 统计相关
-      'record-visit',
-      'record-play',
-      'get-stats-summary'
+      'clear-lyric-cache'
     ];
     if (validChannels.includes(channel)) {
       return ipcRenderer.invoke(channel, ...args);

@@ -1,6 +1,6 @@
 import match from '@unblockneteasemusic/server';
 
-type Platform = 'qq' | 'migu' | 'kugou' | 'pyncmd' | 'joox' | 'kuwo' | 'bilibili';
+type Platform = 'qq' | 'migu' | 'kugou' | 'pyncmd' | 'joox' | 'bilibili';
 
 interface SongData {
   name: string;
@@ -30,7 +30,7 @@ interface UnblockResult {
 }
 
 // 所有可用平台
-export const ALL_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd', 'kuwo', 'bilibili'];
+export const ALL_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd', 'bilibili'];
 
 /**
  * 音乐解析函数

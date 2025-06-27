@@ -1,7 +1,6 @@
 // musicHistoryHooks
 import { useLocalStorage } from '@vueuse/core';
 
-import { recordPlay } from '@/api/stats';
 import type { SongResult } from '@/type/music';
 
 export const useMusicHistory = () => {
@@ -14,25 +13,6 @@ export const useMusicHistory = () => {
       musicHistory.value.unshift(musicHistory.value.splice(index, 1)[0]);
     } else {
       musicHistory.value.unshift({ ...music, count: 1 });
-    }
-
-    // 记录播放统计
-    if (music?.id && music?.name) {
-      // 获取艺术家名称
-      let artistName = '未知艺术家';
-
-      if (music.ar) {
-        artistName = music.ar.map((artist) => artist.name).join('/');
-      } else if (music.song?.artists && music.song.artists.length > 0) {
-        artistName = music.song.artists.map((artist) => artist.name).join('/');
-      } else if (music.artists) {
-        artistName = music.artists.map((artist) => artist.name).join('/');
-      }
-
-      // 发送播放统计
-      recordPlay(music.id, music.name, artistName).catch((error) =>
-        console.error('记录播放统计失败:', error)
-      );
     }
   };
 

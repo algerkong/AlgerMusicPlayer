@@ -248,7 +248,6 @@ export interface IArtists {
 export type MusicSourceType = 
   | 'tencent' 
   | 'kugou' 
-  | 'kuwo' 
   | 'migu' 
   | 'netease' 
   | 'joox' 
