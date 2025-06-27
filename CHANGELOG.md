@@ -1,6 +1,6 @@
 # 更新日志
 
-## v4.8.0
+## v4.8.1
 > 如果更新遇到问题，请前往 <a href="http://donate.alger.fun/download" target="_blank">下载 AlgerMusicPlayer</a>
 
 > 请我喝咖啡(支持作者) ☕️ <a href="http://donate.alger.fun/donate" target="_blank" style="color: red; font-weight: bold;">赏你</a>
@@ -10,6 +10,17 @@
 > 微信公众号 微信搜索 <span style="font-weight: bold;">AlgerMusic</span>
 
 > QQ频道 AlgerMusic <a href="https://pd.qq.com/s/cs056n33q?b=5" target="_blank">加入频道</a>
+
+### 🐛 Bug 修复
+- 修复无法快捷键调整问题
+
+### 🎨 优化
+- 优化音乐资源解析
+- 去除无用代码，优化加载速度
+
+
+
+## v4.8.0
 
 ### ✨ 新功能
 - 增强移动端播放页面效果，添加播放模式选择，添加横屏模式，添加播放列表功能 ([81b61e4](https://github.com/algerkong/AlgerMusicPlayer/commit/81b61e4))，([0d89e15](https://github.com/algerkong/AlgerMusicPlayer/commit/0d89e15))，([9345805](https://github.com/algerkong/AlgerMusicPlayer/commit/9345805))
