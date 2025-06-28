@@ -14,9 +14,7 @@
   <a href="https://t.me/+9efsKRuvKBk2NWVl">
     <img src="https://img.shields.io/badge/AlgerMusic-blue?style=for-the-badge&logo=telegram&logoColor=white&label=Telegram" alt="Telegram">
   </a>
-   <a href="https://donate.alger.fun/">
-    <img src="https://img.shields.io/badge/%E9%A1%B9%E7%9B%AE%E6%8D%90%E8%B5%A0-blue?style=for-the-badge&logo=telegram&logoColor=pink&color=pink&label=%E8%B5%9E%E5%8A%A9" alt="赞助">
-  </a>
+
 </div>
 </div>
 <div align="center">
@@ -80,11 +78,7 @@ npm run dev
 
 
 
-## 赞赏☕️
-[赞赏列表](http://donate.alger.fun/)
-|                                        微信赞赏                                        |                                       支付宝赞赏                                       |
-| :--------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------: |
-| <img src="https://github.com/algerkong/algerkong/blob/main/wechat.jpg?raw=true" alt="WeChat QRcode" width=200> <br><small>喝点咖啡继续干</small> | <img src="https://github.com/algerkong/algerkong/blob/main/alipay.jpg?raw=true" alt="Wechat QRcode" width=200> <br><small>来包辣条吧~</small> |
+
 
 
 ## 项目统计

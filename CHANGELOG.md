@@ -1,9 +1,7 @@
 # 更新日志
 
 ## v4.8.1
-> 如果更新遇到问题，请前往 <a href="http://donate.alger.fun/download" target="_blank">下载 AlgerMusicPlayer</a>
-
-> 请我喝咖啡(支持作者) ☕️ <a href="http://donate.alger.fun/donate" target="_blank" style="color: red; font-weight: bold;">赏你</a>
+> 如果更新遇到问题，请前往 <a href="https://github.com/algerkong/AlgerMusicPlayer/releases" target="_blank">下载 AlgerMusicPlayer</a>
 
 > 帮我点个 star <a href="https://github.com/algerkong/AlgerMusicPlayer" target="_blank">github star</a>
 
@@ -51,23 +49,4 @@
 - 翻译优化
 - 代码优化
 
-## 赞赏支持☕️
-[赞赏列表](http://donate.alger.fun/)
-<table>
-  <tr>
-    <th style="text-align:center">微信赞赏</th>
-    <th style="width:100px"></th>
-    <th style="text-align:center">支付宝赞赏</th>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="https://github.com/algerkong/algerkong/blob/main/wechat.jpg?raw=true" alt="WeChat QRcode" width="200"><br>
-      <h6>☕️喝点咖啡继续干</h6>
-    </td>
-    <td></td>
-    <td align="center">
-      <img src="https://github.com/algerkong/algerkong/blob/main/alipay.jpg?raw=true" alt="Alipay QRcode" width="200"><br>
-      <h6>🍔来个汉堡</h6>
-    </td>
-  </tr>
-</table>
+

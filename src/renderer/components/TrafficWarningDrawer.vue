@@ -63,7 +63,7 @@
 
           
           <div class="drawer-actions">
-            <n-button secondary class="action-button" @click="markAsDonated">已了解</n-button>
+            <n-button secondary class="action-button" @click="markAsUnderstood">已了解</n-button>
             <n-button type="primary" class="action-button primary" @click="remindLater">稍后提醒</n-button>
           </div>
         </div>
@@ -92,7 +92,7 @@ const remindLater = () => {
 };
 
 // 标记为已了解（永久不再提示）
-const markAsDonated = () => {
+const markAsUnderstood = () => {
   localStorage.setItem('trafficNeverShow', '1');
   showDrawer.value = false;
 };
