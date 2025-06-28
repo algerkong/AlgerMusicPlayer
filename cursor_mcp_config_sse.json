@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "music-player-simple": {
+      "url": "http://localhost:3001/sse",
+      "disabled": false
+    }
+  }
+} 

@@ -25,6 +25,7 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
+    "@element-plus/icons-vue": "^2.3.1",
     "@unblockneteasemusic/server": "^0.27.8-patch.1",
     "cors": "^2.8.5",
     "electron-store": "^8.1.0",

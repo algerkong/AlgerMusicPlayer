@@ -317,6 +317,20 @@
                 t('common.configure')
               }}</n-button>
             </div>
+
+            <!-- MCP服务设置 -->
+            <div class="set-item">
+              <div>
+                <div class="set-item-title">MCP服务</div>
+                <div class="set-item-content">
+                  启用后，可以通过兼容的MCP客户端（如Cursor）控制播放器
+                </div>
+              </div>
+              <n-switch v-model:value="mcpServerEnabled">
+                <template #checked>{{ t('common.on') }}</template>
+                <template #unchecked>{{ t('common.off') }}</template>
+              </n-switch>
+            </div>
           </div>
         </div>
 
@@ -501,6 +515,7 @@ import { useDebounceFn } from '@vueuse/core';
 import { useMessage } from 'naive-ui';
 import { computed, h, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { storeToRefs } from 'pinia';
 
 import localData from '@/../main/set.json';
 import Coffee from '@/components/Coffee.vue';
@@ -528,6 +543,8 @@ const platform = window.electron ? window.electron.ipcRenderer.sendSync('get-pla
 
 const settingsStore = useSettingsStore();
 const userStore = useUserStore();
+const { set, user } = storeToRefs(useUserStore());
+const { changeisAutoLogin, changeIsShowExitTip, changeIsShowTaskbar } = useUserStore();
 
 // 创建一个本地缓存的setData，避免频繁更新
 const localSetData = ref({ ...settingsStore.setData });
@@ -705,6 +722,10 @@ onMounted(async () => {
       ...setData.value,
       enableRealIP: false
     };
+  }
+  const result = await window.ipcRenderer.invoke('get-mcp-server-status');
+  if (result.success) {
+    mcpServerEnabled.value = result.running;
   }
 });
 
@@ -954,6 +975,17 @@ const showMusicSourcesModal = ref(false);
 
 // 远程控制设置弹窗
 const showRemoteControlModal = ref(false);
+
+// MCP服务器状态
+const mcpServerEnabled = ref(false);
+
+watch(mcpServerEnabled, (newValue) => {
+  if (newValue) {
+    window.ipcRenderer.invoke('start-mcp-server');
+  } else {
+    window.ipcRenderer.invoke('stop-mcp-server');
+  }
+});
 </script>
 
 <style lang="scss" scoped>

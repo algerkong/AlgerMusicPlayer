@@ -72,7 +72,19 @@ const ipc = {
   },
   // 监听主进程消息
   on: (channel: string, listener: (...args: any[]) => void) => {
-    ipcRenderer.on(channel, (_, ...args) => listener(...args));
+    ipcRenderer.on(channel, (event, ...args) => {
+      console.log(`[Preload] 接收到IPC事件 ${channel}:`, args);
+      
+      // 特殊处理MCP工具调用事件
+      if (channel === 'mcp-tool-call' && args.length > 0) {
+        // 确保传递第一个参数（MCP工具调用数据）
+        console.log(`[Preload] 准备传递MCP数据:`, args[0]);
+        listener(args[0]);
+      } else {
+        // 其他事件正常传递所有参数
+        listener(...args);
+      }
+    });
     return () => {
       ipcRenderer.removeListener(channel, listener);
     };

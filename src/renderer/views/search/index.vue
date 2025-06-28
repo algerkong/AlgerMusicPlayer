@@ -392,17 +392,38 @@ const handleScroll = (e: any) => {
 
 watch(
   () => route.query,
-  (query) => {
+  async (query) => {
     if (route.path === '/search' && query.keyword) {
       const routeKeyword = query.keyword as string;
       const routeType = query.type ? Number(query.type) : searchType.value;
+      const shouldAutoplay = query.autoplay === 'true';
 
       // 更新搜索类型和值
       searchStore.searchType = routeType;
       searchStore.searchValue = routeKeyword;
 
       // 加载搜索结果
-      loadSearch(routeKeyword, routeType);
+      await loadSearch(routeKeyword, routeType);
+      
+      // 如果需要自动播放且有搜索结果
+      if (shouldAutoplay && searchDetail.value?.songs?.length > 0) {
+        console.log('MCP自动播放搜索结果的第一首歌:', searchDetail.value.songs[0].name);
+        
+        // 设置播放列表为搜索结果
+        playerStore.setPlayList(searchDetail.value.songs);
+        
+        // 播放第一首歌
+        await playerStore.setPlay(searchDetail.value.songs[0]);
+        
+        // 清除URL中的autoplay参数，避免重复触发
+        router.replace({ 
+          path: '/search', 
+          query: { 
+            keyword: routeKeyword, 
+            type: routeType 
+          } 
+        });
+      }
     }
   },
   { immediate: true }

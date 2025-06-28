@@ -1,0 +1,6 @@
+{
+  "name": "AlgerMusicPlayer",
+  "description": "通过AI控制您的 Alger 音乐播放器。请先在播放器的设置页面打开MCP服务开关。",
+  "protocol": "sse",
+  "url": "http://localhost:3001/sse"
+} 
