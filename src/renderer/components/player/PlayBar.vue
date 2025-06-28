@@ -343,7 +343,12 @@ const playMusicEvent = async () => {
   }
 };
 
-const musicFullVisible = ref(false);
+const musicFullVisible = computed({
+  get: () => playerStore.musicFull,
+  set: (value) => {
+    playerStore.setMusicFull(value);
+  }
+})
 
 // 设置musicFull
 const setMusicFull = () => {

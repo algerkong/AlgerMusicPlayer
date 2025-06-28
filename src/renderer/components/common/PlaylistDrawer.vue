@@ -5,6 +5,7 @@
     placement="right"
     @update:show="$emit('update:modelValue', $event)"
     :unstable-show-mask="false"
+    :show-mask="false"
   >
     <n-drawer-content :title="t('comp.playlistDrawer.title')" class="mac-style-drawer">
       <n-scrollbar class="h-full">

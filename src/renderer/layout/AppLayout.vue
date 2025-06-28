@@ -125,6 +125,8 @@ const currentSongId = ref<number | undefined>();
 const openPlaylistDrawer = (songId: number, isOpen: boolean = true) => {
   currentSongId.value = songId;
   showPlaylistDrawer.value = isOpen;
+  playerStore.setMusicFull(false);
+  playerStore.setPlayListDrawerVisible(!isOpen);
 };
 
 // 将方法提供给全局
