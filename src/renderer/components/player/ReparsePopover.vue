@@ -52,12 +52,21 @@
       <div v-if="playMusic.source === 'bilibili'" class="text-red-500 text-sm">
         {{ t('player.reparse.bilibiliNotSupported') }}
       </div>
+      <!-- 清除自定义音源 -->
+      <div class="text-red-500 text-sm flex items-center bg-light-200 dark:bg-dark-200 rounded-lg p-2 cursor-pointer"  @click="clearCustomSource">
+        <div class="flex items-center justify-center w-6 h-6 mr-3 text-lg">
+          <i class="ri-close-circle-line"></i>
+        </div>
+        <div>
+          {{ t('player.reparse.clear') }}
+        </div>
+      </div>
     </div>
   </n-popover>
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useMessage } from 'naive-ui';
 import { playMusic } from '@/hooks/MusicHook';
@@ -76,11 +85,7 @@ const currentReparsingSource = ref<Platform | null>(null);
 // 实际存储选中音源的值
 const selectedSourcesValue = ref<Platform[]>([]);
 
-// 判断当前歌曲是否有自定义解析记录
-const isReparse = computed(() => {
-  const songId = String(playMusic.value.id);
-  return localStorage.getItem(`song_source_${songId}`) !== null;
-});
+const isReparse = ref(localStorage.getItem(`song_source_${String(playMusic.value.id)}`) !== null);
 
 // 可选音源列表
 const musicSourceOptions = ref([
@@ -125,6 +130,13 @@ const initSelectedSources = () => {
   } else {
     selectedSourcesValue.value = [];
   }
+};
+
+// 清除自定义音源
+const clearCustomSource = () => {
+  localStorage.removeItem(`song_source_${String(playMusic.value.id)}`);
+  selectedSourcesValue.value = [];
+  isReparse.value = false;
 };
 
 // 直接重新解析当前歌曲

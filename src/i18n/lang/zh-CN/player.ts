@@ -38,7 +38,8 @@ export default {
     failed: '重新解析失败',
     warning: '请选择一个音源',
     bilibiliNotSupported: 'B站视频不支持重新解析',
-    processing: '解析中...'
+    processing: '解析中...',
+    clear: '清除自定义音源'
   },
   playBar: {
     expand: '展开歌词',
