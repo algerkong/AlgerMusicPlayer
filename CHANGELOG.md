@@ -1,15 +1,16 @@
 # 更新日志
 
+## v4.8.2
+### 🎨 优化
+- 重新设计pc端歌词页面Mini播放栏
+- 添加清除歌曲自定义解析功能
+
+### 🐛 Bug 修复
+- 修复歌曲单独解析失败问题
+- 修复歌词页面加入歌单抽屉被遮挡问题
+
+
 ## v4.8.1
-> 如果更新遇到问题，请前往 <a href="http://donate.alger.fun/download" target="_blank">下载 AlgerMusicPlayer</a>
-
-> 请我喝咖啡(支持作者) ☕️ <a href="http://donate.alger.fun/donate" target="_blank" style="color: red; font-weight: bold;">赏你</a>
-
-> 帮我点个 star <a href="https://github.com/algerkong/AlgerMusicPlayer" target="_blank">github star</a>
-
-> 微信公众号 微信搜索 <span style="font-weight: bold;">AlgerMusic</span>
-
-> QQ频道 AlgerMusic <a href="https://pd.qq.com/s/cs056n33q?b=5" target="_blank">加入频道</a>
 
 ### 🐛 Bug 修复
 - 修复无法快捷键调整问题
