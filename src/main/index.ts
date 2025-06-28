@@ -148,7 +148,9 @@ if (!isSingleInstance) {
 
   // 监听快捷键更新
   ipcMain.on('update-shortcuts', () => {
-    registerShortcuts(mainWindow);
+    if (mainWindow) {
+      registerShortcuts(mainWindow);
+    }
   });
 
   // 监听语言切换
@@ -156,7 +158,9 @@ if (!isSingleInstance) {
     // 更新主进程的语言设置
     i18n.global.locale = locale;
     // 更新托盘菜单
-    updateTrayMenu(mainWindow);
+    if (mainWindow) {
+      updateTrayMenu(mainWindow);
+    }
     // 通知所有窗口语言已更改
     mainWindow?.webContents.send('language-changed', locale);
   });

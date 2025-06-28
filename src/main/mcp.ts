@@ -70,20 +70,6 @@ const TOOLS = [
 // 存储SSE连接的响应对象
 const clients: express.Response[] = [];
 
-/**
- * 向所有连接的客户端发送SSE消息
- */
-function sendSSEToAll(data: any) {
-  const formattedData = `data: ${JSON.stringify(data)}\n\n`;
-  clients.forEach(client => {
-    try {
-      client.write(formattedData);
-    } catch (error) {
-      console.error('发送SSE消息失败:', error);
-    }
-  });
-}
-
 export class MCPServer {
   private app: express.Express;
   private server: Server | null = null;
@@ -189,13 +175,13 @@ export class MCPServer {
     });
 
     // 健康检查端点
-    this.app.get('/health', (req, res) => {
+    this.app.get('/health', (_, res) => {
       res.json({ status: 'ok', timestamp: new Date().toISOString() });
     });
   }
 
   private handleMCPMethod(request: any): any {
-    const { method, params, id } = request;
+    const { method, id } = request;
 
     switch (method) {
       case 'initialize':

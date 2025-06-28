@@ -72,7 +72,7 @@ const ipc = {
   },
   // 监听主进程消息
   on: (channel: string, listener: (...args: any[]) => void) => {
-    ipcRenderer.on(channel, (event, ...args) => {
+    ipcRenderer.on(channel, (_, ...args) => {
       console.log(`[Preload] 接收到IPC事件 ${channel}:`, args);
       
       // 特殊处理MCP工具调用事件
