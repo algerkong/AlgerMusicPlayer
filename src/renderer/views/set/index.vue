@@ -534,7 +534,6 @@ import { checkUpdate, UpdateResult } from '@/utils/update';
 import { type Platform } from '@/types/music';
 
 import config from '../../../../package.json';
-import './index.scss';
 
 const { t } = useI18n();
 
