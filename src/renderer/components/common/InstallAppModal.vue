@@ -76,7 +76,7 @@ onMounted(async () => {
 });
 
 const handleInstall = async (): Promise<void> => {
-  window.open('http://donate.alger.fun/download', '_blank');
+  window.open('https://github.com/algerkong/AlgerMusicPlayer/releases', '_blank');
 };
 </script>
 

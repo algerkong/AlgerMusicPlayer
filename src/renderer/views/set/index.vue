@@ -425,12 +425,10 @@
               class="set-item cursor-pointer hover:text-green-500 hover:bg-green-950 transition-all"
               @click="openAuthor"
             >
-              <coffee>
-                <div>
-                  <div class="set-item-title">{{ t('settings.about.author') }}</div>
-                  <div class="set-item-content">{{ t('settings.about.authorDesc') }}</div>
-                </div>
-              </coffee>
+              <div>
+                <div class="set-item-title">{{ t('settings.about.author') }}</div>
+                <div class="set-item-content">{{ t('settings.about.authorDesc') }}</div>
+              </div>
               <div>
                 <n-button size="small" @click="openAuthor">
                   <i class="ri-github-line"></i>{{ t('settings.about.gotoGithub') }}
@@ -440,25 +438,7 @@
           </div>
         </div>
 
-        <!-- 捐赠支持 -->
-        <div id="donation" ref="donationRef" class="settings-section">
-          <div class="settings-section-title">{{ t('settings.sections.donation') }}</div>
-          <div class="settings-section-content">
-            <div class="set-item">
-              <div>
-                <div class="set-item-title">{{ t('settings.sections.donation') }}</div>
-                <div class="set-item-content">{{ t('donation.message') }}</div>
-              </div>
-              <n-button text @click="toggleDonationList">
-                <template #icon>
-                  <i :class="isDonationListVisible ? 'ri-eye-line' : 'ri-eye-off-line'" />
-                </template>
-                {{ isDonationListVisible ? t('common.hide') : t('common.show') }}
-              </n-button>
-            </div>
-            <donation-list v-if="isDonationListVisible" />
-          </div>
-        </div>
+
       </div>
       <play-bottom />
     </n-scrollbar>
@@ -502,8 +482,7 @@ import { computed, h, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import localData from '@/../main/set.json';
-import Coffee from '@/components/Coffee.vue';
-import DonationList from '@/components/common/DonationList.vue';
+
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import ShortcutSettings from '@/components/settings/ShortcutSettings.vue';
@@ -768,12 +747,7 @@ watch(
   }
 );
 
-const isDonationListVisible = ref(localStorage.getItem('donationListVisible') !== 'false');
 
-const toggleDonationList = () => {
-  isDonationListVisible.value = !isDonationListVisible.value;
-  localStorage.setItem('donationListVisible', isDonationListVisible.value.toString());
-};
 
 // 清除缓存相关
 const showClearCacheModal = ref(false);
@@ -854,7 +828,7 @@ const settingSections = [
   { id: 'network', title: t('settings.sections.network'), electron: true },
   { id: 'system', title: t('settings.sections.system'), electron: true },
   { id: 'regard', title: t('settings.sections.regard') },
-  { id: 'donation', title: t('settings.sections.donation') }
+
 ];
 
 // 当前激活的分类
@@ -868,7 +842,7 @@ const applicationRef = ref();
 const networkRef = ref();
 const systemRef = ref();
 const aboutRef = ref();
-const donationRef = ref();
+
 
 // 滚动到指定分类
 const scrollToSection = async (sectionId: string) => {
@@ -880,7 +854,7 @@ const scrollToSection = async (sectionId: string) => {
     network: networkRef,
     system: systemRef,
     about: aboutRef,
-    donation: donationRef
+
   }[sectionId];
 
   if (sectionRef?.value) {
@@ -903,7 +877,7 @@ const handleScroll = (e: any) => {
     { id: 'network', ref: networkRef },
     { id: 'system', ref: systemRef },
     { id: 'about', ref: aboutRef },
-    { id: 'donation', ref: donationRef }
+
   ];
 
   const activeSection = sections[0].id;

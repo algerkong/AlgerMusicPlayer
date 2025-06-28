@@ -114,11 +114,9 @@
       </div>
     </n-popover>
 
-    <coffee :alipay-q-r="alipay" :wechat-q-r="wechat">
-      <div class="github" @click="toGithub">
-        <i class="ri-github-fill"></i>
-      </div>
-    </coffee>
+    <div class="github" @click="toGithub">
+      <i class="ri-github-fill"></i>
+    </div>
   </div>
 </template>
 
@@ -128,9 +126,7 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { getSearchKeyword } from '@/api/home';
 import { getUserDetail } from '@/api/login';
-import alipay from '@/assets/alipay.png';
-import wechat from '@/assets/wechat.png';
-import Coffee from '@/components/Coffee.vue';
+
 import { useZoom } from '@/hooks/useZoom';
 import { SEARCH_TYPES, USER_SET_OPTIONS } from '@/const/bar-const';
 import { useSearchStore } from '@/store/modules/search';
@@ -303,7 +299,7 @@ const selectItem = async (key: string) => {
 };
 
 const toGithub = () => {
-  window.open('http://donate.alger.fun/download', '_blank');
+  window.open('https://github.com/algerkong/AlgerMusicPlayer', '_blank');
 };
 
 const updateInfo = ref<UpdateResult>({

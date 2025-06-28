@@ -50,7 +50,7 @@
             <a href="https://mp.weixin.qq.com/s/9pr1XQB36gShM_-TG2LBdg" target="_blank" class="doc-link">
               <i class="ri-file-text-line mr-1"></i> 查看使用文档
             </a>
-            <a href="http://donate.alger.fun/download" target="_blank" class="download-link">
+            <a href="https://github.com/algerkong/AlgerMusicPlayer/releases" target="_blank" class="download-link">
               <i class="ri-download-2-line mr-1"></i> 立即下载
             </a>
           </div>
@@ -60,27 +60,10 @@
             <p>关注公众号获取最新版本与更新信息</p>
           </div>
           
-          <div class="support-section">
-            <h4>支持项目</h4>
-            <p class="support-desc">您的支持是我们持续改进的动力</p>
-            <div class="payment-options">
-              <div class="payment-option">
-                <div class="payment-icon wechat">
-                  <img src="@/assets/wechat.png" alt="微信支付" />
-                </div>
-                <span>微信支付</span>
-              </div>
-              <div class="payment-option">
-                <div class="payment-icon alipay">
-                  <img src="@/assets/alipay.png" alt="支付宝" />
-                </div>
-                <span>支付宝</span>
-              </div>
-            </div>
-          </div>
+
           
           <div class="drawer-actions">
-            <n-button secondary class="action-button" @click="markAsDonated">已支持</n-button>
+            <n-button secondary class="action-button" @click="markAsDonated">已了解</n-button>
             <n-button type="primary" class="action-button primary" @click="remindLater">稍后提醒</n-button>
           </div>
         </div>
@@ -104,22 +87,22 @@ const handleDrawerClose = () => {
 // 一天后提醒
 const remindLater = () => {
   const now = new Date();
-  localStorage.setItem('trafficDonated4RemindLater', now.toISOString());
+  localStorage.setItem('trafficRemindLater', now.toISOString());
   showDrawer.value = false;
 };
 
-// 标记为已捐赠（永久不再提示）
+// 标记为已了解（永久不再提示）
 const markAsDonated = () => {
-  localStorage.setItem('trafficDonated4Never', '1');
+  localStorage.setItem('trafficNeverShow', '1');
   showDrawer.value = false;
 };
 // 组件挂载时检查是否需要显示
 onMounted(() => {
   // 优先判断是否永久不再提示
-  if (localStorage.getItem('trafficDonated4Never')) return;
-  
+  if (localStorage.getItem('trafficNeverShow')) return;
+
   // 判断一天后提醒
-  const remindLaterTime = localStorage.getItem('trafficDonated4RemindLater');
+  const remindLaterTime = localStorage.getItem('trafficRemindLater');
   if (remindLaterTime) {
     const lastRemind = new Date(remindLaterTime);
     const now = new Date();
@@ -294,39 +277,7 @@ onMounted(() => {
   }
 }
 
-.payment-options {
-  display: flex;
-  justify-content: center;
-  gap: 100px;
-  flex-wrap: wrap;
-  padding-bottom: 100px;
-}
 
-.payment-option {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  
-  .payment-icon {
-    width: 220px;
-    height: 220px;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-  }
-  
-  span {
-    font-size: 15px;
-    color: #444;
-  }
-}
 
 .drawer-actions {
   display: flex;
@@ -386,12 +337,7 @@ onMounted(() => {
     }
   }
   
-  .payment-option {
-    .payment-icon {
-      width: 190px;
-      height: 190px;
-    }
-  }
+
   
   .drawer-actions {
     flex-wrap: wrap;

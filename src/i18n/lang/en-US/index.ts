@@ -1,7 +1,7 @@
 import artist from './artist';
 import common from './common';
 import comp from './comp';
-import donation from './donation';
+
 import download from './download';
 import favorite from './favorite';
 import history from './history';
@@ -14,7 +14,7 @@ import user from './user';
 
 export default {
   common,
-  donation,
+
   favorite,
   history,
   login,

@@ -9,7 +9,7 @@ export default {
     application: '应用设置',
     network: '网络设置',
     system: '系统管理',
-    donation: '捐赠支持',
+
     regard: '关于'
   },
   basic: {

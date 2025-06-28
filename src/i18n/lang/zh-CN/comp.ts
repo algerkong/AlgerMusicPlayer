@@ -50,20 +50,7 @@ export default {
     copyFailed: '复制失败',
     backgroundDownload: '后台下载'
   },
-  coffee: {
-    title: '请我喝咖啡',
-    alipay: '支付宝',
-    wechat: '微信支付',
-    alipayQR: '支付宝收款码',
-    wechatQR: '微信收款码',
-    coffeeDesc: '一杯咖啡，一份支持',
-    coffeeDescLinkText: '查看更多',
-    qqGroup: 'QQ频道：algermusic',
-    messages: {
-      copySuccess: '已复制到剪贴板'
-    },
-    donateList: '请我喝咖啡'
-  },
+
   playlistType: {
     title: '歌单分类',
     showAll: '显示全部',

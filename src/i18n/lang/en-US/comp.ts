@@ -52,20 +52,7 @@ export default {
     copyFailed: 'Copy failed',
     backgroundDownload: 'Background Download'
   },
-  coffee: {
-    title: 'Buy me a coffee',
-    alipay: 'Alipay',
-    wechat: 'Wechat',
-    alipayQR: 'Alipay QR code',
-    wechatQR: 'Wechat QR code',
-    coffeeDesc: 'A cup of coffee, a support',
-    coffeeDescLinkText: 'View more',
-    qqGroup: 'QQ group: algermusic',
-    messages: {
-      copySuccess: 'Copied to clipboard'
-    },
-    donateList: 'Buy me a coffee'
-  },
+
   playlistType: {
     title: 'Playlist Category',
     showAll: 'Show all',

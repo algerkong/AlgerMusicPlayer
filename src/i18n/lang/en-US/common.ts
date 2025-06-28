@@ -7,8 +7,7 @@ export default {
   search: 'Search',
   loading: 'Loading...',
   loadingMore: 'Loading more...',
-  alipay: 'Alipay',
-  wechat: 'WeChat Pay',
+
   on: 'On',
   off: 'Off',
   show: 'Show',
