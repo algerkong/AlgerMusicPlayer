@@ -25,16 +25,9 @@ import RecommendSonglist from '@/components/home/RecommendSonglist.vue';
 import TopBanner from '@/components/home/TopBanner.vue';
 import { isMobile } from '@/utils';
 import FavoriteList from '@/views/favorite/index.vue';
-import Volume from './components/Volume.vue';
 import { useUserStore } from '@/store/modules/user';
-import { useSettingsStore } from '@/store/modules/settings';
 import { useRouter } from 'vue-router';
-import { storeToRefs } from 'pinia';
 import { usePlayerStore } from '@/store/modules/player';
-
-const settingsStore = useSettingsStore();
-const { showPlayBottom } = storeToRefs(settingsStore);
-const { changeShowPlayBottom } = settingsStore;
 
 // 在setup顶层获取这些对象，避免在事件监听器中调用
 const userStore = useUserStore();
@@ -42,7 +35,7 @@ const playerStore = usePlayerStore();
 const router = useRouter();
 
 // 监听来自主进程的MCP指令
-window.ipcRenderer.on('mcp-command', (event, payload) => {
+window.ipcRenderer.on('mcp-command', (_, payload) => {
   console.log('收到MCP指令:', payload);
   
   // 安全检查，确保payload存在且有必要的属性
@@ -61,7 +54,7 @@ window.ipcRenderer.on('mcp-command', (event, payload) => {
   switch (method) {
     case 'search':
       if (params && params.keyword) {
-        userStore.setSearchWord(params.keyword);
+        userStore.setSearchValue(params.keyword);
         router.push({ name: 'Search', query: { key: params.keyword } });
       }
       break;
@@ -99,7 +92,7 @@ window.ipcRenderer.on('mcp-tool-call', (payload) => {
     return;
   }
   
-  const { name, args, id } = payload;
+  const { name, args } = payload;
   
   if (!name) {
     console.warn('MCP工具调用缺少name参数:', payload);

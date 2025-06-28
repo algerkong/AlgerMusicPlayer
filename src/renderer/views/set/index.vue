@@ -512,6 +512,8 @@
 
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core';
+import { useRouter } from 'vue-router';
+import { createReusableTemplate } from '@vueuse/core';
 import { useMessage } from 'naive-ui';
 import { computed, h, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -535,6 +537,9 @@ import { checkUpdate, UpdateResult } from '@/utils/update';
 import { type Platform } from '@/types/music';
 
 import config from '../../../../package.json';
+import './index.scss';
+
+const { t } = useI18n();
 
 // 所有平台默认值
 const ALL_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd', 'bilibili', 'kuwo'];
@@ -543,8 +548,6 @@ const platform = window.electron ? window.electron.ipcRenderer.sendSync('get-pla
 
 const settingsStore = useSettingsStore();
 const userStore = useUserStore();
-const { set, user } = storeToRefs(useUserStore());
-const { changeisAutoLogin, changeIsShowExitTip, changeIsShowTaskbar } = useUserStore();
 
 // 创建一个本地缓存的setData，避免频繁更新
 const localSetData = ref({ ...settingsStore.setData });
@@ -562,8 +565,6 @@ const updateInfo = ref<UpdateResult>({
   currentVersion: config.version,
   releaseInfo: null
 });
-
-const { t } = useI18n();
 
 // 创建一个防抖的保存函数
 // const debouncedSaveSettings = debounce((newData) => {
