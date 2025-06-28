@@ -82,6 +82,66 @@ export const getMusicLrc = async (id: number) => {
   }
 };
 
+/**
+ * 从Bilibili获取音频URL
+ * @param data 歌曲数据
+ * @returns 解析结果
+ */
+const getBilibiliAudio = async (data: SongResult) => {
+  const songName = data?.name || '';
+  const artistName = Array.isArray(data?.ar) && data.ar.length > 0 && data.ar[0]?.name ? data.ar[0].name : '';
+  const albumName = data?.al && typeof data.al === 'object' && data.al?.name ? data.al.name : '';
+  
+  const searchQuery = [songName, artistName, albumName].filter(Boolean).join(' ').trim();
+  console.log('开始搜索bilibili音频:', searchQuery);
+  
+  const url = await searchAndGetBilibiliAudioUrl(searchQuery);
+  return {
+    data: {
+      code: 200,
+      message: 'success',
+      data: { url }
+    }
+  };
+};
+
+/**
+ * 从GD音乐台获取音频URL
+ * @param id 歌曲ID
+ * @param data 歌曲数据
+ * @returns 解析结果，失败时返回null
+ */
+const getGDMusicAudio = async (id: number, data: SongResult) => {
+  try {
+    const gdResult = await parseFromGDMusic(id, data, '999');
+    if (gdResult) {
+      return gdResult;
+    }
+  } catch (error) {
+    console.error('GD音乐台解析失败:', error);
+  }
+  return null;
+};
+
+/**
+ * 使用unblockMusic解析音频URL
+ * @param id 歌曲ID
+ * @param data 歌曲数据
+ * @param sources 音源列表
+ * @returns 解析结果
+ */
+const getUnblockMusicAudio = (id: number, data: SongResult, sources: any[]) => {
+  const filteredSources = sources.filter(source => source !== 'gdmusic');
+  console.log(`使用unblockMusic解析，音源:`, filteredSources);
+  return window.api.unblockMusic(id, cloneDeep(data), cloneDeep(filteredSources));
+};
+
+/**
+ * 获取解析后的音乐URL
+ * @param id 歌曲ID
+ * @param data 歌曲数据
+ * @returns 解析结果
+ */
 export const getParsingMusicUrl = async (id: number, data: SongResult) => {
   const settingStore = useSettingsStore();
   
@@ -90,65 +150,51 @@ export const getParsingMusicUrl = async (id: number, data: SongResult) => {
     return Promise.resolve({ data: { code: 404, message: '音乐解析功能已禁用' } });
   }
   
-  // 获取音源设置，优先使用歌曲自定义音源
+  // 1. 确定使用的音源列表(自定义或全局)
   const songId = String(id);
-  const savedSource = localStorage.getItem(`song_source_${songId}`);
-  let enabledSources: any[] = [];
+  const savedSourceStr = localStorage.getItem(`song_source_${songId}`);
+  let musicSources: any[] = [];
   
-  // 如果有歌曲自定义音源，使用自定义音源
-  if (savedSource) {
-    try {
-      enabledSources = JSON.parse(savedSource);
-      console.log(`使用歌曲 ${id} 自定义音源:`, enabledSources);
-      if(enabledSources.includes('bilibili')){
-        // 构建搜索关键词，依次判断歌曲名称、歌手名称和专辑名称是否存在
-        const songName = data?.name || '';
-        const artistName = Array.isArray(data?.ar) && data.ar.length > 0 && data.ar[0]?.name ? data.ar[0].name : '';
-        const albumName = data?.al && typeof data.al === 'object' && data.al?.name ? data.al.name : '';
-        const name = [songName, artistName, albumName].filter(Boolean).join(' ').trim();
-        console.log('开始搜索bilibili音频', name);
-       return {
-        data: {
-          code: 200,
-          message: 'success',
-          data: {
-            url: await searchAndGetBilibiliAudioUrl(name)
-          }
-        }
-       }
+  try {
+    if (savedSourceStr) {
+      // 使用自定义音源
+      musicSources = JSON.parse(savedSourceStr);
+      console.log(`使用歌曲 ${id} 自定义音源:`, musicSources);
+    } else {
+      // 使用全局音源设置
+      musicSources = settingStore.setData.enabledMusicSources || [];
+      console.log(`使用全局音源设置:`, musicSources);
+      if (isElectron && musicSources.length > 0) {
+        return getUnblockMusicAudio(id, data, musicSources);
       }
-    } catch (e) {
-      console.error('e',e)
-      console.error('解析自定义音源失败, 使用全局设置', e);
-      enabledSources = settingStore.setData.enabledMusicSources || [];
     }
-  } else {
-    // 没有自定义音源，使用全局音源设置
-    enabledSources = settingStore.setData.enabledMusicSources || [];
+  } catch (e) {
+    console.error('解析音源设置失败，使用全局设置', e);
+    musicSources = settingStore.setData.enabledMusicSources || [];
   }
   
-  // 检查是否选择了GD音乐台解析
+  // 2. 按优先级解析
   
-  if (enabledSources.includes('gdmusic')) {
-    // 获取音质设置并转换为GD音乐台格式
-    try {
-      const gdResult = await parseFromGDMusic(id, data, '999');
-      if (gdResult) {
-        return gdResult;
-      }
-    } catch (error) {
-      console.error('GD音乐台解析失败:', error);
-    }
-      
-    console.log('GD音乐台所有音源均解析失败，尝试使用unblockMusic');
+  // 2.1 Bilibili解析(优先级最高)
+  if (musicSources.includes('bilibili')) {
+    return await getBilibiliAudio(data);
   }
   
-  // 如果GD音乐台解析失败或者未启用，尝试使用unblockMusic
-  if (isElectron) {
-    const filteredSources = enabledSources.filter(source => source !== 'gdmusic');
-    return window.api.unblockMusic(id, cloneDeep(data), cloneDeep(filteredSources));
+  // 2.2 GD音乐台解析
+  if (musicSources.includes('gdmusic')) {
+    const gdResult = await getGDMusicAudio(id, data);
+    if (gdResult) return gdResult;
+    // GD解析失败，继续下一步
+    console.log('GD音乐台解析失败，尝试使用其他音源');
+  }
+  console.log('musicSources',musicSources)
+  // 2.3 使用unblockMusic解析其他音源
+  if (isElectron && musicSources.length > 0) {
+    return getUnblockMusicAudio(id, data, musicSources);
   }
   
+  // 3. 后备方案：使用API请求
+  console.log('无可用音源或不在Electron环境中，使用API请求');
   return requestMusic.get<any>('/music', { params: { id } });
 };
 

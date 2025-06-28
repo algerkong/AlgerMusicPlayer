@@ -67,10 +67,10 @@ const visible = ref(props.show);
 const selectedSources = ref<Platform[]>(props.sources);
 
 const musicSourceOptions = ref([
-  { label: 'MiGu音乐', value: 'migu' },
-  { label: '酷狗音乐', value: 'kugou' },
+  { label: 'MG', value: 'migu' },
+  { label: 'KG', value: 'kugou' },
   { label: 'pyncmd', value: 'pyncmd' },
-  { label: 'Bilibili音乐', value: 'bilibili' },
+  { label: 'Bilibili', value: 'bilibili' },
   { label: 'GD音乐台', value: 'gdmusic' }
 ]);
 

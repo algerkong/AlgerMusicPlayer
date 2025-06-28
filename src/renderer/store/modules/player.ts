@@ -1,6 +1,7 @@
 import { cloneDeep } from 'lodash';
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+import { useThrottleFn } from '@vueuse/core';
 
 import i18n from '@/../i18n/renderer';
 import { getBilibiliAudioUrl } from '@/api/bilibili';
@@ -556,16 +557,95 @@ export const usePlayerStore = defineStore('player', () => {
     }
   };
 
+  // 添加用户意图跟踪变量
+  const userPlayIntent = ref(true);
+
+  let checkPlayTime: NodeJS.Timeout | null = null;
+
+  // 添加独立的播放状态检测函数
+  const checkPlaybackState = (song: SongResult, timeout: number = 4000) => {
+    if(checkPlayTime) {
+      clearTimeout(checkPlayTime);
+    }
+    const sound = audioService.getCurrentSound();
+    if (!sound) return;
+    
+    // 使用audioService的事件系统监听播放状态
+    // 添加一次性播放事件监听器
+    const onPlayHandler = () => {
+      // 播放事件触发，表示成功播放
+      console.log('播放事件触发，歌曲成功开始播放');
+      audioService.off('play', onPlayHandler);
+      audioService.off('playerror', onPlayErrorHandler);
+    };
+    
+    // 添加一次性播放错误事件监听器
+    const onPlayErrorHandler = async () => {
+      console.log('播放错误事件触发，尝试重新获取URL');
+      audioService.off('play', onPlayHandler);
+      audioService.off('playerror', onPlayErrorHandler);
+      
+      // 只有用户仍然希望播放时才重试
+      if (userPlayIntent.value && play.value) {
+        // 重置URL并重新播放
+        playMusic.value.playMusicUrl = undefined;
+        // 保持播放状态，但强制重新获取URL
+        const refreshedSong = { ...song, isFirstPlay: true };
+        await handlePlayMusic(refreshedSong, true);
+      }
+    };
+    
+    // 注册事件监听器
+    audioService.on('play', onPlayHandler);
+    audioService.on('playerror', onPlayErrorHandler);
+    
+    // 额外的安全检查：如果指定时间后仍未播放也未触发错误，且用户仍希望播放
+    checkPlayTime = setTimeout(() => {
+      // 使用更准确的方法检查是否真正在播放
+      if (!audioService.isActuallyPlaying() && userPlayIntent.value && play.value) {
+        console.log(`${timeout}ms后歌曲未真正播放且用户仍希望播放，尝试重新获取URL`);
+        // 移除事件监听器
+        audioService.off('play', onPlayHandler);
+        audioService.off('playerror', onPlayErrorHandler);
+        
+        // 重置URL并重新播放
+        playMusic.value.playMusicUrl = undefined;
+        // 保持播放状态，强制重新获取URL
+        (async () => {
+          const refreshedSong = { ...song, isFirstPlay: true };
+          await handlePlayMusic(refreshedSong, true);
+        })();
+      }
+    }, timeout);
+  };
+
   const setPlay = async (song: SongResult) => {
     try {
-    // 如果是当前正在播放的音乐，则切换播放/暂停状态
-    if (playMusic.value.id === song.id && playMusic.value.playMusicUrl === song.playMusicUrl && !song.isFirstPlay) {
-      if (play.value) {
+      // 检查URL是否已过期
+      if (song.expiredAt && song.expiredAt < Date.now()) {
+        console.info(`歌曲URL已过期，重新获取: ${song.name}`);
+        song.playMusicUrl = undefined;
+        // 重置过期时间，以便重新获取
+        song.expiredAt = undefined;
+      }
+      
+      // 如果是当前正在播放的音乐，则切换播放/暂停状态
+      if (playMusic.value.id === song.id && playMusic.value.playMusicUrl === song.playMusicUrl && !song.isFirstPlay) {
+        if (play.value) {
           setPlayMusic(false);
           audioService.getCurrentSound()?.pause();
+          // 设置用户意图为暂停
+          userPlayIntent.value = false;
         } else {
           setPlayMusic(true);
-          audioService.getCurrentSound()?.play();
+          // 设置用户意图为播放
+          userPlayIntent.value = true;
+          const sound = audioService.getCurrentSound();
+          if (sound) {
+            sound.play();
+            // 使用独立的播放状态检测函数
+            checkPlaybackState(playMusic.value);
+          }
         }
         return;
       }
@@ -600,10 +680,14 @@ export const usePlayerStore = defineStore('player', () => {
   const setPlayMusic = async (value: boolean | SongResult) => {
     if (typeof value === 'boolean') {
       setIsPlay(value);
+      // 记录用户的播放意图
+      userPlayIntent.value = value;
     } else {
       await handlePlayMusic(value);
       play.value = true;
       isPlay.value = true;
+      // 设置为播放意图
+      userPlayIntent.value = true;
       localStorage.setItem('currentPlayMusic', JSON.stringify(playMusic.value));
       localStorage.setItem('currentPlayMusicUrl', playMusicUrl.value);
     }
@@ -803,8 +887,7 @@ export const usePlayerStore = defineStore('player', () => {
     }
   };
 
-  // 修改nextPlay方法，改进播放逻辑
-  const nextPlay = async () => {
+  const _nextPlay = async () => {
 
     try {
       
@@ -927,9 +1010,10 @@ export const usePlayerStore = defineStore('player', () => {
     }
   };
 
-  // 修改 prevPlay 方法，使用与 nextPlay 相似的逻辑改进
-  const prevPlay = async () => {
+  // 节流
+  const nextPlay = useThrottleFn(_nextPlay, 500);
 
+  const _prevPlay = async () => {
     
     try {
 
@@ -1009,6 +1093,9 @@ export const usePlayerStore = defineStore('player', () => {
       console.error('切换上一首出错:', error);
     }
   };
+
+  // 节流
+  const prevPlay = useThrottleFn(_prevPlay, 500);
 
   const togglePlayMode = () => {
     playMode.value = (playMode.value + 1) % 3;
@@ -1185,6 +1272,12 @@ export const usePlayerStore = defineStore('player', () => {
       // 播放新音频，传递是否应该播放的状态
       console.log('调用audioService.play，播放状态:', shouldPlay);
       const newSound = await audioService.play(playMusicUrl.value, playMusic.value, shouldPlay, initialPosition || 0);
+      
+      // 添加播放状态检测（仅当需要播放时）
+      if (shouldPlay) {
+        checkPlaybackState(playMusic.value);
+      }
+      
       // 发布音频就绪事件，让 MusicHook.ts 来处理设置监听器
       window.dispatchEvent(new CustomEvent('audio-ready', { detail: { sound: newSound, shouldPlay } }));
 
@@ -1215,15 +1308,18 @@ export const usePlayerStore = defineStore('player', () => {
         
         // 延迟较长时间，确保锁已完全释放
         setTimeout(() => {
-          // 直接重试当前歌曲，而不是切换到下一首
-          playAudio().catch(e => {
-            console.error('重试播放失败，切换到下一首:', e);
-            
-            // 只有再次失败才切换到下一首
-            if (playList.value.length > 1) {
-              nextPlay();
-            }
-          });
+          // 如果用户仍希望播放
+          if (userPlayIntent.value && play.value) {
+            // 直接重试当前歌曲，而不是切换到下一首
+            playAudio().catch(e => {
+              console.error('重试播放失败，切换到下一首:', e);
+              
+              // 只有再次失败才切换到下一首
+              if (playList.value.length > 1) {
+                nextPlay();
+              }
+            });
+          }
         }, 1000);
       } else {
         // 其他错误，切换到下一首
@@ -1253,7 +1349,7 @@ export const usePlayerStore = defineStore('player', () => {
         return false;
       }
 
-      // 保存用户选择的音源
+      // 保存用户选择的音源（作为数组传递，确保unblockMusic可以使用）
       const songId = String(currentSong.id);
       localStorage.setItem(`song_source_${songId}`, JSON.stringify([sourcePlatform]));
       
@@ -1267,11 +1363,17 @@ export const usePlayerStore = defineStore('player', () => {
       const numericId = typeof currentSong.id === 'string' 
         ? parseInt(currentSong.id, 10) 
         : currentSong.id;
+        
+      console.log(`使用音源 ${sourcePlatform} 重新解析歌曲 ${numericId}`);
       
-      const res = await getParsingMusicUrl(numericId, cloneDeep(currentSong));
+      // 克隆一份歌曲数据，防止修改原始数据
+      const songData = cloneDeep(currentSong);
+      
+      const res = await getParsingMusicUrl(numericId, songData);
       if (res && res.data && res.data.data && res.data.data.url) {
         // 更新URL
         const newUrl = res.data.data.url;
+        console.log(`解析成功，获取新URL: ${newUrl.substring(0, 50)}...`);
         
         // 使用新URL更新播放
         const updatedMusic = { 
@@ -1286,6 +1388,7 @@ export const usePlayerStore = defineStore('player', () => {
         
         return true;
       } else {
+        console.warn(`使用音源 ${sourcePlatform} 解析失败`);
         return false;
       }
     } catch (error) {
@@ -1307,6 +1410,8 @@ export const usePlayerStore = defineStore('player', () => {
         currentSound.pause();
       }
       setPlayMusic(false);
+      // 明确设置用户意图为暂停
+      userPlayIntent.value = false;
     } catch (error) {
       console.error('暂停播放失败:', error);
     }
@@ -1345,8 +1450,8 @@ export const usePlayerStore = defineStore('player', () => {
     clearPlayAll,
     setPlay,
     setIsPlay,
-    nextPlay,
-    prevPlay,
+    nextPlay: nextPlay as unknown as typeof _nextPlay,
+    prevPlay: prevPlay as unknown as typeof _prevPlay,
     setPlayMusic,
     setMusicFull,
     setPlayList,

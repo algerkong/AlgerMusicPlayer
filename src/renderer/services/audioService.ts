@@ -811,6 +811,40 @@ class AudioService {
     
     console.log('Volume applied (linear):', linearVolume);
   }
+
+  // 添加方法检查当前音频是否在加载状态
+  isLoading(): boolean {
+    if (!this.currentSound) return false;
+    
+    // 检查Howl对象的内部状态
+    // 如果状态为1表示已经加载但未完成，状态为2表示正在加载
+    const state = (this.currentSound as any)._state;
+    // 如果操作锁激活也认为是加载状态
+    return this.operationLock || (state === 'loading' || state === 1);
+  }
+  
+  // 检查音频是否真正在播放
+  isActuallyPlaying(): boolean {
+    if (!this.currentSound) return false;
+    
+    try {
+      // 综合判断: 
+      // 1. Howler API是否报告正在播放
+      // 2. 是否不在加载状态
+      // 3. 确保音频上下文状态正常
+      const isPlaying = this.currentSound.playing();
+      const isLoading = this.isLoading();
+      const contextRunning = Howler.ctx && Howler.ctx.state === 'running';
+      
+      console.log(`实际播放状态检查: playing=${isPlaying}, loading=${isLoading}, contextRunning=${contextRunning}`);
+      
+      // 只有在三个条件都满足时才认为是真正在播放
+      return isPlaying && !isLoading && contextRunning;
+    } catch (error) {
+      console.error('检查播放状态出错:', error);
+      return false;
+    }
+  }
 }
 
 export const audioService = new AudioService();
