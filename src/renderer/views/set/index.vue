@@ -512,12 +512,9 @@
 
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core';
-import { useRouter } from 'vue-router';
-import { createReusableTemplate } from '@vueuse/core';
 import { useMessage } from 'naive-ui';
 import { computed, h, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { storeToRefs } from 'pinia';
 
 import localData from '@/../main/set.json';
 import Coffee from '@/components/Coffee.vue';
