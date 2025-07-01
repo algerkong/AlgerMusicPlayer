@@ -61,7 +61,7 @@ import { computed, defineAsyncComponent, onMounted, provide, ref } from 'vue';
 import { useRoute } from 'vue-router';
 
 import DownloadDrawer from '@/components/common/DownloadDrawer.vue';
-import InstallAppModal from '@/components/common/InstallAppModal.vue';
+//import InstallAppModal from '@/components/common/InstallAppModal.vue';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import UpdateModal from '@/components/common/UpdateModal.vue';
 import homeRouter from '@/router/home';

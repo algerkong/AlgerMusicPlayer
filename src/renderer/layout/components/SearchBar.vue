@@ -100,7 +100,7 @@
             <i class="iconfont ri-refresh-line"></i>
             <span>{{ t('comp.searchBar.refresh') }}</span>
           </div>
-          <div class="menu-item" @click="toGithubRelease">
+          <!-- <div class="menu-item" @click="toGithubRelease">
             <i class="iconfont ri-github-fill"></i>
             <span>{{ t('comp.searchBar.currentVersion') }}</span>
             <div class="version-info">
@@ -109,16 +109,16 @@
                 New {{ updateInfo.latestVersion }}
               </n-tag>
             </div>
-          </div>
+          </div> -->
         </div>
       </div>
     </n-popover>
 
-    <coffee :alipay-q-r="alipay" :wechat-q-r="wechat">
+    <!-- <coffee :alipay-q-r="alipay" :wechat-q-r="wechat">
       <div class="github" @click="toGithub">
         <i class="ri-github-fill"></i>
       </div>
-    </coffee>
+    </coffee> -->
   </div>
 </template>
 

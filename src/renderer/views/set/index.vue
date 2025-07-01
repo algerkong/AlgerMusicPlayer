@@ -1,7 +1,7 @@
 <template>
   <div class="settings-container">
     <!-- 左侧导航栏 -->
-    <div v-if="!isMobile" class="settings-nav">
+    <!-- <div v-if="!isMobile" class="settings-nav">
       <div
         v-for="section in settingSections"
         :key="section.id"
@@ -11,7 +11,7 @@
       >
         {{ t(`settings.sections.${section.id}`) }}
       </div>
-    </div>
+    </div> -->
 
     <!-- 右侧内容区 -->
     <n-scrollbar ref="scrollbarRef" class="settings-content" @scroll="handleScroll">
@@ -421,7 +421,7 @@
               </div>
             </div>
 
-            <div
+            <!-- <div
               class="set-item cursor-pointer hover:text-green-500 hover:bg-green-950 transition-all"
               @click="openAuthor"
             >
@@ -436,12 +436,12 @@
                   <i class="ri-github-line"></i>{{ t('settings.about.gotoGithub') }}
                 </n-button>
               </div>
-            </div>
+            </div> -->
           </div>
         </div>
 
         <!-- 捐赠支持 -->
-        <div id="donation" ref="donationRef" class="settings-section">
+        <!-- <div id="donation" ref="donationRef" class="settings-section">
           <div class="settings-section-title">{{ t('settings.sections.donation') }}</div>
           <div class="settings-section-content">
             <div class="set-item">
@@ -458,7 +458,7 @@
             </div>
             <donation-list v-if="isDonationListVisible" />
           </div>
-        </div>
+        </div> -->
       </div>
       <play-bottom />
     </n-scrollbar>
@@ -502,8 +502,8 @@ import { computed, h, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import localData from '@/../main/set.json';
-import Coffee from '@/components/Coffee.vue';
-import DonationList from '@/components/common/DonationList.vue';
+// import Coffee from '@/components/Coffee.vue';
+// import DonationList from '@/components/common/DonationList.vue';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import ShortcutSettings from '@/components/settings/ShortcutSettings.vue';
@@ -590,9 +590,9 @@ const isDarkTheme = computed({
   set: () => settingsStore.toggleTheme()
 });
 
-const openAuthor = () => {
-  window.open(setData.value.authorUrl);
-};
+// const openAuthor = () => {
+//   window.open(setData.value.authorUrl);
+// };
 
 const restartApp = () => {
   window.electron.ipcRenderer.send('restart');
@@ -768,12 +768,12 @@ watch(
   }
 );
 
-const isDonationListVisible = ref(localStorage.getItem('donationListVisible') !== 'false');
+//const isDonationListVisible = ref(localStorage.getItem('donationListVisible') !== 'false');
 
-const toggleDonationList = () => {
-  isDonationListVisible.value = !isDonationListVisible.value;
-  localStorage.setItem('donationListVisible', isDonationListVisible.value.toString());
-};
+// const toggleDonationList = () => {
+//   isDonationListVisible.value = !isDonationListVisible.value;
+//   localStorage.setItem('donationListVisible', isDonationListVisible.value.toString());
+// };
 
 // 清除缓存相关
 const showClearCacheModal = ref(false);
@@ -847,15 +847,15 @@ const handleShortcutsChange = (shortcuts: any) => {
 };
 
 // 定义设置分类
-const settingSections = [
-  { id: 'basic', title: t('settings.sections.basic') },
-  { id: 'playback', title: t('settings.sections.playback') },
-  { id: 'application', title: t('settings.sections.application'), electron: true },
-  { id: 'network', title: t('settings.sections.network'), electron: true },
-  { id: 'system', title: t('settings.sections.system'), electron: true },
-  { id: 'regard', title: t('settings.sections.regard') },
-  { id: 'donation', title: t('settings.sections.donation') }
-];
+// const settingSections = [
+//   { id: 'basic', title: t('settings.sections.basic') },
+//   { id: 'playback', title: t('settings.sections.playback') },
+//   { id: 'application', title: t('settings.sections.application'), electron: true },
+//   { id: 'network', title: t('settings.sections.network'), electron: true },
+//   { id: 'system', title: t('settings.sections.system'), electron: true },
+//   { id: 'regard', title: t('settings.sections.regard') },
+//   { id: 'donation', title: t('settings.sections.donation') }
+// ];
 
 // 当前激活的分类
 const currentSection = ref('basic');
@@ -871,26 +871,26 @@ const aboutRef = ref();
 const donationRef = ref();
 
 // 滚动到指定分类
-const scrollToSection = async (sectionId: string) => {
-  currentSection.value = sectionId;
-  const sectionRef = {
-    basic: basicRef,
-    playback: playbackRef,
-    application: applicationRef,
-    network: networkRef,
-    system: systemRef,
-    about: aboutRef,
-    donation: donationRef
-  }[sectionId];
+// const scrollToSection = async (sectionId: string) => {
+//   currentSection.value = sectionId;
+//   const sectionRef = {
+//     basic: basicRef,
+//     playback: playbackRef,
+//     application: applicationRef,
+//     network: networkRef,
+//     system: systemRef,
+//     about: aboutRef,
+//     donation: donationRef
+//   }[sectionId];
 
-  if (sectionRef?.value) {
-    await nextTick();
-    scrollbarRef.value?.scrollTo({
-      top: sectionRef.value.offsetTop - 20,
-      behavior: 'smooth'
-    });
-  }
-};
+//   if (sectionRef?.value) {
+//     await nextTick();
+//     scrollbarRef.value?.scrollTo({
+//       top: sectionRef.value.offsetTop - 20,
+//       behavior: 'smooth'
+//     });
+//   }
+// };
 
 // 处理滚动，更新当前激活的分类
 const handleScroll = (e: any) => {

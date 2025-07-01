@@ -1,8 +1,8 @@
 <template>
   <div id="title-bar" @mousedown="drag">
-    <div id="title">Alger Music</div>
+    <div id="title">Size Music</div>
     <div id="buttons">
-      <n-button
+      <!-- <n-button
         v-if="!isElectron"
         type="primary"
         size="small"
@@ -12,7 +12,7 @@
       >
         <i class="ri-download-line"></i>
         下载桌面版
-      </n-button>
+      </n-button> -->
       <template v-if="isElectron">
         <div class="button" @click="miniWindow">
           <i class="iconfont ri-picture-in-picture-line"></i>

@@ -1,4 +1,4 @@
-<template>
+<!-- <template>
   <div class="traffic-warning-trigger">
     <n-button circle secondary class="mac-style-button" @click="showDrawer = true">
       <template #icon>
@@ -408,4 +408,4 @@ onMounted(() => {
     }
   }
 }
-</style>
+</style> -->
