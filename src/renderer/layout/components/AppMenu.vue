@@ -74,7 +74,7 @@ const iconStyle = (index: number) => {
   return style;
 };
 
-const isText = ref(false);
+const isText = ref(true);
 </script>
 
 <style lang="scss" scoped>
