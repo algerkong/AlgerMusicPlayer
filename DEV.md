@@ -1,5 +1,5 @@
 # Alger Music Player 开发文档
-1
+
 ## 项目结构
 
 ### 技术栈
