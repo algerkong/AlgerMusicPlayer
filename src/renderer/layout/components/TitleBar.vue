@@ -68,11 +68,11 @@ const settingsStore = useSettingsStore();
 const showCloseModal = ref(false);
 const rememberChoice = ref(false);
 
-const openDownloadPage = () => {
-  if (!isElectron) {
-    window.open('http://donate.alger.fun/download', '_blank');
-  }
-};
+// const openDownloadPage = () => {
+//   if (!isElectron) {
+//     window.open('http://donate.alger.fun/download', '_blank');
+//   }
+// };
 
 const minimize = () => {
   if (!isElectron) {
