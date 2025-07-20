@@ -1,9 +1,11 @@
 import enUS from './lang/en-US';
 import zhCN from './lang/zh-CN';
+import zhHant from './lang/zh-Hant';
 
 const messages = {
   'zh-CN': zhCN,
-  'en-US': enUS
+  'en-US': enUS,
+  'zh-Hant': zhHant
 } as const;
 
 type Language = keyof typeof messages;

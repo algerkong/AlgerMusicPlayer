@@ -9,6 +9,7 @@ const { locale } = useI18n();
 
 const languages = [
   { label: '简体中文', value: 'zh-CN' },
+  { label: '繁體中文', value: 'zh-Hant' },
   { label: 'English', value: 'en-US' }
 ];
 
