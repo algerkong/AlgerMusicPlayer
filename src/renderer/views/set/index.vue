@@ -151,7 +151,7 @@
                 />
               </div>
             </div>
-            <div class="set-item" v-if="isElectron">
+            <div class="set-item" >
               <div>
                 <div class="set-item-title">{{ t('settings.playback.musicSources') }}</div>
                 <div class="set-item-content">
@@ -386,16 +386,16 @@
         @confirm="handleProxyConfirm"
       />
 
-      <!-- 音源设置弹窗 -->
-      <music-source-settings
-        v-model:show="showMusicSourcesModal"
-        v-model:sources="musicSources"
-      />
-
       <!-- 远程控制设置弹窗 -->
       <remote-control-setting v-model:visible="showRemoteControlModal" />
 
     </template>
+
+    <!-- 音源设置弹窗 -->
+    <music-source-settings
+      v-model:show="showMusicSourcesModal"
+      v-model:sources="musicSources"
+    />
 
     <!-- 清除缓存弹窗 -->
     <clear-cache-settings
