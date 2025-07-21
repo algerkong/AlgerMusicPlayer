@@ -1,35 +1,22 @@
 <template>
   <div class="settings-container">
-    <!-- 左侧导航栏 -->
-    <div v-if="!isMobile" class="settings-nav">
-      <div
-        v-for="section in settingSections"
-        :key="section.id"
-        class="nav-item"
-        :class="{ active: currentSection === section.id }"
-        @click="scrollToSection(section.id)"
-      >
-        {{ t(`settings.sections.${section.id}`) }}
-      </div>
-    </div>
-
-    <!-- 右侧内容区 -->
-    <n-scrollbar ref="scrollbarRef" class="settings-content" @scroll="handleScroll">
+    <n-scrollbar class="settings-content" >
       <div class="set-page">
         <!-- 基础设置 -->
-        <div id="basic" ref="basicRef" class="settings-section">
+        <div class="settings-section">
           <div class="settings-section-title">{{ t('settings.sections.basic') }}</div>
           <div class="settings-section-content">
+            <!-- 主题设置 -->
             <div class="set-item">
               <div>
                 <div class="set-item-title">{{ t('settings.basic.themeMode') }}</div>
                 <div class="set-item-content">{{ t('settings.basic.themeModeDesc') }}</div>
               </div>
-              <n-switch v-model:value="isDarkTheme">
+              <n-switch :value="settingsStore.theme === 'dark'" @click="settingsStore.toggleTheme">
                 <template #checked><i class="ri-moon-line"></i></template>
                 <template #unchecked><i class="ri-sun-line"></i></template>
               </n-switch>
-            </div>
+            </div>   
 
             <!-- 语言设置 -->
             <div class="set-item">
@@ -136,7 +123,7 @@
         </div>
 
         <!-- 播放设置 -->
-        <div id="playback" ref="playbackRef" class="settings-section">
+        <div  class="settings-section">
           <div class="settings-section-title">{{ t('settings.sections.playback') }}</div>
           <div class="settings-section-content">
             <div>
@@ -162,16 +149,6 @@
                   ]"
                   style="width: 160px"
                 />
-              </div>
-              <!-- 网易云 QQ 音乐 酷我 酷狗 会员购买链接 -->
-            <div class="p-2 bg-light-100 dark:bg-dark-100 rounded-lg mt-2">
-              <div>大家还是需要支持正版，本软件只做开源探讨</div>
-                <div class="mt-2">各大音乐会员购买链接</div>
-                <div class="flex gap-5 flex-wrap">
-                  <a class="text-green-400 hover:text-green-500" href="https://music.163.com/store/vip" target="_blank">网易云音乐会员</a>
-                  <a class="text-green-400 hover:text-green-500" href="https://y.qq.com/portal/vipportal/" target="_blank">QQ音乐会员</a>
-                  <a class="text-green-400 hover:text-green-500" href="https://vip.kugou.com/" target="_blank">酷狗音乐会员</a>
-                </div>
               </div>
             </div>
             <div class="set-item" v-if="isElectron">
@@ -232,7 +209,7 @@
         </div>
 
         <!-- 应用设置 -->
-        <div v-if="isElectron" id="application" ref="applicationRef" class="settings-section">
+        <div v-if="isElectron"  class="settings-section">
           <div class="settings-section-title">{{ t('settings.sections.application') }}</div>
           <div class="settings-section-content">
             <div class="set-item">
@@ -320,7 +297,7 @@
         </div>
 
         <!-- 网络设置 -->
-        <div v-if="isElectron" id="network" ref="networkRef" class="settings-section">
+        <div v-if="isElectron"  class="settings-section">
           <div class="settings-section-title">{{ t('settings.sections.network') }}</div>
           <div class="settings-section-content">
             <div class="set-item">
@@ -370,7 +347,7 @@
         </div>
 
         <!-- 系统管理 -->
-        <div v-if="isElectron" id="system" ref="systemRef" class="settings-section">
+        <div v-if="isElectron"  class="settings-section">
           <div class="settings-section-title">{{ t('settings.sections.system') }}</div>
           <div class="settings-section-content">
             <div class="set-item">
@@ -433,7 +410,7 @@
 <script setup lang="ts">
 import { useDebounceFn } from '@vueuse/core';
 import { useMessage } from 'naive-ui';
-import { computed, h, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, h, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import localData from '@/../main/set.json';
@@ -469,11 +446,6 @@ onUnmounted(() => {
 
 const { t } = useI18n();
 
-// 创建一个防抖的保存函数
-// const debouncedSaveSettings = debounce((newData) => {
-//   settingsStore.setSetData(newData);
-// }, 500);
-
 const saveSettings = useDebounceFn((data) => {
   settingsStore.setSetData(data);
 }, 500);
@@ -506,11 +478,6 @@ watch(
   },
   { deep: true, immediate: true }
 );
-
-const isDarkTheme = computed({
-  get: () => settingsStore.theme === 'dark',
-  set: () => settingsStore.toggleTheme()
-});
 
 const restartApp = () => {
   window.electron.ipcRenderer.send('restart');
@@ -731,83 +698,6 @@ const handleShortcutsChange = (shortcuts: any) => {
   console.log('快捷键已更新:', shortcuts);
 };
 
-// 定义设置分类
-const settingSections = [
-  { id: 'basic', title: t('settings.sections.basic') },
-  { id: 'playback', title: t('settings.sections.playback') },
-  { id: 'application', title: t('settings.sections.application'), electron: true },
-  { id: 'network', title: t('settings.sections.network'), electron: true },
-  { id: 'system', title: t('settings.sections.system'), electron: true }
-];
-
-// 当前激活的分类
-const currentSection = ref('basic');
-const scrollbarRef = ref();
-
-// 各个分类的ref
-const basicRef = ref();
-const playbackRef = ref();
-const applicationRef = ref();
-const networkRef = ref();
-const systemRef = ref();
-
-// 滚动到指定分类
-const scrollToSection = async (sectionId: string) => {
-  currentSection.value = sectionId;
-  const sectionRef = {
-    basic: basicRef,
-    playback: playbackRef,
-    application: applicationRef,
-    network: networkRef,
-    system: systemRef
-  }[sectionId];
-
-  if (sectionRef?.value) {
-    await nextTick();
-    scrollbarRef.value?.scrollTo({
-      top: sectionRef.value.offsetTop - 20,
-      behavior: 'smooth'
-    });
-  }
-};
-
-// 处理滚动，更新当前激活的分类
-const handleScroll = (e: any) => {
-  const { scrollTop } = e.target;
-
-  const sections = [
-    { id: 'basic', ref: basicRef },
-    { id: 'playback', ref: playbackRef },
-    { id: 'application', ref: applicationRef },
-    { id: 'network', ref: networkRef },
-    { id: 'system', ref: systemRef }
-  ];
-
-  const activeSection = sections[0].id;
-  let lastValidSection = activeSection;
-
-  for (const section of sections) {
-    if (section.ref?.value) {
-      const { offsetTop } = section.ref.value;
-      if (scrollTop >= offsetTop - 100) {
-        lastValidSection = section.id;
-      }
-    }
-  }
-
-  if (lastValidSection !== currentSection.value) {
-    currentSection.value = lastValidSection;
-  }
-};
-
-// 初始化时设置当前激活的分类
-onMounted(() => {
-  // 延迟一帧等待 DOM 完全渲染
-  nextTick(() => {
-    handleScroll({ target: { scrollTop: 0 } });
-  });
-});
-
 // 音源设置相关
 const musicSources = computed({
   get: () => {
@@ -837,48 +727,12 @@ const showRemoteControlModal = ref(false);
   @apply flex h-full;
 }
 
-.settings-nav {
-  @apply w-32 h-full flex-shrink-0 border-r border-gray-200 dark:border-gray-700;
-  @apply bg-light dark:bg-dark;
-
-  .nav-item {
-    @apply px-4 py-2.5 cursor-pointer text-sm;
-    @apply text-gray-600 dark:text-gray-400;
-    @apply transition-colors duration-200;
-    @apply border-l-2 border-transparent;
-
-    &:hover {
-      @apply text-primary dark:text-white bg-gray-50 dark:bg-dark-100;
-      @apply border-l-2 border-gray-200 dark:border-gray-200;
-    }
-
-    &.active {
-      @apply text-primary dark:text-white bg-gray-50 dark:bg-dark-100;
-      @apply border-l-2 border-gray-200 dark:border-gray-200;
-      @apply font-medium;
-    }
-  }
-}
-
 .settings-content {
   @apply flex-1 h-full;
 }
 
 .set-page {
   @apply p-4 pb-20;
-}
-
-.settings-section {
-  @apply mb-6 scroll-mt-4;
-
-  &-title {
-    @apply text-base font-medium mb-4;
-    @apply text-gray-600 dark:text-white;
-  }
-
-  &-content {
-    @apply space-y-4;
-  }
 }
 
 .set-item {
@@ -896,10 +750,6 @@ const showRemoteControlModal = ref(false);
 
   &:hover {
     @apply bg-gray-50 dark:bg-gray-800;
-  }
-
-  &.cursor-pointer:hover {
-    @apply text-green-500 bg-green-50 dark:bg-green-900;
   }
 }
 
@@ -933,7 +783,4 @@ const showRemoteControlModal = ref(false);
   }
 }
 
-:deep(.n-select) {
-  width: 200px;
-}
 </style>

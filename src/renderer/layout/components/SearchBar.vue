@@ -80,18 +80,6 @@
               </n-button>
             </div>
           </div>
-          <div class="menu-item">
-            <i class="iconfont" :class="isDark ? 'ri-moon-line' : 'ri-sun-line'"></i>
-            <span>{{ t('comp.searchBar.theme') }}</span>
-            <n-switch v-model:value="isDark" class="ml-auto">
-              <template #checked>
-                <i class="ri-moon-line"></i>
-              </template>
-              <template #unchecked>
-                <i class="ri-sun-line"></i>
-              </template>
-            </n-switch>
-          </div>
           <div class="menu-item" @click="restartApp">
             <i class="iconfont ri-restart-line"></i>
             <span>{{ t('comp.searchBar.restart') }}</span>
@@ -115,13 +103,11 @@ import { getUserDetail } from '@/api/login';
 import { useZoom } from '@/hooks/useZoom';
 import { SEARCH_TYPES, USER_SET_OPTIONS } from '@/const/bar-const';
 import { useSearchStore } from '@/store/modules/search';
-import { useSettingsStore } from '@/store/modules/settings';
 import { useUserStore } from '@/store/modules/user';
 import { getImgUrl, isElectron } from '@/utils';
 
 const router = useRouter();
 const searchStore = useSearchStore();
-const settingsStore = useSettingsStore();
 const userStore = useUserStore();
 const userSetOptions = ref(USER_SET_OPTIONS);
 const { t, locale } = useI18n();
@@ -188,11 +174,6 @@ onMounted(() => {
   loadHotSearchKeyword();
   loadPage();
   isElectron && initZoomFactor();
-});
-
-const isDark = computed({
-  get: () => settingsStore.theme === 'dark',
-  set: () => settingsStore.toggleTheme()
 });
 
 // 搜索词
