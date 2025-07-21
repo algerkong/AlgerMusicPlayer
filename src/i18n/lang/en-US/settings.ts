@@ -1,16 +1,13 @@
 export default {
   theme: 'Theme',
   language: 'Language',
-  regard: 'About',
   logout: 'Logout',
   sections: {
     basic: 'Basic Settings',
     playback: 'Playback Settings',
     application: 'Application Settings',
     network: 'Network Settings',
-    system: 'System Management',
-    donation: 'Donation',
-    regard: 'About'
+    system: 'System Management'
   },
   basic: {
     themeMode: 'Theme Mode',

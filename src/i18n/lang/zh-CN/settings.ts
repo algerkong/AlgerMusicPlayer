@@ -1,16 +1,13 @@
 export default {
   theme: '主题',
   language: '语言',
-  regard: '关于',
   logout: '退出登录',
   sections: {
     basic: '基础设置',
     playback: '播放设置',
     application: '应用设置',
     network: '网络设置',
-    system: '系统管理',
-    donation: '捐赠支持',
-    regard: '关于'
+    system: '系统管理'
   },
   basic: {
     themeMode: '主题模式',

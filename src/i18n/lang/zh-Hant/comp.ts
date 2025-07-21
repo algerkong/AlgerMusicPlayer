@@ -29,41 +29,6 @@ export default {
     getPlaylistFailed: '取得播放清單失敗',
     inputPlaylistName: '請輸入播放清單名稱'
   },
-  update: {
-    title: '發現新版本',
-    currentVersion: '目前版本',
-    cancel: '暫不更新',
-    prepareDownload: '準備下載...',
-    downloading: '下載中...',
-    nowUpdate: '立即更新',
-    downloadFailed: '下載失敗，請重試或手動下載',
-    startFailed: '啟動下載失敗，請重試或手動下載',
-    noDownloadUrl: '未找到適合目前系統的安裝包，請手動下載',
-    installConfirmTitle: '安裝更新',
-    installConfirmContent: '是否關閉應用程式並安裝更新？',
-    manualInstallTip: '如果關閉應用程式後沒有正常彈出安裝程式，請至下載資料夾尋找檔案並手動開啟。',
-    yesInstall: '立即安裝',
-    noThanks: '稍後安裝',
-    fileLocation: '檔案位置',
-    copy: '複製路徑',
-    copySuccess: '路徑已複製到剪貼簿',
-    copyFailed: '複製失敗',
-    backgroundDownload: '背景下載'
-  },
-  coffee: {
-    title: '請我喝杯咖啡',
-    alipay: '支付寶',
-    wechat: '微信支付',
-    alipayQR: '支付寶收款碼',
-    wechatQR: '微信收款碼',
-    coffeeDesc: '一杯咖啡，一份支持',
-    coffeeDescLinkText: '查看更多',
-    qqGroup: 'QQ頻道：algermusic',
-    messages: {
-      copySuccess: '已複製到剪貼簿'
-    },
-    donateList: '請我喝杯咖啡'
-  },
   playlistType: {
     title: '播放清單分類',
     showAll: '顯示全部',

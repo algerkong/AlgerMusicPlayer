@@ -29,41 +29,6 @@ export default {
     getPlaylistFailed: '获取歌单失败',
     inputPlaylistName: '请输入歌单名称'
   },
-  update: {
-    title: '发现新版本',
-    currentVersion: '当前版本',
-    cancel: '暂不更新',
-    prepareDownload: '准备下载...',
-    downloading: '下载中...',
-    nowUpdate: '立即更新',
-    downloadFailed: '下载失败，请重试或手动下载',
-    startFailed: '启动下载失败，请重试或手动下载',
-    noDownloadUrl: '未找到适合当前系统的安装包，请手动下载',
-    installConfirmTitle: '安装更新',
-    installConfirmContent: '是否关闭应用并安装更新？',
-    manualInstallTip: '如果关闭应用后没有正常弹出安装程序，请至下载文件夹查找文件并手动打开。',
-    yesInstall: '立即安装',
-    noThanks: '稍后安装',
-    fileLocation: '文件位置',
-    copy: '复制路径',
-    copySuccess: '路径已复制到剪贴板',
-    copyFailed: '复制失败',
-    backgroundDownload: '后台下载'
-  },
-  coffee: {
-    title: '请我喝咖啡',
-    alipay: '支付宝',
-    wechat: '微信支付',
-    alipayQR: '支付宝收款码',
-    wechatQR: '微信收款码',
-    coffeeDesc: '一杯咖啡，一份支持',
-    coffeeDescLinkText: '查看更多',
-    qqGroup: 'QQ频道：algermusic',
-    messages: {
-      copySuccess: '已复制到剪贴板'
-    },
-    donateList: '请我喝咖啡'
-  },
   playlistType: {
     title: '歌单分类',
     showAll: '显示全部',
