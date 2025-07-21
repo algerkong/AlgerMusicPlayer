@@ -329,7 +329,7 @@ export function updateTrayMenu(mainWindow: BrowserWindow) {
 
 // 初始化状态栏Tray
 function initializeStatusBarTray(mainWindow: BrowserWindow) {
-  const store = getStore();
+  const store = getStore()
   if (process.platform !== 'darwin' || !store.get('set.showTopAction')) return;
 
   const iconSize = getProperIconSize();
@@ -411,7 +411,7 @@ export function initializeTray(iconPath: string, mainWindow: BrowserWindow) {
   tray = new Tray(trayIcon);
 
   // 设置托盘图标的提示文字
-  tray.setToolTip('Alger Music Player');
+  tray.setToolTip('Size Music Player');
 
   // 初始化菜单
   updateTrayMenu(mainWindow);

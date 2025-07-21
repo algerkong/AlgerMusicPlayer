@@ -38,5 +38,6 @@ linux:
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
+# 自动更新功能已禁用 - 如需启用请添加 publish 配置
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/

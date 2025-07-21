@@ -10,6 +10,8 @@
   "realIP": "",
   "noAnimate": false,
   "animationSpeed": 1,
+  "author": "Size",
+  "authorUrl": "https://music.sizeof.top",
   "musicApiPort": 30488,
   "closeAction": "ask",
   "musicQuality": "higher",
