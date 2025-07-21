@@ -35,7 +35,8 @@ let currentSong: SongInfo | null = null;
 
 const LANGUAGES: { label: string; value: Language }[] = [
   { label: '简体中文', value: 'zh-CN' },
-  { label: 'English', value: 'en-US' }
+  { label: 'English', value: 'en-US' },
+  { label: '繁體中文', value: 'zh-Hant' }
 ];
 
 // 更新播放状态
