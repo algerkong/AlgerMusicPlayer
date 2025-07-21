@@ -21,6 +21,7 @@ const store = new Store();
 // 保存主窗口引用，以便在 activate 事件中使用
 let mainWindowInstance: BrowserWindow | null = null;
 let isPlaying = false;
+let isAppQuitting = false;
 // 保存迷你模式前的窗口状态
 let preMiniModeState: WindowState = {
   width: DEFAULT_MAIN_WIDTH,
@@ -29,6 +30,13 @@ let preMiniModeState: WindowState = {
   y: undefined,
   isMaximized: false
 };
+
+/**
+ * 设置应用退出状态
+ */
+export function setAppQuitting(quitting: boolean) {
+  isAppQuitting = quitting;
+}
 
 /**
  * 初始化代理设置
@@ -117,8 +125,13 @@ export function initializeWindowManager() {
   ipcMain.on('close-window', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) {
-      win.destroy();
-      app.quit();
+      // 在 macOS 上，关闭窗口不应该退出应用，而是隐藏窗口
+      if (process.platform === 'darwin') {
+        win.hide();
+      } else {
+        win.destroy();
+        app.quit();
+      }
     }
   });
 
@@ -292,6 +305,20 @@ export function createMainWindow(icon: Electron.NativeImage): BrowserWindow {
 
   mainWindow.on('show', () => {
     setThumbarButtons(mainWindow);
+  });
+
+  // 处理窗口关闭事件
+  mainWindow.on('close', (event) => {
+    // 在 macOS 上，阻止默认的关闭行为，改为隐藏窗口
+    if (process.platform === 'darwin') {
+      // 检查是否是应用正在退出
+      if (!isAppQuitting) {
+        event.preventDefault();
+        mainWindow.hide();
+        return;
+      }
+    }
+    // 在其他平台上，或者应用正在退出时，允许正常关闭
   });
 
   mainWindow.on('ready-to-show', () => {
