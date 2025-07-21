@@ -737,9 +737,7 @@ const settingSections = [
   { id: 'playback', title: t('settings.sections.playback') },
   { id: 'application', title: t('settings.sections.application'), electron: true },
   { id: 'network', title: t('settings.sections.network'), electron: true },
-  { id: 'system', title: t('settings.sections.system'), electron: true },
-  { id: 'regard', title: t('settings.sections.regard') },
-  { id: 'donation', title: t('settings.sections.donation') }
+  { id: 'system', title: t('settings.sections.system'), electron: true }
 ];
 
 // 当前激活的分类
@@ -752,8 +750,6 @@ const playbackRef = ref();
 const applicationRef = ref();
 const networkRef = ref();
 const systemRef = ref();
-const aboutRef = ref();
-const donationRef = ref();
 
 // 滚动到指定分类
 const scrollToSection = async (sectionId: string) => {
@@ -763,9 +759,7 @@ const scrollToSection = async (sectionId: string) => {
     playback: playbackRef,
     application: applicationRef,
     network: networkRef,
-    system: systemRef,
-    about: aboutRef,
-    donation: donationRef
+    system: systemRef
   }[sectionId];
 
   if (sectionRef?.value) {
@@ -786,9 +780,7 @@ const handleScroll = (e: any) => {
     { id: 'playback', ref: playbackRef },
     { id: 'application', ref: applicationRef },
     { id: 'network', ref: networkRef },
-    { id: 'system', ref: systemRef },
-    { id: 'about', ref: aboutRef },
-    { id: 'donation', ref: donationRef }
+    { id: 'system', ref: systemRef }
   ];
 
   const activeSection = sections[0].id;
