@@ -18,4 +18,4 @@ const musicFullRef = ref<InstanceType<typeof MusicFull>>();
 defineExpose({
   musicFullRef
 });
-</script> 
+</script>

@@ -557,7 +557,7 @@ const currentLrcTiming = computed(() => {
 export const getLrcStyle = (index: number) => {
   const currentTime = nowTime.value + correctionTime.value;
   const start = lrcTimeArray.value[index];
-  const end = lrcTimeArray.value[index + 1] ?? (start + 1);
+  const end = lrcTimeArray.value[index + 1] ?? start + 1;
 
   if (currentTime >= start && currentTime < end) {
     // 当前句，显示进度
@@ -933,7 +933,6 @@ audioService.on('url_expired', async (expiredTrack) => {
       // 处理网易云音乐，重新获取URL
       console.log('重新获取网易云音乐URL');
       try {
-        
         const newUrl = await getSongUrl(expiredTrack.id, expiredTrack as any);
 
         if (newUrl) {
@@ -982,16 +981,16 @@ window.addEventListener('audio-ready', ((event: CustomEvent) => {
     if (newSound) {
       // 更新本地 sound 引用
       sound.value = newSound as Howl;
-      
+
       // 设置音频监听器
       setupAudioListeners();
-      
+
       // 获取当前播放位置并更新显示
       const currentPosition = newSound.seek() as number;
       if (typeof currentPosition === 'number' && !Number.isNaN(currentPosition)) {
         nowTime.value = currentPosition;
       }
-      
+
       console.log('音频就绪，已设置监听器并更新进度显示');
     }
   } catch (error) {

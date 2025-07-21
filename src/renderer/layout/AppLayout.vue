@@ -9,7 +9,11 @@
           <!-- 搜索栏 -->
           <search-bar />
           <!-- 主页面路由 -->
-          <div class="main-content" :native-scrollbar="false" :class="{'mobile-content': !shouldShowMobileMenu}">
+          <div
+            class="main-content"
+            :native-scrollbar="false"
+            :class="{ 'mobile-content': !shouldShowMobileMenu }"
+          >
             <router-view
               v-slot="{ Component }"
               class="main-page"
@@ -39,7 +43,7 @@
       </template>
     </div>
     <playlist-drawer v-model="showPlaylistDrawer" :song-id="currentSongId" />
-    <SleepTimerTop v-if="!isMobile"/>
+    <SleepTimerTop v-if="!isMobile" />
     <!-- 下载管理抽屉 -->
     <download-drawer
       v-if="
@@ -70,14 +74,14 @@ import SleepTimerTop from '@/components/player/SleepTimerTop.vue';
 
 const keepAliveInclude = computed(() => {
   const allRoutes = [...homeRouter, ...otherRouter];
-  
+
   return allRoutes
     .filter((item) => {
       return item.meta?.keepAlive;
     })
     .map((item) => {
-      return typeof item.name === 'string' 
-        ? item.name.charAt(0).toUpperCase() + item.name.slice(1) 
+      return typeof item.name === 'string'
+        ? item.name.charAt(0).toUpperCase() + item.name.slice(1)
         : '';
     })
     .filter(Boolean);
@@ -88,7 +92,9 @@ const PlayBar = defineAsyncComponent(() => import('@/components/player/PlayBar.v
 const MobilePlayBar = defineAsyncComponent(() => import('@/components/player/MobilePlayBar.vue'));
 const SearchBar = defineAsyncComponent(() => import('./components/SearchBar.vue'));
 const TitleBar = defineAsyncComponent(() => import('./components/TitleBar.vue'));
-const PlayingListDrawer = defineAsyncComponent(() => import('@/components/player/PlayingListDrawer.vue'));
+const PlayingListDrawer = defineAsyncComponent(
+  () => import('@/components/player/PlayingListDrawer.vue')
+);
 const PlaylistDrawer = defineAsyncComponent(() => import('@/components/common/PlaylistDrawer.vue'));
 
 const playerStore = usePlayerStore();

@@ -1,29 +1,32 @@
 # 更新日志
 
 ## v4.8.2
+
 ### 🎨 优化
+
 - 重新设计pc端歌词页面Mini播放栏
 - 添加清除歌曲自定义解析功能
 
 ### 🐛 Bug 修复
+
 - 修复歌曲单独解析失败问题
 - 修复歌词页面加入歌单抽屉被遮挡问题
-
 
 ## v4.8.1
 
 ### 🐛 Bug 修复
+
 - 修复无法快捷键调整问题
 
 ### 🎨 优化
+
 - 优化音乐资源解析
 - 去除无用代码，优化加载速度
-
-
 
 ## v4.8.0
 
 ### ✨ 新功能
+
 - 增强移动端播放页面效果，添加播放模式选择，添加横屏模式，添加播放列表功能 ([81b61e4](https://github.com/algerkong/AlgerMusicPlayer/commit/81b61e4))，([0d89e15](https://github.com/algerkong/AlgerMusicPlayer/commit/0d89e15))，([9345805](https://github.com/algerkong/AlgerMusicPlayer/commit/9345805))
 - 优化移动端界面动画效果，播放栏，返回效果等一系列功能
 - 添加下载管理页面, 引入文件类型检测库以支持多种音频格式,支持自定义文件名格式和下载路径配置 ([3ac3159](https://github.com/algerkong/AlgerMusicPlayer/commit/3ac3159)),([b203077](https://github.com/algerkong/AlgerMusicPlayer/commit/b203077))
@@ -34,7 +37,8 @@
 - 添加歌词时间矫正功能，支持增加和减少矫正时间 ([c975344](https://github.com/algerkong/AlgerMusicPlayer/commit/c975344))
 
 ### 🐛 Bug 修复
-- 修复音频初始化音量问题，完善翻译  ([#320](https://github.com/algerkong/AlgerMusicPlayer/pull/320))   感谢[Qumo](https://github.com/Hellodwadawd12312312)的pr
+
+- 修复音频初始化音量问题，完善翻译 ([#320](https://github.com/algerkong/AlgerMusicPlayer/pull/320)) 感谢[Qumo](https://github.com/Hellodwadawd12312312)的pr
 - 重构每日推荐数据加载逻辑，提取为独立函数并优化用户状态判断 ([5e704a1](https://github.com/algerkong/AlgerMusicPlayer/commit/5e704a1))
 - 修复刷新后第一次播放出现的无法播放问题 ([6f1909a](https://github.com/algerkong/AlgerMusicPlayer/commit/6f1909a))
 - 修复更多设置弹窗被歌词窗口遮挡问题，并优化为互斥弹窗，优化样式 ([62e5166](https://github.com/algerkong/AlgerMusicPlayer/commit/62e5166))
@@ -42,8 +46,8 @@
 - 修复音频服务相关问题 ([090103b](https://github.com/algerkong/AlgerMusicPlayer/commit/090103b)),([5ee60d7](https://github.com/algerkong/AlgerMusicPlayer/commit/5ee60d7))
 - 修复播放栏无法控制隐藏问题 ([d227ac8](https://github.com/algerkong/AlgerMusicPlayer/commit/d227ac8))
 
-
 ### 🎨 优化
+
 - 优化歌曲列表组件布局([fabcf28](https://github.com/algerkong/AlgerMusicPlayer/commit/fabcf28))
 - 重构播放控制逻辑，添加播放进度恢复功能并清理无用代码 ([b9c38d2](https://github.com/algerkong/AlgerMusicPlayer/commit/b9c38d2))
 - 优化提示组件，支持位置和图标显示选项 ([155bdf2](https://github.com/algerkong/AlgerMusicPlayer/commit/155bdf2))

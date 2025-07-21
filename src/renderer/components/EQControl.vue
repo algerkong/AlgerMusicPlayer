@@ -1,7 +1,8 @@
 <template>
   <div class="eq-control">
     <div class="eq-header">
-      <h3>{{ t('player.eq.title') }}
+      <h3>
+        {{ t('player.eq.title') }}
         <n-tag type="warning" size="small" round v-if="!isElectron">
           桌面版可用，网页端不支持
         </n-tag>

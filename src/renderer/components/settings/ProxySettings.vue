@@ -92,7 +92,8 @@ const proxyRules: FormRules = {
     validator: (_rule, value) => {
       if (!value) return false;
       // 简单的IP或域名验证
-      const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$|^localhost$|^[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+$/;
+      const ipRegex =
+        /^(\d{1,3}\.){3}\d{1,3}$|^localhost$|^[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+$/;
       return ipRegex.test(value);
     }
   },
@@ -149,4 +150,4 @@ const handleProxyConfirm = async () => {
 const handleCancel = () => {
   visible.value = false;
 };
-</script> 
+</script>

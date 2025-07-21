@@ -153,11 +153,8 @@ export const getBilibiliAudioUrl = async (bvid: string, cid: number): Promise<st
   }
 };
 
-
 // 根据音乐名称搜索并直接返回音频URL
-export const searchAndGetBilibiliAudioUrl = async (
-  keyword: string
-): Promise<string> => {
+export const searchAndGetBilibiliAudioUrl = async (keyword: string): Promise<string> => {
   try {
     // 搜索B站视频，取第一页第一个结果
     const res = await searchBilibili({ keyword, page: 1, pagesize: 1 });
@@ -180,4 +177,4 @@ export const searchAndGetBilibiliAudioUrl = async (
     console.error('根据名称搜索B站音频URL失败:', error);
     throw error;
   }
-}
+};

@@ -60,9 +60,7 @@
         <n-ellipsis class="text-ellipsis" line-clamp="1">
           {{ playMusic.name }}
         </n-ellipsis>
-        <span v-if="playbackRate !== 1.0" class="playback-rate-badge">
-            {{ playbackRate }}x
-        </span>
+        <span v-if="playbackRate !== 1.0" class="playback-rate-badge"> {{ playbackRate }}x </span>
       </div>
       <div class="music-content-name">
         <n-ellipsis
@@ -137,13 +135,16 @@
         </template>
         {{ t('player.playBar.reparse') }}
       </n-tooltip>
-      
+
       <!-- 高级控制菜单按钮（整合了 EQ、定时关闭、播放速度） -->
       <advanced-controls-popover />
-      
+
       <n-tooltip trigger="hover" :z-index="9999999">
         <template #trigger>
-          <i class="iconfont icon-list text-2xl hover:text-green-500 transition-colors cursor-pointer" @click="openPlayListDrawer"></i>
+          <i
+            class="iconfont icon-list text-2xl hover:text-green-500 transition-colors cursor-pointer"
+            @click="openPlayListDrawer"
+          ></i>
         </template>
         {{ t('player.playBar.playList') }}
       </n-tooltip>
@@ -171,10 +172,7 @@ import {
 import { useArtist } from '@/hooks/useArtist';
 import MusicFullWrapper from '@/components/lyric/MusicFullWrapper.vue';
 import { audioService } from '@/services/audioService';
-import { 
-  isBilibiliIdMatch, 
-  usePlayerStore
-} from '@/store/modules/player';
+import { isBilibiliIdMatch, usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 import { getImgUrl, isElectron, isMobile, secondToMinute, setAnimationClass } from '@/utils';
 import AdvancedControlsPopover from '@/components/player/AdvancedControlsPopover.vue';
@@ -313,7 +311,7 @@ const playModeText = computed(() => {
 });
 
 // 播放速度控制
-const {playbackRate} = storeToRefs(playerStore);
+const { playbackRate } = storeToRefs(playerStore);
 // 切换播放模式
 const togglePlayMode = () => {
   playerStore.togglePlayMode();
@@ -333,7 +331,7 @@ const showSliderTooltip = ref(false);
 // 播放暂停按钮事件
 const playMusicEvent = async () => {
   try {
-    const result = await playerStore.setPlay({ ...playMusic.value});
+    const result = await playerStore.setPlay({ ...playMusic.value });
     if (result) {
       playerStore.setPlayMusic(true);
     }
@@ -348,7 +346,7 @@ const musicFullVisible = computed({
   set: (value) => {
     playerStore.setMusicFull(value);
   }
-})
+});
 
 // 设置musicFull
 const setMusicFull = () => {
@@ -362,9 +360,9 @@ const setMusicFull = () => {
 const isFavorite = computed(() => {
   // 对于B站视频，使用ID匹配函数
   if (playMusic.value.source === 'bilibili' && playMusic.value.bilibiliData?.bvid) {
-    return playerStore.favoriteList.some(id => isBilibiliIdMatch(id, playMusic.value.id));
+    return playerStore.favoriteList.some((id) => isBilibiliIdMatch(id, playMusic.value.id));
   }
-  
+
   // 非B站视频直接比较ID
   return playerStore.favoriteList.includes(playMusic.value.id);
 });
@@ -372,7 +370,7 @@ const isFavorite = computed(() => {
 const toggleFavorite = async (e: Event) => {
   console.log('playMusic.value', playMusic.value);
   e.stopPropagation();
-  
+
   // 处理B站视频的收藏ID
   let favoriteId = playMusic.value.id;
   if (playMusic.value.source === 'bilibili' && playMusic.value.bilibiliData?.bvid) {
@@ -381,7 +379,7 @@ const toggleFavorite = async (e: Event) => {
       favoriteId = `${playMusic.value.bilibiliData.bvid}--${playMusic.value.song?.ar?.[0]?.id || 0}--${playMusic.value.bilibiliData.cid}`;
     }
   }
-  
+
   if (isFavorite.value) {
     playerStore.removeFromFavorite(favoriteId);
   } else {
@@ -490,7 +488,7 @@ const openPlayListDrawer = () => {
     @apply absolute opacity-0 invisible transition-all duration-300 bottom-[30px] left-1/2 -translate-x-1/2 h-[180px] px-2 py-4 rounded-xl;
     @apply bg-light dark:bg-dark-200;
     @apply border border-gray-200 dark:border-gray-700;
-    
+
     .volume-percentage {
       @apply absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-medium bg-light dark:bg-dark-200 px-2 py-1 rounded-md;
       @apply border border-gray-200 dark:border-gray-700;
@@ -727,7 +725,6 @@ const openPlayListDrawer = () => {
 .speed-button:hover {
   background: var(--hover-color-dark);
 }
-
 
 .playback-rate-badge {
   @apply ml-2 px-1.5 h-4 flex items-center text-xs rounded bg-green-500 bg-opacity-15 text-green-600 dark:text-green-400;

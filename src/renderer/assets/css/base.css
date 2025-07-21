@@ -10,7 +10,7 @@ body {
   border-radius: 0.5rem !important;
   overflow: hidden !important;
 }
-.n-popover:has(.transparent-popover ) {
+.n-popover:has(.transparent-popover) {
   background-color: transparent !important;
   padding: 0 !important;
 }

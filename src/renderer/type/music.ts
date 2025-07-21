@@ -245,16 +245,16 @@ export interface IArtists {
 }
 
 // 音乐源类型定义
-export type MusicSourceType = 
-  | 'tencent' 
-  | 'kugou' 
-  | 'migu' 
-  | 'netease' 
-  | 'joox' 
-  | 'ytmusic' 
-  | 'spotify' 
-  | 'qobuz' 
+export type MusicSourceType =
+  | 'tencent'
+  | 'kugou'
+  | 'migu'
+  | 'netease'
+  | 'joox'
+  | 'ytmusic'
+  | 'spotify'
+  | 'qobuz'
   | 'deezer'
   | 'gdmusic';
-  
+
 // 更多音乐相关的类型可以在这里定义

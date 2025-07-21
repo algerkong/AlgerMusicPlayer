@@ -19,7 +19,7 @@
           <n-dropdown trigger="hover" :options="searchTypeOptions" @select="selectSearchType">
             <div class="w-20 px-3 flex justify-between items-center">
               <div>
-                {{ searchTypeOptions.find(item => item.key === searchStore.searchType)?.label }}
+                {{ searchTypeOptions.find((item) => item.key === searchStore.searchType)?.label }}
               </div>
               <i class="iconfont icon-xiasanjiaoxing"></i>
             </div>
@@ -63,16 +63,18 @@
           </div>
           <div class="menu-item" v-if="isElectron">
             <i class="iconfont ri-zoom-in-line"></i>
-            <span>{{ t('comp.searchBar.zoom')}}</span>
+            <span>{{ t('comp.searchBar.zoom') }}</span>
             <div class="zoom-controls ml-auto">
               <n-button quaternary circle size="tiny" @click="decreaseZoom">
                 <i class="ri-subtract-line"></i>
               </n-button>
               <n-tooltip trigger="hover">
                 <template #trigger>
-                  <span class="zoom-value" :class="{'zoom-100': isZoom100()}" @click="resetZoom">{{ Math.round(zoomFactor * 100) }}%</span>
+                  <span class="zoom-value" :class="{ 'zoom-100': isZoom100() }" @click="resetZoom"
+                    >{{ Math.round(zoomFactor * 100) }}%</span
+                  >
                 </template>
-                {{ isZoom100() ? t('comp.searchBar.zoom100'): t('comp.searchBar.resetZoom')}}
+                {{ isZoom100() ? t('comp.searchBar.zoom100') : t('comp.searchBar.resetZoom') }}
               </n-tooltip>
               <n-button quaternary circle size="tiny" @click="increaseZoom">
                 <i class="ri-add-line"></i>
@@ -112,14 +114,7 @@ const userSetOptions = ref(USER_SET_OPTIONS);
 const { t, locale } = useI18n();
 
 // 使用缩放hook
-const { 
-  zoomFactor, 
-  initZoomFactor, 
-  increaseZoom, 
-  decreaseZoom, 
-  resetZoom, 
-  isZoom100 
-} = useZoom();
+const { zoomFactor, initZoomFactor, increaseZoom, decreaseZoom, resetZoom, isZoom100 } = useZoom();
 
 // 显示返回按钮
 const showBackButton = computed(() => {
@@ -227,14 +222,14 @@ const selectSearchType = (key: number) => {
   }
 };
 
-const rawSearchTypes = ref(SEARCH_TYPES)
+const rawSearchTypes = ref(SEARCH_TYPES);
 const searchTypeOptions = computed(() => {
   // 引用 locale 以创建响应式依赖
   locale.value;
-  return rawSearchTypes.value.map(type => ({
+  return rawSearchTypes.value.map((type) => ({
     label: t(type.label),
     key: type.key
-  }))
+  }));
 });
 
 const selectItem = async (key: string) => {
@@ -258,7 +253,6 @@ const selectItem = async (key: string) => {
     default:
   }
 };
-
 </script>
 
 <style lang="scss" scoped>
@@ -346,17 +340,17 @@ const selectItem = async (key: string) => {
           @apply bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300;
         }
       }
-      
+
       // 缩放控制样式
       .zoom-controls {
         @apply flex items-center gap-1;
-        
+
         .zoom-value {
           @apply text-xs px-2 py-0.5 rounded cursor-pointer;
           @apply bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300;
           @apply hover:bg-gray-200 dark:hover:bg-gray-600;
           transition: all 0.2s ease;
-          
+
           &.zoom-100 {
             @apply bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 font-bold;
             @apply hover:bg-green-200 dark:hover:bg-green-800;

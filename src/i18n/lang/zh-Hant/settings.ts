@@ -65,7 +65,7 @@ export default {
     autoPlay: '自動播放',
     autoPlayDesc: '重新開啟應用程式時是否自動繼續播放',
     showStatusBar: '是否顯示狀態列控制功能',
-    showStatusBarContent: '可以在您的mac狀態列顯示音樂控制功能(重啟後生效)',
+    showStatusBarContent: '可以在您的mac狀態列顯示音樂控制功能(重啟後生效)'
   },
   application: {
     closeAction: '關閉行為',

@@ -10,14 +10,13 @@ export const useSettingsStore = defineStore('settings', () => {
   const theme = ref<ThemeType>(getCurrentTheme());
   const isMobile = ref(false);
   const isMiniMode = ref(false);
-  const showUpdateModal = ref(false);
   const showArtistDrawer = ref(false);
   const currentArtistId = ref<number | null>(null);
   const systemFonts = ref<{ label: string; value: string }[]>([
     { label: '系统默认', value: 'system-ui' }
   ]);
   const showDownloadDrawer = ref(false);
-  
+
   // 先声明 setData ref 但不初始化
   const setData = ref<any>({});
 
@@ -46,7 +45,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
     // 合并默认设置和保存的设置
     const mergedSettings = merge({}, setDataDefault, savedSettings);
-    
+
     // 更新设置并返回
     setSetData(mergedSettings);
     return mergedSettings;
@@ -62,10 +61,6 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const setMiniMode = (value: boolean) => {
     isMiniMode.value = value;
-  };
-
-  const setShowUpdateModal = (value: boolean) => {
-    showUpdateModal.value = value;
   };
 
   const setShowArtistDrawer = (show: boolean) => {
@@ -126,7 +121,6 @@ export const useSettingsStore = defineStore('settings', () => {
     theme,
     isMobile,
     isMiniMode,
-    showUpdateModal,
     showArtistDrawer,
     currentArtistId,
     systemFonts,
@@ -134,7 +128,6 @@ export const useSettingsStore = defineStore('settings', () => {
     setSetData,
     toggleTheme,
     setMiniMode,
-    setShowUpdateModal,
     setShowArtistDrawer,
     setCurrentArtistId,
     setSystemFonts,

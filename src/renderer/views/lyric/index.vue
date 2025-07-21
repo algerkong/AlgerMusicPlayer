@@ -172,7 +172,7 @@ const handleMouseLeave = () => {
   if (!lyricSetting.value.isLock) return;
   isHovering.value = false;
   windowData.electron.ipcRenderer.send('set-ignore-mouse', false);
-  
+
   // 强制重置背景色
   const lyricWindow = document.querySelector('.lyric-window') as HTMLElement;
   if (lyricWindow) {

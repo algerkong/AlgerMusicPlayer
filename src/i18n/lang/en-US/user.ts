@@ -20,14 +20,14 @@ export default {
     noFollowings: 'No Followings',
     loadMore: 'Load More',
     noSignature: 'This guy is lazy, nothing left',
-    userFollowsTitle: '\'s Followings',
+    userFollowsTitle: "'s Followings",
     myFollowsTitle: 'My Followings'
   },
   follower: {
     title: 'Follower List',
     noFollowers: 'No Followers',
     loadMore: 'Load More',
-    userFollowersTitle: '\'s Followers',
+    userFollowersTitle: "'s Followers",
     myFollowersTitle: 'My Followers'
   },
   detail: {
@@ -38,7 +38,7 @@ export default {
     artist: 'Artist',
     noSignature: 'This guy is lazy, nothing left',
     invalidUserId: 'Invalid User ID',
-    noRecordPermission: '{name} doesn\'t let you see your listening history'
+    noRecordPermission: "{name} doesn't let you see your listening history"
   },
   message: {
     loadFailed: 'Failed to load user page',

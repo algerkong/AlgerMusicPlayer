@@ -35,4 +35,4 @@ export function navigateToMusicList(
       name: 'musicList'
     });
   }
-} 
+}

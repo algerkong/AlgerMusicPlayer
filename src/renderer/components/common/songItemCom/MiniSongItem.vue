@@ -18,7 +18,7 @@
         <n-checkbox :checked="selected" />
       </div>
     </template>
-    
+
     <!-- 图片插槽 -->
     <template #image>
       <n-image
@@ -32,7 +32,7 @@
         @load="onImageLoad"
       />
     </template>
-    
+
     <!-- 内容插槽 -->
     <template #content>
       <div class="song-item-content">
@@ -55,7 +55,7 @@
         </div>
       </div>
     </template>
-    
+
     <!-- 操作插槽 -->
     <template #operating>
       <div class="song-item-operating">
@@ -68,7 +68,7 @@
         </div>
         <div
           class="song-item-operating-play bg-gray-300 dark:bg-gray-800 animate__animated"
-          :class="{ 'bg-green-600': isPlaying, 'animate__flipInY': playLoading }"
+          :class="{ 'bg-green-600': isPlaying, animate__flipInY: playLoading }"
           @click="onPlayMusic"
         >
           <i v-if="isPlaying && play" class="iconfont icon-stop"></i>
@@ -169,11 +169,11 @@ const onPlayMusic = () => {
 
     &-like {
       @apply mr-1 ml-1 cursor-pointer;
-      
+
       .icon-likefill {
         @apply text-base transition text-gray-500 dark:text-gray-400 hover:text-red-500;
       }
-      
+
       .like-active {
         @apply text-red-500 dark:text-red-500;
       }
@@ -190,4 +190,4 @@ const onPlayMusic = () => {
     }
   }
 }
-</style> 
+</style>

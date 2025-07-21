@@ -52,7 +52,13 @@
           ></i>
         </div>
 
-        <n-popover v-if="component" trigger="hover" :z-index="99999999" placement="top" :show-arrow="false">
+        <n-popover
+          v-if="component"
+          trigger="hover"
+          :z-index="99999999"
+          placement="top"
+          :show-arrow="false"
+        >
           <template #trigger>
             <div class="function-button" @click="mute" @wheel.prevent="handleVolumeWheel">
               <i class="iconfont" :class="getVolumeIcon"></i>
@@ -196,16 +202,16 @@ const handleVolumeWheel = (e: WheelEvent) => {
 const isFavorite = computed(() => {
   // 对于B站视频，使用ID匹配函数
   if (playMusic.value.source === 'bilibili' && playMusic.value.bilibiliData?.bvid) {
-    return playerStore.favoriteList.some(id => isBilibiliIdMatch(id, playMusic.value.id));
+    return playerStore.favoriteList.some((id) => isBilibiliIdMatch(id, playMusic.value.id));
   }
-  
+
   // 非B站视频直接比较ID
   return playerStore.favoriteList.includes(playMusic.value.id);
 });
 
 const toggleFavorite = async (e: Event) => {
   e.stopPropagation();
-  
+
   // 处理B站视频的收藏ID
   let favoriteId = playMusic.value.id;
   if (playMusic.value.source === 'bilibili' && playMusic.value.bilibiliData?.bvid) {
@@ -538,7 +544,7 @@ const setMusicFull = () => {
 .volume-slider-wrapper {
   @apply p-2 py-4 rounded-xl bg-white dark:bg-dark-100 shadow-lg bg-opacity-90 backdrop-blur;
   height: 160px;
-  
+
   :deep(.n-slider) {
     --n-rail-height: 4px;
     --n-rail-color: theme('colors.gray.200');
@@ -642,7 +648,7 @@ const setMusicFull = () => {
   }
 }
 
-:deep(.n-popover){
+:deep(.n-popover) {
   background-color: transparent !important;
 }
 </style>

@@ -8,7 +8,7 @@ export default {
     unfavorite: '取消喜欢',
     removeFromPlaylist: '从歌单中删除',
     dislike: '不喜欢',
-    undislike: '取消不喜欢',
+    undislike: '取消不喜欢'
   },
   message: {
     downloading: '正在下载中，请稍候...',

@@ -240,7 +240,7 @@ const removeLinkRow = (index: number) => {
 
 // 验证链接是否有效
 const isLinkInputValid = computed(() => {
-  return linkInputs.value.some(item => item.value.trim() !== '');
+  return linkInputs.value.some((item) => item.value.trim() !== '');
 });
 
 // 元数据相关函数
@@ -254,7 +254,7 @@ const removeMetadataRow = (index: number) => {
 
 // 验证元数据是否有效
 const isLocalMetadataValid = computed(() => {
-  return localMetadata.value.some(item => item.name.trim() !== '');
+  return localMetadata.value.some((item) => item.name.trim() !== '');
 });
 
 // 导入状态
@@ -275,26 +275,26 @@ const handleImportByLink = async () => {
 
   try {
     importing.value = true;
-    
+
     // 处理链接格式
     const links = linkInputs.value
-      .filter(link => link.value.trim())
-      .map(link => link.value.trim());
-    
+      .filter((link) => link.value.trim())
+      .map((link) => link.value.trim());
+
     const encodedLinks = JSON.stringify(links);
-    
+
     const params: any = {
       link: encodedLinks
     };
-    
+
     if (importToStarPlaylist.value) {
       params.importStarPlaylist = true;
     } else if (playlistName.value) {
       params.playlistName = playlistName.value;
     }
-    
+
     const res = await importPlaylist(params);
-    
+
     if (res.data.code === 200) {
       message.success(t('comp.playlist.import.importSuccess'));
       taskId.value = res.data.data.taskId;
@@ -319,21 +319,21 @@ const handleImportByText = async () => {
 
   try {
     importing.value = true;
-    
+
     const encodedText = encodeURIComponent(textInput.value);
-    
+
     const params: any = {
       text: encodedText
     };
-    
+
     if (importToStarPlaylist.value) {
       params.importStarPlaylist = true;
     } else if (playlistName.value) {
       params.playlistName = playlistName.value;
     }
-    
+
     const res = await importPlaylist(params);
-    
+
     if (res.data.code === 200) {
       message.success(t('comp.playlist.import.importSuccess'));
       taskId.value = res.data.data.taskId;
@@ -358,24 +358,24 @@ const handleImportByLocal = async () => {
 
   try {
     importing.value = true;
-    
+
     // 过滤掉空的行
-    const filteredData = localMetadata.value.filter(item => item.name.trim() !== '');
-    
+    const filteredData = localMetadata.value.filter((item) => item.name.trim() !== '');
+
     const encodedLocal = JSON.stringify(filteredData);
-    
+
     const params: any = {
       local: encodedLocal
     };
-    
+
     if (importToStarPlaylist.value) {
       params.importStarPlaylist = true;
     } else if (playlistName.value) {
       params.playlistName = playlistName.value;
     }
-    
+
     const res = await importPlaylist(params);
-    
+
     if (res.data.code === 200) {
       message.success(t('comp.playlist.import.importSuccess'));
       taskId.value = res.data.data.taskId;
@@ -397,10 +397,10 @@ const startStatusCheck = () => {
   if (statusCheckInterval.value) {
     clearInterval(statusCheckInterval.value);
   }
-  
+
   // 立即检查一次
   checkTaskStatus();
-  
+
   // 设置定时检查
   statusCheckInterval.value = window.setInterval(() => {
     checkTaskStatus();
@@ -410,25 +410,25 @@ const startStatusCheck = () => {
 // 检查任务状态
 const checkTaskStatus = async () => {
   if (!taskId.value) return;
-  
+
   try {
     checkingStatus.value = true;
     const res = await getImportTaskStatus(taskId.value);
-    
+
     if (res.data.code === 200) {
       // 新的API返回格式处理
       if (res.data.data.tasks && res.data.data.tasks.length > 0) {
         const taskData = res.data.data.tasks[0];
         // 将API返回的status映射到组件内部使用的taskStatus
         const statusMap: Record<string, string> = {
-          'PENDING': 'pending',
-          'PROCESSING': 'processing',
-          'COMPLETE': 'success',
-          'FAILED': 'failed'
+          PENDING: 'pending',
+          PROCESSING: 'processing',
+          COMPLETE: 'success',
+          FAILED: 'failed'
         };
-        
+
         taskStatus.value = statusMap[taskData.status] || 'pending';
-        
+
         if (taskStatus.value === 'success') {
           successCount.value = taskData.succCount || 0;
           // 成功后停止检查
@@ -497,12 +497,12 @@ onUnmounted(() => {
 
 .import-header {
   @apply flex justify-between items-center mb-6;
-  
+
   .import-header-left {
     h2 {
       @apply text-2xl font-bold text-gray-900 dark:text-white mb-2;
     }
-    
+
     .import-desc {
       @apply text-sm text-gray-500 dark:text-gray-400;
     }
@@ -515,62 +515,65 @@ onUnmounted(() => {
 
 .import-card {
   @apply rounded-lg;
-  
+
   .tab-content {
     @apply mt-4 space-y-4;
   }
-  
-  .link-tips, .text-tips, .local-tips {
+
+  .link-tips,
+  .text-tips,
+  .local-tips {
     @apply text-sm text-gray-500 dark:text-gray-400;
-    
+
     ul {
       @apply list-disc pl-5 mt-2;
     }
   }
-  
-  .text-format, .local-format {
+
+  .text-format,
+  .local-format {
     @apply mt-2 font-medium;
   }
-  
+
   .code-example {
     @apply mt-2 p-3 bg-gray-100 dark:bg-gray-800 rounded text-sm overflow-auto;
   }
-  
+
   .link-inputs {
     @apply space-y-3;
-    
+
     .link-row {
       @apply flex items-center space-x-2;
-      
+
       .link-input {
         @apply flex-1;
       }
     }
-    
+
     .link-actions {
       @apply mt-3 flex justify-end;
     }
   }
-  
+
   .metadata-inputs {
     @apply space-y-3;
-    
+
     .metadata-row {
       @apply flex items-center space-x-2;
-      
+
       .metadata-input {
         @apply flex-1;
       }
     }
-    
+
     .metadata-actions {
       @apply mt-3 flex justify-end;
     }
   }
-  
+
   .action-buttons {
     @apply flex items-center space-x-4 mt-6;
-    
+
     .playlist-name-input {
       @apply max-w-xs;
     }
@@ -579,46 +582,47 @@ onUnmounted(() => {
 
 .import-status-card {
   @apply rounded-lg;
-  
+
   .status-header {
     @apply flex justify-between items-center mb-4;
-    
+
     h3 {
       @apply text-lg font-medium text-gray-900 dark:text-white;
     }
   }
-  
+
   .status-content {
     @apply space-y-3;
   }
-  
+
   .status-item {
     @apply flex items-center;
-    
+
     .status-label {
       @apply text-gray-500 dark:text-gray-400 w-24;
     }
-    
+
     .status-value {
       @apply font-medium;
     }
-    
-    .status-pending, .status-processing {
+
+    .status-pending,
+    .status-processing {
       @apply text-blue-500;
     }
-    
+
     .status-success {
       @apply text-green-500;
     }
-    
+
     .status-failed {
       @apply text-red-500;
     }
-    
+
     .success-count {
       @apply text-green-500;
     }
-    
+
     .fail-reason {
       @apply text-red-500;
     }

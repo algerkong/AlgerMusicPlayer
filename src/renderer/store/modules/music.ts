@@ -35,11 +35,11 @@ export const useMusicStore = defineStore('music', {
     // 从列表中移除一首歌曲
     removeSongFromList(id: number) {
       if (!this.currentMusicList) return;
-      
+
       const index = this.currentMusicList.findIndex((song) => song.id === id);
       if (index !== -1) {
         this.currentMusicList.splice(index, 1);
       }
     }
   }
-}); 
+});

@@ -1,18 +1,18 @@
 <template>
-  <n-dropdown 
-    :show="showDropdown" 
-    :options="dropdownOptions" 
-    trigger="hover" 
+  <n-dropdown
+    :show="showDropdown"
+    :options="dropdownOptions"
+    trigger="hover"
     :z-index="9999999"
     @select="handleSelect"
     placement="top"
-    @update:show="(show) => showDropdown = show"
+    @update:show="(show) => (showDropdown = show)"
   >
     <n-tooltip trigger="hover" :z-index="9999999">
       <template #trigger>
         <div class="advanced-controls-btn">
           <i class="iconfont ri-settings-3-line"></i>
-          
+
           <!-- 激活状态的小标记 -->
           <div v-if="hasActiveSettings" class="active-indicator">
             <span v-if="hasActiveSleepTimer" class="timer-badge">
@@ -26,7 +26,12 @@
   </n-dropdown>
 
   <!-- EQ 均衡器弹窗 -->
-  <n-modal v-model:show="showEQModal" :mask-closable="true" :unstable-show-mask="false" :z-index="9999999">
+  <n-modal
+    v-model:show="showEQModal"
+    :mask-closable="true"
+    :unstable-show-mask="false"
+    :z-index="9999999"
+  >
     <div class="eq-modal-content">
       <div class="modal-close" @click="showEQModal = false">
         <i class="ri-close-line"></i>
@@ -36,7 +41,12 @@
   </n-modal>
 
   <!-- 定时关闭弹窗 -->
-  <n-modal v-model:show="playerStore.showSleepTimer" :mask-closable="true" :unstable-show-mask="false" :z-index="9999999">
+  <n-modal
+    v-model:show="playerStore.showSleepTimer"
+    :mask-closable="true"
+    :unstable-show-mask="false"
+    :z-index="9999999"
+  >
     <div class="timer-modal-content">
       <div class="modal-close" @click="playerStore.showSleepTimer = false">
         <i class="ri-close-line"></i>
@@ -46,18 +56,23 @@
   </n-modal>
 
   <!-- 播放速度设置弹窗 -->
-  <n-modal v-model:show="showSpeedModal" :mask-closable="true" :unstable-show-mask="false" :z-index="9999999">
+  <n-modal
+    v-model:show="showSpeedModal"
+    :mask-closable="true"
+    :unstable-show-mask="false"
+    :z-index="9999999"
+  >
     <div class="speed-modal-content">
       <div class="modal-close" @click="showSpeedModal = false">
         <i class="ri-close-line"></i>
       </div>
       <h3>{{ t('player.playBar.playbackSpeed') }}</h3>
       <div class="speed-options">
-        <div 
-          v-for="option in playbackRateOptions" 
+        <div
+          v-for="option in playbackRateOptions"
           :key="option.key"
           class="speed-option"
-          :class="{ 'active': playbackRate === option.key }"
+          :class="{ active: playbackRate === option.key }"
           @click="selectSpeed(option.key)"
         >
           {{ option.label }}
@@ -93,13 +108,16 @@ watch(showEQModal, (newValue) => {
   }
 });
 
-watch(() => playerStore.showSleepTimer, (newValue) => {
-  if (newValue) {
-    // 如果睡眠定时器弹窗打开，关闭其他弹窗
-    showEQModal.value = false;
-    showSpeedModal.value = false;
+watch(
+  () => playerStore.showSleepTimer,
+  (newValue) => {
+    if (newValue) {
+      // 如果睡眠定时器弹窗打开，关闭其他弹窗
+      showEQModal.value = false;
+      showSpeedModal.value = false;
+    }
   }
-});
+);
 
 watch(showSpeedModal, (newValue) => {
   if (newValue) {
@@ -142,14 +160,17 @@ const dropdownOptions = computed<DropdownOption[]>(() => [
     key: 'timer',
     icon: () => h('i', { class: 'ri-timer-line' }),
     // 如果有激活的定时器，添加标记
-    suffix: () => hasActiveSleepTimer.value ? h('span', { class: 'active-option-mark' }) : null
+    suffix: () => (hasActiveSleepTimer.value ? h('span', { class: 'active-option-mark' }) : null)
   },
   {
     label: t('player.playBar.playbackSpeed') + `(${playbackRate.value}x)`,
     key: 'speed',
     icon: () => h('i', { class: 'ri-speed-line' }),
     // 如果播放速度不是1.0，添加标记
-    suffix: () => playbackRate.value !== 1.0 ? h('span', { class: 'active-option-mark' }, `${playbackRate.value}x`) : null
+    suffix: () =>
+      playbackRate.value !== 1.0
+        ? h('span', { class: 'active-option-mark' }, `${playbackRate.value}x`)
+        : null
   }
 ]);
 
@@ -159,7 +180,7 @@ const handleSelect = (key: string) => {
   showEQModal.value = false;
   playerStore.showSleepTimer = false;
   showSpeedModal.value = false;
-  
+
   // 然后仅打开所选弹窗
   switch (key) {
     case 'eq':
@@ -179,18 +200,17 @@ const selectSpeed = (speed: number) => {
   playerStore.setPlaybackRate(speed);
   showSpeedModal.value = false;
 };
-
 </script>
 
 <style lang="scss" scoped>
 .sleep-timer-countdown {
   @apply fixed top-0 left-1/2 transform -translate-x-1/2 py-1 px-3 rounded-b-lg bg-green-500 text-white text-sm flex items-center;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
   z-index: 9998;
   min-width: 80px;
   text-align: center;
   animation: fadeInDown 0.3s ease-out;
-  
+
   @keyframes fadeInDown {
     from {
       transform: translate(-50%, -100%);
@@ -201,7 +221,7 @@ const selectSpeed = (speed: number) => {
       opacity: 1;
     }
   }
-  
+
   span {
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.5px;
@@ -211,28 +231,29 @@ const selectSpeed = (speed: number) => {
 
 .advanced-controls-btn {
   @apply cursor-pointer mx-3 relative;
-  
+
   .iconfont {
     @apply text-2xl transition;
     @apply hover:text-green-500;
   }
-  
+
   .active-indicator {
     @apply absolute -top-1 -right-1 flex;
-    
-    .timer-badge, .speed-badge {
+
+    .timer-badge,
+    .speed-badge {
       @apply flex items-center justify-center text-xs bg-green-500 text-white rounded-full;
       height: 16px;
       min-width: 16px;
       padding: 0 3px;
       font-weight: 600;
       font-size: 10px;
-      
+
       i {
         font-size: 10px;
       }
     }
-    
+
     .timer-badge + .speed-badge {
       @apply -ml-2 z-10;
     }
@@ -282,4 +303,4 @@ const selectSpeed = (speed: number) => {
     @apply text-2xl;
   }
 }
-</style> 
+</style>

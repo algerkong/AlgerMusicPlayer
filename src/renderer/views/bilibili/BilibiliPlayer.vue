@@ -425,7 +425,7 @@ const playCurrentAudio = async () => {
 
     // 播放当前选中的分P
     console.log('播放当前选中的分P:', currentAudio.name, '音频URL:', currentAudio.playMusicUrl);
-    playerStore.setPlay(currentAudio);  
+    playerStore.setPlay(currentAudio);
 
     // 播放后通知用户已开始播放
     message.success('已开始播放');

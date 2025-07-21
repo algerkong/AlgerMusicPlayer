@@ -59,9 +59,9 @@ onMounted(() => {
   // 监听下载完成
   window.electron.ipcRenderer.on('music-download-complete', async (_, data) => {
     if (data.success) {
-      downloadList.value = downloadList.value.filter(item => item.filename !== data.filename);
+      downloadList.value = downloadList.value.filter((item) => item.filename !== data.filename);
     } else {
-      const existingItem = downloadList.value.find(item => item.filename === data.filename);
+      const existingItem = downloadList.value.find((item) => item.filename === data.filename);
       if (existingItem) {
         Object.assign(existingItem, {
           status: 'error',
@@ -69,7 +69,7 @@ onMounted(() => {
           progress: 0
         });
         setTimeout(() => {
-          downloadList.value = downloadList.value.filter(item => item.filename !== data.filename);
+          downloadList.value = downloadList.value.filter((item) => item.filename !== data.filename);
         }, 3000);
       }
     }

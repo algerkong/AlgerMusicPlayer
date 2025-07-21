@@ -44,7 +44,6 @@ export const SEARCH_TYPES = [
   }
 ];
 
-
 export const SEARCH_TYPE = {
   MUSIC: 1, // 单曲
   ALBUM: 10, // 专辑

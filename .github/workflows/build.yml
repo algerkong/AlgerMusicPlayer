@@ -25,33 +25,28 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      # MacOS Build
+      # MacOS Build (without publish)
       - name: Build MacOS
         if: matrix.os == 'macos-latest'
         run: |
-          export ELECTRON_BUILDER_EXTRA_ARGS="--universal"
+          export ELECTRON_BUILDER_EXTRA_ARGS="--universal --publish=never"
           npm run build:mac
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: false
           DEBUG: electron-builder
 
-      # Windows Build
+      # Windows Build (without publish)
       - name: Build Windows
         if: matrix.os == 'windows-latest'
-        run: npm run build:win
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build:win -- --publish=never
 
-      # Linux Build
+      # Linux Build (without publish)
       - name: Build Linux
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 libappindicator3-dev librsvg2-dev patchelf
-          npm run build:linux
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          npm run build:linux -- --publish=never
 
       # Get version from tag
       - name: Get version from tag

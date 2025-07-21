@@ -1,10 +1,11 @@
-name: Deploy Web
+# 已禁用自动部署功能 - 如需启用请取消注释
+# name: Deploy Web
 
-on:
-  push:
-    branches:
-      - main # 或者您的主分支名称
-  workflow_dispatch: # 允许手动触发
+# on:
+#   push:
+#     branches:
+#       - main # 或者您的主分支名称
+#   workflow_dispatch: # 允许手动触发
 
 jobs:
   build-and-deploy:

@@ -113,4 +113,4 @@ const handleCancel = () => {
   selectedTypes.value = [];
   visible.value = false;
 };
-</script> 
+</script>

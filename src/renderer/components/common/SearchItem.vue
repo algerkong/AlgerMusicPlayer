@@ -88,15 +88,10 @@ const handleClick = async () => {
       },
       description: res.data.album.description
     };
-    
+
     // 保存数据到store
-    musicStore.setCurrentMusicList(
-      songList.value, 
-      props.item.name, 
-      listInfo.value, 
-      false
-    );
-    
+    musicStore.setCurrentMusicList(songList.value, props.item.name, listInfo.value, false);
+
     // 使用路由跳转
     router.push({
       name: 'musicList',
@@ -107,15 +102,10 @@ const handleClick = async () => {
     const res = await getListDetail(props.item.id);
     songList.value = res.data.playlist.tracks;
     listInfo.value = res.data.playlist;
-    
+
     // 保存数据到store
-    musicStore.setCurrentMusicList(
-      songList.value, 
-      props.item.name, 
-      listInfo.value, 
-      false
-    );
-    
+    musicStore.setCurrentMusicList(songList.value, props.item.name, listInfo.value, false);
+
     // 使用路由跳转
     router.push({
       name: 'musicList',

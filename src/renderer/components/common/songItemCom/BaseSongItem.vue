@@ -11,7 +11,7 @@
     <slot name="image"></slot>
     <slot name="content"></slot>
     <slot name="operating"></slot>
-    
+
     <song-item-dropdown
       v-if="isElectron"
       :item="item"
@@ -115,4 +115,4 @@ defineExpose({
 .text-ellipsis {
   width: 100%;
 }
-</style> 
+</style>

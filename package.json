@@ -1,10 +1,10 @@
 {
-  "name": "AlgerMusicPlayer",
+  "name": "SizeMusicPlayer",
   "version": "4.8.2",
-  "description": "Alger Music Player",
-  "author": "Alger <algerkc@qq.com>",
+  "description": "Size Music Player",
+  "author": "Size <mail@sizeof.top>",
   "main": "./out/main/index.js",
-  "homepage": "https://github.com/algerkong/AlgerMusicPlayer",
+  "homepage": "https://music.sizeof.top",
   "scripts": {
     "prepare": "husky",
     "format": "prettier --write .",
@@ -95,15 +95,8 @@
     "vue-tsc": "^2.0.22"
   },
   "build": {
-    "appId": "com.alger.music",
-    "productName": "AlgerMusicPlayer",
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "algerkong",
-        "repo": "AlgerMusicPlayer"
-      }
-    ],
+    "appId": "com.size.music",
+    "productName": "SizeMusicPlayer",
     "extraResources": [
       {
         "from": "resources/html",
@@ -133,7 +126,7 @@
       "identity": null,
       "type": "distribution",
       "binaries": [
-        "Contents/MacOS/AlgerMusicPlayer"
+        "Contents/MacOS/SizeMusicPlayer"
       ]
     },
     "win": {
@@ -178,7 +171,7 @@
       ],
       "artifactName": "${productName}-${version}-linux-${arch}.${ext}",
       "category": "Audio",
-      "maintainer": "Alger <algerkc@qq.com>"
+      "maintainer": "Size <mail@sizeof.top>"
     },
     "nsis": {
       "oneClick": false,
@@ -187,7 +180,7 @@
       "uninstallerIcon": "resources/icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "AlgerMusicPlayer",
+      "shortcutName": "SizeMusicPlayer",
       "include": "build/installer.nsh"
     }
   }

@@ -16,7 +16,8 @@ const api = {
   openLyric: () => ipcRenderer.send('open-lyric'),
   sendLyric: (data) => ipcRenderer.send('send-lyric', data),
   sendSong: (data) => ipcRenderer.send('update-current-song', data),
-  unblockMusic: (id, data, enabledSources) => ipcRenderer.invoke('unblock-music', id, data, enabledSources),
+  unblockMusic: (id, data, enabledSources) =>
+    ipcRenderer.invoke('unblock-music', id, data, enabledSources),
   // 歌词窗口关闭事件
   onLyricWindowClosed: (callback: () => void) => {
     ipcRenderer.on('lyric-window-closed', () => callback());

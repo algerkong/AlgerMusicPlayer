@@ -18,9 +18,7 @@ import { initWindowSizeManager } from './modules/window-size';
 // 导入所有图标
 const iconPath = join(__dirname, '../../resources');
 const icon = nativeImage.createFromPath(
-  process.platform === 'darwin'
-    ? join(iconPath, 'icon.icns')
-    : join(iconPath, 'icon.png')
+  process.platform === 'darwin' ? join(iconPath, 'icon.icns') : join(iconPath, 'icon.png')
 );
 
 let mainWindow: Electron.BrowserWindow;
@@ -60,7 +58,6 @@ function initialize() {
 
   // 初始化远程控制服务
   initializeRemoteControl(mainWindow);
-
 }
 
 // 检查是否为第一个实例

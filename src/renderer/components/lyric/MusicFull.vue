@@ -72,7 +72,7 @@
             v-if="!config.hideMiniPlayBar"
             class="mt-4"
             :pure-mode-enabled="config.pureModeEnabled"
-            :isDark=" textColors.theme === 'dark'"
+            :isDark="textColors.theme === 'dark'"
           />
         </div>
       </div>

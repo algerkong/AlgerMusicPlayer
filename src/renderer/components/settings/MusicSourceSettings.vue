@@ -34,7 +34,10 @@
       </div>
 
       <!-- GD音乐台设置 -->
-      <div v-if="selectedSources.includes('gdmusic')" class="mt-4 border-t pt-4 border-gray-200 dark:border-gray-700">
+      <div
+        v-if="selectedSources.includes('gdmusic')"
+        class="mt-4 border-t pt-4 border-gray-200 dark:border-gray-700"
+      >
         <h3 class="text-base font-medium mb-2">GD音乐台(music.gdstudio.xyz)设置</h3>
         <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">
           GD音乐台将自动尝试多个音乐平台进行解析，无需额外配置。优先级高于其他解析方式，但是请求可能较慢。感谢（music.gdstudio.xyz）
@@ -102,10 +105,9 @@ watch(
 const handleConfirm = () => {
   // 确保至少选择一个音源
   const defaultPlatforms = ['migu', 'kugou', 'pyncmd', 'bilibili'];
-  const valuesToEmit = selectedSources.value.length > 0 
-    ? [...new Set(selectedSources.value)] 
-    : defaultPlatforms;
-  
+  const valuesToEmit =
+    selectedSources.value.length > 0 ? [...new Set(selectedSources.value)] : defaultPlatforms;
+
   emit('update:sources', valuesToEmit);
   visible.value = false;
 };
@@ -115,4 +117,4 @@ const handleCancel = () => {
   selectedSources.value = [...props.sources];
   visible.value = false;
 };
-</script> 
+</script>

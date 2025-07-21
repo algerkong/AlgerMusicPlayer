@@ -14,7 +14,6 @@ export function getUserPlaylist(uid: number, limit: number = 30, offset: number 
 // 播放历史
 // /user/record?uid=32953014&type=1
 export function getUserRecord(uid: number, type: number = 0) {
-  
   return request.get('/user/record', {
     params: { uid, type },
     noRetry: true

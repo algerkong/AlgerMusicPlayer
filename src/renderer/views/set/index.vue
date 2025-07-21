@@ -1,6 +1,6 @@
 <template>
   <div class="settings-container">
-    <n-scrollbar class="settings-content" >
+    <n-scrollbar class="settings-content">
       <div class="set-page">
         <!-- 基础设置 -->
         <div class="settings-section">
@@ -16,7 +16,7 @@
                 <template #checked><i class="ri-moon-line"></i></template>
                 <template #unchecked><i class="ri-sun-line"></i></template>
               </n-switch>
-            </div>   
+            </div>
 
             <!-- 语言设置 -->
             <div class="set-item">
@@ -90,19 +90,22 @@
                 </div>
               </div>
               <div class="flex items-center gap-2">
-                <span class="text-sm text-gray-400" v-if="!isMobile">{{ setData.animationSpeed }}x</span>
+                <span class="text-sm text-gray-400" v-if="!isMobile"
+                  >{{ setData.animationSpeed }}x</span
+                >
                 <div class="w-40 flex justify-end">
-                  <template v-if="!isMobile"><n-slider
-                    v-model:value="setData.animationSpeed"
-                    :min="0.1"
-                    :max="3"
-                    :step="0.1"
-                    :marks="{
-                      0.1: t('settings.basic.animationSpeed.slow'),
-                      1: t('settings.basic.animationSpeed.normal'),
-                      3: t('settings.basic.animationSpeed.fast')
-                    }"
-                    :disabled="setData.noAnimate"
+                  <template v-if="!isMobile"
+                    ><n-slider
+                      v-model:value="setData.animationSpeed"
+                      :min="0.1"
+                      :max="3"
+                      :step="0.1"
+                      :marks="{
+                        0.1: t('settings.basic.animationSpeed.slow'),
+                        1: t('settings.basic.animationSpeed.normal'),
+                        3: t('settings.basic.animationSpeed.fast')
+                      }"
+                      :disabled="setData.noAnimate"
                   /></template>
                   <template v-else>
                     <n-input-number
@@ -123,7 +126,7 @@
         </div>
 
         <!-- 播放设置 -->
-        <div  class="settings-section">
+        <div class="settings-section">
           <div class="settings-section-title">{{ t('settings.sections.playback') }}</div>
           <div class="settings-section-content">
             <div>
@@ -151,7 +154,7 @@
                 />
               </div>
             </div>
-            <div class="set-item" >
+            <div class="set-item">
               <div>
                 <div class="set-item-title">{{ t('settings.playback.musicSources') }}</div>
                 <div class="set-item-content">
@@ -164,7 +167,9 @@
                   </div>
                   <div v-if="setData.enableMusicUnblock" class="mt-2">
                     <div class="text-sm">
-                      <span class="text-gray-500">{{ t('settings.playback.selectedMusicSources') }}</span>
+                      <span class="text-gray-500">{{
+                        t('settings.playback.selectedMusicSources')
+                      }}</span>
                       <span v-if="musicSources.length > 0" class="text-gray-400">
                         {{ musicSources.join(', ') }}
                       </span>
@@ -175,8 +180,8 @@
                   </div>
                 </div>
               </div>
-              <n-button 
-                size="small" 
+              <n-button
+                size="small"
                 :disabled="!setData.enableMusicUnblock"
                 @click="showMusicSourcesModal = true"
               >
@@ -187,7 +192,9 @@
             <div class="set-item" v-if="platform === 'darwin'">
               <div>
                 <div class="set-item-title">{{ t('settings.playback.showStatusBar') }}</div>
-                <div class="set-item-content">{{ t('settings.playback.showStatusBarContent') }}</div>
+                <div class="set-item-content">
+                  {{ t('settings.playback.showStatusBarContent') }}
+                </div>
               </div>
               <n-switch v-model:value="setData.showTopAction">
                 <template #checked>{{ t('common.on') }}</template>
@@ -209,7 +216,7 @@
         </div>
 
         <!-- 应用设置 -->
-        <div v-if="isElectron"  class="settings-section">
+        <div v-if="isElectron" class="settings-section">
           <div class="settings-section-title">{{ t('settings.sections.application') }}</div>
           <div class="settings-section-content">
             <div class="set-item">
@@ -287,7 +294,9 @@
             <div class="set-item">
               <div>
                 <div class="set-item-title">{{ t('settings.application.remoteControl') }}</div>
-                <div class="set-item-content">{{ t('settings.application.remoteControlDesc') }}</div>
+                <div class="set-item-content">
+                  {{ t('settings.application.remoteControlDesc') }}
+                </div>
               </div>
               <n-button size="small" @click="showRemoteControlModal = true">{{
                 t('common.configure')
@@ -297,7 +306,7 @@
         </div>
 
         <!-- 网络设置 -->
-        <div v-if="isElectron"  class="settings-section">
+        <div v-if="isElectron" class="settings-section">
           <div class="settings-section-title">{{ t('settings.sections.network') }}</div>
           <div class="settings-section-content">
             <div class="set-item">
@@ -347,7 +356,7 @@
         </div>
 
         <!-- 系统管理 -->
-        <div v-if="isElectron"  class="settings-section">
+        <div v-if="isElectron" class="settings-section">
           <div class="settings-section-title">{{ t('settings.sections.system') }}</div>
           <div class="settings-section-content">
             <div class="set-item">
@@ -380,30 +389,21 @@
       <shortcut-settings v-model:show="showShortcutModal" @change="handleShortcutsChange" />
 
       <!-- 代理设置弹窗 -->
-      <proxy-settings 
-        v-model:show="showProxyModal" 
+      <proxy-settings
+        v-model:show="showProxyModal"
         :config="proxyForm"
         @confirm="handleProxyConfirm"
       />
 
       <!-- 远程控制设置弹窗 -->
       <remote-control-setting v-model:visible="showRemoteControlModal" />
-
     </template>
 
     <!-- 音源设置弹窗 -->
-    <music-source-settings
-      v-model:show="showMusicSourcesModal"
-      v-model:sources="musicSources"
-    />
+    <music-source-settings v-model:show="showMusicSourcesModal" v-model:sources="musicSources" />
 
     <!-- 清除缓存弹窗 -->
-    <clear-cache-settings
-      v-model:show="showClearCacheModal"
-      @confirm="clearCache"
-    />
-
-
+    <clear-cache-settings v-model:show="showClearCacheModal" @confirm="clearCache" />
   </div>
 </template>
 
@@ -782,5 +782,4 @@ const showRemoteControlModal = ref(false);
     }
   }
 }
-
 </style>

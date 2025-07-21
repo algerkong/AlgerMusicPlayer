@@ -65,7 +65,7 @@ export default {
     autoPlay: '自动播放',
     autoPlayDesc: '重新打开应用时是否自动继续播放',
     showStatusBar: '是否显示状态栏控制功能',
-    showStatusBarContent: '可以在您的mac状态栏显示音乐控制功能(重启后生效)',
+    showStatusBarContent: '可以在您的mac状态栏显示音乐控制功能(重启后生效)'
   },
   application: {
     closeAction: '关闭行为',
@@ -241,6 +241,6 @@ export default {
     addIp: '添加IP',
     emptyListHint: '空列表表示允许所有IP访问',
     saveSuccess: '远程控制设置已保存',
-    accessInfo: '远程控制访问地址:',
+    accessInfo: '远程控制访问地址:'
   }
 };

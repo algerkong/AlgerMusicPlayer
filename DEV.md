@@ -105,18 +105,18 @@ AlgerMusicPlayer/
 渲染进程是基于 Vue 3 的前端应用，负责 UI 渲染和用户交互。
 
 - **components/**: 包含各种 UI 组件
-  - **common/**: 通用组件
-  - **home/**: 首页相关组件
-  - **lyric/**: 歌词显示组件
-  - **settings/**: 设置界面组件
-  - **MusicList.vue**: 音乐列表组件
-  - **MvPlayer.vue**: MV 播放器
-  - **EQControl.vue**: 均衡器控制
-  - **...**: 其他组件
+    - **common/**: 通用组件
+    - **home/**: 首页相关组件
+    - **lyric/**: 歌词显示组件
+    - **settings/**: 设置界面组件
+    - **MusicList.vue**: 音乐列表组件
+    - **MvPlayer.vue**: MV 播放器
+    - **EQControl.vue**: 均衡器控制
+    - **...**: 其他组件
 
 - **store/**: Pinia 状态管理
-  - **modules/**: 各功能模块的状态管理
-  - **index.ts**: 状态管理入口
+    - **modules/**: 各功能模块的状态管理
+    - **index.ts**: 状态管理入口
 
 - **views/**: 页面视图组件
 
@@ -142,25 +142,28 @@ AlgerMusicPlayer/
 - 避免使用枚举，使用 const 对象代替
 - 使用 tailwind 实现响应式设计
 
-
 ### 如何启动？
+
 安装依赖（最好使用node18+）：
+
 ```
 npm install
 ```
 
-
 #### 桌面端开发
+
 启动桌面端开发：
+
 ```
 npm run dev
 ```
 
-
 #### 网页端开发
-如果只启动网页端开发，需要自己部署服务  netease-cloud-music-api
+
+如果只启动网页端开发，需要自己部署服务 netease-cloud-music-api
 
 需要复制一份 `.env.development.local` 到 `src/renderer` 下
+
 ```
 # .env.development.local
 
@@ -171,6 +174,7 @@ VITE_API_MUSIC = ***
 ```
 
 启动web端开发：
+
 ```
 npm run dev:web
 ```
@@ -178,15 +182,17 @@ npm run dev:web
 ### 打包
 
 打包桌面端：
+
 ```
 npm run build:win
 ```
+
 打包后的文件在 /dist 下
 
-
-
 打包网页端：
+
 ```
 npm run build
 ```
+
 打包后的文件在 /out/renderer 下

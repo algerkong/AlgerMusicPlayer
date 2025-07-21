@@ -2,4 +2,4 @@
 export type Platform = 'qq' | 'migu' | 'kugou' | 'pyncmd' | 'joox' | 'bilibili' | 'gdmusic';
 
 // 默认平台列表
-export const DEFAULT_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd', 'bilibili']; 
+export const DEFAULT_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd', 'bilibili'];

@@ -51,17 +51,17 @@ const handleClick = async (item: any) => {
 
 const openAlbum = async (album: any) => {
   if (!album) return;
-  
+
   try {
     const res = await getAlbum(album.id);
     const { songs, album: albumInfo } = res.data;
-    
+
     const formattedSongs = songs.map((song: any) => {
       song.al.picUrl = song.al.picUrl || albumInfo.picUrl;
       song.picUrl = song.al.picUrl || albumInfo.picUrl || song.picUrl;
       return song;
     });
-    
+
     navigateToMusicList(router, {
       id: album.id,
       type: 'album',

@@ -1,5 +1,5 @@
 <template>
-  <component 
+  <component
     :is="renderComponent"
     :item="item"
     :favorite="favorite"

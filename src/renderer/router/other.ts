@@ -86,6 +86,6 @@ const otherRouter = [
       back: true
     },
     component: () => import('@/views/playlist/ImportPlaylist.vue')
-  },
+  }
 ];
 export default otherRouter;

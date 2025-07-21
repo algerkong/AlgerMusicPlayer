@@ -10,11 +10,7 @@ interface ToastOptions {
   showIcon?: boolean;
 }
 
-export function showShortcutToast(
-  message: string, 
-  iconName = '', 
-  options: ToastOptions = {}
-) {
+export function showShortcutToast(message: string, iconName = '', options: ToastOptions = {}) {
   // 如果容器不存在，创建一个新的容器
   if (!container) {
     container = document.createElement('div');
