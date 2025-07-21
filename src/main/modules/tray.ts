@@ -329,7 +329,7 @@ export function updateTrayMenu(mainWindow: BrowserWindow) {
 
 // 初始化状态栏Tray
 function initializeStatusBarTray(mainWindow: BrowserWindow) {
-  const store = getStore()
+  const store = getStore();
   if (process.platform !== 'darwin' || !store.get('set.showTopAction')) return;
 
   const iconSize = getProperIconSize();
