@@ -31,6 +31,8 @@ export interface WindowState {
   isMaximized: boolean;
 }
 
+
+
 /**
  * 窗口大小管理器
  * 负责保存、恢复和维护窗口大小状态
@@ -337,19 +339,23 @@ class WindowSizeManager {
         isMaximized: false
       };
     }
-    
+
+    // 检查是否是mini模式窗口（根据窗口大小判断）
+    const [currentWidth, currentHeight] = win.getSize();
+    const isMiniMode = currentWidth === DEFAULT_MINI_WIDTH && currentHeight === DEFAULT_MINI_HEIGHT;
+
     const isMaximized = win.isMaximized();
     let state: WindowState;
-    
+
     if (isMaximized) {
       // 如果窗口处于最大化状态，保存最大化标志
       // 由于 Electron 的限制，最大化状态下 getBounds() 可能不准确
       // 所以我们尽量保留之前保存的非最大化时的大小
       const currentBounds = win.getBounds();
-      const previousSize = this.savedState && !this.savedState.isMaximized 
+      const previousSize = this.savedState && !this.savedState.isMaximized
         ? { width: this.savedState.width, height: this.savedState.height }
         : { width: currentBounds.width, height: currentBounds.height };
-      
+
       state = {
         width: previousSize.width,
         height: previousSize.height,
@@ -359,7 +365,7 @@ class WindowSizeManager {
       };
     console.log('state IsMaximized',state)
 
-    } 
+    }
     else if (win.isMinimized()) {
       // 最小化状态下不保存窗口大小，因为可能不准确
       console.log('state IsMinimized',this.savedState)
@@ -368,12 +374,12 @@ class WindowSizeManager {
         height: DEFAULT_MAIN_HEIGHT,
         isMaximized: false
       };
-    } 
+    }
     else {
       // 正常状态下保存当前大小和位置
       const [width, height] = win.getSize();
       const [x, y] = win.getPosition();
-      
+
       state = {
         width,
         height,
@@ -383,15 +389,21 @@ class WindowSizeManager {
       };
       console.log('state IsNormal',state)
     }
-    
+
+    // 如果是mini模式，不保存到持久化存储，只返回状态用于内存中的恢复
+    if (isMiniMode) {
+      console.log('检测到mini模式窗口，不保存到持久化存储');
+      return state;
+    }
+
     // 保存状态到存储
     this.store.set(WINDOW_STATE_KEY, state);
     console.log(`已保存窗口状态: ${JSON.stringify(state)}`);
-    
+
     // 更新内部状态
     this.savedState = state;
     console.log('state',state)
-    
+
     return state;
   }
   
@@ -400,12 +412,12 @@ class WindowSizeManager {
    */
   getWindowState(): WindowState | null {
     const state = this.store.get(WINDOW_STATE_KEY) as WindowState | undefined;
-    
+
     if (!state) {
       console.log('未找到保存的窗口状态，将使用默认值');
       return null;
     }
-    
+
     // 验证尺寸，确保不小于最小值
     const validatedState: WindowState = {
       width: Math.max(MIN_WIDTH, state.width || DEFAULT_MAIN_WIDTH),
@@ -414,11 +426,13 @@ class WindowSizeManager {
       y: state.y,
       isMaximized: !!state.isMaximized
     };
-    
+
     console.log(`读取保存的窗口状态: ${JSON.stringify(validatedState)}`);
-    
+
     return validatedState;
   }
+
+
   
   /**
    * 检查位置是否在可见屏幕范围内
@@ -697,4 +711,5 @@ export const initWindowSizeHandlers = (mainWindow: BrowserWindow | null): void =
 
 export const calculateMinimumWindowSize = (): { minWidth: number; minHeight: number } => {
   return { minWidth: MIN_WIDTH, minHeight: MIN_HEIGHT };
-}; 
+};
+
