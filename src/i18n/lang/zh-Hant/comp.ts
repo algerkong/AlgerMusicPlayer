@@ -1,15 +1,4 @@
 export default {
-  installApp: {
-    description: '安裝應用程式，獲得更好的體驗',
-    noPrompt: '不再提示',
-    install: '立即安裝',
-    cancel: '暫不安裝',
-    download: '下載',
-    downloadFailed: '下載失敗',
-    downloadComplete: '下載完成',
-    downloadProblem: '下載遇到問題？去',
-    downloadProblemLinkText: '下載最新版本'
-  },
   playlistDrawer: {
     title: '新增至播放清單',
     createPlaylist: '建立新播放清單',

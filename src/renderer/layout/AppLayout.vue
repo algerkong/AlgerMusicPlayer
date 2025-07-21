@@ -38,8 +38,6 @@
         />
       </template>
     </div>
-    <install-app-modal v-if="!isElectron"></install-app-modal>
-    <update-modal v-if="isElectron" />
     <playlist-drawer v-model="showPlaylistDrawer" :song-id="currentSongId" />
     <SleepTimerTop v-if="!isMobile"/>
     <!-- 下载管理抽屉 -->

@@ -1,15 +1,4 @@
 export default {
-  installApp: {
-    description: '安装应用程序，获得更好的体验',
-    noPrompt: '不再提示',
-    install: '立即安装',
-    cancel: '暂不安装',
-    download: '下载',
-    downloadFailed: '下载失败',
-    downloadComplete: '下载完成',
-    downloadProblem: '下载遇到问题？去',
-    downloadProblemLinkText: '下载最新版本'
-  },
   playlistDrawer: {
     title: '添加到歌单',
     createPlaylist: '创建新歌单',

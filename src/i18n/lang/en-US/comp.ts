@@ -1,15 +1,4 @@
 export default {
-  installApp: {
-    description: 'Install the application for a better experience',
-    noPrompt: 'Do not prompt again',
-    install: 'Install now',
-    cancel: 'Cancel',
-    download: 'Download',
-    downloadFailed: 'Download failed',
-    downloadComplete: 'Download complete',
-    downloadProblem: 'Download problem? Go to',
-    downloadProblemLinkText: 'Download the latest version'
-  },
   playlistDrawer: {
     title: 'Add to playlist',
     createPlaylist: 'Create new playlist',
