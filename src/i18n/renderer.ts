@@ -2,10 +2,12 @@ import { createI18n } from 'vue-i18n';
 
 import enUS from './lang/en-US';
 import zhCN from './lang/zh-CN';
+import zhHant from './lang/zh-Hant';
 
 const messages = {
   'zh-CN': zhCN,
-  'en-US': enUS
+  'en-US': enUS,
+  'zh-Hant': zhHant
 };
 
 const i18n = createI18n({
