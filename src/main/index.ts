@@ -12,7 +12,7 @@ import { initializeRemoteControl } from './modules/remoteControl';
 import { initializeShortcuts, registerShortcuts } from './modules/shortcuts';
 import { initializeTray, updateCurrentSong, updatePlayState, updateTrayMenu } from './modules/tray';
 import { setupUpdateHandlers } from './modules/update';
-import { createMainWindow, initializeWindowManager } from './modules/window';
+import { createMainWindow, initializeWindowManager, setAppQuitting } from './modules/window';
 import { startMusicApi } from './server';
 import { initWindowSizeManager } from './modules/window-size';
 
@@ -135,6 +135,12 @@ if (!isSingleInstance) {
     if (process.platform !== 'darwin') {
       app.quit();
     }
+  });
+
+  // 应用即将退出时的处理
+  app.on('before-quit', () => {
+    // 设置退出标志
+    setAppQuitting(true);
   });
 
   // 重启应用
