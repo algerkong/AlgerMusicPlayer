@@ -57,7 +57,6 @@
             <i class="iconfont ri-logout-box-r-line"></i>
             <span>{{ t('comp.searchBar.logout') }}</span>
           </div>
-          <!-- 切换主题 -->
           <div class="menu-item" @click="selectItem('set')">
             <i class="iconfont ri-settings-3-line"></i>
             <span>{{ t('comp.searchBar.set') }}</span>
@@ -80,7 +79,7 @@
               </n-button>
             </div>
           </div>
-          <div class="menu-item" @click="restartApp">
+          <div class="menu-item" @click="restartApp" v-if="isElectron">
             <i class="iconfont ri-restart-line"></i>
             <span>{{ t('comp.searchBar.restart') }}</span>
           </div>
