@@ -394,71 +394,6 @@
             </div>
           </div>
         </div>
-
-        <!-- 关于 -->
-        <div id="about" ref="aboutRef" class="settings-section">
-          <div class="settings-section-title">{{ t('settings.regard') }}</div>
-          <div class="settings-section-content">
-            <div class="set-item">
-              <div>
-                <div class="set-item-title">{{ t('settings.about.version') }}</div>
-                <div class="set-item-content">
-                  {{ updateInfo.currentVersion }}
-                  <template v-if="updateInfo.hasUpdate">
-                    <n-tag type="success" class="ml-2">
-                      {{ t('settings.about.hasUpdate') }} {{ updateInfo.latestVersion }}
-                    </n-tag>
-                  </template>
-                </div>
-              </div>
-              <div class="flex items-center gap-2">
-                <n-button size="small" :loading="checking" @click="checkForUpdates(true)">
-                  {{ checking ? t('settings.about.checking') : t('settings.about.checkUpdate') }}
-                </n-button>
-                <n-button v-if="updateInfo.hasUpdate" size="small" @click="openReleasePage">
-                  {{ t('settings.about.gotoUpdate') }}
-                </n-button>
-              </div>
-            </div>
-
-            <div
-              class="set-item cursor-pointer hover:text-green-500 hover:bg-green-950 transition-all"
-              @click="openAuthor"
-            >
-              <coffee>
-                <div>
-                  <div class="set-item-title">{{ t('settings.about.author') }}</div>
-                  <div class="set-item-content">{{ t('settings.about.authorDesc') }}</div>
-                </div>
-              </coffee>
-              <div>
-                <n-button size="small" @click="openAuthor">
-                  <i class="ri-github-line"></i>{{ t('settings.about.gotoGithub') }}
-                </n-button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 捐赠支持 -->
-        <div id="donation" ref="donationRef" class="settings-section">
-          <div class="settings-section-title">{{ t('settings.sections.donation') }}</div>
-          <div class="settings-section-content">
-            <div class="set-item">
-              <div>
-                <div class="set-item-title">{{ t('settings.sections.donation') }}</div>
-                <div class="set-item-content">{{ t('donation.message') }}</div>
-              </div>
-              <n-button text @click="toggleDonationList">
-                <template #icon>
-                  <i :class="isDonationListVisible ? 'ri-eye-line' : 'ri-eye-off-line'" />
-                </template>
-                {{ isDonationListVisible ? t('common.hide') : t('common.show') }}
-              </n-button>
-            </div>
-            <donation-list v-if="isDonationListVisible" />
-          </div>
-        </div>
       </div>
       <play-bottom />
     </n-scrollbar>
@@ -502,8 +437,6 @@ import { computed, h, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import localData from '@/../main/set.json';
-import Coffee from '@/components/Coffee.vue';
-import DonationList from '@/components/common/DonationList.vue';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import ShortcutSettings from '@/components/settings/ShortcutSettings.vue';
@@ -515,10 +448,7 @@ import { useSettingsStore } from '@/store/modules/settings';
 import { useUserStore } from '@/store/modules/user';
 import { isElectron, isMobile } from '@/utils';
 import { openDirectory, selectDirectory } from '@/utils/fileOperation';
-import { checkUpdate, UpdateResult } from '@/utils/update';
 import { type Platform } from '@/types/music';
-
-import config from '../../../../package.json';
 
 // 所有平台默认值
 const ALL_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd', 'bilibili'];
@@ -535,14 +465,6 @@ const localSetData = ref({ ...settingsStore.setData });
 onUnmounted(() => {
   // 确保最终设置被保存
   settingsStore.setSetData(localSetData.value);
-});
-
-const checking = ref(false);
-const updateInfo = ref<UpdateResult>({
-  hasUpdate: false,
-  latestVersion: '',
-  currentVersion: config.version,
-  releaseInfo: null
 });
 
 const { t } = useI18n();
@@ -590,39 +512,10 @@ const isDarkTheme = computed({
   set: () => settingsStore.toggleTheme()
 });
 
-const openAuthor = () => {
-  window.open(setData.value.authorUrl);
-};
-
 const restartApp = () => {
   window.electron.ipcRenderer.send('restart');
 };
 const message = useMessage();
-const checkForUpdates = async (isClick = false) => {
-  checking.value = true;
-  try {
-    const result = await checkUpdate(config.version);
-    if (result) {
-      updateInfo.value = result;
-      if (!result.hasUpdate && isClick) {
-        message.success(t('settings.about.latest'));
-      }
-    } else if (isClick) {
-      message.success(t('settings.about.latest'));
-    }
-  } catch (error) {
-    console.error('检查更新失败:', error);
-    if (isClick) {
-      message.error(t('settings.about.messages.checkError'));
-    }
-  } finally {
-    checking.value = false;
-  }
-};
-
-const openReleasePage = () => {
-  settingsStore.showUpdateModal = true;
-};
 
 const selectDownloadPath = async () => {
   const path = await selectDirectory(message);
@@ -694,7 +587,6 @@ watch(
 
 // 初始化时从store获取配置
 onMounted(async () => {
-  checkForUpdates();
   if (setData.value.proxyConfig) {
     proxyForm.value = { ...setData.value.proxyConfig };
   }
@@ -767,13 +659,6 @@ watch(
     }
   }
 );
-
-const isDonationListVisible = ref(localStorage.getItem('donationListVisible') !== 'false');
-
-const toggleDonationList = () => {
-  isDonationListVisible.value = !isDonationListVisible.value;
-  localStorage.setItem('donationListVisible', isDonationListVisible.value.toString());
-};
 
 // 清除缓存相关
 const showClearCacheModal = ref(false);

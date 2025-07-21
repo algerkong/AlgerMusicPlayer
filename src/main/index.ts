@@ -11,7 +11,6 @@ import { initializeFonts } from './modules/fonts';
 import { initializeRemoteControl } from './modules/remoteControl';
 import { initializeShortcuts, registerShortcuts } from './modules/shortcuts';
 import { initializeTray, updateCurrentSong, updatePlayState, updateTrayMenu } from './modules/tray';
-import { setupUpdateHandlers } from './modules/update';
 import { createMainWindow, initializeWindowManager, setAppQuitting } from './modules/window';
 import { startMusicApi } from './server';
 import { initWindowSizeManager } from './modules/window-size';
@@ -62,8 +61,6 @@ function initialize() {
   // 初始化远程控制服务
   initializeRemoteControl(mainWindow);
 
-  // 初始化更新处理程序
-  setupUpdateHandlers(mainWindow);
 }
 
 // 检查是否为第一个实例

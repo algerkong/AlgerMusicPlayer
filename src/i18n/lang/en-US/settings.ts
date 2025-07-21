@@ -147,20 +147,6 @@ export default {
       clearSuccess: 'Cache cleared successfully, some settings will take effect after restart'
     }
   },
-  about: {
-    version: 'Version',
-    checkUpdate: 'Check for Updates',
-    checking: 'Checking...',
-    latest: 'Already latest version',
-    hasUpdate: 'New version available',
-    gotoUpdate: 'Go to Update',
-    gotoGithub: 'Go to Github',
-    author: 'Author',
-    authorDesc: 'algerkong Give a star🌟',
-    messages: {
-      checkError: 'Failed to check for updates, please try again later'
-    }
-  },
   validation: {
     selectProxyProtocol: 'Please select proxy protocol',
     proxyHost: 'Please enter proxy host',

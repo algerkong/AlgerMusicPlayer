@@ -100,25 +100,9 @@
             <i class="iconfont ri-refresh-line"></i>
             <span>{{ t('comp.searchBar.refresh') }}</span>
           </div>
-          <div class="menu-item" @click="toGithubRelease">
-            <i class="iconfont ri-github-fill"></i>
-            <span>{{ t('comp.searchBar.currentVersion') }}</span>
-            <div class="version-info">
-              <span class="version-number">{{ updateInfo.currentVersion }}</span>
-              <n-tag v-if="updateInfo.hasUpdate" type="success" size="small" class="ml-1">
-                New {{ updateInfo.latestVersion }}
-              </n-tag>
-            </div>
-          </div>
         </div>
       </div>
     </n-popover>
-
-    <coffee :alipay-q-r="alipay" :wechat-q-r="wechat">
-      <div class="github" @click="toGithub">
-        <i class="ri-github-fill"></i>
-      </div>
-    </coffee>
   </div>
 </template>
 
@@ -128,18 +112,12 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import { getSearchKeyword } from '@/api/home';
 import { getUserDetail } from '@/api/login';
-import alipay from '@/assets/alipay.png';
-import wechat from '@/assets/wechat.png';
-import Coffee from '@/components/Coffee.vue';
 import { useZoom } from '@/hooks/useZoom';
 import { SEARCH_TYPES, USER_SET_OPTIONS } from '@/const/bar-const';
 import { useSearchStore } from '@/store/modules/search';
 import { useSettingsStore } from '@/store/modules/settings';
 import { useUserStore } from '@/store/modules/user';
 import { getImgUrl, isElectron } from '@/utils';
-import { checkUpdate, UpdateResult } from '@/utils/update';
-
-import config from '../../../../package.json';
 
 const router = useRouter();
 const searchStore = useSearchStore();
@@ -209,7 +187,6 @@ const toLogin = () => {
 onMounted(() => {
   loadHotSearchKeyword();
   loadPage();
-  checkForUpdates();
   isElectron && initZoomFactor();
 });
 
@@ -302,35 +279,6 @@ const selectItem = async (key: string) => {
   }
 };
 
-const toGithub = () => {
-  window.open('http://donate.alger.fun/download', '_blank');
-};
-
-const updateInfo = ref<UpdateResult>({
-  hasUpdate: false,
-  latestVersion: '',
-  currentVersion: config.version,
-  releaseInfo: null
-});
-
-const checkForUpdates = async () => {
-  try {
-    const result = await checkUpdate(config.version);
-    if (result) {
-      updateInfo.value = result;
-    }
-  } catch (error) {
-    console.error('检查更新失败:', error);
-  }
-};
-
-const toGithubRelease = () => {
-  if (updateInfo.value.hasUpdate) {
-    settingsStore.showUpdateModal = true;
-  } else {
-    window.open('https://github.com/algerkong/AlgerMusicPlayer/releases', '_blank');
-  }
-};
 </script>
 
 <style lang="scss" scoped>

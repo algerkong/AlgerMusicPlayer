@@ -147,20 +147,6 @@ export default {
       clearSuccess: '清除成功，部分設定在重啟後生效'
     }
   },
-  about: {
-    version: '版本',
-    checkUpdate: '檢查更新',
-    checking: '檢查中...',
-    latest: '目前已是最新版本',
-    hasUpdate: '發現新版本',
-    gotoUpdate: '前往更新',
-    gotoGithub: '前往 Github',
-    author: '作者',
-    authorDesc: 'algerkong 點個star🌟呗',
-    messages: {
-      checkError: '檢查更新失敗，請稍後重試'
-    }
-  },
   validation: {
     selectProxyProtocol: '請選擇代理協議',
     proxyHost: '請輸入代理位址',
