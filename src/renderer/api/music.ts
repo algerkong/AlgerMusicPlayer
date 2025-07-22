@@ -186,7 +186,7 @@ export const getParsingMusicUrl = async (id: number, data: SongResult) => {
   try {
     const result = await requestMusic.get<any>('/music', { params: { id } });
     if (result) {
-      console.log('🎵 自定义API解析成功');
+      console.log('🎵 自定义API解析成功,音源:', result.data.data.platform);
       return result;
     } else {
       console.log('❌ 自定义API解析失败');
