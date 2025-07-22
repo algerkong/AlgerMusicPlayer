@@ -52,7 +52,7 @@ const useIndexedDB = async <T extends string, S extends Record<T, Record<string,
       const tx = db.value.transaction(storeName, 'readwrite');
       const store = tx.objectStore(storeName);
 
-      const request = store.add(value);
+      const request = store.put(value);
 
       request.onsuccess = () => {
         console.log('成功');
