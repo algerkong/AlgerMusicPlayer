@@ -2,8 +2,8 @@ import axios from 'axios';
 
 // API地址配置数组
 const apiUrls = [
-  import.meta.env.VITE_API_MUSIC,        // 0: 主API
-  import.meta.env.VITE_API_MUSIC_BACKUP  // 1: 备用API
+  import.meta.env.VITE_API_MUSIC, // 0: 主API
+  import.meta.env.VITE_API_MUSIC_BACKUP // 1: 备用API
 ];
 
 /**
@@ -19,7 +19,7 @@ const requestMusic = (apiIndex: number = 0) => {
   }
 
   const baseURL = apiUrls[apiIndex];
-  
+
   // 检查API地址是否存在
   if (!baseURL) {
     throw new Error(`API索引 ${apiIndex} 对应的地址未配置`);
@@ -46,7 +46,7 @@ const requestMusic = (apiIndex: number = 0) => {
 /**
  * 获取可用API数量
  */
-export const getApiCount = () => apiUrls.filter(url => url).length;
+export const getApiCount = () => apiUrls.filter((url) => url).length;
 
 /**
  * 获取API地址
