@@ -35,7 +35,6 @@
 import { ref, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-
 import { getMusicDetail } from '@/api/music';
 import SongItem from '@/components/common/SongItem.vue';
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';

@@ -31,8 +31,6 @@ function getLocalStorageItem<T>(key: string, defaultValue: T): T {
   }
 }
 
-
-
 // 获取歌曲播放URL
 
 export const getSongUrl = async (
@@ -44,8 +42,6 @@ export const getSongUrl = async (
     if (songData.playMusicUrl) {
       return songData.playMusicUrl;
     }
-
-
 
     const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
 
@@ -163,8 +159,6 @@ export const loadLrc = async (id: string | number): Promise<ILyric> => {
 
 const getSongDetail = async (playMusic: SongResult) => {
   // playMusic.playLoading 在 handlePlayMusic 中已设置，这里不再设置
-
-
 
   if (playMusic.expiredAt && playMusic.expiredAt < Date.now()) {
     console.info(`歌曲已过期，重新获取: ${playMusic.name}`);
@@ -1100,8 +1094,6 @@ export const usePlayerStore = defineStore('player', () => {
         console.log('settingStore.setData', settingStore.setData);
         const isPlaying = settingStore.setData.autoPlay;
 
-
-
         await handlePlayMusic(
           { ...savedPlayMusic, isFirstPlay: true, playMusicUrl: undefined },
           isPlaying
@@ -1165,8 +1157,6 @@ export const usePlayerStore = defineStore('player', () => {
       if (savedProgress.songId === playMusic.value.id) {
         initialPosition = savedProgress.progress;
       }
-
-
 
       // 播放新音频，传递是否应该播放的状态
       console.log('调用audioService.play，播放状态:', shouldPlay);
@@ -1248,8 +1238,6 @@ export const usePlayerStore = defineStore('player', () => {
         console.warn('没有有效的播放对象');
         return false;
       }
-
-
 
       // 保存用户选择的音源（作为数组传递，确保unblockMusic可以使用）
       const songId = String(currentSong.id);

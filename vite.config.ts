@@ -38,7 +38,7 @@ export default defineConfig({
   publicDir: resolve('resources'),
   server: {
     host: '0.0.0.0',
-    port: 50081,
+    port: 50088,
     proxy: {}
   }
 });
