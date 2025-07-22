@@ -157,7 +157,7 @@ export const getParsingMusicUrl = async (id: number, data: SongResult) => {
     try {
       const gdResult = await getGDMusicAudio(id, data);
       if (gdResult) {
-        console.log('🎵 GD音乐台解析成功');
+        console.log(`🎵 GD音乐台解析成功 - 歌曲ID: ${id}, 歌曲: ${data.name || '未知'}`);
         return gdResult;
       } else {
         console.log('❌ GD音乐台解析失败');
@@ -172,7 +172,7 @@ export const getParsingMusicUrl = async (id: number, data: SongResult) => {
     try {
       const result = await getUnblockMusicAudio(id, data, musicSources);
       if (result) {
-        console.log('🎵 UnblockMusic解析成功');
+        console.log(`🎵 UnblockMusic解析成功 - 歌曲ID: ${id}, 歌曲: ${data.name || '未知'}`);
         return result;
       } else {
         console.log('❌ UnblockMusic解析失败');
@@ -181,32 +181,38 @@ export const getParsingMusicUrl = async (id: number, data: SongResult) => {
       console.log('❌ UnblockMusic解析失败:', error);
     }
   }
-  // 2.3 后备方案：使用自定义API请求
-  console.log('🎵 使用自定义API解析');
-  try {
-    const result = await requestMusic(0).get<any>('/music', { params: { id } });
-    if (result) {
-      console.log('🎵 自定义API解析成功,音源:', result.data.data.source);
-      return result;
-    } else {
-      console.log('❌ 自定义API解析失败');
+    // 2.3 星辰音乐解析（API1）
+  if (musicSources.includes('stellar')) {
+    console.log('🎵 使用星辰音乐解析');
+    try {
+      const result = await requestMusic(0).get<any>('/music', { params: { id } });
+      if (result) {
+        console.log(`🎵 星辰音乐解析成功 - 歌曲ID: ${id}, 歌曲: ${data.name || '未知'}, 音源: ${result.data.data?.source || 'stellar'}`);
+        return result;
+      } else {
+        console.log('❌ 星辰音乐解析失败');
+      }
+    } catch (error) {
+      console.log('❌ 星辰音乐解析失败:', error);
     }
-  } catch (error) {
-    console.log('❌ 自定义API解析失败:', error);
   }
-  // 2.4 备用API方案
-  console.log('🎵 使用备用API解析');
-  try {
-    const result = await requestMusic(1).get<any>('/music', { params: { id } });
-    if (result) {
-      console.log('🎵 备用API解析成功,音源:', result.data.data.source);
-      return result;
-    } else {
-      console.log('❌ 备用API解析失败');
+  // 2.4 云端音乐解析（API2）
+  if (musicSources.includes('cloud')) {
+    console.log('🎵 使用云端音乐解析');
+    try {
+      const result = await requestMusic(1).get<any>('/music', { params: { id } });
+      if (result) {
+        console.log(`🎵 云端音乐解析成功 - 歌曲ID: ${id}, 歌曲: ${data.name || '未知'}, 音源: ${result.data.data?.source || 'cloud'}`);
+        return result;
+      } else {
+        console.log('❌ 云端音乐解析失败');
+      }
+    } catch (error) {
+      console.log('❌ 云端音乐解析失败:', error);
     }
-  } catch (error) {
-    console.log('❌ 备用API解析失败:', error);
   }
+  // 所有音源解析失败
+  console.log(`❌ 所有音源解析失败 - 歌曲ID: ${id}, 歌曲: ${data.name || '未知'}`);
 };
 
 // 收藏歌曲
