@@ -1,184 +1,184 @@
 <template>
-<div v-loading="loading" class="artist-page-wrapper">
-  <n-scrollbar class="artist-page">
-    <!-- 歌手信息头部 -->
-    <div class="artist-header">
-      <div class="artist-cover">
-        <n-image
-          :src="getImgUrl(artistInfo?.avatar, '300y300')"
-          class="artist-avatar"
-          preview-disabled
-        />
-      </div>
-      <div class="artist-info">
-        <h1 class="artist-name">{{ artistInfo?.name }}</h1>
-        <div v-if="artistInfo?.alias?.length" class="artist-alias">
-          {{ artistInfo.alias.join(' / ') }}
+  <div v-loading="loading" class="artist-page-wrapper">
+    <n-scrollbar class="artist-page">
+      <!-- 歌手信息头部 -->
+      <div class="artist-header">
+        <div class="artist-cover">
+          <n-image
+            :src="getImgUrl(artistInfo?.avatar, '300y300')"
+            class="artist-avatar"
+            preview-disabled
+          />
         </div>
-        <div v-if="artistInfo?.briefDesc" class="artist-desc">
-          {{ artistInfo.briefDesc }}
-        </div>
-      </div>
-    </div>
-
-    <!-- 标签页切换 -->
-    <n-tabs v-model:value="activeTab" class="content-tabs" type="line" animated>
-      <n-tab-pane name="songs" :tab="t('artist.hotSongs')">
-        <!-- 添加歌曲操作工具栏 -->
-        <div class="songs-toolbar">
-          <div class="toolbar-left">
-            <n-tooltip placement="bottom" trigger="hover">
-              <template #trigger>
-                <div class="action-button hover-green" @click="handlePlayAll">
-                  <i class="icon iconfont ri-play-fill"></i>
-                </div>
-              </template>
-              {{ t('comp.musicList.playAll') }}
-            </n-tooltip>
-
-            <n-tooltip placement="bottom" trigger="hover">
-              <template #trigger>
-                <div class="action-button hover-green" @click="addToPlaylist">
-                  <i class="icon iconfont ri-add-line"></i>
-                </div>
-              </template>
-              {{ t('comp.musicList.addToPlaylist') }}
-            </n-tooltip>
+        <div class="artist-info">
+          <h1 class="artist-name">{{ artistInfo?.name }}</h1>
+          <div v-if="artistInfo?.alias?.length" class="artist-alias">
+            {{ artistInfo.alias.join(' / ') }}
           </div>
+          <div v-if="artistInfo?.briefDesc" class="artist-desc">
+            {{ artistInfo.briefDesc }}
+          </div>
+        </div>
+      </div>
 
-          <div class="toolbar-right">
-            <!-- 布局切换按钮 -->
-            <div class="layout-toggle" v-if="!isMobile">
+      <!-- 标签页切换 -->
+      <n-tabs v-model:value="activeTab" class="content-tabs" type="line" animated>
+        <n-tab-pane name="songs" :tab="t('artist.hotSongs')">
+          <!-- 添加歌曲操作工具栏 -->
+          <div class="songs-toolbar">
+            <div class="toolbar-left">
               <n-tooltip placement="bottom" trigger="hover">
                 <template #trigger>
-                  <div class="toggle-button hover-green" @click="toggleLayout">
-                    <i
-                      class="icon iconfont"
-                      :class="isCompactLayout ? 'ri-list-check-2' : 'ri-grid-line'"
-                    ></i>
+                  <div class="action-button hover-green" @click="handlePlayAll">
+                    <i class="icon iconfont ri-play-fill"></i>
                   </div>
                 </template>
-                {{
-                  isCompactLayout
-                    ? t('comp.musicList.switchToNormal')
-                    : t('comp.musicList.switchToCompact')
-                }}
+                {{ t('comp.musicList.playAll') }}
+              </n-tooltip>
+
+              <n-tooltip placement="bottom" trigger="hover">
+                <template #trigger>
+                  <div class="action-button hover-green" @click="addToPlaylist">
+                    <i class="icon iconfont ri-add-line"></i>
+                  </div>
+                </template>
+                {{ t('comp.musicList.addToPlaylist') }}
               </n-tooltip>
             </div>
 
-            <!-- 搜索框 -->
-            <div class="search-container" :class="{ 'search-expanded': isSearchVisible }">
-              <template v-if="isSearchVisible">
-                <n-input
-                  v-model:value="searchKeyword"
-                  :placeholder="t('comp.musicList.searchSongs')"
-                  clearable
-                  round
-                  size="small"
-                  @blur="handleSearchBlur"
-                >
-                  <template #prefix>
-                    <i class="icon iconfont ri-search-line text-sm"></i>
-                  </template>
-                  <template #suffix>
-                    <i
-                      class="icon iconfont ri-close-line text-sm cursor-pointer"
-                      @click="closeSearch"
-                    ></i>
-                  </template>
-                </n-input>
-              </template>
-              <template v-else>
+            <div class="toolbar-right">
+              <!-- 布局切换按钮 -->
+              <div class="layout-toggle" v-if="!isMobile">
                 <n-tooltip placement="bottom" trigger="hover">
                   <template #trigger>
-                    <div class="search-button" @click="showSearch">
-                      <i class="icon iconfont ri-search-line"></i>
+                    <div class="toggle-button hover-green" @click="toggleLayout">
+                      <i
+                        class="icon iconfont"
+                        :class="isCompactLayout ? 'ri-list-check-2' : 'ri-grid-line'"
+                      ></i>
                     </div>
                   </template>
-                  {{ t('comp.musicList.searchSongs') }}
+                  {{
+                    isCompactLayout
+                      ? t('comp.musicList.switchToNormal')
+                      : t('comp.musicList.switchToCompact')
+                  }}
                 </n-tooltip>
-              </template>
+              </div>
+
+              <!-- 搜索框 -->
+              <div class="search-container" :class="{ 'search-expanded': isSearchVisible }">
+                <template v-if="isSearchVisible">
+                  <n-input
+                    v-model:value="searchKeyword"
+                    :placeholder="t('comp.musicList.searchSongs')"
+                    clearable
+                    round
+                    size="small"
+                    @blur="handleSearchBlur"
+                  >
+                    <template #prefix>
+                      <i class="icon iconfont ri-search-line text-sm"></i>
+                    </template>
+                    <template #suffix>
+                      <i
+                        class="icon iconfont ri-close-line text-sm cursor-pointer"
+                        @click="closeSearch"
+                      ></i>
+                    </template>
+                  </n-input>
+                </template>
+                <template v-else>
+                  <n-tooltip placement="bottom" trigger="hover">
+                    <template #trigger>
+                      <div class="search-button" @click="showSearch">
+                        <i class="icon iconfont ri-search-line"></i>
+                      </div>
+                    </template>
+                    {{ t('comp.musicList.searchSongs') }}
+                  </n-tooltip>
+                </template>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="songs-list">
-          <div class="song-list-content">
-            <div v-if="filteredSongs.length === 0 && searchKeyword" class="no-result">
-              {{ t('comp.musicList.noSearchResults') }}
-            </div>
+          <div class="songs-list">
+            <div class="song-list-content">
+              <div v-if="filteredSongs.length === 0 && searchKeyword" class="no-result">
+                {{ t('comp.musicList.noSearchResults') }}
+              </div>
 
-            <!-- 替换原来的 v-for 循环为虚拟列表 -->
-            <n-virtual-list
-              ref="songListRef"
-              class="song-virtual-list"
-              style="height: calc(80vh - 60px)"
-              :items="filteredSongs"
-              :item-size="isCompactLayout ? 50 : 70"
-              item-resizable
-              key-field="id"
-              @scroll="handleVirtualScroll"
-            >
-              <template #default="{ item, index }">
-                <div>
-                  <div class="double-item">
-                    <song-item
-                      :index="index"
-                      :compact="isCompactLayout"
-                      :item="formatSong(item)"
-                      @play="handlePlay"
-                    />
+              <!-- 替换原来的 v-for 循环为虚拟列表 -->
+              <n-virtual-list
+                ref="songListRef"
+                class="song-virtual-list"
+                style="height: calc(80vh - 60px)"
+                :items="filteredSongs"
+                :item-size="isCompactLayout ? 50 : 70"
+                item-resizable
+                key-field="id"
+                @scroll="handleVirtualScroll"
+              >
+                <template #default="{ item, index }">
+                  <div>
+                    <div class="double-item">
+                      <song-item
+                        :index="index"
+                        :compact="isCompactLayout"
+                        :item="formatSong(item)"
+                        @play="handlePlay"
+                      />
+                    </div>
+                    <div v-if="index === filteredSongs.length - 1" class="h-36"></div>
                   </div>
-                  <div v-if="index === filteredSongs.length - 1" class="h-36"></div>
-                </div>
-              </template>
-            </n-virtual-list>
+                </template>
+              </n-virtual-list>
 
-            <div v-if="songLoading" class="loading-more">{{ t('common.loading') }}</div>
-            <div
-              v-else-if="songPage.hasMore"
-              ref="songsLoadMoreRef"
-              class="load-more-trigger"
-            ></div>
+              <div v-if="songLoading" class="loading-more">{{ t('common.loading') }}</div>
+              <div
+                v-else-if="songPage.hasMore"
+                ref="songsLoadMoreRef"
+                class="load-more-trigger"
+              ></div>
+            </div>
           </div>
-        </div>
-      </n-tab-pane>
+        </n-tab-pane>
 
-      <n-tab-pane name="albums" :tab="t('artist.albums')">
-        <div class="albums-list">
-          <div class="albums-grid">
-            <search-item
-              v-for="album in albums"
-              :key="album.id"
-              shape="square"
-              :item="{
-                id: album.id,
-                picUrl: album.picUrl,
-                name: album.name,
-                desc: formatPublishTime(album.publishTime),
-                size: album.size,
-                type: '专辑'
-              }"
-            />
-            <div v-if="albumLoading" class="loading-more">{{ t('common.loading') }}</div>
-            <div
-              v-else-if="albumPage.hasMore"
-              ref="albumsLoadMoreRef"
-              class="load-more-trigger"
-            ></div>
+        <n-tab-pane name="albums" :tab="t('artist.albums')">
+          <div class="albums-list">
+            <div class="albums-grid">
+              <search-item
+                v-for="album in albums"
+                :key="album.id"
+                shape="square"
+                :item="{
+                  id: album.id,
+                  picUrl: album.picUrl,
+                  name: album.name,
+                  desc: formatPublishTime(album.publishTime),
+                  size: album.size,
+                  type: '专辑'
+                }"
+              />
+              <div v-if="albumLoading" class="loading-more">{{ t('common.loading') }}</div>
+              <div
+                v-else-if="albumPage.hasMore"
+                ref="albumsLoadMoreRef"
+                class="load-more-trigger"
+              ></div>
+            </div>
           </div>
-        </div>
-      </n-tab-pane>
+        </n-tab-pane>
 
-      <n-tab-pane name="about" :tab="t('artist.description')">
-        <div class="artist-description">
-          <div class="description-content" v-html="artistInfo?.briefDesc"></div>
-        </div>
-      </n-tab-pane>
-    </n-tabs>
+        <n-tab-pane name="about" :tab="t('artist.description')">
+          <div class="artist-description">
+            <div class="description-content" v-html="artistInfo?.briefDesc"></div>
+          </div>
+        </n-tab-pane>
+      </n-tabs>
 
-    <play-bottom />
-  </n-scrollbar>
+      <play-bottom />
+    </n-scrollbar>
   </div>
 </template>
 
@@ -831,5 +831,4 @@ const handleVirtualScroll = (e: any) => {
   width: 100%;
   position: relative;
 }
-
 </style>

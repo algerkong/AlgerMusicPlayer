@@ -1,6 +1,6 @@
 import { cloneDeep } from 'lodash';
 import { createDiscreteApi } from 'naive-ui';
-import { computed, getCurrentInstance,nextTick, onUnmounted, ref, watch } from 'vue';
+import { computed, getCurrentInstance, nextTick, onUnmounted, ref, watch } from 'vue';
 
 import useIndexedDB from '@/hooks/IndexDBHook';
 import { audioService } from '@/services/audioService';
