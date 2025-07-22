@@ -44,7 +44,10 @@ export const useSettingsStore = defineStore('settings', () => {
       : JSON.parse(localStorage.getItem('appSettings') || '{}');
 
     // 合并默认设置和保存的设置
-    const mergedSettings = merge({}, setDataDefault, savedSettings);
+    // const mergedSettings = merge({}, setDataDefault, savedSettings);
+    
+    // 使用对象展开语法合并，确保用户配置完全覆盖默认配置
+    const mergedSettings = { ...setDataDefault, ...savedSettings };
 
     // 更新设置并返回
     setSetData(mergedSettings);

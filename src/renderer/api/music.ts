@@ -184,18 +184,30 @@ export const getParsingMusicUrl = async (id: number, data: SongResult) => {
   // 2.3 后备方案：使用自定义API请求
   console.log('🎵 使用自定义API解析');
   try {
-    const result = await requestMusic.get<any>('/music', { params: { id } });
+    const result = await requestMusic(0).get<any>('/music', { params: { id } });
     if (result) {
-      console.log('🎵 自定义API解析成功,音源:', result.data.data.platform);
+      console.log('🎵 自定义API解析成功,音源:', result.data.data.source);
       return result;
     } else {
       console.log('❌ 自定义API解析失败');
-      return result;
     }
   } catch (error) {
     console.log('❌ 自定义API解析失败:', error);
-    throw error;
   }
+  // 2.4 备用API方案
+  console.log('🎵 使用备用API解析');
+  try {
+    const result = await requestMusic(1).get<any>('/music', { params: { id } });
+    if (result) {
+      console.log('🎵 备用API解析成功,音源:', result.data.data.source);
+      return result;
+    } else {
+      console.log('❌ 备用API解析失败');
+    }
+  } catch (error) {
+    console.log('❌ 备用API解析失败:', error);
+  }
+  
 };
 
 // 收藏歌曲
