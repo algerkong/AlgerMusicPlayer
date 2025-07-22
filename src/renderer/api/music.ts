@@ -107,7 +107,9 @@ const getGDMusicAudio = async (id: number, data: SongResult) => {
  * @returns 解析结果
  */
 const getUnblockMusicAudio = (id: number, data: SongResult, sources: any[]) => {
-  const filteredSources = sources.filter((source) => source !== 'gdmusic');
+  const filteredSources = sources.filter((source) => 
+    !['gdmusic', 'stellar', 'cloud'].includes(source)
+  );
   console.log(`使用unblockMusic解析，音源:`, filteredSources);
   return window.api.unblockMusic(id, cloneDeep(data), cloneDeep(filteredSources));
 };
