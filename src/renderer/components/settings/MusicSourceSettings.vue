@@ -76,15 +76,15 @@ const musicSourceOptions = computed(() => {
       { label: 'MG', value: 'migu' },
       { label: 'KG', value: 'kugou' },
       { label: 'pyncmd', value: 'pyncmd' },
-      { label: 'GD音乐台', value: 'gdmusic' },
       { label: '星辰音乐', value: 'stellar' },
-      { label: '云端音乐', value: 'cloud' }
+      { label: '云端音乐', value: 'cloud' },
+      { label: 'GD音乐台', value: 'gdmusic' }
     ];
   } else {
     return [
-      { label: 'GD音乐台', value: 'gdmusic' },
       { label: '星辰音乐', value: 'stellar' },
-      { label: '云端音乐', value: 'cloud' }
+      { label: '云端音乐', value: 'cloud' },
+      { label: 'GD音乐台', value: 'gdmusic' }
     ];
   }
 });

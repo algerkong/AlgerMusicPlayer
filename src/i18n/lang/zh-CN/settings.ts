@@ -21,6 +21,7 @@ export default {
       lyric: '仅歌词'
     },
     animation: '动画速度',
+    animationSpeedPlaceholder: '请输入动画速度',
     animationDesc: '是否开启动画',
     animationSpeed: {
       slow: '极慢',

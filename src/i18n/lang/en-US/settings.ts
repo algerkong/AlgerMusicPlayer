@@ -21,6 +21,7 @@ export default {
       lyric: 'Lyrics Only'
     },
     animation: 'Animation Speed',
+    animationSpeedPlaceholder: 'Enter animation speed',
     animationDesc: 'Enable/disable animations',
     animationSpeed: {
       slow: 'Very Slow',

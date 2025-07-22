@@ -23,7 +23,7 @@
   "alwaysShowDownloadButton": false,
   "unlimitedDownload": false,
   "enableMusicUnblock": true,
-  "enabledMusicSources": ["migu", "kugou", "pyncmd", "gdmusic"],
+  "enabledMusicSources": ["migu", "kugou", "pyncmd", "stellar", "cloud", "gdmusic"],
   "showTopAction": false,
   "contentZoomFactor": 1
 }

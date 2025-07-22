@@ -107,8 +107,8 @@ const getGDMusicAudio = async (id: number, data: SongResult) => {
  * @returns 解析结果
  */
 const getUnblockMusicAudio = (id: number, data: SongResult, sources: any[]) => {
-  const filteredSources = sources.filter((source) => 
-    !['gdmusic', 'stellar', 'cloud'].includes(source)
+  const filteredSources = sources.filter(
+    (source) => !['gdmusic', 'stellar', 'cloud'].includes(source)
   );
   console.log(`使用unblockMusic解析，音源:`, filteredSources);
   return window.api.unblockMusic(id, cloneDeep(data), cloneDeep(filteredSources));
@@ -116,7 +116,6 @@ const getUnblockMusicAudio = (id: number, data: SongResult, sources: any[]) => {
 
 /**
  * 获取解析后的音乐URL
- * 解析优先级：API -> GD音乐台 -> UnblockMusic -> 自定义API
  * @param id 歌曲ID
  * @param data 歌曲数据
  * @returns 解析结果
@@ -152,24 +151,12 @@ export const getParsingMusicUrl = async (id: number, data: SongResult) => {
     musicSources = settingStore.setData.enabledMusicSources || [];
   }
 
-  // 2. 按优先级解析
-  // 2.1 GD音乐台解析
-  if (musicSources.includes('gdmusic')) {
-    console.log('🎵 使用GD音乐台解析');
-    try {
-      const gdResult = await getGDMusicAudio(id, data);
-      if (gdResult) {
-        console.log(`🎵 GD音乐台解析成功 - 歌曲ID: ${id}, 歌曲: ${data.name || '未知'}`);
-        return gdResult;
-      } else {
-        console.log('❌ GD音乐台解析失败');
-      }
-    } catch (error) {
-      console.log('❌ GD音乐台解析失败:', error);
-    }
-  }
-  // 2.2 使用unblockMusic解析其他音源
+  // 2. 按优先级解析：UnblockMusic → 星辰音乐 → 云端音乐 → GD音乐台
+  // 2.1 UnblockMusic解析（优先级最高）
   if (isElectron && musicSources.length > 0) {
+    // const unblockSources = musicSources.filter(
+    //   source => ['migu', 'kugou', 'pyncmd'].includes(source)
+    // );
     console.log('🎵 使用UnblockMusic解析，音源:', musicSources);
     try {
       const result = await getUnblockMusicAudio(id, data, musicSources);
@@ -183,7 +170,7 @@ export const getParsingMusicUrl = async (id: number, data: SongResult) => {
       console.log('❌ UnblockMusic解析失败:', error);
     }
   }
-  // 2.3 星辰音乐解析（API1）
+  // 2.2 星辰音乐解析（API1）
   if (musicSources.includes('stellar')) {
     console.log('🎵 使用星辰音乐解析');
     try {
@@ -200,7 +187,7 @@ export const getParsingMusicUrl = async (id: number, data: SongResult) => {
       console.log('❌ 星辰音乐解析失败:', error);
     }
   }
-  // 2.4 云端音乐解析（API2）
+  // 2.3 云端音乐解析（API2）
   if (musicSources.includes('cloud')) {
     console.log('🎵 使用云端音乐解析');
     try {
@@ -215,6 +202,21 @@ export const getParsingMusicUrl = async (id: number, data: SongResult) => {
       }
     } catch (error) {
       console.log('❌ 云端音乐解析失败:', error);
+    }
+  }
+  // 2.4 GD音乐台解析（优先级最低）
+  if (musicSources.includes('gdmusic')) {
+    console.log('🎵 使用GD音乐台解析');
+    try {
+      const gdResult = await getGDMusicAudio(id, data);
+      if (gdResult) {
+        console.log(`🎵 GD音乐台解析成功 - 歌曲ID: ${id}, 歌曲: ${data.name || '未知'}`);
+        return gdResult;
+      } else {
+        console.log('❌ GD音乐台解析失败');
+      }
+    } catch (error) {
+      console.log('❌ GD音乐台解析失败:', error);
     }
   }
   // 所有音源解析失败

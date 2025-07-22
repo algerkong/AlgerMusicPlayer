@@ -50,6 +50,35 @@ export const useSettingsStore = defineStore('settings', () => {
     // 使用对象展开语法合并，确保用户配置完全覆盖默认配置
     const mergedSettings = { ...setDataDefault, ...savedSettings };
 
+    // 根据平台智能处理音源设置
+    if (mergedSettings.enabledMusicSources) {
+      if (isElectron) {
+        // Win端：支持所有音源，不做处理
+        console.log('🔧 Win端支持所有音源，保持原配置');
+      } else {
+        // Web端：只保留Web端支持的音源
+        const webSupportedSources = ['gdmusic', 'stellar', 'cloud'];
+        const currentSources = mergedSettings.enabledMusicSources;
+        const filteredSources = currentSources.filter((source) =>
+          webSupportedSources.includes(source)
+        );
+
+        if (filteredSources.length > 0) {
+          mergedSettings.enabledMusicSources = filteredSources;
+          console.log('🔧 Web端过滤后的音源:', filteredSources);
+        } else {
+          // 如果过滤后没有可用音源，使用Web端默认音源
+          mergedSettings.enabledMusicSources = ['gdmusic'];
+          console.log('🔧 Web端没有可用音源，使用默认音源: gdmusic');
+        }
+      }
+    }
+
+    console.log('🔧 初始化音源设置:', {
+      platform: isElectron ? 'Electron' : 'Web',
+      sources: mergedSettings.enabledMusicSources
+    });
+
     // 更新设置并返回
     setSetData(mergedSettings);
     return mergedSettings;
