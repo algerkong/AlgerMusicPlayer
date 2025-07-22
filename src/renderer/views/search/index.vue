@@ -47,34 +47,33 @@
       <div v-loading="searchDetailLoading" class="search-list-box">
         <template v-if="searchDetail">
           <!-- 音乐搜索结果 -->
-            <div
-              v-for="(item, index) in searchDetail?.songs"
-              :key="item.id"
-              :class="setAnimationClass('animate__bounceInRight')"
-              :style="getSearchListAnimation(index)"
-            >
-              <song-item :item="item" @play="handlePlay" :is-next="true" />
-            </div>
-            <template v-for="(list, key) in searchDetail">
-              <template v-if="key.toString() !== 'songs'">
-                <div
-                  v-for="(item, index) in list"
-                  :key="item.id"
-                  class="mb-3"
-                  :class="setAnimationClass('animate__bounceInRight')"
-                  :style="getSearchListAnimation(index)"
-                >
-                  <search-item :item="item" />
-                </div>
-              </template>
+          <div
+            v-for="(item, index) in searchDetail?.songs"
+            :key="item.id"
+            :class="setAnimationClass('animate__bounceInRight')"
+            :style="getSearchListAnimation(index)"
+          >
+            <song-item :item="item" @play="handlePlay" :is-next="true" />
+          </div>
+          <template v-for="(list, key) in searchDetail">
+            <template v-if="key.toString() !== 'songs'">
+              <div
+                v-for="(item, index) in list"
+                :key="item.id"
+                class="mb-3"
+                :class="setAnimationClass('animate__bounceInRight')"
+                :style="getSearchListAnimation(index)"
+              >
+                <search-item :item="item" />
+              </div>
             </template>
-            <!-- 加载状态 -->
-            <div v-if="isLoadingMore" class="loading-more">
-              <n-spin size="small" />
-              <span class="ml-2">{{ t('search.loading.more') }}</span>
-            </div>
-            <div v-if="!hasMore && searchDetail" class="no-more">{{ t('search.noMore') }}</div>
           </template>
+          <!-- 加载状态 -->
+          <div v-if="isLoadingMore" class="loading-more">
+            <n-spin size="small" />
+            <span class="ml-2">{{ t('search.loading.more') }}</span>
+          </div>
+          <div v-if="!hasMore && searchDetail" class="no-more">{{ t('search.noMore') }}</div>
         </template>
         <!-- 搜索历史 -->
         <template v-else>
@@ -334,8 +333,6 @@ const handleScroll = (e: any) => {
     loadSearch(currentKeyword.value, null, true);
   }
 };
-
-
 
 watch(
   () => route.query,
