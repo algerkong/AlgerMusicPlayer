@@ -56,6 +56,7 @@ export default {
     musicSources: '音源設定',
     musicSourcesDesc: '選擇音樂解析使用的音源平台',
     musicSourcesWarning: '至少需要選擇一個音源平台',
+    webPlatformNote: '網頁版僅支援線上音源（GD音樂台、星辰音樂、雲端音樂）',
     musicUnblockEnable: '啟用音樂解析',
     musicUnblockEnableDesc: '開啟後將嘗試解析無法播放的音樂',
     configureMusicSources: '設定音源',

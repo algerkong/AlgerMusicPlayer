@@ -73,13 +73,14 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useMessage } from 'naive-ui';
 import { playMusic } from '@/hooks/MusicHook';
 import { usePlayerStore } from '@/store/modules/player';
 import type { Platform } from '@/types/music';
 import { audioService } from '@/services/audioService';
+import { isElectron } from '@/utils';
 
 const playerStore = usePlayerStore();
 const { t } = useI18n();
@@ -95,12 +96,24 @@ const selectedSourcesValue = ref<Platform[]>([]);
 const isReparse = ref(localStorage.getItem(`song_source_${String(playMusic.value.id)}`) !== null);
 
 // 可选音源列表
-const musicSourceOptions = ref([
-  { label: 'MiGu', value: 'migu' as Platform },
-  { label: 'KuGou', value: 'kugou' as Platform },
-  { label: 'pyncmd', value: 'pyncmd' as Platform },
-  { label: 'GdMuisc', value: 'gdmusic' as Platform }
-]);
+const musicSourceOptions = computed(() => {
+  if (isElectron) {
+    return [
+      { label: 'MiGu', value: 'migu' as Platform },
+      { label: 'KuGou', value: 'kugou' as Platform },
+      { label: 'pyncmd', value: 'pyncmd' as Platform },
+      { label: 'GdMuisc', value: 'gdmusic' as Platform },
+      { label: '星辰音乐', value: 'stellar' as Platform },
+      { label: '云端音乐', value: 'cloud' as Platform }
+    ];
+  } else {
+    return [
+      { label: 'GdMuisc', value: 'gdmusic' as Platform },
+      { label: '星辰音乐', value: 'stellar' as Platform },
+      { label: '云端音乐', value: 'cloud' as Platform }
+    ];
+  }
+});
 
 // 检查音源是否被选中
 const isCurrentSource = (source: Platform) => {
@@ -115,7 +128,9 @@ const getSourceIcon = (source: Platform) => {
     qq: 'ri-qq-fill',
     joox: 'ri-disc-fill',
     pyncmd: 'ri-netease-cloud-music-fill',
-    gdmusic: 'ri-google-fill'
+    gdmusic: 'ri-google-fill',
+    stellar: 'ri-star-fill',
+    cloud: 'ri-cloud-fill'
   };
 
   return iconMap[source] || 'ri-music-2-fill';

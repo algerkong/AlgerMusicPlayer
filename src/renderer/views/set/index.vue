@@ -427,9 +427,6 @@ import { isElectron, isMobile } from '@/utils';
 import { openDirectory, selectDirectory } from '@/utils/fileOperation';
 import { type Platform } from '@/types/music';
 
-// 所有平台默认值
-const ALL_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd'];
-
 const platform = window.electron ? window.electron.ipcRenderer.sendSync('get-platform') : 'web';
 
 const settingsStore = useSettingsStore();
@@ -562,6 +559,14 @@ onMounted(async () => {
     setData.value = {
       ...setData.value,
       enableRealIP: false
+    };
+  }
+
+  // 检查并修复音源配置
+  if (!setData.value.enabledMusicSources || setData.value.enabledMusicSources.length === 0) {
+    setData.value = {
+      ...setData.value,
+      enabledMusicSources: getDefaultPlatforms()
     };
   }
 });
@@ -698,17 +703,30 @@ const handleShortcutsChange = (shortcuts: any) => {
   console.log('快捷键已更新:', shortcuts);
 };
 
+// 根据平台获取默认音源
+const getDefaultPlatforms = (): Platform[] => {
+  return isElectron ? ['migu', 'kugou', 'pyncmd'] : ['gdmusic'];
+};
+
 // 音源设置相关
 const musicSources = computed({
   get: () => {
     if (!setData.value.enabledMusicSources) {
-      return ALL_PLATFORMS;
+      return getDefaultPlatforms();
     }
-    return setData.value.enabledMusicSources as Platform[];
+
+    // 过滤掉当前平台不支持的音源
+    const enabledSources = setData.value.enabledMusicSources as Platform[];
+    const supportedSources = isElectron
+      ? enabledSources
+      : enabledSources.filter((source) => ['gdmusic', 'stellar', 'cloud'].includes(source));
+
+    // 如果过滤后没有可用音源，使用默认值
+    return supportedSources.length > 0 ? supportedSources : getDefaultPlatforms();
   },
   set: (newValue: Platform[]) => {
     // 确保至少选择一个音源
-    const valuesToSet = newValue.length > 0 ? [...new Set(newValue)] : ALL_PLATFORMS;
+    const valuesToSet = newValue.length > 0 ? [...new Set(newValue)] : getDefaultPlatforms();
     setData.value = {
       ...setData.value,
       enabledMusicSources: valuesToSet
