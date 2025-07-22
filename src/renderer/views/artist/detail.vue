@@ -1,5 +1,6 @@
 <template>
-  <n-scrollbar v-loading="loading" class="artist-page">
+<div v-loading="loading" class="artist-page-wrapper">
+  <n-scrollbar class="artist-page">
     <!-- 歌手信息头部 -->
     <div class="artist-header">
       <div class="artist-cover">
@@ -178,6 +179,7 @@
 
     <play-bottom />
   </n-scrollbar>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -823,4 +825,11 @@ const handleVirtualScroll = (e: any) => {
     @apply mb-0;
   }
 }
+
+.artist-page-wrapper {
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
 </style>

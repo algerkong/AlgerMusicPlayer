@@ -1,6 +1,6 @@
 import { cloneDeep } from 'lodash';
 import { createDiscreteApi } from 'naive-ui';
-import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
+import { computed, getCurrentInstance,nextTick, onUnmounted, ref, watch } from 'vue';
 
 import useIndexedDB from '@/hooks/IndexDBHook';
 import { audioService } from '@/services/audioService';
@@ -791,9 +791,12 @@ watch(
 );
 
 // 在组件卸载时清理资源
-onUnmounted(() => {
-  stopLyricSync();
-});
+const instance = getCurrentInstance();
+if (instance) {
+  onUnmounted(() => {
+    stopLyricSync();
+  });
+}
 
 // 添加播放控制命令监听
 if (isElectron) {
@@ -959,3 +962,10 @@ window.addEventListener('audio-ready', ((event: CustomEvent) => {
     console.error('处理音频就绪事件出错:', error);
   }
 }) as EventListener);
+
+// 添加页面卸载时的清理
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', () => {
+    stopLyricSync();
+  });
+}
