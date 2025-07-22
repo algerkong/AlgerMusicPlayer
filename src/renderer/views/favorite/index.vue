@@ -226,12 +226,8 @@ const getFavoriteSongs = async () => {
       }
     }
 
-    // 跳过B站视频数据处理（已移除bilibili支持）
-    const bilibiliSongs: SongResult[] = [];
-
     console.log('获取数据统计:', {
-      neteaseSongs: neteaseSongs.length,
-      bilibiliSongs: bilibiliSongs.length
+      neteaseSongs: neteaseSongs.length
     });
 
     // 合并数据，保持原有顺序

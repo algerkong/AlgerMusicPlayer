@@ -33,7 +33,7 @@ function getLocalStorageItem<T>(key: string, defaultValue: T): T {
 
 
 
-// 提取公共函数：获取B站视频URL
+// 获取歌曲播放URL
 
 export const getSongUrl = async (
   id: string | number,
@@ -125,7 +125,7 @@ const parseLyrics = (lyricsString: string): { lyrics: ILyricText[]; times: numbe
 
 export const loadLrc = async (id: string | number): Promise<ILyric> => {
   if (typeof id === 'string' && id.includes('--')) {
-    console.log('B站音频，无需加载歌词');
+    console.log('特殊格式ID，无需加载歌词');
     return {
       lrcTimeArray: [],
       lrcArray: []

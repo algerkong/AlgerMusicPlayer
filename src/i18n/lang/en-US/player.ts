@@ -37,7 +37,7 @@ export default {
     success: 'Reparse successful',
     failed: 'Reparse failed',
     warning: 'Please select a music source',
-    bilibiliNotSupported: 'Bilibili videos do not support reparsing',
+
     processing: 'Processing...',
     clear: 'Clear Custom Source'
   },
