@@ -143,26 +143,17 @@ export const getParsingMusicUrl = async (id: number, data: SongResult) => {
       // 使用全局音源设置
       musicSources = settingStore.setData.enabledMusicSources || [];
       console.log(`使用全局音源设置:`, musicSources);
+      if (isElectron && musicSources.length > 0) {
+        return getUnblockMusicAudio(id, data, musicSources);
+      }
     }
   } catch (e) {
     console.error('解析音源设置失败，使用全局设置', e);
     musicSources = settingStore.setData.enabledMusicSources || [];
   }
 
-  // 2. 按优先级解析：API -> GD -> UnblockMusic -> 自定义API
-
-  // 2.1 优先尝试官方API（如果有VIP等）
-  try {
-    const apiResult = await getMusicUrl(id, false);
-    if (apiResult?.data?.data?.[0]?.url) {
-      console.log('官方API解析成功');
-      return apiResult;
-    }
-  } catch (error) {
-    console.log('官方API解析失败，继续尝试其他方式');
-  }
-
-  // 2.2 GD音乐台解析
+  // 2. 按优先级解析
+  // 2.1 GD音乐台解析
   if (musicSources.includes('gdmusic')) {
     const gdResult = await getGDMusicAudio(id, data);
     if (gdResult) {
@@ -172,13 +163,13 @@ export const getParsingMusicUrl = async (id: number, data: SongResult) => {
     console.log('GD音乐台解析失败，尝试使用其他音源');
   }
 
-  // 2.3 使用unblockMusic解析其他音源
+  // 2.2 使用unblockMusic解析其他音源
   if (isElectron && musicSources.length > 0) {
     console.log('使用UnblockMusic解析，音源:', musicSources);
     return getUnblockMusicAudio(id, data, musicSources);
   }
 
-  // 2.4 后备方案：使用自定义API请求
+  // 2.3 后备方案：使用自定义API请求
   console.log('使用自定义API作为最后的解析方案');
   return requestMusic.get<any>('/music', { params: { id } });
 };

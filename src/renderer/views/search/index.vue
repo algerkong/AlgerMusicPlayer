@@ -118,6 +118,11 @@ import { useRoute } from 'vue-router';
 
 import { getHotSearch } from '@/api/home';
 import { getSearch } from '@/api/search';
+// @ts-ignore - 用于模板中的search-item组件
+import SearchItem from '@/components/common/SearchItem.vue';
+// @ts-ignore - 用于模板中的song-item组件
+import SongItem from '@/components/common/SongItem.vue';
+import { usePlayerStore } from '@/store/modules/player';
 import { useSearchStore } from '@/store/modules/search';
 import type { IHotSearch } from '@/type/search';
 import { setAnimationClass, setAnimationDelay } from '@/utils';
@@ -128,6 +133,7 @@ defineOptions({
 
 const { t } = useI18n();
 const route = useRoute();
+const playerStore = usePlayerStore();
 const searchStore = useSearchStore();
 
 const searchDetail = ref<any>();
@@ -319,6 +325,16 @@ searchStore.searchValue = route.query.keyword as string;
 
 const dateFormat = (time: any) => useDateFormat(time, 'YYYY.MM.DD').value;
 
+// 添加滚动处理函数 (用于模板中的@scroll事件)
+// @ts-ignore - 用于模板中的@scroll事件
+const handleScroll = (e: any) => {
+  const { scrollTop, scrollHeight, clientHeight } = e.target;
+  // 距离底部100px时加载更多
+  if (scrollTop + clientHeight >= scrollHeight - 100 && !isLoadingMore.value && hasMore.value) {
+    loadSearch(currentKeyword.value, null, true);
+  }
+};
+
 
 
 watch(
@@ -339,6 +355,13 @@ watch(
   { immediate: true }
 );
 
+// 播放单首歌曲 (用于模板中的@play事件)
+// @ts-ignore - 用于模板中的@play事件
+const handlePlay = (item: any) => {
+  // 添加到下一首
+  playerStore.addToNextPlay(item);
+};
+
 // 点击搜索历史
 const handleSearchHistory = (item: { keyword: string; type: number }) => {
   // 更新搜索类型
@@ -347,6 +370,20 @@ const handleSearchHistory = (item: { keyword: string; type: number }) => {
   searchStore.searchValue = item.keyword;
   // 使用关键词和类型加载搜索
   loadSearch(item.keyword, item.type);
+};
+
+// 播放全部搜索结果 (用于模板中的@click事件)
+// @ts-ignore - 用于模板中的@click事件
+const handlePlayAll = () => {
+  if (!searchDetail.value?.songs?.length) return;
+
+  // 设置播放列表为搜索结果中的所有歌曲
+  playerStore.setPlayList(searchDetail.value.songs);
+
+  // 开始播放第一首歌
+  if (searchDetail.value.songs[0]) {
+    playerStore.setPlay(searchDetail.value.songs[0]);
+  }
 };
 </script>
 
