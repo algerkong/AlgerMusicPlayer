@@ -153,23 +153,49 @@ export const getParsingMusicUrl = async (id: number, data: SongResult) => {
   // 2. 按优先级解析
   // 2.1 GD音乐台解析
   if (musicSources.includes('gdmusic')) {
-    const gdResult = await getGDMusicAudio(id, data);
-    if (gdResult) {
-      console.log('GD音乐台解析成功');
-      return gdResult;
+    console.log('🎵 使用GD音乐台解析');
+    try {
+      const gdResult = await getGDMusicAudio(id, data);
+      if (gdResult) {
+        console.log('🎵 GD音乐台解析成功');
+        return gdResult;
+      } else {
+        console.log('❌ GD音乐台解析失败');
+      }
+    } catch (error) {
+      console.log('❌ GD音乐台解析失败:', error);
     }
-    console.log('GD音乐台解析失败，尝试使用其他音源');
   }
-
   // 2.2 使用unblockMusic解析其他音源
   if (isElectron && musicSources.length > 0) {
-    console.log('使用UnblockMusic解析，音源:', musicSources);
-    return getUnblockMusicAudio(id, data, musicSources);
+    console.log('🎵 使用UnblockMusic解析，音源:', musicSources);
+    try {
+      const result = await getUnblockMusicAudio(id, data, musicSources);
+      if (result) {
+        console.log('🎵 UnblockMusic解析成功');
+        return result;
+      } else {
+        console.log('❌ UnblockMusic解析失败');
+      }
+    } catch (error) {
+      console.log('❌ UnblockMusic解析失败:', error);
+    }
   }
-
   // 2.3 后备方案：使用自定义API请求
-  console.log('使用自定义API作为最后的解析方案');
-  return requestMusic.get<any>('/music', { params: { id } });
+  console.log('🎵 使用自定义API解析');
+  try {
+    const result = await requestMusic.get<any>('/music', { params: { id } });
+    if (result) {
+      console.log('🎵 自定义API解析成功');
+      return result;
+    } else {
+      console.log('❌ 自定义API解析失败');
+      return result;
+    }
+  } catch (error) {
+    console.log('❌ 自定义API解析失败:', error);
+    throw error;
+  }
 };
 
 // 收藏歌曲
