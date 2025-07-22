@@ -124,7 +124,7 @@ import SongItem from '@/components/common/SongItem.vue';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSearchStore } from '@/store/modules/search';
 import type { IHotSearch } from '@/type/search';
-import { setAnimationClass, setAnimationDelay } from '@/utils';
+import { setAnimationClass, setAnimationDelay, isMobile } from '@/utils';
 
 defineOptions({
   name: 'Search'
