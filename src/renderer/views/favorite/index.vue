@@ -101,7 +101,7 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
 import { getMusicDetail } from '@/api/music';
-import { getBilibiliProxyUrl, getBilibiliVideoDetail } from '@/api/bilibili';
+
 import SongItem from '@/components/common/SongItem.vue';
 import { useDownload } from '@/hooks/useDownload';
 import { usePlayerStore } from '@/store';
@@ -210,10 +210,8 @@ const getFavoriteSongs = async () => {
   try {
     const currentIds = getCurrentPageIds();
 
-    // 分离网易云音乐ID和B站视频ID
+    // 只处理网易云音乐ID
     const musicIds = currentIds.filter((id) => typeof id === 'number') as number[];
-    // B站ID可能是字符串格式（包含"--"）或特定数字ID，如113911642789603
-    const bilibiliIds = currentIds.filter((id) => typeof id === 'string');
 
     // 处理网易云音乐数据
     let neteaseSongs: SongResult[] = [];
@@ -228,58 +226,8 @@ const getFavoriteSongs = async () => {
       }
     }
 
-    // 处理B站视频数据
+    // 跳过B站视频数据处理（已移除bilibili支持）
     const bilibiliSongs: SongResult[] = [];
-    for (const biliId of bilibiliIds) {
-      const strBiliId = String(biliId);
-      console.log(`处理B站ID: ${strBiliId}`);
-
-      if (strBiliId.includes('--')) {
-        // 从ID中提取B站视频信息 (bvid--pid--cid格式)
-        try {
-          const [bvid, pid, cid] = strBiliId.split('--');
-          if (!bvid || !pid || !cid) {
-            console.warn(`B站ID格式错误: ${strBiliId}, 正确格式应为 bvid--pid--cid`);
-            continue;
-          }
-
-          const res = await getBilibiliVideoDetail(bvid);
-          const videoDetail = res.data;
-
-          // 找到对应的分P
-          const page = videoDetail.pages.find((p) => p.cid === Number(cid));
-          if (!page) {
-            console.warn(`未找到对应的分P: cid=${cid}`);
-            continue;
-          }
-
-          const songData = {
-            id: strBiliId,
-            name: `${page.part || ''} - ${videoDetail.title}`,
-            picUrl: getBilibiliProxyUrl(videoDetail.pic),
-            ar: [
-              {
-                name: videoDetail.owner.name,
-                id: videoDetail.owner.mid
-              }
-            ],
-            al: {
-              name: videoDetail.title,
-              picUrl: getBilibiliProxyUrl(videoDetail.pic)
-            },
-            source: 'bilibili',
-            bilibiliData: {
-              bvid,
-              cid: Number(cid)
-            }
-          } as SongResult;
-
-          bilibiliSongs.push(songData);
-        } catch (error) {
-          console.error(`获取B站视频详情失败 (${strBiliId}):`, error);
-        }
-      }
-    }
 
     console.log('获取数据统计:', {
       neteaseSongs: neteaseSongs.length,
@@ -290,13 +238,6 @@ const getFavoriteSongs = async () => {
     const newSongs = currentIds
       .map((id) => {
         const strId = String(id);
-
-        // 查找B站视频
-        if (typeof id === 'string') {
-          const found = bilibiliSongs.find((song) => String(song.id) === strId);
-          if (found) return found;
-        }
-
         // 查找网易云音乐
         const found = neteaseSongs.find((song) => String(song.id) === strId);
         return found;

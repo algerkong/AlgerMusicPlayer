@@ -55,17 +55,7 @@ const otherRouter = [
     },
     component: () => import('@/views/artist/detail.vue')
   },
-  {
-    path: '/bilibili/:bvid',
-    name: 'bilibiliPlayer',
-    meta: {
-      title: 'B站听书',
-      keepAlive: true,
-      showInMenu: false,
-      back: true
-    },
-    component: () => import('@/views/bilibili/BilibiliPlayer.vue')
-  },
+
   {
     path: '/music-list/:id?',
     name: 'musicList',

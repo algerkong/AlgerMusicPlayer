@@ -21,7 +21,6 @@ export default {
     single: '單曲',
     album: '專輯',
     playlist: '歌單',
-    mv: 'MV',
-    bilibili: 'B站'
+    mv: 'MV'
   }
 };

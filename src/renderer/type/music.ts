@@ -33,11 +33,7 @@ export interface SongResult {
   lyric?: ILyric;
   backgroundColor?: string;
   primaryColor?: string;
-  bilibiliData?: {
-    bvid: string;
-    cid: number;
-  };
-  source?: 'netease' | 'bilibili';
+  source?: 'netease';
   // 过期时间
   expiredAt?: number;
   // 获取时间

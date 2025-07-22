@@ -4,7 +4,7 @@ import { computed, ref } from 'vue';
 import { useThrottleFn } from '@vueuse/core';
 
 import i18n from '@/../i18n/renderer';
-import { getBilibiliAudioUrl } from '@/api/bilibili';
+
 import { getLikedList, getMusicLrc, getMusicUrl, getParsingMusicUrl, likeSong } from '@/api/music';
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';
 import { audioService } from '@/services/audioService';
@@ -31,49 +31,7 @@ function getLocalStorageItem<T>(key: string, defaultValue: T): T {
   }
 }
 
-// 比较B站视频ID的辅助函数
-export const isBilibiliIdMatch = (id1: string | number, id2: string | number): boolean => {
-  const str1 = String(id1);
-  const str2 = String(id2);
 
-  // 如果两个ID都不包含--分隔符，直接比较
-  if (!str1.includes('--') && !str2.includes('--')) {
-    return str1 === str2;
-  }
-
-  // 处理B站视频ID
-  if (str1.includes('--') || str2.includes('--')) {
-    // 尝试从ID中提取bvid和cid
-    const extractBvIdAndCid = (str: string) => {
-      if (!str.includes('--')) return { bvid: '', cid: '' };
-      const parts = str.split('--');
-      if (parts.length >= 3) {
-        // bvid--pid--cid格式
-        return { bvid: parts[0], cid: parts[2] };
-      } else if (parts.length === 2) {
-        // 旧格式或其他格式
-        return { bvid: '', cid: parts[1] };
-      }
-      return { bvid: '', cid: '' };
-    };
-
-    const { bvid: bvid1, cid: cid1 } = extractBvIdAndCid(str1);
-    const { bvid: bvid2, cid: cid2 } = extractBvIdAndCid(str2);
-
-    // 如果两个ID都有bvid，比较bvid和cid
-    if (bvid1 && bvid2) {
-      return bvid1 === bvid2 && cid1 === cid2;
-    }
-
-    // 其他情况，只比较cid部分
-    if (cid1 && cid2) {
-      return cid1 === cid2;
-    }
-  }
-
-  // 默认情况，直接比较完整ID
-  return str1 === str2;
-};
 
 // 提取公共函数：获取B站视频URL
 
@@ -87,22 +45,7 @@ export const getSongUrl = async (
       return songData.playMusicUrl;
     }
 
-    if (songData.source === 'bilibili' && songData.bilibiliData) {
-      console.log('加载B站音频URL');
-      if (!songData.playMusicUrl && songData.bilibiliData.bvid && songData.bilibiliData.cid) {
-        try {
-          songData.playMusicUrl = await getBilibiliAudioUrl(
-            songData.bilibiliData.bvid,
-            songData.bilibiliData.cid
-          );
-          return songData.playMusicUrl;
-        } catch (error) {
-          console.error('重启后获取B站音频URL失败:', error);
-          return '';
-        }
-      }
-      return songData.playMusicUrl || '';
-    }
+
 
     const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
 
@@ -111,7 +54,7 @@ export const getSongUrl = async (
     const savedSource = localStorage.getItem(`song_source_${songId}`);
 
     // 如果有自定义音源设置，直接使用getParsingMusicUrl获取URL
-    if (savedSource && songData.source !== 'bilibili') {
+    if (savedSource) {
       try {
         console.log(`使用自定义音源解析歌曲 ID: ${songId}`);
         const res = await getParsingMusicUrl(numericId, cloneDeep(songData));
@@ -221,25 +164,7 @@ export const loadLrc = async (id: string | number): Promise<ILyric> => {
 const getSongDetail = async (playMusic: SongResult) => {
   // playMusic.playLoading 在 handlePlayMusic 中已设置，这里不再设置
 
-  if (playMusic.source === 'bilibili') {
-    console.log('处理B站音频详情');
-    try {
-      // 如果需要获取URL
-      if (!playMusic.playMusicUrl && playMusic.bilibiliData) {
-        playMusic.playMusicUrl = await getBilibiliAudioUrl(
-          playMusic.bilibiliData.bvid,
-          playMusic.bilibiliData.cid
-        );
-      }
 
-      playMusic.playLoading = false;
-      return { ...playMusic } as SongResult;
-    } catch (error) {
-      console.error('获取B站音频详情失败:', error);
-      playMusic.playLoading = false;
-      throw error;
-    }
-  }
 
   if (playMusic.expiredAt && playMusic.expiredAt < Date.now()) {
     console.info(`歌曲已过期，重新获取: ${playMusic.name}`);
@@ -487,8 +412,6 @@ export const usePlayerStore = defineStore('player', () => {
         (prev: string, curr: any) => `${prev}${curr.name}/`,
         ''
       )}`;
-    } else if (music.source === 'bilibili' && music?.song?.ar?.[0]) {
-      title += ` - ${music.song.ar[0].name}`;
     }
     document.title = 'SizeMusic - ' + title;
 
@@ -1112,12 +1035,8 @@ export const usePlayerStore = defineStore('player', () => {
   };
 
   const addToFavorite = async (id: number | string) => {
-    // 检查是否已存在相同的ID或内容相同的B站视频
-    const isAlreadyInList = favoriteList.value.some((existingId) =>
-      typeof id === 'string' && id.includes('--')
-        ? isBilibiliIdMatch(existingId, id)
-        : existingId === id
-    );
+    // 检查是否已存在相同的ID
+    const isAlreadyInList = favoriteList.value.includes(id);
 
     if (!isAlreadyInList) {
       favoriteList.value.push(id);
@@ -1127,15 +1046,8 @@ export const usePlayerStore = defineStore('player', () => {
   };
 
   const removeFromFavorite = async (id: number | string) => {
-    // 对于B站视频，需要根据bvid和cid来匹配
-    if (typeof id === 'string' && id.includes('--')) {
-      favoriteList.value = favoriteList.value.filter(
-        (existingId) => !isBilibiliIdMatch(existingId, id)
-      );
-    } else {
-      favoriteList.value = favoriteList.value.filter((existingId) => existingId !== id);
-      useUserStore().user && likeSong(Number(id), false);
-    }
+    favoriteList.value = favoriteList.value.filter((existingId) => existingId !== id);
+    typeof id === 'number' && useUserStore().user && likeSong(Number(id), false);
     localStorage.setItem('favoriteList', JSON.stringify(favoriteList.value));
   };
 
@@ -1188,12 +1100,7 @@ export const usePlayerStore = defineStore('player', () => {
         console.log('settingStore.setData', settingStore.setData);
         const isPlaying = settingStore.setData.autoPlay;
 
-        // 如果是B站视频，确保播放URL能够在重启后正确恢复
-        if (savedPlayMusic.source === 'bilibili' && savedPlayMusic.bilibiliData) {
-          console.log('恢复B站视频播放', savedPlayMusic.bilibiliData);
-          // 清除之前可能存在的播放URL，确保重新获取
-          savedPlayMusic.playMusicUrl = undefined;
-        }
+
 
         await handlePlayMusic(
           { ...savedPlayMusic, isFirstPlay: true, playMusicUrl: undefined },
@@ -1259,31 +1166,7 @@ export const usePlayerStore = defineStore('player', () => {
         initialPosition = savedProgress.progress;
       }
 
-      // 对于B站视频，检查URL是否有效
-      if (
-        playMusic.value.source === 'bilibili' &&
-        (!playMusicUrl.value || playMusicUrl.value === 'undefined')
-      ) {
-        console.log('B站视频URL无效，尝试重新获取');
 
-        // 需要重新获取B站视频URL
-        if (playMusic.value.bilibiliData) {
-          try {
-            const proxyUrl = await getBilibiliAudioUrl(
-              playMusic.value.bilibiliData.bvid,
-              playMusic.value.bilibiliData.cid
-            );
-
-            // 设置URL到播放器状态
-            (playMusic.value as any).playMusicUrl = proxyUrl;
-            playMusicUrl.value = proxyUrl;
-          } catch (error) {
-            console.error('获取B站音频URL失败:', error);
-            message.error(i18n.global.t('player.playFailed'));
-            return null;
-          }
-        }
-      }
 
       // 播放新音频，传递是否应该播放的状态
       console.log('调用audioService.play，播放状态:', shouldPlay);
@@ -1366,11 +1249,7 @@ export const usePlayerStore = defineStore('player', () => {
         return false;
       }
 
-      // B站视频不支持重新解析
-      if (currentSong.source === 'bilibili') {
-        console.warn('B站视频不支持重新解析');
-        return false;
-      }
+
 
       // 保存用户选择的音源（作为数组传递，确保unblockMusic可以使用）
       const songId = String(currentSong.id);

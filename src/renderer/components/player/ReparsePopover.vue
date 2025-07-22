@@ -30,7 +30,7 @@
             class="source-button flex items-center p-2 rounded-lg cursor-pointer transition-all duration-200 bg-light-200 dark:bg-dark-200 hover:bg-light-300 dark:hover:bg-dark-300"
             :class="{
               'bg-green-50 dark:bg-green-900/20 text-green-500': isCurrentSource(source.value),
-              'opacity-50 cursor-not-allowed': isReparsing || playMusic.source === 'bilibili'
+              'opacity-50 cursor-not-allowed': isReparsing
             }"
             @click="directReparseMusic(source.value)"
           >
@@ -55,9 +55,7 @@
           </div>
         </div>
       </div>
-      <div v-if="playMusic.source === 'bilibili'" class="text-red-500 text-sm">
-        {{ t('player.reparse.bilibiliNotSupported') }}
-      </div>
+
       <!-- 清除自定义音源 -->
       <div
         class="text-red-500 text-sm flex items-center bg-light-200 dark:bg-dark-200 rounded-lg p-2 cursor-pointer"
@@ -101,7 +99,6 @@ const musicSourceOptions = ref([
   { label: 'MiGu', value: 'migu' as Platform },
   { label: 'KuGou', value: 'kugou' as Platform },
   { label: 'pyncmd', value: 'pyncmd' as Platform },
-  { label: 'Bilibili', value: 'bilibili' as Platform },
   { label: 'GdMuisc', value: 'gdmusic' as Platform }
 ]);
 
@@ -118,7 +115,6 @@ const getSourceIcon = (source: Platform) => {
     qq: 'ri-qq-fill',
     joox: 'ri-disc-fill',
     pyncmd: 'ri-netease-cloud-music-fill',
-    bilibili: 'ri-bilibili-fill',
     gdmusic: 'ri-google-fill'
   };
 
@@ -150,7 +146,7 @@ const clearCustomSource = () => {
 
 // 直接重新解析当前歌曲
 const directReparseMusic = async (source: Platform) => {
-  if (isReparsing.value || playMusic.value.source === 'bilibili') {
+  if (isReparsing.value) {
     return;
   }
 
@@ -200,8 +196,8 @@ watch(
       const songId = String(newId);
       const savedSource = localStorage.getItem(`song_source_${songId}`);
 
-      // 如果有保存的音源设置但当前不是使用自定义解析的播放，尝试应用
-      if (savedSource && playMusic.value.source !== 'bilibili') {
+      // 如果有保存的音源设置，尝试应用
+      if (savedSource) {
         try {
           const sources = JSON.parse(savedSource) as Platform[];
           console.log(`检测到歌曲ID ${songId} 有自定义音源设置:`, sources);

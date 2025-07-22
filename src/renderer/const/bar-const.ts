@@ -37,10 +37,6 @@ export const SEARCH_TYPES = [
   {
     label: 'search.search.mv', // MV
     key: 1004
-  },
-  {
-    label: 'search.search.bilibili', // B站
-    key: 2000
   }
 ];
 
@@ -49,6 +45,5 @@ export const SEARCH_TYPE = {
   ALBUM: 10, // 专辑
   ARTIST: 100, // 歌手
   PLAYLIST: 1000, // 歌单
-  MV: 1004, // MV
-  BILIBILI: 2000 // B站视频
+  MV: 1004 // MV
 } as const;

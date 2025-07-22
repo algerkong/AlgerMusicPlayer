@@ -59,7 +59,7 @@ const props = defineProps({
   },
   sources: {
     type: Array as () => Platform[],
-    default: () => ['migu', 'kugou', 'pyncmd', 'bilibili']
+    default: () => ['migu', 'kugou', 'pyncmd']
   }
 });
 
@@ -73,7 +73,6 @@ const musicSourceOptions = ref([
   { label: 'MG', value: 'migu' },
   { label: 'KG', value: 'kugou' },
   { label: 'pyncmd', value: 'pyncmd' },
-  { label: 'Bilibili', value: 'bilibili' },
   { label: 'GD音乐台', value: 'gdmusic' }
 ]);
 
@@ -104,7 +103,7 @@ watch(
 
 const handleConfirm = () => {
   // 确保至少选择一个音源
-  const defaultPlatforms = ['migu', 'kugou', 'pyncmd', 'bilibili'];
+  const defaultPlatforms = ['migu', 'kugou', 'pyncmd'];
   const valuesToEmit =
     selectedSources.value.length > 0 ? [...new Set(selectedSources.value)] : defaultPlatforms;
 

@@ -35,7 +35,7 @@
 import { ref, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import { getBilibiliProxyUrl, getBilibiliVideoDetail } from '@/api/bilibili';
+
 import { getMusicDetail } from '@/api/music';
 import SongItem from '@/components/common/SongItem.vue';
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';
@@ -68,18 +68,14 @@ const getHistorySongs = async () => {
     const endIndex = startIndex + pageSize;
     const currentPageItems = musicList.value.slice(startIndex, endIndex);
 
-    // 分离网易云音乐和B站视频
-    const neteaseItems = currentPageItems.filter((item) => item.source !== 'bilibili');
-    const bilibiliItems = currentPageItems.filter((item) => item.source === 'bilibili');
-
     // 处理网易云音乐
     let neteaseSongs: SongResult[] = [];
-    if (neteaseItems.length > 0) {
-      const currentIds = neteaseItems.map((item) => item.id as number);
+    if (currentPageItems.length > 0) {
+      const currentIds = currentPageItems.map((item) => item.id as number);
       const res = await getMusicDetail(currentIds);
       if (res.data.songs) {
         neteaseSongs = res.data.songs.map((song: SongResult) => {
-          const historyItem = neteaseItems.find((item) => item.id === song.id);
+          const historyItem = currentPageItems.find((item) => item.id === song.id);
           return {
             ...song,
             picUrl: song.al?.picUrl || '',
@@ -90,56 +86,9 @@ const getHistorySongs = async () => {
       }
     }
 
-    // 处理B站视频
-    const bilibiliSongs: SongResult[] = [];
-    for (const item of bilibiliItems) {
-      try {
-        const bvid = item.bilibiliData?.bvid;
-        if (!bvid) continue;
-
-        const res = await getBilibiliVideoDetail(bvid);
-        const videoDetail = res.data;
-
-        // 找到对应的分P
-        const page = videoDetail.pages.find((p) => p.cid === item.bilibiliData?.cid);
-        if (!page) continue;
-
-        bilibiliSongs.push({
-          id: `${bvid}--${page.page}--${page.cid}`,
-          name: `${page.part || ''} - ${videoDetail.title}`,
-          picUrl: getBilibiliProxyUrl(videoDetail.pic),
-          ar: [
-            {
-              name: videoDetail.owner.name,
-              id: videoDetail.owner.mid
-            }
-          ],
-          al: {
-            name: videoDetail.title,
-            picUrl: getBilibiliProxyUrl(videoDetail.pic)
-          },
-          source: 'bilibili',
-          count: item.count || 0,
-          bilibiliData: {
-            bvid,
-            cid: page.cid
-          }
-        } as SongResult);
-      } catch (error) {
-        console.error('获取B站视频详情失败:', error);
-      }
-    }
-
-    // 合并两种来源的数据，并保持原有顺序
+    // 合并数据，并保持原有顺序
     const newSongs = currentPageItems
       .map((item) => {
-        if (item.source === 'bilibili') {
-          return bilibiliSongs.find(
-            (song) =>
-              song.bilibiliData?.bvid === item.bilibiliData?.bvid &&
-              song.bilibiliData?.cid === item.bilibiliData?.cid
-          );
-        }
         return neteaseSongs.find((song) => song.id === item.id);
       })
       .filter((song): song is SongResult => !!song);

@@ -428,7 +428,7 @@ import { openDirectory, selectDirectory } from '@/utils/fileOperation';
 import { type Platform } from '@/types/music';
 
 // 所有平台默认值
-const ALL_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd', 'bilibili'];
+const ALL_PLATFORMS: Platform[] = ['migu', 'kugou', 'pyncmd'];
 
 const platform = window.electron ? window.electron.ipcRenderer.sendSync('get-platform') : 'web';
 
