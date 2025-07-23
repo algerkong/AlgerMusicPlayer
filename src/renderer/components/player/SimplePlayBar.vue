@@ -8,14 +8,14 @@
           <div class="progress-track"></div>
           <div class="progress-fill" :style="{ width: `${(nowTime / allTime) * 100}%` }"></div>
         </div>
-        
+
         <!-- 时间显示 -->
         <div class="time-display">
           <span class="current-time">{{ formatTime(nowTime) }}</span>
           <span class="total-time">{{ formatTime(allTime) }}</span>
         </div>
       </div>
-      
+
       <!-- 主控制区域 -->
       <div class="controls-section">
         <div class="left-controls">
@@ -23,24 +23,24 @@
             <i class="iconfont" :class="playModeIcon"></i>
           </button>
         </div>
-        
+
         <div class="center-controls">
           <!-- 上一首 -->
           <button class="control-btn" @click="handlePrev">
             <i class="iconfont icon-prev"></i>
           </button>
-          
+
           <!-- 播放/暂停 -->
           <button class="control-btn play-btn" @click="playMusicEvent">
             <i class="iconfont" :class="play ? 'icon-stop' : 'icon-play'"></i>
           </button>
-          
+
           <!-- 下一首 -->
           <button class="control-btn" @click="handleNext">
             <i class="iconfont icon-next"></i>
           </button>
         </div>
-        
+
         <div class="right-controls">
           <!-- 播放列表按钮 -->
           <button class="control-btn small-btn" @click="openPlayListDrawer">
@@ -48,7 +48,7 @@
           </button>
         </div>
       </div>
-      
+
       <!-- 底部控制区域 -->
       <div class="bottom-section">
         <div class="spacer"></div>
@@ -56,9 +56,9 @@
         <div class="volume-control">
           <i class="iconfont" :class="getVolumeIcon" @click="mute"></i>
           <div class="volume-slider">
-            <n-slider 
-              v-model:value="volumeSlider" 
-              :step="1" 
+            <n-slider
+              v-model:value="volumeSlider"
+              :step="1"
               :tooltip="false"
               @wheel.prevent="handleVolumeWheel"
             ></n-slider>
@@ -70,18 +70,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, watch } from 'vue';
-import { secondToMinute } from '@/utils';
+import { computed, onMounted, ref, watch } from 'vue';
+
 import { allTime, nowTime, playMusic } from '@/hooks/MusicHook';
 import { audioService } from '@/services/audioService';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
+import { secondToMinute } from '@/utils';
 
-const props = withDefaults(defineProps<{
-  isDark: boolean;
-}>(), {
-  isDark: false
-});
+const props = withDefaults(
+  defineProps<{
+    isDark: boolean;
+  }>(),
+  {
+    isDark: false
+  }
+);
 
 const playerStore = usePlayerStore();
 const settingsStore = useSettingsStore();
@@ -184,27 +188,28 @@ const isDarkMode = computed(() => settingsStore.theme === 'dark' || props.isDark
 // 主题颜色应用函数
 const applyThemeColor = (colorValue: string) => {
   if (!colorValue || !playBarRef.value) return;
-  
+
   console.log('应用主题色:', colorValue);
   const playBarElement = playBarRef.value;
-  
+
   // 解析RGB值
   const rgbMatch = colorValue.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-  
+
   if (rgbMatch) {
     const [_, r, g, b] = rgbMatch.map(Number);
-    
+
     // 计算颜色亮度 (0-255)
     // 使用加权平均值公式: 0.299*R + 0.587*G + 0.114*B
     const brightness = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
-    
+
     console.log(`主题色亮度: ${brightness}/255`);
-    
+
     // 设置主色
     playBarElement.style.setProperty('--fill-color', colorValue);
-    
+
     // 亮度自适应处理
-    if (brightness > 200) { // 非常亮的颜色
+    if (brightness > 200) {
+      // 非常亮的颜色
       // 深化主色以增加对比度
       const darkenedColor = `rgb(${Math.max(0, r - 60)}, ${Math.max(0, g - 60)}, ${Math.max(0, b - 60)})`;
       playBarElement.style.setProperty('--fill-color-alt', darkenedColor);
@@ -213,7 +218,8 @@ const applyThemeColor = (colorValue: string) => {
       playBarElement.style.setProperty('--high-contrast-color', '#000000'); // 高对比度颜色
       playBarElement.classList.add('light-theme-color');
       playBarElement.classList.remove('dark-theme-color');
-    } else if (brightness < 50) { // 非常暗的颜色
+    } else if (brightness < 50) {
+      // 非常暗的颜色
       // 提亮主色以增加可见性
       const lightenedColor = `rgb(${Math.min(255, r + 60)}, ${Math.min(255, g + 60)}, ${Math.min(255, b + 60)})`;
       playBarElement.style.setProperty('--fill-color-alt', lightenedColor);
@@ -234,7 +240,7 @@ const applyThemeColor = (colorValue: string) => {
       playBarElement.classList.remove('light-theme-color');
       playBarElement.classList.remove('dark-theme-color');
     }
-    
+
     // 设置亮色（用于高亮效果）
     const lightenedColor = `rgb(${Math.min(255, r + 40)}, ${Math.min(255, g + 40)}, ${Math.min(255, b + 40)})`;
     playBarElement.style.setProperty('--fill-color-light', lightenedColor);
@@ -250,11 +256,14 @@ const applyThemeColor = (colorValue: string) => {
 };
 
 // 监听主题色变化
-watch(() => playerStore.playMusic.primaryColor, (newVal) => {
-  if (newVal) {
-    applyThemeColor(newVal);
+watch(
+  () => playerStore.playMusic.primaryColor,
+  (newVal) => {
+    if (newVal) {
+      applyThemeColor(newVal);
+    }
   }
-});
+);
 
 onMounted(() => {
   if (playerStore.playMusic?.primaryColor) {
@@ -270,11 +279,11 @@ onMounted(() => {
   @apply w-full;
   border-radius: 12px;
   transition: all 0.3s ease;
-  
+
   /* 默认变量 */
   --text-on-fill: #ffffff;
   --high-contrast-color: #ffffff;
-  
+
   &.dark-theme {
     --text-color: #333333;
     --muted-color: rgba(0, 0, 0, 0.6);
@@ -287,7 +296,7 @@ onMounted(() => {
     --button-bg: rgba(0, 0, 0, 0.1);
     --button-hover: rgba(0, 0, 0, 0.2);
   }
-  
+
   &:not(.dark-theme) {
     --text-color: #f1f1f1;
     --muted-color: rgba(255, 255, 255, 0.6);
@@ -300,37 +309,45 @@ onMounted(() => {
     --button-bg: rgba(255, 255, 255, 0.05);
     --button-hover: rgba(255, 255, 255, 0.1);
   }
-  
+
   /* 极亮主题色适配 */
   &.light-theme-color {
     .progress-fill {
-      box-shadow: 0 0 8px var(--fill-color-transparent), inset 0 0 0 1px rgba(0, 0, 0, 0.1);
+      box-shadow:
+        0 0 8px var(--fill-color-transparent),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.1);
     }
-    
+
     .control-btn.play-btn {
-      box-shadow: 0 3px 8px var(--fill-color-transparent), 0 1px 2px rgba(0, 0, 0, 0.3);
+      box-shadow:
+        0 3px 8px var(--fill-color-transparent),
+        0 1px 2px rgba(0, 0, 0, 0.3);
       color: var(--text-on-fill);
     }
-    
+
     .volume-control .iconfont:hover {
       color: var(--fill-color-alt);
     }
   }
-  
+
   /* 极暗主题色适配 */
   &.dark-theme-color {
     .progress-fill {
-      box-shadow: 0 0 10px var(--fill-color-transparent), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+      box-shadow:
+        0 0 10px var(--fill-color-transparent),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.2);
     }
-    
+
     .control-btn.play-btn {
-      box-shadow: 0 3px 12px var(--fill-color-transparent), 0 0 0 1px rgba(255, 255, 255, 0.2);
-      
+      box-shadow:
+        0 3px 12px var(--fill-color-transparent),
+        0 0 0 1px rgba(255, 255, 255, 0.2);
+
       .iconfont {
-        text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
       }
     }
-    
+
     .volume-control .iconfont:hover {
       color: var(--fill-color-light);
     }
@@ -343,47 +360,48 @@ onMounted(() => {
 
 .top-section {
   @apply mb-3;
-  
+
   .progress-bar {
     @apply relative cursor-pointer h-2 mb-2 w-full;
-    
+
     .progress-track {
       @apply absolute inset-0 rounded-full transition-all duration-150;
       background-color: var(--track-color);
     }
-    
+
     .progress-fill {
       @apply absolute top-0 left-0 h-full rounded-full transition-all duration-150;
       background: linear-gradient(90deg, var(--fill-color), var(--fill-color-light));
       box-shadow: 0 0 8px var(--fill-color-transparent);
     }
-    
+
     &:hover {
-      .progress-track{
+      .progress-track {
         background-color: var(--track-color-hover);
       }
-      .progress-track, .progress-fill {
+      .progress-track,
+      .progress-fill {
         @apply h-full;
       }
-      
+
       .progress-fill {
         box-shadow: 0 0 12px var(--fill-color-transparent);
       }
     }
   }
-  
+
   .time-display {
     @apply flex justify-between text-base;
     color: var(--muted-color);
-    
+
     .time-separator {
       @apply mx-1;
     }
-    
+
     .current-time {
       opacity: 0.8;
       transition: opacity 0.3s ease;
-      
+
       &:hover {
         opacity: 1;
       }
@@ -393,11 +411,12 @@ onMounted(() => {
 
 .controls-section {
   @apply flex items-center justify-between mb-4;
-  
-  .left-controls, .right-controls {
+
+  .left-controls,
+  .right-controls {
     @apply flex items-center;
   }
-  
+
   .center-controls {
     @apply flex items-center justify-center space-x-6;
   }
@@ -414,39 +433,39 @@ onMounted(() => {
   width: 32px;
   height: 32px;
   cursor: pointer;
-  
+
   &:hover {
     background-color: var(--button-bg);
     transform: scale(1.05);
   }
-  
+
   &:active {
     background-color: var(--button-hover);
     transform: scale(0.95);
   }
-  
+
   &.play-btn {
     background: linear-gradient(145deg, var(--fill-color), var(--fill-color-alt));
     color: var(--text-on-fill);
     width: 46px;
     height: 46px;
     box-shadow: 0 3px 8px var(--fill-color-transparent);
-    
+
     &:hover {
       box-shadow: 0 4px 12px var(--fill-color-transparent);
     }
-    
+
     .iconfont {
       font-size: 1.25rem;
     }
   }
-  
+
   &.small-btn {
     @apply text-2xl;
     width: 28px;
     height: 28px;
   }
-  
+
   .iconfont {
     @apply text-2xl;
   }
@@ -455,42 +474,46 @@ onMounted(() => {
 .volume-control {
   @apply flex items-center space-x-2;
   color: var(--text-color);
-  
+
   .iconfont {
     @apply cursor-pointer text-base;
-    transition: transform 0.2s ease, color 0.2s ease;
-    
+    transition:
+      transform 0.2s ease,
+      color 0.2s ease;
+
     &:hover {
       transform: scale(1.1);
       color: var(--fill-color);
     }
   }
-  
+
   .volume-slider {
     @apply w-24;
-    
+
     :deep(.n-slider) {
       --n-rail-height: 3px;
       --n-fill-color: var(--fill-color);
       --n-rail-color: var(--track-color);
       --n-handle-size: 12px;
-      
+
       .n-slider-rail {
         @apply rounded-full;
       }
-      
+
       .n-slider-rail__fill {
         background: linear-gradient(90deg, var(--fill-color), var(--fill-color-light));
         box-shadow: 0 0 6px var(--fill-color-transparent);
       }
-      
+
       .n-slider-handle {
         @apply opacity-0 transition-opacity duration-200;
         background: white;
-        box-shadow: 0 0 6px var(--fill-color-transparent), 0 0 0 1px var(--high-contrast-color);
+        box-shadow:
+          0 0 6px var(--fill-color-transparent),
+          0 0 0 1px var(--high-contrast-color);
         border: 2px solid var(--fill-color);
       }
-      
+
       &:hover .n-slider-handle {
         @apply opacity-100;
       }
@@ -506,4 +529,4 @@ onMounted(() => {
   color: var(--fill-color);
   text-shadow: 0 0 8px var(--fill-color-transparent);
 }
-</style> 
+</style>

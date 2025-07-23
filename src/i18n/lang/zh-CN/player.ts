@@ -64,7 +64,7 @@ export default {
     unFavorite: '已取消收藏{name}',
     miniPlayBar: '迷你播放栏',
     playbackSpeed: '播放速度',
-    advancedControls: '更多设置s',
+    advancedControls: '更多设置s'
   },
   eq: {
     title: '均衡器',

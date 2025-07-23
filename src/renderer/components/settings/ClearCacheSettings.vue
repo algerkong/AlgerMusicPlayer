@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, defineProps, defineEmits } from 'vue';
+import { defineEmits, defineProps, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 const props = defineProps({
@@ -113,4 +113,4 @@ const handleCancel = () => {
   selectedTypes.value = [];
   visible.value = false;
 };
-</script> 
+</script>

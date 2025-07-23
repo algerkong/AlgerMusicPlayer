@@ -30,7 +30,9 @@
         <div class="play-list" :class="setAnimationClass('animate__fadeInLeft')">
           <div class="title">
             <div>{{ t('user.playlist.created') }}</div>
-            <div class="import-btn" @click="goToImportPlaylist" v-if="isElectron">{{ t('comp.playlist.import.button') }}</div>
+            <div class="import-btn" @click="goToImportPlaylist" v-if="isElectron">
+              {{ t('comp.playlist.import.button') }}
+            </div>
           </div>
           <n-scrollbar>
             <div
@@ -91,7 +93,11 @@
       </div>
     </div>
     <!-- 未登录时显示登录组件 -->
-    <div v-if="!isLoggedIn && isMobile" class="login-container" :class="setAnimationClass('animate__fadeIn')">
+    <div
+      v-if="!isLoggedIn && isMobile"
+      class="login-container"
+      :class="setAnimationClass('animate__fadeIn')"
+    >
       <login-component @login-success="handleLoginSuccess" />
     </div>
   </div>
@@ -105,9 +111,9 @@ import { useRouter } from 'vue-router';
 
 import { getListDetail } from '@/api/list';
 import { getUserDetail, getUserPlaylist, getUserRecord } from '@/api/user';
+import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import SongItem from '@/components/common/SongItem.vue';
-import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import { usePlayerStore } from '@/store/modules/player';
 import { useUserStore } from '@/store/modules/user';
 import type { Playlist } from '@/type/listDetail';
@@ -243,11 +249,11 @@ onMounted(() => {
 // 替换显示歌单的方法
 const openPlaylist = (item: any) => {
   listLoading.value = true;
-  
-  getListDetail(item.id).then(res => {
+
+  getListDetail(item.id).then((res) => {
     list.value = res.data.playlist;
     listLoading.value = false;
-    
+
     navigateToMusicList(router, {
       id: item.id,
       type: 'playlist',
@@ -300,11 +306,11 @@ const isLoggedIn = computed(() => userStore.user);
     .title {
       @apply text-lg font-bold flex items-center justify-between;
       @apply text-gray-900 dark:text-white;
-     .import-btn {
-      @apply bg-light-100 font-normal rounded-lg px-2 py-1 text-opacity-70 text-sm hover:bg-light-200 hover:text-green-500 dark:bg-dark-200 dark:hover:bg-dark-300 dark:hover:text-green-400;
-      @apply cursor-pointer;
-      @apply transition-all duration-200;
-     }
+      .import-btn {
+        @apply bg-light-100 font-normal rounded-lg px-2 py-1 text-opacity-70 text-sm hover:bg-light-200 hover:text-green-500 dark:bg-dark-200 dark:hover:bg-dark-300 dark:hover:text-green-400;
+        @apply cursor-pointer;
+        @apply transition-all duration-200;
+      }
     }
 
     .user-name {
@@ -388,7 +394,7 @@ const isLoggedIn = computed(() => userStore.user);
 
     &-name {
       @apply text-gray-900 dark:text-white text-base flex items-center gap-2;
-      
+
       .playlist-creator-tag {
         @apply inline-flex items-center justify-center px-2 rounded-full text-xs;
         @apply bg-light-300 text-primary dark:bg-dark-300 dark:text-white;

@@ -44,7 +44,11 @@
               class="color-preview"
               :style="{ backgroundColor: currentColor }"
               @click="showColorPicker = !showColorPicker"
-              :title="showColorPicker ? t('settings.themeColor.tooltips.closeColorPicker') : t('settings.themeColor.tooltips.openColorPicker')"
+              :title="
+                showColorPicker
+                  ? t('settings.themeColor.tooltips.closeColorPicker')
+                  : t('settings.themeColor.tooltips.openColorPicker')
+              "
             >
               <i class="ri-palette-line"></i>
             </div>
@@ -70,7 +74,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- 颜色选择器（展开时显示） -->
       <div v-if="showColorPicker" class="color-picker-dropdown">
         <n-color-picker
@@ -86,16 +90,16 @@
 </template>
 
 <script setup lang="ts">
+import { NColorPicker } from 'naive-ui';
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { NColorPicker } from 'naive-ui';
 
 import {
   getLyricThemeColors,
   getPresetColorValue,
-  validateColor,
+  type LyricThemeColor,
   optimizeColorForTheme,
-  type LyricThemeColor
+  validateColor
 } from '@/utils/linearColor';
 
 interface Props {
@@ -105,7 +109,7 @@ interface Props {
 }
 
 interface Emits {
-  (e: 'colorChange', color: string): void;
+  (e: 'colorChange', _color: string): void;
   (e: 'close'): void;
 }
 
@@ -160,7 +164,7 @@ const handlePresetColorSelect = (color: LyricThemeColor) => {
   const colorValue = getColorValue(color);
   const optimizedColor = optimizeColorForTheme(colorValue, props.theme);
   emit('colorChange', optimizedColor);
-  
+
   // 更新输入框和选择器
   colorInput.value = optimizedColor;
   pickerColor.value = optimizedColor;
@@ -253,31 +257,31 @@ watch(
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   z-index: 1000;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  
+
   &.hidden {
     opacity: 0;
     visibility: hidden;
     transform: translateX(-50%) translateY(-10px) scale(0.95);
     pointer-events: none;
   }
-  
+
   &.visible {
     opacity: 1;
     visibility: visible;
     transform: translateX(-50%) translateY(0) scale(1);
     pointer-events: auto;
   }
-  
+
   // 小屏幕适配
   @media (max-width: 520px) {
     min-width: calc(100vw - 40px);
     left: 20px;
     transform: none;
-    
+
     &.hidden {
       transform: translateY(-10px) scale(0.95);
     }
-    
+
     &.visible {
       transform: translateY(0) scale(1);
     }
@@ -289,14 +293,14 @@ watch(
   justify-content: space-between;
   align-items: center;
   margin-bottom: 12px;
-  
+
   .panel-title {
     font-size: 13px;
     font-weight: 600;
     color: var(--text-color);
     opacity: 0.9;
   }
-  
+
   .close-button {
     width: 24px;
     height: 24px;
@@ -307,12 +311,12 @@ watch(
     border-radius: 6px;
     color: var(--text-color);
     transition: all 0.2s ease;
-    
+
     &:hover {
       background: rgba(255, 255, 255, 0.15);
       color: #ff6b6b;
     }
-    
+
     i {
       font-size: 14px;
     }
@@ -325,7 +329,7 @@ watch(
     align-items: center;
     gap: 16px;
   }
-  
+
   .section-label {
     font-size: 11px;
     font-weight: 500;
@@ -334,7 +338,7 @@ watch(
     margin-bottom: 6px;
     text-align: center;
   }
-  
+
   .divider {
     width: 1px;
     height: 40px;
@@ -347,7 +351,7 @@ watch(
   .preset-colors {
     display: flex;
     gap: 6px;
-    
+
     .color-dot {
       width: 24px;
       height: 24px;
@@ -358,17 +362,17 @@ watch(
       display: flex;
       align-items: center;
       justify-content: center;
-      
+
       &:hover {
         transform: scale(1.1);
         border-color: rgba(255, 255, 255, 0.3);
       }
-      
+
       &.active {
         border-color: var(--text-color);
         box-shadow: 0 0 0 2px var(--control-bg);
       }
-      
+
       i {
         color: white;
         font-size: 10px;
@@ -384,7 +388,7 @@ watch(
     display: flex;
     gap: 8px;
     align-items: center;
-    
+
     .color-preview {
       width: 24px;
       height: 24px;
@@ -395,19 +399,19 @@ watch(
       align-items: center;
       justify-content: center;
       transition: all 0.2s ease;
-      
+
       &:hover {
         border-color: rgba(255, 255, 255, 0.4);
         transform: scale(1.05);
       }
-      
+
       i {
         color: white;
         font-size: 12px;
         text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
       }
     }
-    
+
     .color-input {
       width: 80px;
       height: 24px;
@@ -420,12 +424,12 @@ watch(
       font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
       outline: none;
       transition: all 0.2s ease;
-      
+
       &:focus {
         border-color: var(--highlight-color, rgba(255, 255, 255, 0.4));
         background: rgba(255, 255, 255, 0.12);
       }
-      
+
       &::placeholder {
         color: rgba(255, 255, 255, 0.4);
       }
@@ -441,7 +445,7 @@ watch(
     line-height: 1.2;
     white-space: nowrap;
     transition: all 0.2s ease;
-    
+
     &:hover {
       transform: scale(1.02);
     }
@@ -455,7 +459,7 @@ watch(
   background: rgba(0, 0, 0, 0.2);
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  
+
   :deep(.n-color-picker) {
     width: 100%;
   }
@@ -466,13 +470,13 @@ watch(
   .compact-layout {
     flex-direction: column;
     gap: 12px;
-    
+
     .divider {
       width: 100%;
       height: 1px;
     }
   }
-  
+
   .preset-section .preset-colors {
     justify-content: center;
   }

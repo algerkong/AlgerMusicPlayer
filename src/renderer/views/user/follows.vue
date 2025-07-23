@@ -7,7 +7,7 @@
       <div class="page-title" v-else>
         {{ t('user.follow.myFollowsTitle') }}
       </div>
-      
+
       <n-spin v-if="followListLoading && followList.length === 0" size="large" />
       <n-scrollbar v-else class="scrollbar-container">
         <div v-if="followList.length === 0" class="empty-follow">
@@ -69,7 +69,7 @@
 import { useMessage } from 'naive-ui';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter, useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import { getUserFollows } from '@/api/user';
 import { useUserStore } from '@/store/modules/user';
@@ -101,13 +101,13 @@ const user = computed(() => userStore.user);
 const checkTargetUser = () => {
   const uid = route.query.uid;
   const name = route.query.name;
-  
+
   if (uid && typeof uid === 'string') {
     targetUserId.value = parseInt(uid);
     targetUserName.value = typeof name === 'string' ? name : '';
     return true;
   }
-  
+
   // 如果没有指定用户ID，则显示当前登录用户的关注列表
   return checkLoginStatus();
 };
@@ -133,8 +133,8 @@ const checkLoginStatus = () => {
 // 加载关注列表
 const loadFollowList = async () => {
   // 确定要加载哪个用户的关注列表
-  const userId = targetUserId.value || (user.value?.userId);
-  
+  const userId = targetUserId.value || user.value?.userId;
+
   if (!userId) return;
 
   try {
@@ -187,14 +187,17 @@ onMounted(() => {
 });
 
 // 监听路由变化重新加载数据
-watch(() => route.query, (newQuery) => {
-  if (newQuery.uid && newQuery.uid !== targetUserId.value?.toString()) {
-    followList.value = []; // 清空列表
-    followOffset.value = 0; // 重置偏移量
-    checkTargetUser();
-    loadFollowList();
+watch(
+  () => route.query,
+  (newQuery) => {
+    if (newQuery.uid && newQuery.uid !== targetUserId.value?.toString()) {
+      followList.value = []; // 清空列表
+      followOffset.value = 0; // 重置偏移量
+      checkTargetUser();
+      loadFollowList();
+    }
   }
-});
+);
 </script>
 
 <style lang="scss" scoped>

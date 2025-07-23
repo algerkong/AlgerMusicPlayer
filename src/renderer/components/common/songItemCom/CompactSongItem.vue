@@ -14,7 +14,11 @@
   >
     <!-- 索引插槽 -->
     <template #index>
-      <div v-if="index !== undefined" class="song-item-index" :class="{ 'text-green-500': isPlaying }">
+      <div
+        v-if="index !== undefined"
+        class="song-item-index"
+        :class="{ 'text-green-500': isPlaying }"
+      >
         {{ index + 1 }}
       </div>
     </template>
@@ -25,13 +29,17 @@
         <n-checkbox :checked="selected" />
       </div>
     </template>
-    
+
     <!-- 内容插槽 -->
     <template #content>
       <div class="song-item-content-compact">
         <div class="song-item-content-compact-wrapper">
           <div class="song-item-content-compact-title w-60 flex-shrink-0">
-            <n-ellipsis class="text-ellipsis" line-clamp="1" :class="{ 'text-green-500': isPlaying }">
+            <n-ellipsis
+              class="text-ellipsis"
+              line-clamp="1"
+              :class="{ 'text-green-500': isPlaying }"
+            >
               {{ item.name }}
             </n-ellipsis>
           </div>
@@ -56,11 +64,15 @@
         </div>
       </div>
     </template>
-    
+
     <!-- 操作插槽 -->
     <template #operating>
       <div class="song-item-operating-compact">
-        <div v-if="favorite" class="song-item-operating-like" :class="{ 'opacity-0': !isHovering && !isFavorite }">
+        <div
+          v-if="favorite"
+          class="song-item-operating-like"
+          :class="{ 'opacity-0': !isHovering && !isFavorite }"
+        >
           <i
             class="iconfont icon-likefill"
             :class="{ 'like-active': isFavorite }"
@@ -69,13 +81,21 @@
         </div>
         <div
           class="song-item-operating-play animate__animated"
-          :class="{ 'bg-green-600': isPlaying, 'animate__flipInY': playLoading, 'opacity-0': !isHovering && !isPlaying }"
+          :class="{
+            'bg-green-600': isPlaying,
+            animate__flipInY: playLoading,
+            'opacity-0': !isHovering && !isPlaying
+          }"
           @click="onPlayMusic"
         >
           <i v-if="isPlaying && play" class="iconfont icon-stop"></i>
           <i v-else class="iconfont icon-playfill"></i>
         </div>
-        <div class="song-item-operating-menu" @click.stop="onMenuClick" :class="{ 'opacity-0': !isHovering && !isPlaying }">
+        <div
+          class="song-item-operating-menu"
+          @click.stop="onMenuClick"
+          :class="{ 'opacity-0': !isHovering && !isPlaying }"
+        >
           <i class="iconfont ri-more-fill"></i>
         </div>
       </div>
@@ -86,9 +106,11 @@
 <script lang="ts" setup>
 import { NCheckbox, NEllipsis } from 'naive-ui';
 import { computed, ref } from 'vue';
+
 import { usePlayerStore } from '@/store';
-import BaseSongItem from './BaseSongItem.vue';
 import type { SongResult } from '@/type/music';
+
+import BaseSongItem from './BaseSongItem.vue';
 
 const playerStore = usePlayerStore();
 
@@ -249,4 +271,4 @@ const formatDuration = (ms: number): string => {
 :deep(.text-ellipsis) {
   width: 100%;
 }
-</style> 
+</style>

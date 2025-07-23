@@ -1,486 +1,505 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>AlgerMusicPlayer 远程控制</title>
-  <style>
-    :root {
-      --primary-color: #007AFF;
-      --secondary-color: #5AC8FA;
-      --success-color: #4CD964;
-      --danger-color: #FF3B30;
-      --warning-color: #FF9500;
-      --light-gray: #F2F2F7;
-      --medium-gray: #E5E5EA;
-      --dark-gray: #8E8E93;
-      --text-color: #000000;
-      --text-secondary: #6C6C6C;
-      --background-color: #FFFFFF;
-    }
-
-    @media (prefers-color-scheme: dark) {
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>AlgerMusicPlayer 远程控制</title>
+    <style>
       :root {
-        --primary-color: #0A84FF;
-        --secondary-color: #64D2FF;
-        --success-color: #30D158;
-        --danger-color: #FF453A;
-        --warning-color: #FF9F0A;
-        --light-gray: #1C1C1E;
-        --medium-gray: #2C2C2E;
-        --dark-gray: #8E8E93;
-        --text-color: #FFFFFF;
-        --text-secondary: #AEAEB2;
-        --background-color: #000000;
+        --primary-color: #007aff;
+        --secondary-color: #5ac8fa;
+        --success-color: #4cd964;
+        --danger-color: #ff3b30;
+        --warning-color: #ff9500;
+        --light-gray: #f2f2f7;
+        --medium-gray: #e5e5ea;
+        --dark-gray: #8e8e93;
+        --text-color: #000000;
+        --text-secondary: #6c6c6c;
+        --background-color: #ffffff;
       }
-    }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
-      line-height: 1.6;
-      color: var(--text-color);
-      background-color: var(--light-gray);
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-      padding: 0;
-      margin: 0;
-    }
-
-    .header {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background-color: var(--background-color);
-      padding: 12px 16px;
-      text-align: center;
-      border-bottom: 1px solid var(--medium-gray);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
-
-    .header h1 {
-      font-size: 18px;
-      font-weight: 600;
-      margin: 0;
-    }
-
-    .container {
-      max-width: 540px;
-      margin: 0 auto;
-      padding: 16px;
-      width: 100%;
-      flex: 1;
-    }
-
-    .card {
-      background-color: var(--background-color);
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-
-    .song-info {
-      display: flex;
-      align-items: center;
-      padding-bottom: 16px;
-    }
-
-    .song-cover {
-      width: 72px;
-      height: 72px;
-      border-radius: 8px;
-      object-fit: cover;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-      background-color: var(--medium-gray);
-    }
-
-    .song-details {
-      margin-left: 16px;
-      flex: 1;
-    }
-
-    .song-details h2 {
-      margin: 0;
-      font-size: 18px;
-      font-weight: 600;
-      color: var(--text-color);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .song-details p {
-      margin: 4px 0 0;
-      font-size: 15px;
-      color: var(--text-secondary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .play-state {
-      font-size: 14px;
-      color: var(--primary-color);
-      margin-top: 4px;
-      display: flex;
-      align-items: center;
-    }
-
-    .play-state::before {
-      content: '';
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      margin-right: 6px;
-    }
-
-    .playing .play-state::before {
-      background-color: var(--success-color);
-    }
-
-    .paused .play-state::before {
-      background-color: var(--warning-color);
-    }
-
-    .controls {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .extra-controls {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 12px;
-    }
-
-    .btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background-color: var(--background-color);
-      color: var(--primary-color);
-      border: 1px solid var(--medium-gray);
-      padding: 16px 0;
-      border-radius: 12px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
-      transition: all 0.2s ease;
-      user-select: none;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .btn:active {
-      transform: scale(0.97);
-      opacity: 0.7;
-    }
-
-    .btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: var(--primary-color);
-      opacity: 0;
-      transition: opacity 0.2s ease;
-      z-index: -1;
-    }
-
-    .btn:active::before {
-      opacity: 0.1;
-    }
-
-    .btn svg {
-      margin-bottom: 8px;
-      width: 24px;
-      height: 24px;
-      fill: var(--primary-color);
-    }
-
-    .btn-play svg {
-      width: 28px;
-      height: 28px;
-      margin-bottom: 6px;
-    }
-
-    .status-bar {
-      text-align: center;
-      padding: 8px 16px;
-      font-size: 14px;
-      color: var(--text-secondary);
-      background-color: var(--background-color);
-      border-top: 1px solid var(--medium-gray);
-      position: sticky;
-      bottom: 0;
-    }
-
-    .status-message {
-      display: inline-block;
-      transition: opacity 0.3s ease;
-    }
-
-    .status-message.fade {
-      opacity: 0;
-    }
-
-    .refresh-button {
-      color: var(--primary-color);
-      background: none;
-      border: none;
-      font-size: 14px;
-      cursor: pointer;
-      padding: 0;
-      margin-left: 8px;
-    }
-
-    @media (max-width: 350px) {
-      .controls, .extra-controls {
-        gap: 8px;
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --primary-color: #0a84ff;
+          --secondary-color: #64d2ff;
+          --success-color: #30d158;
+          --danger-color: #ff453a;
+          --warning-color: #ff9f0a;
+          --light-gray: #1c1c1e;
+          --medium-gray: #2c2c2e;
+          --dark-gray: #8e8e93;
+          --text-color: #ffffff;
+          --text-secondary: #aeaeb2;
+          --background-color: #000000;
+        }
       }
-      
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;
+        line-height: 1.6;
+        color: var(--text-color);
+        background-color: var(--light-gray);
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        padding: 0;
+        margin: 0;
+      }
+
+      .header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background-color: var(--background-color);
+        padding: 12px 16px;
+        text-align: center;
+        border-bottom: 1px solid var(--medium-gray);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+
+      .header h1 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0;
+      }
+
+      .container {
+        max-width: 540px;
+        margin: 0 auto;
+        padding: 16px;
+        width: 100%;
+        flex: 1;
+      }
+
+      .card {
+        background-color: var(--background-color);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .song-info {
+        display: flex;
+        align-items: center;
+        padding-bottom: 16px;
+      }
+
+      .song-cover {
+        width: 72px;
+        height: 72px;
+        border-radius: 8px;
+        object-fit: cover;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        background-color: var(--medium-gray);
+      }
+
+      .song-details {
+        margin-left: 16px;
+        flex: 1;
+      }
+
+      .song-details h2 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--text-color);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .song-details p {
+        margin: 4px 0 0;
+        font-size: 15px;
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .play-state {
+        font-size: 14px;
+        color: var(--primary-color);
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+      }
+
+      .play-state::before {
+        content: '';
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 6px;
+      }
+
+      .playing .play-state::before {
+        background-color: var(--success-color);
+      }
+
+      .paused .play-state::before {
+        background-color: var(--warning-color);
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .extra-controls {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
       .btn {
-        padding: 12px 0;
-        font-size: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--background-color);
+        color: var(--primary-color);
+        border: 1px solid var(--medium-gray);
+        padding: 16px 0;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        user-select: none;
+        position: relative;
+        overflow: hidden;
       }
-      
+
+      .btn:active {
+        transform: scale(0.97);
+        opacity: 0.7;
+      }
+
+      .btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--primary-color);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        z-index: -1;
+      }
+
+      .btn:active::before {
+        opacity: 0.1;
+      }
+
       .btn svg {
-        width: 20px;
-        height: 20px;
+        margin-bottom: 8px;
+        width: 24px;
+        height: 24px;
+        fill: var(--primary-color);
+      }
+
+      .btn-play svg {
+        width: 28px;
+        height: 28px;
         margin-bottom: 6px;
       }
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1>AlgerMusicPlayer 远程控制</h1>
-  </div>
 
-  <div class="container">
-    <div class="card" id="songInfoCard">
-      <div class="song-info">
-        <img id="songCover" class="song-cover" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%238E8E93'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 14.5c-2.49 0-4.5-2.01-4.5-4.5S9.51 7.5 12 7.5s4.5 2.01 4.5 4.5-2.01 4.5-4.5 4.5zm0-5.5c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z'/%3E%3C/svg%3E" alt="封面">
-        <div class="song-details">
-          <h2 id="songTitle">未在播放</h2>
-          <p id="songArtist">--</p>
-          <div class="play-state" id="playState">未播放</div>
+      .status-bar {
+        text-align: center;
+        padding: 8px 16px;
+        font-size: 14px;
+        color: var(--text-secondary);
+        background-color: var(--background-color);
+        border-top: 1px solid var(--medium-gray);
+        position: sticky;
+        bottom: 0;
+      }
+
+      .status-message {
+        display: inline-block;
+        transition: opacity 0.3s ease;
+      }
+
+      .status-message.fade {
+        opacity: 0;
+      }
+
+      .refresh-button {
+        color: var(--primary-color);
+        background: none;
+        border: none;
+        font-size: 14px;
+        cursor: pointer;
+        padding: 0;
+        margin-left: 8px;
+      }
+
+      @media (max-width: 350px) {
+        .controls,
+        .extra-controls {
+          gap: 8px;
+        }
+
+        .btn {
+          padding: 12px 0;
+          font-size: 12px;
+        }
+
+        .btn svg {
+          width: 20px;
+          height: 20px;
+          margin-bottom: 6px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>AlgerMusicPlayer 远程控制</h1>
+    </div>
+
+    <div class="container">
+      <div class="card" id="songInfoCard">
+        <div class="song-info">
+          <img
+            id="songCover"
+            class="song-cover"
+            src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%238E8E93'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 14.5c-2.49 0-4.5-2.01-4.5-4.5S9.51 7.5 12 7.5s4.5 2.01 4.5 4.5-2.01 4.5-4.5 4.5zm0-5.5c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z'/%3E%3C/svg%3E"
+            alt="封面"
+          />
+          <div class="song-details">
+            <h2 id="songTitle">未在播放</h2>
+            <p id="songArtist">--</p>
+            <div class="play-state" id="playState">未播放</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="controls">
+          <button id="prevBtn" class="btn">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
+            </svg>
+            上一首
+          </button>
+          <button id="playBtn" class="btn btn-play">
+            <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+            播放/暂停
+          </button>
+          <button id="nextBtn" class="btn">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
+            </svg>
+            下一首
+          </button>
+        </div>
+
+        <div class="extra-controls">
+          <button id="volumeDownBtn" class="btn">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M18.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z"
+              />
+            </svg>
+            音量-
+          </button>
+          <button id="volumeUpBtn" class="btn">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"
+              />
+            </svg>
+            音量+
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="extra-controls">
+          <button id="favoriteBtn" class="btn">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+              />
+            </svg>
+            收藏
+          </button>
+          <button id="refreshBtn" class="btn">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"
+              />
+            </svg>
+            刷新
+          </button>
         </div>
       </div>
     </div>
 
-    <div class="card">
-      <div class="controls">
-        <button id="prevBtn" class="btn">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
-          </svg>
-          上一首
-        </button>
-        <button id="playBtn" class="btn btn-play">
-          <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M8 5v14l11-7z"/>
-          </svg>
-          播放/暂停
-        </button>
-        <button id="nextBtn" class="btn">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
-          </svg>
-          下一首
-        </button>
-      </div>
-
-      <div class="extra-controls">
-        <button id="volumeDownBtn" class="btn">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.5 12c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM5 9v6h4l5 5V4L9 9H5z"/>
-          </svg>
-          音量-
-        </button>
-        <button id="volumeUpBtn" class="btn">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
-          </svg>
-          音量+
-        </button>
-      </div>
+    <div class="status-bar">
+      <span id="status" class="status-message">准备就绪</span>
     </div>
 
-    <div class="card">
-      <div class="extra-controls">
-        <button id="favoriteBtn" class="btn">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-          </svg>
-          收藏
-        </button>
-        <button id="refreshBtn" class="btn">
-          <svg viewBox="0 0 24 24" fill="currentColor">
-            <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
-          </svg>
-          刷新
-        </button>
-      </div>
-    </div>
-  </div>
+    <script>
+      // 页面加载完成后执行
+      document.addEventListener('DOMContentLoaded', () => {
+        // 获取DOM元素
+        const songInfoCard = document.getElementById('songInfoCard');
+        const songTitle = document.getElementById('songTitle');
+        const songArtist = document.getElementById('songArtist');
+        const songCover = document.getElementById('songCover');
+        const playState = document.getElementById('playState');
+        const playBtn = document.getElementById('playBtn');
+        const playIcon = document.getElementById('playIcon');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const favoriteBtn = document.getElementById('favoriteBtn');
+        const volumeUpBtn = document.getElementById('volumeUpBtn');
+        const volumeDownBtn = document.getElementById('volumeDownBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const status = document.getElementById('status');
 
-  <div class="status-bar">
-    <span id="status" class="status-message">准备就绪</span>
-  </div>
+        let isPlaying = false;
 
-  <script>
-    // 页面加载完成后执行
-    document.addEventListener('DOMContentLoaded', () => {
-      // 获取DOM元素
-      const songInfoCard = document.getElementById('songInfoCard');
-      const songTitle = document.getElementById('songTitle');
-      const songArtist = document.getElementById('songArtist');
-      const songCover = document.getElementById('songCover');
-      const playState = document.getElementById('playState');
-      const playBtn = document.getElementById('playBtn');
-      const playIcon = document.getElementById('playIcon');
-      const prevBtn = document.getElementById('prevBtn');
-      const nextBtn = document.getElementById('nextBtn');
-      const favoriteBtn = document.getElementById('favoriteBtn');
-      const volumeUpBtn = document.getElementById('volumeUpBtn');
-      const volumeDownBtn = document.getElementById('volumeDownBtn');
-      const refreshBtn = document.getElementById('refreshBtn');
-      const status = document.getElementById('status');
-      
-      let isPlaying = false;
-      
-      // 显示状态消息并淡出
-      function showStatus(message, autoClear = true) {
-        status.textContent = message;
-        status.classList.remove('fade');
-        
-        if (autoClear) {
-          setTimeout(() => {
-            status.classList.add('fade');
-          }, 2000);
-        }
-      }
-      
-      // 更新播放/暂停图标
-      function updatePlayIcon() {
-        if (isPlaying) {
-          playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
-        } else {
-          playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
-        }
-      }
-      
-      // 更新状态的函数
-      async function updateStatus() {
-        try {
-          showStatus('获取播放状态...', false);
-          
-          const response = await fetch('/api/status');
-          const data = await response.json();
-          
-          // 更新播放状态
-          isPlaying = data.isPlaying;
-          updatePlayIcon();
-          
-          // 更新UI
-          if (data.currentSong) {
-            songTitle.textContent = data.currentSong.name || '未知歌曲';
-            
-            if (data.currentSong.ar && data.currentSong.ar.length) {
-              songArtist.textContent = data.currentSong.ar.map(a => a.name).join(', ');
-            } else if (data.currentSong.artists && data.currentSong.artists.length) {
-              songArtist.textContent = data.currentSong.artists.map(a => a.name).join(', ');
-            } else {
-              songArtist.textContent = '未知艺术家';
-            }
-            
-            if (data.currentSong.picUrl) {
-              songCover.src = data.currentSong.picUrl;
-            }
-          } else {
-            songTitle.textContent = '未在播放';
-            songArtist.textContent = '--';
-            songCover.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%238E8E93'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 14.5c-2.49 0-4.5-2.01-4.5-4.5S9.51 7.5 12 7.5s4.5 2.01 4.5 4.5-2.01 4.5-4.5 4.5zm0-5.5c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z'/%3E%3C/svg%3E";
+        // 显示状态消息并淡出
+        function showStatus(message, autoClear = true) {
+          status.textContent = message;
+          status.classList.remove('fade');
+
+          if (autoClear) {
+            setTimeout(() => {
+              status.classList.add('fade');
+            }, 2000);
           }
-          
-          // 更新播放状态
-          playState.textContent = isPlaying ? '正在播放' : '已暂停';
-          songInfoCard.className = isPlaying ? 'card playing' : 'card paused';
-          
-          showStatus('已更新', true);
-        } catch (error) {
-          console.error('获取状态失败:', error);
-          showStatus('获取状态失败');
         }
-      }
-      
-      // 发送命令的函数
-      async function sendCommand(endpoint) {
-        try {
-          showStatus('发送命令中...', false);
-          const response = await fetch('/api/' + endpoint, { method: 'POST' });
-          const data = await response.json();
-          
-          showStatus(data.message || '命令已发送');
-          
-          // 稍等后更新状态
-          setTimeout(updateStatus, 500);
-        } catch (error) {
-          console.error('发送命令失败:', error);
-          showStatus('发送命令失败');
-        }
-      }
-      
-      // 绑定按钮事件
-      playBtn.addEventListener('click', () => sendCommand('toggle-play'));
-      prevBtn.addEventListener('click', () => sendCommand('prev'));
-      nextBtn.addEventListener('click', () => sendCommand('next'));
-      favoriteBtn.addEventListener('click', () => sendCommand('toggle-favorite'));
-      volumeUpBtn.addEventListener('click', () => sendCommand('volume-up'));
-      volumeDownBtn.addEventListener('click', () => sendCommand('volume-down'));
-      refreshBtn.addEventListener('click', updateStatus);
-      
-      // 初始加载状态
-      updateStatus();
-      
-      // 每1秒更新一次状态
-      setInterval(updateStatus, 1000);
-      
-      // 添加触摸反馈
-      const buttons = document.querySelectorAll('.btn');
-      buttons.forEach(btn => {
-        btn.addEventListener('touchstart', function() {
-          this.style.transform = 'scale(0.97)';
-          this.style.opacity = '0.7';
-        });
-        
-        btn.addEventListener('touchend', function() {
-          this.style.transform = 'scale(1)';
-          this.style.opacity = '1';
-        });
-      });
 
-      // 检测深色模式变化
-      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        // 更新播放/暂停图标
+        function updatePlayIcon() {
+          if (isPlaying) {
+            playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+          } else {
+            playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+          }
+        }
+
+        // 更新状态的函数
+        async function updateStatus() {
+          try {
+            showStatus('获取播放状态...', false);
+
+            const response = await fetch('/api/status');
+            const data = await response.json();
+
+            // 更新播放状态
+            isPlaying = data.isPlaying;
+            updatePlayIcon();
+
+            // 更新UI
+            if (data.currentSong) {
+              songTitle.textContent = data.currentSong.name || '未知歌曲';
+
+              if (data.currentSong.ar && data.currentSong.ar.length) {
+                songArtist.textContent = data.currentSong.ar.map((a) => a.name).join(', ');
+              } else if (data.currentSong.artists && data.currentSong.artists.length) {
+                songArtist.textContent = data.currentSong.artists.map((a) => a.name).join(', ');
+              } else {
+                songArtist.textContent = '未知艺术家';
+              }
+
+              if (data.currentSong.picUrl) {
+                songCover.src = data.currentSong.picUrl;
+              }
+            } else {
+              songTitle.textContent = '未在播放';
+              songArtist.textContent = '--';
+              songCover.src =
+                "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%238E8E93'%3E%3Cpath d='M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 14.5c-2.49 0-4.5-2.01-4.5-4.5S9.51 7.5 12 7.5s4.5 2.01 4.5 4.5-2.01 4.5-4.5 4.5zm0-5.5c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1z'/%3E%3C/svg%3E";
+            }
+
+            // 更新播放状态
+            playState.textContent = isPlaying ? '正在播放' : '已暂停';
+            songInfoCard.className = isPlaying ? 'card playing' : 'card paused';
+
+            showStatus('已更新', true);
+          } catch (error) {
+            console.error('获取状态失败:', error);
+            showStatus('获取状态失败');
+          }
+        }
+
+        // 发送命令的函数
+        async function sendCommand(endpoint) {
+          try {
+            showStatus('发送命令中...', false);
+            const response = await fetch('/api/' + endpoint, { method: 'POST' });
+            const data = await response.json();
+
+            showStatus(data.message || '命令已发送');
+
+            // 稍等后更新状态
+            setTimeout(updateStatus, 500);
+          } catch (error) {
+            console.error('发送命令失败:', error);
+            showStatus('发送命令失败');
+          }
+        }
+
+        // 绑定按钮事件
+        playBtn.addEventListener('click', () => sendCommand('toggle-play'));
+        prevBtn.addEventListener('click', () => sendCommand('prev'));
+        nextBtn.addEventListener('click', () => sendCommand('next'));
+        favoriteBtn.addEventListener('click', () => sendCommand('toggle-favorite'));
+        volumeUpBtn.addEventListener('click', () => sendCommand('volume-up'));
+        volumeDownBtn.addEventListener('click', () => sendCommand('volume-down'));
+        refreshBtn.addEventListener('click', updateStatus);
+
+        // 初始加载状态
         updateStatus();
+
+        // 每1秒更新一次状态
+        setInterval(updateStatus, 1000);
+
+        // 添加触摸反馈
+        const buttons = document.querySelectorAll('.btn');
+        buttons.forEach((btn) => {
+          btn.addEventListener('touchstart', function () {
+            this.style.transform = 'scale(0.97)';
+            this.style.opacity = '0.7';
+          });
+
+          btn.addEventListener('touchend', function () {
+            this.style.transform = 'scale(1)';
+            this.style.opacity = '1';
+          });
+        });
+
+        // 检测深色模式变化
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+          updateStatus();
+        });
       });
-    });
-  </script>
-</body>
-</html> 
+    </script>
+  </body>
+</html>

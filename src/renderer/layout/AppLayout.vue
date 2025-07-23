@@ -9,7 +9,11 @@
           <!-- 搜索栏 -->
           <search-bar />
           <!-- 主页面路由 -->
-          <div class="main-content" :native-scrollbar="false" :class="{'mobile-content': !shouldShowMobileMenu}">
+          <div
+            class="main-content"
+            :native-scrollbar="false"
+            :class="{ 'mobile-content': !shouldShowMobileMenu }"
+          >
             <router-view
               v-slot="{ Component }"
               class="main-page"
@@ -41,7 +45,7 @@
     <install-app-modal v-if="!isElectron"></install-app-modal>
     <update-modal v-if="isElectron" />
     <playlist-drawer v-model="showPlaylistDrawer" :song-id="currentSongId" />
-    <SleepTimerTop v-if="!isMobile"/>
+    <sleep-timer-top v-if="!isMobile" />
     <!-- 下载管理抽屉 -->
     <download-drawer
       v-if="
@@ -64,24 +68,24 @@ import DownloadDrawer from '@/components/common/DownloadDrawer.vue';
 import InstallAppModal from '@/components/common/InstallAppModal.vue';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import UpdateModal from '@/components/common/UpdateModal.vue';
+import SleepTimerTop from '@/components/player/SleepTimerTop.vue';
 import homeRouter from '@/router/home';
 import otherRouter from '@/router/other';
 import { useMenuStore } from '@/store/modules/menu';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 import { isElectron, isMobile } from '@/utils';
-import SleepTimerTop from '@/components/player/SleepTimerTop.vue';
 
 const keepAliveInclude = computed(() => {
   const allRoutes = [...homeRouter, ...otherRouter];
-  
+
   return allRoutes
     .filter((item) => {
       return item.meta?.keepAlive;
     })
     .map((item) => {
-      return typeof item.name === 'string' 
-        ? item.name.charAt(0).toUpperCase() + item.name.slice(1) 
+      return typeof item.name === 'string'
+        ? item.name.charAt(0).toUpperCase() + item.name.slice(1)
         : '';
     })
     .filter(Boolean);
@@ -92,7 +96,9 @@ const PlayBar = defineAsyncComponent(() => import('@/components/player/PlayBar.v
 const MobilePlayBar = defineAsyncComponent(() => import('@/components/player/MobilePlayBar.vue'));
 const SearchBar = defineAsyncComponent(() => import('./components/SearchBar.vue'));
 const TitleBar = defineAsyncComponent(() => import('./components/TitleBar.vue'));
-const PlayingListDrawer = defineAsyncComponent(() => import('@/components/player/PlayingListDrawer.vue'));
+const PlayingListDrawer = defineAsyncComponent(
+  () => import('@/components/player/PlayingListDrawer.vue')
+);
 const PlaylistDrawer = defineAsyncComponent(() => import('@/components/common/PlaylistDrawer.vue'));
 
 const playerStore = usePlayerStore();

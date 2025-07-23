@@ -1,7 +1,7 @@
 <template>
   <div class="sleep-timer-content">
     <h3 class="timer-title">{{ t('player.sleepTimer.title') }}</h3>
-    
+
     <div v-if="hasTimerActive" class="sleep-timer-active">
       <div class="timer-status">
         <template v-if="timerType === 'time'">
@@ -9,19 +9,21 @@
         </template>
         <template v-else-if="timerType === 'songs'">
           <div class="timer-value">{{ remainingSongs }}</div>
-          <div class="timer-label">{{ t('player.sleepTimer.songsRemaining', { count: remainingSongs }) }}</div>
+          <div class="timer-label">
+            {{ t('player.sleepTimer.songsRemaining', { count: remainingSongs }) }}
+          </div>
         </template>
         <template v-else-if="timerType === 'end'">
           <div class="timer-value">{{ t('player.sleepTimer.activeUntilEnd') }}</div>
           <div class="timer-label">{{ t('player.sleepTimer.afterPlaylist') }}</div>
         </template>
       </div>
-      
+
       <n-button type="error" class="cancel-timer-btn" @click="handleCancelTimer" round>
         {{ t('player.sleepTimer.cancel') }}
       </n-button>
     </div>
-    
+
     <div v-else class="sleep-timer-options">
       <!-- 按时间定时 -->
       <div class="option-section">
@@ -59,7 +61,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- 按歌曲数定时 -->
       <div class="option-section">
         <h4 class="option-title">{{ t('player.sleepTimer.songsMode') }}</h4>
@@ -96,7 +98,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- 播放完列表后关闭 -->
       <div class="option-section playlist-end-section">
         <n-button block class="playlist-end-btn" @click="handleSetPlaylistEndTimer" round>
@@ -108,9 +110,10 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, onMounted, onUnmounted, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
+
 import { usePlayerStore } from '@/store/modules/player';
 
 const { t } = useI18n();
@@ -163,22 +166,22 @@ function handleCancelTimer() {
 const formattedRemainingTime = computed(() => {
   // 依赖刷新触发器强制更新
   void refreshTrigger.value;
-  
+
   if (timerType.value !== 'time' || !sleepTimer.value.endTime) {
     return '00:00:00';
   }
-  
+
   const remaining = Math.max(0, sleepTimer.value.endTime - Date.now());
   const totalSeconds = Math.floor(remaining / 1000);
-  
+
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = Math.floor(totalSeconds % 60);
-  
+
   const formattedHours = hours.toString().padStart(2, '0');
   const formattedMinutes = minutes.toString().padStart(2, '0');
   const formattedSeconds = seconds.toString().padStart(2, '0');
-  
+
   return `${formattedHours}:${formattedMinutes}:${formattedSeconds}`;
 });
 
@@ -190,10 +193,10 @@ onMounted(() => {
   if (hasTimerActive.value && timerType.value === 'time') {
     startTimerUpdate();
   }
-  
+
   // 监听定时器状态变化
   watch(
-    () => [hasTimerActive.value, timerType.value], 
+    () => [hasTimerActive.value, timerType.value],
     ([newHasTimer, newType]) => {
       if (newHasTimer && newType === 'time') {
         startTimerUpdate();
@@ -207,7 +210,7 @@ onMounted(() => {
 // 启动定时器更新UI
 function startTimerUpdate() {
   stopTimerUpdate(); // 先停止之前的计时器
-  
+
   // 每秒更新UI
   timerInterval = window.setInterval(() => {
     // 更新刷新触发器，强制重新计算
@@ -244,13 +247,15 @@ onUnmounted(() => {
     .timer-status {
       @apply flex flex-col items-center justify-center p-8 mb-5 w-full rounded-2xl dark:bg-gray-800 dark:bg-opacity-40 dark:shadow-gray-900/20;
       background-color: rgba(255, 255, 255, 0.5);
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      box-shadow:
+        0 1px 3px rgba(0, 0, 0, 0.05),
+        0 0 0 1px rgba(255, 255, 255, 0.1);
       transition: all 0.3s ease;
 
       // 定时值显示
       .timer-value {
         @apply text-4xl font-semibold mb-2 text-green-500;
-        
+
         &.countdown-timer {
           font-variant-numeric: tabular-nums;
           letter-spacing: 2px;
@@ -266,11 +271,11 @@ onUnmounted(() => {
     // 取消按钮
     .cancel-timer-btn {
       @apply w-full py-3 text-base rounded-full transition-all duration-200;
-      
+
       &:hover {
         @apply transform scale-105 shadow-md;
       }
-      
+
       &:active {
         @apply transform scale-95;
       }
@@ -292,37 +297,44 @@ onUnmounted(() => {
       }
 
       // 时间/歌曲选项容器
-      .time-options, .songs-options {
+      .time-options,
+      .songs-options {
         @apply flex flex-wrap gap-2;
 
         // 选项按钮共享样式
-        .time-option-btn, .songs-option-btn {
+        .time-option-btn,
+        .songs-option-btn {
           @apply px-4 py-2 rounded-full text-gray-800 dark:text-gray-200 transition-all duration-200;
           background-color: rgba(255, 255, 255, 0.5);
           @apply dark:bg-gray-800 dark:bg-opacity-40 hover:bg-white dark:hover:bg-gray-700;
-          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(255, 255, 255, 0.1);
+          box-shadow:
+            0 1px 2px rgba(0, 0, 0, 0.05),
+            0 0 0 1px rgba(255, 255, 255, 0.1);
           @apply dark:shadow-gray-900/20;
-          
+
           &:hover {
             @apply transform scale-105 shadow-md;
           }
-          
+
           &:active {
             @apply transform scale-95;
           }
         }
 
         // 自定义输入区域
-        .custom-time, .custom-songs {
+        .custom-time,
+        .custom-songs {
           @apply flex items-center space-x-2 mt-4 w-full;
 
           // 输入框
-          .custom-time-input, .custom-songs-input {
+          .custom-time-input,
+          .custom-songs-input {
             @apply flex-1;
           }
 
           // 设置按钮
-          .custom-time-btn, .custom-songs-btn {
+          .custom-time-btn,
+          .custom-songs-btn {
             @apply py-2 px-4 rounded-full transition-all duration-200;
           }
         }
@@ -339,4 +351,4 @@ onUnmounted(() => {
     }
   }
 }
-</style> 
+</style>

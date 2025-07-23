@@ -8,11 +8,11 @@ on:
 jobs:
   release:
     runs-on: ${{ matrix.os }}
-    
+
     strategy:
       matrix:
         os: [macos-latest, windows-latest, ubuntu-latest]
-        
+
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
@@ -85,4 +85,4 @@ jobs:
           draft: false
           prerelease: false
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,4 +1,5 @@
 import { Router } from 'vue-router';
+
 import { useMusicStore } from '@/store/modules/music';
 
 /**
@@ -35,4 +36,4 @@ export function navigateToMusicList(
       name: 'musicList'
     });
   }
-} 
+}

@@ -97,11 +97,11 @@ const router = useRouter();
 const openPlaylist = (item: any) => {
   recommendItem.value = item;
   listLoading.value = true;
-  
-  getListDetail(item.id).then(res => {
+
+  getListDetail(item.id).then((res) => {
     listDetail.value = res.data;
     listLoading.value = false;
-    
+
     navigateToMusicList(router, {
       id: item.id,
       type: 'playlist',

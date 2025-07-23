@@ -4,7 +4,13 @@ import { ref } from 'vue';
 
 import setDataDefault from '@/../main/set.json';
 import { isElectron } from '@/utils';
-import { applyTheme, getCurrentTheme, getSystemTheme, watchSystemTheme, ThemeType } from '@/utils/theme';
+import {
+  applyTheme,
+  getCurrentTheme,
+  getSystemTheme,
+  ThemeType,
+  watchSystemTheme
+} from '@/utils/theme';
 
 export const useSettingsStore = defineStore('settings', () => {
   const theme = ref<ThemeType>(getCurrentTheme());
@@ -17,10 +23,10 @@ export const useSettingsStore = defineStore('settings', () => {
     { label: '系统默认', value: 'system-ui' }
   ]);
   const showDownloadDrawer = ref(false);
-  
+
   // 系统主题监听器清理函数
   let systemThemeCleanup: (() => void) | null = null;
-  
+
   // 先声明 setData ref 但不初始化
   const setData = ref<any>({});
 
@@ -49,7 +55,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
     // 合并默认设置和保存的设置
     const mergedSettings = merge({}, setDataDefault, savedSettings);
-    
+
     // 更新设置并返回
     setSetData(mergedSettings);
     return mergedSettings;
@@ -62,9 +68,9 @@ export const useSettingsStore = defineStore('settings', () => {
     if (setData.value.autoTheme) {
       // 如果是自动模式，切换到手动模式并设置相反的主题
       const newTheme = theme.value === 'dark' ? 'light' : 'dark';
-      setSetData({ 
-        autoTheme: false, 
-        manualTheme: newTheme 
+      setSetData({
+        autoTheme: false,
+        manualTheme: newTheme
       });
       theme.value = newTheme;
       applyTheme(newTheme);
@@ -84,13 +90,13 @@ export const useSettingsStore = defineStore('settings', () => {
 
   const setAutoTheme = (auto: boolean) => {
     setSetData({ autoTheme: auto });
-    
+
     if (auto) {
       // 启用自动模式
       const systemTheme = getSystemTheme();
       theme.value = systemTheme;
       applyTheme(systemTheme);
-      
+
       // 开始监听系统主题变化
       systemThemeCleanup = watchSystemTheme((newTheme) => {
         if (setData.value.autoTheme) {
@@ -103,7 +109,7 @@ export const useSettingsStore = defineStore('settings', () => {
       const manualTheme = setData.value.manualTheme || 'light';
       theme.value = manualTheme;
       applyTheme(manualTheme);
-      
+
       // 停止监听系统主题
       if (systemThemeCleanup) {
         systemThemeCleanup();

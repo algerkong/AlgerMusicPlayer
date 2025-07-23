@@ -37,8 +37,8 @@
           <i v-if="lyricSetting.theme === 'light'" class="ri-sun-line"></i>
           <i v-else class="ri-moon-line"></i>
         </div>
-        <div 
-          class="control-button theme-color-button" 
+        <div
+          class="control-button theme-color-button"
           :class="{ active: showThemeColorPanel }"
           @click="toggleThemeColorPanel"
         >
@@ -58,7 +58,7 @@
     </div>
 
     <!-- 主题色选择面板 -->
-    <ThemeColorPanel
+    <theme-color-panel
       :visible="showThemeColorPanel"
       :current-color="currentHighlightColor"
       :theme="lyricSetting.theme"
@@ -106,8 +106,8 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
-import { SongResult } from '@/type/music';
 import ThemeColorPanel from '@/components/lyric/ThemeColorPanel.vue';
+import { SongResult } from '@/type/music';
 import {
   getCurrentLyricThemeColor,
   loadLyricThemeColor,
@@ -156,18 +156,18 @@ const loadLyricSettings = () => {
     const stored = localStorage.getItem('lyricData');
     if (stored) {
       const parsed = JSON.parse(stored);
-      
+
       // 验证 highlightColor 字段
       let validatedHighlightColor = parsed.highlightColor;
       if (validatedHighlightColor && !validateColor(validatedHighlightColor)) {
         console.warn('Invalid stored highlight color, removing it');
         validatedHighlightColor = undefined;
       }
-      
+
       // 确保所有必需字段存在并有效
       return {
         isTop: parsed.isTop ?? false,
-        theme: (parsed.theme === 'light' || parsed.theme === 'dark') ? parsed.theme : 'dark',
+        theme: parsed.theme === 'light' || parsed.theme === 'dark' ? parsed.theme : 'dark',
         isLock: parsed.isLock ?? false,
         highlightColor: validatedHighlightColor
       };
@@ -175,7 +175,7 @@ const loadLyricSettings = () => {
   } catch (error) {
     console.error('Failed to load lyric settings:', error);
   }
-  
+
   // 返回默认设置
   return {
     isTop: false,
@@ -226,7 +226,7 @@ const handleMouseLeave = () => {
   if (!lyricSetting.value.isLock) return;
   isHovering.value = false;
   windowData.electron.ipcRenderer.send('set-ignore-mouse', false);
-  
+
   // 强制重置背景色
   const lyricWindow = document.querySelector('.lyric-window') as HTMLElement;
   if (lyricWindow) {
@@ -418,7 +418,7 @@ const getLyricStyle = (index: number) => {
   if (index !== currentIndex.value) return {};
 
   const progress = currentProgress.value * 100;
-  
+
   // 使用更清晰的渐变实现
   return {
     background: `linear-gradient(to right, var(--highlight-color) ${progress}%, var(--text-color) ${progress}%)`,
@@ -594,14 +594,14 @@ const handleColorChange = (color: string) => {
     console.error('Invalid color received:', color);
     return;
   }
-  
+
   try {
     currentHighlightColor.value = color;
     updateThemeColorWithTransition(color);
-    
+
     // 更新 lyricSetting 中的 highlightColor
     lyricSetting.value.highlightColor = color;
-    
+
     // 同时保存到专用的主题色存储
     saveLyricThemeColor(color);
   } catch (error) {
@@ -621,12 +621,12 @@ const handleThemeColorPanelClose = () => {
 const resetThemeColor = () => {
   // 重置到默认颜色
   const defaultColor = getCurrentLyricThemeColor(lyricSetting.value.theme);
-  
+
   // 更新所有相关状态
   currentHighlightColor.value = defaultColor;
   lyricSetting.value.highlightColor = undefined;
   updateThemeColorWithTransition(defaultColor);
-  
+
   // 清除专用存储
   try {
     const settings = loadLyricSettings();
@@ -648,7 +648,7 @@ const validateAndFixColorSettings = () => {
       lyricSetting.value.highlightColor = undefined;
       updateCSSVariable('--lyric-highlight-color', defaultColor);
     }
-    
+
     // 检查 lyricSetting 中的颜色是否有效
     if (lyricSetting.value.highlightColor && !validateColor(lyricSetting.value.highlightColor)) {
       console.warn('Stored highlight color is invalid, removing it');
@@ -680,10 +680,10 @@ const updateThemeColorWithTransition = (newColor: string) => {
   if (lyricWindow) {
     lyricWindow.classList.add('color-transitioning');
   }
-  
+
   // 更新CSS变量
   updateCSSVariable('--lyric-highlight-color', newColor);
-  
+
   // 移除过渡类
   setTimeout(() => {
     if (lyricWindow) {
@@ -695,7 +695,7 @@ const updateThemeColorWithTransition = (newColor: string) => {
 const initializeThemeColor = () => {
   // 优先从 lyricSetting 中读取颜色
   let savedColor = lyricSetting.value.highlightColor;
-  
+
   // 如果 lyricSetting 中没有，则从专用存储中读取
   if (!savedColor) {
     savedColor = loadLyricThemeColor();
@@ -704,7 +704,7 @@ const initializeThemeColor = () => {
       lyricSetting.value.highlightColor = savedColor;
     }
   }
-  
+
   if (savedColor) {
     const optimizedColor = getCurrentLyricThemeColor(lyricSetting.value.theme);
     currentHighlightColor.value = optimizedColor;
@@ -844,10 +844,10 @@ onMounted(() => {
       }
     };
   }
-  
+
   // 初始化主题色
   initializeThemeColor();
-  
+
   // 验证和修复颜色设置
   validateAndFixColorSettings();
 });
@@ -887,12 +887,12 @@ body,
   transition: background-color 0.3s ease;
   cursor: default;
   border-radius: 14px;
-  
+
   &.color-transitioning {
     .lyric-text-inner {
       transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
-    
+
     .control-button {
       i {
         transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
@@ -1011,11 +1011,11 @@ body,
       color: var(--highlight-color);
     }
   }
-  
+
   &.theme-color-button {
     &.active {
       background: var(--control-bg);
-      
+
       i {
         color: var(--highlight-color);
       }
@@ -1062,12 +1062,12 @@ body,
   &.lyric-line-current {
     transform: scale(1.05);
     opacity: 1;
-    
+
     // 当前播放歌词的特殊样式
     .lyric-text {
       // 移除阴影，避免干扰渐变效果
       text-shadow: none;
-      
+
       .lyric-text-inner {
         // 为渐变文字添加轻微的外发光
         filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
@@ -1094,13 +1094,13 @@ body,
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  
+
   // 为非当前播放的歌词添加阴影效果
-  text-shadow: 
+  text-shadow:
     0 0 2px rgba(0, 0, 0, 0.8),
     0 1px 1px rgba(0, 0, 0, 0.6),
     0 0 4px rgba(255, 255, 255, 0.2);
-  
+
   .lyric-text-inner {
     transition: background 0.3s ease;
   }
@@ -1112,9 +1112,9 @@ body,
   word-break: break-all;
   transition: font-size 0.2s ease;
   line-height: 1.4;
-  
+
   // 为翻译文本也添加阴影效果，但稍微轻一些
-  text-shadow: 
+  text-shadow:
     0 0 2px rgba(0, 0, 0, 0.7),
     0 1px 1px rgba(0, 0, 0, 0.5),
     0 0 4px rgba(255, 255, 255, 0.2),
@@ -1127,9 +1127,9 @@ body,
   color: var(--text-secondary);
   font-size: 16px;
   padding: 20px;
-  
+
   // 为空歌词提示也添加阴影效果
-  text-shadow: 
+  text-shadow:
     0 0 2px rgba(0, 0, 0, 0.7),
     0 1px 1px rgba(0, 0, 0, 0.5),
     0 0 4px rgba(255, 255, 255, 0.2);

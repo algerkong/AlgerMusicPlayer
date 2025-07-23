@@ -1,4 +1,3 @@
-
 <h2 align="center">🎵 Alger Music Player</h2>
 <div align="center">
 <div align="center">
@@ -23,10 +22,10 @@
   <a href="https://hellogithub.com/repository/607b849c598d48e08fe38789d156ebdc" target="_blank"><img src="https://api.hellogithub.com/v1/widgets/recommend.svg?rid=607b849c598d48e08fe38789d156ebdc&claim_uid=ObuMXUfeHBmk9TI&theme=neutral" alt="Featured｜HelloGitHub" width="160" height="32" /></a>
 </div>
 
-
 [项目下安装以及常用问题文档](https://www.yuque.com/alger-pfg5q/ip4f1a/bmgmfmghnhgwghkm?singleDoc#)
 
 主要功能如下
+
 - 🎵 音乐推荐
 - 🔐 网易云账号登录与同步
 - 📝 功能
@@ -41,7 +40,6 @@
   - 迷你模式
   - 状态栏控制
   - 多语言支持
-  
 - 🎼 音乐功能
   - 支持歌单、MV、专辑等完整音乐服务
   - 音乐资源解析（基于 @unblockneteasemusic/server）
@@ -56,12 +54,15 @@
   - 全平台适配（Desktop & Web & Mobile Web & Android<测试> & ios<后续>）
 
 ## 项目简介
- 一个第三方音乐播放器、本地服务、桌面歌词、音乐下载、最高音质
+
+一个第三方音乐播放器、本地服务、桌面歌词、音乐下载、最高音质
 
 ## 预览地址
+
 [http://music.alger.fun/](http://music.alger.fun/)
 
 ## 软件截图
+
 ![首页白](./docs/image.png)
 ![首页黑](./docs/image3.png)
 ![歌词](./docs/image6.png)
@@ -70,31 +71,31 @@
 ![音乐远程控制](./docs/image5.png)
 
 ## 项目启动
+
 ```bash
 npm install
 npm run dev
 ```
+
 ## 开发文档
+
 点击这里[开发文档](./DEV.md)
 
-
-
-
 ## 赞赏☕️
+
 [赞赏列表](http://donate.alger.fun/)
-|                                        微信赞赏                                        |                                       支付宝赞赏                                       |
+| 微信赞赏 | 支付宝赞赏 |
 | :--------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------: |
 | <img src="https://github.com/algerkong/algerkong/blob/main/wechat.jpg?raw=true" alt="WeChat QRcode" width=200> <br><small>喝点咖啡继续干</small> | <img src="https://github.com/algerkong/algerkong/blob/main/alipay.jpg?raw=true" alt="Wechat QRcode" width=200> <br><small>来包辣条吧~</small> |
 
-
 ## 项目统计
+
 [![Stargazers over time](https://starchart.cc/algerkong/AlgerMusicPlayer.svg?variant=adaptive)](https://starchart.cc/algerkong/AlgerMusicPlayer)
-![Alt](https://repobeats.axiom.co/api/embed/c4d01b3632e241c90cdec9508dfde86a7f54c9f5.svg "Repobeats analytics image")
-
-
+![Alt](https://repobeats.axiom.co/api/embed/c4d01b3632e241c90cdec9508dfde86a7f54c9f5.svg 'Repobeats analytics image')
 
 ## 欢迎提Issues
 
 ## 声明
+
 本软件仅用于学习交流，禁止用于商业用途，否则后果自负。
 希望大家还是要多多支持官方正版，此软件仅用作开发教学。

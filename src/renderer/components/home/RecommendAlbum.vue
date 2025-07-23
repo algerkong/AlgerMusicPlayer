@@ -32,9 +32,9 @@ import { useRouter } from 'vue-router';
 
 import { getNewAlbum } from '@/api/home';
 import { getAlbum } from '@/api/list';
-import { getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import type { IAlbumNew } from '@/type/album';
+import { getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
 
 const { t } = useI18n();
 const albumData = ref<IAlbumNew>();
@@ -51,17 +51,17 @@ const handleClick = async (item: any) => {
 
 const openAlbum = async (album: any) => {
   if (!album) return;
-  
+
   try {
     const res = await getAlbum(album.id);
     const { songs, album: albumInfo } = res.data;
-    
+
     const formattedSongs = songs.map((song: any) => {
       song.al.picUrl = song.al.picUrl || albumInfo.picUrl;
       song.picUrl = song.al.picUrl || albumInfo.picUrl || song.picUrl;
       return song;
     });
-    
+
     navigateToMusicList(router, {
       id: album.id,
       type: 'album',

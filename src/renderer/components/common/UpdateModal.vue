@@ -421,7 +421,7 @@ const handleUpdate = async () => {
 }
 </style>
 
-<style lang="scss">
+<style lang="scss" scoped>
 /* 对话框内容样式 */
 .update-dialog-content {
   display: flex;

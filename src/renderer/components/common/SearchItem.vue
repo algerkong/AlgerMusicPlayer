@@ -31,13 +31,14 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router';
+
 import { getAlbum, getListDetail } from '@/api/list';
 import MvPlayer from '@/components/MvPlayer.vue';
+import { useMusicStore } from '@/store/modules/music';
 import { usePlayerStore } from '@/store/modules/player';
 import { IMvItem } from '@/type/mv';
 import { getImgUrl } from '@/utils';
-import { useRouter } from 'vue-router';
-import { useMusicStore } from '@/store/modules/music';
 
 const props = withDefaults(
   defineProps<{
@@ -88,15 +89,10 @@ const handleClick = async () => {
       },
       description: res.data.album.description
     };
-    
+
     // 保存数据到store
-    musicStore.setCurrentMusicList(
-      songList.value, 
-      props.item.name, 
-      listInfo.value, 
-      false
-    );
-    
+    musicStore.setCurrentMusicList(songList.value, props.item.name, listInfo.value, false);
+
     // 使用路由跳转
     router.push({
       name: 'musicList',
@@ -107,15 +103,10 @@ const handleClick = async () => {
     const res = await getListDetail(props.item.id);
     songList.value = res.data.playlist.tracks;
     listInfo.value = res.data.playlist;
-    
+
     // 保存数据到store
-    musicStore.setCurrentMusicList(
-      songList.value, 
-      props.item.name, 
-      listInfo.value, 
-      false
-    );
-    
+    musicStore.setCurrentMusicList(songList.value, props.item.name, listInfo.value, false);
+
     // 使用路由跳转
     router.push({
       name: 'musicList',

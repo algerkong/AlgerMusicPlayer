@@ -8,7 +8,7 @@ export default {
     unfavorite: 'Unlike',
     removeFromPlaylist: 'Remove from Playlist',
     dislike: 'Dislike',
-    undislike: 'Undislike',
+    undislike: 'Undislike'
   },
   message: {
     downloading: 'Downloading, please wait...',
@@ -18,7 +18,7 @@ export default {
     getUrlFailed: 'Failed to get music download URL, please check if logged in'
   },
   dialog: {
-    dislike:{
+    dislike: {
       title: 'Dislike',
       content: 'Are you sure you want to dislike this song?',
       positiveText: 'Dislike',

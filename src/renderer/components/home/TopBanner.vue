@@ -30,11 +30,7 @@
               </div>
 
               <div class="mt-2">
-                <p
-                  v-for="item in getDisplayDaySongs.slice(0, 5)"
-                  :key="item.id"
-                  class="text-el"
-                >
+                <p v-for="item in getDisplayDaySongs.slice(0, 5)" :key="item.id" class="text-el">
                   {{ item.name }}
                   <br />
                 </p>
@@ -100,7 +96,9 @@
             @click="handleArtistClick(item.id)"
           >
             <div
-              :style="setBackgroundImg(getImgUrl(item.picUrl || item.avatar || item.cover, '500y500'))"
+              :style="
+                setBackgroundImg(getImgUrl(item.picUrl || item.avatar || item.cover, '500y500'))
+              "
               class="recommend-singer-item-bg"
             ></div>
             <div class="recommend-singer-item-count p-2 text-base text-gray-200 z-10">
@@ -128,7 +126,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref, watchEffect, computed } from 'vue';
+import { computed, onMounted, ref, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
@@ -136,6 +134,7 @@ import { getDayRecommend, getHotSinger } from '@/api/home';
 import { getListDetail } from '@/api/list';
 import { getMusicDetail } from '@/api/music';
 import { getUserPlaylist } from '@/api/user';
+import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import { useArtist } from '@/hooks/useArtist';
 import { usePlayerStore, useUserStore } from '@/store';
 import { IDayRecommend } from '@/type/day_recommend';
@@ -150,7 +149,6 @@ import {
   setAnimationDelay,
   setBackgroundImg
 } from '@/utils';
-import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 
 const userStore = useUserStore();
 const playerStore = usePlayerStore();
@@ -232,7 +230,6 @@ onMounted(async () => {
   loadNonUserData();
 });
 
-
 // 提取每日推荐加载逻辑到单独的函数
 const loadDayRecommendData = async () => {
   try {
@@ -242,7 +239,9 @@ const loadDayRecommendData = async () => {
     const dayRecommendSource = dayRecommend as unknown as IDayRecommend;
     dayRecommendData.value = {
       ...dayRecommendSource,
-      dailySongs: dayRecommendSource.dailySongs.filter((song: any) => !playerStore.dislikeList.includes(song.id))
+      dailySongs: dayRecommendSource.dailySongs.filter(
+        (song: any) => !playerStore.dislikeList.includes(song.id)
+      )
     };
   } catch (error) {
     console.error('获取每日推荐失败:', error);
@@ -256,11 +255,10 @@ const loadNonUserData = async () => {
     if (!userStore.user) {
       await loadDayRecommendData();
     }
-    
+
     // 获取热门歌手
     const { data: singerData } = await getHotSinger({ offset: 0, limit: 5 });
     hotSingerData.value = singerData;
-
   } catch (error) {
     console.error('加载热门歌手数据失败:', error);
   }
@@ -285,15 +283,17 @@ const handleArtistClick = (id: number) => {
   navigateToArtist(id);
 };
 const getDisplayDaySongs = computed(() => {
-  if(!dayRecommendData.value){
+  if (!dayRecommendData.value) {
     return [];
   }
-  return dayRecommendData.value.dailySongs.filter((song) => !playerStore.dislikeList.includes(song.id));
-})
+  return dayRecommendData.value.dailySongs.filter(
+    (song) => !playerStore.dislikeList.includes(song.id)
+  );
+});
 
 const showDayRecommend = () => {
   if (!dayRecommendData.value?.dailySongs) return;
-  
+
   navigateToMusicList(router, {
     type: 'dailyRecommend',
     name: t('comp.recommendSinger.songlist'),
@@ -305,11 +305,11 @@ const showDayRecommend = () => {
 const openPlaylist = (item: any) => {
   playlistItem.value = item;
   playlistLoading.value = true;
-  
-  getListDetail(item.id).then(res => {
+
+  getListDetail(item.id).then((res) => {
     playlistDetail.value = res.data;
     playlistLoading.value = false;
-    
+
     navigateToMusicList(router, {
       id: item.id,
       type: 'playlist',
@@ -415,7 +415,6 @@ watchEffect(() => {
     loadDayRecommendData();
   }
 });
-
 
 const getPlaylistGridClass = (length: number) => {
   switch (length) {

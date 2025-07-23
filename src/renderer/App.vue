@@ -19,17 +19,16 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
 import TrafficWarningDrawer from '@/components/TrafficWarningDrawer.vue';
-
 import homeRouter from '@/router/home';
 import { useMenuStore } from '@/store/modules/menu';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 import { isElectron, isLyricWindow } from '@/utils';
 
-import { initAudioListeners } from './hooks/MusicHook';
+import { initAudioListeners, initMusicHook } from './hooks/MusicHook';
+import { audioService } from './services/audioService';
 import { isMobile } from './utils';
 import { useAppShortcuts } from './utils/appShortcuts';
-import { audioService } from './services/audioService';
 
 const { locale } = useI18n();
 const settingsStore = useSettingsStore();
@@ -114,6 +113,9 @@ onMounted(async () => {
   }
   // 先初始化播放状态
   await playerStore.initializePlayState();
+  // 初始化 MusicHook，注入 playerStore
+  initMusicHook(playerStore);
+
   // 如果有正在播放的音乐，则初始化音频监听器
   if (playerStore.playMusic && playerStore.playMusic.id) {
     // 使用 nextTick 确保 DOM 更新后再初始化

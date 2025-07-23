@@ -1,11 +1,12 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 
-import { useUserStore } from '../store/modules/user';
 import AppLayout from '@/layout/AppLayout.vue';
 import MiniLayout from '@/layout/MiniLayout.vue';
 import homeRouter from '@/router/home';
 import otherRouter from '@/router/other';
 import { useSettingsStore } from '@/store/modules/settings';
+
+import { useUserStore } from '../store/modules/user';
 
 function getUserId(): string | null {
   const userStore = useUserStore();

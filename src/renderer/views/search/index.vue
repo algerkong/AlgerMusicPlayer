@@ -431,10 +431,10 @@ const handlePlayBilibili = (item: IBilibiliSearchResult) => {
 
 const handlePlayAll = () => {
   if (!searchDetail.value?.songs?.length) return;
-  
+
   // 设置播放列表为搜索结果中的所有歌曲
   playerStore.setPlayList(searchDetail.value.songs);
-  
+
   // 开始播放第一首歌
   if (searchDetail.value.songs[0]) {
     playerStore.setPlay(searchDetail.value.songs[0]);
@@ -493,7 +493,7 @@ const handlePlayAll = () => {
 .title {
   @apply text-xl font-bold my-2 mx-4 flex items-center;
   @apply text-gray-900 dark:text-white;
-  
+
   &-play-all {
     @apply ml-auto;
   }
@@ -502,7 +502,7 @@ const handlePlayAll = () => {
 .play-all-btn {
   @apply flex items-center gap-1 px-3 py-1 rounded-full cursor-pointer transition-all;
   @apply text-sm font-normal text-gray-900 dark:text-white hover:bg-light-300 dark:hover:bg-dark-300 hover:text-green-500;
-  
+
   i {
     @apply text-xl;
   }

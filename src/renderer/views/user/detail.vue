@@ -103,7 +103,13 @@
                   :class="setAnimationClass('animate__bounceInUp')"
                   :style="setAnimationDelay(index, 25)"
                 >
-                  <song-item class="song-item" :index="index" :item="item" compact @play="handlePlay" />
+                  <song-item
+                    class="song-item"
+                    :index="index"
+                    :item="item"
+                    compact
+                    @play="handlePlay"
+                  />
                 </div>
               </div>
             </n-tab-pane>
@@ -128,8 +134,8 @@ import { useRoute, useRouter } from 'vue-router';
 
 import { getListDetail } from '@/api/list';
 import { getUserDetail, getUserPlaylist, getUserRecord } from '@/api/user';
-import SongItem from '@/components/common/SongItem.vue';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
+import SongItem from '@/components/common/SongItem.vue';
 import { usePlayerStore } from '@/store/modules/player';
 import type { Playlist } from '@/type/listDetail';
 import type { IUserDetail } from '@/type/user';
@@ -190,7 +196,7 @@ const loadUserData = async () => {
     // 2. 单独处理听歌记录请求，这个请求可能会无权限
     try {
       const recordRes = await getUserRecord(userId.value);
-      
+
       if (recordRes.data && recordRes.data.allData) {
         recordList.value = recordRes.data.allData.map((item: any) => ({
           ...item,
@@ -233,11 +239,11 @@ watch(
 // 替换显示歌单的方法
 const openPlaylist = (item: any) => {
   listLoading.value = true;
-  
-  getListDetail(item.id).then(res => {
+
+  getListDetail(item.id).then((res) => {
     currentList.value = res.data.playlist;
     listLoading.value = false;
-    
+
     navigateToMusicList(router, {
       id: item.id,
       type: 'playlist',
@@ -260,12 +266,12 @@ const handlePlay = () => {
 // 显示关注列表
 const showFollowList = () => {
   if (!userDetail.value) return;
-  
+
   router.push({
     path: `/user/follows`,
-    query: { 
+    query: {
       uid: userId.value.toString(),
-      name: userDetail.value.profile.nickname 
+      name: userDetail.value.profile.nickname
     }
   });
 };
@@ -273,12 +279,12 @@ const showFollowList = () => {
 // 显示粉丝列表
 const showFollowerList = () => {
   if (!userDetail.value) return;
-  
+
   router.push({
     path: `/user/followers`,
-    query: { 
+    query: {
       uid: userId.value.toString(),
-      name: userDetail.value.profile.nickname 
+      name: userDetail.value.profile.nickname
     }
   });
 };
@@ -340,8 +346,9 @@ const isArtist = (profile: any) => {
         .label {
           @apply text-lg font-bold;
         }
-        
-        &:nth-child(1), &:nth-child(2) {
+
+        &:nth-child(1),
+        &:nth-child(2) {
           @apply cursor-pointer transition-all duration-200;
           @apply hover:bg-black hover:bg-opacity-20 rounded-lg px-2;
         }
@@ -426,7 +433,7 @@ const isArtist = (profile: any) => {
   .no-permission {
     @apply flex flex-col items-center justify-center text-gray-500 dark:text-gray-400;
     @apply p-4 rounded-lg;
-    
+
     i {
       @apply text-3xl mb-2;
     }

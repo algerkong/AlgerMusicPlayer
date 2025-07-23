@@ -18,7 +18,7 @@
         <n-checkbox :checked="selected" />
       </div>
     </template>
-    
+
     <!-- 图片插槽 -->
     <template #image>
       <n-image
@@ -32,12 +32,17 @@
         @load="onImageLoad"
       />
     </template>
-    
+
     <!-- 内容插槽 -->
     <template #content>
       <div class="song-item-content">
         <div class="song-item-content-title">
-          <n-ellipsis class="text-ellipsis" line-clamp="1" :class="{ 'text-green-500': isPlaying }">{{ item.name }}</n-ellipsis>
+          <n-ellipsis
+            class="text-ellipsis"
+            line-clamp="1"
+            :class="{ 'text-green-500': isPlaying }"
+            >{{ item.name }}</n-ellipsis
+          >
         </div>
         <div class="song-item-content-name">
           <n-ellipsis class="text-ellipsis" line-clamp="1">
@@ -53,7 +58,7 @@
         </div>
       </div>
     </template>
-    
+
     <!-- 操作插槽 -->
     <template #operating>
       <div class="song-item-operating">
@@ -74,7 +79,7 @@
         </n-tooltip>
         <div
           class="song-item-operating-play bg-gray-300 dark:bg-gray-800 animate__animated"
-          :class="{ 'bg-green-600': isPlaying, 'animate__flipInY': playLoading }"
+          :class="{ 'bg-green-600': isPlaying, animate__flipInY: playLoading }"
           @click="onPlayMusic"
         >
           <i v-if="isPlaying && play" class="iconfont icon-stop"></i>
@@ -91,9 +96,10 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { usePlayerStore } from '@/store';
-import BaseSongItem from './BaseSongItem.vue';
 import type { SongResult } from '@/type/music';
 import { getImgUrl } from '@/utils';
+
+import BaseSongItem from './BaseSongItem.vue';
 
 const { t } = useI18n();
 const playerStore = usePlayerStore();
@@ -185,7 +191,7 @@ const onPlayNext = () => {
 
     &-next {
       @apply mr-2 cursor-pointer transition-all;
-      
+
       .iconfont {
         @apply text-xl transition text-gray-500 dark:text-gray-400 hover:text-green-500;
       }
@@ -210,4 +216,4 @@ const onPlayNext = () => {
     @apply mr-3 cursor-pointer;
   }
 }
-</style> 
+</style>

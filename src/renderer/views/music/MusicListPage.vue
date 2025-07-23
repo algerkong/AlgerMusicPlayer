@@ -21,7 +21,11 @@
 
         <n-tooltip v-if="canCollect" placement="bottom" trigger="hover">
           <template #trigger>
-            <div class="action-button" :class="isCollected ? 'collected' : 'hover-green'" @click="toggleCollect">
+            <div
+              class="action-button"
+              :class="isCollected ? 'collected' : 'hover-green'"
+              @click="toggleCollect"
+            >
               <i class="icon iconfont" :class="isCollected ? 'ri-heart-fill' : 'ri-heart-line'"></i>
             </div>
           </template>
@@ -45,7 +49,7 @@
                 <i class="icon iconfont ri-checkbox-multiple-line"></i>
               </div>
             </template>
-            {{ t('favorite.batchDownload')}}
+            {{ t('favorite.batchDownload') }}
           </n-tooltip>
           <div v-else class="flex items-center gap-2">
             <n-checkbox
@@ -59,10 +63,15 @@
               <template #trigger>
                 <div
                   class="action-button hover-green"
-                  :class="{ 'opacity-50 pointer-events-none': selectedSongs.length === 0 || isDownloading }"
+                  :class="{
+                    'opacity-50 pointer-events-none': selectedSongs.length === 0 || isDownloading
+                  }"
                   @click="selectedSongs.length && !isDownloading && handleBatchDownload()"
                 >
-                  <i class="icon iconfont ri-download-line" :class="{ 'animate-spin': isDownloading }"></i>
+                  <i
+                    class="icon iconfont ri-download-line"
+                    :class="{ 'animate-spin': isDownloading }"
+                  ></i>
                 </div>
               </template>
               {{ t('favorite.download', { count: selectedSongs.length }) }}
@@ -83,10 +92,17 @@
           <n-tooltip placement="bottom" trigger="hover">
             <template #trigger>
               <div class="toggle-button hover-green" @click="toggleLayout">
-                <i class="icon iconfont" :class="isCompactLayout ? 'ri-list-check-2' : 'ri-grid-line'"></i>
+                <i
+                  class="icon iconfont"
+                  :class="isCompactLayout ? 'ri-list-check-2' : 'ri-grid-line'"
+                ></i>
               </div>
             </template>
-            {{ isCompactLayout ? t('comp.musicList.switchToNormal') : t('comp.musicList.switchToCompact') }}
+            {{
+              isCompactLayout
+                ? t('comp.musicList.switchToNormal')
+                : t('comp.musicList.switchToCompact')
+            }}
           </n-tooltip>
         </div>
 
@@ -104,7 +120,10 @@
                 <i class="icon iconfont ri-search-line text-sm"></i>
               </template>
               <template #suffix>
-                <i class="icon iconfont ri-close-line text-sm cursor-pointer" @click="closeSearch"></i>
+                <i
+                  class="icon iconfont ri-close-line text-sm cursor-pointer"
+                  @click="closeSearch"
+                ></i>
               </template>
             </n-input>
           </template>
@@ -160,7 +179,7 @@
               <n-virtual-list
                 ref="songListRef"
                 class="song-virtual-list"
-                style="max-height: calc(100vh - 130px);"
+                style="max-height: calc(100vh - 130px)"
                 :items="filteredSongs"
                 :item-size="isCompactLayout ? 50 : 70"
                 item-resizable
@@ -170,7 +189,7 @@
                 <template #default="{ item, index }">
                   <div>
                     <div class="double-item">
-                      <song-item  
+                      <song-item
                         :index="index"
                         :compact="isCompactLayout"
                         :item="formatSong(item)"
@@ -201,20 +220,20 @@ defineOptions({
   name: 'MusicList'
 });
 
+import { useMessage } from 'naive-ui';
 import PinyinMatch from 'pinyin-match';
-import { computed, onMounted, onUnmounted, ref, watch, nextTick } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
-import { updatePlaylistTracks, subscribePlaylist } from '@/api/music';
-import { useMessage } from 'naive-ui';
 
+import { subscribePlaylist, updatePlaylistTracks } from '@/api/music';
 import { getMusicDetail, getMusicListByType } from '@/api/music';
-import SongItem from '@/components/common/SongItem.vue';
 import PlayBottom from '@/components/common/PlayBottom.vue';
+import SongItem from '@/components/common/SongItem.vue';
+import { useDownload } from '@/hooks/useDownload';
 import { useMusicStore, usePlayerStore } from '@/store';
 import { SongResult } from '@/type/music';
 import { getImgUrl, isElectron, isMobile, setAnimationClass } from '@/utils';
-import { useDownload } from '@/hooks/useDownload';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -245,7 +264,9 @@ const isFullPlaylistLoaded = ref(false); // 标记完整播放列表是否已加
 
 // 添加搜索相关的状态和方法
 const isSearchVisible = ref(false);
-const isCompactLayout = ref(isMobile.value ? false : localStorage.getItem('musicListLayout') === 'compact'); // 默认使用紧凑布局
+const isCompactLayout = ref(
+  isMobile.value ? false : localStorage.getItem('musicListLayout') === 'compact'
+); // 默认使用紧凑布局
 
 const showSearch = () => {
   isSearchVisible.value = true;
@@ -288,7 +309,7 @@ onMounted(() => {
 
 // 从 pinia 或路由参数获取数据
 
-  // 从路由参数获取
+// 从路由参数获取
 const routeId = route.params.id as string;
 const routeType = route.query.type as string;
 
@@ -299,14 +320,12 @@ const initData = () => {
     songList.value = musicStore.currentMusicList || [];
     listInfo.value = musicStore.currentListInfo || null;
     canRemove.value = musicStore.canRemoveSong || false;
-    
+
     // 初始化歌曲列表
     initSongList(songList.value);
     return;
   }
-  
 
-  
   if (routeId) {
     // 这里根据 type 和 id 加载数据
     // 例如: 获取歌单、专辑等
@@ -321,7 +340,7 @@ const initData = () => {
 const loadDataByType = async (type: string, id: string) => {
   try {
     const result = await getMusicListByType(type, id);
-    
+
     if (type === 'album') {
       const { songs, album } = result.data;
       name.value = album.name;
@@ -342,13 +361,13 @@ const loadDataByType = async (type: string, id: string) => {
       const { playlist } = result.data;
       name.value = playlist.name;
       listInfo.value = playlist;
-      
+
       // 初始化歌曲列表
       if (playlist.tracks) {
         songList.value = playlist.tracks;
       }
     }
-    
+
     // 初始化歌曲列表
     initSongList(songList.value);
   } catch (error) {
@@ -376,12 +395,12 @@ const getCoverImgUrl = computed(() => {
 });
 
 const getDisplaySongs = computed(() => {
-  if(routeType === 'dailyRecommend') {
+  if (routeType === 'dailyRecommend') {
     return displayedSongs.value.filter((song) => !playerStore.dislikeList.includes(song.id));
-  }else {
+  } else {
     return displayedSongs.value;
   }
-})
+});
 
 // 过滤歌曲列表
 const filteredSongs = computed(() => {
@@ -663,17 +682,17 @@ const handleRemoveSong = async (songId: number) => {
 
     if (res.status === 200) {
       message.success(t('user.message.deleteSuccess'));
-      
+
       // 从显示列表和完整播放列表中移除歌曲
-      displayedSongs.value = displayedSongs.value.filter(song => song.id !== songId);
-      completePlaylist.value = completePlaylist.value.filter(song => song.id !== songId);
-      
+      displayedSongs.value = displayedSongs.value.filter((song) => song.id !== songId);
+      completePlaylist.value = completePlaylist.value.filter((song) => song.id !== songId);
+
       // 如果正在播放该列表，也需要更新播放列表
       const currentPlaylist = playerStore.playList;
       if (currentPlaylist.length > 0 && currentPlaylist[0].id === displayedSongs.value[0]?.id) {
         playerStore.setPlayList(displayedSongs.value.map(formatSong));
       }
-      
+
       // 从Pinia状态中也移除
       if (musicStore.currentMusicList) {
         musicStore.removeSongFromList(songId);
@@ -810,7 +829,7 @@ const checkCollectionStatus = () => {
 // 切换收藏状态
 const toggleCollect = async () => {
   if (!listInfo.value?.id) return;
-  
+
   try {
     loadingList.value = true;
     const tVal = isCollected.value ? 2 : 1; // 1:收藏, 2:取消收藏
@@ -818,13 +837,13 @@ const toggleCollect = async () => {
       t: tVal,
       id: listInfo.value.id
     });
-    
+
     // 假设API返回格式是 { data: { code: number, msg?: string } }
     const res = response.data;
-    
+
     if (res.code === 200) {
       isCollected.value = !isCollected.value;
-      const msgKey = isCollected.value 
+      const msgKey = isCollected.value
         ? 'comp.musicList.collectSuccess'
         : 'comp.musicList.cancelCollectSuccess';
       message.success(t(msgKey));
@@ -844,14 +863,14 @@ const toggleCollect = async () => {
 // 播放全部
 const handlePlayAll = () => {
   if (displayedSongs.value.length === 0) return;
-  
+
   // 如果有搜索关键词，只播放过滤后的歌曲
   if (searchKeyword.value) {
     playerStore.setPlayList(filteredSongs.value.map(formatSong));
     playerStore.setPlay(formatSong(filteredSongs.value[0]));
     return;
   }
-  
+
   // 否则播放全部歌曲
   // 使用setPlayList设置播放列表
   playerStore.setPlayList(displayedSongs.value.map(formatSong));
@@ -862,29 +881,25 @@ const handlePlayAll = () => {
 // 添加到播放列表末尾
 const addToPlaylist = () => {
   if (displayedSongs.value.length === 0) return;
-  
+
   // 获取当前播放列表
   const currentList = playerStore.playList;
-  
+
   // 如果有搜索关键词，只添加过滤后的歌曲
-  const songsToAdd = searchKeyword.value 
-    ? filteredSongs.value 
-    : displayedSongs.value;
-  
+  const songsToAdd = searchKeyword.value ? filteredSongs.value : displayedSongs.value;
+
   // 添加歌曲到播放列表(避免重复添加)
-  const newSongs = songsToAdd.filter(song => 
-    !currentList.some(item => item.id === song.id)
-  );
-  
+  const newSongs = songsToAdd.filter((song) => !currentList.some((item) => item.id === song.id));
+
   if (newSongs.length === 0) {
     message.info(t('comp.musicList.songsAlreadyInPlaylist'));
     return;
   }
-  
+
   // 合并到当前播放列表末尾
   const newList = [...currentList, ...newSongs.map(formatSong)];
   playerStore.setPlayList(newList);
-  
+
   message.success(t('comp.musicList.addToPlaylistSuccess', { count: newSongs.length }));
 };
 
@@ -910,15 +925,11 @@ const handleSelect = (songId: number, selected: boolean) => {
 };
 const isAllSelected = computed(() => {
   return (
-    filteredSongs.value.length > 0 &&
-    selectedSongs.value.length === filteredSongs.value.length
+    filteredSongs.value.length > 0 && selectedSongs.value.length === filteredSongs.value.length
   );
 });
 const isIndeterminate = computed(() => {
-  return (
-    selectedSongs.value.length > 0 &&
-    selectedSongs.value.length < filteredSongs.value.length
-  );
+  return selectedSongs.value.length > 0 && selectedSongs.value.length < filteredSongs.value.length;
 });
 const handleSelectAll = (checked: boolean) => {
   if (checked) {
@@ -1004,7 +1015,7 @@ const handleBatchDownload = async () => {
 
   .search-button {
     @apply w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-light-300 dark:hover:bg-dark-300 transition-colors text-gray-500 dark:text-gray-400 hover:text-green-500;
-    
+
     .icon {
       @apply text-lg;
     }
@@ -1013,7 +1024,6 @@ const handleBatchDownload = async () => {
   :deep(.n-input) {
     @apply bg-light-200 dark:bg-dark-200;
   }
-
 }
 
 .no-result {
@@ -1079,7 +1089,7 @@ const handleBatchDownload = async () => {
 .layout-toggle {
   .toggle-button {
     @apply w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-light-300 dark:hover:bg-dark-300 transition-colors;
-    
+
     .icon {
       @apply text-lg text-gray-500 dark:text-gray-400 transition-colors;
     }
@@ -1089,7 +1099,7 @@ const handleBatchDownload = async () => {
 .layout-toggle .toggle-button,
 .action-button {
   @apply w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-light-300 dark:hover:bg-dark-300 transition-colors text-gray-500 dark:text-gray-400;
-  
+
   .icon {
     @apply text-lg;
   }
@@ -1099,11 +1109,11 @@ const handleBatchDownload = async () => {
       @apply text-red-500;
     }
   }
-  
+
   &.hover-green:hover {
     .icon {
       @apply text-green-500;
     }
   }
 }
-</style> 
+</style>

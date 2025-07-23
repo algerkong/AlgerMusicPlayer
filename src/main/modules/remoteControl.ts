@@ -1,10 +1,11 @@
+import cors from 'cors';
 import { ipcMain } from 'electron';
 import express from 'express';
-import cors from 'cors';
-import os from 'os';
-import { getStore } from './config';
-import path from 'path';
 import fs from 'fs';
+import os from 'os';
+import path from 'path';
+
+import { getStore } from './config';
 
 // 定义远程控制相关接口
 export interface RemoteControlConfig {
@@ -72,9 +73,9 @@ export function initializeRemoteControl(mainWindow: Electron.BrowserWindow) {
     if (server) {
       stopServer();
     }
-    
+
     store.set('remoteControl', newConfig);
-    
+
     if (newConfig.enabled) {
       startServer(newConfig);
     }
@@ -105,16 +106,16 @@ function startServer(config: RemoteControlConfig) {
   }
 
   app = express();
-  
+
   // 跨域配置
   app.use(cors());
   app.use(express.json());
-  
+
   // IP 过滤中间件
   app.use((req, res, next) => {
     const clientIp = req.ip || req.socket.remoteAddress || '';
     const cleanIp = clientIp.replace(/^::ffff:/, ''); // 移除IPv6前缀
-    console.log('config',config)
+    console.log('config', config);
     if (config.allowedIps.length === 0 || config.allowedIps.includes(cleanIp)) {
       next();
     } else {
@@ -216,7 +217,7 @@ function setupRoutes(app: express.Application) {
       const isDev = process.env.NODE_ENV === 'development';
       const htmlPath = path.join(process.cwd(), 'resources', 'html', 'remote-control.html');
       const finalPath = isDev ? htmlPath : path.join(resourcesPath, 'html', 'remote-control.html');
-      
+
       if (fs.existsSync(finalPath)) {
         res.sendFile(finalPath);
       } else {
@@ -228,4 +229,4 @@ function setupRoutes(app: express.Application) {
       res.status(500).send('加载远程控制界面失败');
     }
   });
-} 
+}

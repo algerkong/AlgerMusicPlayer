@@ -7,8 +7,15 @@
     :to="`#layout-main`"
     :z-index="9998"
   >
-  
-    <div id="mobile-drawer-target" :class="[config.theme, `cover-style-${config.mobileCoverStyle}`, {'is-landscape': isLandscape}, {'is-dark': isDark}]">
+    <div
+      id="mobile-drawer-target"
+      :class="[
+        config.theme,
+        `cover-style-${config.mobileCoverStyle}`,
+        { 'is-landscape': isLandscape },
+        { 'is-dark': isDark }
+      ]"
+    >
       <!-- 顶部控制按钮 -->
       <div v-if="playMusic?.playLoading" class="loading-overlay">
         <i class="ri-loader-4-line loading-icon"></i>
@@ -23,11 +30,7 @@
 
       <!-- 全屏歌词页面 - 竖屏模式下 -->
       <transition name="fade">
-        <div 
-          v-if="showFullLyrics && !isLandscape" 
-          class="fullscreen-lyrics"
-          :class="config.theme"
-        >
+        <div v-if="showFullLyrics && !isLandscape" class="fullscreen-lyrics" :class="config.theme">
           <div class="fullscreen-header">
             <div class="song-title">{{ playMusic.name }}</div>
             <div class="artist-name">
@@ -46,8 +49,8 @@
             @scroll="handleScroll"
           >
             <div class="lyrics-padding-top"></div>
-            <div 
-              v-for="(item, index) in lrcArray" 
+            <div
+              v-for="(item, index) in lrcArray"
               :key="index"
               :id="`lyric-line-${index}`"
               class="lyric-line"
@@ -70,11 +73,11 @@
           <!-- 封面区域 -->
           <div
             class="cover-container"
-            :class="{ 
+            :class="{
               'record-style': config.mobileCoverStyle === 'record',
               'square-style': config.mobileCoverStyle === 'square',
               'full-style': config.mobileCoverStyle === 'full',
-              'paused': !play
+              paused: !play
             }"
             @click="cycleCoverStyle"
           >
@@ -108,16 +111,12 @@
                 </span>
               </p>
               <div class="favorite-icon" @click="toggleFavorite">
-                <i class="ri-heart-3-fill" :class="{ 'favorite': isFavorite }"></i>
+                <i class="ri-heart-3-fill" :class="{ favorite: isFavorite }"></i>
               </div>
             </div>
 
             <!-- 歌词区域 -->
-            <div 
-              class="lyrics-container"
-              v-if="!config.hideLyrics"
-              @click="showFullLyricScreen"
-            >
+            <div class="lyrics-container" v-if="!config.hideLyrics" @click="showFullLyricScreen">
               <div v-if="lrcArray.length > 0" class="lyrics-wrapper">
                 <div v-for="(line, idx) in visibleLyrics" :key="idx" class="lyric-line">
                   {{ line.text }}
@@ -137,11 +136,11 @@
         <div class="landscape-left-section">
           <div
             class="landscape-cover-container cover-container"
-            :class="{ 
+            :class="{
               'record-style': config.mobileCoverStyle === 'record',
               'square-style': config.mobileCoverStyle === 'square',
               'full-style': config.mobileCoverStyle === 'full',
-              'paused': !play
+              paused: !play
             }"
             @click="cycleCoverStyle"
           >
@@ -162,17 +161,19 @@
               <span class="current-time">{{ secondToMinute(nowTime) }}</span>
               <span class="total-time">{{ secondToMinute(allTime) }}</span>
             </div>
-            <div class="apple-style-progress" 
+            <div
+              class="apple-style-progress"
               @click="handleProgressBarClick"
-              @mousedown="handleMouseDown">
+              @mousedown="handleMouseDown"
+            >
               <div class="progress-track">
-                <div 
-                  class="progress-fill" 
+                <div
+                  class="progress-fill"
                   :style="{ width: `${(nowTime / Math.max(1, allTime)) * 100}%` }"
                 ></div>
-                <div 
+                <div
                   class="progress-thumb"
-                  :class="{ 'active': isThumbDragging || isMouseDragging }"
+                  :class="{ active: isThumbDragging || isMouseDragging }"
                   :style="{ left: `${(nowTime / Math.max(1, allTime)) * 100}%` }"
                   @touchstart="handleThumbTouchStart"
                   @touchmove="handleThumbTouchMove"
@@ -202,10 +203,10 @@
               </p>
             </div>
             <div class="favorite-icon landscape" @click="toggleFavorite">
-              <i class="ri-heart-3-fill" :class="{ 'favorite': isFavorite }"></i>
+              <i class="ri-heart-3-fill" :class="{ favorite: isFavorite }"></i>
             </div>
           </div>
-          
+
           <!-- 歌词滚动区域 -->
           <div
             ref="landscapeLyricsRef"
@@ -216,8 +217,8 @@
             @scroll="handleScroll"
           >
             <div class="lyrics-padding-top"></div>
-            <div 
-              v-for="(item, index) in lrcArray" 
+            <div
+              v-for="(item, index) in lrcArray"
               :key="index"
               :id="`landscape-lyric-line-${index}`"
               class="lyric-line"
@@ -231,7 +232,7 @@
             </div>
             <div class="lyrics-padding-bottom"></div>
           </div>
-          
+
           <!-- 右下角控制按钮 -->
           <div class="landscape-main-controls">
             <div class="main-button prev" @click="prevSong">
@@ -248,24 +249,30 @@
       </div>
 
       <!-- 竖屏模式的控制区域 -->
-      <div v-if="!isLandscape" class="unified-controls" :class="{ 'fullscreen-mode': showFullLyrics }">
+      <div
+        v-if="!isLandscape"
+        class="unified-controls"
+        :class="{ 'fullscreen-mode': showFullLyrics }"
+      >
         <!-- 进度条 (苹果风格) -->
         <div class="progress-container">
           <div class="time-info">
             <span class="current-time">{{ secondToMinute(nowTime) }}</span>
             <span class="total-time">{{ secondToMinute(allTime) }}</span>
           </div>
-          <div class="apple-style-progress" 
+          <div
+            class="apple-style-progress"
             @click="handleProgressBarClick"
-            @mousedown="handleMouseDown">
+            @mousedown="handleMouseDown"
+          >
             <div class="progress-track">
-              <div 
-                class="progress-fill" 
+              <div
+                class="progress-fill"
                 :style="{ width: `${(nowTime / Math.max(1, allTime)) * 100}%` }"
               ></div>
-              <div 
+              <div
                 class="progress-thumb"
-                :class="{ 'active': isThumbDragging || isMouseDragging }"
+                :class="{ active: isThumbDragging || isMouseDragging }"
                 :style="{ left: `${(nowTime / Math.max(1, allTime)) * 100}%` }"
                 @touchstart="handleThumbTouchStart"
                 @touchmove="handleThumbTouchMove"
@@ -304,9 +311,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { useWindowSize } from '@vueuse/core';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import {
   allTime,
@@ -331,7 +338,7 @@ const playerStore = usePlayerStore();
 
 // 播放控制相关
 const play = computed(() => playerStore.isPlay);
-const playIcon = computed(() => play.value ? 'ri-pause-fill' : 'ri-play-fill');
+const playIcon = computed(() => (play.value ? 'ri-pause-fill' : 'ri-play-fill'));
 const playMode = computed(() => playerStore.playMode);
 const playModeIcon = computed(() => {
   switch (playMode.value) {
@@ -395,11 +402,11 @@ const showFullLyricScreen = () => {
   // 使用多次延迟尝试滚动，确保能够滚动到当前歌词
   nextTick(() => {
     scrollToCurrentLyric(true);
-    
+
     setTimeout(() => {
       scrollToCurrentLyric(true);
     }, 200);
-    
+
     setTimeout(() => {
       scrollToCurrentLyric(true);
     }, 500);
@@ -423,27 +430,31 @@ const scrollToCurrentLyric = (immediate = false, customScrollerRef?: HTMLElement
       console.log('歌词容器引用不存在');
       return;
     }
-    
+
     // 如果用户正在手动滚动，不打断他们的操作
     if (isTouchScrolling.value && !immediate) {
       return;
     }
-    
+
     const prefix = customScrollerRef ? 'landscape-' : '';
     const activeEl = document.getElementById(`${prefix}lyric-line-${nowIndex.value}`);
     if (!activeEl) {
       console.log(`找不到当前歌词元素: ${prefix}lyric-line-${nowIndex.value}`);
       return;
     }
-    
+
     const containerRect = scrollerRef.getBoundingClientRect();
     const lineRect = activeEl.getBoundingClientRect();
-    
+
     // 优化滚动位置计算，确保当前歌词在视图中央
-    const scrollTop = scrollerRef.scrollTop + (lineRect.top - containerRect.top) - (containerRect.height / 2) + (lineRect.height / 2);
-    
+    const scrollTop =
+      scrollerRef.scrollTop +
+      (lineRect.top - containerRect.top) -
+      containerRect.height / 2 +
+      lineRect.height / 2;
+
     console.log(`滚动到歌词 #${nowIndex.value}, 位置: ${scrollTop}px`);
-    
+
     scrollerRef.scrollTo({
       top: scrollTop,
       behavior: immediate ? 'auto' : 'smooth'
@@ -456,13 +467,13 @@ const scrollToCurrentLyric = (immediate = false, customScrollerRef?: HTMLElement
 // 监听歌词变化，自动滚动
 watch(nowIndex, (newIndex, oldIndex) => {
   console.log(`歌词索引变化: ${oldIndex} -> ${newIndex}`);
-  
+
   // 在竖屏全屏歌词模式下滚动
   if (showFullLyrics.value) {
     nextTick(() => {
       scrollToCurrentLyric(false);
     });
-  } 
+  }
   // 在横屏模式下滚动
   else if (isLandscape.value) {
     nextTick(() => {
@@ -489,7 +500,7 @@ watch(nowTime, () => {
     // 在竖屏全屏歌词模式下滚动
     if (showFullLyrics.value) {
       scrollToCurrentLyric(false);
-    } 
+    }
     // 在横屏模式下滚动
     else if (isLandscape.value) {
       scrollToCurrentLyric(false, landscapeLyricsRef.value);
@@ -500,20 +511,20 @@ watch(nowTime, () => {
 // 处理滚动事件
 const handleScroll = () => {
   if (!isTouchScrolling.value) return;
-  
+
   // 用户手动滚动时，临时停止自动滚动
   isAutoScrollEnabled.value = false;
-  
+
   // 清除之前的计时器
   if (autoScrollTimer.value) {
     clearTimeout(autoScrollTimer.value);
   }
-  
+
   // 设置新的计时器，3秒后恢复自动滚动
   autoScrollTimer.value = window.setTimeout(() => {
     isAutoScrollEnabled.value = true;
     isTouchScrolling.value = false;
-    
+
     // 滚动到当前歌词
     if (showFullLyrics.value) {
       scrollToCurrentLyric(false);
@@ -526,17 +537,20 @@ const handleScroll = () => {
 // 触摸相关事件
 const handleTouchStart = (e: TouchEvent) => {
   touchStartY.value = e.touches[0].clientY;
-  
+
   // 根据当前模式获取正确的滚动容器
-  const scrollerRef = showFullLyrics.value ? lyricsScrollerRef.value : 
-                     (isLandscape.value ? landscapeLyricsRef.value : lyricsScrollerRef.value);
-                     
+  const scrollerRef = showFullLyrics.value
+    ? lyricsScrollerRef.value
+    : isLandscape.value
+      ? landscapeLyricsRef.value
+      : lyricsScrollerRef.value;
+
   lastScrollTop.value = scrollerRef?.scrollTop || 0;
   isTouchScrolling.value = true;
-  
+
   // 用户开始触摸时，暂时停止自动滚动
   isAutoScrollEnabled.value = false;
-  
+
   // 清除之前可能存在的计时器
   if (autoScrollTimer.value) {
     clearTimeout(autoScrollTimer.value);
@@ -554,11 +568,11 @@ const handleTouchEnd = () => {
   if (autoScrollTimer.value) {
     clearTimeout(autoScrollTimer.value);
   }
-  
+
   autoScrollTimer.value = window.setTimeout(() => {
     isAutoScrollEnabled.value = true;
     isTouchScrolling.value = false;
-    
+
     // 恢复自动滚动到当前歌词
     if (showFullLyrics.value) {
       scrollToCurrentLyric(true);
@@ -574,7 +588,7 @@ const cycleCoverStyle = () => {
   const currentIdx = styles.indexOf(config.value.mobileCoverStyle);
   const nextIdx = (currentIdx + 1) % styles.length;
   config.value.mobileCoverStyle = styles[nextIdx] as 'record' | 'square' | 'full';
-  
+
   // 添加动画反馈
   const container = document.querySelector('.cover-container');
   if (container) {
@@ -595,18 +609,18 @@ const isMouseDragging = ref(false);
 // 处理进度条点击
 const handleProgressBarClick = (e: MouseEvent) => {
   if (!sound.value) return;
-  
+
   e.stopPropagation(); // 阻止事件冒泡
   const progressBar = e.currentTarget as HTMLElement;
   const rect = progressBar.getBoundingClientRect();
   const offsetX = e.clientX - rect.left;
   progressContainerWidth.value = rect.width;
-  
+
   const percentage = offsetX / rect.width;
   const newTime = Math.max(0, Math.min(percentage * allTime.value, allTime.value));
-  
+
   console.log(`进度条点击: ${percentage.toFixed(2)}, 新时间: ${newTime.toFixed(2)}`);
-  
+
   sound.value.seek(newTime);
   nowTime.value = newTime;
 };
@@ -614,23 +628,25 @@ const handleProgressBarClick = (e: MouseEvent) => {
 // 鼠标按下事件
 const handleMouseDown = (e: MouseEvent) => {
   if (e.button !== 0) return; // 只处理左键点击
-  
+
   e.preventDefault();
   e.stopPropagation();
   isMouseDragging.value = true;
-  
+
   // 立即更新位置
-  const progressBar = (e.currentTarget as HTMLElement).closest('.apple-style-progress') as HTMLElement;
+  const progressBar = (e.currentTarget as HTMLElement).closest(
+    '.apple-style-progress'
+  ) as HTMLElement;
   if (progressBar) {
     const rect = progressBar.getBoundingClientRect();
     const offsetX = e.clientX - rect.left;
     const percentage = Math.max(0, Math.min(1, offsetX / rect.width));
     const newTime = percentage * allTime.value;
-    
+
     nowTime.value = newTime;
     console.log(`鼠标按下，位置: ${percentage.toFixed(2)}, 时间: ${newTime.toFixed(2)}秒`);
   }
-  
+
   // 添加全局鼠标事件监听
   document.addEventListener('mousemove', handleMouseMove);
   document.addEventListener('mouseup', handleMouseUp);
@@ -639,21 +655,21 @@ const handleMouseDown = (e: MouseEvent) => {
 // 鼠标移动事件
 const handleMouseMove = (e: MouseEvent) => {
   if (!isMouseDragging.value || !sound.value) return;
-  
+
   e.preventDefault();
-  
+
   // 查找当前视图中的进度条元素
-  const progressBar = isLandscape.value 
+  const progressBar = isLandscape.value
     ? document.querySelector('.landscape-left-section .apple-style-progress')
     : document.querySelector('.unified-controls .apple-style-progress');
-  
+
   if (!progressBar) return;
-  
+
   const rect = (progressBar as HTMLElement).getBoundingClientRect();
   const offsetX = e.clientX - rect.left;
   const percentage = Math.max(0, Math.min(1, offsetX / rect.width));
   const newTime = percentage * allTime.value;
-  
+
   nowTime.value = newTime;
   console.log(`鼠标移动，位置: ${percentage.toFixed(2)}, 时间: ${newTime.toFixed(2)}秒`);
 };
@@ -661,15 +677,15 @@ const handleMouseMove = (e: MouseEvent) => {
 // 鼠标释放事件
 const handleMouseUp = (e: MouseEvent) => {
   if (!isMouseDragging.value || !sound.value) return;
-  
+
   e.preventDefault();
-  
+
   // 释放时跳转到指定位置
   sound.value.seek(nowTime.value);
   console.log(`鼠标释放，跳转到: ${nowTime.value.toFixed(2)}秒`);
-  
+
   isMouseDragging.value = false;
-  
+
   // 移除全局事件监听
   document.removeEventListener('mousemove', handleMouseMove);
   document.removeEventListener('mouseup', handleMouseUp);
@@ -680,7 +696,7 @@ const handleThumbTouchStart = (e: TouchEvent) => {
   e.preventDefault(); // 阻止默认行为
   e.stopPropagation(); // 阻止事件冒泡
   isThumbDragging.value = true;
-  
+
   // 获取进度条宽度
   const target = e.currentTarget as HTMLElement;
   const progressBar = target.parentElement?.parentElement as HTMLElement;
@@ -692,31 +708,31 @@ const handleThumbTouchStart = (e: TouchEvent) => {
 
 const handleThumbTouchMove = (e: TouchEvent) => {
   if (!isThumbDragging.value || !sound.value) return;
-  
+
   e.preventDefault(); // 阻止默认行为
-  
+
   const touch = e.touches[0];
   const target = e.currentTarget as HTMLElement;
   const progressBar = target.parentElement?.parentElement as HTMLElement;
   const rect = progressBar.getBoundingClientRect();
   const offsetX = touch.clientX - rect.left;
-  
+
   // 计算百分比并限制在0-1之间
   const percentage = Math.max(0, Math.min(1, offsetX / rect.width));
   const newTime = percentage * allTime.value;
-  
+
   // 实时更新UI，但不频繁seek
   nowTime.value = newTime;
-  
+
   console.log(`thumb拖动: ${percentage.toFixed(2)}, 时间: ${newTime.toFixed(2)}`);
 };
 
 const handleThumbTouchEnd = (e: TouchEvent) => {
   if (!isThumbDragging.value || !sound.value) return;
-  
+
   e.preventDefault(); // 阻止默认行为
   e.stopPropagation(); // 阻止事件冒泡
-  
+
   // 拖动结束时执行seek操作
   console.log(`拖动结束，跳转到: ${nowTime.value.toFixed(2)}秒`);
   sound.value.seek(nowTime.value);
@@ -734,26 +750,26 @@ const visibleLyrics = computed(() => {
   const centerIndex = nowIndex.value;
   const numLines = 3;
   const halfLines = Math.floor(numLines / 2);
-  
+
   let startIdx = centerIndex - halfLines;
   let endIdx = centerIndex + halfLines;
-  
+
   // 处理奇偶数行数的情况
   if (numLines % 2 === 0) {
     endIdx -= 1;
   }
-  
+
   // 处理边界情况
   if (startIdx < 0) {
     startIdx = 0;
     endIdx = Math.min(numLines - 1, lrcArray.value.length - 1);
   }
-  
+
   if (endIdx >= lrcArray.value.length) {
     endIdx = lrcArray.value.length - 1;
     startIdx = Math.max(0, endIdx - numLines + 1);
   }
-  
+
   return lrcArray.value.slice(startIdx, endIdx + 1);
 });
 
@@ -801,10 +817,10 @@ const setTextColors = (background: string) => {
   );
   document.documentElement.style.setProperty('--text-color-primary', textColors.value.primary);
   document.documentElement.style.setProperty('--text-color-active', textColors.value.active);
-  
+
   // 解析背景颜色用于封面融合
   let bgColor = playerStore.playMusic.primaryColor || 'rgba(25, 25, 25, 1)';
-  
+
   document.documentElement.style.setProperty('--bg-color', bgColor);
 
   // 处理背景颜色动画
@@ -844,7 +860,7 @@ onBeforeUnmount(() => {
   if (autoScrollTimer.value) {
     clearTimeout(autoScrollTimer.value);
   }
-  
+
   // 清理鼠标事件监听
   document.removeEventListener('mousemove', handleMouseMove);
   document.removeEventListener('mouseup', handleMouseUp);
@@ -876,11 +892,11 @@ const prevSong = () => {
 
 const togglePlayMode = () => {
   playerStore.togglePlayMode();
-  showBottomToast([
-    t('player.playMode.sequence'),
-    t('player.playMode.loop'),
-    t('player.playMode.random')
-  ][playMode.value]);
+  showBottomToast(
+    [t('player.playMode.sequence'), t('player.playMode.loop'), t('player.playMode.random')][
+      playMode.value
+    ]
+  );
 };
 
 const closeMusicFull = () => {
@@ -904,11 +920,11 @@ onMounted(() => {
   if (savedConfig) {
     config.value = { ...config.value, ...JSON.parse(savedConfig) };
   }
-  
+
   // 初始化自动滚动状态
   isAutoScrollEnabled.value = true;
   isTouchScrolling.value = false;
-  
+
   // 等待DOM元素渲染完成后初始化歌词滚动
   nextTick(() => {
     if (isVisible.value) {
@@ -948,25 +964,25 @@ const jumpToLyricTime = (index: number) => {
     // 使用类型断言确保time属性存在
     const lrcItem = lrcArray.value[index] as { time: number; text: string; trText?: string };
     const time = lrcItem.time / 1000;
-    
+
     // 更新播放位置
     sound.value.seek(time);
     nowTime.value = time;
-    
+
     // 显示反馈动画 - 处理两种模式下的歌词行
     const normalEl = document.getElementById(`lyric-line-${index}`);
     const landscapeEl = document.getElementById(`landscape-lyric-line-${index}`);
-    
+
     // 根据当前模式获取正确的元素并添加动画效果
     const activeEl = isLandscape.value ? landscapeEl : normalEl;
-    
+
     if (activeEl) {
       activeEl.classList.add('clicked');
       setTimeout(() => {
         activeEl.classList.remove('clicked');
       }, 300);
     }
-    
+
     // 如果歌词索引没有变化（例如点击当前行），手动触发滚动
     if (nowIndex.value === index) {
       if (isLandscape.value && !showFullLyrics.value) {
@@ -1010,7 +1026,7 @@ const getLrcStyle = (index: number) => {
 #mobile-drawer-target {
   @apply top-0 left-0 absolute overflow-hidden flex flex-col w-full h-full;
   animation-duration: 300ms;
-  
+
   // 通用控制按钮样式
   .main-button {
     @apply flex items-center justify-center cursor-pointer transition-all duration-200 rounded-full;
@@ -1019,48 +1035,48 @@ const getLrcStyle = (index: number) => {
       @apply text-2xl;
       color: var(--text-color-active);
     }
-    
+
     &.play-pause {
       i {
         @apply text-4xl;
       }
     }
-    
+
     &:hover {
       transform: scale(1.05);
     }
-    
+
     &:active {
       transform: scale(0.95);
     }
   }
-  
+
   // 通用进度条样式
   .apple-style-progress {
     @apply relative flex items-center cursor-pointer;
     touch-action: none; // 确保触摸事件正常工作
-    
+
     .progress-track {
       @apply relative w-full h-2 bg-white bg-opacity-20 rounded-full;
-      
+
       .progress-fill {
         @apply absolute top-0 left-0 h-full bg-white rounded-full;
         box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
         z-index: 1;
         transition: width 0.1s linear;
       }
-      
+
       .progress-thumb {
         @apply absolute top-1/2 -translate-y-1/2 -translate-x-1/2 rounded-full bg-white;
         box-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
         z-index: 2;
         transition: transform 0.15s ease-out;
-        
+
         &.active {
           transform: translate(-50%, -50%) scale(1.3);
           box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
         }
-        
+
         &:active {
           transform: translate(-50%, -50%) scale(1.3);
         }
@@ -1072,27 +1088,29 @@ const getLrcStyle = (index: number) => {
   .record-style-common {
     @apply rounded-full overflow-hidden relative;
     aspect-ratio: 1/1;
-    
+
     &::before {
       content: '';
       @apply absolute top-0 left-0 w-full h-full rounded-full z-10;
-      background: radial-gradient(circle at center, 
-                               transparent 38%, 
-                               rgba(0, 0, 0, 0.15) 38%, 
-                               rgba(0, 0, 0, 0.15) 39%, 
-                               rgba(255, 255, 255, 0.1) 39%, 
-                               rgba(255, 255, 255, 0.1) 39.5%,
-                               rgba(0, 0, 0, 0.08) 39.5%,
-                               rgba(0, 0, 0, 0.08) 40.5%,
-                               rgba(0, 0, 0, 0.2) 40.5%,
-                               rgba(0, 0, 0, 0.2) 41.5%,
-                               rgba(0, 0, 0, 0.6) 41.5%,
-                               rgba(0, 0, 0, 0.6) 100%);
+      background: radial-gradient(
+        circle at center,
+        transparent 38%,
+        rgba(0, 0, 0, 0.15) 38%,
+        rgba(0, 0, 0, 0.15) 39%,
+        rgba(255, 255, 255, 0.1) 39%,
+        rgba(255, 255, 255, 0.1) 39.5%,
+        rgba(0, 0, 0, 0.08) 39.5%,
+        rgba(0, 0, 0, 0.08) 40.5%,
+        rgba(0, 0, 0, 0.2) 40.5%,
+        rgba(0, 0, 0, 0.2) 41.5%,
+        rgba(0, 0, 0, 0.6) 41.5%,
+        rgba(0, 0, 0, 0.6) 100%
+      );
       pointer-events: none;
       animation: spin 20s linear infinite;
       animation-play-state: running;
     }
-    
+
     &::after {
       content: '';
       @apply absolute w-6 h-6 rounded-full bg-gray-900 z-20;
@@ -1101,127 +1119,131 @@ const getLrcStyle = (index: number) => {
       transform: translate(-50%, -50%);
       box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.4);
     }
-    
+
     &.paused {
-      &::before, &::after {
+      &::before,
+      &::after {
         animation-play-state: paused;
       }
     }
-    
+
     .img-wrapper {
       @apply rounded-full overflow-hidden border-solid border-black z-0;
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      
+
       &::after {
         content: '';
         @apply absolute top-0 left-0 w-full h-full rounded-full z-[2];
-        background: linear-gradient(135deg, 
-                                  rgba(255, 255, 255, 0.05) 0%, 
-                                  rgba(255, 255, 255, 0) 50%, 
-                                  rgba(0, 0, 0, 0.05) 100%);
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.05) 0%,
+          rgba(255, 255, 255, 0) 50%,
+          rgba(0, 0, 0, 0.05) 100%
+        );
         pointer-events: none;
       }
     }
-    
+
     .cover-image {
       @apply w-full h-full rounded-full border-[2px] border-gray-900;
       animation: spin 20s linear infinite;
       animation-play-state: running;
     }
-    
+
     &.paused .cover-image {
       animation-play-state: paused;
     }
   }
-  
+
   // 通用时间显示样式
   .time-info {
     @apply flex justify-between items-center mb-2;
-    
-    .current-time, .total-time {
+
+    .current-time,
+    .total-time {
       @apply text-sm;
       color: var(--text-color-primary);
       opacity: 0.8;
     }
   }
-  
+
   // 通用收藏按钮样式
   .favorite-icon {
     @apply cursor-pointer transition-all duration-200;
-    
+
     i {
       @apply text-xl;
       color: var(--text-color-primary);
-      
+
       &.favorite {
         @apply text-red-500 !important;
       }
     }
-    
+
     &:hover {
       transform: scale(1.1);
     }
-    
+
     &:active {
       transform: scale(0.9);
     }
-    
+
     &.landscape {
       i {
         @apply text-3xl;
       }
     }
   }
-  
+
   // 通用歌曲信息样式
   .song-info-common {
     @apply z-[9995];
-    
+
     .song-title {
       @apply font-bold line-clamp-1;
       color: var(--text-color-active);
     }
-    
+
     .song-artist {
       @apply font-medium line-clamp-1;
       color: var(--text-color-primary);
       opacity: 0.9;
-      
+
       .artist-name {
         @apply cursor-pointer;
-        
+
         &:hover {
           @apply underline;
         }
       }
     }
   }
-  
+
   // 横屏模式布局
   &.is-landscape {
     .landscape-layout {
       @apply flex flex-row w-full h-full overflow-hidden px-8 gap-4;
-      
+
       // 左侧区域
       .landscape-left-section {
         @apply h-full flex flex-col items-center justify-center pt-6 pb-6 px-3 relative;
-        width: 35%; 
+        width: 35%;
         min-width: 320px;
         max-width: 480px;
-        
+
         // 封面
         .landscape-cover-container {
           @apply flex-shrink-0 mx-auto mb-4 z-[9995];
           width: 85%;
           max-width: 260px;
           min-width: 180px;
-          
+
           &.record-style {
             @extend .record-style-common;
-            
+
             .img-wrapper {
               @apply border-[20px];
               width: 90%;
@@ -1229,45 +1251,51 @@ const getLrcStyle = (index: number) => {
             }
           }
         }
-        
+
         // 左侧进度条
         .landscape-progress-container {
           @apply mt-0 mb-2 px-2 w-full max-w-md;
-          
+
           .apple-style-progress {
             height: 48px; // 增加高度使更容易点击
-            
+
             .progress-thumb {
               @apply w-5 h-5;
             }
           }
         }
       }
-      
+
       // 右侧区域
       .landscape-lyrics-section {
         @apply h-full flex-1 flex flex-col relative;
-        
+
         // 歌曲信息
         .landscape-song-info {
           @apply flex justify-between items-center pt-5 z-[9995] px-4;
           @extend .song-info-common;
-          
+
           .song-title {
             @apply text-2xl mb-1;
           }
-          
+
           .song-artist {
             @apply text-base;
           }
         }
-        
+
         // 歌词滚动区域
         .landscape-lyrics-scroller {
           @apply h-full w-full overflow-y-auto pt-24 pb-24;
           scroll-behavior: smooth;
           -webkit-overflow-scrolling: touch;
-          mask-image: linear-gradient(to bottom, transparent 5%, black 15%, black 85%, transparent 95%);
+          mask-image: linear-gradient(
+            to bottom,
+            transparent 5%,
+            black 15%,
+            black 85%,
+            transparent 95%
+          );
           -webkit-mask-image: linear-gradient(
             to bottom,
             transparent 5%,
@@ -1276,11 +1304,11 @@ const getLrcStyle = (index: number) => {
             transparent 95%
           );
         }
-        
+
         // 控制按钮
         .landscape-main-controls {
           @apply fixed bottom-6 right-6 flex items-center z-[10000];
-          
+
           .main-button {
             @apply mx-2;
             width: 54px;
@@ -1288,7 +1316,7 @@ const getLrcStyle = (index: number) => {
             background-color: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(8px);
             border-radius: 50%;
-            
+
             &.play-pause {
               width: 70px;
               height: 70px;
@@ -1299,25 +1327,25 @@ const getLrcStyle = (index: number) => {
       }
     }
   }
-  
+
   // 竖屏模式布局
   &:not(.is-landscape) {
     .ios-layout-container {
       @apply flex flex-col items-center justify-between w-full h-full pt-10;
       padding-bottom: 180px; // 为控制区域留出空间
-      
+
       // 封面样式
       .cover-container {
         @apply relative mb-6 transition-all duration-500 border-gray-900 z-[9995];
-        
+
         &.style-changing {
           animation: styleChange 0.5s ease;
         }
-        
+
         &.record-style {
           @extend .record-style-common;
           @apply w-72 h-72;
-          
+
           .img-wrapper {
             @apply border-[40px];
             width: 90%;
@@ -1325,89 +1353,89 @@ const getLrcStyle = (index: number) => {
           }
         }
       }
-      
+
       // 歌曲信息
       .song-info {
         @apply flex flex-col items-center mb-5 w-full z-[9995];
         @extend .song-info-common;
-        
+
         .song-title-container {
           @apply w-full text-center;
-          
+
           .song-title {
             @apply text-2xl inline-block;
           }
         }
-        
+
         .song-artist {
           @apply text-base mb-2;
         }
 
-        .ri-heart-3-fill{
+        .ri-heart-3-fill {
           @apply text-2xl;
         }
       }
     }
-    
+
     // 统一控制区域
     .unified-controls {
       @apply fixed bottom-0 left-0 right-0 px-6 pt-6 pb-6;
-      background: linear-gradient(to top, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 100%);
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.5) 0%, rgba(0, 0, 0, 0) 100%);
       height: 230px;
       pointer-events: auto;
       z-index: 10000 !important;
-      
+
       .progress-container {
         @apply w-full mb-6;
-        
+
         .apple-style-progress {
           height: 40px;
-          
+
           .progress-thumb {
             @apply w-4 h-4;
           }
         }
       }
-      
+
       .control-buttons {
         @apply flex items-center justify-between w-full px-4;
-        
+
         .side-button {
           @apply w-10 h-10 flex items-center justify-center cursor-pointer transition-all duration-200;
-          
+
           i {
             @apply text-2xl;
             color: var(--text-color-primary);
           }
-          
+
           &:hover {
             i {
               color: var(--text-color-active);
             }
           }
         }
-        
+
         .main-button {
           @apply w-14 h-14;
-          
+
           i {
             @apply text-3xl;
           }
-          
+
           &.play-pause {
             @apply w-16 h-16 bg-white/15 rounded-full backdrop-blur-sm;
-            
+
             i {
               @apply text-4xl;
             }
           }
-          
+
           &:hover:not(.play-pause) {
             i {
               color: var(--text-color-active);
             }
           }
-          
+
           &.play-pause:hover {
             @apply bg-white/30;
           }
@@ -1432,7 +1460,7 @@ const getLrcStyle = (index: number) => {
   @apply absolute top-0 left-0 w-full h-full flex items-center justify-center;
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 9999999999;
-  
+
   .loading-icon {
     font-size: 36px;
     color: white;
@@ -1508,24 +1536,24 @@ const getLrcStyle = (index: number) => {
 
 .favorite-icon {
   @apply cursor-pointer transition-all duration-200;
-  
+
   i {
     @apply text-xl;
     color: var(--text-color-primary);
-    
+
     &.favorite {
       @apply text-red-500 !important;
     }
   }
-  
+
   &:hover {
     transform: scale(1.1);
   }
-  
+
   &:active {
     transform: scale(0.9);
   }
-  
+
   &.landscape {
     @apply mt-2;
     i {
@@ -1537,7 +1565,7 @@ const getLrcStyle = (index: number) => {
 // 歌曲标题容器样式
 .song-title-container {
   @apply w-full flex items-center justify-center relative;
-  
+
   .song-title {
     @apply text-center text-2xl font-bold max-w-[80%] truncate;
     color: var(--text-color-active);
@@ -1552,22 +1580,22 @@ const getLrcStyle = (index: number) => {
   line-height: var(--lyric-line-height, 1.6);
   color: var(--text-color-primary);
   opacity: 0.8;
-  
+
   span {
     background-clip: text !important;
     -webkit-background-clip: text !important;
   }
-  
+
   &.now-text {
     @apply font-bold py-4;
     color: var(--text-color-active);
     opacity: 1;
   }
-  
+
   &.clicked {
     animation: clickPulse 0.3s ease-in-out;
   }
-  
+
   .translation {
     @apply font-normal opacity-70 mt-1 text-base;
   }
@@ -1576,32 +1604,32 @@ const getLrcStyle = (index: number) => {
 // 全屏歌词相关样式
 .fullscreen-lyrics {
   @apply flex flex-col w-full h-full relative;
-  
+
   &.light {
     background: linear-gradient(to bottom, #ffffff, #f5f5f5);
   }
-  
+
   &.dark {
     background: linear-gradient(to bottom, #1a1a1a, #000000);
   }
-  
+
   .fullscreen-header {
     @apply pt-8 pb-4 px-6 flex flex-col items-center fixed top-0 left-0 w-full z-10;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0) 100%);
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0) 100%);
     height: 100px;
     pointer-events: auto;
-    
+
     .song-title {
       @apply text-xl font-semibold text-center mb-1 max-w-full line-clamp-1;
       color: var(--text-color-active);
     }
-    
+
     .artist-name {
       @apply text-sm text-opacity-80 text-center;
       color: var(--text-color-primary);
     }
   }
-  
+
   .lyrics-scroller {
     @apply flex-1 overflow-y-auto px-4;
     scroll-behavior: smooth;
@@ -1618,26 +1646,26 @@ const getLrcStyle = (index: number) => {
     padding-bottom: 200px;
     margin-bottom: 180px;
     margin-top: 90px;
-    
+
     .lyrics-padding-top {
       height: 70px;
       min-height: 70px;
     }
-    
+
     .lyrics-padding-bottom {
       height: 150px;
       min-height: 150px;
     }
-    
+
     .lyric-line {
       @apply px-6 py-4 text-center;
       font-size: var(--lyric-font-size, 22px);
-      
+
       span {
         padding-right: 10px;
       }
     }
-    
+
     .now-text {
       @apply text-2xl;
     }
@@ -1674,7 +1702,7 @@ const getLrcStyle = (index: number) => {
   }
 }
 
-#mobile-drawer-target{
+#mobile-drawer-target {
   // 横屏模式下的歌词样式
   &.is-landscape {
     .landscape-lyrics-section {
@@ -1683,17 +1711,17 @@ const getLrcStyle = (index: number) => {
           height: 30px;
           min-height: 30px;
         }
-        
+
         .lyrics-padding-bottom {
           height: 100px;
           min-height: 100px;
         }
-        
+
         .lyric-line {
           @apply px-4 py-3 text-left;
           font-size: 26px;
         }
-        
+
         .now-text {
           @apply text-3xl;
         }
@@ -1703,9 +1731,9 @@ const getLrcStyle = (index: number) => {
 
   .unified-controls {
     &.fullscreen-mode {
-      background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
     }
-    
+
     .back-button {
       @apply absolute top-4 left-1/2 -translate-x-1/2 w-10 h-10 flex items-center justify-center bg-black bg-opacity-30 rounded-2xl;
 
@@ -1715,28 +1743,28 @@ const getLrcStyle = (index: number) => {
       }
     }
   }
-  
+
   .ios-layout-container {
     .lyrics-container {
       @apply w-full flex-grow flex flex-col items-center justify-center mb-6 overflow-hidden cursor-pointer;
-      
+
       .lyrics-wrapper {
         @apply w-full flex flex-col items-center justify-center;
-        
+
         .lyric-line {
           @apply text-center py-1 transition-all duration-300 opacity-70;
-          
+
           &:nth-child(2) {
             @apply text-lg font-medium opacity-100;
             color: var(--text-color-active);
           }
-          
+
           .translation {
             @apply text-sm opacity-60 mt-1;
           }
         }
       }
-      
+
       .no-lyrics {
         @apply text-center text-base opacity-60;
         color: var(--text-color-primary);
@@ -1753,17 +1781,17 @@ const getLrcStyle = (index: number) => {
     .cover-image {
       @apply w-full h-full;
       transition: transform 0.3s ease-out;
-      
+
       &:active {
         transform: scale(0.95);
       }
     }
   }
-  
+
   // 全屏封面样式
   &.full-style {
     @apply w-full max-h-[50vh] relative overflow-hidden;
-    
+
     &::after {
       content: '';
       position: absolute;
@@ -1771,14 +1799,18 @@ const getLrcStyle = (index: number) => {
       left: 0;
       right: 0;
       height: 40%;
-      background: linear-gradient(transparent, var(--bg-color, rgba(25, 25, 25, 1)) 70%, var(--bg-color, rgba(25, 25, 25, 1)));
+      background: linear-gradient(
+        transparent,
+        var(--bg-color, rgba(25, 25, 25, 1)) 70%,
+        var(--bg-color, rgba(25, 25, 25, 1))
+      );
       z-index: 1;
       pointer-events: none;
     }
-    
+
     .cover-image {
       @apply w-full h-auto shadow-lg;
-      
+
       &.full-blend {
         mix-blend-mode: luminosity;
       }
@@ -1786,10 +1818,9 @@ const getLrcStyle = (index: number) => {
   }
 }
 
-.is-dark{
-  .square-style{
-    @apply shadow-2xl shadow-black/50; 
+.is-dark {
+  .square-style {
+    @apply shadow-2xl shadow-black/50;
   }
 }
-
-</style> 
+</style>

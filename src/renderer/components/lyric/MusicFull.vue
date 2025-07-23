@@ -72,7 +72,7 @@
             v-if="!config.hideMiniPlayBar"
             class="mt-4"
             :pure-mode-enabled="config.pureModeEnabled"
-            :isDark=" textColors.theme === 'dark'"
+            :isDark="textColors.theme === 'dark'"
           />
         </div>
       </div>
@@ -135,7 +135,7 @@
             </div>
           </div>
           <!-- 歌词右下角矫正按钮组件 -->
-          <LyricCorrectionControl
+          <lyric-correction-control
             v-if="!isMobile"
             :correction-time="correctionTime"
             @adjust="adjustCorrectionTime"
@@ -151,19 +151,19 @@ import { useDebounceFn } from '@vueuse/core';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import LyricCorrectionControl from '@/components/lyric/LyricCorrectionControl.vue';
 import LyricSettings from '@/components/lyric/LyricSettings.vue';
 import SimplePlayBar from '@/components/player/SimplePlayBar.vue';
-import LyricCorrectionControl from '@/components/lyric/LyricCorrectionControl.vue';
 import {
+  adjustCorrectionTime,
   artistList,
+  correctionTime,
   lrcArray,
   nowIndex,
   playMusic,
   setAudioTime,
   textColors,
-  useLyricProgress,
-  correctionTime,
-  adjustCorrectionTime
+  useLyricProgress
 } from '@/hooks/MusicHook';
 import { useArtist } from '@/hooks/useArtist';
 import { usePlayerStore } from '@/store/modules/player';

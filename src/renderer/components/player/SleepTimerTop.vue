@@ -9,8 +9,9 @@
 </template>
 
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
+import { useI18n } from 'vue-i18n';
+
 import { usePlayerStore } from '@/store/modules/player';
 
 const { t } = useI18n();
@@ -28,19 +29,18 @@ const checkTimerExpired = () => {
       playerStore.clearSleepTimer();
     }
   }
-}
+};
 
 // 在组件挂载时检查定时器状态
 onMounted(() => {
   checkTimerExpired();
 });
 
-
 // 倒计时显示
 const formattedRemainingTime = computed(() => {
   // 依赖刷新触发器强制更新
   void refreshTrigger.value;
-  
+
   if (sleepTimer.value.type !== 'time' || !sleepTimer.value.endTime) {
     if (sleepTimer.value.type === 'songs' && sleepTimer.value.remainingSongs) {
       return t('player.sleepTimer.songsRemaining', { count: sleepTimer.value.remainingSongs });
@@ -50,14 +50,14 @@ const formattedRemainingTime = computed(() => {
     }
     return '';
   }
-  
+
   const remaining = Math.max(0, sleepTimer.value.endTime - Date.now());
   const totalSeconds = Math.floor(remaining / 1000);
-  
+
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = Math.floor(totalSeconds % 60);
-  
+
   if (hours > 0) {
     return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   } else {
@@ -83,7 +83,7 @@ watch(
 // 启动定时器更新UI
 function startTimerUpdate() {
   stopTimerUpdate(); // 先停止之前的计时器
-  
+
   // 每秒更新UI
   timerUpdateInterval = window.setInterval(() => {
     // 更新刷新触发器，强制重新计算
@@ -110,16 +110,15 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
-
 .sleep-timer-countdown {
   @apply fixed top-[28px] left-1/2 transform -translate-x-1/2 -translate-y-full py-1 px-3 rounded-b-lg bg-green-500 text-white text-sm flex items-center hover:scale-110 transition-all cursor-pointer;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
   z-index: 9998;
   min-width: 80px;
   text-align: center;
   animation: fadeInDown 0.3s ease-out;
   -webkit-app-region: no-drag;
-  
+
   @keyframes fadeInDown {
     from {
       transform: translate(-50%, -150%);
@@ -130,7 +129,7 @@ onUnmounted(() => {
       opacity: 1;
     }
   }
-  
+
   span {
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.5px;

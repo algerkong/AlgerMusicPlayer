@@ -46,10 +46,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, defineProps, defineEmits } from 'vue';
-import { useI18n } from 'vue-i18n';
-import { useMessage } from 'naive-ui';
 import type { FormRules } from 'naive-ui';
+import { useMessage } from 'naive-ui';
+import { defineEmits, defineProps, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps({
   show: {
@@ -92,7 +92,8 @@ const proxyRules: FormRules = {
     validator: (_rule, value) => {
       if (!value) return false;
       // 简单的IP或域名验证
-      const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$|^localhost$|^[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+$/;
+      const ipRegex =
+        /^(\d{1,3}\.){3}\d{1,3}$|^localhost$|^[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+$/;
       return ipRegex.test(value);
     }
   },
@@ -142,6 +143,7 @@ const handleProxyConfirm = async () => {
     visible.value = false;
     message.success(t('settings.network.messages.proxySuccess'));
   } catch (err) {
+    console.error('代理设置验证失败:', err);
     message.error(t('settings.network.messages.proxyError'));
   }
 };
@@ -149,4 +151,4 @@ const handleProxyConfirm = async () => {
 const handleCancel = () => {
   visible.value = false;
 };
-</script> 
+</script>

@@ -112,8 +112,8 @@
 import { useThrottleFn } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
 
-import { allTime, artistList, nowTime, playMusic, sound, textColors } from '@/hooks/MusicHook';
 import MusicFullWrapper from '@/components/lyric/MusicFullWrapper.vue';
+import { allTime, artistList, nowTime, playMusic, sound, textColors } from '@/hooks/MusicHook';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 import { getImgUrl, secondToMinute, setAnimationClass } from '@/utils';

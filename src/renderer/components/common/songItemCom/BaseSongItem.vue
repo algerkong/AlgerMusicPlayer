@@ -11,7 +11,7 @@
     <slot name="image"></slot>
     <slot name="content"></slot>
     <slot name="operating"></slot>
-    
+
     <song-item-dropdown
       v-if="isElectron"
       :item="item"
@@ -33,10 +33,11 @@
 </template>
 
 <script lang="ts" setup>
-import SongItemDropdown from './SongItemDropdown.vue';
 import { useSongItem } from '@/hooks/useSongItem';
-import { isElectron } from '@/utils';
 import type { SongResult } from '@/type/music';
+import { isElectron } from '@/utils';
+
+import SongItemDropdown from './SongItemDropdown.vue';
 
 const props = defineProps<{
   item: SongResult;
@@ -115,4 +116,4 @@ defineExpose({
 .text-ellipsis {
   width: 100%;
 }
-</style> 
+</style>

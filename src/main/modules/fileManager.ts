@@ -1,14 +1,14 @@
 import axios from 'axios';
 import { app, dialog, ipcMain, Notification, protocol, shell } from 'electron';
 import Store from 'electron-store';
+import { fileTypeFromFile } from 'file-type';
 import * as fs from 'fs';
 import * as http from 'http';
 import * as https from 'https';
-import * as NodeID3 from 'node-id3';
-import * as path from 'path';
-import * as os from 'os';
 import * as mm from 'music-metadata';
-import { fileTypeFromFile } from 'file-type';
+import * as NodeID3 from 'node-id3';
+import * as os from 'os';
+import * as path from 'path';
 
 import { getStore } from './config';
 
@@ -42,18 +42,18 @@ export function initializeFileManager() {
   // 注册本地文件协议
   protocol.registerFileProtocol('local', (request, callback) => {
     try {
-      let url = request.url;
+      const url = request.url;
       // local://C:/Users/xxx.mp3
       let filePath = decodeURIComponent(url.replace('local:///', ''));
-      
+
       // 兼容 local:///C:/Users/xxx.mp3 这种情况
       if (/^\/[a-zA-Z]:\//.test(filePath)) {
         filePath = filePath.slice(1);
       }
-      
+
       // 还原为系统路径格式
       filePath = path.normalize(filePath);
-      
+
       // 检查文件是否存在
       if (!fs.existsSync(filePath)) {
         console.error('File not found:', filePath);
@@ -128,13 +128,13 @@ export function initializeFileManager() {
   ipcMain.handle('get-downloads-path', () => {
     return app.getPath('downloads');
   });
-  
+
   // 获取存储的配置值
   ipcMain.handle('get-store-value', (_, key) => {
     const store = new Store();
     return store.get(key);
   });
-  
+
   // 设置存储的配置值
   ipcMain.on('set-store-value', (_, key, value) => {
     const store = new Store();
@@ -189,7 +189,8 @@ export function initializeFileManager() {
       const validEntriesPromises = await Promise.all(
         entriesArray.map(async ([path, info]) => {
           try {
-            const exists = await fs.promises.access(path)
+            const exists = await fs.promises
+              .access(path)
               .then(() => true)
               .catch(() => false);
             return exists ? info : null;
@@ -202,7 +203,7 @@ export function initializeFileManager() {
 
       // 过滤有效的歌曲并排序
       const validSongs = validEntriesPromises
-        .filter(song => song !== null)
+        .filter((song) => song !== null)
         .sort((a, b) => (b.downloadTime || 0) - (a.downloadTime || 0));
 
       // 更新存储，移除不存在的文件记录
@@ -376,9 +377,9 @@ async function downloadMusic(
     const downloadPath =
       (configStore.get('set.downloadPath') as string) || app.getPath('downloads');
     const apiPort = configStore.get('set.musicApiPort') || 30488;
-    
+
     // 获取文件名格式设置
-    const nameFormat = 
+    const nameFormat =
       (configStore.get('set.downloadNameFormat') as string) || '{songName} - {artistName}';
 
     // 根据格式创建文件名
@@ -388,7 +389,7 @@ async function downloadMusic(
       const artistName = songInfo.ar?.map((a: any) => a.name).join('/') || '未知艺术家';
       const songName = songInfo.name || filename;
       const albumName = songInfo.al?.name || '未知专辑';
-      
+
       // 应用自定义格式
       formattedFilename = nameFormat
         .replace(/\{songName\}/g, songName)
@@ -401,12 +402,12 @@ async function downloadMusic(
 
     // 创建临时文件路径 (在系统临时目录中创建)
     const tempDir = path.join(os.tmpdir(), 'AlgerMusicPlayerTemp');
-    
+
     // 确保临时目录存在
     if (!fs.existsSync(tempDir)) {
       fs.mkdirSync(tempDir, { recursive: true });
     }
-    
+
     tempFilePath = path.join(tempDir, `${Date.now()}_${sanitizedFilename}.tmp`);
 
     // 先获取文件大小
@@ -460,7 +461,7 @@ async function downloadMusic(
 
     // 检测文件类型
     let fileExtension = '';
-    
+
     try {
       // 首先尝试使用file-type库检测
       const fileType = await fileTypeFromFile(tempFilePath);
@@ -475,26 +476,28 @@ async function downloadMusic(
           const formatInfo = metadata.format;
           const container = formatInfo.container || '';
           const codec = formatInfo.codec || '';
-          
+
           // 音频格式映射表
           const formatMap = {
-            'mp3': ['MPEG', 'MP3', 'mp3'],
-            'aac': ['AAC'],
-            'flac': ['FLAC'],
-            'ogg': ['Ogg', 'Vorbis'],
-            'wav': ['WAV', 'PCM'],
-            'm4a': ['M4A', 'MP4']
+            mp3: ['MPEG', 'MP3', 'mp3'],
+            aac: ['AAC'],
+            flac: ['FLAC'],
+            ogg: ['Ogg', 'Vorbis'],
+            wav: ['WAV', 'PCM'],
+            m4a: ['M4A', 'MP4']
           };
-          
+
           // 查找匹配的格式
-          const format = Object.entries(formatMap).find(([_, keywords]) => 
-            keywords.some(keyword => container.includes(keyword) || codec.includes(keyword))
+          const format = Object.entries(formatMap).find(([_, keywords]) =>
+            keywords.some((keyword) => container.includes(keyword) || codec.includes(keyword))
           );
-          
+
           // 设置文件扩展名，如果没找到则默认为mp3
           fileExtension = format ? `.${format[0]}` : '.mp3';
-          
-          console.log(`music-metadata检测结果: 容器:${container}, 编码:${codec}, 扩展名: ${fileExtension}`);
+
+          console.log(
+            `music-metadata检测结果: 容器:${container}, 编码:${codec}, 扩展名: ${fileExtension}`
+          );
         } else {
           // 两种方法都失败，使用传入的type或默认mp3
           fileExtension = type ? `.${type}` : '.mp3';
@@ -593,7 +596,7 @@ async function downloadMusic(
       try {
         // 在写入ID3标签前，先移除可能存在的旧标签
         NodeID3.removeTags(finalFilePath);
-        
+
         const tags = {
           title: filename,
           artist: artistNames,
@@ -676,7 +679,7 @@ async function downloadMusic(
       const notificationId = `download-${finalFilePath}`;
       if (!sentNotifications.has(notificationId)) {
         sentNotifications.set(notificationId, true);
-        
+
         // 发送桌面通知
         try {
           const artistNames =
@@ -687,13 +690,13 @@ async function downloadMusic(
             body: `${songInfo?.name || filename} - ${artistNames}`,
             silent: false
           });
-  
+
           notification.on('click', () => {
             shell.showItemInFolder(finalFilePath);
           });
-  
+
           notification.show();
-          
+
           // 60秒后清理通知记录，释放内存
           setTimeout(() => {
             sentNotifications.delete(notificationId);
@@ -722,7 +725,7 @@ async function downloadMusic(
     if (writer) {
       writer.end();
     }
-    
+
     // 清理临时文件
     if (tempFilePath && fs.existsSync(tempFilePath)) {
       try {
@@ -731,7 +734,7 @@ async function downloadMusic(
         console.error('Failed to delete temporary file:', e);
       }
     }
-    
+
     // 清理未完成的最终文件
     if (finalFilePath && fs.existsSync(finalFilePath)) {
       try {

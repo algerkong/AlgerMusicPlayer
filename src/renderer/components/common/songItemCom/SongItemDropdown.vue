@@ -15,7 +15,7 @@
 
 <script lang="ts" setup>
 import type { MenuOption } from 'naive-ui';
-import { NEllipsis, NImage, NDropdown } from 'naive-ui';
+import { NDropdown, NEllipsis, NImage } from 'naive-ui';
 import { computed, h, inject } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -35,12 +35,12 @@ const props = defineProps<{
 }>();
 
 const emits = defineEmits([
-  'update:show', 
-  'select', 
-  'play', 
-  'play-next', 
-  'download', 
-  'add-to-playlist', 
+  'update:show',
+  'select',
+  'play',
+  'play-next',
+  'download',
+  'add-to-playlist',
   'toggle-favorite',
   'toggle-dislike',
   'remove'
@@ -104,7 +104,9 @@ const renderSongPreview = () => {
                 },
                 {
                   default: () => {
-                    const artistNames = (props.item.ar || props.item.song?.artists)?.map((a) => a.name).join(' / ');
+                    const artistNames = (props.item.ar || props.item.song?.artists)
+                      ?.map((a) => a.name)
+                      .join(' / ');
                     return artistNames || '未知艺术家';
                   }
                 }
@@ -164,8 +166,11 @@ const dropdownOptions = computed<MenuOption[]>(() => {
     {
       label: props.isDislike ? t('songItem.menu.undislike') : t('songItem.menu.dislike'),
       key: 'dislike',
-      icon: () => h('i', { class: `iconfont ${props.isDislike ? 'ri-dislike-fill text-green-500': 'ri-dislike-line'}` })
-    },
+      icon: () =>
+        h('i', {
+          class: `iconfont ${props.isDislike ? 'ri-dislike-fill text-green-500' : 'ri-dislike-line'}`
+        })
+    }
   ];
 
   if (props.canRemove) {
@@ -188,7 +193,7 @@ const dropdownOptions = computed<MenuOption[]>(() => {
 // 处理选择
 const handleSelect = (key: string | number) => {
   emits('update:show', false);
-  
+
   switch (key) {
     case 'download':
       emits('download');
@@ -249,4 +254,4 @@ const handleSelect = (key: string | number) => {
 :deep(.n-dropdown-option-body--render) {
   @apply p-0;
 }
-</style> 
+</style>

@@ -122,7 +122,7 @@ const createWin = () => {
     }
   });
 
-  lyricWindow.on('blur', () => lyricWindow && lyricWindow.setMaximizable(false))
+  lyricWindow.on('blur', () => lyricWindow && lyricWindow.setMaximizable(false));
 
   return lyricWindow;
 };

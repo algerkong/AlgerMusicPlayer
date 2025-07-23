@@ -39,7 +39,7 @@ export default defineConfig({
     ],
     publicDir: resolve('resources'),
     server: {
-      host: '0.0.0.0',
+      host: '0.0.0.0'
     }
   }
 });

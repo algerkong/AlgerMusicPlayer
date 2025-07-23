@@ -1,5 +1,5 @@
 <template>
-  <component 
+  <component
     :is="renderComponent"
     :item="item"
     :favorite="favorite"
@@ -16,12 +16,13 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue';
+
 import type { SongResult } from '@/type/music';
 
-import StandardSongItem from './songItemCom/StandardSongItem.vue';
-import MiniSongItem from './songItemCom/MiniSongItem.vue';
-import ListSongItem from './songItemCom/ListSongItem.vue';
 import CompactSongItem from './songItemCom/CompactSongItem.vue';
+import ListSongItem from './songItemCom/ListSongItem.vue';
+import MiniSongItem from './songItemCom/MiniSongItem.vue';
+import StandardSongItem from './songItemCom/StandardSongItem.vue';
 
 const props = withDefaults(
   defineProps<{

@@ -33,9 +33,9 @@ export const watchSystemTheme = (callback: (theme: ThemeType) => void) => {
     const handler = (e: MediaQueryListEvent) => {
       callback(e.matches ? 'dark' : 'light');
     };
-    
+
     mediaQuery.addEventListener('change', handler);
-    
+
     // 返回清理函数
     return () => {
       mediaQuery.removeEventListener('change', handler);

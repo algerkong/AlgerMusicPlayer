@@ -1,21 +1,19 @@
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue';
+import { defineEmits, defineProps } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
-  correctionTime: number
+  correctionTime: number;
 }>();
 const emit = defineEmits<{
-  (e: 'adjust', delta: number): void
+  (e: 'adjust', delta: number): void;
 }>();
 
 const { t } = useI18n();
 </script>
 
 <template>
-  <div
-    class="lyric-correction"
-  >
+  <div class="lyric-correction">
     <n-tooltip placement="right">
       <template #trigger>
         <div
@@ -28,7 +26,9 @@ const { t } = useI18n();
       </template>
       <span>{{ t('player.subtractCorrection', { num: 0.2 }) }}</span>
     </n-tooltip>
-    <span class="text-xs py-0.5 px-1 rounded bg-white/70 dark:bg-neutral-800/70 shadow font-mono tracking-wider text-gray-700 dark:text-gray-200 bg-opacity-40 backdrop-blur-2xl">
+    <span
+      class="text-xs py-0.5 px-1 rounded bg-white/70 dark:bg-neutral-800/70 shadow font-mono tracking-wider text-gray-700 dark:text-gray-200 bg-opacity-40 backdrop-blur-2xl"
+    >
       {{ props.correctionTime > 0 ? '+' : '' }}{{ props.correctionTime.toFixed(1) }}s
     </span>
     <n-tooltip placement="right">
@@ -55,9 +55,9 @@ const { t } = useI18n();
   @apply w-7 h-7 flex items-center justify-center rounded-lg bg-white dark:bg-neutral-800 border border-white/20 dark:border-neutral-700/40 shadow-md backdrop-blur-2xl cursor-pointer transition-all duration-150 text-gray-700 dark:text-gray-200 hover:bg-green-500/80 hover:text-white hover:border-green-400/60 active:scale-95 bg-opacity-40 dark:hover:bg-green-500/80 dark:hover:text-white dark:hover:border-green-400/60 dark:hover:bg-opacity-40;
 }
 
-.mobile{
+.mobile {
   .lyric-correction {
     @apply opacity-100;
   }
 }
-</style> 
+</style>

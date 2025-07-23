@@ -16,7 +16,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
-          
+
       - name: 创建环境变量文件
         run: |
           echo "VITE_API=${{ secrets.VITE_API }}" > .env.production.local
@@ -36,7 +36,7 @@ jobs:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USERNAME }}
           key: ${{ secrets.DEPLOY_KEY }}
-          source: "out/renderer/*"
+          source: 'out/renderer/*'
           target: ${{ secrets.DEPLOY_PATH }}
           strip_components: 2
 

@@ -5,7 +5,7 @@ import server from 'netease-cloud-music-api-alger/server';
 import os from 'os';
 import path from 'path';
 
-import { unblockMusic, type Platform } from './unblockMusic';
+import { type Platform, unblockMusic } from './unblockMusic';
 
 const store = new Store();
 if (!fs.existsSync(path.resolve(os.tmpdir(), 'anonymous_token'))) {

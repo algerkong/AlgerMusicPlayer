@@ -63,7 +63,7 @@ export default {
     favorite: 'Favorite {name}',
     unFavorite: 'Unfavorite {name}',
     playbackSpeed: 'Playback Speed',
-    advancedControls: 'Advanced Controls',
+    advancedControls: 'Advanced Controls'
   },
   eq: {
     title: 'Equalizer',
@@ -117,6 +117,7 @@ export default {
     cleared: 'Playlist cleared',
     empty: 'Playlist is empty',
     clearConfirmTitle: 'Clear Playlist',
-    clearConfirmContent: 'This will clear all songs in the playlist and stop the current playback. Continue?'
+    clearConfirmContent:
+      'This will clear all songs in the playlist and stop the current playback. Continue?'
   }
 };

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ref } from 'vue';
 
 // 定义表配置的泛型接口

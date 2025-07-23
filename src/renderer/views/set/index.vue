@@ -32,11 +32,15 @@
                     <template #unchecked><i class="ri-settings-line"></i></template>
                   </n-switch>
                   <span class="text-sm text-gray-500">
-                    {{ setData.autoTheme ? t('settings.basic.autoTheme') : t('settings.basic.manualTheme') }}
+                    {{
+                      setData.autoTheme
+                        ? t('settings.basic.autoTheme')
+                        : t('settings.basic.manualTheme')
+                    }}
                   </span>
                 </div>
-                <n-switch 
-                  v-model:value="isDarkTheme" 
+                <n-switch
+                  v-model:value="isDarkTheme"
                   :disabled="setData.autoTheme"
                   :class="{ 'opacity-50': setData.autoTheme }"
                 >
@@ -118,19 +122,22 @@
                 </div>
               </div>
               <div class="flex items-center gap-2">
-                <span class="text-sm text-gray-400" v-if="!isMobile">{{ setData.animationSpeed }}x</span>
+                <span class="text-sm text-gray-400" v-if="!isMobile"
+                  >{{ setData.animationSpeed }}x</span
+                >
                 <div class="w-40 flex justify-end">
-                  <template v-if="!isMobile"><n-slider
-                    v-model:value="setData.animationSpeed"
-                    :min="0.1"
-                    :max="3"
-                    :step="0.1"
-                    :marks="{
-                      0.1: t('settings.basic.animationSpeed.slow'),
-                      1: t('settings.basic.animationSpeed.normal'),
-                      3: t('settings.basic.animationSpeed.fast')
-                    }"
-                    :disabled="setData.noAnimate"
+                  <template v-if="!isMobile"
+                    ><n-slider
+                      v-model:value="setData.animationSpeed"
+                      :min="0.1"
+                      :max="3"
+                      :step="0.1"
+                      :marks="{
+                        0.1: t('settings.basic.animationSpeed.slow'),
+                        1: t('settings.basic.animationSpeed.normal'),
+                        3: t('settings.basic.animationSpeed.fast')
+                      }"
+                      :disabled="setData.noAnimate"
                   /></template>
                   <template v-else>
                     <n-input-number
@@ -179,13 +186,28 @@
                 />
               </div>
               <!-- 网易云 QQ 音乐 酷我 酷狗 会员购买链接 -->
-            <div class="p-2 bg-light-100 dark:bg-dark-100 rounded-lg mt-2">
-              <div>大家还是需要支持正版，本软件只做开源探讨</div>
+              <div class="p-2 bg-light-100 dark:bg-dark-100 rounded-lg mt-2">
+                <div>大家还是需要支持正版，本软件只做开源探讨</div>
                 <div class="mt-2">各大音乐会员购买链接</div>
                 <div class="flex gap-5 flex-wrap">
-                  <a class="text-green-400 hover:text-green-500" href="https://music.163.com/store/vip" target="_blank">网易云音乐会员</a>
-                  <a class="text-green-400 hover:text-green-500" href="https://y.qq.com/portal/vipportal/" target="_blank">QQ音乐会员</a>
-                  <a class="text-green-400 hover:text-green-500" href="https://vip.kugou.com/" target="_blank">酷狗音乐会员</a>
+                  <a
+                    class="text-green-400 hover:text-green-500"
+                    href="https://music.163.com/store/vip"
+                    target="_blank"
+                    >网易云音乐会员</a
+                  >
+                  <a
+                    class="text-green-400 hover:text-green-500"
+                    href="https://y.qq.com/portal/vipportal/"
+                    target="_blank"
+                    >QQ音乐会员</a
+                  >
+                  <a
+                    class="text-green-400 hover:text-green-500"
+                    href="https://vip.kugou.com/"
+                    target="_blank"
+                    >酷狗音乐会员</a
+                  >
                 </div>
               </div>
             </div>
@@ -202,7 +224,9 @@
                   </div>
                   <div v-if="setData.enableMusicUnblock" class="mt-2">
                     <div class="text-sm">
-                      <span class="text-gray-500">{{ t('settings.playback.selectedMusicSources') }}</span>
+                      <span class="text-gray-500">{{
+                        t('settings.playback.selectedMusicSources')
+                      }}</span>
                       <span v-if="musicSources.length > 0" class="text-gray-400">
                         {{ musicSources.join(', ') }}
                       </span>
@@ -213,8 +237,8 @@
                   </div>
                 </div>
               </div>
-              <n-button 
-                size="small" 
+              <n-button
+                size="small"
                 :disabled="!setData.enableMusicUnblock"
                 @click="showMusicSourcesModal = true"
               >
@@ -225,7 +249,9 @@
             <div class="set-item" v-if="platform === 'darwin'">
               <div>
                 <div class="set-item-title">{{ t('settings.playback.showStatusBar') }}</div>
-                <div class="set-item-content">{{ t('settings.playback.showStatusBarContent') }}</div>
+                <div class="set-item-content">
+                  {{ t('settings.playback.showStatusBarContent') }}
+                </div>
               </div>
               <n-switch v-model:value="setData.showTopAction">
                 <template #checked>{{ t('common.on') }}</template>
@@ -325,7 +351,9 @@
             <div class="set-item">
               <div>
                 <div class="set-item-title">{{ t('settings.application.remoteControl') }}</div>
-                <div class="set-item-content">{{ t('settings.application.remoteControlDesc') }}</div>
+                <div class="set-item-content">
+                  {{ t('settings.application.remoteControlDesc') }}
+                </div>
               </div>
               <n-button size="small" @click="showRemoteControlModal = true">{{
                 t('common.configure')
@@ -483,30 +511,21 @@
       <shortcut-settings v-model:show="showShortcutModal" @change="handleShortcutsChange" />
 
       <!-- 代理设置弹窗 -->
-      <proxy-settings 
-        v-model:show="showProxyModal" 
+      <proxy-settings
+        v-model:show="showProxyModal"
         :config="proxyForm"
         @confirm="handleProxyConfirm"
       />
 
       <!-- 音源设置弹窗 -->
-      <music-source-settings
-        v-model:show="showMusicSourcesModal"
-        v-model:sources="musicSources"
-      />
+      <music-source-settings v-model:show="showMusicSourcesModal" v-model:sources="musicSources" />
 
       <!-- 远程控制设置弹窗 -->
       <remote-control-setting v-model:visible="showRemoteControlModal" />
-
     </template>
 
     <!-- 清除缓存弹窗 -->
-    <clear-cache-settings
-      v-model:show="showClearCacheModal"
-      @confirm="clearCache"
-    />
-
-
+    <clear-cache-settings v-model:show="showClearCacheModal" @confirm="clearCache" />
   </div>
 </template>
 
@@ -521,17 +540,17 @@ import Coffee from '@/components/Coffee.vue';
 import DonationList from '@/components/common/DonationList.vue';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
-import ShortcutSettings from '@/components/settings/ShortcutSettings.vue';
-import ProxySettings from '@/components/settings/ProxySettings.vue';
 import ClearCacheSettings from '@/components/settings/ClearCacheSettings.vue';
 import MusicSourceSettings from '@/components/settings/MusicSourceSettings.vue';
+import ProxySettings from '@/components/settings/ProxySettings.vue';
 import RemoteControlSetting from '@/components/settings/ServerSetting.vue';
+import ShortcutSettings from '@/components/settings/ShortcutSettings.vue';
 import { useSettingsStore } from '@/store/modules/settings';
 import { useUserStore } from '@/store/modules/user';
+import { type Platform } from '@/types/music';
 import { isElectron, isMobile } from '@/utils';
 import { openDirectory, selectDirectory } from '@/utils/fileOperation';
 import { checkUpdate, UpdateResult } from '@/utils/update';
-import { type Platform } from '@/types/music';
 
 import config from '../../../../package.json';
 

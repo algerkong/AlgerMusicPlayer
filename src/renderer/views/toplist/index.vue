@@ -40,7 +40,7 @@
 <script lang="ts" setup>
 import { useRouter } from 'vue-router';
 
-import { getToplist, getListDetail } from '@/api/list';
+import { getListDetail, getToplist } from '@/api/list';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import type { IListDetail } from '@/type/listDetail';
 import { formatNumber, getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
@@ -63,11 +63,11 @@ const router = useRouter();
 
 const openToplist = (item: any) => {
   listLoading.value = true;
-  
-  getListDetail(item.id).then(res => {
+
+  getListDetail(item.id).then((res) => {
     listDetail.value = res.data;
     listLoading.value = false;
-    
+
     navigateToMusicList(router, {
       id: item.id,
       type: 'playlist',
@@ -175,4 +175,4 @@ onMounted(() => {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   }
 }
-</style> 
+</style>

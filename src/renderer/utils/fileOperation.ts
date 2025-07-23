@@ -12,6 +12,7 @@ export const selectDirectory = async (message: MessageApi): Promise<string | und
       return result.filePaths[0];
     }
   } catch (error) {
+    console.error('选择目录失败:', error);
     message.error('选择目录失败');
   }
   return undefined;

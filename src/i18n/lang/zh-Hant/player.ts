@@ -64,7 +64,7 @@ export default {
     unFavorite: '已取消收藏{name}',
     miniPlayBar: '迷你播放列',
     playbackSpeed: '播放速度',
-    advancedControls: '更多設定s',
+    advancedControls: '更多設定s'
   },
   eq: {
     title: '等化器',

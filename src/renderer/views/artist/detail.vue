@@ -34,7 +34,7 @@
               </template>
               {{ t('comp.musicList.playAll') }}
             </n-tooltip>
-            
+
             <n-tooltip placement="bottom" trigger="hover">
               <template #trigger>
                 <div class="action-button hover-green" @click="addToPlaylist">
@@ -44,20 +44,27 @@
               {{ t('comp.musicList.addToPlaylist') }}
             </n-tooltip>
           </div>
-          
+
           <div class="toolbar-right">
             <!-- 布局切换按钮 -->
             <div class="layout-toggle" v-if="!isMobile">
               <n-tooltip placement="bottom" trigger="hover">
                 <template #trigger>
                   <div class="toggle-button hover-green" @click="toggleLayout">
-                    <i class="icon iconfont" :class="isCompactLayout ? 'ri-list-check-2' : 'ri-grid-line'"></i>
+                    <i
+                      class="icon iconfont"
+                      :class="isCompactLayout ? 'ri-list-check-2' : 'ri-grid-line'"
+                    ></i>
                   </div>
                 </template>
-                {{ isCompactLayout ? t('comp.musicList.switchToNormal') : t('comp.musicList.switchToCompact') }}
+                {{
+                  isCompactLayout
+                    ? t('comp.musicList.switchToNormal')
+                    : t('comp.musicList.switchToCompact')
+                }}
               </n-tooltip>
             </div>
-            
+
             <!-- 搜索框 -->
             <div class="search-container" :class="{ 'search-expanded': isSearchVisible }">
               <template v-if="isSearchVisible">
@@ -73,7 +80,10 @@
                     <i class="icon iconfont ri-search-line text-sm"></i>
                   </template>
                   <template #suffix>
-                    <i class="icon iconfont ri-close-line text-sm cursor-pointer" @click="closeSearch"></i>
+                    <i
+                      class="icon iconfont ri-close-line text-sm cursor-pointer"
+                      @click="closeSearch"
+                    ></i>
                   </template>
                 </n-input>
               </template>
@@ -90,13 +100,13 @@
             </div>
           </div>
         </div>
-        
+
         <div class="songs-list">
           <div class="song-list-content">
             <div v-if="filteredSongs.length === 0 && searchKeyword" class="no-result">
               {{ t('comp.musicList.noSearchResults') }}
             </div>
-            
+
             <!-- 替换原来的 v-for 循环为虚拟列表 -->
             <n-virtual-list
               ref="songListRef"
@@ -122,9 +132,13 @@
                 </div>
               </template>
             </n-virtual-list>
-            
+
             <div v-if="songLoading" class="loading-more">{{ t('common.loading') }}</div>
-            <div v-else-if="songPage.hasMore" ref="songsLoadMoreRef" class="load-more-trigger"></div>
+            <div
+              v-else-if="songPage.hasMore"
+              ref="songsLoadMoreRef"
+              class="load-more-trigger"
+            ></div>
           </div>
         </div>
       </n-tab-pane>
@@ -146,7 +160,11 @@
               }"
             />
             <div v-if="albumLoading" class="loading-more">{{ t('common.loading') }}</div>
-            <div v-else-if="albumPage.hasMore" ref="albumsLoadMoreRef" class="load-more-trigger"></div>
+            <div
+              v-else-if="albumPage.hasMore"
+              ref="albumsLoadMoreRef"
+              class="load-more-trigger"
+            ></div>
           </div>
         </div>
       </n-tab-pane>
@@ -164,11 +182,20 @@
 
 <script setup lang="ts">
 import { useDateFormat } from '@vueuse/core';
-import { computed, onMounted, onUnmounted, ref, watch, nextTick, onActivated, onDeactivated } from 'vue';
+import { useMessage } from 'naive-ui';
+import PinyinMatch from 'pinyin-match';
+import {
+  computed,
+  nextTick,
+  onActivated,
+  onDeactivated,
+  onMounted,
+  onUnmounted,
+  ref,
+  watch
+} from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
-import PinyinMatch from 'pinyin-match';
-import { useMessage } from 'naive-ui';
 
 import { getArtistAlbums, getArtistDetail, getArtistTopSongs } from '@/api/artist';
 import { getMusicDetail } from '@/api/music';
@@ -232,7 +259,9 @@ const getCacheKey = (id: string | number) => `artist_${id}`;
 // 搜索和布局相关
 const searchKeyword = ref('');
 const isSearchVisible = ref(false);
-const isCompactLayout = ref(isMobile.value ? false : localStorage.getItem('musicListLayout') === 'compact');
+const isCompactLayout = ref(
+  isMobile.value ? false : localStorage.getItem('musicListLayout') === 'compact'
+);
 
 // 加载歌手信息
 const loadArtistInfo = async () => {
@@ -261,7 +290,7 @@ const loadArtistInfo = async () => {
     // 重置分页并加载初始数据
     resetPagination();
     await Promise.all([loadSongs(), loadAlbums()]);
-    
+
     // 保存到缓存
     artistDataCache.set(cacheKey, {
       artistInfo: artistInfo.value,
@@ -439,46 +468,48 @@ const toggleLayout = () => {
 // 播放全部
 const handlePlayAll = () => {
   if (filteredSongs.value.length === 0) return;
-  
-  playerStore.setPlayList(filteredSongs.value.map(song => ({
-    ...song,
-    picUrl: song.al.picUrl
-  })));
-  
+
+  playerStore.setPlayList(
+    filteredSongs.value.map((song) => ({
+      ...song,
+      picUrl: song.al.picUrl
+    }))
+  );
+
   // 开始播放第一首
   playerStore.setPlay(filteredSongs.value[0]);
-  
+
   message.success(t('comp.musicList.playAll'));
 };
 
 // 添加到播放列表
 const addToPlaylist = () => {
   if (filteredSongs.value.length === 0) return;
-  
+
   // 获取当前播放列表
   const currentList = playerStore.playList;
-  
+
   // 添加歌曲到播放列表(避免重复添加)
-  const newSongs = filteredSongs.value.filter(song => 
-    !currentList.some(item => item.id === song.id)
+  const newSongs = filteredSongs.value.filter(
+    (song) => !currentList.some((item) => item.id === song.id)
   );
-  
+
   if (newSongs.length === 0) {
     message.info(t('comp.musicList.songsAlreadyInPlaylist'));
     return;
   }
-  
+
   // 合并到当前播放列表末尾
   const newList = [
-    ...currentList, 
-    ...newSongs.map(song => ({
+    ...currentList,
+    ...newSongs.map((song) => ({
       ...song,
       picUrl: song.al.picUrl
     }))
   ];
-  
+
   playerStore.setPlayList(newList);
-  
+
   message.success(t('comp.musicList.addToPlaylistSuccess', { count: newSongs.length }));
 };
 
@@ -486,27 +517,27 @@ const handlePlay = (song?: any) => {
   // 如果传入了特定歌曲（点击单曲播放），则将其作为播放列表的第一首
   if (song) {
     const songList = [...filteredSongs.value];
-    const index = songList.findIndex(item => item.id === song.id);
-    
+    const index = songList.findIndex((item) => item.id === song.id);
+
     if (index !== -1) {
       // 将点击的歌曲移到第一位
       const clickedSong = songList.splice(index, 1)[0];
       songList.unshift(clickedSong);
     }
-    
+
     playerStore.setPlayList(
-      songList.map(item => ({
+      songList.map((item) => ({
         ...item,
         picUrl: item.al?.picUrl || item.picUrl
       }))
     );
-    
+
     // 设置当前播放歌曲
     playerStore.setPlay(song);
   } else {
     // 默认行为：播放整个过滤后的列表
     playerStore.setPlayList(
-      filteredSongs.value.map(item => ({
+      filteredSongs.value.map((item) => ({
         ...item,
         picUrl: item.al?.picUrl || item.picUrl
       }))
@@ -519,7 +550,7 @@ const setupObservers = () => {
   // 清理之前的观察器
   if (songsObserver) songsObserver.disconnect();
   if (albumsObserver) albumsObserver.disconnect();
-  
+
   // 创建观察器(如果不存在)
   if (!songsObserver) {
     songsObserver = new IntersectionObserver(
@@ -531,7 +562,7 @@ const setupObservers = () => {
       { threshold: 0.1 }
     );
   }
-  
+
   if (!albumsObserver) {
     albumsObserver = new IntersectionObserver(
       (entries) => {
@@ -542,7 +573,7 @@ const setupObservers = () => {
       { threshold: 0.1 }
     );
   }
-  
+
   // 观察当前标签页的元素
   nextTick(() => {
     if (activeTab.value === 'songs' && songsLoadMoreRef.value) {
@@ -574,7 +605,7 @@ onActivated(() => {
   // 确保当前路由是艺术家详情页
   if (route.name === 'artistDetail') {
     const currentId = route.params.id as string;
-    
+
     // 首次加载或ID变化时加载数据
     if (!previousId.value || previousId.value !== currentId) {
       console.log('ID已变化，加载新数据');
@@ -582,7 +613,7 @@ onActivated(() => {
       activeTab.value = 'songs';
       loadArtistInfo();
     }
-    
+
     // 重新设置观察器
     setupObservers();
   }
@@ -716,16 +747,17 @@ const handleVirtualScroll = (e: any) => {
       @apply text-sm leading-relaxed whitespace-pre-wrap;
     }
   }
-  
+
   // 添加歌曲工具栏样式
   .songs-toolbar {
     @apply flex items-center justify-between mb-4;
-    
-    .toolbar-left, .toolbar-right {
+
+    .toolbar-left,
+    .toolbar-right {
       @apply flex items-center gap-2;
     }
   }
-  
+
   // 搜索框样式
   .search-container {
     @apply max-w-md transition-all duration-300 ease-in-out;
@@ -736,7 +768,7 @@ const handleVirtualScroll = (e: any) => {
 
     .search-button {
       @apply w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-light-300 dark:hover:bg-dark-300 transition-colors text-gray-500 dark:text-gray-400 hover:text-green-500;
-      
+
       .icon {
         @apply text-lg;
       }
@@ -746,28 +778,28 @@ const handleVirtualScroll = (e: any) => {
       @apply bg-light-200 dark:bg-dark-200;
     }
   }
-  
+
   // 操作按钮样式
   .layout-toggle .toggle-button,
   .action-button {
     @apply w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-light-300 dark:hover:bg-dark-300 transition-colors text-gray-500 dark:text-gray-400;
-    
+
     .icon {
       @apply text-lg;
     }
-    
+
     &.hover-green:hover {
       .icon {
         @apply text-green-500;
       }
     }
   }
-  
+
   // 搜索无结果样式
   .no-result {
     @apply text-center py-8 text-gray-500 dark:text-gray-400;
   }
-  
+
   // 虚拟列表样式
   .song-virtual-list {
     :deep(.n-virtual-list__scroll) {
@@ -780,14 +812,14 @@ const handleVirtualScroll = (e: any) => {
       }
     }
   }
-  
+
   .double-item {
     @apply mb-2 bg-light-100 bg-opacity-30 dark:bg-dark-100 dark:bg-opacity-20 rounded-3xl;
   }
 }
 
 .mobile {
-  .songs-toolbar{
+  .songs-toolbar {
     @apply mb-0;
   }
 }

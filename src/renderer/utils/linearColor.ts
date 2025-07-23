@@ -370,7 +370,7 @@ export const validateColor = (color: string): boolean => {
  */
 export const validateColorContrast = (color: string, theme: 'light' | 'dark'): boolean => {
   if (!validateColor(color)) return false;
-  
+
   const backgroundColor = theme === 'dark' ? '#000000' : '#ffffff';
   const contrast = tinycolor.readability(color, backgroundColor);
   return contrast >= 4.5; // WCAG AA 标准
@@ -386,7 +386,7 @@ export const optimizeColorForTheme = (color: string, theme: 'light' | 'dark'): s
 
   const tc = tinycolor(color);
   const hsl = tc.toHsl();
-  
+
   if (theme === 'dark') {
     // 暗色主题：增加亮度和饱和度
     const optimized = tinycolor({
@@ -394,7 +394,7 @@ export const optimizeColorForTheme = (color: string, theme: 'light' | 'dark'): s
       s: Math.min(hsl.s * 1.1, 1),
       l: Math.max(hsl.l, 0.4) // 确保最小亮度
     });
-    
+
     // 检查对比度，如果不够则进一步调整
     if (!validateColorContrast(optimized.toHexString(), theme)) {
       return tinycolor({
@@ -403,7 +403,7 @@ export const optimizeColorForTheme = (color: string, theme: 'light' | 'dark'): s
         l: Math.max(hsl.l * 1.3, 0.5)
       }).toHexString();
     }
-    
+
     return optimized.toHexString();
   } else {
     // 亮色主题：适当降低亮度
@@ -412,7 +412,7 @@ export const optimizeColorForTheme = (color: string, theme: 'light' | 'dark'): s
       s: Math.min(hsl.s * 1.05, 1),
       l: Math.min(hsl.l, 0.6) // 确保最大亮度
     });
-    
+
     // 检查对比度
     if (!validateColorContrast(optimized.toHexString(), theme)) {
       return tinycolor({
@@ -421,7 +421,7 @@ export const optimizeColorForTheme = (color: string, theme: 'light' | 'dark'): s
         l: Math.min(hsl.l * 0.8, 0.5)
       }).toHexString();
     }
-    
+
     return optimized.toHexString();
   }
 };
@@ -446,12 +446,10 @@ export const getLyricThemeColors = (): LyricThemeColor[] => {
  * 根据主题获取预设颜色的实际值
  */
 export const getPresetColorValue = (colorId: string, theme: 'light' | 'dark'): string => {
-  const color = PRESET_LYRIC_COLORS.find(c => c.id === colorId);
+  const color = PRESET_LYRIC_COLORS.find((c) => c.id === colorId);
   if (!color) return getDefaultHighlightColor(theme);
   return theme === 'dark' ? color.dark : color.light;
 };
-
-
 
 /**
  * 安全加载歌词设置
@@ -461,19 +459,19 @@ const safeLoadLyricSettings = (): LyricSettings => {
     const stored = localStorage.getItem('lyricData');
     if (stored) {
       const parsed = JSON.parse(stored) as LyricSettings;
-      
+
       // 验证 highlightColor 字段
       if (parsed.highlightColor && !validateColor(parsed.highlightColor)) {
         console.warn('Invalid stored highlight color, removing it');
         delete parsed.highlightColor;
       }
-      
+
       return parsed;
     }
   } catch (error) {
     console.error('Failed to load lyric settings:', error);
   }
-  
+
   // 返回默认设置
   return {
     isTop: false,
@@ -501,7 +499,7 @@ export const saveLyricThemeColor = (color: string): void => {
     console.warn('Attempted to save invalid color:', color);
     return;
   }
-  
+
   const settings = safeLoadLyricSettings();
   settings.highlightColor = color;
   safeSaveLyricSettings(settings);
@@ -512,11 +510,11 @@ export const saveLyricThemeColor = (color: string): void => {
  */
 export const loadLyricThemeColor = (): string => {
   const settings = safeLoadLyricSettings();
-  
+
   if (settings.highlightColor && validateColor(settings.highlightColor)) {
     return settings.highlightColor;
   }
-  
+
   // 如果没有保存的颜色或颜色无效，返回默认颜色
   return getDefaultHighlightColor(settings.theme);
 };
@@ -535,10 +533,10 @@ export const resetLyricThemeColor = (): void => {
  */
 export const getCurrentLyricThemeColor = (theme: 'light' | 'dark'): string => {
   const savedColor = loadLyricThemeColor();
-  
+
   if (savedColor && validateColor(savedColor)) {
     return optimizeColorForTheme(savedColor, theme);
   }
-  
+
   return getDefaultHighlightColor(theme);
 };

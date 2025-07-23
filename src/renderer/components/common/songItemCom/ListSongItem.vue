@@ -18,7 +18,7 @@
         <n-checkbox :checked="selected" />
       </div>
     </template>
-    
+
     <!-- 图片插槽 -->
     <template #image>
       <n-image
@@ -32,12 +32,16 @@
         @load="onImageLoad"
       />
     </template>
-    
+
     <!-- 内容插槽 -->
     <template #content>
       <div class="song-item-content">
         <div class="song-item-content-wrapper">
-          <n-ellipsis class="song-item-content-title text-ellipsis" line-clamp="1" :class="{ 'text-green-500': isPlaying }">
+          <n-ellipsis
+            class="song-item-content-title text-ellipsis"
+            line-clamp="1"
+            :class="{ 'text-green-500': isPlaying }"
+          >
             {{ item.name }}
           </n-ellipsis>
           <div class="song-item-content-divider">-</div>
@@ -54,7 +58,7 @@
         </div>
       </div>
     </template>
-    
+
     <!-- 操作插槽 -->
     <template #operating>
       <div class="song-item-operating song-item-operating-list">
@@ -67,7 +71,7 @@
         </div>
         <div
           class="song-item-operating-play bg-gray-300 dark:bg-gray-800 animate__animated"
-          :class="{ 'bg-green-600': isPlaying, 'animate__flipInY': playLoading }"
+          :class="{ 'bg-green-600': isPlaying, animate__flipInY: playLoading }"
           @click="onPlayMusic"
         >
           <i v-if="isPlaying && play" class="iconfont icon-stop"></i>
@@ -81,10 +85,12 @@
 <script lang="ts" setup>
 import { NCheckbox, NEllipsis, NImage } from 'naive-ui';
 import { computed, ref } from 'vue';
+
 import { usePlayerStore } from '@/store';
-import BaseSongItem from './BaseSongItem.vue';
 import type { SongResult } from '@/type/music';
 import { getImgUrl } from '@/utils';
+
+import BaseSongItem from './BaseSongItem.vue';
 
 const playerStore = usePlayerStore();
 
@@ -187,4 +193,4 @@ const onPlayMusic = () => {
     }
   }
 }
-</style> 
+</style>

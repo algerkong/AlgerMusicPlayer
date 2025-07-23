@@ -1,15 +1,20 @@
 <template>
   <!-- 透明遮罩层，点击任意位置关闭 -->
   <div v-if="internalVisible" class="fixed-overlay" @click="closePanel"></div>
-  
+
   <!-- 使用animate.css进行动画效果 -->
-  <div 
-    v-if="internalVisible" 
+  <div
+    v-if="internalVisible"
     class="playlist-panel"
     :class="[
       'animate__animated',
-      closing ? (isMobile ? 'animate__slideOutDown' : 'animate__slideOutRight') : 
-               (isMobile ? 'animate__slideInUp' : 'animate__slideInRight')
+      closing
+        ? isMobile
+          ? 'animate__slideOutDown'
+          : 'animate__slideOutRight'
+        : isMobile
+          ? 'animate__slideInUp'
+          : 'animate__slideInRight'
     ]"
   >
     <div class="playlist-panel-header">
@@ -21,7 +26,7 @@
               <i class="iconfont ri-delete-bin-line"></i>
             </div>
           </template>
-          {{ t('player.playList.clearAll')}}
+          {{ t('player.playList.clearAll') }}
         </n-tooltip>
         <div class="close-btn" @click="closePanel">
           <i class="iconfont ri-close-line"></i>
@@ -31,7 +36,7 @@
     <div class="playlist-panel-content">
       <div v-if="playList.length === 0" class="empty-playlist">
         <i class="iconfont ri-music-2-line"></i>
-        <p>{{ t('player.playList.empty')}}</p>
+        <p>{{ t('player.playList.empty') }}</p>
       </div>
       <n-virtual-list v-else ref="playListRef" :item-size="62" item-resizable :items="playList">
         <template #default="{ item }">
@@ -52,9 +57,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue';
+import { useDialog, useMessage } from 'naive-ui';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useMessage, useDialog } from 'naive-ui';
+
 import SongItem from '@/components/common/SongItem.vue';
 import { usePlayerStore } from '@/store/modules/player';
 import type { SongResult } from '@/type/music';
@@ -78,27 +84,31 @@ const show = computed({
 });
 
 // 监听外部可见性变化
-watch(show, (newValue) => {
-  if (newValue) {
-    // 打开面板
-    internalVisible.value = true;
-    closing.value = false;
-    // 在下一个渲染周期后滚动到当前歌曲
-    nextTick(() => {
-      scrollToCurrentSong();
-    });
-  } else {
-    // 如果已经是关闭状态，不需要处理
-    if (!internalVisible.value) return;
-    
-    // 开始关闭动画
-    closing.value = true;
-    // 等待动画完成后再隐藏组件
-    setTimeout(() => {
-      internalVisible.value = false;
-    }, 400); // 动画持续时间
-  }
-}, { immediate: true });
+watch(
+  show,
+  (newValue) => {
+    if (newValue) {
+      // 打开面板
+      internalVisible.value = true;
+      closing.value = false;
+      // 在下一个渲染周期后滚动到当前歌曲
+      nextTick(() => {
+        scrollToCurrentSong();
+      });
+    } else {
+      // 如果已经是关闭状态，不需要处理
+      if (!internalVisible.value) return;
+
+      // 开始关闭动画
+      closing.value = true;
+      // 等待动画完成后再隐藏组件
+      setTimeout(() => {
+        internalVisible.value = false;
+      }, 400); // 动画持续时间
+    }
+  },
+  { immediate: true }
+);
 
 // 播放列表
 const playList = computed(() => playerStore.playList as SongResult[]);
@@ -118,10 +128,10 @@ const handleClearPlaylist = () => {
     return;
   }
 
-  if(isMobile.value){
+  if (isMobile.value) {
     closePanel();
   }
-  
+
   dialog.warning({
     title: t('player.playList.clearConfirmTitle'),
     content: t('player.playList.clearConfirmContent'),
@@ -159,12 +169,12 @@ const scrollToCurrentSong = () => {
     if (playListRef.value && playList.value.length > 0) {
       const index = playerStore.playListIndex;
       console.log('滚动到歌曲索引:', index);
-      playListRef.value.scrollTo({ 
-        top: (index > 3 ? (index - 3) : 0) * 62,
+      playListRef.value.scrollTo({
+        top: (index > 3 ? index - 3 : 0) * 62
       });
     }
   }, 100);
-};  
+};
 
 // 删除歌曲
 const handleDeleteSong = (song: SongResult) => {
@@ -185,36 +195,36 @@ const handleDeleteSong = (song: SongResult) => {
   height: 70vh;
   top: 15vh; // 距离顶部15%
   animation-duration: 0.4s !important; // 动画持续时间
-  
+
   @apply bg-light dark:bg-dark shadow-2xl dark:border dark:border-gray-700;
-  
+
   &-header {
     @apply flex items-center justify-between px-4 py-2 border-b border-gray-100 dark:border-gray-900;
     backdrop-filter: blur(10px);
     background-color: rgba(255, 255, 255, 0.7);
-    
+
     .dark & {
       background-color: rgba(18, 18, 18, 0.7);
     }
-    
+
     .title {
       @apply text-base font-medium text-gray-800 dark:text-gray-200;
     }
-    
+
     .header-actions {
       @apply flex items-center;
     }
-    
+
     .action-btn,
     .close-btn {
       @apply w-8 h-8 flex items-center justify-center rounded-full cursor-pointer mx-1 text-gray-800 dark:text-gray-200;
       @apply hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors;
-      
+
       .iconfont {
         @apply text-xl;
       }
     }
-    
+
     .action-btn {
       @apply text-gray-500 dark:text-gray-400;
       &:hover {
@@ -222,7 +232,7 @@ const handleDeleteSong = (song: SongResult) => {
       }
     }
   }
-  
+
   &-content {
     @apply h-[calc(70vh-60px)] overflow-hidden;
   }
@@ -230,11 +240,11 @@ const handleDeleteSong = (song: SongResult) => {
 
 .empty-playlist {
   @apply flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500;
-  
+
   .iconfont {
     @apply text-5xl mb-4;
   }
-  
+
   p {
     @apply text-sm;
   }
@@ -267,10 +277,10 @@ const handleDeleteSong = (song: SongResult) => {
     border-left: none;
     border-top: 1px solid theme('colors.gray.200');
     box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1);
-    
+
     &-header {
       @apply text-center relative px-4;
-      
+
       &::before {
         content: '';
         position: absolute;
@@ -283,14 +293,14 @@ const handleDeleteSong = (song: SongResult) => {
         background-color: rgba(150, 150, 150, 0.3);
       }
     }
-    
+
     &-content {
       height: calc(80vh - 60px);
       @apply px-4;
-      .delete-btn{
+      .delete-btn {
         @apply visible;
       }
     }
   }
 }
-</style> 
+</style>

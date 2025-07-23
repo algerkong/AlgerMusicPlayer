@@ -24,13 +24,20 @@
 
           <n-form-item :label="t('settings.remoteControl.allowedIps')">
             <div class="allowed-ips-container">
-              <div v-for="(_, index) in remoteControlConfig.allowedIps" :key="index" class="ip-item">
-                <n-input v-model:value="remoteControlConfig.allowedIps[index]" :disabled="!remoteControlConfig.enabled" />
-                <n-button 
-                  quaternary 
-                  circle 
-                  type="error" 
-                  :disabled="!remoteControlConfig.enabled" 
+              <div
+                v-for="(_, index) in remoteControlConfig.allowedIps"
+                :key="index"
+                class="ip-item"
+              >
+                <n-input
+                  v-model:value="remoteControlConfig.allowedIps[index]"
+                  :disabled="!remoteControlConfig.enabled"
+                />
+                <n-button
+                  quaternary
+                  circle
+                  type="error"
+                  :disabled="!remoteControlConfig.enabled"
                   @click="removeIp(index)"
                 >
                   <template #icon>
@@ -38,10 +45,10 @@
                   </template>
                 </n-button>
               </div>
-              <n-button 
-                secondary 
-                size="small" 
-                :disabled="!remoteControlConfig.enabled" 
+              <n-button
+                secondary
+                size="small"
+                :disabled="!remoteControlConfig.enabled"
                 @click="addIp"
               >
                 <template #icon>
@@ -57,11 +64,7 @@
 
           <n-form-item>
             <n-space>
-              <n-button 
-                type="primary" 
-                :disabled="!remoteControlConfig.enabled" 
-                @click="saveConfig"
-              >
+              <n-button type="primary" :disabled="!remoteControlConfig.enabled" @click="saveConfig">
                 {{ t('common.save') }}
               </n-button>
               <n-button @click="resetConfig">
@@ -78,15 +81,11 @@
                 </template>
                 <p>{{ t('settings.remoteControl.accessInfo') }}</p>
                 <div class="access-url">
-                  <n-tag type="success">
-                    http://localhost:{{ remoteControlConfig.port }}/
-                  </n-tag>
+                  <n-tag type="success"> http://localhost:{{ remoteControlConfig.port }}/ </n-tag>
                 </div>
                 <div v-if="localIpAddresses.length" class="local-ips">
                   <div v-for="ip in localIpAddresses" :key="ip" class="ip-address">
-                    <n-tag type="info">
-                      http://{{ ip }}:{{ remoteControlConfig.port }}/
-                    </n-tag>
+                    <n-tag type="info"> http://{{ ip }}:{{ remoteControlConfig.port }}/ </n-tag>
                   </div>
                 </div>
               </n-alert>
@@ -99,10 +98,10 @@
 </template>
 
 <script setup lang="ts">
+import { cloneDeep } from 'lodash';
+import { useMessage } from 'naive-ui';
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useMessage } from 'naive-ui';
-import { cloneDeep } from 'lodash';
 
 const { t } = useI18n();
 const message = useMessage();
@@ -111,10 +110,10 @@ const message = useMessage();
 const visible = defineModel('visible', { default: false });
 
 // 默认配置
-const defaultConfig:{
-  enabled: boolean,
-  port: number,
-  allowedIps: string[]
+const defaultConfig: {
+  enabled: boolean;
+  port: number;
+  allowedIps: string[];
 } = {
   enabled: false,
   port: 31888,
@@ -122,7 +121,7 @@ const defaultConfig:{
 };
 
 // 远程控制配置
-const remoteControlConfig = ref({...defaultConfig});
+const remoteControlConfig = ref({ ...defaultConfig });
 
 // 本地IP地址列表
 const localIpAddresses = ref<string[]>([]);
@@ -149,10 +148,15 @@ const removeIp = (index: number) => {
 // 保存配置
 const saveConfig = () => {
   // 过滤空IP
-  remoteControlConfig.value.allowedIps = remoteControlConfig.value.allowedIps.filter(ip => ip.trim() !== '');
-  
+  remoteControlConfig.value.allowedIps = remoteControlConfig.value.allowedIps.filter(
+    (ip) => ip.trim() !== ''
+  );
+
   if (window.electron) {
-    window.electron.ipcRenderer.send('update-remote-control-config', cloneDeep(remoteControlConfig.value));
+    window.electron.ipcRenderer.send(
+      'update-remote-control-config',
+      cloneDeep(remoteControlConfig.value)
+    );
     message.success(t('settings.remoteControl.saveSuccess'));
   }
 };
@@ -211,11 +215,11 @@ onMounted(async () => {
 
 .remote-info {
   margin-top: 16px;
-  
+
   .access-url {
     margin-top: 10px;
   }
-  
+
   .local-ips {
     margin-top: 10px;
     display: flex;
@@ -223,4 +227,4 @@ onMounted(async () => {
     gap: 5px;
   }
 }
-</style> 
+</style>

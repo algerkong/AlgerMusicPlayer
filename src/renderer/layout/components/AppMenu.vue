@@ -12,8 +12,17 @@
           <n-tooltip :delay="200" :disabled="isText || isMobile" placement="bottom">
             <template #trigger>
               <router-link class="app-menu-item-link" :to="item.path">
-                <i class="iconfont app-menu-item-icon" :style="iconStyle(index)" :class="item.meta.icon"></i>
-                <span v-if="isText" class="app-menu-item-text ml-3" :class="isChecked(index) ? 'text-green-500' : ''">{{ t(item.meta.title) }}</span>
+                <i
+                  class="iconfont app-menu-item-icon"
+                  :style="iconStyle(index)"
+                  :class="item.meta.icon"
+                ></i>
+                <span
+                  v-if="isText"
+                  class="app-menu-item-text ml-3"
+                  :class="isChecked(index) ? 'text-green-500' : ''"
+                  >{{ t(item.meta.title) }}</span
+                >
               </router-link>
             </template>
             <div v-if="!isText">{{ t(item.meta.title) }}</div>
@@ -25,9 +34,9 @@
 </template>
 
 <script lang="ts" setup>
-import { useRoute } from 'vue-router';
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRoute } from 'vue-router';
 
 import icon from '@/assets/icon.png';
 import { isMobile } from '@/utils';
