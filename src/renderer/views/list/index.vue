@@ -154,7 +154,7 @@ const handleScroll = (e: any) => {
   const { scrollTop, scrollHeight, clientHeight } = e.target;
   // 距离底部100px时加载更多
   if (scrollTop + clientHeight >= scrollHeight - 100 && !isLoadingMore.value && hasMore.value) {
-    loadList(route.query.type as string, true);
+    loadList(currentType.value, true);
   }
 };
 
