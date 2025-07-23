@@ -15,6 +15,8 @@ export default {
   basic: {
     themeMode: '主题模式',
     themeModeDesc: '切换日间/夜间主题',
+    autoTheme: '跟随系统',
+    manualTheme: '手动切换',
     language: '语言设置',
     languageDesc: '切换显示语言',
     font: '字体设置',

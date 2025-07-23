@@ -15,6 +15,8 @@ export default {
   basic: {
     themeMode: 'Theme Mode',
     themeModeDesc: 'Switch between light/dark theme',
+    autoTheme: 'Follow System',
+    manualTheme: 'Manual Switch',
     language: 'Language Settings',
     languageDesc: 'Change display language',
     font: 'Font Settings',

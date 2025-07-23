@@ -25,5 +25,7 @@
   "enableMusicUnblock": true,
   "enabledMusicSources": ["migu", "kugou", "pyncmd", "bilibili"],
   "showTopAction": false,
-  "contentZoomFactor": 1
+  "contentZoomFactor": 1,
+  "autoTheme": false,
+  "manualTheme": "light"
 }

@@ -4,7 +4,7 @@ import { ref } from 'vue';
 
 import setDataDefault from '@/../main/set.json';
 import { isElectron } from '@/utils';
-import { applyTheme, getCurrentTheme, ThemeType } from '@/utils/theme';
+import { applyTheme, getCurrentTheme, getSystemTheme, watchSystemTheme, ThemeType } from '@/utils/theme';
 
 export const useSettingsStore = defineStore('settings', () => {
   const theme = ref<ThemeType>(getCurrentTheme());
@@ -17,6 +17,9 @@ export const useSettingsStore = defineStore('settings', () => {
     { label: '系统默认', value: 'system-ui' }
   ]);
   const showDownloadDrawer = ref(false);
+  
+  // 系统主题监听器清理函数
+  let systemThemeCleanup: (() => void) | null = null;
   
   // 先声明 setData ref 但不初始化
   const setData = ref<any>({});
@@ -56,8 +59,57 @@ export const useSettingsStore = defineStore('settings', () => {
   setData.value = getInitialSettings();
 
   const toggleTheme = () => {
-    theme.value = theme.value === 'dark' ? 'light' : 'dark';
-    applyTheme(theme.value);
+    if (setData.value.autoTheme) {
+      // 如果是自动模式，切换到手动模式并设置相反的主题
+      const newTheme = theme.value === 'dark' ? 'light' : 'dark';
+      setSetData({ 
+        autoTheme: false, 
+        manualTheme: newTheme 
+      });
+      theme.value = newTheme;
+      applyTheme(newTheme);
+      // 停止监听系统主题
+      if (systemThemeCleanup) {
+        systemThemeCleanup();
+        systemThemeCleanup = null;
+      }
+    } else {
+      // 手动模式下正常切换
+      const newTheme = theme.value === 'dark' ? 'light' : 'dark';
+      theme.value = newTheme;
+      setSetData({ manualTheme: newTheme });
+      applyTheme(newTheme);
+    }
+  };
+
+  const setAutoTheme = (auto: boolean) => {
+    setSetData({ autoTheme: auto });
+    
+    if (auto) {
+      // 启用自动模式
+      const systemTheme = getSystemTheme();
+      theme.value = systemTheme;
+      applyTheme(systemTheme);
+      
+      // 开始监听系统主题变化
+      systemThemeCleanup = watchSystemTheme((newTheme) => {
+        if (setData.value.autoTheme) {
+          theme.value = newTheme;
+          applyTheme(newTheme);
+        }
+      });
+    } else {
+      // 切换到手动模式
+      const manualTheme = setData.value.manualTheme || 'light';
+      theme.value = manualTheme;
+      applyTheme(manualTheme);
+      
+      // 停止监听系统主题
+      if (systemThemeCleanup) {
+        systemThemeCleanup();
+        systemThemeCleanup = null;
+      }
+    }
   };
 
   const setMiniMode = (value: boolean) => {
@@ -106,7 +158,14 @@ export const useSettingsStore = defineStore('settings', () => {
   };
 
   const initializeTheme = () => {
-    applyTheme(theme.value);
+    // 根据设置初始化主题
+    if (setData.value.autoTheme) {
+      setAutoTheme(true);
+    } else {
+      const manualTheme = setData.value.manualTheme || getCurrentTheme();
+      theme.value = manualTheme;
+      applyTheme(manualTheme);
+    }
   };
 
   const initializeSystemFonts = async () => {
@@ -133,6 +192,7 @@ export const useSettingsStore = defineStore('settings', () => {
     showDownloadDrawer,
     setSetData,
     toggleTheme,
+    setAutoTheme,
     setMiniMode,
     setShowUpdateModal,
     setShowArtistDrawer,
