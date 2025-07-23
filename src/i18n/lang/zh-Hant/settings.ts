@@ -201,5 +201,25 @@ export default {
       default: '預設',
       loose: '寬鬆'
     }
+  },
+  themeColor: {
+    title: '歌詞主題色',
+    presetColors: '預設顏色',
+    customColor: '自訂顏色',
+    preview: '預覽效果',
+    previewText: '歌詞效果',
+    colorNames: {
+      'spotify-green': 'Spotify 綠',
+      'apple-blue': '蘋果藍',
+      'youtube-red': 'YouTube 紅',
+      'orange': '活力橙',
+      'purple': '神秘紫',
+      'pink': '櫻花粉'
+    },
+    tooltips: {
+      openColorPicker: '開啟色板',
+      closeColorPicker: '關閉色板'
+    },
+    placeholder: '#1db954'
   }
 };

@@ -222,6 +222,26 @@ export default {
     lyricLines: 'Lyric Lines',
     mobileUnavailable: 'This setting is only available on mobile devices'
   },
+  themeColor: {
+    title: 'Lyric Theme Color',
+    presetColors: 'Preset Colors',
+    customColor: 'Custom Color',
+    preview: 'Preview',
+    previewText: 'Lyric Effect',
+    colorNames: {
+      'spotify-green': 'Spotify Green',
+      'apple-blue': 'Apple Blue',
+      'youtube-red': 'YouTube Red',
+      'orange': 'Vibrant Orange',
+      'purple': 'Mystic Purple',
+      'pink': 'Cherry Pink'
+    },
+    tooltips: {
+      openColorPicker: 'Open Color Picker',
+      closeColorPicker: 'Close Color Picker'
+    },
+    placeholder: '#1db954'
+  },
   shortcutSettings: {
     title: 'Shortcut Settings',
     shortcut: 'Shortcut',

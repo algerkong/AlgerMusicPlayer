@@ -222,6 +222,26 @@ export default {
     lyricLines: '歌词行数',
     mobileUnavailable: '此设置仅在移动端可用'
   },
+  themeColor: {
+    title: '歌词主题色',
+    presetColors: '预设颜色',
+    customColor: '自定义颜色',
+    preview: '预览效果',
+    previewText: '歌词效果',
+    colorNames: {
+      'spotify-green': 'Spotify 绿',
+      'apple-blue': '苹果蓝',
+      'youtube-red': 'YouTube 红',
+      'orange': '活力橙',
+      'purple': '神秘紫',
+      'pink': '樱花粉'
+    },
+    tooltips: {
+      openColorPicker: '打开色板',
+      closeColorPicker: '关闭色板'
+    },
+    placeholder: '#1db954'
+  },
   shortcutSettings: {
     title: '快捷键设置',
     shortcut: '快捷键',

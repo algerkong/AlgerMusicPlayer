@@ -37,6 +37,13 @@
           <i v-if="lyricSetting.theme === 'light'" class="ri-sun-line"></i>
           <i v-else class="ri-moon-line"></i>
         </div>
+        <div 
+          class="control-button theme-color-button" 
+          :class="{ active: showThemeColorPanel }"
+          @click="toggleThemeColorPanel"
+        >
+          <i class="ri-palette-line"></i>
+        </div>
         <!-- <div class="control-button" @click="handleTop">
           <i class="ri-pushpin-line" :class="{ active: lyricSetting.isTop }"></i>
         </div> -->
@@ -49,6 +56,15 @@
         </div>
       </div>
     </div>
+
+    <!-- 主题色选择面板 -->
+    <ThemeColorPanel
+      :visible="showThemeColorPanel"
+      :current-color="currentHighlightColor"
+      :theme="lyricSetting.theme"
+      @color-change="handleColorChange"
+      @close="handleThemeColorPanelClose"
+    />
 
     <!-- 歌词显示区域 -->
     <div ref="containerRef" class="lyric-container">
@@ -91,6 +107,13 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import { SongResult } from '@/type/music';
+import ThemeColorPanel from '@/components/lyric/ThemeColorPanel.vue';
+import {
+  getCurrentLyricThemeColor,
+  loadLyricThemeColor,
+  saveLyricThemeColor,
+  validateColor
+} from '@/utils/linearColor';
 
 defineOptions({
   name: 'Lyric'
@@ -127,19 +150,50 @@ const dynamicData = ref({
   isPlay: true
 });
 
-const lyricSetting = ref({
-  ...(localStorage.getItem('lyricData')
-    ? JSON.parse(localStorage.getItem('lyricData') || '')
-    : {
-        isTop: false,
-        theme: 'dark',
-        isLock: false
-      })
-});
+// 安全加载歌词设置
+const loadLyricSettings = () => {
+  try {
+    const stored = localStorage.getItem('lyricData');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      
+      // 验证 highlightColor 字段
+      let validatedHighlightColor = parsed.highlightColor;
+      if (validatedHighlightColor && !validateColor(validatedHighlightColor)) {
+        console.warn('Invalid stored highlight color, removing it');
+        validatedHighlightColor = undefined;
+      }
+      
+      // 确保所有必需字段存在并有效
+      return {
+        isTop: parsed.isTop ?? false,
+        theme: (parsed.theme === 'light' || parsed.theme === 'dark') ? parsed.theme : 'dark',
+        isLock: parsed.isLock ?? false,
+        highlightColor: validatedHighlightColor
+      };
+    }
+  } catch (error) {
+    console.error('Failed to load lyric settings:', error);
+  }
+  
+  // 返回默认设置
+  return {
+    isTop: false,
+    theme: 'dark' as 'light' | 'dark',
+    isLock: false,
+    highlightColor: undefined as string | undefined
+  };
+};
+
+const lyricSetting = ref(loadLyricSettings());
 
 let hideControlsTimer: number | null = null;
 
 const isHovering = ref(false);
+
+// 主题色相关状态
+const showThemeColorPanel = ref(false);
+const currentHighlightColor = ref('#1db954');
 
 // 计算是否栏
 const showControls = computed(() => {
@@ -364,11 +418,20 @@ const getLyricStyle = (index: number) => {
   if (index !== currentIndex.value) return {};
 
   const progress = currentProgress.value * 100;
+  
+  // 使用更清晰的渐变实现
   return {
     background: `linear-gradient(to right, var(--highlight-color) ${progress}%, var(--text-color) ${progress}%)`,
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
-    transition: 'all 0.1s linear'
+    // 优化字体渲染，减少发虚
+    textRendering: 'optimizeLegibility' as const,
+    WebkitFontSmoothing: 'antialiased' as const,
+    MozOsxFontSmoothing: 'grayscale' as const,
+    // 使用 transform 而不是直接的 transition 来提高性能
+    transform: 'translateZ(0)', // 启用硬件加速
+    backfaceVisibility: 'hidden' as const, // 减少渲染问题
+    transition: 'background 0.1s linear'
   };
 };
 
@@ -520,6 +583,140 @@ const checkTheme = () => {
   }
 };
 
+// 主题色相关函数
+const toggleThemeColorPanel = () => {
+  showThemeColorPanel.value = !showThemeColorPanel.value;
+};
+
+const handleColorChange = (color: string) => {
+  // 验证颜色有效性
+  if (!validateColor(color)) {
+    console.error('Invalid color received:', color);
+    return;
+  }
+  
+  try {
+    currentHighlightColor.value = color;
+    updateThemeColorWithTransition(color);
+    
+    // 更新 lyricSetting 中的 highlightColor
+    lyricSetting.value.highlightColor = color;
+    
+    // 同时保存到专用的主题色存储
+    saveLyricThemeColor(color);
+  } catch (error) {
+    console.error('Failed to handle color change:', error);
+    // 恢复到默认颜色
+    const defaultColor = getCurrentLyricThemeColor(lyricSetting.value.theme);
+    currentHighlightColor.value = defaultColor;
+    updateThemeColorWithTransition(defaultColor);
+  }
+};
+
+const handleThemeColorPanelClose = () => {
+  showThemeColorPanel.value = false;
+};
+
+// 导出重置函数以供将来使用
+const resetThemeColor = () => {
+  // 重置到默认颜色
+  const defaultColor = getCurrentLyricThemeColor(lyricSetting.value.theme);
+  
+  // 更新所有相关状态
+  currentHighlightColor.value = defaultColor;
+  lyricSetting.value.highlightColor = undefined;
+  updateThemeColorWithTransition(defaultColor);
+  
+  // 清除专用存储
+  try {
+    const settings = loadLyricSettings();
+    delete settings.highlightColor;
+    saveLyricSettings(settings);
+  } catch (error) {
+    console.error('Failed to reset theme color:', error);
+  }
+};
+
+// 验证和修复颜色设置
+const validateAndFixColorSettings = () => {
+  try {
+    // 检查当前高亮颜色是否有效
+    if (currentHighlightColor.value && !validateColor(currentHighlightColor.value)) {
+      console.warn('Current highlight color is invalid, resetting to default');
+      const defaultColor = getCurrentLyricThemeColor(lyricSetting.value.theme);
+      currentHighlightColor.value = defaultColor;
+      lyricSetting.value.highlightColor = undefined;
+      updateCSSVariable('--lyric-highlight-color', defaultColor);
+    }
+    
+    // 检查 lyricSetting 中的颜色是否有效
+    if (lyricSetting.value.highlightColor && !validateColor(lyricSetting.value.highlightColor)) {
+      console.warn('Stored highlight color is invalid, removing it');
+      lyricSetting.value.highlightColor = undefined;
+    }
+  } catch (error) {
+    console.error('Failed to validate color settings:', error);
+    // 完全重置到默认状态
+    const defaultColor = getCurrentLyricThemeColor(lyricSetting.value.theme);
+    currentHighlightColor.value = defaultColor;
+    lyricSetting.value.highlightColor = undefined;
+    updateCSSVariable('--lyric-highlight-color', defaultColor);
+  }
+};
+
+// 暴露函数
+defineExpose({
+  resetThemeColor,
+  validateAndFixColorSettings
+});
+
+const updateCSSVariable = (name: string, value: string) => {
+  document.documentElement.style.setProperty(name, value);
+};
+
+const updateThemeColorWithTransition = (newColor: string) => {
+  // 添加过渡类
+  const lyricWindow = document.querySelector('.lyric-window');
+  if (lyricWindow) {
+    lyricWindow.classList.add('color-transitioning');
+  }
+  
+  // 更新CSS变量
+  updateCSSVariable('--lyric-highlight-color', newColor);
+  
+  // 移除过渡类
+  setTimeout(() => {
+    if (lyricWindow) {
+      lyricWindow.classList.remove('color-transitioning');
+    }
+  }, 300);
+};
+
+const initializeThemeColor = () => {
+  // 优先从 lyricSetting 中读取颜色
+  let savedColor = lyricSetting.value.highlightColor;
+  
+  // 如果 lyricSetting 中没有，则从专用存储中读取
+  if (!savedColor) {
+    savedColor = loadLyricThemeColor();
+    // 如果从专用存储中读取到了颜色，同步到 lyricSetting
+    if (savedColor) {
+      lyricSetting.value.highlightColor = savedColor;
+    }
+  }
+  
+  if (savedColor) {
+    const optimizedColor = getCurrentLyricThemeColor(lyricSetting.value.theme);
+    currentHighlightColor.value = optimizedColor;
+    updateCSSVariable('--lyric-highlight-color', optimizedColor);
+  } else {
+    // 如果没有保存的颜色，使用默认颜色
+    const defaultColor = getCurrentLyricThemeColor(lyricSetting.value.theme);
+    currentHighlightColor.value = defaultColor;
+    updateCSSVariable('--lyric-highlight-color', defaultColor);
+  }
+};
+
 // const handleTop = () => {
 //   lyricSetting.value.isTop = !lyricSetting.value.isTop;
 //   windowData.electron.ipcRenderer.send('top-lyric', lyricSetting.value.isTop);
@@ -534,12 +731,33 @@ const handleClose = () => {
   windowData.electron.ipcRenderer.send('close-lyric');
 };
 
+// 安全保存歌词设置
+const saveLyricSettings = (settings: typeof lyricSetting.value) => {
+  try {
+    localStorage.setItem('lyricData', JSON.stringify(settings));
+  } catch (error) {
+    console.error('Failed to save lyric settings:', error);
+  }
+};
+
 watch(
   () => lyricSetting.value,
-  (newValue: any) => {
-    localStorage.setItem('lyricData', JSON.stringify(newValue));
+  (newValue) => {
+    saveLyricSettings(newValue);
   },
   { deep: true }
+);
+
+// 监听主题切换，自动调整颜色
+watch(
+  () => lyricSetting.value.theme,
+  (newTheme) => {
+    if (currentHighlightColor.value) {
+      const optimizedColor = getCurrentLyricThemeColor(newTheme);
+      currentHighlightColor.value = optimizedColor;
+      updateThemeColorWithTransition(optimizedColor);
+    }
+  }
 );
 
 // 添加拖动相关变量
@@ -626,6 +844,12 @@ onMounted(() => {
       }
     };
   }
+  
+  // 初始化主题色
+  initializeThemeColor();
+  
+  // 验证和修复颜色设置
+  validateAndFixColorSettings();
 });
 
 // 添加播放控制相关的函数
@@ -663,6 +887,18 @@ body,
   transition: background-color 0.3s ease;
   cursor: default;
   border-radius: 14px;
+  
+  &.color-transitioning {
+    .lyric-text-inner {
+      transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    
+    .control-button {
+      i {
+        transition: color 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      }
+    }
+  }
 
   &:hover {
     .control-bar {
@@ -680,7 +916,7 @@ body,
   &.dark {
     --text-color: #ffffff;
     --text-secondary: #ffffffea;
-    --highlight-color: #1db954;
+    --highlight-color: var(--lyric-highlight-color, #1ed760);
     --control-bg: rgba(124, 124, 124, 0.3);
     &:hover:not(.lyric_lock) {
       background: rgba(44, 44, 44, 0.466) !important;
@@ -688,10 +924,10 @@ body,
   }
 
   &.light {
-    --text-color: #333333;
-    --text-secondary: #39393989;
-    --highlight-color: #1db954;
-    --control-bg: rgba(255, 255, 255, 0.3);
+    --text-color: #383838;
+    --text-secondary: #282828ae;
+    --highlight-color: var(--lyric-highlight-color, #1db954);
+    --control-bg: rgba(38, 38, 38, 0.532);
     &:hover:not(.lyric_lock) {
       background: rgba(0, 0, 0, 0.434) !important;
     }
@@ -775,6 +1011,16 @@ body,
       color: var(--highlight-color);
     }
   }
+  
+  &.theme-color-button {
+    &.active {
+      background: var(--control-bg);
+      
+      i {
+        color: var(--highlight-color);
+      }
+    }
+  }
 }
 
 .lyric-container {
@@ -816,6 +1062,19 @@ body,
   &.lyric-line-current {
     transform: scale(1.05);
     opacity: 1;
+    
+    // 当前播放歌词的特殊样式
+    .lyric-text {
+      // 移除阴影，避免干扰渐变效果
+      text-shadow: none;
+      
+      .lyric-text-inner {
+        // 为渐变文字添加轻微的外发光
+        filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.5));
+        // 确保渐变效果清晰
+        -webkit-font-smoothing: antialiased;
+      }
+    }
   }
 
   &.lyric-line-passed {
@@ -829,9 +1088,22 @@ body,
   color: var(--text-color);
   white-space: pre-wrap;
   word-break: break-all;
-  transition: all 0.2s ease;
+  transition: transform 0.2s ease;
   line-height: 1.4;
-  -webkit-text-stroke: 0.5px #0000008a;
+  // 优化字体渲染
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  // 为非当前播放的歌词添加阴影效果
+  text-shadow: 
+    0 0 2px rgba(0, 0, 0, 0.8),
+    0 1px 1px rgba(0, 0, 0, 0.6),
+    0 0 4px rgba(255, 255, 255, 0.2);
+  
+  .lyric-text-inner {
+    transition: background 0.3s ease;
+  }
 }
 
 .lyric-translation {
@@ -839,7 +1111,15 @@ body,
   white-space: pre-wrap;
   word-break: break-all;
   transition: font-size 0.2s ease;
-  line-height: 1.4; // 添加行高比例
+  line-height: 1.4;
+  
+  // 为翻译文本也添加阴影效果，但稍微轻一些
+  text-shadow: 
+    0 0 2px rgba(0, 0, 0, 0.7),
+    0 1px 1px rgba(0, 0, 0, 0.5),
+    0 0 4px rgba(255, 255, 255, 0.2),
+    1px 1px 1px rgba(0, 0, 0, 0.4),
+    -1px -1px 1px rgba(0, 0, 0, 0.4);
 }
 
 .lyric-empty {
@@ -847,6 +1127,12 @@ body,
   color: var(--text-secondary);
   font-size: 16px;
   padding: 20px;
+  
+  // 为空歌词提示也添加阴影效果
+  text-shadow: 
+    0 0 2px rgba(0, 0, 0, 0.7),
+    0 1px 1px rgba(0, 0, 0, 0.5),
+    0 0 4px rgba(255, 255, 255, 0.2);
 }
 
 body {

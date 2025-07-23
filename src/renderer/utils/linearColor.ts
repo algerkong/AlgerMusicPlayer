@@ -12,6 +12,20 @@ interface ITextColors {
   theme: string;
 }
 
+export interface LyricThemeColor {
+  id: string;
+  name: string;
+  light: string;
+  dark: string;
+}
+
+interface LyricSettings {
+  isTop: boolean;
+  theme: 'light' | 'dark';
+  isLock: boolean;
+  highlightColor?: string;
+}
+
 export const getImageLinearBackground = async (imageSrc: string): Promise<IColor> => {
   try {
     const primaryColor = await getImagePrimaryColor(imageSrc);
@@ -295,4 +309,236 @@ export const createGradientString = (
   return `linear-gradient(to bottom, ${colors
     .map((color, i) => `rgb(${color.r}, ${color.g}, ${color.b}) ${percentages[i]}%`)
     .join(', ')})`;
+};
+
+// ===== 歌词主题色相关工具函数 =====
+
+/**
+ * 预设歌词主题色配置
+ * 注意：name 字段将通过国际化系统动态获取，这里的值仅作为后备
+ */
+const PRESET_LYRIC_COLORS: LyricThemeColor[] = [
+  {
+    id: 'spotify-green',
+    name: 'Spotify Green', // 后备名称，实际使用时会被国际化替换
+    light: '#1db954',
+    dark: '#1ed760'
+  },
+  {
+    id: 'apple-blue',
+    name: 'Apple Blue',
+    light: '#007aff',
+    dark: '#0a84ff'
+  },
+  {
+    id: 'youtube-red',
+    name: 'YouTube Red',
+    light: '#ff0000',
+    dark: '#ff4444'
+  },
+  {
+    id: 'orange',
+    name: 'Vibrant Orange',
+    light: '#ff6b35',
+    dark: '#ff8c42'
+  },
+  {
+    id: 'purple',
+    name: 'Mystic Purple',
+    light: '#8b5cf6',
+    dark: '#a78bfa'
+  },
+  {
+    id: 'pink',
+    name: 'Cherry Pink',
+    light: '#ec4899',
+    dark: '#f472b6'
+  }
+];
+
+/**
+ * 验证颜色是否有效
+ */
+export const validateColor = (color: string): boolean => {
+  if (!color || typeof color !== 'string') return false;
+  const tc = tinycolor(color);
+  return tc.isValid() && tc.getAlpha() > 0;
+};
+
+/**
+ * 检查颜色对比度是否符合可读性标准
+ */
+export const validateColorContrast = (color: string, theme: 'light' | 'dark'): boolean => {
+  if (!validateColor(color)) return false;
+  
+  const backgroundColor = theme === 'dark' ? '#000000' : '#ffffff';
+  const contrast = tinycolor.readability(color, backgroundColor);
+  return contrast >= 4.5; // WCAG AA 标准
+};
+
+/**
+ * 为特定主题优化颜色
+ */
+export const optimizeColorForTheme = (color: string, theme: 'light' | 'dark'): string => {
+  if (!validateColor(color)) {
+    return getDefaultHighlightColor(theme);
+  }
+
+  const tc = tinycolor(color);
+  const hsl = tc.toHsl();
+  
+  if (theme === 'dark') {
+    // 暗色主题：增加亮度和饱和度
+    const optimized = tinycolor({
+      h: hsl.h,
+      s: Math.min(hsl.s * 1.1, 1),
+      l: Math.max(hsl.l, 0.4) // 确保最小亮度
+    });
+    
+    // 检查对比度，如果不够则进一步调整
+    if (!validateColorContrast(optimized.toHexString(), theme)) {
+      return tinycolor({
+        h: hsl.h,
+        s: Math.min(hsl.s * 1.2, 1),
+        l: Math.max(hsl.l * 1.3, 0.5)
+      }).toHexString();
+    }
+    
+    return optimized.toHexString();
+  } else {
+    // 亮色主题：适当降低亮度
+    const optimized = tinycolor({
+      h: hsl.h,
+      s: Math.min(hsl.s * 1.05, 1),
+      l: Math.min(hsl.l, 0.6) // 确保最大亮度
+    });
+    
+    // 检查对比度
+    if (!validateColorContrast(optimized.toHexString(), theme)) {
+      return tinycolor({
+        h: hsl.h,
+        s: Math.min(hsl.s * 1.1, 1),
+        l: Math.min(hsl.l * 0.8, 0.5)
+      }).toHexString();
+    }
+    
+    return optimized.toHexString();
+  }
+};
+
+/**
+ * 获取默认高亮颜色
+ */
+export const getDefaultHighlightColor = (theme?: 'light' | 'dark'): string => {
+  const defaultColor = PRESET_LYRIC_COLORS[0]; // Spotify 绿
+  if (!theme) return defaultColor.light;
+  return theme === 'dark' ? defaultColor.dark : defaultColor.light;
+};
+
+/**
+ * 获取预设主题色列表
+ */
+export const getLyricThemeColors = (): LyricThemeColor[] => {
+  return [...PRESET_LYRIC_COLORS];
+};
+
+/**
+ * 根据主题获取预设颜色的实际值
+ */
+export const getPresetColorValue = (colorId: string, theme: 'light' | 'dark'): string => {
+  const color = PRESET_LYRIC_COLORS.find(c => c.id === colorId);
+  if (!color) return getDefaultHighlightColor(theme);
+  return theme === 'dark' ? color.dark : color.light;
+};
+
+
+
+/**
+ * 安全加载歌词设置
+ */
+const safeLoadLyricSettings = (): LyricSettings => {
+  try {
+    const stored = localStorage.getItem('lyricData');
+    if (stored) {
+      const parsed = JSON.parse(stored) as LyricSettings;
+      
+      // 验证 highlightColor 字段
+      if (parsed.highlightColor && !validateColor(parsed.highlightColor)) {
+        console.warn('Invalid stored highlight color, removing it');
+        delete parsed.highlightColor;
+      }
+      
+      return parsed;
+    }
+  } catch (error) {
+    console.error('Failed to load lyric settings:', error);
+  }
+  
+  // 返回默认设置
+  return {
+    isTop: false,
+    theme: 'dark',
+    isLock: false
+  };
+};
+
+/**
+ * 安全保存歌词设置
+ */
+const safeSaveLyricSettings = (settings: LyricSettings): void => {
+  try {
+    localStorage.setItem('lyricData', JSON.stringify(settings));
+  } catch (error) {
+    console.error('Failed to save lyric settings:', error);
+  }
+};
+
+/**
+ * 保存歌词主题色
+ */
+export const saveLyricThemeColor = (color: string): void => {
+  if (!validateColor(color)) {
+    console.warn('Attempted to save invalid color:', color);
+    return;
+  }
+  
+  const settings = safeLoadLyricSettings();
+  settings.highlightColor = color;
+  safeSaveLyricSettings(settings);
+};
+
+/**
+ * 加载歌词主题色
+ */
+export const loadLyricThemeColor = (): string => {
+  const settings = safeLoadLyricSettings();
+  
+  if (settings.highlightColor && validateColor(settings.highlightColor)) {
+    return settings.highlightColor;
+  }
+  
+  // 如果没有保存的颜色或颜色无效，返回默认颜色
+  return getDefaultHighlightColor(settings.theme);
+};
+
+/**
+ * 重置歌词主题色到默认值
+ */
+export const resetLyricThemeColor = (): void => {
+  const settings = safeLoadLyricSettings();
+  delete settings.highlightColor;
+  safeSaveLyricSettings(settings);
+};
+
+/**
+ * 获取当前有效的歌词主题色
+ */
+export const getCurrentLyricThemeColor = (theme: 'light' | 'dark'): string => {
+  const savedColor = loadLyricThemeColor();
+  
+  if (savedColor && validateColor(savedColor)) {
+    return optimizeColorForTheme(savedColor, theme);
+  }
+  
+  return getDefaultHighlightColor(theme);
 };
