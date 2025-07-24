@@ -58,7 +58,7 @@
     <div class="music-content">
       <div class="music-content-title flex items-center">
         <n-ellipsis class="text-ellipsis" line-clamp="1">
-          {{ playMusic.name }}
+          {{ playMusic?.name || '' }}
         </n-ellipsis>
         <span v-if="playbackRate !== 1.0" class="playback-rate-badge"> {{ playbackRate }}x </span>
       </div>
@@ -123,15 +123,15 @@
         <template #trigger>
           <i
             class="iconfont ri-netease-cloud-music-line"
-            :class="{ 'text-green-500': isLyricWindowOpen, 'disabled-icon': !playMusic.id }"
-            @click="playMusic.id && openLyricWindow()"
+            :class="{ 'text-green-500': isLyricWindowOpen, 'disabled-icon': !(playMusic?.id) }"
+            @click="playMusic?.id && openLyricWindow()"
           ></i>
         </template>
-        {{ playMusic.id ? t('player.playBar.lyric') : t('player.playBar.noSongPlaying') }}
+        {{ playMusic?.id ? t('player.playBar.lyric') : t('player.playBar.noSongPlaying') }}
       </n-tooltip>
-      <n-tooltip v-if="playMusic.id && isElectron" trigger="hover" :z-index="9999999">
+      <n-tooltip v-if="playMusic?.id && isElectron" trigger="hover" :z-index="9999999">
         <template #trigger>
-          <reparse-popover v-if="playMusic.id" />
+          <reparse-popover v-if="playMusic?.id" />
         </template>
         {{ t('player.playBar.reparse') }}
       </n-tooltip>
@@ -191,7 +191,9 @@ const background = ref('#000');
 watch(
   () => playerStore.playMusic,
   async () => {
-    background.value = playMusic.value.backgroundColor as string;
+    if (playMusic && playMusic.value && playMusic.value.backgroundColor) {
+      background.value = playMusic.value.backgroundColor as string;
+    }
   },
   { immediate: true, deep: true }
 );
@@ -359,6 +361,7 @@ const setMusicFull = () => {
 };
 
 const isFavorite = computed(() => {
+  if (!playMusic || !playMusic.value) return false;
   // 对于B站视频，使用ID匹配函数
   if (playMusic.value.source === 'bilibili' && playMusic.value.bilibiliData?.bvid) {
     return playerStore.favoriteList.some((id) => isBilibiliIdMatch(id, playMusic.value.id));
