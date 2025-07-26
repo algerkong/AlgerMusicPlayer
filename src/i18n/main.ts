@@ -1,19 +1,15 @@
-import enUS from './lang/en-US';
-import zhCN from './lang/zh-CN';
-import zhHant from './lang/zh-Hant';
+import { DEFAULT_LANGUAGE } from './languages';
+import { buildLanguageMessages } from './utils';
 
-const messages = {
-  'zh-CN': zhCN,
-  'en-US': enUS,
-  'zh-Hant': zhHant
-} as const;
+// 使用工具函数构建语言消息对象
+const messages = buildLanguageMessages();
 
 type Language = keyof typeof messages;
 
 // 为主进程提供一个简单的 i18n 实现
 const mainI18n = {
   global: {
-    currentLocale: 'zh-CN' as Language,
+    currentLocale: DEFAULT_LANGUAGE as Language,
     get locale() {
       return this.currentLocale;
     },

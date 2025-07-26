@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getLanguageOptions } from '@i18n/utils';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -7,11 +8,8 @@ import { useSettingsStore } from '@/store/modules/settings';
 const settingsStore = useSettingsStore();
 const { locale } = useI18n();
 
-const languages = [
-  { label: '简体中文', value: 'zh-CN' },
-  { label: '繁體中文', value: 'zh-Hant' },
-  { label: 'English', value: 'en-US' }
-];
+// 使用自动导入的语言选项
+const languages = getLanguageOptions();
 
 console.log('locale', locale);
 // 使用计算属性来获取当前语言

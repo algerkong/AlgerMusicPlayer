@@ -9,8 +9,8 @@ import {
 } from 'electron';
 import { join } from 'path';
 
-import type { Language } from '../../i18n/main';
 import i18n from '../../i18n/main';
+import { getLanguageOptions } from '../../i18n/utils';
 import { getStore } from './config';
 
 // 歌曲信息接口定义
@@ -33,11 +33,8 @@ let songTitleTray: Tray | null = null;
 let isPlaying = false;
 let currentSong: SongInfo | null = null;
 
-const LANGUAGES: { label: string; value: Language }[] = [
-  { label: '简体中文', value: 'zh-CN' },
-  { label: 'English', value: 'en-US' },
-  { label: '繁體中文', value: 'zh-Hant' }
-];
+// 使用自动导入的语言选项
+const LANGUAGES = getLanguageOptions();
 
 // 更新播放状态
 export function updatePlayState(playing: boolean) {

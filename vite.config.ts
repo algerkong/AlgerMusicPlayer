@@ -14,7 +14,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve('src/renderer'),
-      '@renderer': resolve('src/renderer')
+      '@renderer': resolve('src/renderer'),
+      '@i18n': resolve('src/i18n')
     }
   },
   plugins: [
