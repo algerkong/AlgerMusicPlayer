@@ -111,10 +111,10 @@ onMounted(async () => {
   if (isLyricWindow.value) {
     return;
   }
-  // 先初始化播放状态
-  await playerStore.initializePlayState();
   // 初始化 MusicHook，注入 playerStore
   initMusicHook(playerStore);
+  // 初始化播放状态
+  await playerStore.initializePlayState();
 
   // 如果有正在播放的音乐，则初始化音频监听器
   if (playerStore.playMusic && playerStore.playMusic.id) {
