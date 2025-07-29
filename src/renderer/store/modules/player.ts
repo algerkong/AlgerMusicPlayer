@@ -411,6 +411,9 @@ export const usePlayerStore = defineStore('player', () => {
   // 播放速度状态
   const playbackRate = ref(parseFloat(getLocalStorageItem('playbackRate', '1.0')));
 
+  // 音量状态管理
+  const volume = ref(parseFloat(getLocalStorageItem('volume', '1')));
+
   // 清空播放列表
   const clearPlayAll = async () => {
     audioService.pause();
@@ -1439,6 +1442,35 @@ export const usePlayerStore = defineStore('player', () => {
     }
   };
 
+  // 音量管理方法
+  const setVolume = (newVolume: number) => {
+    // 确保音量值在0-1范围内
+    const normalizedVolume = Math.max(0, Math.min(1, newVolume));
+    volume.value = normalizedVolume;
+
+    // 保存到localStorage
+    localStorage.setItem('volume', normalizedVolume.toString());
+
+    // 应用到音频服务
+    audioService.setVolume(normalizedVolume);
+  };
+
+  const getVolume = () => {
+    return volume.value;
+  };
+
+  const increaseVolume = (step: number = 0.1) => {
+    const newVolume = Math.min(1, volume.value + step);
+    setVolume(newVolume);
+    return newVolume;
+  };
+
+  const decreaseVolume = (step: number = 0.1) => {
+    const newVolume = Math.max(0, volume.value - step);
+    setVolume(newVolume);
+    return newVolume;
+  };
+
   return {
     play,
     isPlay,
@@ -1491,6 +1523,13 @@ export const usePlayerStore = defineStore('player', () => {
     setPlayListDrawerVisible,
     handlePause,
     playbackRate,
-    setPlaybackRate
+    setPlaybackRate,
+
+    // 音量管理
+    volume,
+    setVolume,
+    getVolume,
+    increaseVolume,
+    decreaseVolume
   };
 });

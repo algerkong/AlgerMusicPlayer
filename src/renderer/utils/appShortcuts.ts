@@ -96,11 +96,8 @@ export async function handleShortcutAction(action: string) {
         showToast(t('player.playBar.next'), 'ri-skip-forward-line');
         break;
       case 'volumeUp':
-        // 从localStorage获取当前音量
-        const currentVolumeUp = parseFloat(localStorage.getItem('volume') || '1');
-        if (currentVolumeUp < 1) {
-          const newVolume = Math.min(1, currentVolumeUp + 0.1);
-          await audioService.setVolume(newVolume);
+        if (playerStore.getVolume() < 1) {
+          const newVolume = playerStore.increaseVolume(0.1);
           showToast(
             `${t('player.playBar.volume')}${Math.round(newVolume * 100)}%`,
             'ri-volume-up-line'
@@ -108,11 +105,8 @@ export async function handleShortcutAction(action: string) {
         }
         break;
       case 'volumeDown':
-        // 从localStorage获取当前音量
-        const currentVolumeDown = parseFloat(localStorage.getItem('volume') || '1');
-        if (currentVolumeDown > 0) {
-          const newVolume = Math.max(0, currentVolumeDown - 0.1);
-          await audioService.setVolume(newVolume);
+        if (playerStore.getVolume() > 0) {
+          const newVolume = playerStore.decreaseVolume(0.1);
           showToast(
             `${t('player.playBar.volume')}${Math.round(newVolume * 100)}%`,
             'ri-volume-down-line'

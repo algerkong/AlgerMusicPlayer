@@ -123,7 +123,7 @@
         <template #trigger>
           <i
             class="iconfont ri-netease-cloud-music-line"
-            :class="{ 'text-green-500': isLyricWindowOpen, 'disabled-icon': !(playMusic?.id) }"
+            :class="{ 'text-green-500': isLyricWindowOpen, 'disabled-icon': !playMusic?.id }"
             @click="playMusic?.id && openLyricWindow()"
           ></i>
         </template>
@@ -245,27 +245,22 @@ const formatTooltip = (value: number) => {
   return `${secondToMinute(value)} / ${secondToMinute(allTime.value)}`;
 };
 
-// 音量条
-const audioVolume = ref(
-  localStorage.getItem('volume') ? parseFloat(localStorage.getItem('volume') as string) : 1
-);
+// 音量条 - 使用 playerStore 的统一音量管理
 const getVolumeIcon = computed(() => {
   // 0 静音 ri-volume-mute-line 0.5 ri-volume-down-line 1 ri-volume-up-line
-  if (audioVolume.value === 0) {
+  if (playerStore.volume === 0) {
     return 'ri-volume-mute-line';
   }
-  if (audioVolume.value <= 0.5) {
+  if (playerStore.volume <= 0.5) {
     return 'ri-volume-down-line';
   }
   return 'ri-volume-up-line';
 });
 
 const volumeSlider = computed({
-  get: () => audioVolume.value * 100,
+  get: () => playerStore.volume * 100,
   set: (value) => {
-    localStorage.setItem('volume', (value / 100).toString());
-    audioService.setVolume(value / 100);
-    audioVolume.value = value / 100;
+    playerStore.setVolume(value / 100);
   }
 });
 
