@@ -91,6 +91,33 @@ const isText = ref(false);
   @apply flex-col items-center justify-center transition-all duration-300 w-[100px] px-1;
 }
 
+.app-menu-list {
+  max-height: calc(100vh - 120px); /* 为header预留空间，防止菜单项被遮挡 */
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* 自定义滚动条样式 */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+  padding-bottom: 20px;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 2px;
+
+    &:hover {
+      background-color: rgba(156, 163, 175, 0.7);
+    }
+  }
+}
+
 .app-menu-expanded {
   @apply w-[160px];
 
@@ -136,6 +163,8 @@ const isText = ref(false);
 
     &-list {
       @apply flex justify-between px-4;
+      max-height: none !important; /* 移动端不限制高度 */
+      overflow: visible !important; /* 移动端不需要滚动 */
     }
 
     &-item {
