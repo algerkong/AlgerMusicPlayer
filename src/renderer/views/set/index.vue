@@ -409,6 +409,16 @@
                 />
               </div>
             </div>
+
+            <div class="set-item">
+              <div>
+                <div class="set-item-title">{{ t('settings.network.token') }}</div>
+                <div class="set-item-content">{{ t('settings.network.tokenDesc') }}</div>
+              </div>
+              <n-button size="small" @click="showTokenModal = true">
+                {{ t('common.configure') }}
+              </n-button>
+            </div>
           </div>
         </div>
 
@@ -524,6 +534,9 @@
       <remote-control-setting v-model:visible="showRemoteControlModal" />
     </template>
 
+    <!-- Token设置弹窗 -->
+    <token-settings v-model:show="showTokenModal" />
+
     <!-- 清除缓存弹窗 -->
     <clear-cache-settings v-model:show="showClearCacheModal" @confirm="clearCache" />
   </div>
@@ -545,6 +558,7 @@ import MusicSourceSettings from '@/components/settings/MusicSourceSettings.vue';
 import ProxySettings from '@/components/settings/ProxySettings.vue';
 import RemoteControlSetting from '@/components/settings/ServerSetting.vue';
 import ShortcutSettings from '@/components/settings/ShortcutSettings.vue';
+import TokenSettings from '@/components/settings/TokenSettings.vue';
 import { useSettingsStore } from '@/store/modules/settings';
 import { useUserStore } from '@/store/modules/user';
 import { type Platform } from '@/types/music';
@@ -677,6 +691,7 @@ const openDownloadPath = () => {
 };
 
 const showProxyModal = ref(false);
+const showTokenModal = ref(false);
 const proxyForm = ref({
   protocol: 'http',
   host: '127.0.0.1',

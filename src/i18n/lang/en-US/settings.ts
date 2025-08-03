@@ -104,11 +104,18 @@ export default {
     proxyPortPlaceholder: 'Enter proxy port',
     realIP: 'RealIP Settings',
     realIPDesc: 'Use realIP parameter with mainland China IP to resolve access restrictions abroad',
+    token: 'Token Settings',
+    tokenDesc: 'Manually configure authentication token',
+    tokenPlaceholder: 'Enter your authentication token here...',
+    tokenTip: 'You can manually enter your authentication token. After configuration, please restart the application for the changes to take effect.',
     messages: {
       proxySuccess: 'Proxy settings saved, restart required to take effect',
       proxyError: 'Please check your input',
       realIPSuccess: 'RealIP settings saved',
-      realIPError: 'Please enter a valid IP address'
+      realIPError: 'Please enter a valid IP address',
+      tokenSuccess: 'Token settings saved successfully',
+      tokenError: 'Please enter a valid token',
+      restartRequired: 'Please restart the application for the changes to take effect'
     }
   },
   system: {
@@ -168,7 +175,8 @@ export default {
   validation: {
     selectProxyProtocol: 'Please select proxy protocol',
     proxyHost: 'Please enter proxy host',
-    portNumber: 'Please enter a valid port number (1-65535)'
+    portNumber: 'Please enter a valid port number (1-65535)',
+    tokenRequired: 'Please enter a valid token'
   },
   lyricSettings: {
     title: 'Lyric Settings',

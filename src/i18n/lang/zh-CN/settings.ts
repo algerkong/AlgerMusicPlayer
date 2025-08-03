@@ -102,11 +102,18 @@ export default {
     proxyPortPlaceholder: '请输入代理端口',
     realIP: 'realIP设置',
     realIPDesc: '由于限制,此项目在国外使用会受到限制可使用realIP参数,传进国内IP解决',
+    token: 'Token设置',
+    tokenDesc: '手动配置认证令牌',
+    tokenPlaceholder: '请输入您的认证令牌...',
+    tokenTip: '您可以手动输入认证令牌。配置完成后，请重启应用程序以使更改生效。',
     messages: {
       proxySuccess: '代理设置已保存，重启应用后生效',
       proxyError: '请检查输入是否正确',
       realIPSuccess: '真实IP设置已保存',
-      realIPError: '请输入有效的IP地址'
+      realIPError: '请输入有效的IP地址',
+      tokenSuccess: 'Token设置已保存成功',
+      tokenError: '请输入有效的Token',
+      restartRequired: '请重启应用程序以使更改生效'
     }
   },
   system: {
@@ -166,7 +173,8 @@ export default {
   validation: {
     selectProxyProtocol: '请选择代理协议',
     proxyHost: '请输入代理地址',
-    portNumber: '请输入有效的端口号(1-65535)'
+    portNumber: '请输入有效的端口号(1-65535)',
+    tokenRequired: '请输入有效的Token'
   },
   lyricSettings: {
     title: '歌词设置',

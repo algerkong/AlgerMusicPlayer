@@ -102,11 +102,18 @@ export default {
     proxyPortPlaceholder: 'プロキシポートを入力してください',
     realIP: 'realIP設定',
     realIPDesc: '制限により、このプロジェクトは海外での使用が制限されます。realIPパラメータを使用して国内IPを渡すことで解決できます',
+    token: 'Token設定',
+    tokenDesc: '認証トークンを手動で設定',
+    tokenPlaceholder: '認証トークンを入力してください...',
+    tokenTip: '認証トークンを手動で入力できます。設定後、変更を有効にするためにアプリケーションを再起動してください。',
     messages: {
       proxySuccess: 'プロキシ設定を保存しました。アプリ再起動後に有効になります',
       proxyError: '入力が正しいかどうか確認してください',
       realIPSuccess: '実IPアドレス設定を保存しました',
-      realIPError: '有効なIPアドレスを入力してください'
+      realIPError: '有効なIPアドレスを入力してください',
+      tokenSuccess: 'Token設定を正常に保存しました',
+      tokenError: '有効なTokenを入力してください',
+      restartRequired: '変更を有効にするためにアプリケーションを再起動してください'
     }
   },
   system: {
@@ -166,7 +173,8 @@ export default {
   validation: {
     selectProxyProtocol: 'プロキシプロトコルを選択してください',
     proxyHost: 'プロキシアドレスを入力してください',
-    portNumber: '有効なポート番号を入力してください（1-65535）'
+    portNumber: '有効なポート番号を入力してください（1-65535）',
+    tokenRequired: '有効なTokenを入力してください'
   },
   lyricSettings: {
     title: '歌詞設定',

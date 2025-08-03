@@ -102,11 +102,18 @@ export default {
     proxyPortPlaceholder: '請輸入代理連接埠',
     realIP: 'realIP設定',
     realIPDesc: '由於限制,此項目在國外使用會受到限制可使用realIP參數,傳進國內IP解決',
+    token: 'Token設定',
+    tokenDesc: '手動配置認證令牌',
+    tokenPlaceholder: '請輸入您的認證令牌...',
+    tokenTip: '您可以手動輸入認證令牌。配置完成後，請重啟應用程式以使更改生效。',
     messages: {
       proxySuccess: '代理設定已儲存，重啟應用程式後生效',
       proxyError: '請檢查輸入是否正確',
       realIPSuccess: '真實IP設定已儲存',
-      realIPError: '請輸入有效的IP位址'
+      realIPError: '請輸入有效的IP位址',
+      tokenSuccess: 'Token設定已儲存成功',
+      tokenError: '請輸入有效的Token',
+      restartRequired: '請重啟應用程式以使更改生效'
     }
   },
   system: {
@@ -166,7 +173,8 @@ export default {
   validation: {
     selectProxyProtocol: '請選擇代理協議',
     proxyHost: '請輸入代理位址',
-    portNumber: '請輸入有效的連接埠號(1-65535)'
+    portNumber: '請輸入有效的連接埠號(1-65535)',
+    tokenRequired: '請輸入有效的Token'
   },
   lyricSettings: {
     title: '歌詞設定',

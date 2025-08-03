@@ -102,11 +102,18 @@ export default {
     proxyPortPlaceholder: '프록시 포트를 입력하세요',
     realIP: 'realIP 설정',
     realIPDesc: '제한으로 인해 이 프로젝트는 해외에서 사용할 때 제한을 받을 수 있으며, realIP 매개변수를 사용하여 국내 IP를 전달하여 해결할 수 있습니다',
+    token: 'Token 설정',
+    tokenDesc: '인증 토큰을 수동으로 구성',
+    tokenPlaceholder: '인증 토큰을 입력하세요...',
+    tokenTip: '인증 토큰을 수동으로 입력할 수 있습니다. 구성 후 변경사항을 적용하려면 애플리케이션을 재시작하세요.',
     messages: {
       proxySuccess: '프록시 설정이 저장되었습니다. 앱을 재시작한 후 적용됩니다',
       proxyError: '입력이 올바른지 확인하세요',
       realIPSuccess: '실제 IP 설정이 저장되었습니다',
-      realIPError: '유효한 IP 주소를 입력하세요'
+      realIPError: '유효한 IP 주소를 입력하세요',
+      tokenSuccess: 'Token 설정이 성공적으로 저장되었습니다',
+      tokenError: '유효한 Token을 입력하세요',
+      restartRequired: '변경사항을 적용하려면 애플리케이션을 재시작하세요'
     }
   },
   system: {
@@ -166,7 +173,8 @@ export default {
   validation: {
     selectProxyProtocol: '프록시 프로토콜을 선택하세요',
     proxyHost: '프록시 주소를 입력하세요',
-    portNumber: '유효한 포트 번호를 입력하세요 (1-65535)'
+    portNumber: '유효한 포트 번호를 입력하세요 (1-65535)',
+    tokenRequired: '유효한 Token을 입력하세요'
   },
   lyricSettings: {
     title: '가사 설정',
