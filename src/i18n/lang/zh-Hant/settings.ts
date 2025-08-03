@@ -92,21 +92,26 @@ export default {
     remoteControlDesc: '設定遠端控制功能'
   },
   network: {
-    apiPort: '音樂API連接埠',
-    apiPortDesc: '修改後需要重啟應用程式',
+    apiPort: '音樂API端口',
+    apiPortDesc: '修改後需要重啟應用',
     proxy: '代理設定',
-    proxyDesc: '無法存取音樂時可以開啟代理',
-    proxyHost: '代理位址',
-    proxyHostPlaceholder: '請輸入代理位址',
-    proxyPort: '代理連接埠',
-    proxyPortPlaceholder: '請輸入代理連接埠',
+    proxyDesc: '無法訪問音樂時可以開啟代理',
+    proxyHost: '代理地址',
+    proxyHostPlaceholder: '請輸入代理地址',
+    proxyPort: '代理端口',
+    proxyPortPlaceholder: '請輸入代理端口',
     realIP: 'realIP設定',
     realIPDesc: '由於限制,此項目在國外使用會受到限制可使用realIP參數,傳進國內IP解決',
+    token: 'Token設定',
+    tokenDesc: '手動配置網易雲音樂登錄Token',
+    tokenPlaceholder: '請輸入網易雲音樂Token',
     messages: {
-      proxySuccess: '代理設定已儲存，重啟應用程式後生效',
+      proxySuccess: '代理設定已保存，重啟應用後生效',
       proxyError: '請檢查輸入是否正確',
-      realIPSuccess: '真實IP設定已儲存',
-      realIPError: '請輸入有效的IP位址'
+      realIPSuccess: '真實IP設定已保存',
+      realIPError: '請輸入有效的IP地址',
+      tokenSuccess: 'Token設定已保存，重啟應用後生效',
+      tokenError: '請輸入有效的Token'
     }
   },
   system: {

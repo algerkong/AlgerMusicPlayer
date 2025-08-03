@@ -102,11 +102,16 @@ export default {
     proxyPortPlaceholder: '请输入代理端口',
     realIP: 'realIP设置',
     realIPDesc: '由于限制,此项目在国外使用会受到限制可使用realIP参数,传进国内IP解决',
+    token: 'Token设置',
+    tokenDesc: '手动配置网易云音乐登录Token',
+    tokenPlaceholder: '请输入网易云音乐Token',
     messages: {
       proxySuccess: '代理设置已保存，重启应用后生效',
       proxyError: '请检查输入是否正确',
       realIPSuccess: '真实IP设置已保存',
-      realIPError: '请输入有效的IP地址'
+      realIPError: '请输入有效的IP地址',
+      tokenSuccess: 'Token设置已保存，重启应用后生效',
+      tokenError: '请输入有效的Token'
     }
   },
   system: {

@@ -102,13 +102,18 @@ export default {
     proxyHostPlaceholder: 'Enter proxy host',
     proxyPort: 'Proxy Port',
     proxyPortPlaceholder: 'Enter proxy port',
-    realIP: 'RealIP Settings',
-    realIPDesc: 'Use realIP parameter with mainland China IP to resolve access restrictions abroad',
+    realIP: 'Real IP Settings',
+    realIPDesc: 'Due to restrictions, this project may be limited when used abroad. You can use the realIP parameter to pass in a domestic IP to solve the problem',
+    token: 'Token Settings',
+    tokenDesc: 'Manually configure NetEase Cloud Music login token',
+    tokenPlaceholder: 'Enter NetEase Cloud Music token',
     messages: {
-      proxySuccess: 'Proxy settings saved, restart required to take effect',
+      proxySuccess: 'Proxy settings saved, restart app to apply',
       proxyError: 'Please check your input',
-      realIPSuccess: 'RealIP settings saved',
-      realIPError: 'Please enter a valid IP address'
+      realIPSuccess: 'Real IP settings saved',
+      realIPError: 'Please enter a valid IP address',
+      tokenSuccess: 'Token settings saved, restart app to apply',
+      tokenError: 'Please enter a valid token'
     }
   },
   system: {

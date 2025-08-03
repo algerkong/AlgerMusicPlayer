@@ -93,20 +93,25 @@ export default {
   },
   network: {
     apiPort: '音楽APIポート',
-    apiPortDesc: '変更後はアプリの再起動が必要です',
+    apiPortDesc: '変更後はアプリを再起動してください',
     proxy: 'プロキシ設定',
-    proxyDesc: '音楽にアクセスできない場合はプロキシを有効にできます',
+    proxyDesc: '音楽にアクセスできない場合にプロキシを有効にできます',
     proxyHost: 'プロキシアドレス',
     proxyHostPlaceholder: 'プロキシアドレスを入力してください',
     proxyPort: 'プロキシポート',
     proxyPortPlaceholder: 'プロキシポートを入力してください',
     realIP: 'realIP設定',
-    realIPDesc: '制限により、このプロジェクトは海外での使用が制限されます。realIPパラメータを使用して国内IPを渡すことで解決できます',
+    realIPDesc: '制限により、このプロジェクトは海外で使用する際に制限を受ける可能性があり、realIPパラメータを使用して国内IPを渡すことで解決できます',
+    token: 'Token設定',
+    tokenDesc: 'NetEase Cloud Musicログイントークンを手動で設定',
+    tokenPlaceholder: 'NetEase Cloud Musicトークンを入力してください',
     messages: {
-      proxySuccess: 'プロキシ設定を保存しました。アプリ再起動後に有効になります',
-      proxyError: '入力が正しいかどうか確認してください',
-      realIPSuccess: '実IPアドレス設定を保存しました',
-      realIPError: '有効なIPアドレスを入力してください'
+      proxySuccess: 'プロキシ設定が保存されました。アプリを再起動して適用してください',
+      proxyError: '入力が正しいか確認してください',
+      realIPSuccess: 'realIP設定が保存されました',
+      realIPError: '有効なIPアドレスを入力してください',
+      tokenSuccess: 'Token設定が保存されました。アプリを再起動して適用してください',
+      tokenError: '有効なTokenを入力してください'
     }
   },
   system: {

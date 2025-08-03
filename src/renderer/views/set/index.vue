@@ -409,6 +409,18 @@
                 />
               </div>
             </div>
+
+            <div class="set-item">
+              <div>
+                <div class="set-item-title">{{ t('settings.network.token') }}</div>
+                <div class="set-item-content">{{ t('settings.network.tokenDesc') }}</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <n-button size="small" @click="showTokenModal = true">{{
+                  t('common.configure')
+                }}</n-button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -517,6 +529,13 @@
         @confirm="handleProxyConfirm"
       />
 
+      <!-- Token设置弹窗 -->
+      <token-settings
+        v-model:show="showTokenModal"
+        :token="currentToken"
+        @confirm="handleTokenConfirm"
+      />
+
       <!-- 音源设置弹窗 -->
       <music-source-settings v-model:show="showMusicSourcesModal" v-model:sources="musicSources" />
 
@@ -545,6 +564,7 @@ import MusicSourceSettings from '@/components/settings/MusicSourceSettings.vue';
 import ProxySettings from '@/components/settings/ProxySettings.vue';
 import RemoteControlSetting from '@/components/settings/ServerSetting.vue';
 import ShortcutSettings from '@/components/settings/ShortcutSettings.vue';
+import TokenSettings from '@/components/settings/TokenSettings.vue';
 import { useSettingsStore } from '@/store/modules/settings';
 import { useUserStore } from '@/store/modules/user';
 import { type Platform } from '@/types/music';
@@ -683,6 +703,10 @@ const proxyForm = ref({
   port: 7890
 });
 
+// Token设置相关
+const showTokenModal = ref(false);
+const currentToken = ref(localStorage.getItem('token') || '');
+
 // 使用 store 中的字体列表
 const systemFonts = computed(() => settingsStore.systemFonts);
 
@@ -770,6 +794,13 @@ const handleProxyConfirm = async (proxyConfig) => {
     }
   };
   message.success(t('settings.network.messages.proxySuccess'));
+};
+
+const handleTokenConfirm = async (tokenData: { token: string }) => {
+  // 保存token到localStorage
+  localStorage.setItem('token', tokenData.token);
+  currentToken.value = tokenData.token;
+  message.success(t('settings.network.messages.tokenSuccess'));
 };
 
 const validateAndSaveRealIP = () => {
