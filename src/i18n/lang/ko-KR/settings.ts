@@ -19,6 +19,14 @@ export default {
     manualTheme: '수동 전환',
     language: '언어 설정',
     languageDesc: '표시 언어 전환',
+    tokenManagement: 'Cookie 관리',
+    tokenManagementDesc: '넷이즈 클라우드 뮤직 로그인 Cookie 관리',
+    tokenStatus: '현재 Cookie 상태',
+    tokenSet: '설정됨',
+    tokenNotSet: '설정되지 않음',
+    setToken: 'Cookie 설정',
+    modifyToken: 'Cookie 수정',
+    clearToken: 'Cookie 지우기',
     font: '폰트 설정',
     fontDesc: '폰트 선택, 앞에 있는 폰트를 우선 사용',
     fontScope: {
@@ -183,6 +191,7 @@ export default {
     hideLyrics: '가사 숨기기',
     hidePlayBar: '재생바 숨기기',
     hideMiniPlayBar: '미니 재생바 숨기기',
+    showMiniPlayBar: '미니 재생바 표시',
     backgroundTheme: '배경 테마',
     themeOptions: {
       default: '기본',
@@ -281,5 +290,33 @@ export default {
     emptyListHint: '빈 목록은 모든 IP 액세스를 허용함을 의미합니다',
     saveSuccess: '원격 제어 설정이 저장되었습니다',
     accessInfo: '원격 제어 액세스 주소:'
+  },
+  cookie: {
+    title: 'Cookie 설정',
+    description: '넷이즈 클라우드 뮤직의 Cookie를 입력하세요:',
+    placeholder: '완전한 Cookie를 붙여넣으세요...',
+    help: {
+      format: 'Cookie는 일반적으로 "MUSIC_U="로 시작합니다',
+      source: '브라우저 개발자 도구의 네트워크 요청에서 얻을 수 있습니다',
+      storage: 'Cookie 설정 후 자동으로 로컬 저장소에 저장됩니다'
+    },
+    action: {
+      save: 'Cookie 저장',
+      paste: '붙여넣기',
+      clear: '지우기'
+    },
+    validation: {
+      required: 'Cookie를 입력하세요',
+      format: 'Cookie 형식이 올바르지 않을 수 있습니다. MUSIC_U가 포함되어 있는지 확인하세요'
+    },
+    message: {
+      saveSuccess: 'Cookie 저장 성공',
+      saveError: 'Cookie 저장 실패',
+      pasteSuccess: '붙여넣기 성공',
+      pasteError: '붙여넣기 실패, 수동으로 복사하세요'
+    },
+    info: {
+      length: '현재 길이: {length} 문자'
+    }
   }
 };

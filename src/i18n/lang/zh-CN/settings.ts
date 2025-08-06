@@ -19,6 +19,14 @@ export default {
     manualTheme: '手动切换',
     language: '语言设置',
     languageDesc: '切换显示语言',
+    tokenManagement: 'Cookie管理',
+    tokenManagementDesc: '管理网易云音乐登录Cookie',
+    tokenStatus: '当前Cookie状态',
+    tokenSet: '已设置',
+    tokenNotSet: '未设置',
+    setToken: '设置Cookie',
+    modifyToken: '修改Cookie',
+    clearToken: '清除Cookie',
     font: '字体设置',
     fontDesc: '选择字体，优先使用排在前面的字体',
     fontScope: {
@@ -183,6 +191,7 @@ export default {
     hideLyrics: '隐藏歌词',
     hidePlayBar: '隐藏播放栏',
     hideMiniPlayBar: '隐藏迷你播放栏',
+    showMiniPlayBar: '显示迷你播放栏',
     backgroundTheme: '背景主题',
     themeOptions: {
       default: '默认',
@@ -281,5 +290,33 @@ export default {
     emptyListHint: '空列表表示允许所有IP访问',
     saveSuccess: '远程控制设置已保存',
     accessInfo: '远程控制访问地址:'
+  },
+  cookie: {
+    title: 'Cookie设置',
+    description: '请输入网易云音乐的Cookie：',
+    placeholder: '请粘贴完整的Cookie...',
+    help: {
+      format: 'Cookie通常以 "MUSIC_U=" 开头',
+      source: '可以从浏览器开发者工具的网络请求中获取',
+      storage: 'Cookie设置后将自动保存到本地存储'
+    },
+    action: {
+      save: '保存Cookie',
+      paste: '粘贴',
+      clear: '清空'
+    },
+    validation: {
+      required: '请输入Cookie',
+      format: 'Cookie格式可能不正确，请检查是否包含MUSIC_U'
+    },
+    message: {
+      saveSuccess: 'Cookie保存成功',
+      saveError: 'Cookie保存失败',
+      pasteSuccess: '粘贴成功',
+      pasteError: '粘贴失败，请手动复制'
+    },
+    info: {
+      length: '当前长度：{length} 字符'
+    }
   }
 };

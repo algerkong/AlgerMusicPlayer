@@ -1,10 +1,11 @@
 <script lang="ts" setup>
 import { useMessage } from 'naive-ui';
-import { onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
-import { checkQr, createQr, getQrKey, getUserDetail, loginByCellphone } from '@/api/login';
+import { loginByCellphone } from '@/api/login';
+import CookieLogin from '@/components/login/CookieLogin.vue';
+import QrLogin from '@/components/login/QrLogin.vue';
 import { useUserStore } from '@/store/modules/user';
 import { setAnimationClass } from '@/utils';
 
@@ -16,78 +17,9 @@ const { t } = useI18n();
 const message = useMessage();
 const router = useRouter();
 const isQr = ref(true);
+const isTokenLogin = ref(false);
 
-const qrUrl = ref<string>();
 const userStore = useUserStore();
-
-onMounted(() => {
-  loadLogin();
-});
-
-const timerRef = ref(null);
-
-const loadLogin = async () => {
-  try {
-    if (timerRef.value) {
-      clearInterval(timerRef.value);
-      timerRef.value = null;
-    }
-    if (!isQr.value) return;
-    const qrKey = await getQrKey();
-    const key = qrKey.data.data.unikey;
-    const { data } = await createQr(key);
-    qrUrl.value = data.data.qrimg;
-
-    const timer = timerIsQr(key);
-    timerRef.value = timer as any;
-  } catch (error) {
-    console.error(t('login.message.loadError'), error);
-  }
-};
-
-const timerIsQr = (key: string) => {
-  const timer = setInterval(async () => {
-    try {
-      const { data } = await checkQr(key);
-
-      if (data.code === 800) {
-        clearInterval(timer);
-        timerRef.value = null;
-      }
-      if (data.code === 803) {
-        localStorage.setItem('token', data.cookie);
-        const user = await getUserDetail();
-        userStore.user = user.data.profile;
-        localStorage.setItem('user', JSON.stringify(user.data.profile));
-        message.success(t('login.message.loginSuccess'));
-
-        clearInterval(timer);
-        timerRef.value = null;
-        router.push('/user');
-      }
-    } catch (error) {
-      console.error(t('login.message.qrCheckError'), error);
-      clearInterval(timer);
-      timerRef.value = null;
-    }
-  }, 3000);
-
-  return timer;
-};
-
-// 离开页面时
-onBeforeUnmount(() => {
-  if (timerRef.value) {
-    clearInterval(timerRef.value);
-    timerRef.value = null;
-  }
-});
-
-// 是否扫码登陆
-// const chooseQr = () => {
-//   isQr.value = !isQr.value;
-//   loadLogin();
-// };
 
 // 手机号登录
 const phone = ref('');
@@ -110,12 +42,17 @@ const loginPhone = async () => {
     <div class="phone-login">
       <div class="bg"></div>
       <div class="content">
-        <div v-if="isQr" class="phone" :class="setAnimationClass('animate__fadeInUp')">
-          <div class="login-title">{{ t('login.title.qr') }}</div>
-          <img class="qr-img" :src="qrUrl" />
-          <div class="text">{{ t('login.qrTip') }}</div>
+        <!-- 二维码登录组件 -->
+        <div v-if="isQr && !isTokenLogin" class="phone">
+          <qr-login />
         </div>
-        <div v-else class="phone" :class="setAnimationClass('animate__fadeInUp')">
+
+        <!-- 手机号登录 -->
+        <div
+          v-else-if="!isQr && !isTokenLogin"
+          class="phone"
+          :class="setAnimationClass('animate__fadeInUp')"
+        >
           <div class="login-title">{{ t('login.title.phone') }}</div>
           <div class="phone-page">
             <input
@@ -134,11 +71,18 @@ const loginPhone = async () => {
           <div class="text">{{ t('login.phoneTip') }}</div>
           <n-button class="btn-login" @click="loginPhone()">{{ t('login.button.login') }}</n-button>
         </div>
+
+        <!-- Cookie登录组件 -->
+        <div v-else-if="isTokenLogin" class="phone">
+          <cookie-login />
+        </div>
       </div>
       <div class="bottom">
-        <!-- <div class="title" @click="chooseQr()">
-          {{ isQr ? t('login.button.switchToPhone') : t('login.button.switchToQr') }}
-        </div> -->
+        <div class="login-switch">
+          <div class="title" @click="isTokenLogin = !isTokenLogin">
+            {{ isTokenLogin ? t('login.button.backToQr') : t('login.button.switchToToken') }}
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -184,9 +128,6 @@ const loginPhone = async () => {
 
   .content {
     @apply absolute w-full h-full p-4 flex flex-col items-center justify-center pb-20 text-center;
-    .qr-img {
-      @apply rounded-2xl cursor-pointer transition-opacity;
-    }
 
     .phone {
       animation-duration: 0.5s;
@@ -208,6 +149,7 @@ const loginPhone = async () => {
         }
       }
     }
+
     .btn-login {
       width: 250px;
       height: 40px;

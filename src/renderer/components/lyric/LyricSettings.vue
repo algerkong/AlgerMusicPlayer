@@ -36,12 +36,8 @@
           <div class="tab-content">
             <div class="settings-grid">
               <div class="settings-item">
-                <span>{{ t('settings.lyricSettings.hidePlayBar') }}</span>
-                <n-switch v-model:value="config.hidePlayBar" />
-              </div>
-              <div class="settings-item">
-                <span>{{ t('settings.lyricSettings.hideMiniPlayBar') }}</span>
-                <n-switch v-model:value="config.hideMiniPlayBar" />
+                <span>{{ t('settings.lyricSettings.showMiniPlayBar') }}</span>
+                <n-switch v-model:value="showMiniPlayBar" />
               </div>
             </div>
             <div class="theme-section">
@@ -120,7 +116,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { DEFAULT_LYRIC_CONFIG, LyricConfig } from '@/types/lyric';
@@ -128,6 +124,22 @@ import { DEFAULT_LYRIC_CONFIG, LyricConfig } from '@/types/lyric';
 const { t } = useI18n();
 const config = ref<LyricConfig>({ ...DEFAULT_LYRIC_CONFIG });
 const emit = defineEmits(['themeChange']);
+
+// 显示mini播放栏开关
+const showMiniPlayBar = computed({
+  get: () => !config.value.hideMiniPlayBar,
+  set: (value: boolean) => {
+    if (value) {
+      // 显示mini播放栏，隐藏普通播放栏
+      config.value.hideMiniPlayBar = false;
+      config.value.hidePlayBar = true;
+    } else {
+      // 显示普通播放栏，隐藏mini播放栏
+      config.value.hideMiniPlayBar = true;
+      config.value.hidePlayBar = false;
+    }
+  }
+});
 
 watch(
   () => config.value,
