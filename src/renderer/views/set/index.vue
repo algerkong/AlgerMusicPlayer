@@ -552,43 +552,12 @@
       <remote-control-setting v-model:visible="showRemoteControlModal" />
     </template>
 
-    <!-- Token设置弹窗 -->
-    <n-modal v-model:show="showTokenModal" preset="dialog" title="Cookie设置">
-      <template #header>
-        <div class="flex items-center gap-2">
-          <i class="ri-key-line"></i>
-          <span>Cookie设置</span>
-        </div>
-      </template>
-      <div class="space-y-4">
-        <div>
-          <div class="text-sm text-gray-600 dark:text-gray-400 mb-2">
-            请输入网易云音乐的Cookie：
-          </div>
-          <n-input
-            v-model:value="tokenInput"
-            type="textarea"
-            placeholder="请粘贴完整的Cookie..."
-            :rows="6"
-            :autosize="{ minRows: 4, maxRows: 8 }"
-            style="font-family: monospace; font-size: 12px"
-          />
-        </div>
-        <div class="text-xs text-gray-500">
-          <p>• Cookie通常以 "MUSIC_U=" 开头</p>
-          <p>• 可以从浏览器开发者工具的网络请求中获取</p>
-          <p>• Cookie设置后将自动保存到本地存储</p>
-        </div>
-      </div>
-      <template #action>
-        <div class="flex gap-2">
-          <n-button @click="showTokenModal = false">取消</n-button>
-          <n-button type="primary" @click="saveToken" :disabled="!tokenInput.trim()">
-            保存Cookie
-          </n-button>
-        </div>
-      </template>
-    </n-modal>
+    <!-- Cookie设置弹窗 -->
+    <cookie-settings-modal
+      v-model:show="showTokenModal"
+      :initial-value="currentToken"
+      @save="handleTokenSave"
+    />
 
     <!-- 清除缓存弹窗 -->
     <clear-cache-settings v-model:show="showClearCacheModal" @confirm="clearCache" />
@@ -608,6 +577,7 @@ import DonationList from '@/components/common/DonationList.vue';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import ClearCacheSettings from '@/components/settings/ClearCacheSettings.vue';
+import CookieSettingsModal from '@/components/settings/CookieSettingsModal.vue';
 import MusicSourceSettings from '@/components/settings/MusicSourceSettings.vue';
 import ProxySettings from '@/components/settings/ProxySettings.vue';
 import RemoteControlSetting from '@/components/settings/ServerSetting.vue';
@@ -1061,32 +1031,24 @@ const showRemoteControlModal = ref(false);
 
 // Token管理相关
 const showTokenModal = ref(false);
-const tokenInput = ref('');
 const currentToken = ref(localStorage.getItem('token') || '');
 
-// 保存Token
-const saveToken = async () => {
-  if (!tokenInput.value.trim()) {
-    message.error('请输入Token');
-    return;
-  }
-
+// 处理Token保存
+const handleTokenSave = async (token: string) => {
   try {
     // 临时保存原有token
     const originalToken = localStorage.getItem('token');
 
     // 设置新token
-    localStorage.setItem('token', tokenInput.value.trim());
+    localStorage.setItem('token', token);
 
     // 验证token有效性
     const user = await getUserDetail();
     if (user.data && user.data.profile) {
       // token有效，更新用户信息
       userStore.setUser(user.data.profile);
-      currentToken.value = tokenInput.value.trim();
-      message.success('Token设置成功');
-      showTokenModal.value = false;
-      tokenInput.value = '';
+      currentToken.value = token;
+      message.success(t('settings.cookie.message.saveSuccess'));
 
       // 刷新当前页面
       setTimeout(() => {
@@ -1099,7 +1061,7 @@ const saveToken = async () => {
       } else {
         localStorage.removeItem('token');
       }
-      message.error('Token无效，请检查后重试');
+      message.error(t('settings.cookie.message.saveError'));
     }
   } catch (error) {
     // token无效，恢复原有token
@@ -1109,7 +1071,7 @@ const saveToken = async () => {
     } else {
       localStorage.removeItem('token');
     }
-    message.error('Token无效，请检查后重试');
+    message.error(t('settings.cookie.message.saveError'));
     console.error('Token验证失败:', error);
   }
 };
@@ -1120,7 +1082,7 @@ const clearToken = () => {
   localStorage.removeItem('user');
   currentToken.value = '';
   userStore.user = null;
-  message.success('Token已清除');
+  message.success(t('settings.basic.clearToken') + '成功');
 
   // 刷新页面
   setTimeout(() => {
