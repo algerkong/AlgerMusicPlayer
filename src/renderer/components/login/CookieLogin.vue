@@ -41,7 +41,7 @@ const loginByToken = async () => {
     if (user.data && user.data.profile) {
       const successMsg = t('login.message.tokenLoginSuccess');
       message.success(successMsg);
-      emit('loginSuccess', user.data.profile, 'token');
+      emit('loginSuccess', user.data.profile, 'cookie');
     } else {
       // token无效，清除localStorage
       localStorage.removeItem('token');
