@@ -98,7 +98,7 @@ import { getMusicDetail } from '@/api/music';
 import SearchItem from '@/components/common/SearchItem.vue';
 import SongItem from '@/components/common/SongItem.vue';
 import { usePlayerStore, useSettingsStore } from '@/store';
-import { IArtist } from '@/type/artist';
+import { IArtist } from '@/types/artist';
 import { getImgUrl } from '@/utils';
 
 import PlayBottom from './PlayBottom.vue';

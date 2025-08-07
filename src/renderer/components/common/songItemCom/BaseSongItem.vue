@@ -34,7 +34,7 @@
 
 <script lang="ts" setup>
 import { useSongItem } from '@/hooks/useSongItem';
-import type { SongResult } from '@/type/music';
+import type { SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
 
 import SongItemDropdown from './SongItemDropdown.vue';

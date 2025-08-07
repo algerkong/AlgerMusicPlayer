@@ -1,5 +1,5 @@
-import { IData } from '@/type';
-import { IMvUrlData } from '@/type/mv';
+import { IData } from '@/types';
+import { IMvUrlData } from '@/types/mv';
 import request from '@/utils/request';
 
 interface MvParams {

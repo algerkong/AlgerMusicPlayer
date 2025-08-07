@@ -4,7 +4,7 @@ import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { getSongUrl } from '@/store/modules/player';
-import type { SongResult } from '@/type/music';
+import type { SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
 
 const ipcRenderer = isElectron ? window.electron.ipcRenderer : null;

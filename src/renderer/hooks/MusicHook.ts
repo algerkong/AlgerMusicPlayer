@@ -1,13 +1,13 @@
 import { cloneDeep } from 'lodash';
 import { createDiscreteApi } from 'naive-ui';
-import { computed, type ComputedRef,nextTick, onUnmounted, ref, watch } from 'vue';
+import { computed, type ComputedRef, nextTick, onUnmounted, ref, watch } from 'vue';
 
 import { getBilibiliAudioUrl } from '@/api/bilibili';
 import useIndexedDB from '@/hooks/IndexDBHook';
 import { audioService } from '@/services/audioService';
 import type { usePlayerStore } from '@/store';
 import { getSongUrl } from '@/store/modules/player';
-import type { Artist, ILyricText, SongResult } from '@/type/music';
+import type { Artist, ILyricText, SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
 import { getTextColors } from '@/utils/linearColor';
 
@@ -464,7 +464,10 @@ const setupAudioListeners = () => {
         let randomIndex;
         do {
           randomIndex = Math.floor(Math.random() * getPlayerStore().playList.length);
-        } while (randomIndex === getPlayerStore().playListIndex && getPlayerStore().playList.length > 1);
+        } while (
+          randomIndex === getPlayerStore().playListIndex &&
+          getPlayerStore().playList.length > 1
+        );
         getPlayerStore().playListIndex = randomIndex;
         getPlayerStore().setPlay(getPlayerStore().playList[randomIndex]);
       }

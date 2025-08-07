@@ -22,7 +22,9 @@ function getLocalStorageItem<T>(key: string, defaultValue: T): T {
 export const useUserStore = defineStore('user', () => {
   // 状态
   const user = ref<UserData | null>(getLocalStorageItem('user', null));
-  const loginType = ref<'token' | 'cookie' | 'qr' | 'uid' | null>(getLocalStorageItem('loginType', null));
+  const loginType = ref<'token' | 'cookie' | 'qr' | 'uid' | null>(
+    getLocalStorageItem('loginType', null)
+  );
   const searchValue = ref('');
   const searchType = ref(1);
 

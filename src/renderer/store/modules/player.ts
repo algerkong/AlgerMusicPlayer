@@ -9,7 +9,7 @@ import { getBilibiliAudioUrl } from '@/api/bilibili';
 import { getLikedList, getMusicLrc, getMusicUrl, getParsingMusicUrl, likeSong } from '@/api/music';
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';
 import { audioService } from '@/services/audioService';
-import type { ILyric, ILyricText, SongResult } from '@/type/music';
+import type { ILyric, ILyricText, SongResult } from '@/types/music';
 import { type Platform } from '@/types/music';
 import { getImgUrl } from '@/utils';
 import { getImageLinearBackground } from '@/utils/linearColor';

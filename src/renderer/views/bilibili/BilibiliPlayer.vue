@@ -108,8 +108,8 @@ import { useRoute, useRouter } from 'vue-router';
 
 import { getBilibiliPlayUrl, getBilibiliProxyUrl, getBilibiliVideoDetail } from '@/api/bilibili';
 import { usePlayerStore } from '@/store/modules/player';
-import type { SongResult } from '@/type/music';
 import type { IBilibiliPage, IBilibiliVideoDetail } from '@/types/bilibili';
+import type { SongResult } from '@/types/music';
 import { setAnimationClass } from '@/utils';
 
 defineOptions({

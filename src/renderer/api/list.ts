@@ -1,5 +1,5 @@
-import { IList } from '@/type/list';
-import type { IListDetail } from '@/type/listDetail';
+import { IList } from '@/types/list';
+import type { IListDetail } from '@/types/listDetail';
 import request from '@/utils/request';
 
 interface IListByTagParams {

@@ -10,7 +10,7 @@ export const buildLanguageMessages = () => {
     const match = path.match(/\.\/lang\/([^/]+)\/([^/]+)\.ts$/);
     if (match) {
       const [, langCode, moduleName] = match;
-      
+
       // 跳过 index 文件
       if (moduleName !== 'index') {
         if (!messages[langCode]) {
@@ -45,15 +45,15 @@ export const getLanguageDisplayNames = (): Record<string, string> => {
 export const getLanguageOptions = () => {
   const supportedLanguages = getSupportedLanguages();
   const displayNames = getLanguageDisplayNames();
-  
+
   // 按优先级排序
   const sortedLanguages = supportedLanguages.sort((a, b) => {
     const priorityA = LANGUAGE_PRIORITY[a] || 999;
     const priorityB = LANGUAGE_PRIORITY[b] || 999;
     return priorityA - priorityB;
   });
-  
-  return sortedLanguages.map(lang => ({
+
+  return sortedLanguages.map((lang) => ({
     label: displayNames[lang] || lang,
     value: lang
   }));

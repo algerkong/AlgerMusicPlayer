@@ -17,7 +17,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue';
 
-import type { SongResult } from '@/type/music';
+import type { SongResult } from '@/types/music';
 
 import CompactSongItem from './songItemCom/CompactSongItem.vue';
 import ListSongItem from './songItemCom/ListSongItem.vue';

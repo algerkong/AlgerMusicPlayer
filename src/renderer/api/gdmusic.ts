@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import type { MusicSourceType } from '@/type/music';
+import type { MusicSourceType } from '@/types/music';
 
 /**
  * GD音乐台解析服务

@@ -84,7 +84,7 @@ import { NCheckbox, NEllipsis, NImage } from 'naive-ui';
 import { computed, ref } from 'vue';
 
 import { usePlayerStore } from '@/store';
-import type { SongResult } from '@/type/music';
+import type { SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
 
 import BaseSongItem from './BaseSongItem.vue';

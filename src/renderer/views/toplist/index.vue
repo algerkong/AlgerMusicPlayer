@@ -42,7 +42,7 @@ import { useRouter } from 'vue-router';
 
 import { getListDetail, getToplist } from '@/api/list';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
-import type { IListDetail } from '@/type/listDetail';
+import type { IListDetail } from '@/types/listDetail';
 import { formatNumber, getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
 
 defineOptions({

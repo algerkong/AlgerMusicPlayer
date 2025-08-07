@@ -73,7 +73,7 @@ import { useRoute, useRouter } from 'vue-router';
 
 import { getUserFollows } from '@/api/user';
 import { useUserStore } from '@/store/modules/user';
-import type { IUserFollow } from '@/type/user';
+import type { IUserFollow } from '@/types/user';
 import { getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
 import { checkLoginStatus as checkAuthStatus } from '@/utils/auth';
 

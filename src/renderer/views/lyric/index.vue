@@ -107,7 +107,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
 import ThemeColorPanel from '@/components/lyric/ThemeColorPanel.vue';
-import { SongResult } from '@/type/music';
+import { SongResult } from '@/types/music';
 import {
   getCurrentLyricThemeColor,
   loadLyricThemeColor,

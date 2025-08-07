@@ -96,7 +96,7 @@ import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { usePlayerStore } from '@/store';
-import type { SongResult } from '@/type/music';
+import type { SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
 
 import BaseSongItem from './BaseSongItem.vue';

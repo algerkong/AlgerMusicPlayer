@@ -105,7 +105,7 @@ import { getMusicDetail } from '@/api/music';
 import SongItem from '@/components/common/SongItem.vue';
 import { useDownload } from '@/hooks/useDownload';
 import { usePlayerStore } from '@/store';
-import type { SongResult } from '@/type/music';
+import type { SongResult } from '@/types/music';
 import { isElectron, setAnimationClass, setAnimationDelay } from '@/utils';
 
 const { t } = useI18n();

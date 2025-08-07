@@ -66,9 +66,9 @@ import { useRoute, useRouter } from 'vue-router';
 import { getPlaylistCategory } from '@/api/home';
 import { getListByCat, getListDetail } from '@/api/list';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
-import type { IRecommendItem } from '@/type/list';
-import type { IListDetail } from '@/type/listDetail';
-import type { IPlayListSort } from '@/type/playlist';
+import type { IRecommendItem } from '@/types/list';
+import type { IListDetail } from '@/types/listDetail';
+import type { IPlayListSort } from '@/types/playlist';
 import { formatNumber, getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
 
 defineOptions({

@@ -33,7 +33,7 @@ import { useRouter } from 'vue-router';
 import { getNewAlbum } from '@/api/home';
 import { getAlbum } from '@/api/list';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
-import type { IAlbumNew } from '@/type/album';
+import type { IAlbumNew } from '@/types/album';
 import { getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
 
 const { t } = useI18n();

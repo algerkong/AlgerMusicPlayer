@@ -50,7 +50,7 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
 import { getPlaylistCategory } from '@/api/home';
-import type { IPlayListSort } from '@/type/playlist';
+import type { IPlayListSort } from '@/types/playlist';
 import { setAnimationClass, setAnimationDelay } from '@/utils';
 
 const { t } = useI18n();

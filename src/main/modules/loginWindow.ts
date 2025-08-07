@@ -13,7 +13,7 @@ const loginTitle = i18n.global.t('login.qrTitle');
  */
 const openLoginWindow = async (mainWin: BrowserWindow) => {
   let loginTimer: NodeJS.Timeout;
-  
+
   // 如果登录窗口已存在，则聚焦并返回
   if (loginWindow && !loginWindow.isDestroyed()) {
     loginWindow.focus();
@@ -21,10 +21,10 @@ const openLoginWindow = async (mainWin: BrowserWindow) => {
   }
 
   const loginSession = session.fromPartition('persist:login');
-  
+
   // 清除 Cookie
   await loginSession.clearStorageData({
-    storages: ['cookies', 'localstorage'],
+    storages: ['cookies', 'localstorage']
   });
 
   loginWindow = new BrowserWindow({
@@ -38,8 +38,8 @@ const openLoginWindow = async (mainWin: BrowserWindow) => {
       session: loginSession,
       sandbox: false,
       webSecurity: false,
-      preload: join(__dirname, '../../preload/index.js'),
-    },
+      preload: join(__dirname, '../../preload/index.js')
+    }
   });
 
   // 打开网易云登录页面
@@ -57,17 +57,17 @@ const openLoginWindow = async (mainWin: BrowserWindow) => {
         if (loginTimer) clearInterval(loginTimer);
         return;
       }
-      
+
       const MUSIC_U = await loginSession.cookies.get({
-        name: 'MUSIC_U',
+        name: 'MUSIC_U'
       });
-      
+
       if (MUSIC_U && MUSIC_U?.length > 0) {
         if (loginTimer) clearInterval(loginTimer);
         const value = `MUSIC_U=${MUSIC_U[0].value};`;
-        
+
         mainWin?.webContents.send('send-cookies', value);
-        
+
         // 关闭登录窗口
         loginWindow.destroy();
         loginWindow = null;
@@ -81,7 +81,7 @@ const openLoginWindow = async (mainWin: BrowserWindow) => {
   loginWindow.webContents.once('did-finish-load', () => {
     loginWindow?.show();
     loginTimer = setInterval(checkLogin, 500);
-    
+
     loginWindow?.on('closed', () => {
       if (loginTimer) clearInterval(loginTimer);
       loginWindow = null;

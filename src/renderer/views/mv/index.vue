@@ -69,7 +69,7 @@ import { getAllMv, getTopMv } from '@/api/mv';
 import MvPlayer from '@/components/MvPlayer.vue';
 import { audioService } from '@/services/audioService';
 import { usePlayerStore } from '@/store/modules/player';
-import { IMvItem } from '@/type/mv';
+import { IMvItem } from '@/types/mv';
 import { formatNumber, getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
 
 defineOptions({

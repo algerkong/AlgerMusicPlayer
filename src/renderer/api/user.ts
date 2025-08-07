@@ -1,4 +1,4 @@
-import type { IUserDetail, IUserFollow } from '@/type/user';
+import type { IUserDetail, IUserFollow } from '@/types/user';
 import request from '@/utils/request';
 
 // /user/detail

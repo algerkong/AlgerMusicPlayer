@@ -1,6 +1,6 @@
 import { Howl, Howler } from 'howler';
 
-import type { SongResult } from '@/type/music';
+import type { SongResult } from '@/types/music';
 import { isElectron } from '@/utils'; // 导入isElectron常量
 
 class AudioService {

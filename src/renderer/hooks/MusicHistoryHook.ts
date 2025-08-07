@@ -1,7 +1,6 @@
-// musicHistoryHooks
 import { useLocalStorage } from '@vueuse/core';
 
-import type { SongResult } from '@/type/music';
+import type { SongResult } from '@/types/music';
 
 export const useMusicHistory = () => {
   const musicHistory = useLocalStorage<SongResult[]>('musicHistory', []);

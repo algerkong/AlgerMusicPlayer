@@ -137,11 +137,11 @@ import { getUserPlaylist } from '@/api/user';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import { useArtist } from '@/hooks/useArtist';
 import { usePlayerStore, useUserStore } from '@/store';
-import { IDayRecommend } from '@/type/day_recommend';
-import { Playlist } from '@/type/list';
-import type { IListDetail } from '@/type/listDetail';
-import { SongResult } from '@/type/music';
-import type { IHotSinger } from '@/type/singer';
+import { IDayRecommend } from '@/types/day_recommend';
+import { Playlist } from '@/types/list';
+import type { IListDetail } from '@/types/listDetail';
+import { SongResult } from '@/types/music';
+import type { IHotSinger } from '@/types/singer';
 import {
   getImgUrl,
   isMobile,

@@ -131,7 +131,7 @@ import { allTime, artistList, nowTime, playMusic } from '@/hooks/MusicHook';
 import { useArtist } from '@/hooks/useArtist';
 import { audioService } from '@/services/audioService';
 import { isBilibiliIdMatch, usePlayerStore, useSettingsStore } from '@/store';
-import type { SongResult } from '@/type/music';
+import type { SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
 
 const playerStore = usePlayerStore();

@@ -90,10 +90,7 @@ export function clearLoginStatus(): void {
  * @param loginType 登录类型
  * @param token 登录token（可选）
  */
-export function setLoginStatus(
-  loginType: LoginInfo['loginType'],
-  token?: string
-): void {
+export function setLoginStatus(loginType: LoginInfo['loginType'], token?: string): void {
   localStorage.setItem('loginType', loginType || '');
 
   if (token) {

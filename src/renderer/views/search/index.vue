@@ -142,8 +142,8 @@ import SongItem from '@/components/common/SongItem.vue';
 import { SEARCH_TYPE } from '@/const/bar-const';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSearchStore } from '@/store/modules/search';
-import type { IHotSearch } from '@/type/search';
 import type { IBilibiliSearchResult } from '@/types/bilibili';
+import type { IHotSearch } from '@/types/search';
 import { isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
 
 defineOptions({

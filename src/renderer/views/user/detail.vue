@@ -137,8 +137,8 @@ import { getUserDetail, getUserPlaylist, getUserRecord } from '@/api/user';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import SongItem from '@/components/common/SongItem.vue';
 import { usePlayerStore } from '@/store/modules/player';
-import type { Playlist } from '@/type/listDetail';
-import type { IUserDetail } from '@/type/user';
+import type { Playlist } from '@/types/listDetail';
+import type { IUserDetail } from '@/types/user';
 import { formatNumber, getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
 
 defineOptions({

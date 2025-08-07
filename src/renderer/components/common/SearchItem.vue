@@ -37,7 +37,7 @@ import { getAlbum, getListDetail } from '@/api/list';
 import MvPlayer from '@/components/MvPlayer.vue';
 import { useMusicStore } from '@/store/modules/music';
 import { usePlayerStore } from '@/store/modules/player';
-import { IMvItem } from '@/type/mv';
+import { IMvItem } from '@/types/mv';
 import { getImgUrl } from '@/utils';
 
 const props = withDefaults(

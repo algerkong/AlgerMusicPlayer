@@ -3,7 +3,7 @@
 // 语言显示名称映射
 export const LANGUAGE_DISPLAY_NAMES: Record<string, string> = {
   'zh-CN': '简体中文',
-  'zh-Hant': '繁體中文', 
+  'zh-Hant': '繁體中文',
   'en-US': 'English',
   'ja-JP': '日本語',
   'ko-KR': '한국어'

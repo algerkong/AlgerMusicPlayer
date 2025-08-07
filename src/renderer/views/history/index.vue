@@ -40,7 +40,7 @@ import { getMusicDetail } from '@/api/music';
 import SongItem from '@/components/common/SongItem.vue';
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';
 import { usePlayerStore } from '@/store/modules/player';
-import type { SongResult } from '@/type/music';
+import type { SongResult } from '@/types/music';
 import { setAnimationClass, setAnimationDelay } from '@/utils';
 const { t } = useI18n();
 const { delMusic, musicList } = useMusicHistory();

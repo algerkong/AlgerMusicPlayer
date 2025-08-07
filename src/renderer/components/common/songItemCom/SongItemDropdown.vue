@@ -19,7 +19,7 @@ import { NDropdown, NEllipsis, NImage } from 'naive-ui';
 import { computed, h, inject } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import type { SongResult } from '@/type/music';
+import type { SongResult } from '@/types/music';
 import { getImgUrl, isElectron } from '@/utils';
 
 const { t } = useI18n();

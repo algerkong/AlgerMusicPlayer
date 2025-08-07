@@ -63,7 +63,7 @@ import { useI18n } from 'vue-i18n';
 
 import SongItem from '@/components/common/SongItem.vue';
 import { usePlayerStore } from '@/store/modules/player';
-import type { SongResult } from '@/type/music';
+import type { SongResult } from '@/types/music';
 import { isMobile } from '@/utils';
 
 const { t } = useI18n();

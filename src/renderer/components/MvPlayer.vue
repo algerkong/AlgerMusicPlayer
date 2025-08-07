@@ -193,7 +193,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { getMvUrl } from '@/api/mv';
-import { IMvItem } from '@/type/mv';
+import { IMvItem } from '@/types/mv';
 
 const { t } = useI18n();
 type PlayMode = 'single' | 'auto';

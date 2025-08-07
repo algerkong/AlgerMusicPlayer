@@ -203,7 +203,7 @@ import PlayBottom from '@/components/common/PlayBottom.vue';
 import SearchItem from '@/components/common/SearchItem.vue';
 import SongItem from '@/components/common/SongItem.vue';
 import { usePlayerStore } from '@/store';
-import { IArtist } from '@/type/artist';
+import { IArtist } from '@/types/artist';
 import { getImgUrl, isMobile } from '@/utils';
 
 defineOptions({
