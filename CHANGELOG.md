@@ -1,60 +1,34 @@
 # 更新日志
 
-## v4.8.2
-
-### 🎨 优化
-
-- 重新设计pc端歌词页面Mini播放栏
-- 添加清除歌曲自定义解析功能
-
-### 🐛 Bug 修复
-
-- 修复歌曲单独解析失败问题
-- 修复歌词页面加入歌单抽屉被遮挡问题
-
-## v4.8.1
-
-### 🐛 Bug 修复
-
-- 修复无法快捷键调整问题
-
-### 🎨 优化
-
-- 优化音乐资源解析
-- 去除无用代码，优化加载速度
-
-## v4.8.0
+## v4.9.0
 
 ### ✨ 新功能
 
-- 增强移动端播放页面效果，添加播放模式选择，添加横屏模式，添加播放列表功能 ([81b61e4](https://github.com/algerkong/AlgerMusicPlayer/commit/81b61e4))，([0d89e15](https://github.com/algerkong/AlgerMusicPlayer/commit/0d89e15))，([9345805](https://github.com/algerkong/AlgerMusicPlayer/commit/9345805))
-- 优化移动端界面动画效果，播放栏，返回效果等一系列功能
-- 添加下载管理页面, 引入文件类型检测库以支持多种音频格式,支持自定义文件名格式和下载路径配置 ([3ac3159](https://github.com/algerkong/AlgerMusicPlayer/commit/3ac3159)),([b203077](https://github.com/algerkong/AlgerMusicPlayer/commit/b203077))
-- 新增歌单导入功能 ([edd393c](https://github.com/algerkong/AlgerMusicPlayer/commit/edd393c))
-- 列表添加多选下载功能，支持批量选择和下载音乐 ([1221101](https://github.com/algerkong/AlgerMusicPlayer/commit/1221101)),([8988cdb](https://github.com/algerkong/AlgerMusicPlayer/commit/8988cdb))，([21b2fc0](https://github.com/algerkong/AlgerMusicPlayer/commit/21b2fc0))
-- Windows添加任务栏缩略图播放控制按钮 ([9bec67e](https://github.com/algerkong/AlgerMusicPlayer/commit/9bec67e))，([58ab990](https://github.com/algerkong/AlgerMusicPlayer/commit/58ab990)) 感谢[HE Cai](https://github.com/hecai84)的pr
-- 添加主窗口自适应大小功能，页面缩放功能，支持缩放因子的调整和重置 ([6170047](https://github.com/algerkong/AlgerMusicPlayer/commit/6170047)), ([e46df8a](https://github.com/algerkong/AlgerMusicPlayer/commit/e46df8a))
-- 添加歌词时间矫正功能，支持增加和减少矫正时间 ([c975344](https://github.com/algerkong/AlgerMusicPlayer/commit/c975344))
+- 重新设计pc端歌词页面Mini播放栏
+- 添加清除歌曲自定义解析功能
+- 添加Cookie登录功能及自动获取等相关管理设置 ([16aeaf2](https://github.com/algerkong/AlgerMusicPlayer/commit/16aeaf2)) - 支持通过Cookie方式登录，提供更便捷的登录体验
+- 添加UID登录功能，优化登录流程 ([daa8e75](https://github.com/algerkong/AlgerMusicPlayer/commit/daa8e75)) - 新增用户ID直接登录方式
+- 添加主题根据系统切换功能 ([d5ba218](https://github.com/algerkong/AlgerMusicPlayer/commit/d5ba218)) - 支持跟随系统主题自动切换明暗模式
+- 桌面歌词添加主题颜色面板组件 ([d1f5c8a](https://github.com/algerkong/AlgerMusicPlayer/commit/d1f5c8a)) - 为桌面歌词提供丰富的主题颜色自定义选项
+- 增强播放速度控制，添加滑块控制并改善播放安全性 ([8fb382e](https://github.com/algerkong/AlgerMusicPlayer/commit/8fb382e)) 感谢[Qumo](https://github.com/Hellodwadawd12312312)的pr
+- 添加日语和韩语国际化支持，并优化语言相关代码 ([3062156](https://github.com/algerkong/AlgerMusicPlayer/commit/3062156))
+- 添加繁体中文本地化支持 ([2cc03cb](https://github.com/algerkong/AlgerMusicPlayer/commit/2cc03cb)) 感谢[dongguacute](https://github.com/dongguacute)的pr
+- 播放速度设置弹窗标题添加速度显示 ([aeb7f03](https://github.com/algerkong/AlgerMusicPlayer/commit/aeb7f03))
 
 ### 🐛 Bug 修复
 
-- 修复音频初始化音量问题，完善翻译 ([#320](https://github.com/algerkong/AlgerMusicPlayer/pull/320)) 感谢[Qumo](https://github.com/Hellodwadawd12312312)的pr
-- 重构每日推荐数据加载逻辑，提取为独立函数并优化用户状态判断 ([5e704a1](https://github.com/algerkong/AlgerMusicPlayer/commit/5e704a1))
-- 修复刷新后第一次播放出现的无法播放问题 ([6f1909a](https://github.com/algerkong/AlgerMusicPlayer/commit/6f1909a))
-- 修复更多设置弹窗被歌词窗口遮挡问题，并优化为互斥弹窗，优化样式 ([62e5166](https://github.com/algerkong/AlgerMusicPlayer/commit/62e5166))
-- 修复设置页面动画速度滑块样式和文本错误 ([e5adb8a](https://github.com/algerkong/AlgerMusicPlayer/commit/e5adb8a))
-- 修复音频服务相关问题 ([090103b](https://github.com/algerkong/AlgerMusicPlayer/commit/090103b)),([5ee60d7](https://github.com/algerkong/AlgerMusicPlayer/commit/5ee60d7))
-- 修复播放栏无法控制隐藏问题 ([d227ac8](https://github.com/algerkong/AlgerMusicPlayer/commit/d227ac8))
+- 修复mac快捷键关闭窗口报错的问题 ([67ef4d7](https://github.com/algerkong/AlgerMusicPlayer/commit/67ef4d7))
+- 修复mini窗口恢复时导致的应用窗口变小问题 ([9b3019d](https://github.com/algerkong/AlgerMusicPlayer/commit/9b3019d))
+- 修复歌单列表页面翻页类型问题 ([e489ab4](https://github.com/algerkong/AlgerMusicPlayer/commit/e489ab4))
+- 修复歌曲初始化问题 ([b7a58a0](https://github.com/algerkong/AlgerMusicPlayer/commit/b7a58a0))
+- 修复音量调整不同步的问题 ([679089e](https://github.com/algerkong/AlgerMusicPlayer/commit/679089e))
+- 修复菜单显示不全的问题，添加滚动条 ([09ccd9f](https://github.com/algerkong/AlgerMusicPlayer/commit/09ccd9f))
 
 ### 🎨 优化
 
-- 优化歌曲列表组件布局([fabcf28](https://github.com/algerkong/AlgerMusicPlayer/commit/fabcf28))
-- 重构播放控制逻辑，添加播放进度恢复功能并清理无用代码 ([b9c38d2](https://github.com/algerkong/AlgerMusicPlayer/commit/b9c38d2))
-- 优化提示组件，支持位置和图标显示选项 ([155bdf2](https://github.com/algerkong/AlgerMusicPlayer/commit/155bdf2))
-- 添加mini播放栏鼠标滚轮调整音量，并优化音量滑块数字不展示问题 ([5c72785](https://github.com/algerkong/AlgerMusicPlayer/commit/5c72785))
-- 优化收藏和历史列表组件，添加加载状态管理和动画效果 ([5070a08](https://github.com/algerkong/AlgerMusicPlayer/commit/5070a08))
-- 翻译优化
-- 代码优化
+- 更新 eslint 和 prettier 配置，格式化代码 ([c08c2cb](https://github.com/algerkong/AlgerMusicPlayer/commit/c08c2cb))
+- 优化类型处理和登录功能 ([3ba85f3](https://github.com/algerkong/AlgerMusicPlayer/commit/3ba85f3))
+- 优化Cookie相关文字描述 ([1597fbf](https://github.com/algerkong/AlgerMusicPlayer/commit/1597fbf))
 
 ## 赞赏支持☕️
 
