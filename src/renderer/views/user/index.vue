@@ -9,7 +9,9 @@
       <div class="page">
         <div class="user-name">
           <span>{{ user.nickname }}</span>
-          <span class="login-type">{{ t('login.title.' + currentLoginType) }}</span>
+          <span v-if="currentLoginType" class="login-type">{{
+            t('login.title.' + currentLoginType)
+          }}</span>
         </div>
         <div class="user-info">
           <n-avatar round :size="50" :src="getImgUrl(user.avatarUrl, '50y50')" />
