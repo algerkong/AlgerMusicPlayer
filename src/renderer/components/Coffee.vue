@@ -41,9 +41,9 @@
         <div class="mt-4">
           <p
             class="text-sm text-gray-700 dark:text-gray-200 text-center cursor-pointer hover:text-green-500"
-            @click="copyQQ"
+            @click="copyText"
           >
-            {{ t('comp.coffee.qqGroup') }}
+            {{ t('comp.coffee.groupText') }}
           </p>
         </div>
         <div class="mt-4">
@@ -70,8 +70,8 @@ import wechat from '@/assets/wechat.png';
 const { t } = useI18n();
 
 const message = useMessage();
-const copyQQ = () => {
-  navigator.clipboard.writeText('algermusic');
+const copyText = () => {
+  navigator.clipboard.writeText('AlgerMusic');
   message.success(t('common.copySuccess'));
 };
 

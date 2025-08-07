@@ -58,7 +58,7 @@ export default {
     wechatQR: '위챗 결제 QR코드',
     coffeeDesc: '커피 한 잔, 하나의 지원',
     coffeeDescLinkText: '더 보기',
-    qqGroup: 'QQ 채널: algermusic',
+    groupText: '微信公众号：AlgerMusic',
     messages: {
       copySuccess: '클립보드에 복사됨'
     },
