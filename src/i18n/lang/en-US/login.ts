@@ -2,35 +2,61 @@ export default {
   title: {
     qr: 'QR Code Login',
     phone: 'Phone Login',
-    token: 'Cookie Login'
+    cookie: 'Cookie Login',
+    uid: 'UID Login'
   },
   qrTip: 'Scan with NetEase Cloud Music APP',
   phoneTip: 'Login with NetEase Cloud account',
   tokenTip: 'Enter a valid NetEase Cloud Music Cookie to login',
+  uidTip: 'Enter User ID for quick login',
   placeholder: {
     phone: 'Phone Number',
     password: 'Password',
-    token: 'Please enter NetEase Cloud Music Cookie (token)'
+    cookie: 'Please enter NetEase Cloud Music Cookie (token)',
+    uid: 'Please enter User ID (UID)'
   },
   button: {
     login: 'Login',
     switchToQr: 'QR Code Login',
     switchToPhone: 'Phone Login',
     switchToToken: 'Use Cookie Login',
+    switchToUid: 'UID Login',
     backToQr: 'Back to QR Code Login',
-    tokenLogin: 'Cookie Login',
-    autoGetCookie: 'Auto Get Cookie'
+    cookieLogin: 'Cookie Login',
+    autoGetCookie: 'Auto Get Cookie',
+    refresh: 'Click to Refresh',
+    refreshing: 'Refreshing...',
+    refreshQr: 'Refresh QR Code'
   },
   message: {
     loginSuccess: 'Login successful',
+    loginFailed: 'Login failed',
     tokenLoginSuccess: 'Cookie login successful',
+    uidLoginSuccess: 'UID login successful',
     loadError: 'Error loading login information',
     qrCheckError: 'Error checking QR code status',
     tokenRequired: 'Please enter Cookie',
     tokenInvalid: 'Invalid Cookie, please check and try again',
+    uidRequired: 'Please enter User ID',
+    uidInvalid: 'Invalid User ID or user does not exist',
+    uidLoginFailed: 'UID login failed, please check if User ID is correct',
+    phoneRequired: 'Please enter phone number',
+    passwordRequired: 'Please enter password',
+    phoneLoginFailed: 'Phone login failed, please check if phone number and password are correct',
     autoGetCookieSuccess: 'Auto get Cookie successful',
     autoGetCookieFailed: 'Auto get Cookie failed',
-    autoGetCookieTip: 'Will open NetEase Cloud Music login page, please complete login and close the window'
+    autoGetCookieTip: 'Will open NetEase Cloud Music login page, please complete login and close the window',
+    qrCheckFailed: 'Failed to check QR code status, please refresh and try again',
+    qrLoading: 'Loading QR code...',
+    qrExpired: 'QR code has expired, please click to refresh',
+    qrExpiredShort: 'QR code expired',
+    qrExpiredWarning: 'QR code has expired, please click to refresh for a new one',
+    qrScanned: 'QR code scanned, please confirm login on your phone',
+    qrScannedShort: 'Scanned',
+    qrScannedInfo: 'QR code scanned, please confirm login on your phone',
+    qrConfirmed: 'Login successful, redirecting...',
+    qrGenerating: 'Generating QR code...'
   },
-  qrTitle: 'NetEase Cloud Music QR Code Login'
+  qrTitle: 'NetEase Cloud Music QR Code Login',
+  uidWarning: 'Note: UID login is only for viewing user public information and cannot access features that require login permissions.'
 };

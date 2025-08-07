@@ -7,7 +7,10 @@
       :style="{ backgroundImage: `url(${getImgUrl(user.backgroundUrl)})` }"
     >
       <div class="page">
-        <div class="user-name">{{ user.nickname }}</div>
+        <div class="user-name">
+          <span>{{ user.nickname }}</span>
+          <span class="login-type">{{ t('login.title.' + currentLoginType) }}</span>
+        </div>
         <div class="user-info">
           <n-avatar round :size="50" :src="getImgUrl(user.avatarUrl, '50y50')" />
           <div class="user-info-list">
@@ -26,7 +29,6 @@
           </div>
         </div>
         <div class="uesr-signature">{{ userDetail.profile.signature }}</div>
-
         <div class="play-list" :class="setAnimationClass('animate__fadeInLeft')">
           <div class="title">
             <div>{{ t('user.playlist.created') }}</div>
@@ -119,6 +121,7 @@ import { useUserStore } from '@/store/modules/user';
 import type { Playlist } from '@/type/listDetail';
 import type { IUserDetail } from '@/type/user';
 import { getImgUrl, isElectron, isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
+import { checkLoginStatus as checkAuthStatus } from '@/utils/auth';
 import LoginComponent from '@/views/login/index.vue';
 
 defineOptions({
@@ -150,17 +153,26 @@ onBeforeUnmount(() => {
 
 // 检查登录状态
 const checkLoginStatus = () => {
-  const token = localStorage.getItem('token');
-  const userData = localStorage.getItem('user');
+  // 优先使用 userStore 中的状态
+  if (userStore.user && userStore.loginType) {
+    return true;
+  }
 
-  if (!token || !userData) {
+  // 如果 store 中没有数据，尝试从 localStorage 恢复
+  const loginInfo = checkAuthStatus();
+
+  if (!loginInfo.isLoggedIn) {
     !isMobile.value && router.push('/login');
     return false;
   }
 
-  // 如果store中没有用户数据，但localStorage中有，则恢复用户数据
-  if (!userStore.user && userData) {
-    userStore.setUser(JSON.parse(userData));
+  // 恢复用户数据和登录类型到 store
+  if (!userStore.user && loginInfo.user) {
+    userStore.setUser(loginInfo.user);
+  }
+
+  if (!userStore.loginType && loginInfo.loginType) {
+    userStore.setLoginType(loginInfo.loginType);
   }
 
   return true;
@@ -289,6 +301,7 @@ const handleLoginSuccess = () => {
 };
 
 const isLoggedIn = computed(() => userStore.user);
+const currentLoginType = computed(() => userStore.loginType);
 </script>
 
 <style lang="scss" scoped>
@@ -314,7 +327,7 @@ const isLoggedIn = computed(() => userStore.user);
     }
 
     .user-name {
-      @apply text-xl font-bold mb-4;
+      @apply text-xl font-bold mb-4 flex justify-between;
       @apply text-white text-opacity-70;
     }
 
@@ -412,6 +425,10 @@ const isLoggedIn = computed(() => userStore.user);
       @apply text-gray-500 dark:text-gray-400;
     }
   }
+}
+
+.login-type {
+  @apply text-sm text-green-500 dark:text-green-400;
 }
 
 .mobile {

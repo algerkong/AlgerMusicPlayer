@@ -3,6 +3,7 @@ import { ref } from 'vue';
 
 import { logout } from '@/api/login';
 import { getLikedList } from '@/api/music';
+import { clearLoginStatus } from '@/utils/auth';
 
 interface UserData {
   userId: number;
@@ -21,6 +22,7 @@ function getLocalStorageItem<T>(key: string, defaultValue: T): T {
 export const useUserStore = defineStore('user', () => {
   // 状态
   const user = ref<UserData | null>(getLocalStorageItem('user', null));
+  const loginType = ref<'token' | 'cookie' | 'qr' | 'uid' | null>(getLocalStorageItem('loginType', null));
   const searchValue = ref('');
   const searchType = ref(1);
 
@@ -30,16 +32,30 @@ export const useUserStore = defineStore('user', () => {
     localStorage.setItem('user', JSON.stringify(userData));
   };
 
+  const setLoginType = (type: typeof loginType.value) => {
+    loginType.value = type;
+    if (type) {
+      localStorage.setItem('loginType', type);
+    } else {
+      localStorage.removeItem('loginType');
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await logout();
       user.value = null;
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
+      loginType.value = null;
+      clearLoginStatus();
       // 刷新
       window.location.reload();
     } catch (error) {
       console.error('登出失败:', error);
+      // 即使API调用失败，也要清除本地状态
+      user.value = null;
+      loginType.value = null;
+      clearLoginStatus();
+      window.location.reload();
     }
   };
 
@@ -73,11 +89,13 @@ export const useUserStore = defineStore('user', () => {
   return {
     // 状态
     user,
+    loginType,
     searchValue,
     searchType,
 
     // 方法
     setUser,
+    setLoginType,
     handleLogout,
     setSearchValue,
     setSearchType,

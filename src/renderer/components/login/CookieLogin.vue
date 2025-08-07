@@ -2,27 +2,33 @@
 import { useMessage } from 'naive-ui';
 import { onBeforeUnmount, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
 
 import { getUserDetail } from '@/api/login';
-import { useUserStore } from '@/store/modules/user';
 import { isElectron, setAnimationClass } from '@/utils';
 
 defineOptions({
   name: 'CookieLogin'
 });
 
+// Emits
+interface Emits {
+  (e: 'loginSuccess', userProfile: any, loginType: string): void;
+  (e: 'loginError', error: string): void;
+}
+
+const emit = defineEmits<Emits>();
+
 const { t } = useI18n();
 const message = useMessage();
-const router = useRouter();
-const userStore = useUserStore();
 
 const token = ref('');
 
 // Token登录
 const loginByToken = async () => {
   if (!token.value.trim()) {
-    message.error(t('login.message.tokenRequired'));
+    const errorMsg = t('login.message.tokenRequired');
+    message.error(errorMsg);
+    emit('loginError', errorMsg);
     return;
   }
 
@@ -33,19 +39,22 @@ const loginByToken = async () => {
     // 获取用户信息验证token有效性
     const user = await getUserDetail();
     if (user.data && user.data.profile) {
-      userStore.user = user.data.profile;
-      localStorage.setItem('user', JSON.stringify(user.data.profile));
-      message.success(t('login.message.tokenLoginSuccess'));
-      router.push('/user');
+      const successMsg = t('login.message.tokenLoginSuccess');
+      message.success(successMsg);
+      emit('loginSuccess', user.data.profile, 'token');
     } else {
       // token无效，清除localStorage
       localStorage.removeItem('token');
-      message.error(t('login.message.tokenInvalid'));
+      const errorMsg = t('login.message.tokenInvalid');
+      message.error(errorMsg);
+      emit('loginError', errorMsg);
     }
   } catch (error) {
     // token无效，清除localStorage
     localStorage.removeItem('token');
-    message.error(t('login.message.tokenInvalid'));
+    const errorMsg = t('login.message.tokenInvalid');
+    message.error(errorMsg);
+    emit('loginError', errorMsg);
     console.error('Token登录失败:', error);
   }
 };
@@ -70,17 +79,20 @@ const handleCookieReceived = async (_event: any, cookieValue: string) => {
     // 验证Cookie有效性
     const user = await getUserDetail();
     if (user.data && user.data.profile) {
-      userStore.user = user.data.profile;
-      localStorage.setItem('user', JSON.stringify(user.data.profile));
-      message.success(t('login.message.autoGetCookieSuccess'));
-      router.push('/user');
+      const successMsg = t('login.message.autoGetCookieSuccess');
+      message.success(successMsg);
+      emit('loginSuccess', user.data.profile, 'cookie');
     } else {
       localStorage.removeItem('token');
-      message.error(t('login.message.autoGetCookieFailed'));
+      const errorMsg = t('login.message.autoGetCookieFailed');
+      message.error(errorMsg);
+      emit('loginError', errorMsg);
     }
   } catch (error) {
     localStorage.removeItem('token');
-    message.error(t('login.message.autoGetCookieFailed'));
+    const errorMsg = t('login.message.autoGetCookieFailed');
+    message.error(errorMsg);
+    emit('loginError', errorMsg);
     console.error('自动获取Cookie失败:', error);
   }
 };
@@ -102,18 +114,18 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="cookie-login" :class="setAnimationClass('animate__fadeInUp')">
-    <div class="login-title">{{ t('login.title.token') }}</div>
+    <div class="login-title">{{ t('login.title.cookie') }}</div>
     <div class="phone-page">
       <textarea
         v-model="token"
         class="token-input"
-        :placeholder="t('login.placeholder.token')"
+        :placeholder="t('login.placeholder.cookie')"
         rows="4"
       />
     </div>
     <div class="text">{{ t('login.tokenTip') }}</div>
     <n-button class="btn-login" @click="loginByToken()">{{
-      t('login.button.tokenLogin')
+      t('login.button.cookieLogin')
     }}</n-button>
     <n-button v-if="isElectron" class="btn-auto-cookie" @click="autoGetCookie()" type="info">
       {{ t('login.button.autoGetCookie') }}

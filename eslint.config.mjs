@@ -66,14 +66,10 @@ export default [
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/no-unused-vars': [
-        'warn',
-        {
-          argsIgnorePattern:
-            '^_|^e$|^event$|^error$|^data$|^callback$|^args$|^value$|^loading$|^width$|^height$|^showPlaylist$|^id$|^enabledSources$|^progress$|^status$|^success$|^filePath$|^locale$|^channel$|^listener$|^url$|^songId$|^delta$|^item$|^err$|^gradient$|^theme$',
-          varsIgnorePattern:
-            '^_|^e$|^event$|^error$|^data$|^callback$|^args$|^NONE$|^TIME$|^SONGS$|^PLAYLIST_END$|^c$|^l$|^Window$|^key$|^color$',
-          ignoreRestSiblings: true
-        }
+        'error',
+        // we are only using this rule to check for unused arguments since TS
+        // catches unused variables but not args.
+        { varsIgnorePattern: '.*', args: 'none' }
       ],
       '@typescript-eslint/no-use-before-define': 'off',
       '@typescript-eslint/ban-ts-comment': 'off',
@@ -83,14 +79,10 @@ export default [
       'simple-import-sort/exports': 'error',
       'no-console': 'off',
       'no-unused-vars': [
-        'warn',
-        {
-          argsIgnorePattern:
-            '^_|^e$|^event$|^error$|^data$|^callback$|^args$|^value$|^loading$|^width$|^height$|^showPlaylist$|^id$|^enabledSources$|^progress$|^status$|^success$|^filePath$|^locale$|^channel$|^listener$|^url$|^songId$|^delta$|^item$|^err$|^gradient$|^theme$',
-          varsIgnorePattern:
-            '^_|^e$|^event$|^error$|^data$|^callback$|^args$|^NONE$|^TIME$|^SONGS$|^PLAYLIST_END$|^c$|^l$|^Window$|^key$|^color$',
-          ignoreRestSiblings: true
-        }
+        'error',
+        // we are only using this rule to check for unused arguments since TS
+        // catches unused variables but not args.
+        { varsIgnorePattern: '.*', args: 'none' }
       ],
       'no-use-before-define': 'off',
       'max-classes-per-file': 'off',
@@ -235,14 +227,10 @@ export default [
       'class-methods-use-this': 'off',
       'no-case-declarations': 'off',
       'no-unused-vars': [
-        'warn',
-        {
-          argsIgnorePattern:
-            '^_|^e$|^event$|^error$|^data$|^callback$|^args$|^value$|^loading$|^width$|^height$|^showPlaylist$|^id$|^enabledSources$|^progress$|^status$|^success$|^filePath$|^locale$|^channel$|^listener$|^url$|^songId$|^delta$|^item$|^err$|^gradient$|^theme$',
-          varsIgnorePattern:
-            '^_|^e$|^event$|^error$|^data$|^callback$|^args$|^NONE$|^TIME$|^SONGS$|^PLAYLIST_END$|^c$|^l$|^Window$|^key$|^color$',
-          ignoreRestSiblings: true
-        }
+        'error',
+        // we are only using this rule to check for unused arguments since TS
+        // catches unused variables but not args.
+        { varsIgnorePattern: '.*', args: 'none' }
       ]
     }
   }

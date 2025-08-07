@@ -1,21 +1,25 @@
 <script lang="ts" setup>
 import { useMessage } from 'naive-ui';
-import { onBeforeUnmount, onMounted } from 'vue';
+import { onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
 
 import { checkQr, createQr, getQrKey, getUserDetail } from '@/api/login';
-import { useUserStore } from '@/store/modules/user';
 import { setAnimationClass } from '@/utils';
 
 defineOptions({
   name: 'QrLogin'
 });
 
+// Emits
+interface Emits {
+  (e: 'loginSuccess', userProfile: any, loginType: string): void;
+  (e: 'loginError', error: string): void;
+}
+
+const emit = defineEmits<Emits>();
+
 const { t } = useI18n();
 const message = useMessage();
-const router = useRouter();
-const userStore = useUserStore();
 
 const qrUrl = ref<string>();
 const timerRef = ref(null);
@@ -44,7 +48,9 @@ const loadLogin = async () => {
   } catch (error) {
     console.error(t('login.message.loadError'), error);
     qrStatus.value = 'expired';
-    message.error(t('login.message.loadError'));
+    const errorMsg = t('login.message.loadError');
+    message.error(errorMsg);
+    emit('loginError', errorMsg);
   } finally {
     isRefreshing.value = false;
   }
@@ -60,7 +66,7 @@ const timerIsQr = (key: string) => {
         qrStatus.value = 'expired';
         clearInterval(timer);
         timerRef.value = null;
-        message.warning('二维码已过期，请点击刷新获取新的二维码');
+        message.warning(t('login.message.qrExpiredWarning'));
         return;
       }
 
@@ -73,7 +79,7 @@ const timerIsQr = (key: string) => {
       // 已扫码，等待确认
       if (data.code === 802) {
         qrStatus.value = 'scanned';
-        message.info('已扫码，请在手机上确认登录');
+        message.info(t('login.message.qrScannedInfo'));
         return;
       }
 
@@ -82,20 +88,21 @@ const timerIsQr = (key: string) => {
         qrStatus.value = 'confirmed';
         localStorage.setItem('token', data.cookie);
         const user = await getUserDetail();
-        userStore.user = user.data.profile;
-        localStorage.setItem('user', JSON.stringify(user.data.profile));
-        message.success(t('login.message.loginSuccess'));
+        const successMsg = t('login.message.loginSuccess');
+        message.success(successMsg);
+        emit('loginSuccess', user.data.profile, 'qr');
 
         clearInterval(timer);
         timerRef.value = null;
-        router.push('/user');
       }
     } catch (error) {
       console.error(t('login.message.qrCheckError'), error);
       qrStatus.value = 'expired';
       clearInterval(timer);
       timerRef.value = null;
-      message.error('检查二维码状态失败，请刷新重试');
+      const errorMsg = t('login.message.qrCheckFailed');
+      message.error(errorMsg);
+      emit('loginError', errorMsg);
     }
   }, 3000);
 
@@ -111,15 +118,15 @@ const refreshQr = () => {
 const getStatusText = () => {
   switch (qrStatus.value) {
     case 'loading':
-      return '正在加载二维码...';
+      return t('login.message.qrLoading');
     case 'active':
       return t('login.qrTip');
     case 'expired':
-      return '二维码已过期，请点击刷新';
+      return t('login.message.qrExpired');
     case 'scanned':
-      return '已扫码，请在手机上确认登录';
+      return t('login.message.qrScanned');
     case 'confirmed':
-      return '登录成功，正在跳转...';
+      return t('login.message.qrConfirmed');
     default:
       return t('login.qrTip');
   }
@@ -129,7 +136,7 @@ onMounted(() => {
   loadLogin();
 });
 
-onBeforeUnmount(() => {
+onUnmounted(() => {
   if (timerRef.value) {
     clearInterval(timerRef.value);
     timerRef.value = null;
@@ -146,7 +153,7 @@ onBeforeUnmount(() => {
       <!-- 加载状态 -->
       <div v-if="qrStatus === 'loading'" class="qr-loading">
         <n-spin size="large" />
-        <div class="loading-text">正在生成二维码...</div>
+        <div class="loading-text">{{ t('login.message.qrGenerating') }}</div>
       </div>
 
       <!-- 二维码图片 -->
@@ -155,16 +162,16 @@ onBeforeUnmount(() => {
 
         <!-- 过期遮罩 -->
         <div v-if="qrStatus === 'expired'" class="expired-overlay">
-          <div class="expired-text">二维码已过期</div>
+          <div class="expired-text">{{ t('login.message.qrExpiredShort') }}</div>
           <n-button class="refresh-btn" type="primary" @click="refreshQr" :loading="isRefreshing">
-            {{ isRefreshing ? '刷新中...' : '点击刷新' }}
+            {{ isRefreshing ? t('login.button.refreshing') : t('login.button.refresh') }}
           </n-button>
         </div>
 
         <!-- 已扫码遮罩 -->
         <div v-if="qrStatus === 'scanned'" class="scanned-overlay">
           <div class="scanned-icon">✓</div>
-          <div class="scanned-text">已扫码</div>
+          <div class="scanned-text">{{ t('login.message.qrScannedShort') }}</div>
         </div>
       </div>
     </div>
@@ -177,7 +184,7 @@ onBeforeUnmount(() => {
     <!-- 手动刷新按钮 -->
     <div v-if="qrStatus === 'active'" class="refresh-area">
       <n-button text class="manual-refresh" @click="refreshQr" :loading="isRefreshing">
-        刷新二维码
+        {{ t('login.button.refreshQr') }}
       </n-button>
     </div>
   </div>

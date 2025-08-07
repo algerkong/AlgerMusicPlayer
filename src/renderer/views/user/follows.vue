@@ -75,6 +75,7 @@ import { getUserFollows } from '@/api/user';
 import { useUserStore } from '@/store/modules/user';
 import type { IUserFollow } from '@/type/user';
 import { getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
+import { checkLoginStatus as checkAuthStatus } from '@/utils/auth';
 
 defineOptions({
   name: 'UserFollows'
@@ -114,17 +115,16 @@ const checkTargetUser = () => {
 
 // 检查登录状态
 const checkLoginStatus = () => {
-  const token = localStorage.getItem('token');
-  const userData = localStorage.getItem('user');
+  const loginInfo = checkAuthStatus();
 
-  if (!token || !userData) {
+  if (!loginInfo.isLoggedIn) {
     router.push('/login');
     return false;
   }
 
   // 如果store中没有用户数据，但localStorage中有，则恢复用户数据
-  if (!userStore.user && userData) {
-    userStore.setUser(JSON.parse(userData));
+  if (!userStore.user && loginInfo.user) {
+    userStore.setUser(loginInfo.user);
   }
 
   return true;

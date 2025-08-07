@@ -2,35 +2,61 @@ export default {
   title: {
     qr: '扫码登录',
     phone: '手机号登录',
-    token: 'Cookie登录'
+    cookie: 'Cookie登录',
+    uid: 'UID登录'
   },
   qrTip: '使用网易云APP扫码登录',
   phoneTip: '使用网易云账号登录',
   tokenTip: '输入有效的网易云音乐Cookie即可登录',
+  uidTip: '输入用户ID快速登录',
   placeholder: {
     phone: '手机号',
     password: '密码',
-    token: '请输入网易云音乐Cookie（token）'
+    cookie: '请输入网易云音乐Cookie（token）',
+    uid: '请输入用户ID（UID）'
   },
   button: {
     login: '登录',
     switchToQr: '扫码登录',
     switchToPhone: '手机号登录',
     switchToToken: '使用Cookie登录',
+    switchToUid: 'UID登录',
     backToQr: '返回二维码登录',
-    tokenLogin: 'Cookie登录',
-    autoGetCookie: '自动获取Cookie'
+    cookieLogin: 'Cookie登录',
+    autoGetCookie: '自动获取Cookie',
+    refresh: '点击刷新',
+    refreshing: '刷新中...',
+    refreshQr: '刷新二维码'
   },
   message: {
     loginSuccess: '登录成功',
+    loginFailed: '登录失败',
     tokenLoginSuccess: 'Cookie登录成功',
+    uidLoginSuccess: 'UID登录成功',
     loadError: '加载登录信息时出错',
     qrCheckError: '检查二维码状态时出错',
     tokenRequired: '请输入Cookie',
     tokenInvalid: 'Cookie无效，请检查后重试',
+    uidRequired: '请输入用户ID',
+    uidInvalid: '用户ID无效或用户不存在',
+    uidLoginFailed: 'UID登录失败，请检查用户ID是否正确',
+    phoneRequired: '请输入手机号',
+    passwordRequired: '请输入密码',
+    phoneLoginFailed: '手机号登录失败，请检查手机号和密码是否正确',
     autoGetCookieSuccess: '自动获取Cookie成功',
     autoGetCookieFailed: '自动获取Cookie失败',
-    autoGetCookieTip: '将打开网易云音乐登录页面，请完成登录后关闭窗口'
+    autoGetCookieTip: '将打开网易云音乐登录页面，请完成登录后关闭窗口',
+    qrCheckFailed: '检查二维码状态失败，请刷新重试',
+    qrLoading: '正在加载二维码...',
+    qrExpired: '二维码已过期，请点击刷新',
+    qrExpiredShort: '二维码已过期',
+    qrExpiredWarning: '二维码已过期，请点击刷新获取新的二维码',
+    qrScanned: '已扫码，请在手机上确认登录',
+    qrScannedShort: '已扫码',
+    qrScannedInfo: '已扫码，请在手机上确认登录',
+    qrConfirmed: '登录成功，正在跳转...',
+    qrGenerating: '正在生成二维码...'
   },
-  qrTitle: '扫码登录网易云音乐'
+  qrTitle: '扫码登录网易云音乐',
+  uidWarning: '注意：UID登录仅用于查看用户公开信息，无法访问需要登录权限的功能'
 };

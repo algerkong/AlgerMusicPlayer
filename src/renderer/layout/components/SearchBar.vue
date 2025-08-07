@@ -46,7 +46,10 @@
       <div class="user-popover">
         <div v-if="userStore.user" class="user-header" @click="selectItem('user')">
           <n-avatar circle size="small" :src="getImgUrl(userStore.user?.avatarUrl)" />
-          <span class="username">{{ userStore.user?.nickname || 'Theodore' }}</span>
+          <div>
+            <p class="username">{{ userStore.user?.nickname || 'Theodore' }}</p>
+            <p></p>
+          </div>
         </div>
         <div class="menu-items">
           <div v-if="!userStore.user" class="menu-item" @click="toLogin">
