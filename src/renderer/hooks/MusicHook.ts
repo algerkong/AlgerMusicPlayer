@@ -455,24 +455,8 @@ const setupAudioListeners = () => {
       if (sound.value) {
         replayMusic();
       }
-    } else if (getPlayerStore().playMode === 2) {
-      // 随机播放模式
-
-      if (getPlayerStore().playList.length <= 1) {
-        replayMusic();
-      } else {
-        let randomIndex;
-        do {
-          randomIndex = Math.floor(Math.random() * getPlayerStore().playList.length);
-        } while (
-          randomIndex === getPlayerStore().playListIndex &&
-          getPlayerStore().playList.length > 1
-        );
-        getPlayerStore().playListIndex = randomIndex;
-        getPlayerStore().setPlay(getPlayerStore().playList[randomIndex]);
-      }
     } else {
-      // 列表循环模式
+      // 顺序播放、列表循环、随机播放模式都使用统一的nextPlay方法
       getPlayerStore().nextPlay();
     }
   });
