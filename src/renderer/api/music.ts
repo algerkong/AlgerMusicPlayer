@@ -146,54 +146,56 @@ const getUnblockMusicAudio = (id: number, data: SongResult, sources: any[]) => {
  * @returns 解析结果
  */
 export const getParsingMusicUrl = async (id: number, data: SongResult) => {
-  const settingStore = useSettingsStore();
+  if(isElectron){
+    const settingStore = useSettingsStore();
 
-  // 如果禁用了音乐解析功能，则直接返回空结果
-  if (!settingStore.setData.enableMusicUnblock) {
-    return Promise.resolve({ data: { code: 404, message: '音乐解析功能已禁用' } });
-  }
-
-  // 1. 确定使用的音源列表(自定义或全局)
-  const songId = String(id);
-  const savedSourceStr = localStorage.getItem(`song_source_${songId}`);
-  let musicSources: any[] = [];
-
-  try {
-    if (savedSourceStr) {
-      // 使用自定义音源
-      musicSources = JSON.parse(savedSourceStr);
-      console.log(`使用歌曲 ${id} 自定义音源:`, musicSources);
-    } else {
-      // 使用全局音源设置
-      musicSources = settingStore.setData.enabledMusicSources || [];
-      console.log(`使用全局音源设置:`, musicSources);
-      if (isElectron && musicSources.length > 0) {
-        return getUnblockMusicAudio(id, data, musicSources);
-      }
+    // 如果禁用了音乐解析功能，则直接返回空结果
+    if (!settingStore.setData.enableMusicUnblock) {
+      return Promise.resolve({ data: { code: 404, message: '音乐解析功能已禁用' } });
     }
-  } catch (e) {
-    console.error('解析音源设置失败，使用全局设置', e);
-    musicSources = settingStore.setData.enabledMusicSources || [];
-  }
-
-  // 2. 按优先级解析
-
-  // 2.1 Bilibili解析(优先级最高)
-  if (musicSources.includes('bilibili')) {
-    return await getBilibiliAudio(data);
-  }
-
-  // 2.2 GD音乐台解析
-  if (musicSources.includes('gdmusic')) {
-    const gdResult = await getGDMusicAudio(id, data);
-    if (gdResult) return gdResult;
-    // GD解析失败，继续下一步
-    console.log('GD音乐台解析失败，尝试使用其他音源');
-  }
-  console.log('musicSources', musicSources);
-  // 2.3 使用unblockMusic解析其他音源
-  if (isElectron && musicSources.length > 0) {
-    return getUnblockMusicAudio(id, data, musicSources);
+  
+    // 1. 确定使用的音源列表(自定义或全局)
+    const songId = String(id);
+    const savedSourceStr = localStorage.getItem(`song_source_${songId}`);
+    let musicSources: any[] = [];
+  
+    try {
+      if (savedSourceStr) {
+        // 使用自定义音源
+        musicSources = JSON.parse(savedSourceStr);
+        console.log(`使用歌曲 ${id} 自定义音源:`, musicSources);
+      } else {
+        // 使用全局音源设置
+        musicSources = settingStore.setData.enabledMusicSources || [];
+        console.log(`使用全局音源设置:`, musicSources);
+        if (musicSources.length > 0) {
+          return getUnblockMusicAudio(id, data, musicSources);
+        }
+      }
+    } catch (e) {
+      console.error('解析音源设置失败，使用全局设置', e);
+      musicSources = settingStore.setData.enabledMusicSources || [];
+    }
+  
+    // 2. 按优先级解析
+  
+    // 2.1 Bilibili解析(优先级最高)
+    if (musicSources.includes('bilibili')) {
+      return await getBilibiliAudio(data);
+    }
+  
+    // 2.2 GD音乐台解析
+    if (musicSources.includes('gdmusic')) {
+      const gdResult = await getGDMusicAudio(id, data);
+      if (gdResult) return gdResult;
+      // GD解析失败，继续下一步
+      console.log('GD音乐台解析失败，尝试使用其他音源');
+    }
+    console.log('musicSources', musicSources);
+    // 2.3 使用unblockMusic解析其他音源
+    if (musicSources.length > 0) {
+      return getUnblockMusicAudio(id, data, musicSources);
+    }
   }
 
   // 3. 后备方案：使用API请求
