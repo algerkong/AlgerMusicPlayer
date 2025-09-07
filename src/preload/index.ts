@@ -18,6 +18,7 @@ const api = {
   sendSong: (data) => ipcRenderer.send('update-current-song', data),
   unblockMusic: (id, data, enabledSources) =>
     ipcRenderer.invoke('unblock-music', id, data, enabledSources),
+  importCustomApiPlugin: () => ipcRenderer.invoke('import-custom-api-plugin'),
   // 歌词窗口关闭事件
   onLyricWindowClosed: (callback: () => void) => {
     ipcRenderer.on('lyric-window-closed', () => callback());
@@ -54,7 +55,7 @@ const api = {
       return ipcRenderer.invoke(channel, ...args);
     }
     return Promise.reject(new Error(`未授权的 IPC 通道: ${channel}`));
-  }
+  },
 };
 
 // 创建带类型的ipcRenderer对象，暴露给渲染进程

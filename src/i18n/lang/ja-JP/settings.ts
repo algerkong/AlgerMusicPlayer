@@ -78,7 +78,19 @@ export default {
     autoPlay: '自動再生',
     autoPlayDesc: 'アプリを再起動した際に自動的に再生を継続するかどうか',
     showStatusBar: 'ステータスバーコントロール機能を表示するかどうか',
-    showStatusBarContent: 'Macのステータスバーに音楽コントロール機能を表示できます（再起動後に有効）'
+    showStatusBarContent: 'Macのステータスバーに音楽コントロール機能を表示できます（再起動後に有効）',
+    fallbackParser: '代替解析サービス (GD音楽台)',
+    fallbackParserDesc: '「GD音楽台」にチェックが入っていて、通常の音源で再生できない場合、このサービスが使用されます。',
+    parserGD: 'GD音楽台 (内蔵)',
+    parserCustom: 'カスタムAPI',
+
+    customApi: {
+      importConfig: 'JSON設定をインポート',
+      currentSource: '現在の音源',
+      notImported: 'カスタム音源はまだインポートされていません。',
+      importSuccess: '音源のインポートに成功しました: {name}',
+      importFailed: 'インポートに失敗しました: {message}',
+    }
   },
   application: {
     closeAction: '閉じる動作',

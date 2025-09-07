@@ -78,7 +78,19 @@ export default {
     autoPlay: '自動播放',
     autoPlayDesc: '重新開啟應用程式時是否自動繼續播放',
     showStatusBar: '是否顯示狀態列控制功能',
-    showStatusBarContent: '可以在您的mac狀態列顯示音樂控制功能(重啟後生效)'
+    showStatusBarContent: '可以在您的mac狀態列顯示音樂控制功能(重啟後生效)',
+    fallbackParser: '備用解析服務 (GD音樂台)',
+    fallbackParserDesc: '當勾選「GD音樂台」且常規音源無法播放時，將使用此服務嘗試解析。',
+    parserGD: 'GD 音樂台 (內建)',
+    parserCustom: '自訂 API',
+
+    customApi: {
+      importConfig: '匯入 JSON 設定',
+      currentSource: '目前音源',
+      notImported: '尚未匯入自訂音源。',
+      importSuccess: '成功匯入音源：{name}',
+      importFailed: '匯入失敗：{message}',
+    }
   },
   application: {
     closeAction: '關閉行為',
