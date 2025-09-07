@@ -9,7 +9,8 @@ import * as mm from 'music-metadata';
 import * as NodeID3 from 'node-id3';
 import * as os from 'os';
 import * as path from 'path';
-
+import { FlacTagMap, writeFlacTags } from 'flac-tagger';
+import sharp from 'sharp';
 import { getStore } from './config';
 
 const MAX_CONCURRENT_DOWNLOADS = 3;
@@ -350,7 +351,7 @@ async function processDownloadQueue(event: Electron.IpcMainEvent) {
 function sanitizeFilename(filename: string): string {
   // 替换 Windows 和 Unix 系统中的非法字符
   return filename
-    .replace(/[<>:"/\\|?*]/g, '_') // 替换特殊字符为下划线
+    .replace(/[<>:"/\\|?*]/g, '、') // 替换特殊字符为下划线
     .replace(/\s+/g, ' ') // 将多个空格替换为单个空格
     .trim(); // 移除首尾空格
 }
@@ -576,8 +577,39 @@ async function downloadMusic(
             timeout: 10000
           });
 
-          // 获取封面图片的buffer
-          coverImageBuffer = Buffer.from(coverResponse.data);
+          const originalCoverBuffer = Buffer.from(coverResponse.data);
+          const TWO_MB = 2 * 1024 * 1024;
+          // 检查图片大小是否超过2MB
+          if (originalCoverBuffer.length > TWO_MB) {
+            const originalSizeMB = (originalCoverBuffer.length / (1024 * 1024)).toFixed(2);
+            console.log(`封面图大于2MB (${originalSizeMB} MB)，开始压缩...`);
+            try {
+              // 使用 sharp 进行压缩
+              coverImageBuffer = await sharp(originalCoverBuffer)
+                  .resize({
+                    width: 1600,
+                    height: 1600,
+                    fit: 'inside',
+                    withoutEnlargement: true
+                  })
+                  .jpeg({
+                    quality: 80,
+                    mozjpeg: true
+                  })
+                  .toBuffer();
+
+              const compressedSizeMB = (coverImageBuffer.length / (1024 * 1024)).toFixed(2);
+              console.log(`封面图压缩完成，新大小: ${compressedSizeMB} MB`);
+
+            } catch (compressionError) {
+              console.error('封面图压缩失败，将使用原图:', compressionError);
+              coverImageBuffer = originalCoverBuffer; // 如果压缩失败，则回退使用原始图片
+            }
+          } else {
+            // 如果图片不大于2MB，直接使用原图
+            coverImageBuffer = originalCoverBuffer;
+          }
+
           console.log('封面已准备好，将写入元数据');
         }
       }
@@ -588,7 +620,7 @@ async function downloadMusic(
 
     const fileFormat = fileExtension.toLowerCase();
     const artistNames =
-      (songInfo?.ar || songInfo?.song?.artists)?.map((a: any) => a.name).join('/ ') || '未知艺术家';
+      (songInfo?.ar || songInfo?.song?.artists)?.map((a: any) => a.name).join('、') || '未知艺术家';
 
     // 根据文件类型处理元数据
     if (['.mp3'].includes(fileFormat)) {
@@ -598,7 +630,7 @@ async function downloadMusic(
         NodeID3.removeTags(finalFilePath);
 
         const tags = {
-          title: filename,
+          title: songInfo?.name,
           artist: artistNames,
           TPE1: artistNames,
           TPE2: artistNames,
@@ -634,10 +666,36 @@ async function downloadMusic(
       } catch (err) {
         console.error('Error writing ID3 tags:', err);
       }
-    } else {
-      // 对于非MP3文件，使用music-metadata来写入元数据可能需要专门的库
-      // 或者根据不同文件类型使用专用工具，暂时只记录但不处理
-      console.log(`文件类型 ${fileFormat} 不支持使用NodeID3写入标签，跳过元数据写入`);
+    } else if (['.flac'].includes(fileFormat)) {
+      // Para arquivos FLAC, use flac-tagger para lidar com Vorbis comments
+      try {
+        const tagMap: FlacTagMap = {
+          TITLE: songInfo?.name,
+          ARTIST: artistNames,
+          ALBUM: songInfo?.al?.name || songInfo?.song?.album?.name || songInfo?.name || filename,
+          LYRICS: lyricsContent || '',
+          TRACKNUMBER: songInfo?.no ? String(songInfo.no) : undefined,
+          DATE: songInfo?.publishTime
+              ? new Date(songInfo.publishTime).getFullYear().toString()
+              : undefined
+        };
+
+        await writeFlacTags(
+            {
+              tagMap,
+              picture: coverImageBuffer
+                  ? {
+                    buffer: coverImageBuffer,
+                    mime: 'image/jpeg' // Supondo que seja jpeg, pode ser melhorado com detecção
+                  }
+                  : undefined
+            },
+            finalFilePath
+        );
+        console.log('FLAC tags written successfully');
+      } catch (err) {
+        console.error('Error writing FLAC tags:', err);
+      }
     }
 
     // 保存下载信息
