@@ -667,7 +667,6 @@ async function downloadMusic(
         console.error('Error writing ID3 tags:', err);
       }
     } else if (['.flac'].includes(fileFormat)) {
-      // Para arquivos FLAC, use flac-tagger para lidar com Vorbis comments
       try {
         const tagMap: FlacTagMap = {
           TITLE: songInfo?.name,
@@ -686,7 +685,7 @@ async function downloadMusic(
               picture: coverImageBuffer
                   ? {
                     buffer: coverImageBuffer,
-                    mime: 'image/jpeg' // Supondo que seja jpeg, pode ser melhorado com detecção
+                    mime: 'image/jpeg'
                   }
                   : undefined
             },
