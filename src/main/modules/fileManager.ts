@@ -351,7 +351,7 @@ async function processDownloadQueue(event: Electron.IpcMainEvent) {
 function sanitizeFilename(filename: string): string {
   // 替换 Windows 和 Unix 系统中的非法字符
   return filename
-    .replace(/[<>:"/\\|?*]/g, '、') // 替换特殊字符为下划线
+    .replace(/[<>:"/\\|?*]/g, '_') // 替换特殊字符为下划线
     .replace(/\s+/g, ' ') // 将多个空格替换为单个空格
     .trim(); // 移除首尾空格
 }
@@ -387,7 +387,7 @@ async function downloadMusic(
     let formattedFilename = filename;
     if (songInfo) {
       // 准备替换变量
-      const artistName = songInfo.ar?.map((a: any) => a.name).join('/') || '未知艺术家';
+      const artistName = songInfo.ar?.map((a: any) => a.name).join('、') || '未知艺术家';
       const songName = songInfo.name || filename;
       const albumName = songInfo.al?.name || '未知专辑';
 
@@ -741,7 +741,7 @@ async function downloadMusic(
         // 发送桌面通知
         try {
           const artistNames =
-            (songInfo?.ar || songInfo?.song?.artists)?.map((a: any) => a.name).join('/') ||
+            (songInfo?.ar || songInfo?.song?.artists)?.map((a: any) => a.name).join('、') ||
             '未知艺术家';
           const notification = new Notification({
             title: '下载完成',
