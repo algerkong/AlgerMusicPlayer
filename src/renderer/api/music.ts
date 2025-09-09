@@ -208,6 +208,12 @@ export const likeSong = (id: number, like: boolean = true) => {
   return request.get('/like', { params: { id, like } });
 };
 
+// 将每日推荐中的歌曲标记为不感兴趣，并获取一首新歌
+export const dislikeRecommendedSong = (id: number | string) => {
+  return request.get('/recommend/songs/dislike', {
+   params: { id }
+  });
+};
 // 获取用户喜欢的音乐列表
 export const getLikedList = (uid: number) => {
   return request.get('/likelist', {
