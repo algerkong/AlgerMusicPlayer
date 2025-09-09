@@ -22,6 +22,7 @@ interface API {
   onLanguageChanged: (callback: (locale: string) => void) => void;
   removeDownloadListeners: () => void;
   invoke: (channel: string, ...args: any[]) => Promise<any>;
+  getSearchSuggestions: (keyword: string) => Promise<any>;
 }
 
 // 自定义IPC渲染进程通信接口

@@ -1,5 +1,5 @@
 import request from '@/utils/request';
-import axios from 'axios';
+import { isElectron } from '@/utils';
 
 interface IParams {
   keywords: string;
@@ -39,15 +39,16 @@ export const getSearchSuggestions = async (keyword: string) => {
   console.log(`[API] getSearchSuggestions: 准备请求，关键词: "${keyword}"`);
 
   try {
-    const response = await axios.get<KugouSuggestionResponse>('/kugou/new/app/i/search.php', {
-      params: {
-        cmd: 302,
-        keyword: keyword,
-      },
-    });
+    let responseData: KugouSuggestionResponse;
+    if (isElectron) {
+      console.log('[API] Running in Electron, using IPC proxy.');
+      responseData = await window.api.getSearchSuggestions(keyword);
+    } else {
+      return [];
+    }
 
-    if (response.data && Array.isArray(response.data.data)) {
-      const suggestions = response.data.data.map(item => item.keyword).slice(0, 8);
+    if (responseData && Array.isArray(responseData.data)) {
+      const suggestions = responseData.data.map(item => item.keyword).slice(0, 10);
       console.log('[API] getSearchSuggestions: 成功解析建议:', suggestions);
       return suggestions;
     }
