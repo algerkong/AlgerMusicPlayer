@@ -80,7 +80,6 @@ export default {
     autoPlayDesc: 'Auto resume playback when reopening the app',
     showStatusBar: 'Show Status Bar',
     showStatusBarContent:
-      'You can display the music control function in your mac status bar (effective after a restart)'
       'You can display the music control function in your mac status bar (effective after a restart)',
     fallbackParser: 'Fallback Parser (GD Music)',
     fallbackParserDesc: 'When "GD Music" is checked and regular sources fail, this service will be used.',
