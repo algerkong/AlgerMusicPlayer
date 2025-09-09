@@ -219,7 +219,6 @@ export const useSettingsStore = defineStore('settings', () => {
     setLanguage,
     initializeSettings,
     initializeTheme,
-    initializeSystemFonts
     initializeSystemFonts,
     setCustomApiPlugin,
   };
