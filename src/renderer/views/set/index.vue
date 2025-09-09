@@ -108,6 +108,18 @@
               </div>
             </div>
 
+            <!-- 隐藏热搜设置 -->
+            <div class="set-item">
+              <div>
+                <div class="set-item-title">{{ t('settings.playback.searchPage.title') }}</div>
+                <div class="set-item-content">{{ t('settings.playback.searchPage.showHotSearchDesc') }}</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm text-gray-500">{{ t('settings.playback.searchPage.showHotSearchLabel') }}</span>
+                <n-switch v-model:value="setData.showHotSearchOnSearchPage" />
+              </div>
+            </div>
+
             <!-- Token管理 -->
             <div class="set-item">
               <div>

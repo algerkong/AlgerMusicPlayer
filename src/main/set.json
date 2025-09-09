@@ -27,5 +27,6 @@
   "showTopAction": false,
   "contentZoomFactor": 1,
   "autoTheme": false,
-  "manualTheme": "light"
+  "manualTheme": "light",
+  "showHotSearchOnSearchPage": true
 }

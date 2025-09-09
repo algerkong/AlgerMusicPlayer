@@ -80,7 +80,12 @@ export default {
     autoPlayDesc: 'Auto resume playback when reopening the app',
     showStatusBar: 'Show Status Bar',
     showStatusBarContent:
-      'You can display the music control function in your mac status bar (effective after a restart)'
+      'You can display the music control function in your mac status bar (effective after a restart)',
+    searchPage: {
+      title: 'Search Page Settings',
+      showHotSearchDesc: 'Control whether to display the hot search list on the search page',
+      showHotSearchLabel: 'Show Hot Search List'
+    }
   },
   application: {
     closeAction: 'Close Action',
