@@ -64,6 +64,17 @@ export const useSettingsStore = defineStore('settings', () => {
   // 初始化 setData
   setData.value = getInitialSettings();
 
+  /**
+   * 保存导入的自定义API插件
+   * @param plugin 包含name和content的对象
+   */
+  const setCustomApiPlugin = (plugin: { name: string; content: string }) => {
+    setSetData({
+      customApiPlugin: plugin.content,
+      customApiPluginName: plugin.name
+    });
+  };
+
   const toggleTheme = () => {
     if (setData.value.autoTheme) {
       // 如果是自动模式，切换到手动模式并设置相反的主题
@@ -209,5 +220,7 @@ export const useSettingsStore = defineStore('settings', () => {
     initializeSettings,
     initializeTheme,
     initializeSystemFonts
+    initializeSystemFonts,
+    setCustomApiPlugin,
   };
 });

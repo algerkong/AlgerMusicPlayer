@@ -79,6 +79,21 @@ export default {
     autoPlayDesc: '重新打开应用时是否自动继续播放',
     showStatusBar: '是否显示状态栏控制功能',
     showStatusBarContent: '可以在您的mac状态栏显示音乐控制功能(重启后生效)'
+    showStatusBarContent: '可以在您的mac状态栏显示音乐控制功能(重启后生效)',
+
+    fallbackParser: 'GD音乐台(music.gdstudio.xyz)设置',
+    fallbackParserDesc: 'GD音乐台将自动尝试多个音乐平台进行解析，无需额外配置。优先级高于其他解析方式，但是请求可能较慢。感谢（music.gdstudio.xyz）\n',
+    parserGD: 'GD 音乐台 (内置)',
+    parserCustom: '自定义 API',
+
+    // 自定义API相关的提示
+    customApi: {
+      importConfig: '导入 JSON 配置',
+      currentSource: '当前音源',
+      notImported: '尚未导入自定义音源。',
+      importSuccess: '成功导入音源: {name}',
+      importFailed: '导入失败: {message}',
+    },
   },
   application: {
     closeAction: '关闭行为',

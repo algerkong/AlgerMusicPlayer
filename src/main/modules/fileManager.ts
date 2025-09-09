@@ -275,6 +275,39 @@ export function initializeFileManager() {
       }
     }
   });
+
+  // 处理导入自定义API插件的请求
+  ipcMain.handle('import-custom-api-plugin', async () => {
+    const result = await dialog.showOpenDialog({
+      title: '选择自定义音源配置文件',
+      filters: [{ name: 'JSON Files', extensions: ['json'] }],
+      properties: ['openFile']
+    });
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return null;
+    }
+
+    const filePath = result.filePaths[0];
+    try {
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+
+      // 基础验证，确保它是个合法的JSON并且包含关键字段
+      const pluginData = JSON.parse(fileContent);
+      if (!pluginData.name || !pluginData.apiUrl) {
+        throw new Error('无效的插件文件，缺少 name 或 apiUrl 字段。');
+      }
+
+      return {
+        name: pluginData.name,
+        content: fileContent // 返回完整的JSON字符串
+      };
+    } catch (error: any) {
+      console.error('读取或解析插件文件失败:', error);
+      // 向渲染进程抛出错误，以便UI可以显示提示
+      throw new Error(`文件读取或解析失败: ${error.message}`);
+    }
+  });
 }
 
 /**

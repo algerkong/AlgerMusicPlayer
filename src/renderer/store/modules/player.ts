@@ -78,10 +78,14 @@ export const isBilibiliIdMatch = (id1: string | number, id2: string | number): b
 // 提取公共函数：获取B站视频URL
 
 export const getSongUrl = async (
-  id: string | number,
-  songData: SongResult,
-  isDownloaded: boolean = false
+    id: string | number,
+    songData: SongResult,
+    isDownloaded: boolean = false
 ) => {
+  const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+  const settingsStore = useSettingsStore();
+  const { message } = createDiscreteApi(['message']); // 引入 message API 用于提示
+
   try {
     if (songData.playMusicUrl) {
       return songData.playMusicUrl;
@@ -92,8 +96,8 @@ export const getSongUrl = async (
       if (!songData.playMusicUrl && songData.bilibiliData.bvid && songData.bilibiliData.cid) {
         try {
           songData.playMusicUrl = await getBilibiliAudioUrl(
-            songData.bilibiliData.bvid,
-            songData.bilibiliData.cid
+              songData.bilibiliData.bvid,
+              songData.bilibiliData.cid
           );
           return songData.playMusicUrl;
         } catch (error) {
@@ -104,14 +108,48 @@ export const getSongUrl = async (
       return songData.playMusicUrl || '';
     }
 
-    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
 
-    // 检查是否有自定义音源设置
+    // ==================== 自定义API最优先 ====================
+    // 检查用户是否在全局设置中启用了 'custom' 音源
+    const globalSources = settingsStore.setData.enabledMusicSources || [];
+    const useCustomApiGlobally = globalSources.includes('custom');
+
+    // 检查歌曲是否有专属的 'custom' 音源设置
     const songId = String(id);
-    const savedSource = localStorage.getItem(`song_source_${songId}`);
+    const savedSourceStr = localStorage.getItem(`song_source_${songId}`);
+    let useCustomApiForSong = false;
+    if (savedSourceStr) {
+      try {
+        const songSources = JSON.parse(savedSourceStr);
+        useCustomApiForSong = songSources.includes('custom');
+      } catch (e) { /* ignore parsing error */ }
+    }
 
+    // 如果全局或歌曲专属设置中启用了自定义API，则最优先尝试
+    if ( (useCustomApiGlobally || useCustomApiForSong) && settingsStore.setData.customApiPlugin) {
+      console.log(`优先级 1: 尝试使用自定义API解析歌曲 ${id}...`);
+      try {
+        // 直接从 api 目录导入 parseFromCustomApi 函数
+        const { parseFromCustomApi } = await import('@/api/parseFromCustomApi');
+        const customResult = await parseFromCustomApi(numericId, cloneDeep(songData), settingsStore.setData.musicQuality || 'higher');
+
+        if (customResult && customResult.data && customResult.data.data && customResult.data.data.url) {
+          console.log('自定义API解析成功！');
+          if (isDownloaded) return customResult.data.data as any;
+          return customResult.data.data.url;
+        } else {
+          // 自定义API失败，给出提示，然后继续走默认流程
+          console.log('自定义API解析失败，将使用默认降级流程...');
+          message.warning('自定义API解析失败，正在尝试使用内置音源...'); // 给用户一个提示
+        }
+      } catch (error) {
+        console.error('调用自定义API时发生错误:', error);
+        message.error('自定义API请求出错，正在尝试使用内置音源...');
+      }
+    }
+    // 如果自定义API失败或未启用，则执行【原有】的解析流程
     // 如果有自定义音源设置，直接使用getParsingMusicUrl获取URL
-    if (savedSource && songData.source !== 'bilibili') {
+    if (savedSourceStr && songData.source !== 'bilibili') {
       try {
         console.log(`使用自定义音源解析歌曲 ID: ${songId}`);
         const res = await getParsingMusicUrl(numericId, cloneDeep(songData));
@@ -129,28 +167,33 @@ export const getSongUrl = async (
 
     // 正常获取URL流程
     const { data } = await getMusicUrl(numericId, isDownloaded);
-    let url = '';
-    let songDetail = null;
-    try {
-      if (data.data[0].freeTrialInfo || !data.data[0].url) {
+    if (data && data.data && data.data[0]) {
+      const songDetail = data.data[0];
+      const hasNoUrl = !songDetail.url;
+      const isTrial = !!songDetail.freeTrialInfo;
+
+      if (hasNoUrl || isTrial) {
+        console.log(`官方URL无效 (无URL: ${hasNoUrl}, 试听: ${isTrial})，进入内置备用解析...`);
         const res = await getParsingMusicUrl(numericId, cloneDeep(songData));
-        url = res.data.data.url;
-        songDetail = res.data.data;
-      } else {
-        songDetail = data.data[0] as any;
+        if (isDownloaded) return res?.data?.data as any;
+        return res?.data?.data?.url || null;
       }
-    } catch (error) {
-      console.error('error', error);
-      url = data.data[0].url || '';
+
+      console.log('官方API解析成功！');
+      if (isDownloaded) return songDetail as any;
+      return songDetail.url;
     }
-    if (isDownloaded) {
-      return songDetail;
-    }
-    url = url || data.data[0].url;
-    return url;
+
+    console.log('官方API返回数据结构异常，进入内置备用解析...');
+    const res = await getParsingMusicUrl(numericId, cloneDeep(songData));
+    if (isDownloaded) return res?.data?.data as any;
+    return res?.data?.data?.url || null;
+
   } catch (error) {
-    console.error('error', error);
-    return null;
+    console.error('官方API请求失败，进入内置备用解析流程:', error);
+    const res = await getParsingMusicUrl(numericId, cloneDeep(songData));
+    if (isDownloaded) return res?.data?.data as any;
+    return res?.data?.data?.url || null;
   }
 };
 

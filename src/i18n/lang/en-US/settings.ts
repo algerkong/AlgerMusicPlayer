@@ -81,6 +81,19 @@ export default {
     showStatusBar: 'Show Status Bar',
     showStatusBarContent:
       'You can display the music control function in your mac status bar (effective after a restart)'
+      'You can display the music control function in your mac status bar (effective after a restart)',
+    fallbackParser: 'Fallback Parser (GD Music)',
+    fallbackParserDesc: 'When "GD Music" is checked and regular sources fail, this service will be used.',
+    parserGD: 'GD Music (Built-in)',
+    parserCustom: 'Custom API',
+
+    customApi: {
+      importConfig: 'Import JSON Config',
+      currentSource: 'Current Source',
+      notImported: 'No custom source imported yet.',
+      importSuccess: 'Successfully imported source: {name}',
+      importFailed: 'Import failed: {message}',
+    },
   },
   application: {
     closeAction: 'Close Action',
