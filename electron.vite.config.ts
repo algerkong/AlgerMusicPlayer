@@ -40,7 +40,14 @@ export default defineConfig({
     ],
     publicDir: resolve('resources'),
     server: {
-      host: '0.0.0.0'
+      host: '0.0.0.0',
+      proxy: {
+        '/kugou': {
+          target: 'http://msearchcdn.kugou.com', // 目标服务器地址
+          changeOrigin: true, // 必须设置为 true
+          rewrite: (path) => path.replace(/^\/kugou/, '') // 重写请求路径，去掉 /kugou 前缀
+        }
+      }
     }
   }
 });
