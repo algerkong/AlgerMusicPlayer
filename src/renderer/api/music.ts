@@ -30,6 +30,8 @@ export const getMusicUrl = async (id: number, isDownloaded: boolean = false) => 
         params: {
           id,
           level: settingStore.setData.musicQuality || 'higher',
+          encodeType: settingStore.setData.musicQuality == 'lossless' ? 'aac' : 'flac',
+          // level为lossless时，encodeType=flac时网易云会返回hires音质，encodeType=aac时网易云会返回lossless音质
           cookie: `${localStorage.getItem('token')} os=pc;`
         }
       });
@@ -45,7 +47,8 @@ export const getMusicUrl = async (id: number, isDownloaded: boolean = false) => 
   return await request.get('/song/url/v1', {
     params: {
       id,
-      level: settingStore.setData.musicQuality || 'higher'
+      level: settingStore.setData.musicQuality || 'higher',
+      encodeType: settingStore.setData.musicQuality == 'lossless' ? 'aac' : 'flac'
     }
   });
 };
