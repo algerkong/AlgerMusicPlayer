@@ -78,7 +78,12 @@ export default {
     autoPlay: '自動再生',
     autoPlayDesc: 'アプリを再起動した際に自動的に再生を継続するかどうか',
     showStatusBar: 'ステータスバーコントロール機能を表示するかどうか',
-    showStatusBarContent: 'Macのステータスバーに音楽コントロール機能を表示できます（再起動後に有効）'
+    showStatusBarContent: 'Macのステータスバーに音楽コントロール機能を表示できます（再起動後に有効）',
+    searchPage: {
+      title: '検索ページ設定',
+      showHotSearchDesc: '検索ページに人気検索リストを表示するかどうかを制御します',
+      showHotSearchLabel: '人気検索リストを表示'
+    }
   },
   application: {
     closeAction: '閉じる動作',

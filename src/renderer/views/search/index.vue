@@ -1,7 +1,7 @@
 <template>
   <div class="search-page">
     <n-layout
-      v-if="isMobile ? !searchDetail : true"
+      v-if="isMobile ? !searchDetail && settingsStore.setData.showHotSearchOnSearchPage : settingsStore.setData.showHotSearchOnSearchPage"
       class="hot-search"
       :class="setAnimationClass('animate__fadeInDown')"
       :native-scrollbar="false"
@@ -142,6 +142,7 @@ import SongItem from '@/components/common/SongItem.vue';
 import { SEARCH_TYPE } from '@/const/bar-const';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSearchStore } from '@/store/modules/search';
+import { useSettingsStore } from '@/store/modules/settings';
 import type { IBilibiliSearchResult } from '@/types/bilibili';
 import type { IHotSearch } from '@/types/search';
 import { isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
@@ -155,6 +156,7 @@ const route = useRoute();
 const router = useRouter();
 const playerStore = usePlayerStore();
 const searchStore = useSearchStore();
+const settingsStore = useSettingsStore();
 
 const searchDetail = ref<any>();
 const searchType = computed(() => searchStore.searchType as number);

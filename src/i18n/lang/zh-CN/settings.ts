@@ -78,7 +78,12 @@ export default {
     autoPlay: '自动播放',
     autoPlayDesc: '重新打开应用时是否自动继续播放',
     showStatusBar: '是否显示状态栏控制功能',
-    showStatusBarContent: '可以在您的mac状态栏显示音乐控制功能(重启后生效)'
+    showStatusBarContent: '可以在您的mac状态栏显示音乐控制功能(重启后生效)',
+    searchPage: {
+      title: '搜索页面设置',
+      showHotSearchDesc: '控制是否在搜索页面显示热搜列表',
+      showHotSearchLabel: '显示热搜列表'
+    }
   },
   application: {
     closeAction: '关闭行为',

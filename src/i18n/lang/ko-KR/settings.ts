@@ -78,7 +78,12 @@ export default {
     autoPlay: '자동 재생',
     autoPlayDesc: '앱을 다시 열 때 자동으로 재생을 계속할지 여부',
     showStatusBar: '상태바 제어 기능 표시 여부',
-    showStatusBarContent: 'Mac 상태바에 음악 제어 기능을 표시할 수 있습니다 (재시작 후 적용)'
+    showStatusBarContent: 'Mac 상태바에 음악 제어 기능을 표시할 수 있습니다 (재시작 후 적용)',
+    searchPage: {
+      title: '검색 페이지 설정',
+      showHotSearchDesc: '검색 페이지에 인기 검색 목록 표시 여부 제어',
+      showHotSearchLabel: '인기 검색 목록 표시'
+    }
   },
   application: {
     closeAction: '닫기 동작',
