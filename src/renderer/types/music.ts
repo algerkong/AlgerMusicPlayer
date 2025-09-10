@@ -52,6 +52,21 @@ export interface SongResult {
   duration?: number;
   dt?: number;
   isFirstPlay?: boolean;
+  fee?: number; // 1 表示 VIP 歌曲
+
+  // 音质信息
+  hr?: {
+    size: number;
+    [key: string]: any;
+  } | null;
+  sq?: {
+    size: number;
+    [key: string]: any;
+  } | null;
+  h?: {
+    size: number;
+    [key: string]: any;
+  } | null;
 }
 
 export interface Song {
