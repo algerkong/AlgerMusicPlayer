@@ -16,6 +16,7 @@ import { setupUpdateHandlers } from './modules/update';
 import { createMainWindow, initializeWindowManager, setAppQuitting } from './modules/window';
 import { initWindowSizeManager } from './modules/window-size';
 import { startMusicApi } from './server';
+import { initializeOtherApi } from './modules/otherApi';
 
 // 导入所有图标
 const iconPath = join(__dirname, '../../resources');
@@ -38,6 +39,8 @@ function initialize() {
 
   // 初始化文件管理
   initializeFileManager();
+  // 初始化其他 API （搜索建议等）
+  initializeOtherApi();
   // 初始化窗口管理
   initializeWindowManager();
   // 初始化字体管理

@@ -5,25 +5,25 @@
     </div>
     <div class="search-box-input flex-1 relative">
       <n-popover
-          trigger="manual"
-          placement="bottom-start"
-          :show="showSuggestions"
-          :show-arrow="false"
-          style="width: 100%; margin-top: 4px;"
-          content-style="padding: 0; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
-          raw
+        trigger="manual"
+        placement="bottom-start"
+        :show="showSuggestions"
+        :show-arrow="false"
+        style="width: 100%; margin-top: 4px"
+        content-style="padding: 0; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
+        raw
       >
         <template #trigger>
           <n-input
-              v-model:value="searchValue"
-              size="medium"
-              round
-              :placeholder="hotSearchKeyword"
-              class="border dark:border-gray-600 border-gray-200"
-              @input="handleInput"
-              @keydown="handleKeydown"
-              @focus="handleFocus"
-              @blur="handleBlur"
+            v-model:value="searchValue"
+            size="medium"
+            round
+            :placeholder="hotSearchKeyword"
+            class="border dark:border-gray-600 border-gray-200"
+            @input="handleInput"
+            @keydown="handleKeydown"
+            @focus="handleFocus"
+            @blur="handleBlur"
           >
             <template #prefix>
               <i class="iconfont icon-search"></i>
@@ -32,7 +32,9 @@
               <n-dropdown trigger="hover" :options="searchTypeOptions" @select="selectSearchType">
                 <div class="w-20 px-3 flex justify-between items-center">
                   <div>
-                    {{ searchTypeOptions.find((item) => item.key === searchStore.searchType)?.label }}
+                    {{
+                      searchTypeOptions.find((item) => item.key === searchStore.searchType)?.label
+                    }}
                   </div>
                   <i class="iconfont icon-xiasanjiaoxing"></i>
                 </div>
@@ -42,17 +44,17 @@
         </template>
         <!-- ==================== 搜索建议列表 ==================== -->
         <div class="search-suggestions-panel">
-          <n-scrollbar style="max-height: 300px;">
+          <n-scrollbar style="max-height: 300px">
             <div v-if="suggestionsLoading" class="suggestion-item loading">
               <n-spin size="small" />
             </div>
             <div
-                v-for="(suggestion, index) in suggestions"
-                :key="index"
-                class="suggestion-item"
-                :class="{ 'highlighted': index === highlightedIndex }"
-                @mousedown.prevent="selectSuggestion(suggestion)"
-                @mouseenter="highlightedIndex = index"
+              v-for="(suggestion, index) in suggestions"
+              :key="index"
+              class="suggestion-item"
+              :class="{ highlighted: index === highlightedIndex }"
+              @mousedown.prevent="selectSuggestion(suggestion)"
+              @mouseenter="highlightedIndex = index"
             >
               <i class="ri-search-line suggestion-icon"></i>
               <span>{{ suggestion }}</span>
@@ -162,10 +164,10 @@
 </template>
 
 <script lang="ts" setup>
+import { useDebounceFn } from '@vueuse/core';
 import { computed, onMounted, ref, watch, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-import { useDebounceFn } from '@vueuse/core';
 
 import { getSearchKeyword } from '@/api/home';
 import { getUserDetail } from '@/api/login';
@@ -427,7 +429,8 @@ const handleKeydown = (event: KeyboardEvent) => {
       break;
     case 'ArrowUp':
       event.preventDefault(); // 阻止光标移动到开头
-      highlightedIndex.value = (highlightedIndex.value - 1 + suggestions.value.length) % suggestions.value.length;
+      highlightedIndex.value =
+        (highlightedIndex.value - 1 + suggestions.value.length) % suggestions.value.length;
       break;
     case 'Enter':
       event.preventDefault(); // 阻止表单默认提交行为

@@ -1,5 +1,5 @@
-import request from '@/utils/request';
 import { isElectron } from '@/utils';
+import request from '@/utils/request';
 
 interface IParams {
   keywords: string;
@@ -25,6 +25,16 @@ interface KugouSuggestionResponse {
   data: Suggestion[];
 }
 
+// 网易云搜索建议返回的数据结构（部分字段）
+interface NeteaseSuggestResult {
+  result?: {
+    songs?: Array<{ name: string }>;
+    artists?: Array<{ name: string }>;
+    albums?: Array<{ name: string }>;
+  };
+  code?: number;
+}
+
 /**
  * 从酷狗获取搜索建议
  * @param keyword 搜索关键词
@@ -44,11 +54,25 @@ export const getSearchSuggestions = async (keyword: string) => {
       console.log('[API] Running in Electron, using IPC proxy.');
       responseData = await window.api.getSearchSuggestions(keyword);
     } else {
-      return [];
+      // 非 Electron 环境下，使用网易云接口
+      const res = await request.get<NeteaseSuggestResult>('/search/suggest', {
+        params: { keywords: keyword }
+      });
+
+      const result = res?.data?.result || {};
+      const names: string[] = [];
+      if (Array.isArray(result.songs)) names.push(...result.songs.map((s) => s.name));
+      if (Array.isArray(result.artists)) names.push(...result.artists.map((a) => a.name));
+      if (Array.isArray(result.albums)) names.push(...result.albums.map((al) => al.name));
+
+      // 去重并截取前10个
+      const unique = Array.from(new Set(names)).slice(0, 10);
+      console.log('[API] getSearchSuggestions: 网易云建议解析成功:', unique);
+      return unique;
     }
 
     if (responseData && Array.isArray(responseData.data)) {
-      const suggestions = responseData.data.map(item => item.keyword).slice(0, 10);
+      const suggestions = responseData.data.map((item) => item.keyword).slice(0, 10);
       console.log('[API] getSearchSuggestions: 成功解析建议:', suggestions);
       return suggestions;
     }
