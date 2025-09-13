@@ -227,11 +227,11 @@ import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 
 import { subscribePlaylist, updatePlaylistTracks } from '@/api/music';
-import { getMusicDetail, getMusicListByType } from '@/api/music';
+import { getMusicDetail } from '@/api/music';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import SongItem from '@/components/common/SongItem.vue';
 import { useDownload } from '@/hooks/useDownload';
-import { useMusicStore, usePlayerStore } from '@/store';
+import { useMusicStore, usePlayerStore, useRecommendStore } from '@/store';
 import { SongResult } from '@/types/music';
 import { getImgUrl, isElectron, isMobile, setAnimationClass } from '@/utils';
 
@@ -239,14 +239,39 @@ const { t } = useI18n();
 const route = useRoute();
 const playerStore = usePlayerStore();
 const musicStore = useMusicStore();
+const recommendStore = useRecommendStore();
 const message = useMessage();
 
 // 从路由参数或状态管理获取数据
-const name = ref('');
 const loading = ref(false);
-const songList = ref<any[]>([]);
-const listInfo = ref<any>(null);
-const canRemove = ref(false);
+const isDailyRecommend = computed(() => route.query.type === 'dailyRecommend');
+const name = computed(() => {
+  if (isDailyRecommend.value) {
+    return t('comp.recommendSinger.songlist'); // 日推的标题
+  }
+  return musicStore.currentMusicListName || ''; // 其他列表的标题
+});
+const songList = computed(() => {
+  if (isDailyRecommend.value) {
+    // 如果是日推页面，直接使用 recommendStore 中响应式的数据
+    return recommendStore.dailyRecommendSongs;
+  }
+  // 否则，使用 musicStore 中的静态数据
+  return musicStore.currentMusicList || [];
+});
+const listInfo = computed(() => {
+  if (isDailyRecommend.value) {
+    return null;
+  }
+  return musicStore.currentListInfo || null;
+});
+const canRemove = computed(() => {
+  if (isDailyRecommend.value) {
+    return false;
+  }
+  return musicStore.canRemoveSong || false;
+});
+
 const canCollect = ref(false);
 const isCollected = ref(false);
 
@@ -303,77 +328,8 @@ const total = computed(() => {
 
 // 初始化数据
 onMounted(() => {
-  initData();
   checkCollectionStatus();
 });
-
-// 从 pinia 或路由参数获取数据
-
-// 从路由参数获取
-const routeId = route.params.id as string;
-const routeType = route.query.type as string;
-
-const initData = () => {
-  // 优先从 pinia 获取数据
-  if (musicStore.currentMusicList) {
-    name.value = musicStore.currentMusicListName || '';
-    songList.value = musicStore.currentMusicList || [];
-    listInfo.value = musicStore.currentListInfo || null;
-    canRemove.value = musicStore.canRemoveSong || false;
-
-    // 初始化歌曲列表
-    initSongList(songList.value);
-    return;
-  }
-
-  if (routeId) {
-    // 这里根据 type 和 id 加载数据
-    // 例如: 获取歌单、专辑等
-    loading.value = true;
-    loadDataByType(routeType, routeId).finally(() => {
-      loading.value = false;
-    });
-  }
-};
-
-// 根据类型加载数据
-const loadDataByType = async (type: string, id: string) => {
-  try {
-    const result = await getMusicListByType(type, id);
-
-    if (type === 'album') {
-      const { songs, album } = result.data;
-      name.value = album.name;
-      songList.value = songs.map((song: any) => {
-        song.al.picUrl = song.al.picUrl || album.picUrl;
-        song.picUrl = song.al.picUrl || album.picUrl || song.picUrl;
-        return song;
-      });
-      listInfo.value = {
-        ...album,
-        creator: {
-          avatarUrl: album.artist.img1v1Url,
-          nickname: `${album.artist.name} - ${album.company}`
-        },
-        description: album.description
-      };
-    } else if (type === 'playlist') {
-      const { playlist } = result.data;
-      name.value = playlist.name;
-      listInfo.value = playlist;
-
-      // 初始化歌曲列表
-      if (playlist.tracks) {
-        songList.value = playlist.tracks;
-      }
-    }
-
-    // 初始化歌曲列表
-    initSongList(songList.value);
-  } catch (error) {
-    console.error('加载数据失败:', error);
-  }
-};
 
 const getCoverImgUrl = computed(() => {
   const coverImgUrl = listInfo.value?.coverImgUrl;
@@ -394,22 +350,27 @@ const getCoverImgUrl = computed(() => {
   return '';
 });
 
-const getDisplaySongs = computed(() => {
-  if (routeType === 'dailyRecommend') {
-    return displayedSongs.value.filter((song) => !playerStore.dislikeList.includes(song.id));
-  } else {
-    return displayedSongs.value;
-  }
-});
-
 // 过滤歌曲列表
 const filteredSongs = computed(() => {
+  // 1. 确定数据源是来自store的完整列表(日推)还是来自本地分页的列表(其他)
+  const sourceList = isDailyRecommend.value
+    ? songList.value // 如果是日推，直接使用来自 recommendStore 的完整、响应式列表
+    : displayedSongs.value; // 否则，使用用于分页加载的 displayedSongs
+
+  // 2. 过滤不喜欢的歌曲
+  const dislikeFilteredList = sourceList.filter(
+    (song) => !playerStore.dislikeList.includes(song.id)
+  );
+  // =================================================================
+
+  // 3. 如果没有搜索词，直接返回处理后的列表
   if (!searchKeyword.value) {
-    return getDisplaySongs.value;
+    return dislikeFilteredList;
   }
 
+  // 4. 如果有搜索词，在处理后的列表上进行搜索
   const keyword = searchKeyword.value.toLowerCase().trim();
-  return getDisplaySongs.value.filter((song) => {
+  return dislikeFilteredList.filter((song) => {
     const songName = song.name?.toLowerCase() || '';
     const albumName = song.al?.name?.toLowerCase() || '';
     const artists = song.ar || song.artists || [];
@@ -438,6 +399,17 @@ const filteredSongs = computed(() => {
     );
   });
 });
+
+const resetListState = () => {
+  page.value = 0;
+  loadedIds.value.clear();
+  displayedSongs.value = [];
+  completePlaylist.value = [];
+  hasMore.value = true;
+  loadingList.value = false;
+  searchKeyword.value = '';
+  isFullPlaylistLoaded.value = false;
+};
 
 // 格式化歌曲数据
 const formatSong = (item: any) => {
@@ -802,6 +774,20 @@ watch(searchKeyword, () => {
     loadMoreSongs();
   }
 });
+
+watch(
+  songList,
+  (newSongs) => {
+    resetListState();
+    initSongList(newSongs);
+    if (hasMore.value && listInfo.value?.trackIds) {
+      setTimeout(() => {
+        loadMoreSongs();
+      }, 300);
+    }
+  },
+  { immediate: true }
+);
 
 // 组件卸载时清理状态
 onUnmounted(() => {

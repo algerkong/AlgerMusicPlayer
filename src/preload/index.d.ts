@@ -21,7 +21,9 @@ interface API {
   onDownloadComplete: (callback: (success: boolean, filePath: string) => void) => void;
   onLanguageChanged: (callback: (locale: string) => void) => void;
   removeDownloadListeners: () => void;
+  importCustomApiPlugin: () => Promise<{ name: string; content: string } | null>;
   invoke: (channel: string, ...args: any[]) => Promise<any>;
+  getSearchSuggestions: (keyword: string) => Promise<any>;
 }
 
 // 自定义IPC渲染进程通信接口

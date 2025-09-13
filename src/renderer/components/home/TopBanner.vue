@@ -130,14 +130,13 @@ import { computed, onMounted, ref, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
-import { getDayRecommend, getHotSinger } from '@/api/home';
+import { getHotSinger } from '@/api/home';
 import { getListDetail } from '@/api/list';
 import { getMusicDetail } from '@/api/music';
 import { getUserPlaylist } from '@/api/user';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import { useArtist } from '@/hooks/useArtist';
-import { usePlayerStore, useUserStore } from '@/store';
-import { IDayRecommend } from '@/types/day_recommend';
+import { usePlayerStore, useRecommendStore, useUserStore } from '@/store';
 import { Playlist } from '@/types/list';
 import type { IListDetail } from '@/types/listDetail';
 import { SongResult } from '@/types/music';
@@ -152,13 +151,21 @@ import {
 
 const userStore = useUserStore();
 const playerStore = usePlayerStore();
+const recommendStore = useRecommendStore();
 const router = useRouter();
 
 const { t } = useI18n();
 
 // 歌手信息
 const hotSingerData = ref<IHotSinger>();
-const dayRecommendData = ref<IDayRecommend>();
+const dayRecommendData = computed(() => {
+  if (recommendStore.dailyRecommendSongs.length > 0) {
+    return {
+      dailySongs: recommendStore.dailyRecommendSongs
+    };
+  }
+  return null;
+});
 const userPlaylist = ref<Playlist[]>([]);
 
 // 为歌单弹窗添加的状态
@@ -230,22 +237,8 @@ onMounted(async () => {
   loadNonUserData();
 });
 
-// 提取每日推荐加载逻辑到单独的函数
 const loadDayRecommendData = async () => {
-  try {
-    const {
-      data: { data: dayRecommend }
-    } = await getDayRecommend();
-    const dayRecommendSource = dayRecommend as unknown as IDayRecommend;
-    dayRecommendData.value = {
-      ...dayRecommendSource,
-      dailySongs: dayRecommendSource.dailySongs.filter(
-        (song: any) => !playerStore.dislikeList.includes(song.id)
-      )
-    };
-  } catch (error) {
-    console.error('获取每日推荐失败:', error);
-  }
+  await recommendStore.fetchDailyRecommendSongs();
 };
 
 // 加载不需要登录的数据
