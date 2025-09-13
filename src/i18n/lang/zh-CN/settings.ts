@@ -78,7 +78,33 @@ export default {
     autoPlay: '自动播放',
     autoPlayDesc: '重新打开应用时是否自动继续播放',
     showStatusBar: '是否显示状态栏控制功能',
-    showStatusBarContent: '可以在您的mac状态栏显示音乐控制功能(重启后生效)'
+    showStatusBarContent: '可以在您的mac状态栏显示音乐控制功能(重启后生效)',
+
+    fallbackParser: 'GD音乐台(music.gdstudio.xyz)设置',
+    fallbackParserDesc: 'GD音乐台将自动尝试多个音乐平台进行解析，无需额外配置。优先级高于其他解析方式，但是请求可能较慢。感谢（music.gdstudio.xyz）\n',
+    parserGD: 'GD 音乐台 (内置)',
+    parserCustom: '自定义 API',
+
+    // 音源标签
+    sourceLabels: {
+      migu: '咪咕音乐',
+      kugou: '酷狗音乐',
+      pyncmd: '网易云（内置）',
+      bilibili: 'Bilibili',
+      gdmusic: 'GD音乐台',
+      custom: '自定义 API'
+    },
+
+    // 自定义API相关的提示
+    customApi: {
+      sectionTitle: '自定义 API 设置',
+      importConfig: '导入 JSON 配置',
+      currentSource: '当前音源',
+      notImported: '尚未导入自定义音源。',
+      importSuccess: '成功导入音源: {name}',
+      importFailed: '导入失败: {message}',
+      enableHint: '请先导入 JSON 配置文件才能启用',
+    },
   },
   application: {
     closeAction: '关闭行为',

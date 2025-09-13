@@ -39,7 +39,9 @@ export default {
     warning: 'Please select a music source',
     bilibiliNotSupported: 'Bilibili videos do not support reparsing',
     processing: 'Processing...',
-    clear: 'Clear Custom Source'
+    clear: 'Clear Custom Source',
+    customApiFailed: 'Custom API parsing failed, trying built-in sources...',
+    customApiError: 'Custom API request error, trying built-in sources...'
   },
   playBar: {
     expand: 'Expand Lyrics',

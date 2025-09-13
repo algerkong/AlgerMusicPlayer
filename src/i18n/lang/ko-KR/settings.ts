@@ -78,7 +78,31 @@ export default {
     autoPlay: '자동 재생',
     autoPlayDesc: '앱을 다시 열 때 자동으로 재생을 계속할지 여부',
     showStatusBar: '상태바 제어 기능 표시 여부',
-    showStatusBarContent: 'Mac 상태바에 음악 제어 기능을 표시할 수 있습니다 (재시작 후 적용)'
+    showStatusBarContent: 'Mac 상태바에 음악 제어 기능을 표시할 수 있습니다 (재시작 후 적용)',
+    fallbackParser: '대체 분석 서비스 (GD Music)',
+    fallbackParserDesc: '"GD Music"을 선택하고 일반 음원을 사용할 수 없을 때 이 서비스를 사용합니다.',
+    parserGD: 'GD Music (내장)',
+    parserCustom: '사용자 지정 API',
+
+    // 음원 라벨
+    sourceLabels: {
+      migu: 'Migu',
+      kugou: 'Kugou',
+      pyncmd: 'NetEase (내장)',
+      bilibili: 'Bilibili',
+      gdmusic: 'GD Music',
+      custom: '사용자 지정 API'
+    },
+
+    customApi: {
+      sectionTitle: '사용자 지정 API 설정',
+      importConfig: 'JSON 설정 가져오기',
+      currentSource: '현재 음원',
+      notImported: '아직 사용자 지정 음원을 가져오지 않았습니다.',
+      importSuccess: '음원 가져오기 성공: {name}',
+      importFailed: '가져오기 실패: {message}',
+      enableHint: '사용하려면 먼저 JSON 구성 파일을 가져오세요',
+    },
   },
   application: {
     closeAction: '닫기 동작',

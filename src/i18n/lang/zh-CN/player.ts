@@ -39,7 +39,9 @@ export default {
     warning: '请选择一个音源',
     bilibiliNotSupported: 'B站视频不支持重新解析',
     processing: '解析中...',
-    clear: '清除自定义音源'
+    clear: '清除自定义音源',
+    customApiFailed: '自定义API解析失败，正在尝试使用内置音源...',
+    customApiError: '自定义API请求出错，正在尝试使用内置音源...'
   },
   playBar: {
     expand: '展开歌词',
