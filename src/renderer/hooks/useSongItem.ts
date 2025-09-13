@@ -1,20 +1,21 @@
-import { useDialog, useMessage } from 'naive-ui';
+import { useMessage } from 'naive-ui';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import { usePlayerStore } from '@/store';
+import { usePlayerStore, useRecommendStore } from '@/store';
 import type { SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
 import { getImageBackground } from '@/utils/linearColor';
 
+import { dislikeRecommendedSong } from "../api/music";
 import { useArtist } from './useArtist';
 import { useDownload } from './useDownload';
 
 export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
   const { t } = useI18n();
   const playerStore = usePlayerStore();
+  const recommendStore = useRecommendStore();
   const message = useMessage();
-  const dialog = useDialog();
   const { downloadMusic } = useDownload();
   const { navigateToArtist } = useArtist();
 
@@ -86,23 +87,57 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
     }
   };
 
+  // 判断当前歌曲是否为每日推荐歌曲
+  const isDailyRecommendSong = computed(() => {
+    return recommendStore.dailyRecommendSongs.some(song => song.id === props.item.id);
+  });
+
   // 切换不喜欢状态
-  const toggleDislike = async (e: Event) => {
+  const toggleDislike = async (e: Event) => { 
     e && e.stopPropagation();
+
     if (isDislike.value) {
       playerStore.removeFromDislikeList(props.item.id);
       return;
     }
 
-    dialog.warning({
-      title: t('songItem.dialog.dislike.title'),
-      content: t('songItem.dialog.dislike.content'),
-      positiveText: t('songItem.dialog.dislike.positiveText'),
-      negativeText: t('songItem.dialog.dislike.negativeText'),
-      onPositiveClick: () => {
-        playerStore.addToDislikeList(props.item.id);
+    playerStore.addToDislikeList(props.item.id);
+    
+    // 只有当前歌曲是每日推荐歌曲时才调用接口
+    if (!isDailyRecommendSong.value) {
+      return;
+    } 
+    try {
+      console.log('发送不感兴趣请求，歌曲ID:', props.item.id);
+      const numericId = typeof props.item.id === 'string' ? parseInt(props.item.id) : props.item.id;
+      const response = await dislikeRecommendedSong(numericId);
+      if (response.data.data) {
+        console.log(response)
+        const newSongData = response.data.data;
+        const newSong: SongResult = {
+          ...newSongData,
+          name: newSongData.name,
+          id: newSongData.id,
+          picUrl: newSongData.al?.picUrl || newSongData.album?.picUrl,
+          ar: newSongData.ar || newSongData.artists,
+          al: newSongData.al || newSongData.album,
+          song: {
+            ...newSongData.song,
+            id: newSongData.id,
+            name: newSongData.name,
+            artists: newSongData.ar || newSongData.artists,
+            album: newSongData.al || newSongData.album,
+          },
+          source: 'netease',
+          count: 0,
+        };
+        recommendStore.replaceSongInDailyRecommend(props.item.id, newSong);
+      } else {
+        console.warn('标记不感兴趣API成功，但未返回新歌曲。', response.data);
       }
-    });
+    } catch (error) {
+      console.error('发送不感兴趣请求时出错:', error);
+    }
   };
 
   // 添加到下一首播放
