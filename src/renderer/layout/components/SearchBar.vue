@@ -3,29 +3,65 @@
     <div v-if="showBackButton" class="back-button" @click="goBack">
       <i class="ri-arrow-left-line"></i>
     </div>
-    <div class="search-box-input flex-1">
-      <n-input
-        v-model:value="searchValue"
-        size="medium"
-        round
-        :placeholder="hotSearchKeyword"
-        class="border dark:border-gray-600 border-gray-200"
-        @keydown.enter="search"
+    <div class="search-box-input flex-1 relative">
+      <n-popover
+        trigger="manual"
+        placement="bottom-start"
+        :show="showSuggestions"
+        :show-arrow="false"
+        style="width: 100%; margin-top: 4px"
+        content-style="padding: 0; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
+        raw
       >
-        <template #prefix>
-          <i class="iconfont icon-search"></i>
+        <template #trigger>
+          <n-input
+            v-model:value="searchValue"
+            size="medium"
+            round
+            :placeholder="hotSearchKeyword"
+            class="border dark:border-gray-600 border-gray-200"
+            @input="handleInput"
+            @keydown="handleKeydown"
+            @focus="handleFocus"
+            @blur="handleBlur"
+          >
+            <template #prefix>
+              <i class="iconfont icon-search"></i>
+            </template>
+            <template #suffix>
+              <n-dropdown trigger="hover" :options="searchTypeOptions" @select="selectSearchType">
+                <div class="w-20 px-3 flex justify-between items-center">
+                  <div>
+                    {{
+                      searchTypeOptions.find((item) => item.key === searchStore.searchType)?.label
+                    }}
+                  </div>
+                  <i class="iconfont icon-xiasanjiaoxing"></i>
+                </div>
+              </n-dropdown>
+            </template>
+          </n-input>
         </template>
-        <template #suffix>
-          <n-dropdown trigger="hover" :options="searchTypeOptions" @select="selectSearchType">
-            <div class="w-20 px-3 flex justify-between items-center">
-              <div>
-                {{ searchTypeOptions.find((item) => item.key === searchStore.searchType)?.label }}
-              </div>
-              <i class="iconfont icon-xiasanjiaoxing"></i>
+        <!-- ==================== 搜索建议列表 ==================== -->
+        <div class="search-suggestions-panel">
+          <n-scrollbar style="max-height: 300px">
+            <div v-if="suggestionsLoading" class="suggestion-item loading">
+              <n-spin size="small" />
             </div>
-          </n-dropdown>
-        </template>
-      </n-input>
+            <div
+              v-for="(suggestion, index) in suggestions"
+              :key="index"
+              class="suggestion-item"
+              :class="{ highlighted: index === highlightedIndex }"
+              @mousedown.prevent="selectSuggestion(suggestion)"
+              @mouseenter="highlightedIndex = index"
+            >
+              <i class="ri-search-line suggestion-icon"></i>
+              <span>{{ suggestion }}</span>
+            </div>
+          </n-scrollbar>
+        </div>
+      </n-popover>
     </div>
     <n-popover trigger="hover" placement="bottom" :show-arrow="false" raw>
       <template #trigger>
@@ -128,12 +164,14 @@
 </template>
 
 <script lang="ts" setup>
+import { useDebounceFn } from '@vueuse/core';
 import { computed, onMounted, ref, watch, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
 import { getSearchKeyword } from '@/api/home';
 import { getUserDetail } from '@/api/login';
+import { getSearchSuggestions } from '@/api/search';
 import alipay from '@/assets/alipay.png';
 import wechat from '@/assets/wechat.png';
 import Coffee from '@/components/Coffee.vue';
@@ -250,6 +288,9 @@ const search = () => {
       type: searchStore.searchType
     }
   });
+
+  console.log(`[UI] 执行搜索，关键词: "${searchValue.value}"`); // <--- 日志 K
+  showSuggestions.value = false; // 搜索后强制隐藏
 };
 
 const selectSearchType = (key: number) => {
@@ -330,6 +371,84 @@ const toGithubRelease = () => {
     window.open('https://github.com/algerkong/AlgerMusicPlayer/releases', '_blank');
   }
 };
+
+// ==================== 搜索建议相关的状态和方法 ====================
+const suggestions = ref<string[]>([]);
+const showSuggestions = ref(false);
+const suggestionsLoading = ref(false);
+const highlightedIndex = ref(-1); // -1 表示没有高亮项
+// 使用防抖函数来避免频繁请求API
+const debouncedGetSuggestions = useDebounceFn(async (keyword: string) => {
+  if (!keyword.trim()) {
+    suggestions.value = [];
+    showSuggestions.value = false;
+    return;
+  }
+  suggestionsLoading.value = true;
+  suggestions.value = await getSearchSuggestions(keyword);
+  suggestionsLoading.value = false;
+  // 只有当有建议时才显示面板
+  showSuggestions.value = suggestions.value.length > 0;
+  highlightedIndex.value = -1;
+}, 300); // 300ms延迟
+
+const handleInput = (value: string) => {
+  debouncedGetSuggestions(value);
+};
+const handleFocus = () => {
+  if (searchValue.value && suggestions.value.length > 0) {
+    showSuggestions.value = true;
+  }
+};
+
+const handleBlur = () => {
+  setTimeout(() => {
+    showSuggestions.value = false;
+  }, 150);
+};
+
+const selectSuggestion = (suggestion: string) => {
+  searchValue.value = suggestion;
+  showSuggestions.value = false;
+  search();
+};
+const handleKeydown = (event: KeyboardEvent) => {
+  // 如果建议列表不显示，则不处理上下键
+  if (!showSuggestions.value || suggestions.value.length === 0) {
+    // 如果是回车键，则正常执行搜索
+    if (event.key === 'Enter') {
+      search();
+    }
+    return;
+  }
+
+  switch (event.key) {
+    case 'ArrowDown':
+      event.preventDefault(); // 阻止光标移动到末尾
+      highlightedIndex.value = (highlightedIndex.value + 1) % suggestions.value.length;
+      break;
+    case 'ArrowUp':
+      event.preventDefault(); // 阻止光标移动到开头
+      highlightedIndex.value =
+        (highlightedIndex.value - 1 + suggestions.value.length) % suggestions.value.length;
+      break;
+    case 'Enter':
+      event.preventDefault(); // 阻止表单默认提交行为
+      if (highlightedIndex.value !== -1) {
+        // 如果有高亮项，就选择它
+        selectSuggestion(suggestions.value[highlightedIndex.value]);
+      } else {
+        // 否则，执行默认搜索
+        search();
+      }
+      break;
+    case 'Escape':
+      showSuggestions.value = false; // 按 Esc 隐藏建议
+      break;
+  }
+};
+
+// ================================================================
 </script>
 
 <style lang="scss" scoped>
@@ -434,6 +553,24 @@ const toGithubRelease = () => {
           }
         }
       }
+    }
+  }
+}
+
+.search-suggestions-panel {
+  @apply bg-light dark:bg-dark-100 rounded-lg overflow-hidden;
+  .suggestion-item {
+    @apply flex items-center px-4 py-2 cursor-pointer;
+    @apply text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800;
+    &.highlighted {
+      @apply bg-gray-100 dark:bg-gray-800;
+    }
+    &.loading {
+      @apply justify-center;
+    }
+
+    .suggestion-icon {
+      @apply mr-2 text-gray-400;
     }
   }
 }

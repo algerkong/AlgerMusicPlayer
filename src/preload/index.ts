@@ -56,6 +56,8 @@ const api = {
     }
     return Promise.reject(new Error(`未授权的 IPC 通道: ${channel}`));
   },
+  // 搜索建议
+  getSearchSuggestions: (keyword: string) => ipcRenderer.invoke('get-search-suggestions', keyword),
 };
 
 // 创建带类型的ipcRenderer对象，暴露给渲染进程
