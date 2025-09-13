@@ -12,6 +12,7 @@ import { audioService } from '@/services/audioService';
 import type { ILyric, ILyricText, SongResult } from '@/types/music';
 import { type Platform } from '@/types/music';
 import { getImgUrl } from '@/utils';
+import { hasPermission } from '@/utils/auth';
 import { getImageLinearBackground } from '@/utils/linearColor';
 
 import { useSettingsStore } from './settings';
@@ -1282,9 +1283,17 @@ export const usePlayerStore = defineStore('player', () => {
     );
 
     if (!isAlreadyInList) {
+      // 先添加到本地收藏列表
       favoriteList.value.push(id);
       localStorage.setItem('favoriteList', JSON.stringify(favoriteList.value));
-      typeof id === 'number' && useUserStore().user && likeSong(id, true);
+      // 只有在有真实登录权限时才调用API
+      if (typeof id === 'number' && useUserStore().user && hasPermission(true)) {
+        try {
+          await likeSong(id, true);
+        } catch (error) {
+          console.error('收藏歌曲API调用失败:', error);
+        }
+      }
     }
   };
 
@@ -1295,8 +1304,16 @@ export const usePlayerStore = defineStore('player', () => {
         (existingId) => !isBilibiliIdMatch(existingId, id)
       );
     } else {
+      // 先从本地收藏列表中移除
       favoriteList.value = favoriteList.value.filter((existingId) => existingId !== id);
-      useUserStore().user && likeSong(Number(id), false);
+      // 只有在有真实登录权限时才调用API
+      if (typeof id === 'number' && useUserStore().user && hasPermission(true)) {
+        try {
+          await likeSong(id, false);
+        } catch (error) {
+          console.error('取消收藏歌曲API调用失败:', error);
+        }
+      }
     }
     localStorage.setItem('favoriteList', JSON.stringify(favoriteList.value));
   };

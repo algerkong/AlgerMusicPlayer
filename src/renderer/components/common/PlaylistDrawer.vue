@@ -117,6 +117,7 @@ import { createPlaylist, updatePlaylistTracks } from '@/api/music';
 import { getUserPlaylist } from '@/api/user';
 import { useUserStore } from '@/store';
 import { getImgUrl } from '@/utils';
+import { hasPermission, getLoginErrorMessage } from '@/utils/auth';
 
 const store = useUserStore();
 const { t } = useI18n();
@@ -160,6 +161,13 @@ const fetchUserPlaylists = async () => {
       return;
     }
 
+    // 检查是否有真实登录权限
+    if (!hasPermission(true)) {
+      message.error(getLoginErrorMessage(true));
+      emit('update:modelValue', false);
+      return;
+    }
+
     const res = await getUserPlaylist(user.userId, 999);
     if (res.data?.playlist) {
       playlists.value = res.data.playlist.filter((item: any) => item.userId === user.userId);
@@ -173,6 +181,13 @@ const fetchUserPlaylists = async () => {
 // 添加到歌单
 const handleAddToPlaylist = async (playlist: any) => {
   if (!props.songId) return;
+
+  // 检查是否有真实登录权限
+  if (!hasPermission(true)) {
+    message.error(getLoginErrorMessage(true));
+    return;
+  }
+
   try {
     const res = await updatePlaylistTracks({
       op: 'add',
@@ -197,6 +212,12 @@ const handleAddToPlaylist = async (playlist: any) => {
 const handleCreatePlaylist = async () => {
   if (!formValue.value.name) {
     message.error(t('comp.playlistDrawer.inputPlaylistName'));
+    return;
+  }
+
+  // 检查是否有真实登录权限
+  if (!hasPermission(true)) {
+    message.error(getLoginErrorMessage(true));
     return;
   }
 

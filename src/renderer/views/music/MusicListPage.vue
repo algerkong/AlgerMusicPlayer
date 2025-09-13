@@ -234,6 +234,7 @@ import { useDownload } from '@/hooks/useDownload';
 import { useMusicStore, usePlayerStore, useRecommendStore } from '@/store';
 import { SongResult } from '@/types/music';
 import { getImgUrl, isElectron, isMobile, setAnimationClass } from '@/utils';
+import { getLoginErrorMessage, hasPermission } from '@/utils/auth';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -815,6 +816,12 @@ const checkCollectionStatus = () => {
 // 切换收藏状态
 const toggleCollect = async () => {
   if (!listInfo.value?.id) return;
+
+  // 检查是否有真实登录权限
+  if (!hasPermission(true)) {
+    message.error(getLoginErrorMessage(true));
+    return;
+  }
 
   try {
     loadingList.value = true;

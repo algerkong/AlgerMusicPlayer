@@ -21,6 +21,7 @@ import { useI18n } from 'vue-i18n';
 
 import type { SongResult } from '@/types/music';
 import { getImgUrl, isElectron } from '@/utils';
+import { hasPermission } from '@/utils/auth';
 
 const { t } = useI18n();
 
@@ -121,6 +122,8 @@ const renderSongPreview = () => {
 
 // 下拉菜单选项
 const dropdownOptions = computed<MenuOption[]>(() => {
+  const hasRealAuth = hasPermission(true);
+
   const options: MenuOption[] = [
     {
       key: 'header',
@@ -153,7 +156,8 @@ const dropdownOptions = computed<MenuOption[]>(() => {
     {
       label: t('songItem.menu.addToPlaylist'),
       key: 'addToPlaylist',
-      icon: () => h('i', { class: 'iconfont ri-folder-add-line' })
+      icon: () => h('i', { class: 'iconfont ri-folder-add-line' }),
+      disabled: !hasRealAuth
     },
     {
       label: props.isFavorite ? t('songItem.menu.unfavorite') : t('songItem.menu.favorite'),
@@ -162,6 +166,7 @@ const dropdownOptions = computed<MenuOption[]>(() => {
         h('i', {
           class: `iconfont ${props.isFavorite ? 'ri-heart-fill text-red-500' : 'ri-heart-line'}`
         })
+      // 收藏功能不禁用，UID登录时可以本地收藏/取消收藏
     },
     {
       label: props.isDislike ? t('songItem.menu.undislike') : t('songItem.menu.dislike'),
