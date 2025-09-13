@@ -16,7 +16,7 @@
           <!-- 遍历常规音源 -->
           <n-grid-item v-for="source in regularMusicSources" :key="source.value">
             <n-checkbox :value="source.value">
-              {{ source.label }}
+              {{ t('settings.playback.sourceLabels.' + source.value) }}
               <n-tooltip v-if="source.value === 'gdmusic'">
                 <template #trigger>
                   <n-icon size="16" class="ml-1 text-blue-500 cursor-help">
@@ -31,14 +31,14 @@
           <!-- 单独处理自定义API选项 -->
           <n-grid-item>
             <n-checkbox value="custom" :disabled="!settingsStore.setData.customApiPlugin">
-              自定义 API
+              {{ t('settings.playback.sourceLabels.custom') }}
               <n-tooltip v-if="!settingsStore.setData.customApiPlugin">
                 <template #trigger>
                   <n-icon size="16" class="ml-1 text-gray-400 cursor-help">
                     <i class="ri-question-line"></i>
                   </n-icon>
                 </template>
-                请先导入JSON配置文件才能启用
+                {{ t('settings.playback.customApi.enableHint') }}
               </n-tooltip>
             </n-checkbox>
           </n-grid-item>
@@ -50,13 +50,20 @@
 
       <!-- 自定义API导入区域 -->
       <div>
-        <h3 class="text-base font-medium mb-2">自定义 API 设置</h3>
+        <h3 class="text-base font-medium mb-2">
+          {{ t('settings.playback.customApi.sectionTitle') }}
+        </h3>
         <div class="flex items-center gap-4">
-          <n-button @click="importPlugin" size="small"> 导入 JSON 配置 </n-button>
+          <n-button @click="importPlugin" size="small">{{
+            t('settings.playback.customApi.importConfig')
+          }}</n-button>
           <p v-if="settingsStore.setData.customApiPluginName" class="text-sm">
-            当前: <span class="font-semibold">{{ settingsStore.setData.customApiPluginName }}</span>
+            {{ t('settings.playback.customApi.currentSource') }}:
+            <span class="font-semibold">{{ settingsStore.setData.customApiPluginName }}</span>
           </p>
-          <p v-else class="text-sm text-gray-500">尚未导入</p>
+          <p v-else class="text-sm text-gray-500">
+            {{ t('settings.playback.customApi.notImported') }}
+          </p>
         </div>
       </div>
     </n-space>
@@ -95,11 +102,11 @@ const selectedSources = ref<ExtendedPlatform[]>(props.sources);
 
 // 将常规音源和自定义音源分开定义
 const regularMusicSources = ref([
-  { label: 'MG', value: 'migu' },
-  { label: 'KG', value: 'kugou' },
-  { label: 'pyncmd', value: 'pyncmd' },
-  { label: 'Bilibili', value: 'bilibili' },
-  { label: 'GD音乐台', value: 'gdmusic' }
+  { value: 'migu' },
+  { value: 'kugou' },
+  { value: 'pyncmd' },
+  { value: 'bilibili' },
+  { value: 'gdmusic' }
 ]);
 
 const importPlugin = async () => {
@@ -107,14 +114,14 @@ const importPlugin = async () => {
     const result = await window.api.importCustomApiPlugin();
     if (result && result.name && result.content) {
       settingsStore.setCustomApiPlugin(result);
-      message.success(`成功导入音源: ${result.name}`);
+      message.success(t('settings.playback.customApi.importSuccess', { name: result.name }));
       // 导入成功后，如果用户还没勾选，则自动勾选上
       if (!selectedSources.value.includes('custom')) {
         selectedSources.value.push('custom');
       }
     }
   } catch (error: any) {
-    message.error(`导入失败: ${error.message}`);
+    message.error(t('settings.playback.customApi.importFailed', { message: error.message }));
   }
 };
 

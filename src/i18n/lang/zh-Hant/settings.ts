@@ -84,12 +84,24 @@ export default {
     parserGD: 'GD 音樂台 (內建)',
     parserCustom: '自訂 API',
 
+    // 音源標籤
+    sourceLabels: {
+      migu: '咪咕音樂',
+      kugou: '酷狗音樂',
+      pyncmd: '網易雲（內建）',
+      bilibili: 'Bilibili',
+      gdmusic: 'GD音樂台',
+      custom: '自訂 API'
+    },
+
     customApi: {
+      sectionTitle: '自訂 API 設定',
       importConfig: '匯入 JSON 設定',
       currentSource: '目前音源',
       notImported: '尚未匯入自訂音源。',
       importSuccess: '成功匯入音源：{name}',
       importFailed: '匯入失敗：{message}',
+      enableHint: '請先匯入 JSON 設定檔才能啟用',
     },
   },
   application: {

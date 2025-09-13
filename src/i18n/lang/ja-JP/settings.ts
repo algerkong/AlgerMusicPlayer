@@ -81,10 +81,19 @@ export default {
     showStatusBarContent: 'Macのステータスバーに音楽コントロール機能を表示できます（再起動後に有効）',
     fallbackParser: '代替解析サービス (GD音楽台)',
     fallbackParserDesc: '「GD音楽台」にチェックが入っていて、通常の音源で再生できない場合、このサービスが使用されます。',
-    parserGD: 'GD音楽台 (内蔵)',
-    parserCustom: 'カスタムAPI',
-
+    parserGD: 'GD 音楽台 (内蔵)',
+    parserCustom: 'カスタム API',
+    sourceLabels: {
+      migu: 'Migu',
+      kugou: 'Kugou',
+      pyncmd: 'NetEase (内蔵)',
+      bilibili: 'Bilibili',
+      gdmusic: 'GD 音楽台',
+      custom: 'カスタム API'
+    },
     customApi: {
+      sectionTitle: 'カスタム API 設定',
+      enableHint: 'カスタム API を有効にするには、まずカスタム API をインポートする必要があります。',
       importConfig: 'JSON設定をインポート',
       currentSource: '現在の音源',
       notImported: 'カスタム音源はまだインポートされていません。',

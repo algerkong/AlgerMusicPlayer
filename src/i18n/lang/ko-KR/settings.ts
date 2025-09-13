@@ -84,12 +84,24 @@ export default {
     parserGD: 'GD Music (내장)',
     parserCustom: '사용자 지정 API',
 
+    // 음원 라벨
+    sourceLabels: {
+      migu: 'Migu',
+      kugou: 'Kugou',
+      pyncmd: 'NetEase (내장)',
+      bilibili: 'Bilibili',
+      gdmusic: 'GD Music',
+      custom: '사용자 지정 API'
+    },
+
     customApi: {
+      sectionTitle: '사용자 지정 API 설정',
       importConfig: 'JSON 설정 가져오기',
       currentSource: '현재 음원',
       notImported: '아직 사용자 지정 음원을 가져오지 않았습니다.',
       importSuccess: '음원 가져오기 성공: {name}',
       importFailed: '가져오기 실패: {message}',
+      enableHint: '사용하려면 먼저 JSON 구성 파일을 가져오세요',
     },
   },
   application: {

@@ -86,12 +86,24 @@ export default {
     parserGD: 'GD Music (Built-in)',
     parserCustom: 'Custom API',
 
+    // Source labels
+    sourceLabels: {
+      migu: 'Migu',
+      kugou: 'Kugou',
+      pyncmd: 'NetEase (Built-in)',
+      bilibili: 'Bilibili',
+      gdmusic: 'GD Music',
+      custom: 'Custom API'
+    },
+
     customApi: {
+      sectionTitle: 'Custom API Settings',
       importConfig: 'Import JSON Config',
       currentSource: 'Current Source',
       notImported: 'No custom source imported yet.',
       importSuccess: 'Successfully imported source: {name}',
       importFailed: 'Import failed: {message}',
+      enableHint: 'Import a JSON config file to enable',
     },
   },
   application: {
