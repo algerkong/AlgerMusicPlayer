@@ -19,13 +19,15 @@ export const getSongUrl = async (id: any, songData: any, isDownloaded: boolean =
 
   const { data } = await getMusicUrl(id, !unlimitedDownload);
   let url = '';
-  let songDetail = null;
+  let songDetail: any = null;
 
   try {
     if (data.data[0].freeTrialInfo || !data.data[0].url) {
       const res = await getParsingMusicUrl(id, cloneDeep(songData));
-      url = res.data.data.url;
-      songDetail = res.data.data;
+      if (res.data.data?.url) {
+        url = res.data.data.url;
+        songDetail = res.data.data;
+      }
     } else {
       songDetail = data.data[0] as any;
     }

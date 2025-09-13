@@ -55,11 +55,17 @@ export const textColors = ref<any>(getTextColors());
 export let playMusic: ComputedRef<SongResult>;
 export let artistList: ComputedRef<Artist[]>;
 
-export const musicDB = await useIndexedDB('musicDB', [
-  { name: 'music', keyPath: 'id' },
-  { name: 'music_lyric', keyPath: 'id' },
-  { name: 'api_cache', keyPath: 'id' }
-]);
+export const musicDB = await useIndexedDB(
+  'musicDB',
+  [
+    { name: 'music', keyPath: 'id' },
+    { name: 'music_lyric', keyPath: 'id' },
+    { name: 'api_cache', keyPath: 'id' },
+    { name: 'music_url_cache', keyPath: 'id' },
+    { name: 'music_failed_cache', keyPath: 'id' }
+  ],
+  2
+);
 
 // 键盘事件处理器，在初始化后设置
 const setupKeyboardListeners = () => {

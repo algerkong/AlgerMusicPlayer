@@ -1,17 +1,10 @@
-import { cloneDeep } from 'lodash';
-
 import { musicDB } from '@/hooks/MusicHook';
 import { useSettingsStore, useUserStore } from '@/store';
 import type { ILyric } from '@/types/lyric';
 import type { SongResult } from '@/types/music';
-import { isElectron } from '@/utils';
 import request from '@/utils/request';
-import requestMusic from '@/utils/request_music';
 
-import { searchAndGetBilibiliAudioUrl } from './bilibili';
-import type { ParsedMusicResult } from './gdmusic';
-import { parseFromGDMusic } from './gdmusic';
-import { parseFromCustomApi } from './parseFromCustomApi';
+import { MusicParser, type MusicParseResult } from './musicParser';
 
 const { addData, getData, deleteData } = musicDB;
 
@@ -90,187 +83,16 @@ export const getMusicLrc = async (id: number) => {
 };
 
 /**
- * 从Bilibili获取音频URL
- * @param data 歌曲数据
- * @returns 解析结果
- */
-const getBilibiliAudio = async (data: SongResult) => {
-  const songName = data?.name || '';
-  const artistName =
-    Array.isArray(data?.ar) && data.ar.length > 0 && data.ar[0]?.name ? data.ar[0].name : '';
-  const albumName = data?.al && typeof data.al === 'object' && data.al?.name ? data.al.name : '';
-
-  const searchQuery = [songName, artistName, albumName].filter(Boolean).join(' ').trim();
-  console.log('开始搜索bilibili音频:', searchQuery);
-
-  const url = await searchAndGetBilibiliAudioUrl(searchQuery);
-  return {
-    data: {
-      code: 200,
-      message: 'success',
-      data: { url }
-    }
-  };
-};
-
-/**
- * 从GD音乐台获取音频URL
- * @param id 歌曲ID
- * @param data 歌曲数据
- * @returns 解析结果，失败时返回null
- */
-const getGDMusicAudio = async (id: number, data: SongResult): Promise<ParsedMusicResult | null> => {
-  // <-- 在这里明确声明返回类型
-  try {
-    const gdResult = await parseFromGDMusic(id, data, '999');
-    if (gdResult) {
-      return gdResult;
-    }
-  } catch (error) {
-    console.error('GD音乐台解析失败:', error);
-  }
-  return null;
-};
-
-/**
- * 使用unblockMusic解析音频URL
- * @param id 歌曲ID
- * @param data 歌曲数据
- * @param sources 音源列表
- * @returns 解析结果
- */
-const getUnblockMusicAudio = (id: number, data: SongResult, sources: any[]) => {
-  const filteredSources = sources.filter((source) => source !== 'gdmusic');
-  console.log(`使用unblockMusic解析，音源:`, filteredSources);
-  return window.api.unblockMusic(id, cloneDeep(data), cloneDeep(filteredSources));
-};
-
-/**
  * 获取解析后的音乐URL
  * @param id 歌曲ID
  * @param data 歌曲数据
  * @returns 解析结果
  */
-export const getParsingMusicUrl = async (id: number, data: SongResult) => {
-  try {
-    if (isElectron) {
-      let musicSources: any[] = [];
-      let quality: string = 'higher';
-      try {
-        const settingStore = useSettingsStore();
-        const enableMusicUnblock = settingStore?.setData?.enableMusicUnblock;
-
-        // 如果禁用了音乐解析功能，则直接返回空结果
-        if (!enableMusicUnblock) {
-          return Promise.resolve({ data: { code: 404, message: '音乐解析功能已禁用' } });
-        }
-
-        // 1. 确定使用的音源列表(自定义或全局)
-        const songId = String(id);
-        const savedSourceStr = (() => {
-          try {
-            return localStorage.getItem(`song_source_${songId}`);
-          } catch (e) {
-            console.warn('读取本地存储失败，忽略自定义音源', e);
-            return null;
-          }
-        })();
-
-        if (savedSourceStr) {
-          try {
-            musicSources = JSON.parse(savedSourceStr);
-            console.log(`使用歌曲 ${id} 自定义音源:`, musicSources);
-          } catch (e) {
-            console.error('解析音源设置失败，回退到默认全局设置', e);
-            musicSources = settingStore?.setData?.enabledMusicSources || [];
-          }
-        } else {
-          // 使用全局音源设置
-          musicSources = settingStore?.setData?.enabledMusicSources || [];
-          console.log(`使用全局音源设置:`, musicSources);
-        }
-
-        quality = settingStore?.setData?.musicQuality || 'higher';
-      } catch (e) {
-        console.error('读取设置失败，使用默认配置', e);
-        musicSources = [];
-        quality = 'higher';
-      }
-
-      // 优先级 1: 自定义 API
-      try {
-        const hasCustom = Array.isArray(musicSources) && musicSources.includes('custom');
-        const customEnabled = (() => {
-          try {
-            const st = useSettingsStore();
-            return Boolean(st?.setData?.customApiPlugin);
-          } catch {
-            return false;
-          }
-        })();
-        if (hasCustom && customEnabled) {
-          console.log('尝试使用 自定义API 解析...');
-          const customResult = await parseFromCustomApi(id, data, quality);
-          if (customResult) {
-            return customResult; // 成功则直接返回
-          }
-          console.log('自定义API解析失败，继续尝试其他音源...');
-        }
-      } catch (e) {
-        console.error('自定义API解析发生异常，继续尝试其他音源', e);
-      }
-
-      // 优先级 2: Bilibili
-      try {
-        if (Array.isArray(musicSources) && musicSources.includes('bilibili')) {
-          console.log('尝试使用 Bilibili 解析...');
-          const bilibiliResult = await getBilibiliAudio(data);
-          if (bilibiliResult?.data?.data?.url) {
-            return bilibiliResult;
-          }
-          console.log('Bilibili解析失败，继续尝试其他音源...');
-        }
-      } catch (e) {
-        console.error('Bilibili解析发生异常，继续尝试其他音源', e);
-      }
-
-      // 优先级 3: GD 音乐台
-      try {
-        if (Array.isArray(musicSources) && musicSources.includes('gdmusic')) {
-          console.log('尝试使用 GD音乐台 解析...');
-          const gdResult = await getGDMusicAudio(id, data);
-          if (gdResult) {
-            return gdResult;
-          }
-          console.log('GD音乐台解析失败，继续尝试其他音源...');
-        }
-      } catch (e) {
-        console.error('GD音乐台解析发生异常，继续尝试其他音源', e);
-      }
-
-      // 优先级 4: UnblockMusic (migu, kugou, pyncmd)
-      try {
-        const unblockSources = (Array.isArray(musicSources) ? musicSources : []).filter(
-          (source) => !['custom', 'bilibili', 'gdmusic'].includes(source)
-        );
-        if (unblockSources.length > 0) {
-          console.log('尝试使用 UnblockMusic 解析:', unblockSources);
-          // 捕获内部可能的异常
-          return await getUnblockMusicAudio(id, data, unblockSources);
-        } else {
-          console.warn('UnblockMusic API 不可用，跳过此解析方式');
-        }
-      } catch (e) {
-        console.error('UnblockMusic 解析发生异常，继续后备方案', e);
-      }
-    }
-  } catch (e) {
-    console.error('getParsingMusicUrl 执行异常，将使用后备方案:', e);
-  }
-
-  // 后备方案：使用API请求
-  console.log('无可用音源或不在Electron环境中，使用API请求');
-  return requestMusic.get<any>('/music', { params: { id } });
+export const getParsingMusicUrl = async (
+  id: number,
+  data: SongResult
+): Promise<MusicParseResult> => {
+  return await MusicParser.parseMusic(id, data);
 };
 
 // 收藏歌曲
