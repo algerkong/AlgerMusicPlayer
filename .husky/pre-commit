@@ -1,2 +1,7 @@
+echo "对已暂存文件运行 lint-staged..."
+npx lint-staged
+
 echo "运行类型检查..."
-npm run typecheck 
+npm run typecheck
+
+echo "所有检查通过，准备提交..."
