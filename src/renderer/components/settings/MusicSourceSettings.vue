@@ -1,12 +1,12 @@
 <template>
   <n-modal
-      v-model:show="visible"
-      preset="dialog"
-      :title="t('settings.playback.musicSources')"
-      :positive-text="t('common.confirm')"
-      :negative-text="t('common.cancel')"
-      @positive-click="handleConfirm"
-      @negative-click="handleCancel"
+    v-model:show="visible"
+    preset="dialog"
+    :title="t('settings.playback.musicSources')"
+    :positive-text="t('common.confirm')"
+    :negative-text="t('common.cancel')"
+    @positive-click="handleConfirm"
+    @negative-click="handleCancel"
   >
     <n-space vertical>
       <p>{{ t('settings.playback.musicSourcesDesc') }}</p>
@@ -59,7 +59,6 @@
           <p v-else class="text-sm text-gray-500">尚未导入</p>
         </div>
       </div>
-
     </n-space>
   </n-modal>
 </template>
@@ -68,8 +67,8 @@
 import { useMessage } from 'naive-ui';
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useSettingsStore } from '@/store';
 
+import { useSettingsStore } from '@/store';
 import { type Platform } from '@/types/music';
 
 // 扩展 Platform 类型以包含 'custom'
@@ -120,45 +119,48 @@ const importPlugin = async () => {
 };
 
 // 监听自定义插件内容的变化。如果用户清除了插件，要确保 'custom' 选项被取消勾选
-watch(() => settingsStore.setData.customApiPlugin, (newPluginContent) => {
-  if (!newPluginContent) {
-    const index = selectedSources.value.indexOf('custom');
-    if (index > -1) {
-      selectedSources.value.splice(index, 1);
+watch(
+  () => settingsStore.setData.customApiPlugin,
+  (newPluginContent) => {
+    if (!newPluginContent) {
+      const index = selectedSources.value.indexOf('custom');
+      if (index > -1) {
+        selectedSources.value.splice(index, 1);
+      }
     }
   }
-});
+);
 
 // 同步外部show属性变化
 watch(
-    () => props.show,
-    (newVal) => {
-      visible.value = newVal;
-    }
+  () => props.show,
+  (newVal) => {
+    visible.value = newVal;
+  }
 );
 
 // 同步内部visible变化
 watch(
-    () => visible.value,
-    (newVal) => {
-      emit('update:show', newVal);
-    }
+  () => visible.value,
+  (newVal) => {
+    emit('update:show', newVal);
+  }
 );
 
 // 同步外部sources属性变化
 watch(
-    () => props.sources,
-    (newVal) => {
-      selectedSources.value = [...newVal];
-    },
-    { deep: true }
+  () => props.sources,
+  (newVal) => {
+    selectedSources.value = [...newVal];
+  },
+  { deep: true }
 );
 
 const handleConfirm = () => {
   // 确保至少选择一个音源
   const defaultPlatforms = ['migu', 'kugou', 'pyncmd', 'bilibili'];
   const valuesToEmit =
-      selectedSources.value.length > 0 ? [...new Set(selectedSources.value)] : defaultPlatforms;
+    selectedSources.value.length > 0 ? [...new Set(selectedSources.value)] : defaultPlatforms;
   emit('update:sources', valuesToEmit);
   visible.value = false;
 };

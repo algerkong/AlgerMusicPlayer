@@ -27,8 +27,7 @@
   "showTopAction": false,
   "contentZoomFactor": 1,
   "autoTheme": false,
-  "manualTheme": "light"
   "manualTheme": "light",
   "customApiPlugin": "",
-  "customApiPluginName": "",
+  "customApiPluginName": ""
 }

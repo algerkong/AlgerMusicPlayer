@@ -122,7 +122,9 @@ export const getSongUrl = async (
       try {
         const songSources = JSON.parse(savedSourceStr);
         useCustomApiForSong = songSources.includes('custom');
-      } catch (e) { /* ignore parsing error */ }
+      } catch (e) {
+        console.error('解析歌曲音源设置失败:', e);
+      }
     }
 
     // 如果全局或歌曲专属设置中启用了自定义API，则最优先尝试
@@ -140,11 +142,11 @@ export const getSongUrl = async (
         } else {
           // 自定义API失败，给出提示，然后继续走默认流程
           console.log('自定义API解析失败，将使用默认降级流程...');
-          message.warning('自定义API解析失败，正在尝试使用内置音源...'); // 给用户一个提示
+          message.warning(i18n.global.t('player.reparse.customApiFailed')); // 给用户一个提示
         }
       } catch (error) {
         console.error('调用自定义API时发生错误:', error);
-        message.error('自定义API请求出错，正在尝试使用内置音源...');
+        message.error(i18n.global.t('player.reparse.customApiError'));
       }
     }
     // 如果自定义API失败或未启用，则执行【原有】的解析流程

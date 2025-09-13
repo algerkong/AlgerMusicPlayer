@@ -9,9 +9,9 @@ import request from '@/utils/request';
 import requestMusic from '@/utils/request_music';
 
 import { searchAndGetBilibiliAudioUrl } from './bilibili';
+import type { ParsedMusicResult } from './gdmusic';
 import { parseFromGDMusic } from './gdmusic';
 import { parseFromCustomApi } from './parseFromCustomApi';
-import type { ParsedMusicResult } from './gdmusic';
 
 const { addData, getData, deleteData } = musicDB;
 
@@ -32,6 +32,8 @@ export const getMusicUrl = async (id: number, isDownloaded: boolean = false) => 
         params: {
           id,
           level: settingStore.setData.musicQuality || 'higher',
+          encodeType: settingStore.setData.musicQuality == 'lossless' ? 'aac' : 'flac',
+          // level为lossless时，encodeType=flac时网易云会返回hires音质，encodeType=aac时网易云会返回lossless音质
           cookie: `${localStorage.getItem('token')} os=pc;`
         }
       });
@@ -47,7 +49,8 @@ export const getMusicUrl = async (id: number, isDownloaded: boolean = false) => 
   return await request.get('/song/url/v1', {
     params: {
       id,
-      level: settingStore.setData.musicQuality || 'higher'
+      level: settingStore.setData.musicQuality || 'higher',
+      encodeType: settingStore.setData.musicQuality == 'lossless' ? 'aac' : 'flac'
     }
   });
 };
@@ -116,7 +119,8 @@ const getBilibiliAudio = async (data: SongResult) => {
  * @param data 歌曲数据
  * @returns 解析结果，失败时返回null
  */
-const getGDMusicAudio = async (id: number, data: SongResult): Promise<ParsedMusicResult | null> => { // <-- 在这里明确声明返回类型
+const getGDMusicAudio = async (id: number, data: SongResult): Promise<ParsedMusicResult | null> => {
+  // <-- 在这里明确声明返回类型
   try {
     const gdResult = await parseFromGDMusic(id, data, '999');
     if (gdResult) {
@@ -148,74 +152,120 @@ const getUnblockMusicAudio = (id: number, data: SongResult, sources: any[]) => {
  * @returns 解析结果
  */
 export const getParsingMusicUrl = async (id: number, data: SongResult) => {
-  if (isElectron) {
-    const settingStore = useSettingsStore();
+  try {
+    if (isElectron) {
+      let musicSources: any[] = [];
+      let quality: string = 'higher';
+      try {
+        const settingStore = useSettingsStore();
+        const enableMusicUnblock = settingStore?.setData?.enableMusicUnblock;
 
-    // 如果禁用了音乐解析功能，则直接返回空结果
-    if (!settingStore.setData.enableMusicUnblock) {
-      return Promise.resolve({ data: { code: 404, message: '音乐解析功能已禁用' } });
-    }
+        // 如果禁用了音乐解析功能，则直接返回空结果
+        if (!enableMusicUnblock) {
+          return Promise.resolve({ data: { code: 404, message: '音乐解析功能已禁用' } });
+        }
 
-    // 1. 确定使用的音源列表(自定义或全局)
-    const songId = String(id);
-    const savedSourceStr = localStorage.getItem(`song_source_${songId}`);
-    let musicSources: any[] = [];
+        // 1. 确定使用的音源列表(自定义或全局)
+        const songId = String(id);
+        const savedSourceStr = (() => {
+          try {
+            return localStorage.getItem(`song_source_${songId}`);
+          } catch (e) {
+            console.warn('读取本地存储失败，忽略自定义音源', e);
+            return null;
+          }
+        })();
 
-    try {
-      if (savedSourceStr) {
-        // 使用自定义音源
-        musicSources = JSON.parse(savedSourceStr);
-        console.log(`使用歌曲 ${id} 自定义音源:`, musicSources);
-      } else {
-        // 使用全局音源设置
-        musicSources = settingStore.setData.enabledMusicSources || [];
-        console.log(`使用全局音源设置:`, musicSources);
+        if (savedSourceStr) {
+          try {
+            musicSources = JSON.parse(savedSourceStr);
+            console.log(`使用歌曲 ${id} 自定义音源:`, musicSources);
+          } catch (e) {
+            console.error('解析音源设置失败，回退到默认全局设置', e);
+            musicSources = settingStore?.setData?.enabledMusicSources || [];
+          }
+        } else {
+          // 使用全局音源设置
+          musicSources = settingStore?.setData?.enabledMusicSources || [];
+          console.log(`使用全局音源设置:`, musicSources);
+        }
+
+        quality = settingStore?.setData?.musicQuality || 'higher';
+      } catch (e) {
+        console.error('读取设置失败，使用默认配置', e);
+        musicSources = [];
+        quality = 'higher';
       }
-    } catch (e) {
-      console.error('解析音源设置失败，回退到默认全局设置', e);
-      musicSources = settingStore.setData.enabledMusicSources || [];
-    }
 
-    const quality = settingStore.setData.musicQuality || 'higher';
-
-    // 优先级 1: 自定义 API
-    if (musicSources.includes('custom') && settingStore.setData.customApiPlugin) {
-      console.log('尝试使用 自定义API 解析...');
-      const customResult = await parseFromCustomApi(id, data, quality);
-      if (customResult) {
-        return customResult; // 成功则直接返回
+      // 优先级 1: 自定义 API
+      try {
+        const hasCustom = Array.isArray(musicSources) && musicSources.includes('custom');
+        const customEnabled = (() => {
+          try {
+            const st = useSettingsStore();
+            return Boolean(st?.setData?.customApiPlugin);
+          } catch {
+            return false;
+          }
+        })();
+        if (hasCustom && customEnabled) {
+          console.log('尝试使用 自定义API 解析...');
+          const customResult = await parseFromCustomApi(id, data, quality);
+          if (customResult) {
+            return customResult; // 成功则直接返回
+          }
+          console.log('自定义API解析失败，继续尝试其他音源...');
+        }
+      } catch (e) {
+        console.error('自定义API解析发生异常，继续尝试其他音源', e);
       }
-      console.log('自定义API解析失败，继续尝试其他音源...');
-    }
 
-    // 优先级 2: Bilibili
-    if (musicSources.includes('bilibili')) {
-      console.log('尝试使用 Bilibili 解析...');
-      const bilibiliResult = await getBilibiliAudio(data);
-      if (bilibiliResult?.data?.data?.url) { // 检查返回的 URL 是否有效
-        return bilibiliResult;
+      // 优先级 2: Bilibili
+      try {
+        if (Array.isArray(musicSources) && musicSources.includes('bilibili')) {
+          console.log('尝试使用 Bilibili 解析...');
+          const bilibiliResult = await getBilibiliAudio(data);
+          if (bilibiliResult?.data?.data?.url) {
+            return bilibiliResult;
+          }
+          console.log('Bilibili解析失败，继续尝试其他音源...');
+        }
+      } catch (e) {
+        console.error('Bilibili解析发生异常，继续尝试其他音源', e);
       }
-      console.log('Bilibili解析失败，继续尝试其他音源...');
-    }
 
-    // 优先级 3: GD 音乐台
-    if (musicSources.includes('gdmusic')) {
-      console.log('尝试使用 GD音乐台 解析...');
-      const gdResult = await getGDMusicAudio(id, data);
-      if (gdResult) {
-        return gdResult;
+      // 优先级 3: GD 音乐台
+      try {
+        if (Array.isArray(musicSources) && musicSources.includes('gdmusic')) {
+          console.log('尝试使用 GD音乐台 解析...');
+          const gdResult = await getGDMusicAudio(id, data);
+          if (gdResult) {
+            return gdResult;
+          }
+          console.log('GD音乐台解析失败，继续尝试其他音源...');
+        }
+      } catch (e) {
+        console.error('GD音乐台解析发生异常，继续尝试其他音源', e);
       }
-      console.log('GD音乐台解析失败，继续尝试其他音源...');
-    }
 
-    // 优先级 4: UnblockMusic (migu, kugou, pyncmd)
-    const unblockSources = musicSources.filter(
-        source => !['custom', 'bilibili', 'gdmusic'].includes(source)
-    );
-    if (unblockSources.length > 0) {
-      console.log('尝试使用 UnblockMusic 解析:', unblockSources);
-      return getUnblockMusicAudio(id, data, unblockSources);
+      // 优先级 4: UnblockMusic (migu, kugou, pyncmd)
+      try {
+        const unblockSources = (Array.isArray(musicSources) ? musicSources : []).filter(
+          (source) => !['custom', 'bilibili', 'gdmusic'].includes(source)
+        );
+        if (unblockSources.length > 0) {
+          console.log('尝试使用 UnblockMusic 解析:', unblockSources);
+          // 捕获内部可能的异常
+          return await getUnblockMusicAudio(id, data, unblockSources);
+        } else {
+          console.warn('UnblockMusic API 不可用，跳过此解析方式');
+        }
+      } catch (e) {
+        console.error('UnblockMusic 解析发生异常，继续后备方案', e);
+      }
     }
+  } catch (e) {
+    console.error('getParsingMusicUrl 执行异常，将使用后备方案:', e);
   }
 
   // 后备方案：使用API请求
@@ -228,6 +278,12 @@ export const likeSong = (id: number, like: boolean = true) => {
   return request.get('/like', { params: { id, like } });
 };
 
+// 将每日推荐中的歌曲标记为不感兴趣，并获取一首新歌
+export const dislikeRecommendedSong = (id: number | string) => {
+  return request.get('/recommend/songs/dislike', {
+    params: { id }
+  });
+};
 // 获取用户喜欢的音乐列表
 export const getLikedList = (uid: number) => {
   return request.get('/likelist', {
