@@ -80,7 +80,8 @@ export default {
     showStatusBar: '상태바 제어 기능 표시 여부',
     showStatusBarContent: 'Mac 상태바에 음악 제어 기능을 표시할 수 있습니다 (재시작 후 적용)',
     fallbackParser: '대체 분석 서비스 (GD Music)',
-    fallbackParserDesc: '"GD Music"을 선택하고 일반 음원을 사용할 수 없을 때 이 서비스를 사용합니다.',
+    fallbackParserDesc:
+      '"GD Music"을 선택하고 일반 음원을 사용할 수 없을 때 이 서비스를 사용합니다.',
     parserGD: 'GD Music (내장)',
     parserCustom: '사용자 지정 API',
 
@@ -101,8 +102,8 @@ export default {
       notImported: '아직 사용자 지정 음원을 가져오지 않았습니다.',
       importSuccess: '음원 가져오기 성공: {name}',
       importFailed: '가져오기 실패: {message}',
-      enableHint: '사용하려면 먼저 JSON 구성 파일을 가져오세요',
-    },
+      enableHint: '사용하려면 먼저 JSON 구성 파일을 가져오세요'
+    }
   },
   application: {
     closeAction: '닫기 동작',
@@ -117,7 +118,8 @@ export default {
     download: '다운로드 관리',
     downloadDesc: '다운로드 목록 버튼을 항상 표시할지 여부',
     unlimitedDownload: '무제한 다운로드',
-    unlimitedDownloadDesc: '활성화하면 음악을 무제한으로 다운로드합니다 (다운로드 실패가 발생할 수 있음), 기본 제한 300곡',
+    unlimitedDownloadDesc:
+      '활성화하면 음악을 무제한으로 다운로드합니다 (다운로드 실패가 발생할 수 있음), 기본 제한 300곡',
     downloadPath: '다운로드 디렉토리',
     downloadPathDesc: '음악 파일의 다운로드 위치 선택',
     remoteControl: '원격 제어',
@@ -133,7 +135,8 @@ export default {
     proxyPort: '프록시 포트',
     proxyPortPlaceholder: '프록시 포트를 입력하세요',
     realIP: 'realIP 설정',
-    realIPDesc: '제한으로 인해 이 프로젝트는 해외에서 사용할 때 제한을 받을 수 있으며, realIP 매개변수를 사용하여 국내 IP를 전달하여 해결할 수 있습니다',
+    realIPDesc:
+      '제한으로 인해 이 프로젝트는 해외에서 사용할 때 제한을 받을 수 있으며, realIP 매개변수를 사용하여 국내 IP를 전달하여 해결할 수 있습니다',
     messages: {
       proxySuccess: '프록시 설정이 저장되었습니다. 앱을 재시작한 후 적용됩니다',
       proxyError: '입력이 올바른지 확인하세요',

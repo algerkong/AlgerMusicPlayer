@@ -81,7 +81,8 @@ export default {
     showStatusBarContent: '可以在您的mac状态栏显示音乐控制功能(重启后生效)',
 
     fallbackParser: 'GD音乐台(music.gdstudio.xyz)设置',
-    fallbackParserDesc: 'GD音乐台将自动尝试多个音乐平台进行解析，无需额外配置。优先级高于其他解析方式，但是请求可能较慢。感谢（music.gdstudio.xyz）\n',
+    fallbackParserDesc:
+      'GD音乐台将自动尝试多个音乐平台进行解析，无需额外配置。优先级高于其他解析方式，但是请求可能较慢。感谢（music.gdstudio.xyz）\n',
     parserGD: 'GD 音乐台 (内置)',
     parserCustom: '自定义 API',
 
@@ -103,8 +104,8 @@ export default {
       notImported: '尚未导入自定义音源。',
       importSuccess: '成功导入音源: {name}',
       importFailed: '导入失败: {message}',
-      enableHint: '请先导入 JSON 配置文件才能启用',
-    },
+      enableHint: '请先导入 JSON 配置文件才能启用'
+    }
   },
   application: {
     closeAction: '关闭行为',

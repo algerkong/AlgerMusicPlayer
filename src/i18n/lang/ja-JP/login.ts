@@ -41,8 +41,10 @@ export default {
     uidLoginFailed: 'UIDログインに失敗しました。ユーザーIDが正しいか確認してください',
     autoGetCookieSuccess: 'Cookie自動取得成功',
     autoGetCookieFailed: 'Cookie自動取得失敗',
-    autoGetCookieTip: 'NetEase Cloud Musicのログインページを開きます。ログイン完了後、ウィンドウを閉じてください'
+    autoGetCookieTip:
+      'NetEase Cloud Musicのログインページを開きます。ログイン完了後、ウィンドウを閉じてください'
   },
   qrTitle: 'NetEase Cloud Music QRコードログイン',
-  uidWarning: '注意：UIDログインはユーザーの公開情報を表示するためのみ使用でき、ログイン権限が必要な機能にはアクセスできません。'
+  uidWarning:
+    '注意：UIDログインはユーザーの公開情報を表示するためのみ使用でき、ログイン権限が必要な機能にはアクセスできません。'
 };

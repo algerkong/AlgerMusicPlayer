@@ -220,6 +220,6 @@ export const useSettingsStore = defineStore('settings', () => {
     initializeSettings,
     initializeTheme,
     initializeSystemFonts,
-    setCustomApiPlugin,
+    setCustomApiPlugin
   };
 });

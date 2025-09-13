@@ -38,10 +38,12 @@ export default {
     nowUpdate: '今すぐ更新',
     downloadFailed: 'ダウンロードに失敗しました。再試行するか手動でダウンロードしてください',
     startFailed: 'ダウンロードの開始に失敗しました。再試行するか手動でダウンロードしてください',
-    noDownloadUrl: '現在のシステムに適したインストールパッケージが見つかりません。手動でダウンロードしてください',
+    noDownloadUrl:
+      '現在のシステムに適したインストールパッケージが見つかりません。手動でダウンロードしてください',
     installConfirmTitle: '更新をインストール',
     installConfirmContent: 'アプリを閉じて更新をインストールしますか？',
-    manualInstallTip: 'アプリを閉じた後にインストーラーが正常に起動しない場合は、ダウンロードフォルダでファイルを見つけて手動で開いてください。',
+    manualInstallTip:
+      'アプリを閉じた後にインストーラーが正常に起動しない場合は、ダウンロードフォルダでファイルを見つけて手動で開いてください。',
     yesInstall: '今すぐインストール',
     noThanks: '後でインストール',
     fileLocation: 'ファイルの場所',
@@ -172,7 +174,8 @@ export default {
       noTasks: 'インポートタスクがありません',
       clearTasks: 'タスクをクリア',
       clearTasksConfirmTitle: 'クリア確認',
-      clearTasksConfirmContent: 'すべてのインポートタスク記録をクリアしますか？この操作は元に戻せません。',
+      clearTasksConfirmContent:
+        'すべてのインポートタスク記録をクリアしますか？この操作は元に戻せません。',
       confirm: '確認',
       cancel: 'キャンセル',
       clearTasksSuccess: 'タスクリストをクリアしました',

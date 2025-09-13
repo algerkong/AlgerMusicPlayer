@@ -78,9 +78,9 @@ export const isBilibiliIdMatch = (id1: string | number, id2: string | number): b
 // 提取公共函数：获取B站视频URL
 
 export const getSongUrl = async (
-    id: string | number,
-    songData: SongResult,
-    isDownloaded: boolean = false
+  id: string | number,
+  songData: SongResult,
+  isDownloaded: boolean = false
 ) => {
   const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
   const settingsStore = useSettingsStore();
@@ -96,8 +96,8 @@ export const getSongUrl = async (
       if (!songData.playMusicUrl && songData.bilibiliData.bvid && songData.bilibiliData.cid) {
         try {
           songData.playMusicUrl = await getBilibiliAudioUrl(
-              songData.bilibiliData.bvid,
-              songData.bilibiliData.cid
+            songData.bilibiliData.bvid,
+            songData.bilibiliData.cid
           );
           return songData.playMusicUrl;
         } catch (error) {
@@ -107,7 +107,6 @@ export const getSongUrl = async (
       }
       return songData.playMusicUrl || '';
     }
-
 
     // ==================== 自定义API最优先 ====================
     // 检查用户是否在全局设置中启用了 'custom' 音源
@@ -128,14 +127,23 @@ export const getSongUrl = async (
     }
 
     // 如果全局或歌曲专属设置中启用了自定义API，则最优先尝试
-    if ( (useCustomApiGlobally || useCustomApiForSong) && settingsStore.setData.customApiPlugin) {
+    if ((useCustomApiGlobally || useCustomApiForSong) && settingsStore.setData.customApiPlugin) {
       console.log(`优先级 1: 尝试使用自定义API解析歌曲 ${id}...`);
       try {
         // 直接从 api 目录导入 parseFromCustomApi 函数
         const { parseFromCustomApi } = await import('@/api/parseFromCustomApi');
-        const customResult = await parseFromCustomApi(numericId, cloneDeep(songData), settingsStore.setData.musicQuality || 'higher');
+        const customResult = await parseFromCustomApi(
+          numericId,
+          cloneDeep(songData),
+          settingsStore.setData.musicQuality || 'higher'
+        );
 
-        if (customResult && customResult.data && customResult.data.data && customResult.data.data.url) {
+        if (
+          customResult &&
+          customResult.data &&
+          customResult.data.data &&
+          customResult.data.data.url
+        ) {
           console.log('自定义API解析成功！');
           if (isDownloaded) return customResult.data.data as any;
           return customResult.data.data.url;
@@ -190,7 +198,6 @@ export const getSongUrl = async (
     const res = await getParsingMusicUrl(numericId, cloneDeep(songData));
     if (isDownloaded) return res?.data?.data as any;
     return res?.data?.data?.url || null;
-
   } catch (error) {
     console.error('官方API请求失败，进入内置备用解析流程:', error);
     const res = await getParsingMusicUrl(numericId, cloneDeep(songData));
@@ -465,19 +472,19 @@ export const usePlayerStore = defineStore('player', () => {
   // 通用洗牌函数 - Fisher-Yates 算法
   const performShuffle = (list: SongResult[], currentSong?: SongResult): SongResult[] => {
     if (list.length <= 1) return [...list];
-    
+
     const result: SongResult[] = [];
     const remainingSongs = [...list];
-    
+
     // 如果指定了当前歌曲，先把它放在第一位
     if (currentSong && currentSong.id) {
-      const currentSongIndex = remainingSongs.findIndex(song => song.id === currentSong.id);
+      const currentSongIndex = remainingSongs.findIndex((song) => song.id === currentSong.id);
       if (currentSongIndex !== -1) {
         // 把当前歌曲放在第一位
         result.push(remainingSongs.splice(currentSongIndex, 1)[0]);
       }
     }
-    
+
     // 对剩余歌曲进行洗牌
     if (remainingSongs.length > 0) {
       // Fisher-Yates 洗牌算法
@@ -485,27 +492,27 @@ export const usePlayerStore = defineStore('player', () => {
         const j = Math.floor(Math.random() * (i + 1));
         [remainingSongs[i], remainingSongs[j]] = [remainingSongs[j], remainingSongs[i]];
       }
-      
+
       // 把洗牌后的歌曲添加到结果中
       result.push(...remainingSongs);
     }
-    
+
     return result;
   };
 
   // 应用随机播放到当前播放列表
   const shufflePlayList = () => {
     if (playList.value.length <= 1) return;
-    
+
     // 保存原始播放列表（如果还没保存）
     if (originalPlayList.value.length === 0) {
       originalPlayList.value = [...playList.value];
       localStorage.setItem('originalPlayList', JSON.stringify(originalPlayList.value));
     }
-    
+
     const currentSong = playList.value[playListIndex.value];
     const shuffledList = performShuffle(playList.value, currentSong);
-    
+
     // 更新播放列表和索引
     playList.value = shuffledList;
     playListIndex.value = 0;
@@ -516,16 +523,16 @@ export const usePlayerStore = defineStore('player', () => {
   // 恢复原始播放列表顺序
   const restoreOriginalOrder = () => {
     if (originalPlayList.value.length === 0) return;
-    
+
     const currentSong = playMusic.value;
-    const originalIndex = originalPlayList.value.findIndex(song => song.id === currentSong.id);
-    
+    const originalIndex = originalPlayList.value.findIndex((song) => song.id === currentSong.id);
+
     playList.value = [...originalPlayList.value];
     playListIndex.value = Math.max(0, originalIndex);
-    
+
     localStorage.setItem('playList', JSON.stringify(playList.value));
     localStorage.setItem('playListIndex', playListIndex.value.toString());
-    
+
     // 清空原始播放列表
     originalPlayList.value = [];
     localStorage.removeItem('originalPlayList');
@@ -534,10 +541,10 @@ export const usePlayerStore = defineStore('player', () => {
   // 智能预加载下一首歌曲
   const preloadNextSongs = (currentIndex: number) => {
     if (playList.value.length <= 1) return;
-    
+
     // 计算下一首歌曲的索引
     let nextIndex: number;
-    
+
     if (playMode.value === 0) {
       // 顺序播放模式：下一首，如果是最后一首则不预加载
       if (currentIndex >= playList.value.length - 1) {
@@ -548,18 +555,20 @@ export const usePlayerStore = defineStore('player', () => {
       // 循环播放模式和随机播放模式：都是循环的
       nextIndex = (currentIndex + 1) % playList.value.length;
     }
-    
+
     // 预加载下一首和下下首
     const endIndex = Math.min(nextIndex + 2, playList.value.length);
-    
+
     // 如果需要循环到开头，分两次预加载
     if (nextIndex < playList.value.length) {
       fetchSongs(playList.value, nextIndex, endIndex);
-      
+
       // 如果是循环模式且接近列表末尾，也预加载列表开头的歌曲
-      if ((playMode.value === 1 || playMode.value === 2) && 
-          nextIndex + 1 >= playList.value.length && 
-          playList.value.length > 2) {
+      if (
+        (playMode.value === 1 || playMode.value === 2) &&
+        nextIndex + 1 >= playList.value.length &&
+        playList.value.length > 2
+      ) {
         // 预加载列表开头的第一首
         setTimeout(() => {
           fetchSongs(playList.value, 0, 1);
@@ -877,42 +886,42 @@ export const usePlayerStore = defineStore('player', () => {
     if (playMode.value === 2) {
       // 随机模式：保存原始顺序并洗牌
       console.log('随机模式下设置新播放列表，保存原始顺序并洗牌');
-      
+
       // 保存原始播放列表
       originalPlayList.value = [...list];
       localStorage.setItem('originalPlayList', JSON.stringify(originalPlayList.value));
-      
+
       // 洗牌新列表，优先保持当前歌曲在第一位
       const currentSong = playMusic.value;
       const shuffledList = performShuffle(list, currentSong);
-      
+
       // 计算新的播放索引
       if (currentSong && currentSong.id) {
-        const currentSongIndex = shuffledList.findIndex(song => song.id === currentSong.id);
-        playListIndex.value = currentSongIndex !== -1 ? 0 : (keepIndex ? playListIndex.value : 0);
+        const currentSongIndex = shuffledList.findIndex((song) => song.id === currentSong.id);
+        playListIndex.value = currentSongIndex !== -1 ? 0 : keepIndex ? playListIndex.value : 0;
       } else {
         playListIndex.value = keepIndex ? playListIndex.value : 0;
       }
-      
+
       playList.value = shuffledList;
     } else {
       // 顺序模式和循环模式：直接设置播放列表
       console.log('顺序/循环模式下设置新播放列表');
-      
+
       // 清除原始播放列表状态（如果有的话）
       if (originalPlayList.value.length > 0) {
         originalPlayList.value = [];
         localStorage.removeItem('originalPlayList');
       }
-      
+
       // 计算播放索引
       if (!keepIndex) {
         playListIndex.value = list.findIndex((item) => item.id === playMusic.value.id);
       }
-      
+
       playList.value = list;
     }
-    
+
     // 保存到 localStorage
     localStorage.setItem('playList', JSON.stringify(playList.value));
     localStorage.setItem('playListIndex', playListIndex.value.toString());
@@ -935,7 +944,7 @@ export const usePlayerStore = defineStore('player', () => {
     // 插入到当前播放歌曲的下一个位置
     const insertIndex = playListIndex.value + 1;
     list.splice(insertIndex, 0, song);
-    
+
     // 更新播放列表
     setPlayList(list, true); // 保持当前索引不变
   };
@@ -1131,13 +1140,13 @@ export const usePlayerStore = defineStore('player', () => {
 
       // 保存当前索引，用于错误恢复
       const currentIndex = playListIndex.value;
-      
+
       // 计算下一首歌曲的索引（所有播放模式都使用顺序播放，因为随机模式下列表已经是随机的）
       const nowPlayListIndex = (playListIndex.value + 1) % playList.value.length;
-      
+
       // 获取下一首歌曲
       const nextSong = { ...playList.value[nowPlayListIndex] };
-      
+
       // 更新当前播放索引
       playListIndex.value = nowPlayListIndex;
 
@@ -1247,16 +1256,16 @@ export const usePlayerStore = defineStore('player', () => {
     const newMode = (playMode.value + 1) % 3;
     const wasRandom = playMode.value === 2;
     const isRandom = newMode === 2;
-    
+
     playMode.value = newMode;
     localStorage.setItem('playMode', JSON.stringify(playMode.value));
-    
+
     // 当切换到随机模式时，直接洗牌播放列表
     if (isRandom && !wasRandom && playList.value.length > 0) {
       shufflePlayList();
       console.log('切换到随机模式，洗牌播放列表');
     }
-    
+
     // 当从随机模式切换出去时，恢复原始顺序
     if (!isRandom && wasRandom) {
       restoreOriginalOrder();
@@ -1333,7 +1342,7 @@ export const usePlayerStore = defineStore('player', () => {
 
     if (savedPlayList.length > 0) {
       setPlayList(savedPlayList);
-      
+
       // 重启后恢复随机播放状态
       if (playMode.value === 2) {
         // 如果当前是随机模式但没有保存的原始播放列表，说明需要重新洗牌

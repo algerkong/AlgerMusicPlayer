@@ -7,7 +7,7 @@ import type { SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
 import { getImageBackground } from '@/utils/linearColor';
 
-import { dislikeRecommendedSong } from "../api/music";
+import { dislikeRecommendedSong } from '../api/music';
 import { useArtist } from './useArtist';
 import { useDownload } from './useDownload';
 
@@ -89,11 +89,11 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
 
   // 判断当前歌曲是否为每日推荐歌曲
   const isDailyRecommendSong = computed(() => {
-    return recommendStore.dailyRecommendSongs.some(song => song.id === props.item.id);
+    return recommendStore.dailyRecommendSongs.some((song) => song.id === props.item.id);
   });
 
   // 切换不喜欢状态
-  const toggleDislike = async (e: Event) => { 
+  const toggleDislike = async (e: Event) => {
     e && e.stopPropagation();
 
     if (isDislike.value) {
@@ -102,17 +102,17 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
     }
 
     playerStore.addToDislikeList(props.item.id);
-    
+
     // 只有当前歌曲是每日推荐歌曲时才调用接口
     if (!isDailyRecommendSong.value) {
       return;
-    } 
+    }
     try {
       console.log('发送不感兴趣请求，歌曲ID:', props.item.id);
       const numericId = typeof props.item.id === 'string' ? parseInt(props.item.id) : props.item.id;
       const response = await dislikeRecommendedSong(numericId);
       if (response.data.data) {
-        console.log(response)
+        console.log(response);
         const newSongData = response.data.data;
         const newSong: SongResult = {
           ...newSongData,
@@ -126,10 +126,10 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
             id: newSongData.id,
             name: newSongData.name,
             artists: newSongData.ar || newSongData.artists,
-            album: newSongData.al || newSongData.album,
+            album: newSongData.al || newSongData.album
           },
           source: 'netease',
-          count: 0,
+          count: 0
         };
         recommendStore.replaceSongInDailyRecommend(props.item.id, newSong);
       } else {

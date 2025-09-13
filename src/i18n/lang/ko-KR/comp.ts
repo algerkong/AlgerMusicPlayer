@@ -41,7 +41,8 @@ export default {
     noDownloadUrl: '현재 시스템에 적합한 설치 패키지를 찾을 수 없습니다. 수동으로 다운로드해주세요',
     installConfirmTitle: '업데이트 설치',
     installConfirmContent: '앱을 닫고 업데이트를 설치하시겠습니까?',
-    manualInstallTip: '앱을 닫은 후 설치 프로그램이 정상적으로 나타나지 않으면 다운로드 폴더에서 파일을 찾아 수동으로 열어주세요.',
+    manualInstallTip:
+      '앱을 닫은 후 설치 프로그램이 정상적으로 나타나지 않으면 다운로드 폴더에서 파일을 찾아 수동으로 열어주세요.',
     yesInstall: '지금 설치',
     noThanks: '나중에 설치',
     fileLocation: '파일 위치',
@@ -172,7 +173,8 @@ export default {
       noTasks: '가져오기 작업이 없습니다',
       clearTasks: '작업 지우기',
       clearTasksConfirmTitle: '지우기 확인',
-      clearTasksConfirmContent: '모든 가져오기 작업 기록을 지우시겠습니까? 이 작업은 되돌릴 수 없습니다.',
+      clearTasksConfirmContent:
+        '모든 가져오기 작업 기록을 지우시겠습니까? 이 작업은 되돌릴 수 없습니다.',
       confirm: '확인',
       cancel: '취소',
       clearTasksSuccess: '작업 목록이 지워졌습니다',

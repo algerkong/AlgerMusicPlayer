@@ -101,8 +101,8 @@ export default {
       notImported: '尚未匯入自訂音源。',
       importSuccess: '成功匯入音源：{name}',
       importFailed: '匯入失敗：{message}',
-      enableHint: '請先匯入 JSON 設定檔才能啟用',
-    },
+      enableHint: '請先匯入 JSON 設定檔才能啟用'
+    }
   },
   application: {
     closeAction: '關閉行為',

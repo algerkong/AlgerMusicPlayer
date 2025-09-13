@@ -78,9 +78,11 @@ export default {
     autoPlay: '自動再生',
     autoPlayDesc: 'アプリを再起動した際に自動的に再生を継続するかどうか',
     showStatusBar: 'ステータスバーコントロール機能を表示するかどうか',
-    showStatusBarContent: 'Macのステータスバーに音楽コントロール機能を表示できます（再起動後に有効）',
+    showStatusBarContent:
+      'Macのステータスバーに音楽コントロール機能を表示できます（再起動後に有効）',
     fallbackParser: '代替解析サービス (GD音楽台)',
-    fallbackParserDesc: '「GD音楽台」にチェックが入っていて、通常の音源で再生できない場合、このサービスが使用されます。',
+    fallbackParserDesc:
+      '「GD音楽台」にチェックが入っていて、通常の音源で再生できない場合、このサービスが使用されます。',
     parserGD: 'GD 音楽台 (内蔵)',
     parserCustom: 'カスタム API',
     sourceLabels: {
@@ -93,13 +95,14 @@ export default {
     },
     customApi: {
       sectionTitle: 'カスタム API 設定',
-      enableHint: 'カスタム API を有効にするには、まずカスタム API をインポートする必要があります。',
+      enableHint:
+        'カスタム API を有効にするには、まずカスタム API をインポートする必要があります。',
       importConfig: 'JSON設定をインポート',
       currentSource: '現在の音源',
       notImported: 'カスタム音源はまだインポートされていません。',
       importSuccess: '音源のインポートに成功しました: {name}',
-      importFailed: 'インポートに失敗しました: {message}',
-    },
+      importFailed: 'インポートに失敗しました: {message}'
+    }
   },
   application: {
     closeAction: '閉じる動作',
@@ -114,7 +117,8 @@ export default {
     download: 'ダウンロード管理',
     downloadDesc: 'ダウンロードリストボタンを常に表示するかどうか',
     unlimitedDownload: '無制限ダウンロード',
-    unlimitedDownloadDesc: '有効にすると音楽を無制限でダウンロードします（ダウンロード失敗の可能性があります）。デフォルトは300曲制限',
+    unlimitedDownloadDesc:
+      '有効にすると音楽を無制限でダウンロードします（ダウンロード失敗の可能性があります）。デフォルトは300曲制限',
     downloadPath: 'ダウンロードディレクトリ',
     downloadPathDesc: '音楽ファイルのダウンロード場所を選択',
     remoteControl: 'リモートコントロール',
@@ -130,7 +134,8 @@ export default {
     proxyPort: 'プロキシポート',
     proxyPortPlaceholder: 'プロキシポートを入力してください',
     realIP: 'realIP設定',
-    realIPDesc: '制限により、このプロジェクトは海外での使用が制限されます。realIPパラメータを使用して国内IPを渡すことで解決できます',
+    realIPDesc:
+      '制限により、このプロジェクトは海外での使用が制限されます。realIPパラメータを使用して国内IPを渡すことで解決できます',
     messages: {
       proxySuccess: 'プロキシ設定を保存しました。アプリ再起動後に有効になります',
       proxyError: '入力が正しいかどうか確認してください',

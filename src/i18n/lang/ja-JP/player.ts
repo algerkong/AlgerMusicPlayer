@@ -120,6 +120,7 @@ export default {
     cleared: 'プレイリストをクリアしました',
     empty: 'プレイリストが空です',
     clearConfirmTitle: 'プレイリストをクリア',
-    clearConfirmContent: 'これによりプレイリスト内のすべての楽曲がクリアされ、現在の再生が停止されます。続行しますか？'
+    clearConfirmContent:
+      'これによりプレイリスト内のすべての楽曲がクリアされ、現在の再生が停止されます。続行しますか？'
   }
 };

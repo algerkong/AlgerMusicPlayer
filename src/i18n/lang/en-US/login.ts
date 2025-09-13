@@ -45,7 +45,8 @@ export default {
     phoneLoginFailed: 'Phone login failed, please check if phone number and password are correct',
     autoGetCookieSuccess: 'Auto get Cookie successful',
     autoGetCookieFailed: 'Auto get Cookie failed',
-    autoGetCookieTip: 'Will open NetEase Cloud Music login page, please complete login and close the window',
+    autoGetCookieTip:
+      'Will open NetEase Cloud Music login page, please complete login and close the window',
     qrCheckFailed: 'Failed to check QR code status, please refresh and try again',
     qrLoading: 'Loading QR code...',
     qrExpired: 'QR code has expired, please click to refresh',
@@ -58,5 +59,6 @@ export default {
     qrGenerating: 'Generating QR code...'
   },
   qrTitle: 'NetEase Cloud Music QR Code Login',
-  uidWarning: 'Note: UID login is only for viewing user public information and cannot access features that require login permissions.'
+  uidWarning:
+    'Note: UID login is only for viewing user public information and cannot access features that require login permissions.'
 };

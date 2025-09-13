@@ -41,8 +41,10 @@ export default {
     uidLoginFailed: 'UID 로그인에 실패했습니다. 사용자 ID가 올바른지 확인하세요',
     autoGetCookieSuccess: 'Cookie 자동 가져오기 성공',
     autoGetCookieFailed: 'Cookie 자동 가져오기 실패',
-    autoGetCookieTip: '넷이즈 클라우드 뮤직 로그인 페이지를 열겠습니다. 로그인 완료 후 창을 닫아주세요'
+    autoGetCookieTip:
+      '넷이즈 클라우드 뮤직 로그인 페이지를 열겠습니다. 로그인 완료 후 창을 닫아주세요'
   },
   qrTitle: '넷이즈 클라우드 뮤직 QR코드 로그인',
-  uidWarning: '주의: UID 로그인은 사용자 공개 정보를 확인하는 데만 사용할 수 있으며, 로그인 권한이 필요한 기능에 액세스할 수 없습니다.'
+  uidWarning:
+    '주의: UID 로그인은 사용자 공개 정보를 확인하는 데만 사용할 수 있으며, 로그인 권한이 필요한 기능에 액세스할 수 없습니다.'
 };

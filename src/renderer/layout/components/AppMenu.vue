@@ -9,7 +9,11 @@
       </div>
       <div class="app-menu-list">
         <div v-for="(item, index) in menus" :key="item.path" class="app-menu-item">
-          <n-tooltip :delay="200"  :disabled="settingsStore.setData.isMenuExpanded || isMobile" placement="bottom">
+          <n-tooltip
+            :delay="200"
+            :disabled="settingsStore.setData.isMenuExpanded || isMobile"
+            placement="bottom"
+          >
             <template #trigger>
               <router-link class="app-menu-item-link" :to="item.path">
                 <i
@@ -39,8 +43,8 @@ import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 
 import icon from '@/assets/icon.png';
-import { isMobile } from '@/utils';
 import { useSettingsStore } from '@/store';
+import { isMobile } from '@/utils';
 
 const props = defineProps({
   size: {

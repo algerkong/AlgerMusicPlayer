@@ -2,6 +2,7 @@ import axios from 'axios';
 import { app, dialog, ipcMain, Notification, protocol, shell } from 'electron';
 import Store from 'electron-store';
 import { fileTypeFromFile } from 'file-type';
+import { FlacTagMap, writeFlacTags } from 'flac-tagger';
 import * as fs from 'fs';
 import * as http from 'http';
 import * as https from 'https';
@@ -9,8 +10,8 @@ import * as mm from 'music-metadata';
 import * as NodeID3 from 'node-id3';
 import * as os from 'os';
 import * as path from 'path';
-import { FlacTagMap, writeFlacTags } from 'flac-tagger';
 import sharp from 'sharp';
+
 import { getStore } from './config';
 
 const MAX_CONCURRENT_DOWNLOADS = 3;
@@ -619,21 +620,20 @@ async function downloadMusic(
             try {
               // 使用 sharp 进行压缩
               coverImageBuffer = await sharp(originalCoverBuffer)
-                  .resize({
-                    width: 1600,
-                    height: 1600,
-                    fit: 'inside',
-                    withoutEnlargement: true
-                  })
-                  .jpeg({
-                    quality: 80,
-                    mozjpeg: true
-                  })
-                  .toBuffer();
+                .resize({
+                  width: 1600,
+                  height: 1600,
+                  fit: 'inside',
+                  withoutEnlargement: true
+                })
+                .jpeg({
+                  quality: 80,
+                  mozjpeg: true
+                })
+                .toBuffer();
 
               const compressedSizeMB = (coverImageBuffer.length / (1024 * 1024)).toFixed(2);
               console.log(`封面图压缩完成，新大小: ${compressedSizeMB} MB`);
-
             } catch (compressionError) {
               console.error('封面图压缩失败，将使用原图:', compressionError);
               coverImageBuffer = originalCoverBuffer; // 如果压缩失败，则回退使用原始图片
@@ -708,21 +708,21 @@ async function downloadMusic(
           LYRICS: lyricsContent || '',
           TRACKNUMBER: songInfo?.no ? String(songInfo.no) : undefined,
           DATE: songInfo?.publishTime
-              ? new Date(songInfo.publishTime).getFullYear().toString()
-              : undefined
+            ? new Date(songInfo.publishTime).getFullYear().toString()
+            : undefined
         };
 
         await writeFlacTags(
-            {
-              tagMap,
-              picture: coverImageBuffer
-                  ? {
-                    buffer: coverImageBuffer,
-                    mime: 'image/jpeg'
-                  }
-                  : undefined
-            },
-            finalFilePath
+          {
+            tagMap,
+            picture: coverImageBuffer
+              ? {
+                  buffer: coverImageBuffer,
+                  mime: 'image/jpeg'
+                }
+              : undefined
+          },
+          finalFilePath
         );
         console.log('FLAC tags written successfully');
       } catch (err) {
