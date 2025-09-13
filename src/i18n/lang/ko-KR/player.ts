@@ -39,7 +39,9 @@ export default {
     warning: '음원을 선택해주세요',
     bilibiliNotSupported: 'B站 비디오는 재분석을 지원하지 않습니다',
     processing: '분석 중...',
-    clear: '사용자 정의 음원 지우기'
+    clear: '사용자 정의 음원 지우기',
+    customApiFailed: '사용자 정의 API 분석 실패, 기본 음원을 시도합니다...',
+    customApiError: '사용자 정의 API 요청 오류, 기본 음원을 시도합니다...'
   },
   playBar: {
     expand: '가사 펼치기',

@@ -9,24 +9,22 @@
   >
     <div id="drawer-target" :class="[config.theme]">
       <div
-        class="control-btn absolute top-8 left-8"
+        class="control-buttons-container absolute top-8 left-8 right-8"
         :class="{ 'pure-mode': config.pureModeEnabled }"
-        @click="closeMusicFull"
       >
-        <i class="ri-arrow-down-s-line"></i>
-      </div>
+        <div class="control-btn" @click="closeMusicFull">
+          <i class="ri-arrow-down-s-line"></i>
+        </div>
 
-      <n-popover trigger="click" placement="bottom">
-        <template #trigger>
-          <div
-            class="control-btn absolute top-8 right-8"
-            :class="{ 'pure-mode': config.pureModeEnabled }"
-          >
-            <i class="ri-settings-3-line"></i>
-          </div>
-        </template>
-        <lyric-settings ref="lyricSettingsRef" />
-      </n-popover>
+        <n-popover trigger="click" placement="bottom">
+          <template #trigger>
+            <div class="control-btn">
+              <i class="ri-settings-3-line"></i>
+            </div>
+          </template>
+          <lyric-settings ref="lyricSettingsRef" />
+        </n-popover>
+      </div>
 
       <div
         v-if="!config.hideCover"
@@ -34,17 +32,15 @@
         :class="{ 'only-cover': config.hideLyrics }"
         :style="{ color: textColors.theme === 'dark' ? '#000000' : '#ffffff' }"
       >
-        <div class="img-container relative">
-          <n-image
+        <div class="img-container">
+          <cover3-d
             ref="PicImgRef"
             :src="getImgUrl(playMusic?.picUrl, '500y500')"
-            class="img"
-            lazy
-            preview-disabled
+            :loading="playMusic?.playLoading"
+            :max-tilt="12"
+            :scale="1.03"
+            :shine-intensity="0.25"
           />
-          <div v-if="playMusic?.playLoading" class="loading-overlay">
-            <i class="ri-loader-4-line loading-icon"></i>
-          </div>
         </div>
         <div class="music-info">
           <div class="music-content-name">{{ playMusic.name }}</div>
@@ -151,6 +147,7 @@ import { useDebounceFn } from '@vueuse/core';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import Cover3D from '@/components/cover/Cover3D.vue';
 import LyricCorrectionControl from '@/components/lyric/LyricCorrectionControl.vue';
 import LyricSettings from '@/components/lyric/LyricSettings.vue';
 import SimplePlayBar from '@/components/player/SimplePlayBar.vue';
@@ -183,10 +180,8 @@ const isDark = ref(false);
 const showStickyHeader = ref(false);
 const lyricSettingsRef = ref<InstanceType<typeof LyricSettings>>();
 
-// 移除 computed 配置
 const config = ref<LyricConfig>({ ...DEFAULT_LYRIC_CONFIG });
 
-// 监听设置组件的配置变化
 watch(
   () => lyricSettingsRef.value?.config,
   (newConfig) => {
@@ -525,10 +520,12 @@ defineExpose({
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
 }
+
 .drawer-back {
   @apply absolute bg-cover bg-center;
   z-index: -1;
@@ -561,10 +558,6 @@ defineExpose({
         @apply w-[50vh] h-[50vh] mb-8;
       }
 
-      .img {
-        @apply w-full h-full;
-      }
-
       .music-info {
         @apply text-center w-[600px];
 
@@ -582,10 +575,6 @@ defineExpose({
 
     .img-container {
       @apply relative w-full h-full;
-    }
-
-    .img {
-      @apply rounded-xl w-full h-full shadow-2xl transition-all duration-300;
     }
 
     .music-info {
@@ -610,9 +599,11 @@ defineExpose({
 
     &.center {
       @apply w-auto;
+
       .music-lrc {
         @apply w-full max-w-3xl mx-auto;
       }
+
       .music-lrc-text {
         @apply text-center;
       }
@@ -697,24 +688,30 @@ defineExpose({
 .mobile {
   #drawer-target {
     @apply flex-col p-4 pt-8 justify-start;
+
     .music-img {
       display: none;
     }
+
     .music-lrc {
       height: calc(100vh - 260px) !important;
       width: 100vw;
+
       span {
         padding-right: 0px !important;
       }
+
       .hover-text {
         &:hover {
           background-color: transparent;
         }
       }
+
       .music-lrc-text {
         @apply text-xl text-center;
       }
     }
+
     .music-content {
       @apply h-[calc(100vh-120px)];
       width: 100vw !important;
@@ -751,8 +748,30 @@ defineExpose({
   }
 }
 
+.control-buttons-container {
+  @apply flex justify-between items-start z-[9999];
+
+  &.pure-mode {
+    @apply pointer-events-auto; /* 容器需要能接收hover事件 */
+
+    .control-btn {
+      @apply opacity-0 transition-all duration-300;
+      pointer-events: none; /* 按钮隐藏时不接收事件 */
+    }
+
+    &:hover .control-btn {
+      @apply opacity-100;
+      pointer-events: auto; /* hover时按钮可以点击 */
+    }
+  }
+
+  &:not(.pure-mode) .control-btn {
+    pointer-events: auto;
+  }
+}
+
 .control-btn {
-  @apply w-9 h-9 flex items-center justify-center rounded cursor-pointer transition-all duration-300 z-[9999];
+  @apply w-9 h-9 flex items-center justify-center rounded cursor-pointer transition-all duration-300;
   background: rgba(142, 142, 142, 0.192);
   backdrop-filter: blur(12px);
 
@@ -761,48 +780,16 @@ defineExpose({
     color: var(--text-color-active);
   }
 
-  &.pure-mode {
-    background: transparent;
-    backdrop-filter: none;
-
-    &:not(:hover) {
-      i {
-        opacity: 0;
-      }
-    }
-  }
-
   &:hover {
     background: rgba(126, 121, 121, 0.2);
+
     i {
       opacity: 1;
     }
   }
 }
 
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.loading-overlay {
-  @apply absolute inset-0 flex items-center justify-center rounded-xl;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 2;
-}
-
-.loading-icon {
-  font-size: 48px;
-  color: white;
-  animation: spin 1s linear infinite;
-}
-
 .lyric-correction {
-  /* 仅在 hover 歌词区域时显示 */
   .music-lrc:hover & {
     opacity: 1 !important;
     pointer-events: auto !important;
