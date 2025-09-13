@@ -136,7 +136,7 @@ import { getMusicDetail } from '@/api/music';
 import { getUserPlaylist } from '@/api/user';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import { useArtist } from '@/hooks/useArtist';
-import { usePlayerStore, useUserStore, useRecommendStore } from '@/store';
+import { usePlayerStore, useRecommendStore, useUserStore } from '@/store';
 import { Playlist } from '@/types/list';
 import type { IListDetail } from '@/types/listDetail';
 import { SongResult } from '@/types/music';
@@ -161,7 +161,7 @@ const hotSingerData = ref<IHotSinger>();
 const dayRecommendData = computed(() => {
   if (recommendStore.dailyRecommendSongs.length > 0) {
     return {
-      dailySongs: recommendStore.dailyRecommendSongs,
+      dailySongs: recommendStore.dailyRecommendSongs
     };
   }
   return null;

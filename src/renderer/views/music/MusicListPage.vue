@@ -354,11 +354,13 @@ const getCoverImgUrl = computed(() => {
 const filteredSongs = computed(() => {
   // 1. 确定数据源是来自store的完整列表(日推)还是来自本地分页的列表(其他)
   const sourceList = isDailyRecommend.value
-      ? songList.value // 如果是日推，直接使用来自 recommendStore 的完整、响应式列表
-      : displayedSongs.value; // 否则，使用用于分页加载的 displayedSongs
+    ? songList.value // 如果是日推，直接使用来自 recommendStore 的完整、响应式列表
+    : displayedSongs.value; // 否则，使用用于分页加载的 displayedSongs
 
   // 2. 过滤不喜欢的歌曲
-  const dislikeFilteredList = sourceList.filter(song => !playerStore.dislikeList.includes(song.id));
+  const dislikeFilteredList = sourceList.filter(
+    (song) => !playerStore.dislikeList.includes(song.id)
+  );
   // =================================================================
 
   // 3. 如果没有搜索词，直接返回处理后的列表
@@ -388,12 +390,12 @@ const filteredSongs = computed(() => {
     });
 
     return (
-        nameMatch ||
-        albumMatch ||
-        artistsMatch ||
-        namePinyinMatch ||
-        albumPinyinMatch ||
-        artistsPinyinMatch
+      nameMatch ||
+      albumMatch ||
+      artistsMatch ||
+      namePinyinMatch ||
+      albumPinyinMatch ||
+      artistsPinyinMatch
     );
   });
 });
@@ -774,17 +776,17 @@ watch(searchKeyword, () => {
 });
 
 watch(
-    songList,
-    (newSongs) => {
-      resetListState();
-      initSongList(newSongs);
-      if (hasMore.value && listInfo.value?.trackIds) {
-        setTimeout(() => {
-          loadMoreSongs();
-        }, 300);
-      }
-    },
-    { immediate: true }
+  songList,
+  (newSongs) => {
+    resetListState();
+    initSongList(newSongs);
+    if (hasMore.value && listInfo.value?.trackIds) {
+      setTimeout(() => {
+        loadMoreSongs();
+      }, 300);
+    }
+  },
+  { immediate: true }
 );
 
 // 组件卸载时清理状态
@@ -929,7 +931,6 @@ const handleBatchDownload = async () => {
   await batchDownloadMusic(selectedSongsList);
   cancelSelect();
 };
-
 </script>
 
 <style scoped lang="scss">
