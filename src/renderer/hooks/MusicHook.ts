@@ -279,8 +279,15 @@ const setupMusicWatchers = () => {
       nextTick(async () => {
         console.log('歌曲切换，更新歌词数据');
         // 更新歌词数据
-        lrcArray.value = playMusic.value.lyric?.lrcArray || [];
+        const rawLrc = playMusic.value.lyric?.lrcArray || [];
         lrcTimeArray.value = playMusic.value.lyric?.lrcTimeArray || [];
+        try {
+          const { translateLyrics } = await import('@/services/lyricTranslation');
+          lrcArray.value = await translateLyrics(rawLrc as any);
+        } catch (e) {
+          console.error('翻译歌词失败，使用原始歌词：', e);
+          lrcArray.value = rawLrc as any;
+        }
 
         // 当歌词数据更新时，如果歌词窗口打开，则发送数据
         if (isElectron && isLyricWindowOpen.value) {

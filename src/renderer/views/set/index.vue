@@ -59,6 +59,21 @@
               <language-switcher />
             </div>
 
+            <div class="set-item">
+              <div>
+                <div class="set-item-title">{{ t('settings.translationEngine') }}</div>
+                <div class="set-item-content">{{ t('settings.translationEngine') }}</div>
+              </div>
+              <n-select
+                v-model:value="setData.lyricTranslationEngine"
+                :options="[
+                  { label: t('settings.translationEngineOptions.none'), value: 'none' },
+                  { label: t('settings.translationEngineOptions.opencc'), value: 'opencc' }
+                ]"
+                style="width: 160px"
+              />
+            </div>
+
             <div class="set-item" v-if="isElectron">
               <div>
                 <div class="set-item-title">{{ t('settings.basic.font') }}</div>
