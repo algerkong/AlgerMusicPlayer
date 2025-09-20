@@ -10,14 +10,50 @@ interface ISearchParams {
 }
 
 /**
- * 搜索B站视频
+ * 搜索B站视频（带自动重试）
+ * 最多重试10次，每次间隔100ms
  * @param params 搜索参数
  */
-export const searchBilibili = (params: ISearchParams) => {
+export const searchBilibili = async (params: ISearchParams): Promise<any> => {
   console.log('调用B站搜索API，参数:', params);
-  return request.get('/bilibili/search', {
-    params
-  });
+  const maxRetries = 10;
+  const delayMs = 100;
+  const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
+  let lastError: unknown = null;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await request.get('/bilibili/search', { params });
+      console.log('B站搜索API响应:', response);
+      const hasTitle = Boolean(response?.data?.data?.result?.length);
+      if (response?.status === 200 && hasTitle) {
+        return response;
+      }
+
+      lastError = new Error(
+        `搜索结果不符合成功条件(缺少 data.title ) (attempt ${attempt}/${maxRetries})`
+      );
+      console.warn('B站搜索API响应不符合要求，将重试。调试信息：', {
+        status: response?.status,
+        hasData: Boolean(response?.data),
+        hasInnerData: Boolean(response?.data?.data),
+        title: response?.data?.data?.title
+      });
+    } catch (error) {
+      lastError = error;
+      console.warn(`B站搜索API错误[第${attempt}次]，将重试:`, error);
+    }
+
+    if (attempt === maxRetries) {
+      console.error('B站搜索API重试达到上限，仍然失败');
+      if (lastError instanceof Error) throw lastError;
+      throw new Error('B站搜索失败且达到最大重试次数');
+    }
+
+    await delay(delayMs);
+  }
+  // 理论上不会到达这里，添加以满足TS控制流分析
+  throw new Error('B站搜索在重试后未返回有效结果');
 };
 
 interface IBilibiliResponse<T> {
@@ -139,7 +175,7 @@ export const getBilibiliAudioUrl = async (bvid: string, cid: number): Promise<st
     let url = '';
 
     if (playUrlData.dash && playUrlData.dash.audio && playUrlData.dash.audio.length > 0) {
-      url = playUrlData.dash.audio[0].baseUrl;
+      url = playUrlData.dash.audio[playUrlData.dash.audio.length - 1].baseUrl;
     } else if (playUrlData.durl && playUrlData.durl.length > 0) {
       url = playUrlData.durl[0].url;
     } else {
@@ -158,6 +194,9 @@ export const searchAndGetBilibiliAudioUrl = async (keyword: string): Promise<str
   try {
     // 搜索B站视频，取第一页第一个结果
     const res = await searchBilibili({ keyword, page: 1, pagesize: 1 });
+    if (!res) {
+      throw new Error('B站搜索返回为空');
+    }
     const result = res.data?.data?.result;
     if (!result || result.length === 0) {
       throw new Error('未找到相关B站视频');

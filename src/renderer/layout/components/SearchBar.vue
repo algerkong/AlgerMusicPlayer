@@ -42,7 +42,6 @@
             </template>
           </n-input>
         </template>
-        <!-- ==================== 搜索建议列表 ==================== -->
         <div class="search-suggestions-panel">
           <n-scrollbar style="max-height: 300px">
             <div v-if="suggestionsLoading" class="suggestion-item loading">
@@ -175,7 +174,7 @@ import { getSearchSuggestions } from '@/api/search';
 import alipay from '@/assets/alipay.png';
 import wechat from '@/assets/wechat.png';
 import Coffee from '@/components/Coffee.vue';
-import { SEARCH_TYPES, USER_SET_OPTIONS } from '@/const/bar-const';
+import { SEARCH_TYPE, SEARCH_TYPES, USER_SET_OPTIONS } from '@/const/bar-const';
 import { useZoom } from '@/hooks/useZoom';
 import { useSearchStore } from '@/store/modules/search';
 import { useSettingsStore } from '@/store/modules/settings';
@@ -312,12 +311,13 @@ const selectSearchType = (key: number) => {
 
 const rawSearchTypes = ref(SEARCH_TYPES);
 const searchTypeOptions = computed(() => {
-  // 引用 locale 以创建响应式依赖
   locale.value;
-  return rawSearchTypes.value.map((type) => ({
-    label: t(type.label),
-    key: type.key
-  }));
+  return rawSearchTypes.value
+    .filter((type) => isElectron || type.key !== SEARCH_TYPE.BILIBILI)
+    .map((type) => ({
+      label: t(type.label),
+      key: type.key
+    }));
 });
 
 const selectItem = async (key: string) => {

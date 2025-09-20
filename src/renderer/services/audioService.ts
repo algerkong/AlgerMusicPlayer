@@ -113,23 +113,29 @@ class AudioService {
   }
 
   private updateMediaSessionMetadata(track: SongResult) {
-    if (!('mediaSession' in navigator)) return;
+    try {
+      if (!('mediaSession' in navigator)) return;
 
-    const artists = track.ar ? track.ar.map((a) => a.name) : track.song.artists?.map((a) => a.name);
-    const album = track.al ? track.al.name : track.song.album.name;
-    const artwork = ['96', '128', '192', '256', '384', '512'].map((size) => ({
-      src: `${track.picUrl}?param=${size}y${size}`,
-      type: 'image/jpg',
-      sizes: `${size}x${size}`
-    }));
-    const metadata = {
-      title: track.name || '',
-      artist: artists ? artists.join(',') : '',
-      album: album || '',
-      artwork
-    };
+      const artists = track.ar
+        ? track.ar.map((a) => a.name)
+        : track.song.artists?.map((a) => a.name);
+      const album = track.al ? track.al.name : track.song.album.name;
+      const artwork = ['96', '128', '192', '256', '384', '512'].map((size) => ({
+        src: `${track.picUrl}?param=${size}y${size}`,
+        type: 'image/jpg',
+        sizes: `${size}x${size}`
+      }));
+      const metadata = {
+        title: track.name || '',
+        artist: artists ? artists.join(',') : '',
+        album: album || '',
+        artwork
+      };
 
-    navigator.mediaSession.metadata = new window.MediaMetadata(metadata);
+      navigator.mediaSession.metadata = new window.MediaMetadata(metadata);
+    } catch (error) {
+      console.error('更新媒体会话元数据时出错:', error);
+    }
   }
 
   private updateMediaSessionState(isPlaying: boolean) {
@@ -140,14 +146,17 @@ class AudioService {
   }
 
   private updateMediaSessionPositionState() {
-    if (!this.currentSound || !('mediaSession' in navigator)) return;
-
-    if ('setPositionState' in navigator.mediaSession) {
-      navigator.mediaSession.setPositionState({
-        duration: this.currentSound.duration(),
-        playbackRate: this.playbackRate,
-        position: this.currentSound.seek() as number
-      });
+    try {
+      if (!this.currentSound || !('mediaSession' in navigator)) return;
+      if ('setPositionState' in navigator.mediaSession) {
+        navigator.mediaSession.setPositionState({
+          duration: this.currentSound.duration(),
+          playbackRate: this.playbackRate,
+          position: this.currentSound.seek() as number
+        });
+      }
+    } catch (error) {
+      console.error('更新媒体会话位置状态时出错:', error);
     }
   }
 
