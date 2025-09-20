@@ -19,7 +19,11 @@
 </template>
 
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n';
+
 import type { IBilibiliSearchResult } from '@/types/bilibili';
+
+const { t } = useI18n();
 
 const props = defineProps<{
   item: IBilibiliSearchResult;
@@ -39,7 +43,7 @@ const handleClick = () => {
 const formatNumber = (num?: number) => {
   if (!num) return '0';
   if (num >= 10000) {
-    return `${(num / 10000).toFixed(1)}万`;
+    return `${(num / 10000).toFixed(1)}${t('bilibili.player.num')}`;
   }
   return num.toString();
 };

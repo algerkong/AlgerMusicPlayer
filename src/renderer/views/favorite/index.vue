@@ -100,7 +100,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
-import { getBilibiliProxyUrl, getBilibiliVideoDetail } from '@/api/bilibili';
+import { processBilibiliVideos } from '@/api/bilibili';
 import { getMusicDetail } from '@/api/music';
 import SongItem from '@/components/common/SongItem.vue';
 import { useDownload } from '@/hooks/useDownload';
@@ -228,58 +228,8 @@ const getFavoriteSongs = async () => {
       }
     }
 
-    // 处理B站视频数据
-    const bilibiliSongs: SongResult[] = [];
-    for (const biliId of bilibiliIds) {
-      const strBiliId = String(biliId);
-      console.log(`处理B站ID: ${strBiliId}`);
-
-      if (strBiliId.includes('--')) {
-        // 从ID中提取B站视频信息 (bvid--pid--cid格式)
-        try {
-          const [bvid, pid, cid] = strBiliId.split('--');
-          if (!bvid || !pid || !cid) {
-            console.warn(`B站ID格式错误: ${strBiliId}, 正确格式应为 bvid--pid--cid`);
-            continue;
-          }
-
-          const res = await getBilibiliVideoDetail(bvid);
-          const videoDetail = res.data;
-
-          // 找到对应的分P
-          const page = videoDetail.pages.find((p) => p.cid === Number(cid));
-          if (!page) {
-            console.warn(`未找到对应的分P: cid=${cid}`);
-            continue;
-          }
-
-          const songData = {
-            id: strBiliId,
-            name: `${page.part || ''} - ${videoDetail.title}`,
-            picUrl: getBilibiliProxyUrl(videoDetail.pic),
-            ar: [
-              {
-                name: videoDetail.owner.name,
-                id: videoDetail.owner.mid
-              }
-            ],
-            al: {
-              name: videoDetail.title,
-              picUrl: getBilibiliProxyUrl(videoDetail.pic)
-            },
-            source: 'bilibili',
-            bilibiliData: {
-              bvid,
-              cid: Number(cid)
-            }
-          } as SongResult;
-
-          bilibiliSongs.push(songData);
-        } catch (error) {
-          console.error(`获取B站视频详情失败 (${strBiliId}):`, error);
-        }
-      }
-    }
+    // 处理B站视频数据 - 使用公用方法
+    const bilibiliSongs = await processBilibiliVideos(bilibiliIds);
 
     console.log('获取数据统计:', {
       neteaseSongs: neteaseSongs.length,

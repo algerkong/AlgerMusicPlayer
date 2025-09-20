@@ -16,7 +16,7 @@
 
       <!-- 歌曲信息 -->
       <div class="song-info" @click="setMusicFull">
-        <div class="song-title">{{ playMusic?.name || '未播放' }}</div>
+        <div class="song-title" v-html="playMusic?.name || '未播放'"></div>
         <div class="song-artist">
           <span
             v-for="(artists, artistsindex) in artistList"

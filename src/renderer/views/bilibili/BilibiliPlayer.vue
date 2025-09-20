@@ -4,13 +4,15 @@
       <div class="content-wrapper">
         <div v-if="isLoading" class="loading-wrapper">
           <n-spin size="large" />
-          <p>听书加载中...</p>
+          <p>{{ t('bilibili.player.loading') }}</p>
         </div>
 
         <div v-else-if="errorMessage" class="error-wrapper">
           <i class="ri-error-warning-line text-4xl text-red-500"></i>
           <p>{{ errorMessage }}</p>
-          <n-button type="primary" @click="loadVideoSource">重试</n-button>
+          <n-button type="primary" @click="loadVideoSource">{{
+            t('bilibili.player.retry')
+          }}</n-button>
         </div>
 
         <div v-else-if="videoDetail" class="bilibili-info-wrapper" :class="mainContentAnimation">
@@ -36,14 +38,16 @@
                 <template #icon>
                   <i class="ri-play-fill"></i>
                 </template>
-                立即播放
+                {{ t('bilibili.player.playNow') }}
               </n-button>
             </div>
           </div>
 
           <div class="video-info">
-            <div class="title">{{ videoDetail?.title || '加载中...' }}</div>
-
+            <div
+              class="title"
+              v-html="videoDetail?.title || t('bilibili.player.loadingTitle')"
+            ></div>
             <div class="author">
               <i class="ri-user-line mr-1"></i>
               <span>{{ videoDetail.owner?.name }}</span>
@@ -65,7 +69,13 @@
               <p>{{ videoDetail.desc }}</p>
             </div>
             <div class="duration">
-              <p>总时长: {{ formatTotalDuration(videoDetail.duration) }}</p>
+              <p>
+                {{
+                  t('bilibili.player.totalDuration', {
+                    duration: formatTotalDuration(videoDetail.duration)
+                  })
+                }}
+              </p>
             </div>
           </div>
         </div>
@@ -76,7 +86,7 @@
           :class="partsListAnimation"
         >
           <div class="parts-title">
-            分P列表 (共{{ videoDetail.pages.length }}集)
+            {{ t('bilibili.player.partsList', { count: videoDetail.pages.length }) }}
             <n-spin v-if="partLoading" size="small" class="ml-2" />
           </div>
           <div class="parts-list">
@@ -104,9 +114,15 @@
 <script setup lang="ts">
 import { useMessage } from 'naive-ui';
 import { computed, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
-import { getBilibiliPlayUrl, getBilibiliProxyUrl, getBilibiliVideoDetail } from '@/api/bilibili';
+import {
+  createSongFromBilibiliVideo as createBilibiliSong,
+  getBilibiliPlayUrl,
+  getBilibiliProxyUrl,
+  getBilibiliVideoDetail
+} from '@/api/bilibili';
 import { usePlayerStore } from '@/store/modules/player';
 import type { IBilibiliPage, IBilibiliVideoDetail } from '@/types/bilibili';
 import type { SongResult } from '@/types/music';
@@ -121,6 +137,7 @@ const route = useRoute();
 const router = useRouter();
 const message = useMessage();
 const playerStore = usePlayerStore();
+const { t } = useI18n();
 
 // 从路由参数获取bvid
 const bvid = computed(() => route.params.bvid as string);
@@ -165,7 +182,7 @@ onMounted(async () => {
   if (bvid.value) {
     await loadVideoDetail(bvid.value);
   } else {
-    message.error('视频ID无效');
+    message.error(t('bilibili.player.errors.invalidVideoId'));
     router.back();
   }
 });
@@ -193,11 +210,11 @@ const loadVideoDetail = async (bvid: string) => {
       await loadVideoSource();
     } else {
       console.log('视频无分P或分P数据为空');
-      errorMessage.value = '无法加载视频分P信息';
+      errorMessage.value = t('bilibili.player.errors.loadPartInfoFailed');
     }
   } catch (error) {
     console.error('获取视频详情失败', error);
-    errorMessage.value = '获取视频详情失败';
+    errorMessage.value = t('bilibili.player.errors.loadVideoDetailFailed');
   } finally {
     isLoading.value = false;
     // 标记初始加载完成
@@ -231,33 +248,8 @@ const loadVideoSource = async () => {
           return currentAudio;
         }
 
-        // 其他分P创建占位对象，稍后按需加载
-        return {
-          id: `${bvid.value}--${page.page}--${page.cid}`, // 使用bvid--pid--cid作为唯一ID
-          name: `${page.part || ''} - ${videoDetail.value!.title}`,
-          picUrl: getBilibiliProxyUrl(videoDetail.value!.pic),
-          type: 0,
-          canDislike: false,
-          alg: '',
-          source: 'bilibili', // 设置来源为B站
-          song: {
-            name: `${page.part || ''} - ${videoDetail.value!.title}`,
-            id: `${bvid.value}--${page.page}--${page.cid}`,
-            ar: [
-              {
-                name: videoDetail.value!.owner.name,
-                id: videoDetail.value!.owner.mid
-              }
-            ],
-            al: {
-              picUrl: getBilibiliProxyUrl(videoDetail.value!.pic)
-            }
-          } as any,
-          bilibiliData: {
-            bvid: bvid.value,
-            cid: page.cid
-          }
-        } as SongResult;
+        // 其他分P创建占位对象，稍后按需加载 - 使用公用方法
+        return createBilibiliSong(videoDetail.value!, page, bvid.value);
       });
       console.log('已生成音频列表，共', audioList.value.length, '首');
 
@@ -271,7 +263,7 @@ const loadVideoSource = async () => {
     }
   } catch (error) {
     console.error('获取音频播放地址失败', error);
-    errorMessage.value = '获取音频播放地址失败';
+    errorMessage.value = t('bilibili.player.errors.loadAudioUrlFailed');
   } finally {
     isLoading.value = false;
   }
@@ -282,37 +274,8 @@ const createSongFromBilibiliVideo = (): SongResult => {
     throw new Error('视频详情未加载');
   }
 
-  const pageName = currentPage.value.part || '';
-  const title = `${pageName} - ${videoDetail.value.title}`;
-
-  return {
-    id: `${bvid.value}--${currentPage.value.page}--${currentPage.value.cid}`, // 使用bvid--pid--cid作为唯一ID
-    name: title,
-    picUrl: getBilibiliProxyUrl(videoDetail.value.pic),
-    type: 0,
-    canDislike: false,
-    alg: '',
-    // 设置来源为B站
-    source: 'bilibili',
-    // playMusicUrl属性稍后通过loadSongUrl函数添加
-    song: {
-      name: title,
-      id: `${bvid.value}--${currentPage.value.page}--${currentPage.value.cid}`,
-      ar: [
-        {
-          name: videoDetail.value.owner.name,
-          id: videoDetail.value.owner.mid
-        }
-      ],
-      al: {
-        picUrl: getBilibiliProxyUrl(videoDetail.value.pic)
-      }
-    } as any,
-    bilibiliData: {
-      bvid: bvid.value,
-      cid: currentPage.value.cid
-    }
-  } as SongResult;
+  // 使用公用方法创建SongResult
+  return createBilibiliSong(videoDetail.value, currentPage.value, bvid.value);
 };
 
 const loadSongUrl = async (
@@ -368,20 +331,20 @@ const switchPage = async (page: IBilibiliPage) => {
       playCurrentAudio();
     } catch (error) {
       console.error('切换分P时加载音频URL失败:', error);
-      message.error('获取音频地址失败，请重试');
+      message.error(t('bilibili.player.errors.switchPartFailed'));
     } finally {
       partLoading.value = false;
     }
   } else {
     console.error('未找到对应的音频项');
-    message.error('未找到对应的音频，请重试');
+    message.error(t('bilibili.player.errors.switchPartFailed'));
   }
 };
 
 const playCurrentAudio = async () => {
   if (audioList.value.length === 0) {
     console.error('音频列表为空');
-    errorMessage.value = '音频列表为空，请重试';
+    errorMessage.value = t('bilibili.player.errors.audioListEmpty');
     return;
   }
 
@@ -392,7 +355,7 @@ const playCurrentAudio = async () => {
 
   if (currentIndex === -1) {
     console.error('未找到当前分P的音频');
-    errorMessage.value = '未找到当前分P的音频';
+    errorMessage.value = t('bilibili.player.errors.currentPartNotFound');
     return;
   }
 
@@ -428,7 +391,7 @@ const playCurrentAudio = async () => {
     playerStore.setPlay(currentAudio);
 
     // 播放后通知用户已开始播放
-    message.success('已开始播放');
+    message.success(t('bilibili.player.playStarted'));
   } catch (error) {
     console.error('播放音频失败:', error);
     errorMessage.value = error instanceof Error ? error.message : '播放失败，请重试';
@@ -604,7 +567,7 @@ watch(
   }
 
   .parts-list {
-    @apply flex flex-wrap gap-2 max-h-60 overflow-y-auto pb-4;
+    @apply flex flex-wrap gap-2 pb-4;
 
     .part-item {
       @apply text-xs mb-2;

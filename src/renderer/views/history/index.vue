@@ -35,7 +35,7 @@
 import { onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import { getBilibiliProxyUrl, getBilibiliVideoDetail } from '@/api/bilibili';
+import { processBilibiliVideos } from '@/api/bilibili';
 import { getMusicDetail } from '@/api/music';
 import SongItem from '@/components/common/SongItem.vue';
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';
@@ -90,45 +90,24 @@ const getHistorySongs = async () => {
       }
     }
 
-    // 处理B站视频
-    const bilibiliSongs: SongResult[] = [];
-    for (const item of bilibiliItems) {
-      try {
-        const bvid = item.bilibiliData?.bvid;
-        if (!bvid) continue;
+    // 处理B站视频 - 使用公用方法
+    const bilibiliIds = bilibiliItems
+      .map((item) => `${item.bilibiliData?.bvid}--1--${item.bilibiliData?.cid}`)
+      .filter((id) => id && !id.includes('undefined'));
 
-        const res = await getBilibiliVideoDetail(bvid);
-        const videoDetail = res.data;
+    const bilibiliSongs = await processBilibiliVideos(bilibiliIds);
 
-        // 找到对应的分P
-        const page = videoDetail.pages.find((p) => p.cid === item.bilibiliData?.cid);
-        if (!page) continue;
-
-        bilibiliSongs.push({
-          id: `${bvid}--${page.page}--${page.cid}`,
-          name: `${page.part || ''} - ${videoDetail.title}`,
-          picUrl: getBilibiliProxyUrl(videoDetail.pic),
-          ar: [
-            {
-              name: videoDetail.owner.name,
-              id: videoDetail.owner.mid
-            }
-          ],
-          al: {
-            name: videoDetail.title,
-            picUrl: getBilibiliProxyUrl(videoDetail.pic)
-          },
-          source: 'bilibili',
-          count: item.count || 0,
-          bilibiliData: {
-            bvid,
-            cid: page.cid
-          }
-        } as SongResult);
-      } catch (error) {
-        console.error('获取B站视频详情失败:', error);
+    // 添加count信息
+    bilibiliSongs.forEach((song) => {
+      const historyItem = bilibiliItems.find(
+        (item) =>
+          item.bilibiliData?.bvid === song.bilibiliData?.bvid &&
+          item.bilibiliData?.cid === song.bilibiliData?.cid
+      );
+      if (historyItem) {
+        song.count = historyItem.count || 0;
       }
-    }
+    });
 
     // 合并两种来源的数据，并保持原有顺序
     const newSongs = currentPageItems

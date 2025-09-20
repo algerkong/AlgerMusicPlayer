@@ -43,7 +43,7 @@
           />
         </div>
         <div class="music-info">
-          <div class="music-content-name">{{ playMusic.name }}</div>
+          <div class="music-content-name" v-html="playMusic.name"></div>
           <div class="music-content-singer">
             <n-ellipsis
               class="text-ellipsis"
@@ -98,7 +98,7 @@
               class="music-info-header"
               :style="{ textAlign: config.centerLyrics ? 'center' : 'left' }"
             >
-              <div class="music-info-name">{{ playMusic.name }}</div>
+              <div class="music-info-name" v-html="playMusic.name"></div>
               <div class="music-info-singer">
                 <span
                   v-for="(item, index) in artistList"
@@ -562,7 +562,7 @@ defineExpose({
         @apply text-center w-[600px];
 
         .music-content-name {
-          @apply text-4xl mb-4;
+          @apply text-4xl mb-4 line-clamp-2;
           color: var(--text-color-active);
         }
 
@@ -641,7 +641,7 @@ defineExpose({
       @apply mb-8;
 
       .music-info-name {
-        @apply text-4xl font-bold mb-2;
+        @apply text-4xl font-bold mb-2 line-clamp-2;
         color: var(--text-color-active);
       }
 

@@ -1,0 +1,51 @@
+export default {
+  player: {
+    loading: 'Loading audio...',
+    retry: 'Retry',
+    playNow: 'Play Now',
+    loadingTitle: 'Loading...',
+    totalDuration: 'Total Duration: {duration}',
+    partsList: 'Parts List ({count} episodes)',
+    playStarted: 'Playback started',
+    switchingPart: 'Switching to part: {part}',
+    preloadingNext: 'Preloading next part: {part}',
+    playingCurrent: 'Playing current selected part: {name}',
+    num: 'M',
+    errors: {
+      invalidVideoId: 'Invalid video ID',
+      loadVideoDetailFailed: 'Failed to load video details',
+      loadPartInfoFailed: 'Unable to load video part information',
+      loadAudioUrlFailed: 'Failed to get audio playback URL',
+      videoDetailNotLoaded: 'Video details not loaded',
+      missingParams: 'Missing required parameters',
+      noAvailableAudioUrl: 'No available audio URL found',
+      loadPartAudioFailed: 'Failed to load part audio URL',
+      audioListEmpty: 'Audio list is empty, please retry',
+      currentPartNotFound: 'Current part audio not found',
+      audioUrlFailed: 'Failed to get audio URL',
+      playFailed: 'Playback failed, please retry',
+      getAudioUrlFailed: 'Failed to get audio URL, please retry',
+      audioNotFound: 'Corresponding audio not found, please retry',
+      preloadFailed: 'Failed to preload next part',
+      switchPartFailed: 'Failed to load audio URL when switching parts'
+    },
+    console: {
+      loadingDetail: 'Loading Bilibili video details',
+      detailData: 'Bilibili video detail data',
+      multipleParts: 'Video has multiple parts, total {count}',
+      noPartsData: 'Video has no parts or part data is empty',
+      loadingAudioSource: 'Loading audio source',
+      generatedAudioList: 'Generated audio list, total {count}',
+      getDashAudioUrl: 'Got dash audio URL',
+      getDurlAudioUrl: 'Got durl audio URL',
+      loadingPartAudio: 'Loading part audio URL: {part}, cid: {cid}',
+      loadPartAudioFailed: 'Failed to load part audio URL: {part}',
+      switchToPart: 'Switching to part: {part}',
+      audioNotFoundInList: 'Corresponding audio item not found',
+      preparingToPlay: 'Preparing to play current selected part: {name}',
+      preloadingNextPart: 'Preloading next part: {part}',
+      playingSelectedPart: 'Playing current selected part: {name}, audio URL: {url}',
+      preloadNextFailed: 'Failed to preload next part'
+    }
+  }
+};

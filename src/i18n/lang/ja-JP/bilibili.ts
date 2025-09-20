@@ -1,0 +1,51 @@
+export default {
+  player: {
+    loading: 'オーディオ読み込み中...',
+    retry: '再試行',
+    playNow: '今すぐ再生',
+    loadingTitle: '読み込み中...',
+    totalDuration: '総再生時間: {duration}',
+    partsList: 'パートリスト ({count}話)',
+    playStarted: '再生を開始しました',
+    switchingPart: 'パートを切り替え中: {part}',
+    preloadingNext: '次のパートをプリロード中: {part}',
+    playingCurrent: '現在選択されたパートを再生中: {name}',
+    num: '万',
+    errors: {
+      invalidVideoId: '無効な動画ID',
+      loadVideoDetailFailed: '動画詳細の取得に失敗しました',
+      loadPartInfoFailed: '動画パート情報の読み込みができません',
+      loadAudioUrlFailed: 'オーディオ再生URLの取得に失敗しました',
+      videoDetailNotLoaded: '動画詳細が読み込まれていません',
+      missingParams: '必要なパラメータが不足しています',
+      noAvailableAudioUrl: '利用可能なオーディオURLが見つかりません',
+      loadPartAudioFailed: 'パートオーディオURLの読み込みに失敗しました',
+      audioListEmpty: 'オーディオリストが空です。再試行してください',
+      currentPartNotFound: '現在のパートのオーディオが見つかりません',
+      audioUrlFailed: 'オーディオURLの取得に失敗しました',
+      playFailed: '再生に失敗しました。再試行してください',
+      getAudioUrlFailed: 'オーディオURLの取得に失敗しました。再試行してください',
+      audioNotFound: '対応するオーディオが見つかりません。再試行してください',
+      preloadFailed: '次のパートのプリロードに失敗しました',
+      switchPartFailed: 'パート切り替え時のオーディオURL読み込みに失敗しました'
+    },
+    console: {
+      loadingDetail: 'Bilibiliビデオ詳細を読み込み中',
+      detailData: 'Bilibiliビデオ詳細データ',
+      multipleParts: 'ビデオに複数のパートがあります。合計{count}個',
+      noPartsData: 'ビデオにパートがないか、パートデータが空です',
+      loadingAudioSource: 'オーディオソースを読み込み中',
+      generatedAudioList: 'オーディオリストを生成しました。合計{count}個',
+      getDashAudioUrl: 'dashオーディオURLを取得しました',
+      getDurlAudioUrl: 'durlオーディオURLを取得しました',
+      loadingPartAudio: 'パートオーディオURLを読み込み中: {part}, cid: {cid}',
+      loadPartAudioFailed: 'パートオーディオURLの読み込みに失敗: {part}',
+      switchToPart: 'パートに切り替え中: {part}',
+      audioNotFoundInList: '対応するオーディオアイテムが見つかりません',
+      preparingToPlay: '現在選択されたパートの再生準備中: {name}',
+      preloadingNextPart: '次のパートをプリロード中: {part}',
+      playingSelectedPart: '現在選択されたパートを再生中: {name}、オーディオURL: {url}',
+      preloadNextFailed: '次のパートのプリロードに失敗しました'
+    }
+  }
+};

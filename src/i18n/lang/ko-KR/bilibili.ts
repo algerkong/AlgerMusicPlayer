@@ -1,0 +1,51 @@
+export default {
+  player: {
+    loading: '오디오 로딩 중...',
+    retry: '다시 시도',
+    playNow: '지금 재생',
+    loadingTitle: '로딩 중...',
+    totalDuration: '총 재생시간: {duration}',
+    partsList: '파트 목록 ({count}화)',
+    playStarted: '재생이 시작되었습니다',
+    switchingPart: '파트 전환 중: {part}',
+    preloadingNext: '다음 파트 미리 로딩 중: {part}',
+    playingCurrent: '현재 선택된 파트 재생 중: {name}',
+    num: '만',
+    errors: {
+      invalidVideoId: '유효하지 않은 비디오 ID',
+      loadVideoDetailFailed: '비디오 세부정보 로드 실패',
+      loadPartInfoFailed: '비디오 파트 정보를 로드할 수 없습니다',
+      loadAudioUrlFailed: '오디오 재생 URL 가져오기 실패',
+      videoDetailNotLoaded: '비디오 세부정보가 로드되지 않았습니다',
+      missingParams: '필수 매개변수가 누락되었습니다',
+      noAvailableAudioUrl: '사용 가능한 오디오 URL을 찾을 수 없습니다',
+      loadPartAudioFailed: '파트 오디오 URL 로드 실패',
+      audioListEmpty: '오디오 목록이 비어있습니다. 다시 시도해주세요',
+      currentPartNotFound: '현재 파트의 오디오를 찾을 수 없습니다',
+      audioUrlFailed: '오디오 URL 가져오기 실패',
+      playFailed: '재생 실패. 다시 시도해주세요',
+      getAudioUrlFailed: '오디오 URL 가져오기 실패. 다시 시도해주세요',
+      audioNotFound: '해당 오디오를 찾을 수 없습니다. 다시 시도해주세요',
+      preloadFailed: '다음 파트 미리 로딩 실패',
+      switchPartFailed: '파트 전환 시 오디오 URL 로드 실패'
+    },
+    console: {
+      loadingDetail: 'Bilibili 비디오 세부정보 로딩 중',
+      detailData: 'Bilibili 비디오 세부정보 데이터',
+      multipleParts: '비디오에 여러 파트가 있습니다. 총 {count}개',
+      noPartsData: '비디오에 파트가 없거나 파트 데이터가 비어있습니다',
+      loadingAudioSource: '오디오 소스 로딩 중',
+      generatedAudioList: '오디오 목록을 생성했습니다. 총 {count}개',
+      getDashAudioUrl: 'dash 오디오 URL을 가져왔습니다',
+      getDurlAudioUrl: 'durl 오디오 URL을 가져왔습니다',
+      loadingPartAudio: '파트 오디오 URL 로딩 중: {part}, cid: {cid}',
+      loadPartAudioFailed: '파트 오디오 URL 로드 실패: {part}',
+      switchToPart: '파트로 전환 중: {part}',
+      audioNotFoundInList: '해당 오디오 항목을 찾을 수 없습니다',
+      preparingToPlay: '현재 선택된 파트 재생 준비 중: {name}',
+      preloadingNextPart: '다음 파트 미리 로딩 중: {part}',
+      playingSelectedPart: '현재 선택된 파트 재생 중: {name}, 오디오 URL: {url}',
+      preloadNextFailed: '다음 파트 미리 로딩 실패'
+    }
+  }
+};

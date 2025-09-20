@@ -58,7 +58,7 @@
     <div class="music-content">
       <div class="music-content-title flex items-center">
         <n-ellipsis class="text-ellipsis" line-clamp="1">
-          {{ playMusic?.name || '' }}
+          <p v-html="playMusic?.name || ''"></p>
         </n-ellipsis>
         <span v-if="playbackRate !== 1.0" class="playback-rate-badge"> {{ playbackRate }}x </span>
       </div>

@@ -1,0 +1,51 @@
+export default {
+  player: {
+    loading: '聽書載入中...',
+    retry: '重試',
+    playNow: '立即播放',
+    loadingTitle: '載入中...',
+    totalDuration: '總時長: {duration}',
+    partsList: '分P列表 (共{count}集)',
+    playStarted: '已開始播放',
+    switchingPart: '切換到分P: {part}',
+    preloadingNext: '預載入下一個分P: {part}',
+    playingCurrent: '播放當前選中的分P: {name}',
+    num: '萬',
+    errors: {
+      invalidVideoId: '影片ID無效',
+      loadVideoDetailFailed: '獲取影片詳情失敗',
+      loadPartInfoFailed: '無法載入影片分P資訊',
+      loadAudioUrlFailed: '獲取音訊播放地址失敗',
+      videoDetailNotLoaded: '影片詳情未載入',
+      missingParams: '缺少必要參數',
+      noAvailableAudioUrl: '未找到可用的音訊地址',
+      loadPartAudioFailed: '載入分P音訊URL失敗',
+      audioListEmpty: '音訊列表為空，請重試',
+      currentPartNotFound: '未找到當前分P的音訊',
+      audioUrlFailed: '獲取音訊URL失敗',
+      playFailed: '播放失敗，請重試',
+      getAudioUrlFailed: '獲取音訊地址失敗，請重試',
+      audioNotFound: '未找到對應的音訊，請重試',
+      preloadFailed: '預載入下一個分P失敗',
+      switchPartFailed: '切換分P時載入音訊URL失敗'
+    },
+    console: {
+      loadingDetail: '載入B站影片詳情',
+      detailData: 'B站影片詳情資料',
+      multipleParts: '影片有多個分P，共{count}個',
+      noPartsData: '影片無分P或分P資料為空',
+      loadingAudioSource: '載入音訊來源',
+      generatedAudioList: '已生成音訊列表，共{count}首',
+      getDashAudioUrl: '獲取到dash音訊URL',
+      getDurlAudioUrl: '獲取到durl音訊URL',
+      loadingPartAudio: '載入分P音訊URL: {part}, cid: {cid}',
+      loadPartAudioFailed: '載入分P音訊URL失敗: {part}',
+      switchToPart: '切換到分P: {part}',
+      audioNotFoundInList: '未找到對應的音訊項目',
+      preparingToPlay: '準備播放當前選中的分P: {name}',
+      preloadingNextPart: '預載入下一個分P: {part}',
+      playingSelectedPart: '播放當前選中的分P: {name}，音訊URL: {url}',
+      preloadNextFailed: '預載入下一個分P失敗'
+    }
+  }
+};

@@ -1,4 +1,5 @@
-import type { IBilibiliPlayUrl, IBilibiliVideoDetail } from '@/types/bilibili';
+import type { IBilibiliPage, IBilibiliPlayUrl, IBilibiliVideoDetail } from '@/types/bilibili';
+import type { SongResult } from '@/types/music';
 import { getSetData, isElectron } from '@/utils';
 import request from '@/utils/request';
 
@@ -216,4 +217,228 @@ export const searchAndGetBilibiliAudioUrl = async (keyword: string): Promise<str
     console.error('根据名称搜索B站音频URL失败:', error);
     throw error;
   }
+};
+
+/**
+ * 解析B站ID格式
+ * @param biliId B站ID，可能是字符串格式（bvid--pid--cid）
+ * @returns 解析后的对象 {bvid, pid, cid} 或 null
+ */
+export const parseBilibiliId = (
+  biliId: string | number
+): { bvid: string; pid: string; cid: number } | null => {
+  const strBiliId = String(biliId);
+
+  if (strBiliId.includes('--')) {
+    const [bvid, pid, cid] = strBiliId.split('--');
+    if (!bvid || !pid || !cid) {
+      console.warn(`B站ID格式错误: ${strBiliId}, 正确格式应为 bvid--pid--cid`);
+      return null;
+    }
+    return { bvid, pid, cid: Number(cid) };
+  }
+
+  return null;
+};
+
+/**
+ * 创建默认的Artist对象
+ * @param name 艺术家名称
+ * @param id 艺术家ID
+ * @returns Artist对象
+ */
+const createDefaultArtist = (name: string, id: number = 0) => ({
+  name,
+  id,
+  picId: 0,
+  img1v1Id: 0,
+  briefDesc: '',
+  img1v1Url: '',
+  albumSize: 0,
+  alias: [],
+  trans: '',
+  musicSize: 0,
+  topicPerson: 0,
+  picUrl: ''
+});
+
+/**
+ * 创建默认的Album对象
+ * @param name 专辑名称
+ * @param picUrl 专辑图片URL
+ * @param artistName 艺术家名称
+ * @param artistId 艺术家ID
+ * @returns Album对象
+ */
+const createDefaultAlbum = (
+  name: string,
+  picUrl: string,
+  artistName: string,
+  artistId: number = 0
+) => ({
+  name,
+  picUrl,
+  id: 0,
+  type: '',
+  size: 0,
+  picId: 0,
+  blurPicUrl: '',
+  companyId: 0,
+  pic: 0,
+  publishTime: 0,
+  description: '',
+  tags: '',
+  company: '',
+  briefDesc: '',
+  artist: createDefaultArtist(artistName, artistId),
+  songs: [],
+  alias: [],
+  status: 0,
+  copyrightId: 0,
+  commentThreadId: '',
+  artists: [],
+  subType: '',
+  transName: null,
+  onSale: false,
+  mark: 0,
+  picId_str: ''
+});
+
+/**
+ * 创建基础的B站SongResult对象
+ * @param config 配置对象
+ * @returns SongResult对象
+ */
+const createBaseBilibiliSong = (config: {
+  id: string | number;
+  name: string;
+  picUrl: string;
+  artistName: string;
+  artistId?: number;
+  albumName: string;
+  bilibiliData?: { bvid: string; cid: number };
+  playMusicUrl?: string;
+  duration?: number;
+}): SongResult => {
+  const {
+    id,
+    name,
+    picUrl,
+    artistName,
+    artistId = 0,
+    albumName,
+    bilibiliData,
+    playMusicUrl,
+    duration
+  } = config;
+
+  const baseResult: SongResult = {
+    id,
+    name,
+    picUrl,
+    ar: [createDefaultArtist(artistName, artistId)],
+    al: createDefaultAlbum(albumName, picUrl, artistName, artistId),
+    count: 0,
+    source: 'bilibili' as const
+  };
+
+  if (bilibiliData) {
+    baseResult.bilibiliData = bilibiliData;
+  }
+
+  if (playMusicUrl) {
+    baseResult.playMusicUrl = playMusicUrl;
+  }
+
+  if (duration !== undefined) {
+    baseResult.duration = duration;
+  }
+
+  return baseResult as SongResult;
+};
+
+/**
+ * 从B站视频详情和分P信息创建SongResult对象
+ * @param videoDetail B站视频详情
+ * @param page 分P信息
+ * @param bvid B站视频ID
+ * @returns SongResult对象
+ */
+export const createSongFromBilibiliVideo = (
+  videoDetail: IBilibiliVideoDetail,
+  page: IBilibiliPage,
+  bvid: string
+): SongResult => {
+  const pageName = page.part || '';
+  const title = `${pageName} - ${videoDetail.title}`;
+  const songId = `${bvid}--${page.page}--${page.cid}`;
+  const picUrl = getBilibiliProxyUrl(videoDetail.pic);
+
+  return createBaseBilibiliSong({
+    id: songId,
+    name: title,
+    picUrl,
+    artistName: videoDetail.owner.name,
+    artistId: videoDetail.owner.mid,
+    albumName: videoDetail.title,
+    bilibiliData: {
+      bvid,
+      cid: page.cid
+    }
+  });
+};
+
+/**
+ * 创建简化的SongResult对象（用于搜索结果直接播放）
+ * @param item 搜索结果项
+ * @param audioUrl 音频URL
+ * @returns SongResult对象
+ */
+export const createSimpleBilibiliSong = (item: any, audioUrl: string): SongResult => {
+  const duration = typeof item.duration === 'string' ? 0 : item.duration * 1000; // 转换为毫秒
+
+  return createBaseBilibiliSong({
+    id: item.id,
+    name: item.title,
+    picUrl: item.pic,
+    artistName: item.author,
+    albumName: item.title,
+    playMusicUrl: audioUrl,
+    duration
+  });
+};
+
+/**
+ * 批量处理B站视频，从ID列表获取SongResult列表
+ * @param bilibiliIds B站ID列表
+ * @returns SongResult列表
+ */
+export const processBilibiliVideos = async (
+  bilibiliIds: (string | number)[]
+): Promise<SongResult[]> => {
+  const bilibiliSongs: SongResult[] = [];
+
+  for (const biliId of bilibiliIds) {
+    const parsedId = parseBilibiliId(biliId);
+    if (!parsedId) continue;
+
+    try {
+      const res = await getBilibiliVideoDetail(parsedId.bvid);
+      const videoDetail = res.data;
+
+      // 找到对应的分P
+      const page = videoDetail.pages.find((p) => p.cid === parsedId.cid);
+      if (!page) {
+        console.warn(`未找到对应的分P: cid=${parsedId.cid}`);
+        continue;
+      }
+
+      const songData = createSongFromBilibiliVideo(videoDetail, page, parsedId.bvid);
+      bilibiliSongs.push(songData);
+    } catch (error) {
+      console.error(`获取B站视频详情失败 (${biliId}):`, error);
+    }
+  }
+
+  return bilibiliSongs;
 };

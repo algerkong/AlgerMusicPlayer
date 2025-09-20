@@ -133,7 +133,13 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
-import { getBilibiliProxyUrl, searchBilibili } from '@/api/bilibili';
+import {
+  createSimpleBilibiliSong,
+  getBilibiliAudioUrl,
+  getBilibiliProxyUrl,
+  getBilibiliVideoDetail,
+  searchBilibili
+} from '@/api/bilibili';
 import { getHotSearch } from '@/api/home';
 import { getSearch } from '@/api/search';
 import BilibiliItem from '@/components/common/BilibiliItem.vue';
@@ -424,9 +430,35 @@ const handleSearchHistory = (item: { keyword: string; type: number }) => {
 };
 
 // 处理B站视频播放
-const handlePlayBilibili = (item: IBilibiliSearchResult) => {
-  // 使用路由导航到B站播放页面
-  router.push(`/bilibili/${item.bvid}`);
+const handlePlayBilibili = async (item: IBilibiliSearchResult) => {
+  try {
+    // 获取视频详情以判断是否为单个视频
+    const videoDetail = await getBilibiliVideoDetail(item.bvid);
+    const pages = videoDetail.data.pages;
+
+    // 如果是单个视频（只有一个分P），直接播放
+    if (pages && pages.length === 1) {
+      // 获取音频URL并播放
+      const audioUrl = await getBilibiliAudioUrl(item.bvid, pages[0].cid);
+
+      // 使用公用方法创建播放项目
+      const playItem = createSimpleBilibiliSong(item, audioUrl);
+      playItem.bilibiliData = {
+        bvid: item.bvid,
+        cid: pages[0].cid
+      };
+
+      // 添加到播放列表并开始播放
+      playerStore.setPlay(playItem);
+    } else {
+      // 多P视频，跳转到详情页面
+      router.push(`/bilibili/${item.bvid}`);
+    }
+  } catch (error) {
+    console.error('处理B站视频播放失败:', error);
+    // 出错时回退到原来的逻辑，跳转详情页
+    router.push(`/bilibili/${item.bvid}`);
+  }
 };
 
 const handlePlayAll = () => {

@@ -1,0 +1,51 @@
+export default {
+  player: {
+    loading: '听书加载中...',
+    retry: '重试',
+    playNow: '立即播放',
+    loadingTitle: '加载中...',
+    totalDuration: '总时长: {duration}',
+    partsList: '分P列表 (共{count}集)',
+    playStarted: '已开始播放',
+    switchingPart: '切换到分P: {part}',
+    preloadingNext: '预加载下一个分P: {part}',
+    playingCurrent: '播放当前选中的分P: {name}',
+    num: '万',
+    errors: {
+      invalidVideoId: '视频ID无效',
+      loadVideoDetailFailed: '获取视频详情失败',
+      loadPartInfoFailed: '无法加载视频分P信息',
+      loadAudioUrlFailed: '获取音频播放地址失败',
+      videoDetailNotLoaded: '视频详情未加载',
+      missingParams: '缺少必要参数',
+      noAvailableAudioUrl: '未找到可用的音频地址',
+      loadPartAudioFailed: '加载分P音频URL失败',
+      audioListEmpty: '音频列表为空，请重试',
+      currentPartNotFound: '未找到当前分P的音频',
+      audioUrlFailed: '获取音频URL失败',
+      playFailed: '播放失败，请重试',
+      getAudioUrlFailed: '获取音频地址失败，请重试',
+      audioNotFound: '未找到对应的音频，请重试',
+      preloadFailed: '预加载下一个分P失败',
+      switchPartFailed: '切换分P时加载音频URL失败'
+    },
+    console: {
+      loadingDetail: '加载B站视频详情',
+      detailData: 'B站视频详情数据',
+      multipleParts: '视频有多个分P，共{count}个',
+      noPartsData: '视频无分P或分P数据为空',
+      loadingAudioSource: '加载音频源',
+      generatedAudioList: '已生成音频列表，共{count}首',
+      getDashAudioUrl: '获取到dash音频URL',
+      getDurlAudioUrl: '获取到durl音频URL',
+      loadingPartAudio: '加载分P音频URL: {part}, cid: {cid}',
+      loadPartAudioFailed: '加载分P音频URL失败: {part}',
+      switchToPart: '切换到分P: {part}',
+      audioNotFoundInList: '未找到对应的音频项',
+      preparingToPlay: '准备播放当前选中的分P: {name}',
+      preloadingNextPart: '预加载下一个分P: {part}',
+      playingSelectedPart: '播放当前选中的分P: {name}，音频URL: {url}',
+      preloadNextFailed: '预加载下一个分P失败'
+    }
+  }
+};

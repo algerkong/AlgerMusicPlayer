@@ -18,7 +18,7 @@
             <i class="ri-add-line"></i>
           </div>
         </n-button-group>
-        <div>{{ staticData.playMusic.name }}</div>
+        <div v-html="staticData.playMusic.name"></div>
       </div>
       <!-- 添加播放控制按钮 -->
       <div class="play-controls">
