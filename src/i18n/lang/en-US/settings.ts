@@ -258,7 +258,6 @@ export default {
     lyricLines: 'Lyric Lines',
     mobileUnavailable: 'This setting is only available on mobile devices'
   },
-  // Lyric translation engine
   translationEngine: 'Lyric Translation Engine',
   translationEngineOptions: {
     none: 'Off',

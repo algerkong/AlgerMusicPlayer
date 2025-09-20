@@ -255,7 +255,6 @@ export default {
     },
     placeholder: '#1db954'
   },
-  // 歌詞翻譯引擎相關
   translationEngine: '歌詞翻譯引擎',
   translationEngineOptions: {
     none: '關閉',

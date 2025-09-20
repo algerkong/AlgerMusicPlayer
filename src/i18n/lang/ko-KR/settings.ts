@@ -258,6 +258,11 @@ export default {
     lyricLines: '가사 줄 수',
     mobileUnavailable: '이 설정은 모바일에서만 사용 가능합니다'
   },
+  translationEngine: '가사 번역 엔진',
+  translationEngineOptions: {
+    none: '닫기',
+    opencc: 'OpenCC 중국어 번체'
+  },
   themeColor: {
     title: '가사 테마 색상',
     presetColors: '미리 설정된 색상',

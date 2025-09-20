@@ -257,7 +257,6 @@ export default {
     lyricLines: '歌詞行数',
     mobileUnavailable: 'この設定はモバイルでのみ利用可能です'
   },
-  // 歌詞翻訳エンジン
   translationEngine: '歌詞翻訳エンジン',
   translationEngineOptions: {
     none: 'オフ',
