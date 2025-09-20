@@ -31,5 +31,6 @@
   "manualTheme": "light",
   "isMenuExpanded": false,
   "customApiPlugin": "",
-  "customApiPluginName": ""
+  "customApiPluginName": "",
+  "enableGpuAcceleration": true
 }

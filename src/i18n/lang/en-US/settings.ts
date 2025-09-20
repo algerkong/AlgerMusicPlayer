@@ -50,7 +50,15 @@ export default {
       englishText: 'The quick brown fox jumps over the lazy dog',
       japaneseText: 'あいうえお かきくけこ さしすせそ',
       koreanText: '가나다라마 바사아자차 카타파하'
-    }
+    },
+    gpuAcceleration: 'GPU Acceleration',
+    gpuAccelerationDesc:
+      'Enable or disable hardware acceleration, can improve rendering performance but may increase GPU load',
+    gpuAccelerationRestart:
+      'Changing GPU acceleration settings requires application restart to take effect',
+    gpuAccelerationChangeSuccess:
+      'GPU acceleration settings updated, restart application to take effect',
+    gpuAccelerationChangeError: 'Failed to update GPU acceleration settings'
   },
   playback: {
     quality: 'Audio Quality',

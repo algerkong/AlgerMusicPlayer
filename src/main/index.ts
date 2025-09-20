@@ -9,6 +9,7 @@ import { initializeConfig } from './modules/config';
 import { initializeFileManager } from './modules/fileManager';
 import { initializeFonts } from './modules/fonts';
 import { initializeLoginWindow } from './modules/loginWindow';
+import { initializeOtherApi } from './modules/otherApi';
 import { initializeRemoteControl } from './modules/remoteControl';
 import { initializeShortcuts, registerShortcuts } from './modules/shortcuts';
 import { initializeTray, updateCurrentSong, updatePlayState, updateTrayMenu } from './modules/tray';
@@ -16,7 +17,6 @@ import { setupUpdateHandlers } from './modules/update';
 import { createMainWindow, initializeWindowManager, setAppQuitting } from './modules/window';
 import { initWindowSizeManager } from './modules/window-size';
 import { startMusicApi } from './server';
-import { initializeOtherApi } from './modules/otherApi';
 
 // 导入所有图标
 const iconPath = join(__dirname, '../../resources');
@@ -27,9 +27,9 @@ const icon = nativeImage.createFromPath(
 let mainWindow: Electron.BrowserWindow;
 
 // 初始化应用
-function initialize() {
-  // 初始化配置管理
-  const store = initializeConfig();
+function initialize(configStore: any) {
+  // 使用已初始化的配置存储
+  const store = configStore;
 
   // 设置初始语言
   const savedLanguage = store.get('set.language') as Language;
@@ -76,6 +76,23 @@ const isSingleInstance = app.requestSingleInstanceLock();
 if (!isSingleInstance) {
   app.quit();
 } else {
+  // 在应用准备就绪前初始化GPU加速设置
+  // 必须在 app.ready 之前调用 disableHardwareAcceleration
+  try {
+    // 初始化配置管理以获取GPU加速设置
+    const store = initializeConfig();
+    const enableGpuAcceleration = store.get('set.enableGpuAcceleration', true) as boolean;
+
+    if (!enableGpuAcceleration) {
+      console.log('GPU加速已禁用');
+      app.disableHardwareAcceleration();
+    } else {
+      console.log('GPU加速已启用');
+    }
+  } catch (error) {
+    console.error('GPU加速设置初始化失败:', error);
+    // 如果配置读取失败，默认启用GPU加速
+  }
   // 当第二个实例启动时，将焦点转移到第一个实例的窗口
   app.on('second-instance', () => {
     if (mainWindow) {
@@ -100,12 +117,15 @@ if (!isSingleInstance) {
     // 初始化窗口大小管理器
     initWindowSizeManager();
 
+    // 重新初始化配置管理以获取完整的配置存储
+    const store = initializeConfig();
+
     // 初始化应用
-    initialize();
+    initialize(store);
 
     // macOS 激活应用时的处理
     app.on('activate', () => {
-      if (mainWindow === null) initialize();
+      if (mainWindow === null) initialize(store);
     });
   });
 

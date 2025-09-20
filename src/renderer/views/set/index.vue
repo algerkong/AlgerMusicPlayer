@@ -197,6 +197,29 @@
                 </div>
               </div>
             </div>
+
+            <!-- GPU加速设置 -->
+            <div class="set-item" v-if="isElectron">
+              <div>
+                <div class="set-item-title">{{ t('settings.basic.gpuAcceleration') }}</div>
+                <div class="set-item-content">
+                  <div class="text-sm text-gray-500 mb-2">
+                    {{ t('settings.basic.gpuAccelerationDesc') }}
+                  </div>
+                  <div class="text-xs text-amber-500" v-if="gpuAccelerationChanged">
+                    <i class="ri-information-line mr-1"></i>
+                    {{ t('settings.basic.gpuAccelerationRestart') }}
+                  </div>
+                </div>
+              </div>
+              <n-switch
+                v-model:value="setData.enableGpuAcceleration"
+                @update:value="handleGpuAccelerationChange"
+              >
+                <template #checked><i class="ri-cpu-line"></i></template>
+                <template #unchecked><i class="ri-cpu-line"></i></template>
+              </n-switch>
+            </div>
           </div>
         </div>
 
@@ -680,6 +703,33 @@ const handleAutoThemeChange = (value: boolean) => {
   settingsStore.setAutoTheme(value);
 };
 
+// GPU加速相关
+const gpuAccelerationChanged = ref(false);
+
+/**
+ * 处理GPU加速设置变更
+ * 在非Electron环境下，直接更新配置
+ * 在Electron环境下，通过IPC通信更新主进程配置并提示重启
+ */
+const handleGpuAccelerationChange = (enabled: boolean) => {
+  try {
+    if (window.electron) {
+      // Electron环境：通过IPC更新主进程配置
+      window.electron.ipcRenderer.send('update-gpu-acceleration', enabled);
+      gpuAccelerationChanged.value = true;
+
+      // 显示重启提示
+      message.info(t('settings.basic.gpuAccelerationChangeSuccess'));
+    } else {
+      // 非Electron环境：直接更新本地配置
+      console.log('GPU加速设置在Web环境下不生效');
+    }
+  } catch (error) {
+    console.error('GPU加速设置更新失败:', error);
+    message.error(t('settings.basic.gpuAccelerationChangeError'));
+  }
+};
+
 const openAuthor = () => {
   window.open(setData.value.authorUrl);
 };
@@ -794,6 +844,21 @@ onMounted(async () => {
       ...setData.value,
       enableRealIP: false
     };
+  }
+
+  // 监听GPU加速设置更新事件
+  if (window.electron) {
+    // 监听更新成功事件
+    window.electron.ipcRenderer.on('gpu-acceleration-updated', (_, enabled: boolean) => {
+      console.log('GPU加速设置已更新:', enabled);
+      gpuAccelerationChanged.value = true;
+    });
+
+    // 监听更新错误事件
+    window.electron.ipcRenderer.on('gpu-acceleration-update-error', (_, errorMessage: string) => {
+      console.error('GPU加速设置更新错误:', errorMessage);
+      gpuAccelerationChanged.value = false;
+    });
   }
 });
 
