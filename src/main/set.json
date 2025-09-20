@@ -15,6 +15,7 @@
   "musicApiPort": 30488,
   "closeAction": "ask",
   "musicQuality": "higher",
+  "lyricTranslationEngine": "none",
   "fontFamily": "system-ui",
   "fontScope": "global",
   "autoPlay": false,

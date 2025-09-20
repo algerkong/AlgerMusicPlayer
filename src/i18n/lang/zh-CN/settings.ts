@@ -258,6 +258,12 @@ export default {
     lyricLines: '歌词行数',
     mobileUnavailable: '此设置仅在移动端可用'
   },
+  // 歌词翻译引擎相关
+  translationEngine: '歌詞翻譯引擎',
+  translationEngineOptions: {
+    none: '关闭',
+    opencc: 'OpenCC 繁化'
+  },
   themeColor: {
     title: '歌词主题色',
     presetColors: '预设颜色',

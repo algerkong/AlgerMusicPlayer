@@ -255,6 +255,12 @@ export default {
     },
     placeholder: '#1db954'
   },
+  // 歌詞翻譯引擎相關
+  translationEngine: '歌詞翻譯引擎',
+  translationEngineOptions: {
+    none: '關閉',
+    opencc: 'OpenCC 繁化'
+  },
   cookie: {
     title: 'Cookie設定',
     description: '請輸入網易雲音樂的Cookie：',

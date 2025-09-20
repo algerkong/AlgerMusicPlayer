@@ -56,7 +56,6 @@
     "@electron-toolkit/tsconfig": "^1.0.1",
     "@eslint/js": "^9.31.0",
     "@rushstack/eslint-patch": "^1.10.3",
-
     "@types/howler": "^2.2.12",
     "@types/node": "^20.14.8",
     "@types/tinycolor2": "^1.4.6",
@@ -84,8 +83,8 @@
     "eslint-plugin-vue": "^10.3.0",
     "eslint-plugin-vue-scoped-css": "^2.11.0",
     "globals": "^16.3.0",
-    "lint-staged": "^15.2.10",
     "howler": "^2.2.4",
+    "lint-staged": "^15.2.10",
     "lodash": "^4.17.21",
     "marked": "^15.0.4",
     "naive-ui": "^2.41.0",
@@ -105,6 +104,7 @@
     "vite-plugin-compression": "^0.5.1",
     "vite-plugin-vue-devtools": "7.7.2",
     "vue": "^3.5.13",
+    "vue-eslint-parser": "^10.2.0",
     "vue-router": "^4.5.0",
     "vue-tsc": "^2.0.22"
   },
@@ -204,5 +204,11 @@
       "shortcutName": "AlgerMusicPlayer",
       "include": "build/installer.nsh"
     }
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild"
+    ]
   }
 }
