@@ -44,7 +44,13 @@
             >{{ item.name }}</n-ellipsis
           >
         </div>
-        <div class="song-item-content-name">
+        <div class="song-item-content-name flex items-center">
+          <div class="song-tags mr-2">
+              <span v-if="getHighestQuality(item)" :class="getQualityClass(getHighestQuality(item))">
+                {{ getHighestQuality(item) }}
+              </span>
+            <span v-if="item.fee === 1" class="song-tag vip-tag">VIP</span>
+          </div>
           <n-ellipsis class="text-ellipsis" line-clamp="1">
             <template v-for="(artist, index) in artists" :key="index">
               <span
@@ -150,6 +156,32 @@ const onPlayMusic = () => {
 const onPlayNext = () => {
   baseItem.value?.handlePlayNext();
 };
+// ==================== 音质判断逻辑 ====================
+/**
+ * 判断歌曲的最高音质
+ * @param song 歌曲对象
+ */
+const getHighestQuality = (song: SongResult): 'Hi-Res' | 'SQ' | 'HQ' | null => {
+  if (song.hr && song.hr.size > 0) return 'Hi-Res';
+  if (song.sq && song.sq.size > 0) return 'SQ';
+  if (song.h && song.h.size > 0) return 'HQ';
+  return null;
+};
+
+/**
+ * 根据音质获取对应的CSS类
+ * @param quality 音质字符串
+ */
+const getQualityClass = (quality: string | null): string => {
+  if (!quality) return '';
+  switch (quality) {
+    case 'Hi-Res': return 'song-tag hires-tag';
+    case 'SQ': return 'song-tag sq-tag';
+    case 'HQ': return 'song-tag hq-tag';
+    default: return '';
+  }
+};
+// ============================================================
 </script>
 
 <style lang="scss" scoped>
@@ -216,4 +248,48 @@ const onPlayNext = () => {
     @apply mr-3 cursor-pointer;
   }
 }
+
+// ==================== 标签样式 ====================
+.song-tags {
+  @apply flex items-center flex-shrink-0;
+}
+
+.song-tag {
+  @apply text-xs px-1 py-0.5 rounded border;
+  transform: scale(0.85);
+  transform-origin: left center;
+  letter-spacing: 0.5px;
+  background-color: transparent !important;
+}
+
+.hires-tag {
+  @apply text-red-600 border-red-500/80 dark:text-red-400 dark:border-red-500/70;
+}
+
+.sq-tag {
+  @apply text-amber-600 border-amber-500/80 dark:text-amber-400 dark:border-amber-500/70;
+}
+
+.hq-tag {
+  @apply text-green-600 border-green-500/80 dark:text-green-400 dark:border-green-500/70;
+}
+
+.vip-tag {
+  @apply text-purple-600 border-purple-500/80 dark:text-purple-400 dark:border-purple-500/70;
+}
+
+.compact-song-item .song-item-content-compact-artist {
+  @apply flex items-center;
+  .song-tags {
+    margin-right: 2px;
+  }
+}
+
+.standard-song-item .song-item-content-name {
+  @apply flex items-center;
+  .song-tags {
+    margin-right: 4px;
+  }
+}
+// ======================================================
 </style>
