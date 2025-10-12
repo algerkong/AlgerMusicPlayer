@@ -217,7 +217,6 @@ const loadPage = async () => {
   const token = localStorage.getItem('token');
   if (!token) return;
   const { data } = await getUserDetail();
-  console.log('data', data);
   userStore.user =
     data.profile || userStore.user || JSON.parse(localStorage.getItem('user') || '{}');
   localStorage.setItem('user', JSON.stringify(userStore.user));

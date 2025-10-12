@@ -111,27 +111,31 @@
                 </template>
               </div>
             </div>
+            <!-- 无时间戳歌词提示 -->
+            <div v-if="!supportAutoScroll" class="music-lrc-text no-scroll-tip">
+              <span>本歌词不支持自动滚动</span>
+            </div>
             <div
               v-for="(item, index) in lrcArray"
               :id="`music-lrc-text-${index}`"
               :key="index"
               class="music-lrc-text"
-              :class="{ 'now-text': index === nowIndex, 'hover-text': item.text }"
-              @click="setAudioTime(index)"
+              :class="{
+                'now-text': index === nowIndex,
+                'hover-text': item.text && item.startTime !== -1
+              }"
+              @click="item.startTime !== -1 ? setAudioTime(index) : null"
             >
               <!-- 逐字歌词显示 -->
               <div
                 v-if="item.hasWordByWord && item.words && item.words.length > 0"
                 class="word-by-word-lyric"
               >
-                <span
-                  v-for="(word, wordIndex) in item.words"
-                  :key="wordIndex"
-                  class="lyric-word"
-                  :style="getWordStyle(index, wordIndex, word)"
+                <template v-for="(word, wordIndex) in item.words" :key="wordIndex">
+                  <span class="lyric-word" :style="getWordStyle(index, wordIndex, word)">
+                    {{ word.text }} </span
+                  ><span class="lyric-word" v-if="word.space">&nbsp;</span></template
                 >
-                  {{ word.text }}
-                </span>
               </div>
               <!-- 普通歌词显示 -->
               <span v-else :style="getLrcStyle(index)">{{ item.text }}</span>
@@ -221,6 +225,10 @@ watch(
   { deep: true }
 );
 
+const supportAutoScroll = computed(() => {
+  return lrcArray.value.length > 0 && lrcArray.value[0].startTime !== -1;
+});
+
 const props = defineProps({
   modelValue: {
     type: Boolean,
@@ -246,7 +254,7 @@ const isVisible = computed({
 
 // 歌词滚动方法
 const lrcScroll = (behavior: ScrollBehavior = 'smooth', forceTop: boolean = false) => {
-  if (!isVisible.value || !lrcSider.value) return;
+  if (!isVisible.value || !lrcSider.value || !supportAutoScroll.value) return;
 
   if (forceTop) {
     lrcSider.value.scrollTo({
@@ -748,6 +756,20 @@ defineExpose({
       font-size: var(--lyric-font-size, 22px) !important;
       letter-spacing: var(--lyric-letter-spacing, 0) !important;
       line-height: var(--lyric-line-height, 2) !important;
+
+      &.no-scroll-tip {
+        @apply text-base opacity-60 cursor-default py-2;
+        color: var(--text-color-primary);
+        font-weight: normal;
+
+        span {
+          padding-right: 0;
+        }
+
+        &:hover {
+          background-color: transparent;
+        }
+      }
 
       span {
         background-clip: text !important;

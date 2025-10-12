@@ -9,7 +9,7 @@ import { getBilibiliAudioUrl } from '@/api/bilibili';
 import { getLikedList, getMusicLrc, getMusicUrl, getParsingMusicUrl, likeSong } from '@/api/music';
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';
 import { audioService } from '@/services/audioService';
-import type { ILyric, ILyricText, SongResult } from '@/types/music';
+import type { ILyric, ILyricText, IWordData, SongResult } from '@/types/music';
 import { type Platform } from '@/types/music';
 import { getImgUrl } from '@/utils';
 import { hasPermission } from '@/utils/auth';
@@ -237,13 +237,7 @@ const parseLyrics = (lyricsString: string): { lyrics: ILyricText[]; times: numbe
       lyrics.push({
         text: line.fullText,
         trText: '', // 翻译文本稍后处理
-        words: hasWords
-          ? line.words.map((word) => ({
-              text: word.text,
-              startTime: word.startTime,
-              duration: word.duration
-            }))
-          : undefined,
+        words: hasWords ? (line.words as IWordData[]) : undefined,
         hasWordByWord: hasWords,
         startTime: line.startTime,
         duration: line.duration
@@ -274,7 +268,6 @@ export const loadLrc = async (id: string | number): Promise<ILyric> => {
     const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
     const { data } = await getMusicLrc(numericId);
     const { lyrics, times } = parseLyrics(data?.yrc?.lyric || data?.lrc?.lyric);
-    const tlyric: Record<string, string> = {};
 
     // 检查是否有逐字歌词
     let hasWordByWord = false;
@@ -286,15 +279,58 @@ export const loadLrc = async (id: string | number): Promise<ILyric> => {
     }
 
     if (data.tlyric && data.tlyric.lyric) {
-      const { lyrics: tLyrics, times: tTimes } = parseLyrics(data.tlyric.lyric);
-      tLyrics.forEach((lyric, index) => {
-        tlyric[tTimes[index].toString()] = lyric.text;
+      const { lyrics: tLyrics } = parseLyrics(data.tlyric.lyric);
+
+      // 按索引顺序一一对应翻译歌词
+      // 如果翻译歌词数量与原歌词数量相同，直接按索引匹配
+      // 否则尝试通过时间戳匹配
+      if (tLyrics.length === lyrics.length) {
+        // 数量相同，直接按索引对应
+        lyrics.forEach((item, index) => {
+          item.trText = item.text && tLyrics[index] ? tLyrics[index].text : '';
+        });
+      } else {
+        // 数量不同，构建时间戳映射并尝试匹配
+        const tLyricMap = new Map<number, string>();
+        tLyrics.forEach((lyric) => {
+          if (lyric.text && lyric.startTime !== undefined) {
+            // 使用 startTime（毫秒）转换为秒作为键
+            const timeInSeconds = lyric.startTime / 1000;
+            tLyricMap.set(timeInSeconds, lyric.text);
+          }
+        });
+
+        // 为每句歌词查找最接近的翻译
+        lyrics.forEach((item, index) => {
+          if (!item.text) {
+            item.trText = '';
+            return;
+          }
+
+          const currentTime = times[index];
+          let closestTime = -1;
+          let minDiff = 2.0; // 最大允许差异2秒
+
+          // 查找最接近的时间戳
+          for (const [tTime] of tLyricMap.entries()) {
+            const diff = Math.abs(tTime - currentTime);
+            if (diff < minDiff) {
+              minDiff = diff;
+              closestTime = tTime;
+            }
+          }
+
+          item.trText = closestTime !== -1 ? tLyricMap.get(closestTime) || '' : '';
+        });
+      }
+    } else {
+      // 没有翻译歌词，清空 trText
+      lyrics.forEach((item) => {
+        item.trText = '';
       });
     }
 
-    lyrics.forEach((item, index) => {
-      item.trText = item.text ? tlyric[times[index].toString()] || '' : '';
-    });
+    console.log('lyrics', lyrics);
 
     return {
       lrcTimeArray: times,
@@ -450,14 +486,6 @@ const fetchSongs = async (playList: SongResult[], startIndex: number, endIndex: 
   } catch (error) {
     console.error('获取歌曲列表失败:', error);
   }
-};
-
-const loadLrcAsync = async (playMusic: SongResult) => {
-  if (playMusic.lyric && playMusic.lyric.lrcTimeArray.length > 0) {
-    return;
-  }
-  const lyrics = await loadLrc(playMusic.id);
-  playMusic.lyric = lyrics;
 };
 
 // 定时关闭类型
@@ -671,18 +699,35 @@ export const usePlayerStore = defineStore('player', () => {
       currentSound.stop();
       currentSound.unload();
     }
-    // 先切换歌曲数据，更新播放状态
-    // 加载歌词
-    await loadLrcAsync(music);
+
+    // 保存原始歌曲数据
     const originalMusic = { ...music };
-    // 获取背景色
-    const { backgroundColor, primaryColor } =
-      music.backgroundColor && music.primaryColor
-        ? music
-        : await getImageLinearBackground(getImgUrl(music?.picUrl, '30y30'));
+
+    // 并行加载歌词和背景色，提高加载速度
+    const [lyrics, { backgroundColor, primaryColor }] = await Promise.all([
+      // 加载歌词
+      (async () => {
+        if (music.lyric && music.lyric.lrcTimeArray.length > 0) {
+          return music.lyric;
+        }
+        return await loadLrc(music.id);
+      })(),
+      // 获取背景色
+      (async () => {
+        if (music.backgroundColor && music.primaryColor) {
+          return { backgroundColor: music.backgroundColor, primaryColor: music.primaryColor };
+        }
+        return await getImageLinearBackground(getImgUrl(music?.picUrl, '30y30'));
+      })()
+    ]);
+
+    // 设置歌词和背景色
+    music.lyric = lyrics;
     music.backgroundColor = backgroundColor;
     music.primaryColor = primaryColor;
     music.playLoading = true; // 设置加载状态
+
+    // 更新 playMusic，此时歌词已完全加载
     playMusic.value = music;
 
     // 更新播放相关状态
@@ -717,6 +762,10 @@ export const usePlayerStore = defineStore('player', () => {
 
       // 获取歌曲详情，包括URL
       const updatedPlayMusic = await getSongDetail(originalMusic);
+
+      // 保留已加载的歌词数据，不要被 getSongDetail 的返回值覆盖
+      updatedPlayMusic.lyric = lyrics;
+
       playMusic.value = updatedPlayMusic;
       playMusicUrl.value = updatedPlayMusic.playMusicUrl as string;
       music.playMusicUrl = updatedPlayMusic.playMusicUrl as string;
@@ -1480,6 +1529,7 @@ export const usePlayerStore = defineStore('player', () => {
       // 保存当前播放状态
       const shouldPlay = play.value;
       console.log('播放音频，当前播放状态:', shouldPlay ? '播放' : '暂停');
+      console.log('playMusic.value', playMusic.value.name, playMusic.value.id);
 
       // 检查是否有保存的进度
       let initialPosition = 0;

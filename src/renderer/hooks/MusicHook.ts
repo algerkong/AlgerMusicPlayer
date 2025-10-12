@@ -283,6 +283,7 @@ const parseLyricsString = async (
 
   try {
     const parseResult = parseLyrics(lyricsStr);
+    console.log('parseResult', parseResult);
 
     if (!parseResult.success) {
       console.error('歌词解析失败:', parseResult.error.message);
@@ -306,9 +307,7 @@ const parseLyricsString = async (
         trText: '', // 翻译文本稍后处理
         words: hasWords
           ? line.words.map((word) => ({
-              text: word.text,
-              startTime: word.startTime,
-              duration: word.duration
+              ...word
             }))
           : undefined,
         hasWordByWord: hasWords,
@@ -318,7 +317,6 @@ const parseLyricsString = async (
 
       lrcTimeArray.push(line.startTime);
     }
-    console.log('parseLyricsString', lrcArray);
     return { lrcArray, lrcTimeArray, hasWordByWord };
   } catch (error) {
     console.error('解析歌词时发生错误:', error);
@@ -760,6 +758,7 @@ export const getLrcTimeRange = (index: number) => ({
 watch(
   () => lrcArray.value,
   (newLrcArray) => {
+    console.log('lrcArray.value', lrcArray.value);
     if (newLrcArray.length > 0 && isElectron && isLyricWindowOpen.value) {
       sendLyricToWin();
     }

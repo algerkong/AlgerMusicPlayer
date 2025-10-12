@@ -14,6 +14,7 @@ export interface IWordData {
   text: string;
   startTime: number;
   duration: number;
+  space?: boolean;
 }
 
 export interface ILyricText {

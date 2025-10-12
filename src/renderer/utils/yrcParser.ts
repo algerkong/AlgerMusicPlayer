@@ -8,6 +8,8 @@ export interface WordData {
   readonly startTime: number;
   /** 持续时间（毫秒） */
   readonly duration: number;
+  /** 该单词后是否有空格 */
+  readonly space?: boolean;
 }
 
 /**
@@ -28,8 +30,8 @@ export interface LyricLine {
  * 元数据接口
  */
 export interface MetaData {
-  /** 时间戳 */
-  readonly time: number;
+  /** 时间戳（可选，不带时间的元数据为 undefined） */
+  readonly time?: number;
   /** 内容 */
   readonly content: string;
 }
@@ -65,7 +67,7 @@ export type ParseResult<T> =
   | { success: false; error: LyricParseError };
 
 // 预编译正则表达式以提高性能
-const METADATA_PATTERN = /^\{"t":/;
+const METADATA_PATTERN = /^\{("t":|"c":)/; // 匹配 {"t": 或 {"c":
 const LINE_TIME_PATTERN = /^\[(\d+),(\d+)\](.+)$/; // 逐字歌词格式: [92260,4740]...
 const LRC_TIME_PATTERN = /^\[(\d{2}):(\d{2})\.(\d{2,3})\](.*)$/; // 标准LRC格式: [00:25.47]...
 const WORD_PATTERN = /\((\d+),(\d+),\d+\)([^(]*?)(?=\(|$)/g;
@@ -99,10 +101,19 @@ const parseMetadata = (line: string): ParseResult<MetaData> => {
       };
     }
 
-    if (typeof data.t !== 'number' || !Array.isArray(data.c)) {
+    // 检查必须有 c 字段（内容数组）
+    if (!Array.isArray(data.c)) {
       return {
         success: false,
-        error: new LyricParseError('元数据格式无效：缺少必要字段', line)
+        error: new LyricParseError('元数据格式无效：缺少 c 字段', line)
+      };
+    }
+
+    // t 字段（时间戳）是可选的
+    if (data.t !== undefined && typeof data.t !== 'number') {
+      return {
+        success: false,
+        error: new LyricParseError('元数据格式无效：t 字段必须是数字', line)
       };
     }
 
@@ -203,19 +214,21 @@ const parseWordByWordLine = (line: string): ParseResult<LyricLine> => {
       error: new LyricParseError('逐字歌词行格式无效：时间值无效', line)
     };
   }
-
   // 重置正则表达式状态
   WORD_PATTERN.lastIndex = 0;
 
   const words: WordData[] = [];
-  const textParts: string[] = [];
   let match: RegExpExecArray | null;
 
-  // 使用exec而不是matchAll以更好地控制性能
+  // 第一遍：提取所有单词的原始文本（包含空格），构建完整文本
+  const rawTextParts: string[] = [];
+  const tempWords: Array<{ startTime: number; duration: number; text: string }> = [];
+
   while ((match = WORD_PATTERN.exec(content)) !== null) {
     const wordStartTime = parseInt(match[1], 10);
     const wordDuration = parseInt(match[2], 10);
-    const wordText = match[3].trim();
+    const rawWordText = match[3]; // 保留原始文本（可能包含空格）
+    const wordText = rawWordText.trim(); // 去除首尾空格的文本
 
     // 验证单词数据
     if (isNaN(wordStartTime) || isNaN(wordDuration)) {
@@ -223,21 +236,51 @@ const parseWordByWordLine = (line: string): ParseResult<LyricLine> => {
     }
 
     if (wordText) {
-      words.push({
+      tempWords.push({
         text: wordText,
         startTime: wordStartTime,
         duration: wordDuration
       });
-      textParts.push(wordText);
+      rawTextParts.push(rawWordText); // 保留原始格式用于分析空格
     }
   }
+
+  // 构建完整的文本（保留原始空格）
+  const fullText = rawTextParts.join('').trim();
+
+  // 第二遍：检查每个单词在完整文本中是否后面有空格
+  let currentPos = 0;
+  for (const word of tempWords) {
+    // 在完整文本中查找当前单词的位置
+    const wordIndex = fullText.indexOf(word.text, currentPos);
+    if (wordIndex === -1) {
+      // 如果找不到，直接添加不带空格标记的单词
+      words.push(word);
+      continue;
+    }
+
+    // 计算单词结束位置
+    const wordEndPos = wordIndex + word.text.length;
+    // 检查单词后面是否有空格
+    const hasSpace = wordEndPos < fullText.length && fullText[wordEndPos] === ' ';
+    words.push({
+      ...word,
+      space: hasSpace
+    });
+
+    // 更新搜索位置
+    currentPos = wordEndPos;
+  }
+
+  console.log('fullText', fullText);
+  console.log('words', words);
 
   return {
     success: true,
     data: {
       startTime,
       duration,
-      fullText: textParts.join(' '),
+      fullText,
       words
     }
   };
@@ -307,6 +350,33 @@ const calculateLrcDurations = (lyrics: LyricLine[]): LyricLine[] => {
 };
 
 /**
+ * 解析不带时间戳的纯文本歌词行
+ * @param line 纯文本歌词行
+ * @returns 解析结果
+ */
+const parsePlainTextLine = (line: string): ParseResult<LyricLine> => {
+  // 清理行首尾的 \r 等特殊字符
+  const text = line.replace(/\r/g, '').trim();
+
+  if (!text) {
+    return {
+      success: false,
+      error: new LyricParseError('纯文本歌词行为空', line)
+    };
+  }
+
+  return {
+    success: true,
+    data: {
+      startTime: -1, // -1 表示没有时间信息
+      duration: 0,
+      fullText: text,
+      words: []
+    }
+  };
+};
+
+/**
  * 主解析函数
  * @param lyricsStr 歌词字符串
  * @returns 解析结果
@@ -345,7 +415,13 @@ export const parseLyrics = (lyricsStr: string): ParseResult<ParsedLyrics> => {
           errors.push(result.error);
         }
       } else {
-        errors.push(new LyricParseError(`第${i + 1}行：无法识别的行格式`, trimmedLine));
+        // 尝试解析为纯文本歌词行（不带时间戳）
+        const result = parsePlainTextLine(trimmedLine);
+        if (result.success) {
+          lyrics.push(result.data);
+        } else {
+          errors.push(result.error);
+        }
       }
     }
 
@@ -359,8 +435,13 @@ export const parseLyrics = (lyricsStr: string): ParseResult<ParsedLyrics> => {
       };
     }
 
-    // 按时间排序歌词行
-    lyrics.sort((a, b) => a.startTime - b.startTime);
+    // 按时间排序歌词行（将没有时间信息的行放在最前面）
+    lyrics.sort((a, b) => {
+      if (a.startTime === -1 && b.startTime === -1) return 0;
+      if (a.startTime === -1) return -1;
+      if (b.startTime === -1) return 1;
+      return a.startTime - b.startTime;
+    });
 
     // 计算LRC格式的持续时间
     const finalLyrics = calculateLrcDurations(lyrics);

@@ -83,7 +83,19 @@
               }"
             >
               <div class="lyric-text" :style="{ fontSize: `${fontSize}px` }">
-                <span class="lyric-text-inner" :style="getLyricStyle(index)">
+                <!-- 逐字歌词显示 -->
+                <div
+                  v-if="line.hasWordByWord && line.words && line.words.length > 0"
+                  class="word-by-word-lyric"
+                >
+                  <template v-for="(word, wordIndex) in line.words" :key="wordIndex">
+                    <span class="lyric-word" :style="getWordStyle(index, wordIndex, word)">
+                      {{ word.text }} </span
+                    ><span class="lyric-word" v-if="word.space">&nbsp;</span></template
+                  >
+                </div>
+                <!-- 普通歌词显示 -->
+                <span v-else class="lyric-text-inner" :style="getLyricStyle(index)">
                   {{ line.text || '' }}
                 </span>
               </div>
@@ -131,7 +143,14 @@ const lastUpdateTime = ref(performance.now());
 
 // 静态数据
 const staticData = ref<{
-  lrcArray: Array<{ text: string; trText: string }>;
+  lrcArray: Array<{
+    text: string;
+    trText: string;
+    words?: Array<{ text: string; startTime: number; duration: number; space?: boolean }>;
+    hasWordByWord?: boolean;
+    startTime?: number;
+    duration?: number;
+  }>;
   lrcTimeArray: number[];
   allTime: number;
   playMusic: SongResult;
@@ -433,6 +452,58 @@ const getLyricStyle = (index: number) => {
     backfaceVisibility: 'hidden' as const, // 减少渲染问题
     transition: 'background 0.1s linear'
   };
+};
+
+// 逐字歌词样式函数
+const getWordStyle = (
+  lineIndex: number,
+  _wordIndex: number,
+  word: { text: string; startTime: number; duration: number }
+) => {
+  // 如果不是当前行，返回普通样式
+  if (lineIndex !== currentIndex.value) {
+    return {
+      color: 'var(--text-color)',
+      transition: 'color 0.3s ease',
+      backgroundImage: 'none',
+      WebkitTextFillColor: 'initial'
+    };
+  }
+
+  // 当前行的逐字效果
+  const currentTime = actualTime.value * 1000; // 转换为毫秒
+
+  // 直接使用绝对时间比较
+  const wordStartTime = word.startTime; // 单词开始的绝对时间（毫秒）
+  const wordEndTime = word.startTime + word.duration;
+
+  if (currentTime >= wordStartTime && currentTime < wordEndTime) {
+    // 当前正在播放的单词 - 使用渐变进度效果
+    const progress = Math.min((currentTime - wordStartTime) / word.duration, 1);
+    const progressPercent = Math.round(progress * 100);
+
+    return {
+      backgroundImage: `linear-gradient(to right, var(--highlight-color) 0%, var(--highlight-color) ${progressPercent}%, var(--text-color) ${progressPercent}%, var(--text-color) 100%)`,
+      backgroundClip: 'text',
+      WebkitBackgroundClip: 'text',
+      WebkitTextFillColor: 'transparent',
+      transition: 'all 0.1s ease'
+    };
+  } else if (currentTime >= wordEndTime) {
+    // 已经播放过的单词 - 纯色显示
+    return {
+      color: 'var(--highlight-color)',
+      WebkitTextFillColor: 'initial',
+      transition: 'none'
+    };
+  } else {
+    // 还未播放的单词 - 普通状态
+    return {
+      color: 'var(--text-color)',
+      WebkitTextFillColor: 'initial',
+      transition: 'none'
+    };
+  }
 };
 
 // 时间偏移量（毫秒）
@@ -914,7 +985,7 @@ body,
   }
 
   &.dark {
-    --text-color: #ffffff;
+    --text-color: #e6e6e6;
     --text-secondary: #ffffffea;
     --highlight-color: var(--lyric-highlight-color, #1ed760);
     --control-bg: rgba(124, 124, 124, 0.3);
@@ -1103,6 +1174,24 @@ body,
 
   .lyric-text-inner {
     transition: background 0.3s ease;
+  }
+
+  // 逐字歌词样式
+  .word-by-word-lyric {
+    display: inline-block;
+    text-align: center;
+
+    .lyric-word {
+      display: inline-block;
+      font-weight: inherit;
+      font-size: inherit;
+      letter-spacing: inherit;
+      line-height: inherit;
+      position: relative;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
   }
 }
 
