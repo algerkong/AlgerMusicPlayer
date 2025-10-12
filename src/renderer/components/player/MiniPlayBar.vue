@@ -18,14 +18,15 @@
       <div class="song-info" @click="setMusicFull">
         <div class="song-title" v-html="playMusic?.name || '未播放'"></div>
         <div class="song-artist">
-          <span
-            v-for="(artists, artistsindex) in artistList"
-            :key="artistsindex"
-            class="cursor-pointer hover:text-green-500"
-            @click.stop="handleArtistClick(artists.id)"
-          >
-            {{ artists.name }}{{ artistsindex < artistList.length - 1 ? ' / ' : '' }}
-          </span>
+          <template v-for="(artists, artistsindex) in artistList" :key="artistsindex">
+            <span
+              class="cursor-pointer hover:text-green-500"
+              @click.stop="handleArtistClick(artists.id)"
+            >
+              {{ artists.name }}
+            </span>
+            <span>{{ artistsindex < artistList.length - 1 ? ' / ' : '' }}</span>
+          </template>
         </div>
       </div>
 

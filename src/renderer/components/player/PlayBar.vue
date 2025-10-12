@@ -71,14 +71,15 @@
             zIndex: 99999
           }"
         >
-          <span
-            v-for="(artists, artistsindex) in artistList"
-            :key="artistsindex"
-            class="cursor-pointer hover:text-green-500"
-            @click="handleArtistClick(artists.id)"
-          >
-            {{ artists.name }}{{ artistsindex < artistList.length - 1 ? ' / ' : '' }}
-          </span>
+          <template v-for="(artists, artistsindex) in artistList" :key="artistsindex">
+            <span
+              class="cursor-pointer hover:text-green-500"
+              @click="handleArtistClick(artists.id)"
+            >
+              {{ artists.name }}
+            </span>
+            <span>{{ artistsindex < artistList.length - 1 ? ' / ' : '' }}</span>
+          </template>
         </n-ellipsis>
       </div>
     </div>

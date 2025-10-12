@@ -53,15 +53,15 @@
                 zIndex: 99999
               }"
             >
-              <span
-                v-for="(item, index) in artistList"
-                :key="index"
-                class="cursor-pointer hover:text-green-500"
-                @click="handleArtistClick(item.id)"
-              >
-                {{ item.name }}
-                {{ index < artistList.length - 1 ? ' / ' : '' }}
-              </span>
+              <template v-for="(item, index) in artistList" :key="index">
+                <span
+                  class="cursor-pointer hover:text-green-500"
+                  @click="handleArtistClick(item.id)"
+                >
+                  {{ item.name }}
+                </span>
+                <span>{{ index < artistList.length - 1 ? ' / ' : '' }}</span>
+              </template>
             </n-ellipsis>
           </div>
           <simple-play-bar
@@ -100,15 +100,15 @@
             >
               <div class="music-info-name" v-html="playMusic.name"></div>
               <div class="music-info-singer">
-                <span
-                  v-for="(item, index) in artistList"
-                  :key="index"
-                  class="cursor-pointer hover:text-green-500"
-                  @click="handleArtistClick(item.id)"
-                >
-                  {{ item.name }}
-                  {{ index < artistList.length - 1 ? ' / ' : '' }}
-                </span>
+                <template v-for="(item, index) in artistList" :key="index">
+                  <span
+                    class="cursor-pointer hover:text-green-500"
+                    @click="handleArtistClick(item.id)"
+                  >
+                    {{ item.name }}
+                  </span>
+                  <span>{{ index < artistList.length - 1 ? ' / ' : '' }}</span>
+                </template>
               </div>
             </div>
             <div

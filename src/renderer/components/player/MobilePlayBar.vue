@@ -24,9 +24,10 @@
           <h1 class="music-title">{{ playMusic.name }}</h1>
           <div class="artist-info">
             <span class="artist-name">
-              <span v-for="(artists, artistsindex) in artistList" :key="artistsindex">
-                {{ artists.name }}{{ artistsindex < artistList.length - 1 ? ' / ' : '' }}
-              </span>
+              <template v-for="(artists, artistsindex) in artistList" :key="artistsindex">
+                <span>{{ artists.name }}</span>
+                <span>{{ artistsindex < artistList.length - 1 ? ' / ' : '' }}</span>
+              </template>
             </span>
           </div>
         </div>
@@ -86,9 +87,10 @@
             <span class="mini-song-title">{{ playMusic.name }}</span>
             <span class="mx-2 text-gray-500 dark:text-gray-400">-</span>
             <span class="mini-song-artist">
-              <span v-for="(artists, artistsindex) in artistList" :key="artistsindex">
-                {{ artists.name }}{{ artistsindex < artistList.length - 1 ? ' / ' : '' }}
-              </span>
+              <template v-for="(artists, artistsindex) in artistList" :key="artistsindex">
+                <span>{{ artists.name }}</span>
+                <span>{{ artistsindex < artistList.length - 1 ? ' / ' : '' }}</span>
+              </template>
             </span>
           </n-ellipsis>
         </div>

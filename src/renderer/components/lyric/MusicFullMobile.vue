@@ -34,9 +34,10 @@
           <div class="fullscreen-header">
             <div class="song-title" v-html="playMusic.name"></div>
             <div class="artist-name">
-              <span v-for="(item, index) in artistList" :key="index">
-                {{ item.name }}{{ index < artistList.length - 1 ? ' / ' : '' }}
-              </span>
+              <template v-for="(item, index) in artistList" :key="index">
+                <span>{{ item.name }}</span>
+                <span>{{ index < artistList.length - 1 ? ' / ' : '' }}</span>
+              </template>
             </div>
           </div>
 
@@ -115,15 +116,12 @@
                 <h1 class="song-title" v-html="playMusic.name"></h1>
               </div>
               <p class="song-artist">
-                <span
-                  v-for="(item, index) in artistList"
-                  :key="index"
-                  class="artist-name"
-                  @click="handleArtistClick(item.id)"
-                >
-                  {{ item.name }}
-                  {{ index < artistList.length - 1 ? ' / ' : '' }}
-                </span>
+                <template v-for="(item, index) in artistList" :key="index">
+                  <span class="artist-name" @click="handleArtistClick(item.id)">
+                    {{ item.name }}
+                  </span>
+                  <span> {{ index < artistList.length - 1 ? ' / ' : '' }}</span>
+                </template>
               </p>
               <div class="favorite-icon" @click="toggleFavorite">
                 <i class="ri-heart-3-fill" :class="{ favorite: isFavorite }"></i>
@@ -222,14 +220,12 @@
             <div class="flex flex-col flex-1">
               <h1 class="song-title" v-html="playMusic.name"></h1>
               <p class="song-artist">
-                <span
-                  v-for="(item, index) in artistList"
-                  :key="index"
-                  class="artist-name"
-                  @click="handleArtistClick(item.id)"
-                >
-                  {{ item.name }}{{ index < artistList.length - 1 ? ' / ' : '' }}
-                </span>
+                <template v-for="(item, index) in artistList" :key="index">
+                  <span class="artist-name" @click="handleArtistClick(item.id)">
+                    {{ item.name }}
+                  </span>
+                  <span>{{ index < artistList.length - 1 ? ' / ' : '' }}</span>
+                </template>
               </p>
             </div>
             <div class="favorite-icon landscape" @click="toggleFavorite">
