@@ -29,7 +29,8 @@ export default {
     list: '자동으로 다음 곡 재생'
   },
   lrc: {
-    noLrc: '가사가 없습니다. 음악을 감상해주세요'
+    noLrc: '가사가 없습니다. 음악을 감상해주세요',
+    noAutoScroll: '본 가사는 자동 스크롤을 지원하지 않습니다'
   },
   reparse: {
     title: '음원 선택',

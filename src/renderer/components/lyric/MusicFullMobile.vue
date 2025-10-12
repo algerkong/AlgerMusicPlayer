@@ -52,7 +52,7 @@
             <div class="lyrics-padding-top"></div>
             <!-- 无时间戳歌词提示 -->
             <div v-if="!supportAutoScroll" class="lyric-line no-scroll-tip">
-              <span>本歌词不支持自动滚动</span>
+              <span>{{ t('player.lrc.noAutoScroll') }}</span>
             </div>
             <div
               v-for="(item, index) in lrcArray"
@@ -63,7 +63,7 @@
                 'now-text': index === nowIndex,
                 'hover-text': item.text && item.startTime !== -1
               }"
-              @click="item.startTime !== -1 ? jumpToLyricTime(index) : null"
+              @click="item.startTime !== -1 ? setAudioTime(index) : null"
             >
               <!-- 逐字歌词显示 -->
               <div
@@ -141,14 +141,14 @@
                     v-if="line.hasWordByWord && line.words && line.words.length > 0"
                     class="word-by-word-lyric"
                   >
-                    <span
-                      v-for="(word, wordIndex) in line.words"
-                      :key="wordIndex"
-                      class="lyric-word"
-                      :style="getWordStyle(line.originalIndex, wordIndex, word)"
+                    <template v-for="(word, wordIndex) in line.words" :key="wordIndex">
+                      <span
+                        class="lyric-word"
+                        :style="getWordStyle(line.originalIndex, wordIndex, word)"
+                      >
+                        {{ word.text }}</span
+                      ><span v-if="word.space">&nbsp;</span></template
                     >
-                      {{ word.text }}
-                    </span>
                   </div>
                   <!-- 普通歌词显示 -->
                   <span v-else>{{ line.text }}</span>
@@ -249,7 +249,7 @@
             <div class="lyrics-padding-top"></div>
             <!-- 无时间戳歌词提示 -->
             <div v-if="!supportAutoScroll" class="lyric-line no-scroll-tip">
-              <span>本歌词不支持自动滚动</span>
+              <span>{{ t('player.lrc.noAutoScroll') }}</span>
             </div>
             <div
               v-for="(item, index) in lrcArray"
@@ -260,7 +260,7 @@
                 'now-text': index === nowIndex,
                 'hover-text': item.text && item.startTime !== -1
               }"
-              @click="item.startTime !== -1 ? jumpToLyricTime(index) : null"
+              @click="item.startTime !== -1 ? setAudioTime(index) : null"
             >
               <!-- 逐字歌词显示 -->
               <div
@@ -367,10 +367,12 @@ import { useI18n } from 'vue-i18n';
 import {
   allTime,
   artistList,
+  correctionTime,
   lrcArray,
   nowIndex,
   nowTime,
   playMusic,
+  setAudioTime,
   sound,
   textColors,
   useLyricProgress
@@ -427,6 +429,7 @@ const isTouchScrolling = ref(false);
 const touchStartY = ref(0);
 const lastScrollTop = ref(0);
 const autoScrollTimer = ref<number | null>(null);
+const isSongChanging = ref(false);
 
 // 横屏检测相关
 const { width, height } = useWindowSize();
@@ -525,6 +528,9 @@ const scrollToCurrentLyric = (immediate = false, customScrollerRef?: HTMLElement
 // 监听歌词变化，自动滚动
 watch(nowIndex, (newIndex, oldIndex) => {
   console.log(`歌词索引变化: ${oldIndex} -> ${newIndex}`);
+
+  // 歌曲切换时不自动滚动
+  if (isSongChanging.value) return;
 
   // 在竖屏全屏歌词模式下滚动
   if (showFullLyrics.value) {
@@ -976,6 +982,38 @@ watch(
   { immediate: true }
 );
 
+// 添加对 playMusic.id 的监听，歌曲切换时滚动到顶部
+watch(
+  () => playMusic.value.id,
+  (newId, oldId) => {
+    // 只在歌曲真正切换时滚动到顶部
+    if (newId !== oldId && newId) {
+      isSongChanging.value = true;
+      // 延迟滚动，确保 nowIndex 已重置
+      setTimeout(() => {
+        // 在全屏歌词模式下滚动到顶部
+        if (showFullLyrics.value && lyricsScrollerRef.value) {
+          lyricsScrollerRef.value.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        }
+        // 在横屏模式下滚动到顶部
+        else if (isLandscape.value && landscapeLyricsRef.value) {
+          landscapeLyricsRef.value.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+          });
+        }
+        // 延迟恢复自动滚动，等待歌词数据更新
+        setTimeout(() => {
+          isSongChanging.value = false;
+        }, 300);
+      }, 100);
+    }
+  }
+);
+
 // 加载保存的配置
 onMounted(() => {
   const savedConfig = localStorage.getItem('music-full-config');
@@ -1020,42 +1058,6 @@ watch(isVisible, (newVal) => {
   }
 });
 
-// 通过点击跳转到歌词对应时间点
-const jumpToLyricTime = (index: number) => {
-  if (lrcArray.value[index] && 'time' in lrcArray.value[index] && sound.value) {
-    // 使用类型断言确保time属性存在
-    const lrcItem = lrcArray.value[index] as { time: number; text: string; trText?: string };
-    const time = lrcItem.time / 1000;
-
-    // 更新播放位置
-    sound.value.seek(time);
-    nowTime.value = time;
-
-    // 显示反馈动画 - 处理两种模式下的歌词行
-    const normalEl = document.getElementById(`lyric-line-${index}`);
-    const landscapeEl = document.getElementById(`landscape-lyric-line-${index}`);
-
-    // 根据当前模式获取正确的元素并添加动画效果
-    const activeEl = isLandscape.value ? landscapeEl : normalEl;
-
-    if (activeEl) {
-      activeEl.classList.add('clicked');
-      setTimeout(() => {
-        activeEl.classList.remove('clicked');
-      }, 300);
-    }
-
-    // 如果歌词索引没有变化（例如点击当前行），手动触发滚动
-    if (nowIndex.value === index) {
-      if (isLandscape.value && !showFullLyrics.value) {
-        scrollToCurrentLyric(true, landscapeLyricsRef.value);
-      } else if (showFullLyrics.value) {
-        scrollToCurrentLyric(true);
-      }
-    }
-  }
-};
-
 // 添加getLrcStyle函数
 const { getLrcStyle: originalLrcStyle } = useLyricProgress();
 
@@ -1097,8 +1099,8 @@ const getWordStyle = (lineIndex: number, _wordIndex: number, word: any) => {
     };
   }
 
-  // 当前行的逐字效果
-  const currentTime = nowTime.value * 1000; // 转换为毫秒，确保与word时间单位一致
+  // 当前行的逐字效果，应用歌词矫正时间
+  const currentTime = (nowTime.value + correctionTime.value) * 1000; // 转换为毫秒，确保与word时间单位一致
 
   // 直接使用绝对时间比较
   const wordStartTime = word.startTime; // 单词开始的绝对时间（毫秒）
@@ -1869,6 +1871,10 @@ const getWordStyle = (lineIndex: number, _wordIndex: number, word: any) => {
           @apply text-3xl;
         }
       }
+    }
+
+    .word-by-word-lyric {
+      @apply justify-start;
     }
   }
 

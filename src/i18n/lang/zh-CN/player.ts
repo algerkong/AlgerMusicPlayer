@@ -29,7 +29,8 @@ export default {
     list: '自动播放下一个'
   },
   lrc: {
-    noLrc: '暂无歌词, 请欣赏'
+    noLrc: '暂无歌词, 请欣赏',
+    noAutoScroll: '本歌词不支持自动滚动'
   },
   reparse: {
     title: '选择解析音源',

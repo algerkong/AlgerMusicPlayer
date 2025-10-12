@@ -113,7 +113,7 @@
             </div>
             <!-- 无时间戳歌词提示 -->
             <div v-if="!supportAutoScroll" class="music-lrc-text no-scroll-tip">
-              <span>本歌词不支持自动滚动</span>
+              <span>{{ t('player.lrc.noAutoScroll') }}</span>
             </div>
             <div
               v-for="(item, index) in lrcArray"

@@ -29,7 +29,8 @@ export default {
     list: 'Next'
   },
   lrc: {
-    noLrc: 'No lyrics, please enjoy'
+    noLrc: 'No lyrics, please enjoy',
+    noAutoScroll: 'This lyrics does not support auto-scroll'
   },
   reparse: {
     title: 'Select Music Source',

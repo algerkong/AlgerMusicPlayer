@@ -29,7 +29,8 @@ export default {
     list: '自動で次の曲を再生'
   },
   lrc: {
-    noLrc: '歌詞がありません。お楽しみください'
+    noLrc: '歌詞がありません。お楽しみください',
+    noAutoScroll: '本歌詞は自動スクロールをサポートしていません'
   },
   reparse: {
     title: '解析音源を選択',
