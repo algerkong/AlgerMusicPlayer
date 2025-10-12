@@ -41,6 +41,14 @@ export default {
     cancel: '取消',
     success: '下載記錄已清空'
   },
+  save: {
+    title: '儲存設定',
+    message: '目前下載設定尚未儲存，是否儲存變更？',
+    confirm: '儲存',
+    cancel: '取消',
+    discard: '放棄',
+    saveSuccess: '下載設定已儲存'
+  },
   message: {
     downloadComplete: '{filename} 下載完成',
     downloadFailed: '{filename} 下載失敗: {error}'
