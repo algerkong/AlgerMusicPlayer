@@ -894,11 +894,7 @@ export const usePlayerStore = defineStore('player', () => {
       }
 
       // 如果是当前正在播放的音乐，则切换播放/暂停状态
-      if (
-        playMusic.value.id === song.id &&
-        playMusic.value.playMusicUrl === song.playMusicUrl &&
-        !song.isFirstPlay
-      ) {
+      if (playMusic.value.id === song.id && playMusic.value.playMusicUrl === song.playMusicUrl) {
         if (play.value) {
           setPlayMusic(false);
           audioService.getCurrentSound()?.pause();
