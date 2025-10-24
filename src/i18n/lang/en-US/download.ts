@@ -44,6 +44,14 @@ export default {
     cancel: 'Cancel',
     success: 'Download records cleared'
   },
+  save: {
+    title: 'Save Settings',
+    message: 'Current download settings are not saved. Do you want to save the changes?',
+    confirm: 'Save',
+    cancel: 'Cancel',
+    discard: 'Discard',
+    saveSuccess: 'Download settings saved'
+  },
   message: {
     downloadComplete: '{filename} download completed',
     downloadFailed: '{filename} download failed: {error}',

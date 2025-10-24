@@ -219,8 +219,46 @@
     </div>
   </div>
 
+  <!-- 未保存下载设置对话框 -->
+  <div class="modal-overlay" v-if="showNotSaveConfirm" @click="showNotSaveConfirm = false">
+    <div class="modal-content" @click.stop>
+      <div class="modal-header">
+        <i class="iconfont ri-save-line"></i>
+        <span>{{ t('download.save.title') }}</span>
+      </div>
+      <div class="modal-body">
+        {{ t('download.save.message') }}
+      </div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel" @click="showNotSaveConfirm = false">
+          {{ t('download.save.cancel') }}
+        </button>
+        <button
+          class="modal-btn discard"
+          @click="
+            showNotSaveConfirm = false;
+            showSettingsDrawer = false;
+          "
+        >
+          {{ t('download.save.discard') }}
+        </button>
+        <button class="modal-btn confirm" @click="saveDownloadSettings">
+          {{ t('download.save.confirm') }}
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- 下载设置抽屉 -->
-  <n-drawer v-model:show="showSettingsDrawer" :width="380" placement="right" :z-index="999999999">
+  <n-drawer
+    v-model:show="showSettingsDrawer"
+    :width="380"
+    placement="right"
+    :z-index="999999999"
+    :close-on-esc="false"
+    @mask-click="handleCloseSettings"
+    @esc="handleCloseSettings"
+  >
     <n-drawer-content :native-scrollbar="false">
       <template #header>
         <div class="flex items-center justify-between">
@@ -260,7 +298,7 @@
           <div class="setting-desc">{{ t('download.settingsPanel.fileFormatDesc') }}</div>
 
           <!-- 预设模板 -->
-          <div class="flex gap-2 my-2">
+          <div class="flex flex-wrap gap-2 my-2">
             <n-button
               size="small"
               :type="
@@ -863,6 +901,31 @@ const downloadSettings = ref({
   nameFormat: '{songName} - {artistName}',
   separator: ' - '
 });
+// 保存一份原始设置，用于恢复默认值
+const originalDownloadSettings = ref({ ...downloadSettings.value });
+watch(showSettingsDrawer, (newVal) => {
+  if (newVal) {
+    // 抽屉打开时，保存当前设置作为原始设置
+    originalDownloadSettings.value = { ...downloadSettings.value };
+  } else {
+    // 抽屉关闭时，如果没有保存就恢复原始设置
+    downloadSettings.value = { ...originalDownloadSettings.value };
+  }
+});
+// 未保存对话框
+const showNotSaveConfirm = ref(false);
+// 在关闭抽屉前添加确认提示
+const handleCloseSettings = () => {
+  // 检查设置是否已修改
+  const isSettingsModified =
+    JSON.stringify(downloadSettings.value) !== JSON.stringify(originalDownloadSettings.value);
+  if (isSettingsModified) {
+    showSettingsDrawer.value = true;
+    showNotSaveConfirm.value = true;
+  } else {
+    showSettingsDrawer.value = false;
+  }
+};
 
 // 格式组件（用于拖拽排序）
 const formatComponents = ref([
@@ -979,6 +1042,9 @@ const saveDownloadSettings = () => {
     downloadSettings.value.separator
   );
 
+  // 更新原始设置为当前设置
+  originalDownloadSettings.value = { ...downloadSettings.value };
+
   // 如果是在已下载页面，刷新列表以更新显示
   if (tabName.value === 'downloaded') {
     refreshDownloadedList();
@@ -986,6 +1052,7 @@ const saveDownloadSettings = () => {
 
   message.success(t('download.settingsPanel.saveSuccess'));
   showSettingsDrawer.value = false;
+  showNotSaveConfirm.value = false;
 };
 
 // 初始化下载设置
@@ -1400,6 +1467,7 @@ onMounted(() => {
   @apply fixed inset-0 z-50;
   @apply bg-black/40 backdrop-blur-sm;
   @apply flex items-center justify-center;
+  z-index: 1000000000;
 }
 
 .modal-content {
@@ -1449,6 +1517,12 @@ onMounted(() => {
     @apply bg-amber-500 dark:bg-amber-600;
     @apply text-white;
     @apply hover:bg-amber-600 dark:hover:bg-amber-700;
+  }
+
+  &.discard {
+    @apply bg-red-500 dark:bg-red-600;
+    @apply text-white;
+    @apply hover:bg-red-600 dark:hover:bg-red-700;
   }
 }
 
