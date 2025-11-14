@@ -41,7 +41,7 @@
     "express": "^4.18.2",
     "file-type": "^21.0.0",
     "flac-tagger": "^1.0.7",
-    "font-list": "^1.5.1",
+    "font-list": "^2.0.1",
     "husky": "^9.1.7",
     "music-metadata": "^11.2.3",
     "netease-cloud-music-api-alger": "^4.26.1",
