@@ -122,49 +122,66 @@
             </div>
 
             <div class="downloaded-items">
-              <div v-for="item in downList" :key="item.path" class="downloaded-item">
-                <div class="item-cover">
-                  <img :src="getImgUrl(item.picUrl, '200y200')" alt="Cover" />
-                </div>
-                <div class="item-info flex items-center gap-4 w-full">
-                  <div
-                    class="item-name min-w-[160px] max-w-[160px] truncate"
-                    :title="item.displayName || item.filename"
-                  >
-                    {{ item.displayName || item.filename }}
+              <n-virtual-list
+                ref="downloadedListRef"
+                class="virtual-list"
+                :style="{ height: isPlay ? 'calc(100vh - 210px)' : 'calc(100vh - 130px)' }"
+                :items="downList"
+                :item-size="80"
+                item-resizable
+                key-field="path"
+                @scroll="handleVirtualScroll"
+              >
+                <template #default="{ item }">
+                  <div class="downloaded-item">
+                    <div class="item-cover">
+                      <img :src="getImgUrl(item.picUrl, '200y200')" alt="Cover" />
+                    </div>
+                    <div class="item-info flex items-center gap-4 w-full">
+                      <div
+                        class="item-name min-w-[160px] max-w-[160px] truncate"
+                        :title="item.displayName || item.filename"
+                      >
+                        {{ item.displayName || item.filename }}
+                      </div>
+                      <div
+                        class="item-artist min-w-[120px] max-w-[120px] flex items-center gap-1 truncate"
+                      >
+                        <i class="iconfont ri-user-line"></i>
+                        <span>{{ item.ar?.map((a) => a.name).join(', ') }}</span>
+                      </div>
+                      <div class="item-size min-w-[80px] max-w-[80px] flex items-center gap-1">
+                        <i class="iconfont ri-file-line"></i>
+                        <span>{{ formatSize(item.size) }}</span>
+                      </div>
+                      <div
+                        class="item-path min-w-[220px] max-w-[220px] flex items-center gap-1"
+                        :title="item.path"
+                      >
+                        <i class="iconfont ri-folder-path-line"></i>
+                        <span>{{ shortenPath(item.path) }}</span>
+                        <button class="copy-button" @click="copyPath(item.path)">
+                          <i class="iconfont ri-file-copy-line"></i>
+                        </button>
+                      </div>
+                      <div class="item-actions flex gap-1 ml-2">
+                        <button class="action-btn play" @click="handlePlayMusic(item)">
+                          <i class="iconfont ri-play-circle-line"></i>
+                        </button>
+                        <button class="action-btn open" @click="openDirectory(item.path)">
+                          <i class="iconfont ri-folder-open-line"></i>
+                        </button>
+                        <button class="action-btn delete" @click="handleDelete(item)">
+                          <i class="iconfont ri-delete-bin-line"></i>
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <div
-                    class="item-artist min-w-[120px] max-w-[120px] flex items-center gap-1 truncate"
-                  >
-                    <i class="iconfont ri-user-line"></i>
-                    <span>{{ item.ar?.map((a) => a.name).join(', ') }}</span>
-                  </div>
-                  <div class="item-size min-w-[80px] max-w-[80px] flex items-center gap-1">
-                    <i class="iconfont ri-file-line"></i>
-                    <span>{{ formatSize(item.size) }}</span>
-                  </div>
-                  <div
-                    class="item-path min-w-[220px] max-w-[220px] flex items-center gap-1"
-                    :title="item.path"
-                  >
-                    <i class="iconfont ri-folder-path-line"></i>
-                    <span>{{ shortenPath(item.path) }}</span>
-                    <button class="copy-button" @click="copyPath(item.path)">
-                      <i class="iconfont ri-file-copy-line"></i>
-                    </button>
-                  </div>
-                  <div class="item-actions flex gap-1 ml-2">
-                    <button class="action-btn play" @click="handlePlayMusic(item)">
-                      <i class="iconfont ri-play-circle-line"></i>
-                    </button>
-                    <button class="action-btn open" @click="openDirectory(item.path)">
-                      <i class="iconfont ri-folder-open-line"></i>
-                    </button>
-                    <button class="action-btn delete" @click="handleDelete(item)">
-                      <i class="iconfont ri-delete-bin-line"></i>
-                    </button>
-                  </div>
-                </div>
+                </template>
+              </n-virtual-list>
+              <div v-if="isLoadingDownloaded && downloadedList.length > 0" class="loading-more">
+                <n-spin size="small" />
+                <span class="ml-2">{{ t('download.loading') }}</span>
               </div>
             </div>
           </template>
@@ -464,6 +481,7 @@ const downloadedList = ref<DownloadedItem[]>(
 );
 
 const downList = computed(() => downloadedList.value);
+const isPlay = computed(() => !!playerStore.playMusicUrl);
 
 // 计算总进度
 const totalProgress = computed(() => {
@@ -679,41 +697,88 @@ const formatSongName = (songInfo) => {
     .replace(/\{albumName\}/g, albumName);
 };
 
-// 获取已下载音乐列表
-const refreshDownloadedList = async () => {
-  if (isLoadingDownloaded.value) return; // 防止重复加载
+// 全量本地记录
+const allLocalRecords = ref<any[]>([]);
+// 当前页码
+const page = ref(1);
+// 每页大小
+const pageSize = 50;
+const hasMore = ref(true);
+const scrollbarRef = ref();
+
+// 加载更多已下载音乐（从本地全量数据中分批读取并获取详情）
+const loadMoreDownloaded = async () => {
+  if (isLoadingDownloaded.value || !hasMore.value) return;
 
   try {
     isLoadingDownloaded.value = true;
-    const list = await window.electron.ipcRenderer.invoke('get-downloaded-music');
-
-    if (!Array.isArray(list) || list.length === 0) {
-      downloadedList.value = [];
-      localStorage.setItem('downloadedList', '[]');
+    
+    // 计算当前批次的切片范围
+    const start = (page.value - 1) * pageSize;
+    const end = start + pageSize;
+    
+    // 获取当前批次的本地记录
+    const batchRecords = allLocalRecords.value.slice(start, end);
+    
+    if (batchRecords.length === 0) {
+      hasMore.value = false;
       return;
     }
 
+    // 处理这一批次的数据：获取云端详情
+    const processedBatch = await processBatchRecords(batchRecords);
+    
+    // 追加到显示列表
+    if (page.value === 1) {
+      downloadedList.value = processedBatch;
+    } else {
+      downloadedList.value = [...downloadedList.value, ...processedBatch];
+    }
+    
+    // 更新页码和状态
+    if (end >= allLocalRecords.value.length) {
+      hasMore.value = false;
+    } else {
+      page.value++;
+    }
+
+    // 缓存当前的显示列表（注意：随着列表变大，可能需要限制缓存大小或只缓存前几页）
+    // 这里为了性能，我们只缓存已加载的部分，但要注意 storage 容量限制
+    // 实际生产中建议只缓存ID或前100条，这里暂时保持原逻辑缓存全部已加载的
+    try {
+      localStorage.setItem('downloadedList', JSON.stringify(downloadedList.value));
+    } catch(e) {
+      console.warn('LocalStorage quota exceeded or error', e);
+    }
+
+  } catch (error) {
+    console.error('加载更多下载记录失败:', error);
+  } finally {
+    isLoadingDownloaded.value = false;
+  }
+};
+
+// 处理一批记录：获取详情、格式化
+const processBatchRecords = async (list: any[]): Promise<DownloadedItem[]> => {
     const songIds = list.filter((item) => item.id).map((item) => item.id);
+    
+    // 如果这批没有ID，直接返回格式化后的本地记录
     if (songIds.length === 0) {
-      // 处理显示格式化文件名
-      const updatedList = list.map((item) => ({
+      return list.map((item) => ({
         ...item,
         displayName: formatSongName(item) || item.filename
       }));
-
-      downloadedList.value = updatedList;
-      localStorage.setItem('downloadedList', JSON.stringify(updatedList));
-      return;
     }
 
     try {
+      // 批量获取详情
       const detailRes = await getMusicDetail(songIds);
       const songDetails = detailRes.data.songs.reduce((acc, song) => {
         acc[song.id] = song;
         return acc;
       }, {});
 
-      const updatedList = list.map((item) => {
+      return list.map((item) => {
         const songDetail = songDetails[item.id];
         const updatedItem = {
           ...item,
@@ -721,31 +786,64 @@ const refreshDownloadedList = async () => {
           ar: songDetail?.ar || item.ar || [{ name: t('download.localMusic') }],
           name: songDetail?.name || item.name || item.filename
         };
-
-        // 添加格式化的显示名称
         updatedItem.displayName = formatSongName(updatedItem) || updatedItem.filename;
         return updatedItem;
       });
-
-      downloadedList.value = updatedList;
-      localStorage.setItem('downloadedList', JSON.stringify(updatedList));
     } catch (error) {
-      console.error('Failed to get music details:', error);
-      // 处理显示格式化文件名
-      const updatedList = list.map((item) => ({
+      console.error('获取详情失败，回退到本地信息', error);
+      return list.map((item) => ({
         ...item,
         displayName: formatSongName(item) || item.filename
       }));
-
-      downloadedList.value = updatedList;
-      localStorage.setItem('downloadedList', JSON.stringify(updatedList));
     }
+};
+
+// 初始化/刷新列表：读取所有本地文件记录，重置分页，加载第一页
+const refreshDownloadedList = async () => {
+  if (isLoadingDownloaded.value) return;
+
+  try {
+    isLoadingDownloaded.value = true;
+    // 1. 获取所有本地记录（仅元数据，很快）
+    const list = await window.electron.ipcRenderer.invoke('get-downloaded-music');
+
+    if (!Array.isArray(list) || list.length === 0) {
+      allLocalRecords.value = [];
+      downloadedList.value = [];
+      localStorage.setItem('downloadedList', '[]');
+      hasMore.value = false;
+      return;
+    }
+    
+    // 2. 保存全量索引
+    allLocalRecords.value = list;
+    
+    // 3. 重置状态
+    page.value = 1;
+    hasMore.value = true;
+    downloadedList.value = [];
+    
+    // 4. 释放Loading锁以便 loadMoreDownloaded 可以执行 (实际上 loadMoreDownloaded 也会加锁，所以这里直接调内部逻辑或手动重置锁)
+    isLoadingDownloaded.value = false; 
+    
+    // 5. 加载第一页
+    await loadMoreDownloaded();
+
   } catch (error) {
-    console.error('Failed to get downloaded music list:', error);
+    console.error('Failed to refresh list:', error);
     downloadedList.value = [];
     localStorage.setItem('downloadedList', '[]');
   } finally {
     isLoadingDownloaded.value = false;
+  }
+};
+
+// 虚拟列表滚动处理
+const handleVirtualScroll = (e: any) => {
+  const { scrollTop, scrollHeight, clientHeight } = e.target;
+  const threshold = 200;
+  if (scrollHeight - scrollTop - clientHeight < threshold && !isLoadingDownloaded.value && hasMore.value) {
+    loadMoreDownloaded();
   }
 };
 
