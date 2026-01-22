@@ -62,24 +62,36 @@
       </div>
     </div>
     <div class="favorite-main" :class="setAnimationClass('animate__bounceInRight')">
-      <n-scrollbar ref="scrollbarRef" class="favorite-content" @scroll="handleScroll">
+      <div class="favorite-content">
         <div v-if="favoriteList.length === 0" class="empty-tip">
           <n-empty :description="t('favorite.emptyTip')" />
         </div>
         <div v-else class="favorite-list" :class="{ 'max-w-[400px]': isComponent }">
-          <song-item
-            v-for="(song, index) in favoriteSongs"
-            :key="song.id"
-            :item="song"
-            :favorite="false"
-            class="favorite-list-item"
-            :class="setAnimationClass('animate__bounceInLeft')"
-            :style="getItemAnimationDelay(index)"
-            :selectable="isSelecting"
-            :selected="selectedSongs.includes(song.id as number)"
-            @play="handlePlay"
-            @select="handleSelect"
-          />
+          <n-virtual-list
+            ref="virtualListRef"
+            class="virtual-list"
+            :style="{ height: isPlay ? 'calc(100vh - 210px)' : 'calc(100vh - 130px)' }"
+            :items="favoriteSongs"
+            :item-size="64"
+            item-resizable
+            key-field="id"
+            @scroll="handleScroll"
+          >
+            <template #default="{ item, index }">
+              <song-item
+                :key="item.id"
+                :item="item"
+                :favorite="false"
+                class="favorite-list-item"
+                :class="setAnimationClass('animate__bounceInLeft')"
+                :style="getItemAnimationDelay(index)"
+                :selectable="isSelecting"
+                :selected="selectedSongs.includes(item.id as number)"
+                @play="handlePlay"
+                @select="handleSelect"
+              />
+            </template>
+          </n-virtual-list>
 
           <div v-if="isComponent" class="favorite-list-more text-center">
             <n-button text type="primary" @click="handleMore">{{ t('common.viewMore') }}</n-button>
@@ -92,7 +104,7 @@
           <div v-if="noMore" class="no-more-tip">{{ t('common.noMore') }}</div>
         </div>
         <play-bottom />
-      </n-scrollbar>
+      </div>
     </div>
   </div>
 </template>
@@ -114,6 +126,7 @@ import { isElectron, setAnimationClass, setAnimationDelay } from '@/utils';
 const { t } = useI18n();
 const playerStore = usePlayerStore();
 const favoriteList = computed(() => playerStore.favoriteList);
+const isPlay = computed(() => !!playerStore.playMusicUrl);
 const favoriteSongs = ref<SongResult[]>([]);
 const loading = ref(false);
 const noMore = ref(false);

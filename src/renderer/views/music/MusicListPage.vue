@@ -193,7 +193,7 @@
               <n-virtual-list
                 ref="songListRef"
                 class="song-virtual-list"
-                style="max-height: calc(100vh - 130px)"
+                :style="{ maxHeight: isPlay ? 'calc(100vh - 220px)' : 'calc(100vh - 130px)' }"
                 :items="filteredSongs"
                 :item-size="isCompactLayout ? 50 : 70"
                 item-resizable
@@ -215,7 +215,6 @@
                         @select="(id, selected) => handleSelect(id, selected)"
                       />
                     </div>
-                    <div v-if="index === filteredSongs.length - 1" class="h-36"></div>
                   </div>
                 </template>
               </n-virtual-list>
@@ -300,6 +299,8 @@ const canRemove = computed(() => {
 
 const canCollect = ref(false);
 const isCollected = ref(false);
+
+const isPlay = computed(() => !!playerStore.playMusicUrl && !isMobile.value);
 
 const page = ref(0);
 const pageSize = 40;
@@ -787,7 +788,12 @@ watch(
   () => listInfo.value,
   (newListInfo) => {
     if (newListInfo?.trackIds) {
-      loadFullPlaylist();
+      // 不再自动加载完整列表，改为惰性加载
+      // loadFullPlaylist();
+
+      // 重置列表状态并加载第一页
+      resetListState();
+      loadMoreSongs();
     }
   },
   { deep: true }
