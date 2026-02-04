@@ -1,110 +1,166 @@
 <template>
   <div class="user-page">
-    <div
-      v-if="userDetail && user"
-      class="left"
-      :class="setAnimationClass('animate__fadeInLeft')"
-      :style="{ backgroundImage: `url(${getImgUrl(user.backgroundUrl)})` }"
-    >
-      <div class="page">
-        <div class="user-name">
-          <span>{{ user.nickname }}</span>
-          <span v-if="currentLoginType" class="login-type">{{
-            t('login.title.' + currentLoginType)
-          }}</span>
-        </div>
-        <div class="user-info">
-          <n-avatar round :size="50" :src="getImgUrl(user.avatarUrl, '50y50')" />
-          <div class="user-info-list">
-            <div class="user-info-item">
-              <div class="label">{{ userDetail.profile.followeds }}</div>
-              <div>{{ t('user.profile.followers') }}</div>
-            </div>
-            <div class="user-info-item" @click="showFollowList">
-              <div class="label">{{ userDetail.profile.follows }}</div>
-              <div>{{ t('user.profile.following') }}</div>
-            </div>
-            <div class="user-info-item">
-              <div class="label">{{ userDetail.level }}</div>
-              <div>{{ t('user.profile.level') }}</div>
+    <template v-if="infoLoading">
+      <div class="left bg-gray-200 p-4 dark:bg-gray-800">
+        <div class="flex flex-col gap-6">
+          <div class="flex justify-between">
+            <n-skeleton text class="h-8 w-32" />
+            <n-skeleton text class="h-6 w-20" />
+          </div>
+          <div class="flex items-center gap-4">
+            <n-skeleton class="h-[50px] w-[50px] rounded-full" />
+            <div class="flex w-2/5 justify-around">
+              <div v-for="i in 3" :key="i" class="flex flex-col items-center gap-1">
+                <n-skeleton text class="h-5 w-8" />
+                <n-skeleton text class="h-4 w-12" />
+              </div>
             </div>
           </div>
-        </div>
-        <div class="uesr-signature">{{ userDetail.profile.signature }}</div>
-        <div class="play-list" :class="setAnimationClass('animate__fadeInLeft')">
-          <div class="tab-container">
-            <n-tabs v-model:value="currentTab" type="segment" animated>
-              <n-tab v-for="tab in tabs" :key="tab.key" :name="tab.key" :tab="t(tab.label)">
-              </n-tab>
-            </n-tabs>
-          </div>
-          <n-scrollbar>
-            <div class="mt-4">
-              <button
-                class="play-list-item"
-                @click="goToImportPlaylist"
-                v-if="isElectron && currentTab === 'created'"
-              >
-                <div class="play-list-item-img"><i class="icon iconfont ri-add-line"></i></div>
-                <div class="play-list-item-info">
-                  <div class="play-list-item-name">
-                    {{ t('comp.playlist.import.button') }}
-                  </div>
-                </div>
-              </button>
-              <div
-                v-for="(item, index) in currentList"
-                :key="index"
-                class="play-list-item"
-                @click="handleItemClick(item)"
-              >
-                <n-image
-                  :src="getImgUrl(getCoverUrl(item), '50y50')"
-                  class="play-list-item-img"
-                  lazy
-                  preview-disabled
-                />
-                <div class="play-list-item-info">
-                  <div class="play-list-item-name">
-                    <n-ellipsis :line-clamp="1">{{ item.name }}</n-ellipsis>
-                  </div>
-                  <div class="play-list-item-count">
-                    {{ getItemDescription(item) }}
-                  </div>
+          <n-skeleton text class="h-4 w-3/4" />
+          <div class="mt-4 rounded-xl bg-light p-4 dark:bg-black">
+            <n-skeleton class="mb-4 h-8 w-full rounded-xl" />
+            <div class="space-y-4">
+              <div v-for="i in 5" :key="i" class="flex gap-3">
+                <n-skeleton class="h-[50px] w-[50px] rounded-xl" />
+                <div class="flex flex-1 flex-col justify-center gap-2">
+                  <n-skeleton text class="h-4 w-1/2" />
+                  <n-skeleton text class="h-3 w-1/3" />
                 </div>
               </div>
-              <div class="pb-20"></div>
-              <play-bottom />
             </div>
+          </div>
+        </div>
+      </div>
+      <div v-if="!isMobile" class="right">
+        <div class="title"><n-skeleton text class="h-8 w-32" /></div>
+        <div class="rounded-2xl bg-light p-4 dark:bg-black">
+          <div class="space-y-2">
+            <div
+              v-for="i in 10"
+              :key="i"
+              class="flex items-center gap-4 rounded-2xl bg-light-100 p-2 dark:bg-dark-100"
+            >
+              <n-skeleton class="h-10 w-10 rounded-full" />
+              <n-skeleton class="h-10 w-10 rounded-xl" />
+              <div class="flex flex-1 flex-col gap-2">
+                <n-skeleton text class="h-4 w-1/3" />
+                <n-skeleton text class="h-3 w-1/4" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </template>
+    <template v-else>
+      <div
+        v-if="userDetail && user"
+        class="left"
+        :class="setAnimationClass('animate__fadeIn')"
+        :style="{ backgroundImage: `url(${getImgUrl(user.backgroundUrl)})` }"
+      >
+        <div class="page">
+          <div class="user-name">
+            <span>{{ user.nickname }}</span>
+            <span v-if="currentLoginType" class="login-type">{{
+              t('login.title.' + currentLoginType)
+            }}</span>
+          </div>
+          <div class="user-info">
+            <n-avatar round :size="50" :src="getImgUrl(user.avatarUrl, '50y50')" />
+            <div class="user-info-list">
+              <div class="user-info-item">
+                <div class="label">{{ userDetail.profile.followeds }}</div>
+                <div>{{ t('user.profile.followers') }}</div>
+              </div>
+              <div class="user-info-item" @click="showFollowList">
+                <div class="label">{{ userDetail.profile.follows }}</div>
+                <div>{{ t('user.profile.following') }}</div>
+              </div>
+              <div class="user-info-item">
+                <div class="label">{{ userDetail.level }}</div>
+                <div>{{ t('user.profile.level') }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="uesr-signature">{{ userDetail.profile.signature }}</div>
+          <div class="play-list" :class="setAnimationClass('animate__fadeIn')">
+            <div class="tab-container">
+              <n-tabs v-model:value="currentTab" type="segment" animated>
+                <n-tab v-for="tab in tabs" :key="tab.key" :name="tab.key" :tab="t(tab.label)">
+                </n-tab>
+              </n-tabs>
+            </div>
+            <n-scrollbar>
+              <div class="mt-4">
+                <div
+                  v-if="albumLoading && currentTab === 'album'"
+                  class="flex h-32 items-center justify-center"
+                >
+                  <n-spin size="medium" />
+                </div>
+                <template v-else>
+                  <button
+                    class="play-list-item"
+                    @click="goToImportPlaylist"
+                    v-if="isElectron && currentTab === 'created'"
+                  >
+                    <div class="play-list-item-img"><i class="icon iconfont ri-add-line"></i></div>
+                    <div class="play-list-item-info">
+                      <div class="play-list-item-name">
+                        {{ t('comp.playlist.import.button') }}
+                      </div>
+                    </div>
+                  </button>
+                  <div
+                    v-for="(item, index) in currentList"
+                    :key="index"
+                    class="play-list-item"
+                    @click="handleItemClick(item)"
+                  >
+                    <n-image
+                      :src="getImgUrl(getCoverUrl(item), '50y50')"
+                      class="play-list-item-img"
+                      lazy
+                      preview-disabled
+                    />
+                    <div class="play-list-item-info">
+                      <div class="play-list-item-name">
+                        <n-ellipsis :line-clamp="1">{{ item.name }}</n-ellipsis>
+                      </div>
+                      <div class="play-list-item-count">
+                        {{ getItemDescription(item) }}
+                      </div>
+                    </div>
+                  </div>
+                  <div class="pb-20"></div>
+                  <play-bottom />
+                </template>
+              </div>
+            </n-scrollbar>
+          </div>
+        </div>
+      </div>
+      <div v-if="!isMobile" class="right" :class="setAnimationClass('animate__fadeIn')">
+        <div class="title">{{ t('user.ranking.title') }}</div>
+        <div class="record-list">
+          <n-scrollbar>
+            <div
+              v-for="(item, index) in recordList"
+              :key="item.id"
+              class="record-item"
+              :class="setAnimationClass('animate__bounceInUp')"
+              :style="setAnimationDelay(index, 25)"
+            >
+              <div class="play-score">
+                {{ index + 1 }}
+              </div>
+              <song-item class="song-item" :item="item" mini @play="handlePlay" />
+            </div>
+            <play-bottom />
           </n-scrollbar>
         </div>
       </div>
-    </div>
-    <div
-      v-if="!isMobile"
-      v-loading="infoLoading"
-      class="right"
-      :class="setAnimationClass('animate__fadeInRight')"
-    >
-      <div class="title">{{ t('user.ranking.title') }}</div>
-      <div class="record-list">
-        <n-scrollbar>
-          <div
-            v-for="(item, index) in recordList"
-            :key="item.id"
-            class="record-item"
-            :class="setAnimationClass('animate__bounceInUp')"
-            :style="setAnimationDelay(index, 25)"
-          >
-            <div class="play-score">
-              {{ index + 1 }}
-            </div>
-            <song-item class="song-item" :item="item" mini @play="handlePlay" />
-          </div>
-          <play-bottom />
-        </n-scrollbar>
-      </div>
-    </div>
+    </template>
     <!-- 未登录时显示登录组件 -->
     <div
       v-if="!isLoggedIn && isMobile"
@@ -118,19 +174,17 @@
 
 <script lang="ts" setup>
 import { useMessage } from 'naive-ui';
+import { storeToRefs } from 'pinia';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
-import { getListDetail } from '@/api/list';
 import { getUserAlbumSublist, getUserDetail, getUserPlaylist, getUserRecord } from '@/api/user';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import SongItem from '@/components/common/SongItem.vue';
 import { usePlayerStore } from '@/store/modules/player';
 import { useUserStore } from '@/store/modules/user';
-import type { Playlist } from '@/types/listDetail';
-import type { IUserDetail } from '@/types/user';
 import { getImgUrl, isElectron, isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
 import { checkLoginStatus as checkAuthStatus } from '@/utils/auth';
 import LoginComponent from '@/views/login/index.vue';
@@ -143,12 +197,10 @@ const { t } = useI18n();
 const userStore = useUserStore();
 const playerStore = usePlayerStore();
 const router = useRouter();
-const userDetail = ref<IUserDetail>();
-const recordList = ref();
+const { userDetail, recordList } = storeToRefs(userStore);
 const infoLoading = ref(false);
+const albumLoading = ref(false);
 const mounted = ref(true);
-const list = ref<Playlist>();
-const listLoading = ref(false);
 const message = useMessage();
 
 // Tab 相关
@@ -244,7 +296,10 @@ const loadPage = async () => {
 
 const loadData = async () => {
   try {
-    infoLoading.value = true;
+    // 只有在没有数据时才显示加载状态
+    if (!userDetail.value || !recordList.value?.length) {
+      infoLoading.value = true;
+    }
 
     if (!user.value) {
       console.warn('用户数据不存在，尝试重新获取');
@@ -298,7 +353,7 @@ const loadAlbumList = async () => {
   }
 
   try {
-    infoLoading.value = true;
+    albumLoading.value = true;
     const res = await getUserAlbumSublist({ limit: 100, offset: 0 });
     if (!mounted.value) return;
     // 更新 store 中的专辑列表
@@ -308,7 +363,7 @@ const loadAlbumList = async () => {
     message.error('加载专辑列表失败');
   } finally {
     if (mounted.value) {
-      infoLoading.value = false;
+      albumLoading.value = false;
     }
   }
 };
@@ -356,53 +411,27 @@ onMounted(() => {
 
 // 替换显示歌单的方法
 const openPlaylist = (item: any) => {
-  listLoading.value = true;
-
-  getListDetail(item.id).then((res) => {
-    list.value = res.data.playlist;
-    listLoading.value = false;
-
-    navigateToMusicList(router, {
-      id: item.id,
-      type: 'playlist',
-      name: item.name,
-      songList: res.data.playlist.tracks || [],
-      listInfo: res.data.playlist,
-      canRemove: true // 保留可移除功能
-    });
+  navigateToMusicList(router, {
+    id: item.id,
+    type: 'playlist',
+    name: item.name,
+    listInfo: item,
+    canRemove: true // 保留可移除功能
   });
 };
 
 // 打开专辑
 const openAlbum = async (item: any) => {
-  // 使用专辑 API 获取专辑详情
-  try {
-    listLoading.value = true;
-    const { getAlbumDetail } = await import('@/api/music');
-    const res = await getAlbumDetail(item.id.toString());
-
-    if (res.data?.album && res.data?.songs) {
-      const albumData = res.data.album;
-      const songs = res.data.songs.map((item) => ({
-        ...item,
-        picUrl: albumData.picUrl
-      }));
-
-      navigateToMusicList(router, {
-        id: item.id,
-        type: 'album',
-        name: albumData.name,
-        songList: songs,
-        listInfo: albumData,
-        canRemove: false // 专辑不支持移除歌曲
-      });
-    }
-  } catch (error) {
-    console.error('加载专辑失败:', error);
-    message.error('加载专辑失败');
-  } finally {
-    listLoading.value = false;
-  }
+  navigateToMusicList(router, {
+    id: item.id,
+    type: 'album',
+    name: item.name,
+    listInfo: {
+      ...item,
+      coverImgUrl: item.picUrl || item.coverImgUrl
+    },
+    canRemove: false // 专辑不支持移除歌曲
+  });
 };
 
 const handlePlay = () => {

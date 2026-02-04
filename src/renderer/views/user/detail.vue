@@ -132,12 +132,10 @@ import { onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
-import { getListDetail } from '@/api/list';
 import { getUserDetail, getUserPlaylist, getUserRecord } from '@/api/user';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import SongItem from '@/components/common/SongItem.vue';
 import { usePlayerStore } from '@/store/modules/player';
-import type { Playlist } from '@/types/listDetail';
 import type { IUserDetail } from '@/types/user';
 import { formatNumber, getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
 
@@ -159,10 +157,6 @@ const playList = ref<any[]>([]);
 const recordList = ref<any[]>([]);
 const loading = ref(true);
 const hasRecordPermission = ref(true); // 是否有权限查看听歌记录
-
-// 歌单详情相关
-const currentList = ref<Playlist>();
-const listLoading = ref(false);
 
 // 加载用户数据
 const loadUserData = async () => {
@@ -238,20 +232,12 @@ watch(
 
 // 替换显示歌单的方法
 const openPlaylist = (item: any) => {
-  listLoading.value = true;
-
-  getListDetail(item.id).then((res) => {
-    currentList.value = res.data.playlist;
-    listLoading.value = false;
-
-    navigateToMusicList(router, {
-      id: item.id,
-      type: 'playlist',
-      name: item.name,
-      songList: res.data.playlist.tracks || [],
-      listInfo: res.data.playlist,
-      canRemove: false
-    });
+  navigateToMusicList(router, {
+    id: item.id,
+    type: 'playlist',
+    name: item.name,
+    listInfo: item,
+    canRemove: false
   });
 };
 
