@@ -38,6 +38,7 @@
         :title="album.name"
         :subtitle="getArtistNames(album)"
         :tracks="albumTracksMap[album.id] || []"
+        :show-hover-tracks="!isMobile"
         :animation-delay="calculateAnimationDelay(index, 0.04)"
         @click="handleAlbumClick(album)"
         @play="playAlbum(album)"
@@ -62,7 +63,7 @@ import { getAlbum } from '@/api/list';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import { usePlayerCoreStore } from '@/store/modules/playerCore';
 import { usePlaylistStore } from '@/store/modules/playlist';
-import { calculateAnimationDelay, isElectron } from '@/utils';
+import { calculateAnimationDelay, isElectron, isMobile } from '@/utils';
 
 import HomeListItem from './HomeListItem.vue';
 
@@ -104,7 +105,7 @@ const fetchAlbums = async () => {
     if (data.code === 200) {
       albums.value = data.weekData || data.monthData || data.albums || [];
       // Preload tracks for displayed albums (Electron only)
-      if (isElectron) {
+      if (isElectron && !isMobile.value) {
         preloadAllTracks();
       }
     }

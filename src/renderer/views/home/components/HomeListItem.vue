@@ -16,6 +16,7 @@
 
       <!-- Hover Overlay with Song Preview -->
       <div
+        v-if="showHoverTracks"
         class="absolute inset-0 flex items-end opacity-0 transition-all duration-500 ease-out group-hover:opacity-100"
         :style="overlayStyle"
       >
@@ -108,10 +109,12 @@ const props = withDefaults(
     badgeType?: 'new' | 'hot' | 'recommend';
     playCount?: number;
     animationDelay?: string;
+    showHoverTracks?: boolean;
   }>(),
   {
     tracks: () => [],
-    animationDelay: '0s'
+    animationDelay: '0s',
+    showHoverTracks: true
   }
 );
 

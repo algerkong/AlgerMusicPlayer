@@ -68,7 +68,7 @@ import { onMounted, ref } from 'vue';
 
 import { getHotSinger } from '@/api/home';
 import { useArtist } from '@/hooks/useArtist';
-import { calculateAnimationDelay, getImgUrl } from '@/utils';
+import { calculateAnimationDelay, getImgUrl, isMobile } from '@/utils';
 
 const props = defineProps<{
   title: string;
@@ -100,6 +100,7 @@ const fetchArtists = async () => {
 
 // Enhanced horizontal scroll with wheel support
 const handleWheel = (e: WheelEvent) => {
+  if (isMobile.value) return;
   if (!scrollContainer.value) return;
 
   // Prevent default vertical scroll
@@ -161,7 +162,7 @@ onMounted(() => {
   -webkit-overflow-scrolling: touch;
 
   /* Optimize for touch */
-  touch-action: pan-x;
+  touch-action: pan-x pan-y;
 }
 
 .artists-track {

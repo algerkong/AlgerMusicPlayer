@@ -60,7 +60,7 @@ import { getListDetail } from '@/api/list';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import { usePlayerCoreStore } from '@/store/modules/playerCore';
 import { usePlaylistStore } from '@/store/modules/playlist';
-import { calculateAnimationDelay, isElectron } from '@/utils';
+import { calculateAnimationDelay, isElectron, isMobile } from '@/utils';
 
 import HomeListItem from './HomeListItem.vue';
 
@@ -88,8 +88,13 @@ const playlists = ref<any[]>([]);
 const loading = ref(true);
 const playlistTracksMap = reactive<Record<number, any[]>>({});
 
+const effectiveColumns = computed(() =>
+  isMobile.value ? Math.min(2, props.columns) : props.columns
+);
+const effectiveRows = computed(() => (isMobile.value ? 2 : props.rows));
+
 // Calculate display count to fill exactly N rows
-const displayCount = computed(() => props.columns * props.rows);
+const displayCount = computed(() => effectiveColumns.value * effectiveRows.value);
 
 const displayPlaylists = computed(() => {
   const count = displayCount.value;
@@ -97,7 +102,7 @@ const displayPlaylists = computed(() => {
 });
 
 const gridStyle = computed(() => ({
-  gridTemplateColumns: `repeat(${props.columns}, minmax(0, 1fr))`
+  gridTemplateColumns: `repeat(${effectiveColumns.value}, minmax(0, 1fr))`
 }));
 
 const fetchPlaylists = async () => {

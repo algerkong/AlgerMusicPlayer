@@ -18,10 +18,7 @@
     </div>
 
     <!-- Loading Skeleton -->
-    <div
-      v-if="loading"
-      class="songs-grid grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-    >
+    <div v-if="loading" class="songs-grid grid gap-3" :class="gridClass">
       <div
         v-for="i in 10"
         :key="i"
@@ -30,10 +27,7 @@
     </div>
 
     <!-- Songs Grid (Even columns: 1→2→3→4→5) -->
-    <div
-      v-else
-      class="songs-grid grid grid-cols-1 gap-2 md:gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
-    >
+    <div v-else class="songs-grid grid gap-2 md:gap-3" :class="gridClass">
       <song-item
         v-for="(song, index) in songs"
         :key="song.id"
@@ -49,14 +43,14 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { getRecommendMusic } from '@/api/home';
 import SongItem from '@/components/common/SongItem.vue';
 import { usePlayerStore } from '@/store';
 import { SongResult } from '@/types/music';
-import { calculateAnimationDelay } from '@/utils';
+import { calculateAnimationDelay, isMobile } from '@/utils';
 
 const props = defineProps<{
   title: string;
@@ -67,6 +61,11 @@ const { t } = useI18n();
 const playerStore = usePlayerStore();
 const songs = ref<SongResult[]>([]);
 const loading = ref(true);
+const gridClass = computed(() =>
+  isMobile.value
+    ? 'grid-cols-1 sm:grid-cols-2'
+    : 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+);
 
 const fetchSongs = async () => {
   try {
