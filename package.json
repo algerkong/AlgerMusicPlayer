@@ -8,7 +8,8 @@
   "scripts": {
     "prepare": "husky",
     "format": "prettier --write ./src",
-    "lint": "eslint ./src --fix",
+    "lint": "eslint ./src --fix && npm run lint:i18n",
+    "lint:i18n": "bun scripts/check_i18n.ts",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "vue-tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
@@ -52,7 +53,6 @@
     "node-id3": "^0.2.9",
     "node-machine-id": "^1.1.12",
     "pinia-plugin-persistedstate": "^4.7.1",
-    "sharp": "^0.34.5",
     "vue-i18n": "^11.2.2"
   },
   "devDependencies": {
@@ -78,7 +78,7 @@
     "autoprefixer": "^10.4.22",
     "axios": "^1.13.2",
     "cross-env": "^7.0.3",
-    "electron": "^39.2.7",
+    "electron": "^40.1.0",
     "electron-builder": "^26.0.12",
     "electron-vite": "^5.0.0",
     "eslint": "^9.39.2",

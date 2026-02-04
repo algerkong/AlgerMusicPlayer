@@ -4,4 +4,7 @@ npx lint-staged
 echo "运行类型检查..."
 npm run typecheck
 
+echo "运行国际化检查..."
+npm run lint:i18n
+
 echo "所有检查通过，准备提交..."

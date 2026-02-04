@@ -32,6 +32,11 @@ android/app/release
 .cursor
 .windsurf
 .agent
+.claude
+CLAUDE.md
+AGENTS.md
+.sisyphus
+
 
 
 .auto-imports.d.ts
