@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { app, dialog, ipcMain, Notification, protocol, shell } from 'electron';
+import { app, dialog, ipcMain, nativeImage, Notification, protocol, shell } from 'electron';
 import Store from 'electron-store';
 import { fileTypeFromFile } from 'file-type';
 import { FlacTagMap, writeFlacTags } from 'flac-tagger';
@@ -10,7 +10,6 @@ import * as mm from 'music-metadata';
 import * as NodeID3 from 'node-id3';
 import * as os from 'os';
 import * as path from 'path';
-import sharp from 'sharp';
 
 import { getStore } from './config';
 
@@ -659,19 +658,28 @@ async function downloadMusic(
             const originalSizeMB = (originalCoverBuffer.length / (1024 * 1024)).toFixed(2);
             console.log(`封面图大于2MB (${originalSizeMB} MB)，开始压缩...`);
             try {
-              // 使用 sharp 进行压缩
-              coverImageBuffer = await sharp(originalCoverBuffer)
-                .resize({
-                  width: 1600,
-                  height: 1600,
-                  fit: 'inside',
-                  withoutEnlargement: true
-                })
-                .jpeg({
-                  quality: 80,
-                  mozjpeg: true
-                })
-                .toBuffer();
+              // 使用 Electron nativeImage 进行压缩
+              const image = nativeImage.createFromBuffer(originalCoverBuffer);
+              const size = image.getSize();
+
+              // 计算新尺寸，保持宽高比，最大1600px
+              const maxSize = 1600;
+              let newWidth = size.width;
+              let newHeight = size.height;
+
+              if (size.width > maxSize || size.height > maxSize) {
+                const ratio = Math.min(maxSize / size.width, maxSize / size.height);
+                newWidth = Math.round(size.width * ratio);
+                newHeight = Math.round(size.height * ratio);
+              }
+
+              // 调整大小并转换为 JPEG 格式（质量 80）
+              const resizedImage = image.resize({
+                width: newWidth,
+                height: newHeight,
+                quality: 'good'
+              });
+              coverImageBuffer = resizedImage.toJPEG(80);
 
               const compressedSizeMB = (coverImageBuffer.length / (1024 * 1024)).toFixed(2);
               console.log(`封面图压缩完成，新大小: ${compressedSizeMB} MB`);
@@ -747,10 +755,8 @@ async function downloadMusic(
           ARTIST: artistNames,
           ALBUM: songInfo?.al?.name || songInfo?.song?.album?.name || songInfo?.name || filename,
           LYRICS: lyricsContent || '',
-          TRACKNUMBER: songInfo?.no ? String(songInfo.no) : undefined,
-          DATE: songInfo?.publishTime
-            ? new Date(songInfo.publishTime).getFullYear().toString()
-            : undefined
+          TRACKNUMBER: songInfo?.no ? String(songInfo.no) : '',
+          DATE: songInfo?.publishTime ? new Date(songInfo.publishTime).getFullYear().toString() : ''
         };
 
         await writeFlacTags(

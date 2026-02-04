@@ -1,5 +1,5 @@
 import { electronApp, optimizer } from '@electron-toolkit/utils';
-import { app, ipcMain, nativeImage } from 'electron';
+import { app, ipcMain, nativeImage, session } from 'electron';
 import { join } from 'path';
 
 import type { Language } from '../i18n/main';
@@ -9,6 +9,7 @@ import { initializeConfig } from './modules/config';
 import { initializeFileManager } from './modules/fileManager';
 import { initializeFonts } from './modules/fonts';
 import { initializeLoginWindow } from './modules/loginWindow';
+import { initLxMusicHttp } from './modules/lxMusicHttp';
 import { initializeOtherApi } from './modules/otherApi';
 import { initializeRemoteControl } from './modules/remoteControl';
 import { initializeShortcuts, registerShortcuts } from './modules/shortcuts';
@@ -17,7 +18,6 @@ import { setupUpdateHandlers } from './modules/update';
 import { createMainWindow, initializeWindowManager, setAppQuitting } from './modules/window';
 import { initWindowSizeManager } from './modules/window-size';
 import { startMusicApi } from './server';
-import { initLxMusicHttp } from './modules/lxMusicHttp';
 
 // 导入所有图标
 const iconPath = join(__dirname, '../../resources');
@@ -120,6 +120,19 @@ if (!isSingleInstance) {
 
     // 初始化窗口大小管理器
     initWindowSizeManager();
+
+    // 设置媒体设备权限 - 允许枚举音频输出设备
+    session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
+      if (permission === ('media' as any) || permission === ('audioCapture' as any)) {
+        callback(true);
+        return;
+      }
+      callback(true);
+    });
+
+    session.defaultSession.setPermissionCheckHandler(() => {
+      return true;
+    });
 
     // 重新初始化配置管理以获取完整的配置存储
     const store = initializeConfig();
