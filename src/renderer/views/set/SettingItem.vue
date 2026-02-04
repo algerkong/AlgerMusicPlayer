@@ -1,31 +1,32 @@
 <template>
   <div
-    class="flex items-center justify-between p-4 rounded-lg transition-all bg-light dark:bg-dark text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 hover:bg-gray-50 hover:dark:bg-gray-800"
+    class="setting-item flex items-center justify-between p-4 transition-colors bg-transparent text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 last:border-b-0 hover:bg-gray-50 hover:dark:bg-white/5"
     :class="[
       // 移动端垂直布局
-      { 'max-md:flex-col max-md:items-start max-md:gap-3 max-md:p-3': !inline },
+      { 'max-md:flex-col max-md:items-start max-md:gap-3': !inline },
       // 可点击样式
       {
-        'cursor-pointer hover:text-green-500 hover:!bg-green-50 hover:dark:!bg-green-900/30':
-          clickable
+        'cursor-pointer active:bg-gray-100 active:dark:bg-white/10': clickable
       },
       customClass
     ]"
     @click="handleClick"
   >
     <!-- 左侧：标题和描述 -->
-    <div class="flex-1 min-w-0">
-      <div class="text-base font-medium mb-1">
+    <div class="flex-1 min-w-0 mr-4">
+      <div class="text-base font-medium mb-0.5">
         <slot name="title">{{ title }}</slot>
       </div>
       <div
         v-if="description || $slots.description"
-        class="text-sm text-gray-500 dark:text-gray-400"
+        class="text-sm text-gray-500 dark:text-gray-400 leading-normal"
       >
         <slot name="description">{{ description }}</slot>
       </div>
       <!-- 额外内容插槽 -->
-      <slot name="extra"></slot>
+      <div v-if="$slots.extra" class="mt-2">
+        <slot name="extra"></slot>
+      </div>
     </div>
 
     <!-- 右侧：操作区 -->

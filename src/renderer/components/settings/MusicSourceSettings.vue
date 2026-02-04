@@ -1,5 +1,5 @@
 <template>
-  <ResponsiveModal
+  <responsive-modal
     v-model="visible"
     :title="t('settings.playback.musicSources')"
     @close="handleCancel"
@@ -55,10 +55,12 @@
                   >
                     <i class="ri-music-2-fill text-base"></i>
                   </div>
-                  
+
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between">
-                      <span class="font-semibold text-gray-900 dark:text-white text-sm truncate">{{ source.key }}</span>
+                      <span class="font-semibold text-gray-900 dark:text-white text-sm truncate">{{
+                        source.key
+                      }}</span>
                       <div
                         class="w-4 h-4 rounded-full border flex items-center justify-center transition-colors shrink-0 ml-1"
                         :class="[
@@ -67,7 +69,10 @@
                             : 'border-gray-300 dark:border-gray-600'
                         ]"
                       >
-                        <i v-if="isSourceSelected(source.key)" class="ri-check-line text-white text-xs scale-75"></i>
+                        <i
+                          v-if="isSourceSelected(source.key)"
+                          class="ri-check-line text-white text-xs scale-75"
+                        ></i>
                       </div>
                     </div>
                   </div>
@@ -94,10 +99,12 @@
                   >
                     <i class="ri-netease-cloud-music-fill text-base"></i>
                   </div>
-                  
+
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between">
-                      <span class="font-semibold text-gray-900 dark:text-white text-sm truncate">落雪音源</span>
+                      <span class="font-semibold text-gray-900 dark:text-white text-sm truncate"
+                        >落雪音源</span
+                      >
                       <div
                         class="w-4 h-4 rounded-full border flex items-center justify-center transition-colors shrink-0 ml-1"
                         :class="[
@@ -106,11 +113,18 @@
                             : 'border-gray-300 dark:border-gray-600'
                         ]"
                       >
-                        <i v-if="isSourceSelected('lxMusic')" class="ri-check-line text-white text-xs scale-75"></i>
+                        <i
+                          v-if="isSourceSelected('lxMusic')"
+                          class="ri-check-line text-white text-xs scale-75"
+                        ></i>
                       </div>
                     </div>
                     <p class="text-[10px] text-gray-500 mt-0.5 truncate">
-                      {{ activeLxApiId && lxMusicScriptInfo ? lxMusicScriptInfo.name : t('settings.playback.lxMusic.scripts.notConfigured') }}
+                      {{
+                        activeLxApiId && lxMusicScriptInfo
+                          ? lxMusicScriptInfo.name
+                          : t('settings.playback.lxMusic.scripts.notConfigured')
+                      }}
                     </p>
                   </div>
                 </div>
@@ -136,10 +150,12 @@
                   >
                     <i class="ri-plug-fill text-base"></i>
                   </div>
-                  
+
                   <div class="flex-1 min-w-0">
                     <div class="flex items-center justify-between">
-                      <span class="font-semibold text-gray-900 dark:text-white text-sm truncate">{{ t('settings.playback.sourceLabels.custom') }}</span>
+                      <span class="font-semibold text-gray-900 dark:text-white text-sm truncate">{{
+                        t('settings.playback.sourceLabels.custom')
+                      }}</span>
                       <div
                         class="w-4 h-4 rounded-full border flex items-center justify-center transition-colors shrink-0 ml-1"
                         :class="[
@@ -148,11 +164,18 @@
                             : 'border-gray-300 dark:border-gray-600'
                         ]"
                       >
-                        <i v-if="isSourceSelected('custom')" class="ri-check-line text-white text-xs scale-75"></i>
+                        <i
+                          v-if="isSourceSelected('custom')"
+                          class="ri-check-line text-white text-xs scale-75"
+                        ></i>
                       </div>
                     </div>
                     <p class="text-[10px] text-gray-500 mt-0.5 truncate">
-                      {{ settingsStore.setData.customApiPlugin ? t('settings.playback.customApi.status.imported') : t('settings.playback.customApi.status.notImported') }}
+                      {{
+                        settingsStore.setData.customApiPlugin
+                          ? t('settings.playback.customApi.status.imported')
+                          : t('settings.playback.customApi.status.notImported')
+                      }}
                     </p>
                   </div>
                 </div>
@@ -162,7 +185,9 @@
             <!-- LX Music Management Tab -->
             <div v-else-if="activeTab === 'lxMusic'" class="space-y-3 pb-2">
               <div class="flex justify-between items-center mb-1">
-                <h3 class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ t('settings.playback.lxMusic.scripts.title') }}</h3>
+                <h3 class="text-xs font-medium text-gray-500 dark:text-gray-400">
+                  {{ t('settings.playback.lxMusic.scripts.title') }}
+                </h3>
                 <button
                   @click="importLxMusicScript"
                   class="flex items-center gap-1 px-2.5 py-1 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium rounded-lg transition-colors"
@@ -191,12 +216,17 @@
                       class="peer appearance-none w-4 h-4 rounded-full border border-gray-300 dark:border-gray-600 checked:border-emerald-500 checked:bg-emerald-500 transition-colors cursor-pointer"
                       @change="setActiveLxApi(api.id)"
                     />
-                    <i class="ri-check-line absolute text-white text-[10px] pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity"></i>
+                    <i
+                      class="ri-check-line absolute text-white text-[10px] pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity"
+                    ></i>
                   </div>
 
                   <div class="flex-1 min-w-0 mr-2">
                     <div class="flex items-center gap-2">
-                      <span v-if="editingScriptId !== api.id" class="font-medium text-sm text-gray-900 dark:text-white truncate">
+                      <span
+                        v-if="editingScriptId !== api.id"
+                        class="font-medium text-sm text-gray-900 dark:text-white truncate"
+                      >
                         {{ api.name }}
                       </span>
                       <input
@@ -207,7 +237,7 @@
                         @blur="saveScriptName(api.id)"
                         @keyup.enter="saveScriptName(api.id)"
                       />
-                      
+
                       <button
                         v-if="editingScriptId !== api.id"
                         class="text-gray-400 hover:text-emerald-500 transition-colors"
@@ -217,7 +247,10 @@
                       </button>
                     </div>
                     <div class="flex items-center gap-2 mt-0.5">
-                      <span v-if="api.info.version" class="text-[10px] text-gray-500 bg-gray-100 dark:bg-white/10 px-1.5 py-0.5 rounded">
+                      <span
+                        v-if="api.info.version"
+                        class="text-[10px] text-gray-500 bg-gray-100 dark:bg-white/10 px-1.5 py-0.5 rounded"
+                      >
                         v{{ api.info.version }}
                       </span>
                     </div>
@@ -231,14 +264,19 @@
                   </button>
                 </div>
               </div>
-              
-              <div v-else class="py-6 text-center text-xs text-gray-400 bg-gray-50 dark:bg-white/5 rounded-xl border border-dashed border-gray-200 dark:border-white/10">
+
+              <div
+                v-else
+                class="py-6 text-center text-xs text-gray-400 bg-gray-50 dark:bg-white/5 rounded-xl border border-dashed border-gray-200 dark:border-white/10"
+              >
                 <p>{{ t('settings.playback.lxMusic.scripts.empty') }}</p>
               </div>
 
               <!-- URL Import -->
               <div class="mt-4 pt-4 border-t border-gray-100 dark:border-white/5">
-                <h4 class="text-xs font-medium mb-2 text-gray-900 dark:text-white">{{ t('settings.playback.lxMusic.scripts.importOnline') }}</h4>
+                <h4 class="text-xs font-medium mb-2 text-gray-900 dark:text-white">
+                  {{ t('settings.playback.lxMusic.scripts.importOnline') }}
+                </h4>
                 <div class="flex gap-2">
                   <input
                     v-model="lxScriptUrl"
@@ -260,11 +298,16 @@
             </div>
 
             <!-- Custom API Tab -->
-            <div v-else-if="activeTab === 'customApi'" class="flex flex-col items-center justify-center py-6 text-center h-full">
-              <div class="w-12 h-12 bg-violet-100 dark:bg-violet-500/20 text-violet-500 rounded-xl flex items-center justify-center mb-3">
+            <div
+              v-else-if="activeTab === 'customApi'"
+              class="flex flex-col items-center justify-center py-6 text-center h-full"
+            >
+              <div
+                class="w-12 h-12 bg-violet-100 dark:bg-violet-500/20 text-violet-500 rounded-xl flex items-center justify-center mb-3"
+              >
                 <i class="ri-plug-fill text-2xl"></i>
               </div>
-              
+
               <h3 class="text-base font-semibold text-gray-900 dark:text-white mb-1">
                 {{ t('settings.playback.customApi.sectionTitle') }}
               </h3>
@@ -280,11 +323,17 @@
                 {{ t('settings.playback.customApi.importConfig') }}
               </button>
 
-              <div v-if="settingsStore.setData.customApiPluginName" class="mt-4 flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 rounded-lg text-xs">
+              <div
+                v-if="settingsStore.setData.customApiPluginName"
+                class="mt-4 flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400 rounded-lg text-xs"
+              >
                 <i class="ri-check-circle-fill"></i>
-                <span>{{ t('settings.playback.customApi.currentSource') }}: <b>{{ settingsStore.setData.customApiPluginName }}</b></span>
+                <span
+                  >{{ t('settings.playback.customApi.currentSource') }}:
+                  <b>{{ settingsStore.setData.customApiPluginName }}</b></span
+                >
               </div>
-              
+
               <div v-else class="mt-4 text-xs text-gray-400">
                 {{ t('settings.playback.customApi.notImported') }}
               </div>
@@ -311,7 +360,7 @@
         </button>
       </div>
     </template>
-  </ResponsiveModal>
+  </responsive-modal>
 </template>
 
 <script setup lang="ts">
@@ -344,8 +393,7 @@ const MUSIC_SOURCES: MusicSourceConfig[] = [
   { key: 'migu', color: '#ff6600' },
   { key: 'kugou', color: '#2979ff' },
   { key: 'kuwo', color: '#ff8c00' },
-  { key: 'pyncmd', color: '#ec4141' },
-  { key: 'bilibili', color: '#00a1d6' }
+  { key: 'pyncmd', color: '#ec4141' }
 ];
 
 // ==================== Props & Emits ====================
@@ -356,7 +404,7 @@ const props = defineProps({
   },
   sources: {
     type: Array as () => ExtendedPlatform[],
-    default: () => ['migu', 'kugou', 'kuwo', 'pyncmd', 'bilibili'] as ExtendedPlatform[]
+    default: () => ['migu', 'kugou', 'kuwo', 'pyncmd'] as ExtendedPlatform[]
   }
 });
 
@@ -649,7 +697,9 @@ const importLxMusicScriptFromUrl = async () => {
     lxScriptUrl.value = '';
   } catch (error: any) {
     console.error('从 URL 导入落雪音源脚本失败:', error);
-    message.error(`${t('settings.playback.lxMusic.scripts.importOnline')} ${t('common.error')}：${error.message}`);
+    message.error(
+      `${t('settings.playback.lxMusic.scripts.importOnline')} ${t('common.error')}：${error.message}`
+    );
   } finally {
     isImportingFromUrl.value = false;
   }
@@ -699,7 +749,7 @@ const saveScriptName = (apiId: string) => {
  * 确认选择
  */
 const handleConfirm = () => {
-  const defaultPlatforms: ExtendedPlatform[] = ['migu', 'kugou', 'kuwo', 'pyncmd', 'bilibili'];
+  const defaultPlatforms: ExtendedPlatform[] = ['migu', 'kugou', 'kuwo', 'pyncmd'];
   const valuesToEmit =
     selectedSources.value.length > 0 ? [...new Set(selectedSources.value)] : defaultPlatforms;
   emit('update:sources', valuesToEmit);

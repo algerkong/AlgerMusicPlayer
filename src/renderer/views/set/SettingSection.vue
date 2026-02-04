@@ -1,12 +1,14 @@
 <template>
-  <div :id="id" :ref="setRef" class="mb-6 scroll-mt-4">
+  <div :id="id" :ref="setRef" class="mb-8 scroll-mt-20">
     <!-- 分组标题 -->
-    <div class="text-base font-medium mb-4 text-gray-600 dark:text-white">
+    <div class="text-xl font-bold mb-4 text-gray-900 dark:text-white px-1">
       <slot name="title">{{ title }}</slot>
     </div>
 
-    <!-- 设置项列表 -->
-    <div class="space-y-4 max-md:space-y-3">
+    <!-- 设置项列表容器 -->
+    <div
+      class="bg-white dark:bg-neutral-900 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm"
+    >
       <slot></slot>
     </div>
   </div>
