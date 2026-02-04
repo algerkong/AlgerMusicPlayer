@@ -62,6 +62,11 @@
         </div>
       </n-popover>
     </div>
+    <div v-if="showDownloadButton" class="download-btn" @click="navigateToDownloads">
+      <n-badge :value="downloadingCount" :max="99" :show="downloadingCount > 0" :offset="[-2, 2]">
+        <i class="ri-download-cloud-2-line"></i>
+      </n-badge>
+    </div>
     <n-popover trigger="hover" placement="bottom" :show-arrow="false" raw>
       <template #trigger>
         <div class="user-box">
@@ -174,7 +179,8 @@ import { getSearchSuggestions } from '@/api/search';
 import alipay from '@/assets/alipay.png';
 import wechat from '@/assets/wechat.png';
 import Coffee from '@/components/Coffee.vue';
-import { SEARCH_TYPE, SEARCH_TYPES, USER_SET_OPTIONS } from '@/const/bar-const';
+import { SEARCH_TYPES, USER_SET_OPTIONS } from '@/const/bar-const';
+import { useDownloadStatus } from '@/hooks/useDownloadStatus';
 import { useZoom } from '@/hooks/useZoom';
 import { useSearchStore } from '@/store/modules/search';
 import { useSettingsStore } from '@/store/modules/settings';
@@ -190,6 +196,16 @@ const settingsStore = useSettingsStore();
 const userStore = useUserStore();
 const userSetOptions = ref(USER_SET_OPTIONS);
 const { t, locale } = useI18n();
+
+// 下载状态
+const { downloadingCount, navigateToDownloads } = useDownloadStatus();
+
+// 显示下载按钮逻辑
+const showDownloadButton = computed(() => {
+  return (
+    isElectron && (settingsStore.setData?.alwaysShowDownloadButton || downloadingCount.value > 0)
+  );
+});
 
 // 使用缩放hook
 const { zoomFactor, initZoomFactor, increaseZoom, decreaseZoom, resetZoom, isZoom100 } = useZoom();
@@ -274,13 +290,20 @@ const search = () => {
     return;
   }
 
-  if (router.currentRoute.value.path === '/search') {
+  if (router.currentRoute.value.path === '/search-result') {
     searchStore.searchValue = value;
+    router.replace({
+      path: '/search-result',
+      query: {
+        keyword: value,
+        type: searchStore.searchType
+      }
+    });
     return;
   }
 
   router.push({
-    path: '/search',
+    path: '/search-result',
     query: {
       keyword: value,
       type: searchStore.searchType
@@ -294,11 +317,11 @@ const search = () => {
 const selectSearchType = (key: number) => {
   searchStore.searchType = key;
   if (searchValue.value) {
-    if (router.currentRoute.value.path === '/search') {
+    if (router.currentRoute.value.path === '/search-result') {
       search();
     } else {
       router.push({
-        path: '/search',
+        path: '/search-result',
         query: {
           keyword: searchValue.value,
           type: key
@@ -312,7 +335,7 @@ const rawSearchTypes = ref(SEARCH_TYPES);
 const searchTypeOptions = computed(() => {
   locale.value;
   return rawSearchTypes.value
-    .filter((type) => isElectron || type.key !== SEARCH_TYPE.BILIBILI)
+    .filter(() => isElectron)
     .map((type) => ({
       label: t(type.label),
       key: type.key
@@ -457,6 +480,15 @@ const handleKeydown = (event: KeyboardEvent) => {
   @apply ml-4 flex text-lg justify-center items-center rounded-full transition-colors duration-200;
   @apply border dark:border-gray-600 border-gray-200 hover:border-gray-400 dark:hover:border-gray-400;
   @apply bg-light dark:bg-gray-800;
+}
+
+.download-btn {
+  @apply ml-4 flex items-center justify-center text-xl cursor-pointer;
+  @apply w-9 h-9 rounded-full;
+  @apply bg-light dark:bg-gray-800 text-gray-900 dark:text-white;
+  @apply border dark:border-gray-600 border-gray-200;
+  @apply hover:border-gray-400 dark:hover:border-gray-400;
+  @apply transition-all duration-200;
 }
 
 .search-box {

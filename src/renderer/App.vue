@@ -22,6 +22,7 @@ import { useRouter } from 'vue-router';
 import DisclaimerModal from '@/components/common/DisclaimerModal.vue';
 import TrafficWarningDrawer from '@/components/TrafficWarningDrawer.vue';
 import { usePlayerStore } from '@/store/modules/player';
+import { usePlayerCoreStore } from '@/store/modules/playerCore';
 import { useSettingsStore } from '@/store/modules/settings';
 import { useUserStore } from '@/store/modules/user';
 import { isElectron, isLyricWindow } from '@/utils';
@@ -36,6 +37,7 @@ import { useAppShortcuts } from './utils/appShortcuts';
 const { locale } = useI18n();
 const settingsStore = useSettingsStore();
 const playerStore = usePlayerStore();
+const playerCoreStore = usePlayerCoreStore();
 const userStore = useUserStore();
 const router = useRouter();
 
@@ -127,6 +129,9 @@ onMounted(async () => {
   initMusicHook(playerStore);
   // 初始化播放状态
   await playerStore.initializePlayState();
+
+  // 初始化音频设备变化监听器
+  playerCoreStore.initAudioDeviceListener();
 
   // 初始化落雪音源（如果有激活的音源）
   const activeLxApiId = settingsStore.setData?.activeLxMusicApiId;

@@ -50,15 +50,6 @@
     <update-modal v-if="isElectron" />
     <playlist-drawer v-model="showPlaylistDrawer" :song-id="currentSongId" />
     <sleep-timer-top v-if="!settingsStore.isMobile" />
-    <!-- 下载管理抽屉 -->
-    <download-drawer
-      v-if="
-        isElectron &&
-        (settingsStore.setData?.alwaysShowDownloadButton ||
-          settingsStore.showDownloadDrawer ||
-          settingsStore.setData?.hasDownloadingTasks)
-      "
-    />
     <!-- 播放列表抽屉 -->
     <playing-list-drawer />
   </div>
@@ -68,7 +59,6 @@
 import { computed, defineAsyncComponent, onMounted, provide, ref } from 'vue';
 import { useRoute } from 'vue-router';
 
-import DownloadDrawer from '@/components/common/DownloadDrawer.vue';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import UpdateModal from '@/components/common/UpdateModal.vue';
 import SleepTimerTop from '@/components/player/SleepTimerTop.vue';
