@@ -1,24 +1,8 @@
 // 音乐平台类型
-export type Platform =
-  | 'qq'
-  | 'migu'
-  | 'kugou'
-  | 'kuwo'
-  | 'pyncmd'
-  | 'joox'
-  | 'bilibili'
-  | 'gdmusic'
-  | 'lxMusic';
+export type Platform = 'qq' | 'migu' | 'kugou' | 'kuwo' | 'pyncmd' | 'joox' | 'gdmusic' | 'lxMusic';
 
 // 默认平台列表
-export const DEFAULT_PLATFORMS: Platform[] = [
-  'lxMusic',
-  'migu',
-  'kugou',
-  'kuwo',
-  'pyncmd',
-  'bilibili'
-];
+export const DEFAULT_PLATFORMS: Platform[] = ['lxMusic', 'migu', 'kugou', 'kuwo', 'pyncmd'];
 
 export interface IRecommendMusic {
   code: number;
@@ -70,11 +54,7 @@ export interface SongResult {
   lyric?: ILyric;
   backgroundColor?: string;
   primaryColor?: string;
-  bilibiliData?: {
-    bvid: string;
-    cid: number;
-  };
-  source?: 'netease' | 'bilibili';
+  source?: 'netease';
   // 过期时间
   expiredAt?: number;
   // 获取时间
@@ -83,6 +63,7 @@ export interface SongResult {
   duration?: number;
   dt?: number;
   isFirstPlay?: boolean;
+  isPodcast?: boolean;
 }
 
 export interface Song {

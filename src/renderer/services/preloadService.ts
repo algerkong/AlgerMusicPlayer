@@ -66,11 +66,7 @@ class PreloadService {
 
     // 时长差异只记录警告，不自动触发重新解析
     // 用户可以通过 ReparsePopover 手动选择正确的音源
-    if (
-      expectedDuration > 0 &&
-      Math.abs(duration - expectedDuration) > 5 &&
-      song.source !== 'bilibili'
-    ) {
+    if (expectedDuration > 0 && Math.abs(duration - expectedDuration) > 5) {
       console.warn(
         `[PreloadService] 时长差异警告：实际 ${duration.toFixed(1)}s, 预期 ${expectedDuration.toFixed(1)}s (${song.name})`
       );

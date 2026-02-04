@@ -164,7 +164,9 @@ export class EQService {
         if (node) {
           node.disconnect();
           // 特殊清理Tuna节点
-          if (node instanceof Tuna.Equalizer) node.destroy();
+          if (node === this.equalizer && typeof (node as any).destroy === 'function') {
+            (node as any).destroy();
+          }
         }
       });
 

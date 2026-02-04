@@ -192,11 +192,21 @@ export const usePlaylistStore = defineStore(
       keepIndex: boolean = false,
       fromIntelligenceMode: boolean = false
     ) => {
-      // 如果不是从心动模式调用，清除心动模式状态
+      // 如果不是从心动模式调用，清除心动模式状态并切换播放模式
       if (!fromIntelligenceMode) {
         const intelligenceStore = useIntelligenceModeStore();
+        console.log('[PlaylistStore.setPlayList] 检查心动模式状态:', {
+          isIntelligenceMode: intelligenceStore.isIntelligenceMode,
+          currentPlayMode: playMode.value,
+          fromIntelligenceMode
+        });
+
         if (intelligenceStore.isIntelligenceMode) {
-          intelligenceStore.clearIntelligenceMode();
+          console.log('[PlaylistStore] 退出心动模式，切换播放模式为顺序播放');
+          playMode.value = 0;
+          // 清除心动模式状态
+          intelligenceStore.clearIntelligenceMode(true);
+          console.log('[PlaylistStore] 心动模式已退出，新的播放模式:', playMode.value);
         }
       }
 
@@ -355,7 +365,7 @@ export const usePlaylistStore = defineStore(
       if (!isIntelligence && wasIntelligence) {
         console.log('退出心动模式');
         const intelligenceStore = useIntelligenceModeStore();
-        intelligenceStore.clearIntelligenceMode();
+        intelligenceStore.clearIntelligenceMode(true);
       }
     };
 

@@ -7,7 +7,6 @@ import type { SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
 import requestMusic from '@/utils/request_music';
 
-import { searchAndGetBilibiliAudioUrl } from './bilibili';
 import type { ParsedMusicResult } from './gdmusic';
 import { parseFromGDMusic } from './gdmusic';
 import { LxMusicStrategy } from './lxMusicStrategy';
@@ -164,7 +163,7 @@ export class CacheManager {
       console.log(`清除歌曲 ${id} 的URL缓存`);
 
       // 清除失败缓存 - 需要遍历所有策略
-      const strategies = ['custom', 'bilibili', 'gdmusic', 'unblockMusic'];
+      const strategies = ['custom', 'gdmusic', 'unblockMusic'];
       for (const strategy of strategies) {
         const cacheKey = `${id}_${strategy}`;
         try {
@@ -210,30 +209,6 @@ class RetryHelper {
     throw lastError!;
   }
 }
-
-/**
- * 从Bilibili获取音频URL
- * @param data 歌曲数据
- * @returns 解析结果
- */
-const getBilibiliAudio = async (data: SongResult) => {
-  const songName = data?.name || '';
-  const artistName =
-    Array.isArray(data?.ar) && data.ar.length > 0 && data.ar[0]?.name ? data.ar[0].name : '';
-  const albumName = data?.al && typeof data.al === 'object' && data.al?.name ? data.al.name : '';
-
-  const searchQuery = [songName, artistName, albumName].filter(Boolean).join(' ').trim();
-  console.log('开始搜索bilibili音频:', searchQuery);
-
-  const url = await searchAndGetBilibiliAudioUrl(searchQuery);
-  return {
-    data: {
-      code: 200,
-      message: 'success',
-      data: { url }
-    }
-  };
-};
 
 /**
  * 从GD音乐台获取音频URL
@@ -364,46 +339,6 @@ class CustomApiStrategy implements MusicSourceStrategy {
 }
 
 /**
- * Bilibili解析策略
- */
-class BilibiliStrategy implements MusicSourceStrategy {
-  name = 'bilibili';
-  priority = 2;
-
-  canHandle(sources: string[]): boolean {
-    return sources.includes('bilibili');
-  }
-
-  async parse(id: number, data: SongResult): Promise<MusicParseResult | null> {
-    // 检查失败缓存
-    if (CacheManager.isInFailedCache(id, this.name)) {
-      return null;
-    }
-
-    try {
-      console.log('尝试使用Bilibili解析...');
-      const result = await RetryHelper.withRetry(async () => {
-        return await getBilibiliAudio(data);
-      });
-
-      const adaptedResult = adaptParseResult(result);
-      if (adaptedResult?.data?.data?.url) {
-        console.log('Bilibili解析成功');
-        return adaptedResult;
-      }
-
-      // 解析失败，添加失败缓存
-      CacheManager.addFailedCache(id, this.name);
-      return null;
-    } catch (error) {
-      console.error('Bilibili解析失败:', error);
-      CacheManager.addFailedCache(id, this.name);
-      return null;
-    }
-  }
-}
-
-/**
  * GD音乐台解析策略
  */
 class GDMusicStrategy implements MusicSourceStrategy {
@@ -451,9 +386,7 @@ class UnblockMusicStrategy implements MusicSourceStrategy {
   priority = 4;
 
   canHandle(sources: string[]): boolean {
-    const unblockSources = sources.filter(
-      (source) => !['custom', 'bilibili', 'gdmusic'].includes(source)
-    );
+    const unblockSources = sources.filter((source) => !['custom', 'gdmusic'].includes(source));
     return unblockSources.length > 0;
   }
 
@@ -470,7 +403,7 @@ class UnblockMusicStrategy implements MusicSourceStrategy {
 
     try {
       const unblockSources = (sources || []).filter(
-        (source) => !['custom', 'bilibili', 'gdmusic'].includes(source)
+        (source) => !['custom', 'gdmusic'].includes(source)
       );
       console.log('尝试使用UnblockMusic解析:', unblockSources);
 
@@ -502,7 +435,6 @@ class MusicSourceStrategyFactory {
   private static strategies: MusicSourceStrategy[] = [
     new LxMusicStrategy(),
     new CustomApiStrategy(),
-    new BilibiliStrategy(),
     new GDMusicStrategy(),
     new UnblockMusicStrategy()
   ];

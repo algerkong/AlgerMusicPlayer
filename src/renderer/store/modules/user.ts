@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 import { logout } from '@/api/login';
 import { getLikedList } from '@/api/music';
 import { getUserAlbumSublist, getUserPlaylist } from '@/api/user';
+import type { IUserDetail } from '@/types/user';
 import { clearLoginStatus } from '@/utils/auth';
 
 interface UserData {
@@ -23,6 +24,8 @@ function getLocalStorageItem<T>(key: string, defaultValue: T): T {
 export const useUserStore = defineStore('user', () => {
   // 状态
   const user = ref<UserData | null>(getLocalStorageItem('user', null));
+  const userDetail = ref<IUserDetail | null>(null);
+  const recordList = ref<any[]>([]);
   const loginType = ref<'token' | 'cookie' | 'qr' | 'uid' | null>(
     getLocalStorageItem('loginType', null)
   );
@@ -205,6 +208,8 @@ export const useUserStore = defineStore('user', () => {
     initializeCollectedAlbums,
     addCollectedAlbum,
     removeCollectedAlbum,
-    isAlbumCollected
+    isAlbumCollected,
+    userDetail,
+    recordList
   };
 });

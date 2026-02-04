@@ -1,5 +1,6 @@
 import { Howl, Howler } from 'howler';
 
+import type { AudioOutputDevice } from '@/types/audio';
 import type { SongResult } from '@/types/music';
 import { isElectron } from '@/utils'; // 导入isElectron常量
 
@@ -20,6 +21,10 @@ class AudioService {
   private bypass = false;
 
   private playbackRate = 1.0; // 添加播放速度属性
+
+  private currentSinkId: string = 'default';
+
+  private contextStateMonitoringInitialized = false;
 
   // 预设的 EQ 频段
   private readonly frequencies = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
@@ -304,6 +309,12 @@ class AudioService {
         await this.context.resume();
       }
 
+      // 设置 AudioContext 状态监控
+      this.setupContextStateMonitoring();
+
+      // 恢复保存的音频输出设备
+      this.restoreSavedAudioDevice();
+
       // 清理现有连接
       await this.disposeEQ(true);
 
@@ -360,10 +371,24 @@ class AudioService {
     if (!this.source || !this.gainNode || !this.context) return;
 
     try {
-      // 断开所有现有连接
-      this.source.disconnect();
-      this.filters.forEach((filter) => filter.disconnect());
-      this.gainNode.disconnect();
+      // 断开所有现有连接（捕获已断开的错误）
+      try {
+        this.source.disconnect();
+      } catch {
+        /* already disconnected */
+      }
+      this.filters.forEach((filter) => {
+        try {
+          filter.disconnect();
+        } catch {
+          /* already disconnected */
+        }
+      });
+      try {
+        this.gainNode.disconnect();
+      } catch {
+        /* already disconnected */
+      }
 
       if (this.bypass) {
         // EQ被禁用时，直接连接到输出
@@ -381,7 +406,17 @@ class AudioService {
         this.gainNode.connect(this.context.destination);
       }
     } catch (error) {
-      console.error('应用EQ状态时出错:', error);
+      console.error('Error applying EQ state, attempting fallback:', error);
+      // Fallback: connect source directly to destination
+      try {
+        if (this.source && this.context) {
+          this.source.connect(this.context.destination);
+          console.log('Fallback: connected source directly to destination');
+        }
+      } catch (fallbackError) {
+        console.error('Fallback connection also failed:', fallbackError);
+        this.emit('audio_error', { type: 'graph_disconnected', error: fallbackError });
+      }
     }
   }
 
@@ -580,6 +615,8 @@ class AudioService {
             this.context = Howler.ctx;
             Howler.masterGain = this.context.createGain();
             Howler.masterGain.connect(this.context.destination);
+            // 重新创建上下文后恢复输出设备
+            this.restoreSavedAudioDevice();
           }
 
           // 恢复上下文状态
@@ -914,6 +951,137 @@ class AudioService {
     localStorage.setItem('currentPreset', preset);
   }
 
+  // ==================== 音频输出设备管理 ====================
+
+  /**
+   * 获取可用的音频输出设备列表
+   */
+  public async getAudioOutputDevices(): Promise<AudioOutputDevice[]> {
+    try {
+      // 先尝试获取一个临时音频流来触发权限授予
+      // 确保 enumerateDevices 返回完整的设备信息（包括 label）
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        stream.getTracks().forEach((track) => track.stop());
+      } catch {
+        // 即使失败也继续，可能已有权限
+      }
+
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const audioOutputs = devices.filter((d) => d.kind === 'audiooutput');
+
+      return audioOutputs.map((device, index) => ({
+        deviceId: device.deviceId,
+        label: device.label || `Speaker ${index + 1}`,
+        isDefault: device.deviceId === 'default' || device.deviceId === ''
+      }));
+    } catch (error) {
+      console.error('枚举音频设备失败:', error);
+      return [{ deviceId: 'default', label: 'Default', isDefault: true }];
+    }
+  }
+
+  /**
+   * 设置音频输出设备
+   * 使用 AudioContext.setSinkId() 而不是 HTMLMediaElement.setSinkId()
+   * 因为音频通过 MediaElementAudioSourceNode 进入 Web Audio 图后，
+   * HTMLMediaElement.setSinkId() 不再生效
+   */
+  public async setAudioOutputDevice(deviceId: string): Promise<boolean> {
+    try {
+      if (this.context && typeof (this.context as any).setSinkId === 'function') {
+        await (this.context as any).setSinkId(deviceId);
+        this.currentSinkId = deviceId;
+        localStorage.setItem('audioOutputDeviceId', deviceId);
+        console.log('音频输出设备已切换:', deviceId);
+        return true;
+      } else {
+        console.warn('AudioContext.setSinkId 不可用');
+        return false;
+      }
+    } catch (error) {
+      console.error('设置音频输出设备失败:', error);
+      return false;
+    }
+  }
+
+  /**
+   * 获取当前输出设备ID
+   */
+  public getCurrentSinkId(): string {
+    return this.currentSinkId;
+  }
+
+  /**
+   * 恢复保存的音频输出设备设置
+   */
+  private async restoreSavedAudioDevice(): Promise<void> {
+    const savedDeviceId = localStorage.getItem('audioOutputDeviceId');
+    if (savedDeviceId && savedDeviceId !== 'default') {
+      try {
+        await this.setAudioOutputDevice(savedDeviceId);
+      } catch (error) {
+        console.warn('恢复音频输出设备失败，回退到默认设备:', error);
+        localStorage.removeItem('audioOutputDeviceId');
+        this.currentSinkId = 'default';
+      }
+    }
+  }
+
+  /**
+   * 设置 AudioContext 状态监控
+   * 监听上下文状态变化，自动恢复 suspended 状态
+   */
+  private setupContextStateMonitoring() {
+    if (!this.context || this.contextStateMonitoringInitialized) return;
+
+    this.context.addEventListener('statechange', async () => {
+      console.log('AudioContext state changed:', this.context?.state);
+
+      if (this.context?.state === 'suspended' && this.currentSound?.playing()) {
+        console.log('AudioContext suspended while playing, attempting to resume...');
+        try {
+          await this.context.resume();
+          console.log('AudioContext resumed successfully');
+        } catch (e) {
+          console.error('Failed to resume AudioContext:', e);
+          this.emit('audio_error', { type: 'context_suspended', error: e });
+        }
+      } else if (this.context?.state === 'closed') {
+        console.warn('AudioContext was closed unexpectedly');
+        this.emit('audio_error', { type: 'context_closed' });
+      }
+    });
+
+    this.contextStateMonitoringInitialized = true;
+    console.log('AudioContext state monitoring initialized');
+  }
+
+  /**
+   * 验证音频图是否正确连接
+   * 用于检测音频播放前的图状态
+   */
+  private isAudioGraphConnected(): boolean {
+    if (!this.context || !this.gainNode || !this.source) {
+      return false;
+    }
+
+    try {
+      // 检查 context 是否运行
+      if (this.context.state !== 'running') {
+        console.warn('AudioContext is not running, state:', this.context.state);
+        return false;
+      }
+
+      // Web Audio API 不直接暴露连接状态，
+      // 但我们可以验证节点存在且 context 有效
+      return true;
+    } catch (e) {
+      console.error('Error checking audio graph:', e);
+      return false;
+    }
+  }
+
   public setPlaybackRate(rate: number) {
     if (!this.currentSound) return;
     this.playbackRate = rate;
@@ -986,12 +1154,14 @@ class AudioService {
       // 1. Howler API是否报告正在播放
       // 2. 是否不在加载状态
       // 3. 确保音频上下文状态正常
+      // 4. 确保音频图正确连接（在 Electron 环境中）
       const isPlaying = this.currentSound.playing();
       const isLoading = this.isLoading();
       const contextRunning = Howler.ctx && Howler.ctx.state === 'running';
+      const graphConnected = isElectron ? this.isAudioGraphConnected() : true;
 
-      // 只有在三个条件都满足时才认为是真正在播放
-      return isPlaying && !isLoading && contextRunning;
+      // 只有在所有条件都满足时才认为是真正在播放
+      return isPlaying && !isLoading && contextRunning && graphConnected;
     } catch (error) {
       console.error('检查播放状态出错:', error);
       return false;

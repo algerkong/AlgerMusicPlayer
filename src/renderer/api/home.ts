@@ -50,3 +50,38 @@ export const getDayRecommend = () => {
 export const getNewAlbum = () => {
   return request.get<IAlbumNew>('/album/newest');
 };
+
+// 获取轮播图
+export const getBanners = (type: number = 0) => {
+  return request.get<any>('/banner', { params: { type } });
+};
+
+// 获取推荐歌单
+export const getPersonalizedPlaylist = (limit: number = 30) => {
+  return request.get<any>('/personalized', { params: { limit } });
+};
+
+// 获取私人漫游
+export const getPersonalFM = () => {
+  return request.get<any>('/personal_fm');
+};
+
+// 获取独家放送
+export const getPrivateContent = () => {
+  return request.get<any>('/personalized/privatecontent');
+};
+
+// 获取推荐MV
+export const getPersonalizedMV = () => {
+  return request.get<any>('/personalized/mv');
+};
+
+// 获取新碟上架
+export const getTopAlbum = (params?: { limit?: number; offset?: number; area?: string }) => {
+  return request.get<any>('/top/album', { params });
+};
+
+// 获取推荐电台
+export const getPersonalizedDJ = () => {
+  return request.get<any>('/personalized/djprogram');
+};

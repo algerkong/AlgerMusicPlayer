@@ -33,6 +33,17 @@ const layoutRouter = [
     component: () => import('@/views/list/index.vue')
   },
   {
+    path: '/album',
+    name: 'album',
+    meta: {
+      title: 'comp.newAlbum.title',
+      icon: 'ri-album-fill',
+      keepAlive: true,
+      isMobile: true
+    },
+    component: () => import('@/views/album/index.vue')
+  },
+  {
     path: '/toplist',
     name: 'toplist',
     meta: {
@@ -76,6 +87,17 @@ const layoutRouter = [
       isMobile: true
     },
     component: () => import('@/views/user/index.vue')
+  },
+  {
+    path: '/podcast',
+    name: 'podcast',
+    meta: {
+      title: 'podcast.podcast',
+      icon: 'ri-radio-fill',
+      keepAlive: true,
+      isMobile: true
+    },
+    component: () => import('@/views/podcast/index.vue')
   },
   {
     path: '/set',

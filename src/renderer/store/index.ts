@@ -15,10 +15,14 @@ pinia.use(({ store }) => {
 });
 
 // 导出所有 store
+export * from './modules/intelligenceMode';
 export * from './modules/lyric';
 export * from './modules/menu';
 export * from './modules/music';
 export * from './modules/player';
+export * from './modules/playerCore';
+export * from './modules/playlist';
+export * from './modules/podcast';
 export * from './modules/recommend';
 export * from './modules/search';
 export * from './modules/settings';

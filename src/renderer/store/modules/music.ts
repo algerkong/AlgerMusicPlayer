@@ -24,6 +24,14 @@ export const useMusicStore = defineStore('music', {
       this.canRemoveSong = canRemove;
     },
 
+    // 仅设置基础信息（用于先导航后获取数据）
+    setBasicListInfo(name: string, listInfo: any = null, canRemove = false) {
+      this.currentMusicList = null; // 标识数据未加载
+      this.currentMusicListName = name;
+      this.currentListInfo = listInfo;
+      this.canRemoveSong = canRemove;
+    },
+
     // 清除当前音乐列表
     clearCurrentMusicList() {
       this.currentMusicList = null;

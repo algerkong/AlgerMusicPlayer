@@ -2,7 +2,6 @@ import { cloneDeep } from 'lodash';
 import { createDiscreteApi } from 'naive-ui';
 
 import i18n from '@/../i18n/renderer';
-import { getBilibiliAudioUrl } from '@/api/bilibili';
 import { getMusicLrc, getMusicUrl, getParsingMusicUrl } from '@/api/music';
 import { playbackRequestManager } from '@/services/playbackRequestManager';
 import { SongSourceConfigManager } from '@/services/SongSourceConfigManager';
@@ -37,28 +36,6 @@ export const getSongUrl = async (
 
     if (songData.playMusicUrl) {
       return songData.playMusicUrl;
-    }
-
-    if (songData.source === 'bilibili' && songData.bilibiliData) {
-      console.log('加载B站音频URL');
-      if (!songData.playMusicUrl && songData.bilibiliData.bvid && songData.bilibiliData.cid) {
-        try {
-          songData.playMusicUrl = await getBilibiliAudioUrl(
-            songData.bilibiliData.bvid,
-            songData.bilibiliData.cid
-          );
-          // 验证请求
-          if (requestId && !playbackRequestManager.isRequestValid(requestId)) {
-            console.log(`[getSongUrl] 获取B站URL后请求已失效: ${requestId}`);
-            throw new Error('Request cancelled');
-          }
-          return songData.playMusicUrl;
-        } catch (error) {
-          console.error('重启后获取B站音频URL失败:', error);
-          return '';
-        }
-      }
-      return songData.playMusicUrl || '';
     }
 
     // ==================== 自定义API最优先 ====================
@@ -108,7 +85,7 @@ export const getSongUrl = async (
     }
 
     // 如果有自定义音源设置，直接使用getParsingMusicUrl获取URL
-    if (songConfig && songData.source !== 'bilibili') {
+    if (songConfig) {
       try {
         console.log(`使用自定义音源解析歌曲 ID: ${id}`);
         const res = await getParsingMusicUrl(numericId, cloneDeep(songData));
@@ -239,15 +216,6 @@ const parseLyrics = (lyricsString: string): { lyrics: ILyricText[]; times: numbe
  * 加载歌词（独立函数）
  */
 export const loadLrc = async (id: string | number): Promise<ILyric> => {
-  if (typeof id === 'string' && id.includes('--')) {
-    console.log('B站音频，无需加载歌词');
-    return {
-      lrcTimeArray: [],
-      lrcArray: [],
-      hasWordByWord: false
-    };
-  }
-
   try {
     const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
     const { data } = await getMusicLrc(numericId);
@@ -344,30 +312,6 @@ export const useSongDetail = () => {
     if (requestId && !playbackRequestManager.isRequestValid(requestId)) {
       console.log(`[getSongDetail] 请求已失效: ${requestId}`);
       throw new Error('Request cancelled');
-    }
-
-    if (playMusic.source === 'bilibili') {
-      try {
-        if (!playMusic.playMusicUrl && playMusic.bilibiliData) {
-          playMusic.playMusicUrl = await getBilibiliAudioUrl(
-            playMusic.bilibiliData.bvid,
-            playMusic.bilibiliData.cid
-          );
-        }
-
-        // 验证请求
-        if (requestId && !playbackRequestManager.isRequestValid(requestId)) {
-          console.log(`[getSongDetail] B站URL获取后请求已失效: ${requestId}`);
-          throw new Error('Request cancelled');
-        }
-
-        playMusic.playLoading = false;
-        return { ...playMusic } as SongResult;
-      } catch (error) {
-        console.error('获取B站音频详情失败:', error);
-        playMusic.playLoading = false;
-        throw error;
-      }
     }
 
     if (playMusic.expiredAt && playMusic.expiredAt < Date.now()) {

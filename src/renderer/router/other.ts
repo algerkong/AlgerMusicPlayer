@@ -56,17 +56,6 @@ const otherRouter = [
     component: () => import('@/views/artist/detail.vue')
   },
   {
-    path: '/bilibili/:bvid',
-    name: 'bilibiliPlayer',
-    meta: {
-      title: 'B站听书',
-      keepAlive: true,
-      showInMenu: false,
-      back: true
-    },
-    component: () => import('@/views/bilibili/BilibiliPlayer.vue')
-  },
-  {
     path: '/music-list/:id?',
     name: 'musicList',
     meta: {
@@ -130,6 +119,41 @@ const otherRouter = [
       back: true
     },
     component: () => import('@/views/mobile-search-result/index.vue')
+  },
+  {
+    path: '/podcast/radio/:id',
+    name: 'podcastRadio',
+    meta: {
+      title: 'podcast.radioDetail',
+      keepAlive: false,
+      showInMenu: false,
+      back: true,
+      isMobile: true
+    },
+    component: () => import('@/views/podcast/radio.vue')
+  },
+  {
+    path: '/podcast/category/:id',
+    name: 'podcastCategory',
+    meta: {
+      title: 'podcast.category',
+      keepAlive: false,
+      showInMenu: false,
+      back: true,
+      isMobile: true
+    },
+    component: () => import('@/views/podcast/category.vue')
+  },
+  {
+    path: '/search-result',
+    name: 'searchResult',
+    meta: {
+      title: '搜索结果',
+      keepAlive: true,
+      showInMenu: false,
+      back: true
+    },
+    component: () => import('@/views/search/SearchResult.vue')
   }
 ];
 export default otherRouter;

@@ -4,19 +4,21 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
 import i18n from '@/../i18n/renderer';
-import { getBilibiliAudioUrl } from '@/api/bilibili';
 import { getParsingMusicUrl } from '@/api/music';
 import { useMusicHistory } from '@/hooks/MusicHistoryHook';
+import { usePodcastHistory } from '@/hooks/PodcastHistoryHook';
 import { useLyrics, useSongDetail } from '@/hooks/usePlayerHooks';
 import { audioService } from '@/services/audioService';
 import { playbackRequestManager } from '@/services/playbackRequestManager';
 import { preloadService } from '@/services/preloadService';
 import { SongSourceConfigManager } from '@/services/SongSourceConfigManager';
+import type { AudioOutputDevice } from '@/types/audio';
 import type { Platform, SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
 import { getImageLinearBackground } from '@/utils/linearColor';
 
 const musicHistory = useMusicHistory();
+const podcastHistory = usePodcastHistory();
 const { message } = createDiscreteApi(['message']);
 
 /**
@@ -35,6 +37,12 @@ export const usePlayerCoreStore = defineStore(
     const playbackRate = ref(1.0);
     const volume = ref(1);
     const userPlayIntent = ref(false); // 用户是否想要播放
+
+    // 音频输出设备
+    const audioOutputDeviceId = ref<string>(
+      localStorage.getItem('audioOutputDeviceId') || 'default'
+    );
+    const availableAudioDevices = ref<AudioOutputDevice[]>([]);
 
     let checkPlayTime: NodeJS.Timeout | null = null;
 
@@ -239,14 +247,18 @@ export const usePlayerCoreStore = defineStore(
           (prev: string, curr: any) => `${prev}${curr.name}/`,
           ''
         )}`;
-      } else if (music.source === 'bilibili' && music?.song?.ar?.[0]) {
-        title += ` - ${music.song.ar[0].name}`;
       }
       document.title = 'AlgerMusic - ' + title;
 
       try {
         // 添加到历史记录
-        musicHistory.addMusic(music);
+        if (music.isPodcast) {
+          if (music.program) {
+            podcastHistory.addPodcast(music.program);
+          }
+        } else {
+          musicHistory.addMusic(music);
+        }
 
         // 获取歌曲详情
         const updatedPlayMusic = await getSongDetail(originalMusic, requestId);
@@ -350,36 +362,6 @@ export const usePlayerCoreStore = defineStore(
         if (savedProgress.songId === playMusic.value.id) {
           initialPosition = savedProgress.progress;
           console.log('[playAudio] 恢复播放进度:', initialPosition);
-        }
-
-        // B站视频URL检查
-        if (
-          playMusic.value.source === 'bilibili' &&
-          (!playMusicUrl.value || playMusicUrl.value === 'undefined')
-        ) {
-          console.log('B站视频URL无效，尝试重新获取');
-
-          if (playMusic.value.bilibiliData) {
-            try {
-              const proxyUrl = await getBilibiliAudioUrl(
-                playMusic.value.bilibiliData.bvid,
-                playMusic.value.bilibiliData.cid
-              );
-
-              // 再次验证请求
-              if (requestId && !playbackRequestManager.isRequestValid(requestId)) {
-                console.log(`[playAudio] 获取B站URL后请求已失效: ${requestId}`);
-                return null;
-              }
-
-              (playMusic.value as any).playMusicUrl = proxyUrl;
-              playMusicUrl.value = proxyUrl;
-            } catch (error) {
-              console.error('获取B站音频URL失败:', error);
-              message.error(i18n.global.t('player.playFailed'));
-              return null;
-            }
-          }
         }
 
         // 使用 PreloadService 获取音频
@@ -514,11 +496,6 @@ export const usePlayerCoreStore = defineStore(
           return false;
         }
 
-        if (currentSong.source === 'bilibili') {
-          console.warn('B站视频不支持重新解析');
-          return false;
-        }
-
         // 使用 SongSourceConfigManager 保存配置
         SongSourceConfigManager.setConfig(
           currentSong.id,
@@ -579,11 +556,6 @@ export const usePlayerCoreStore = defineStore(
           console.log('恢复上次播放的音乐:', playMusic.value.name);
           const isPlaying = settingStore.setData.autoPlay;
 
-          if (playMusic.value.source === 'bilibili' && playMusic.value.bilibiliData) {
-            console.log('恢复B站视频播放', playMusic.value.bilibiliData);
-            playMusic.value.playMusicUrl = undefined;
-          }
-
           await handlePlayMusic(
             { ...playMusic.value, isFirstPlay: true, playMusicUrl: undefined },
             isPlaying
@@ -602,6 +574,43 @@ export const usePlayerCoreStore = defineStore(
       }, 2000);
     };
 
+    // ==================== 音频输出设备管理 ====================
+
+    /**
+     * 刷新可用音频输出设备列表
+     */
+    const refreshAudioDevices = async () => {
+      availableAudioDevices.value = await audioService.getAudioOutputDevices();
+    };
+
+    /**
+     * 切换音频输出设备
+     */
+    const setAudioOutputDevice = async (deviceId: string): Promise<boolean> => {
+      const success = await audioService.setAudioOutputDevice(deviceId);
+      if (success) {
+        audioOutputDeviceId.value = deviceId;
+      }
+      return success;
+    };
+
+    /**
+     * 初始化设备变化监听
+     */
+    const initAudioDeviceListener = () => {
+      if (navigator.mediaDevices) {
+        navigator.mediaDevices.addEventListener('devicechange', async () => {
+          await refreshAudioDevices();
+          const exists = availableAudioDevices.value.some(
+            (d) => d.deviceId === audioOutputDeviceId.value
+          );
+          if (!exists && audioOutputDeviceId.value !== 'default') {
+            await setAudioOutputDevice('default');
+          }
+        });
+      }
+    };
+
     return {
       // 状态
       play,
@@ -612,6 +621,8 @@ export const usePlayerCoreStore = defineStore(
       playbackRate,
       volume,
       userPlayIntent,
+      audioOutputDeviceId,
+      availableAudioDevices,
 
       // Computed
       currentSong,
@@ -631,14 +642,17 @@ export const usePlayerCoreStore = defineStore(
       handlePause,
       checkPlaybackState,
       reparseCurrentSong,
-      initializePlayState
+      initializePlayState,
+      refreshAudioDevices,
+      setAudioOutputDevice,
+      initAudioDeviceListener
     };
   },
   {
     persist: {
       key: 'player-core-store',
       storage: localStorage,
-      pick: ['playMusic', 'playMusicUrl', 'playbackRate', 'volume', 'isPlay']
+      pick: ['playMusic', 'playMusicUrl', 'playbackRate', 'volume', 'isPlay', 'audioOutputDeviceId']
     }
   }
 );

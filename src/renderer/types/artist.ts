@@ -76,6 +76,7 @@ export interface IArtist {
   albumSize: number;
   musicSize: number;
   mvSize: number;
+  picUrl?: string; // Optional fallback for cover image
 }
 
 interface Rank {
