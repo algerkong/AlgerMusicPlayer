@@ -1,63 +1,81 @@
 <template>
-  <n-scrollbar :size="100" :x-scrollable="false">
-    <div class="main-page">
-      <!-- 推荐歌手 -->
-      <top-banner />
-      <div class="main-content">
-        <!-- 歌单分类列表 -->
-        <playlist-type v-if="!isMobile" />
-        <!-- 本周最热音乐 -->
-        <recommend-songlist />
-        <!-- 推荐最新专辑 -->
-        <div>
-          <favorite-list is-component />
-          <recommend-album />
+  <div class="home-container h-full w-full bg-white dark:bg-black transition-colors duration-500">
+    <n-scrollbar class="h-full">
+      <div class="home-content w-full pb-32 pt-6 px-4 sm:px-6 lg:px-8 lg:pl-0">
+        <!-- Hero Section -->
+        <home-hero />
+
+        <!-- Main Content Sections -->
+        <div class="content-sections space-y-10 md:space-y-8 lg:space-y-12">
+          <!-- Recommended Playlists (Grid Section) -->
+          <home-playlist-section :title="t('comp.recommendSonglist.title')" :limit="18" />
+
+          <!-- Hot Artists (Horizontal Scroll Section) -->
+          <home-artists :title="t('comp.recommendSinger.title')" :limit="15" />
+
+          <!-- New Albums (NEW - 新碟上架) -->
+          <home-album-section
+            :title="t('comp.newAlbum.title')"
+            :limit="6"
+            :columns="5"
+            :rows="1"
+            @more="router.push('/album')"
+          />
+
+          <!-- New Songs (Compact Grid Section) -->
+          <home-new-songs :title="t('comp.recommendNewMusic.title')" :limit="20" />
         </div>
       </div>
-    </div>
-  </n-scrollbar>
+    </n-scrollbar>
+  </div>
 </template>
 
 <script lang="ts" setup>
-import PlaylistType from '@/components/home/PlaylistType.vue';
-import RecommendAlbum from '@/components/home/RecommendAlbum.vue';
-import RecommendSonglist from '@/components/home/RecommendSonglist.vue';
-import TopBanner from '@/components/home/TopBanner.vue';
-import { isMobile } from '@/utils';
-import FavoriteList from '@/views/favorite/index.vue';
+import { NScrollbar } from 'naive-ui';
+import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
+
+import HomeAlbumSection from './components/HomeAlbumSection.vue';
+import HomeArtists from './components/HomeArtists.vue';
+import HomeHero from './components/HomeHero.vue';
+import HomeNewSongs from './components/HomeNewSongs.vue';
+import HomePlaylistSection from './components/HomePlaylistSection.vue';
 
 defineOptions({
   name: 'Home'
 });
+
+const { t } = useI18n();
+const router = useRouter();
 </script>
 
 <style lang="scss" scoped>
-.main-page {
-  @apply h-full w-full overflow-hidden bg-light dark:bg-black;
-}
-.main-content {
-  @apply mt-6 flex mb-28;
+.home-container {
+  position: relative;
 }
 
-.mobile {
-  .main-content {
-    @apply flex-col mx-4 mb-40;
+/* Global animation optimization - use will-change sparingly */
+:deep(.animate-item) {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
   }
-  :deep(.favorite-page) {
-    @apply p-0 mx-4 h-full;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-:deep(.favorite-page) {
-  @apply p-0 mx-4 h-[300px];
-  .favorite-header {
-    @apply mb-0 px-0 !important;
-    h2 {
-      @apply text-lg font-bold text-gray-900 dark:text-white;
+/* Stagger delays for sequential animations */
+:deep(.animate-item) {
+  @for $i from 1 through 20 {
+    &:nth-child(#{$i}) {
+      animation-delay: #{$i * 0.05}s;
     }
-  }
-  .favorite-list {
-    @apply px-0 !important;
   }
 }
 </style>
