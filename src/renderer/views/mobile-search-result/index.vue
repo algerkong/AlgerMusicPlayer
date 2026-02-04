@@ -36,18 +36,8 @@
 
       <!-- 搜索结果 -->
       <div v-else-if="results.length" class="result-list">
-        <!-- B站视频 -->
-        <template v-if="searchType === SEARCH_TYPE.BILIBILI">
-          <bilibili-item
-            v-for="item in results"
-            :key="item.bvid"
-            :item="item"
-            @play="handlePlayBilibili"
-          />
-        </template>
-
         <!-- 歌曲搜索 -->
-        <template v-else-if="searchType === SEARCH_TYPE.MUSIC">
+        <template v-if="searchType === SEARCH_TYPE.MUSIC">
           <song-item
             v-for="item in results"
             :key="item.id"
@@ -88,21 +78,12 @@ import { computed, inject, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
-import {
-  createSimpleBilibiliSong,
-  getBilibiliAudioUrl,
-  getBilibiliProxyUrl,
-  getBilibiliVideoDetail,
-  searchBilibili
-} from '@/api/bilibili';
 import { getSearch } from '@/api/search';
-import BilibiliItem from '@/components/common/BilibiliItem.vue';
 import SearchItem from '@/components/common/SearchItem.vue';
 import SongItem from '@/components/common/SongItem.vue';
 import { SEARCH_TYPE, SEARCH_TYPES } from '@/const/bar-const';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSearchStore } from '@/store/modules/search';
-import type { IBilibiliSearchResult } from '@/types/bilibili';
 
 const { t, locale } = useI18n();
 const route = useRoute();
@@ -151,37 +132,8 @@ const performSearch = async (isLoadMore = false) => {
   }
 
   try {
-    // B站搜索
-    if (searchType.value === SEARCH_TYPE.BILIBILI) {
-      const response = await searchBilibili({
-        keyword: keyword.value,
-        page: page.value,
-        pagesize: ITEMS_PER_PAGE
-      });
-
-      const bilibiliVideos = response.data.data.result.map((item: any) => ({
-        id: item.aid,
-        bvid: item.bvid,
-        title: item.title,
-        author: item.author,
-        pic: getBilibiliProxyUrl(item.pic),
-        duration: item.duration,
-        pubdate: item.pubdate,
-        description: item.description,
-        view: item.play,
-        danmaku: item.video_review
-      }));
-
-      if (isLoadMore) {
-        results.value = [...results.value, ...bilibiliVideos];
-      } else {
-        results.value = bilibiliVideos;
-      }
-
-      hasMore.value = bilibiliVideos.length === ITEMS_PER_PAGE;
-    }
     // 歌曲搜索
-    else if (searchType.value === SEARCH_TYPE.MUSIC) {
+    if (searchType.value === SEARCH_TYPE.MUSIC) {
       const { data } = await getSearch({
         keywords: keyword.value,
         type: searchType.value,
@@ -317,29 +269,6 @@ const handleScroll = (e: Event) => {
 // 播放音乐
 const handlePlay = (item: any) => {
   playerStore.addToNextPlay(item);
-};
-
-// 播放B站视频
-const handlePlayBilibili = async (item: IBilibiliSearchResult) => {
-  try {
-    const videoDetail = await getBilibiliVideoDetail(item.bvid);
-    const pages = videoDetail.data.pages;
-
-    if (pages && pages.length === 1) {
-      const audioUrl = await getBilibiliAudioUrl(item.bvid, pages[0].cid);
-      const playItem = createSimpleBilibiliSong(item, audioUrl);
-      playItem.bilibiliData = {
-        bvid: item.bvid,
-        cid: pages[0].cid
-      };
-      playerStore.setPlay(playItem);
-    } else {
-      router.push(`/bilibili/${item.bvid}`);
-    }
-  } catch (error) {
-    console.error('播放B站视频失败:', error);
-    router.push(`/bilibili/${item.bvid}`);
-  }
 };
 
 // 返回

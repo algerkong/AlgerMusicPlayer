@@ -1,182 +1,108 @@
 <template>
-  <div class="search-page">
-    <n-layout
-      v-if="isMobile ? !searchDetail : true"
-      class="hot-search"
-      :class="setAnimationClass('animate__fadeInDown')"
-      :native-scrollbar="false"
-    >
-      <div class="title">{{ t('search.title.hotSearch') }}</div>
-      <div class="hot-search-list">
-        <template v-for="(item, index) in hotSearchData?.data" :key="index">
-          <div
-            :class="setAnimationClass('animate__bounceInLeft')"
-            :style="setAnimationDelay(index, 10)"
-            class="hot-search-item"
-            @click.stop="loadSearch(item.searchWord, 1)"
-          >
-            <span class="hot-search-item-count" :class="{ 'hot-search-item-count-3': index < 3 }">{{
-              index + 1
-            }}</span>
-            {{ item.searchWord }}
-          </div>
-        </template>
-      </div>
-    </n-layout>
-    <!-- 搜索到的歌曲列表 -->
-    <n-layout
-      v-if="isMobile ? searchDetail : true"
-      class="search-list"
-      :class="setAnimationClass('animate__fadeInDown')"
-      :native-scrollbar="false"
-      @scroll="handleScroll"
-    >
-      <div v-if="searchDetail" class="title">
-        <i
-          class="ri-arrow-left-s-line mr-1 cursor-pointer hover:text-gray-500 hover:scale-110"
-          @click="searchDetail = null"
-        ></i>
-        {{ hotKeyword }}
-        <div v-if="searchDetail?.songs?.length" class="title-play-all">
-          <div class="play-all-btn" @click="handlePlayAll">
-            <i class="ri-play-circle-fill"></i>
-            <span>{{ t('search.button.playAll') }}</span>
+  <div
+    class="search-page-container h-full w-full bg-white dark:bg-black transition-colors duration-500"
+  >
+    <n-scrollbar class="h-full">
+      <div class="search-content w-full pb-32 pt-6 px-4 sm:px-6 lg:px-8 lg:pl-0">
+        <!-- Search Header / Hero -->
+        <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <h1
+              class="text-3xl md:text-4xl font-bold tracking-tight text-neutral-900 dark:text-white mb-2"
+            >
+              {{ t('search.title.hotSearch') }}
+            </h1>
+            <p class="text-neutral-500 dark:text-neutral-400">探索当下最热门的搜索趋势</p>
           </div>
         </div>
-      </div>
-      <div v-loading="searchDetailLoading" class="search-list-box">
-        <template v-if="searchDetail">
-          <!-- B站视频搜索结果 -->
-          <template v-if="searchType === SEARCH_TYPE.BILIBILI">
-            <div
-              v-for="(item, index) in searchDetail?.bilibili"
-              :key="item.bvid"
-              :class="setAnimationClass('animate__bounceInRight')"
-              :style="getSearchListAnimation(index)"
-            >
-              <bilibili-item :item="item" @play="handlePlayBilibili" />
-            </div>
-            <div v-if="isLoadingMore" class="loading-more">
-              <n-spin size="small" />
-              <span class="ml-2">{{ t('search.loading.more') }}</span>
-            </div>
-            <div v-if="!hasMore && searchDetail" class="no-more">{{ t('search.noMore') }}</div>
-          </template>
-          <!-- 原有音乐搜索结果 -->
-          <template v-else>
-            <div
-              v-for="(item, index) in searchDetail?.songs"
-              :key="item.id"
-              :class="setAnimationClass('animate__bounceInRight')"
-              :style="getSearchListAnimation(index)"
-            >
-              <song-item :item="item" @play="handlePlay" :is-next="true" />
-            </div>
-            <template v-for="(list, key) in searchDetail">
-              <template v-if="key.toString() !== 'songs'">
-                <div
-                  v-for="(item, index) in list"
-                  :key="item.id"
-                  class="mb-3"
-                  :class="setAnimationClass('animate__bounceInRight')"
-                  :style="getSearchListAnimation(index)"
+
+        <!-- Hot Search Section -->
+        <div class="space-y-12">
+          <section>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div
+                v-for="(item, index) in hotSearchData?.data"
+                :key="index"
+                class="hot-search-card group flex items-center gap-4 p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-900/50 hover:bg-neutral-100 dark:hover:bg-neutral-800/50 cursor-pointer transition-all duration-300 animate-item"
+                :style="{ animationDelay: calculateAnimationDelay(index, 0.03) }"
+                @click="handleSearch(item.searchWord)"
+              >
+                <span
+                  class="flex-shrink-0 w-8 text-lg font-bold italic transition-colors duration-300"
+                  :class="index < 3 ? 'text-primary' : 'text-neutral-300 dark:text-neutral-700'"
                 >
-                  <search-item :item="item" />
+                  {{ String(index + 1).padStart(2, '0') }}
+                </span>
+                <div class="flex-1 min-w-0">
+                  <p
+                    class="text-sm font-semibold text-neutral-900 dark:text-white truncate group-hover:text-primary transition-colors"
+                  >
+                    {{ item.searchWord }}
+                  </p>
+                  <p v-if="item.content" class="text-xs text-neutral-400 truncate mt-0.5">
+                    {{ item.content }}
+                  </p>
                 </div>
-              </template>
-            </template>
-            <!-- 加载状态 -->
-            <div v-if="isLoadingMore" class="loading-more">
-              <n-spin size="small" />
-              <span class="ml-2">{{ t('search.loading.more') }}</span>
+                <div v-if="item.iconUrl" class="flex-shrink-0">
+                  <img :src="item.iconUrl" class="h-4 object-contain opacity-80" />
+                </div>
+              </div>
             </div>
-            <div v-if="!hasMore && searchDetail" class="no-more">{{ t('search.noMore') }}</div>
-          </template>
-        </template>
-        <!-- 搜索历史 -->
-        <template v-else>
-          <div class="search-history">
-            <div class="search-history-header title">
-              <span>{{ t('search.title.searchHistory') }}</span>
-              <n-button text type="error" @click="clearSearchHistory">
-                <template #icon>
-                  <i class="ri-delete-bin-line"></i>
-                </template>
+          </section>
+
+          <!-- Search History -->
+          <section v-if="searchHistory.length > 0">
+            <div class="mb-6 flex items-center justify-between">
+              <h2 class="text-xl font-bold text-neutral-900 dark:text-white">
+                {{ t('search.title.searchHistory') }}
+              </h2>
+              <button
+                class="text-xs text-neutral-400 hover:text-red-500 transition-colors"
+                @click="clearSearchHistory"
+              >
                 {{ t('search.button.clear') }}
-              </n-button>
+              </button>
             </div>
-            <div class="search-history-list">
-              <n-tag
+            <div class="flex flex-wrap gap-2">
+              <div
                 v-for="(item, index) in searchHistory"
                 :key="index"
-                :class="setAnimationClass('animate__bounceIn')"
-                :style="getSearchListAnimation(index)"
-                class="search-history-item"
-                round
-                closable
-                @click="handleSearchHistory(item)"
-                @close="handleCloseSearchHistory(item)"
+                class="group relative flex items-center gap-2 px-4 py-1.5 rounded-full bg-neutral-100 dark:bg-neutral-900 text-sm text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-all cursor-pointer"
+                @click="handleSearch(item.keyword, item.type)"
               >
-                {{ item.keyword }}
-              </n-tag>
+                <span>{{ item.keyword }}</span>
+                <i
+                  class="ri-close-line text-neutral-400 hover:text-red-500 transition-colors"
+                  @click.stop="handleCloseSearchHistory(item)"
+                />
+              </div>
             </div>
-          </div>
-        </template>
+          </section>
+        </div>
       </div>
-    </n-layout>
+    </n-scrollbar>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { useDateFormat } from '@vueuse/core';
-import { computed, onMounted, ref, watch } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 
-import {
-  createSimpleBilibiliSong,
-  getBilibiliAudioUrl,
-  getBilibiliProxyUrl,
-  getBilibiliVideoDetail,
-  searchBilibili
-} from '@/api/bilibili';
 import { getHotSearch } from '@/api/home';
-import { getSearch } from '@/api/search';
-import BilibiliItem from '@/components/common/BilibiliItem.vue';
-import SearchItem from '@/components/common/SearchItem.vue';
-import SongItem from '@/components/common/SongItem.vue';
-import { SEARCH_TYPE } from '@/const/bar-const';
-import { usePlayerStore } from '@/store/modules/player';
 import { useSearchStore } from '@/store/modules/search';
-import type { IBilibiliSearchResult } from '@/types/bilibili';
 import type { IHotSearch } from '@/types/search';
-import { isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
+import { calculateAnimationDelay } from '@/utils';
 
 defineOptions({
   name: 'Search'
 });
 
 const { t } = useI18n();
-const route = useRoute();
 const router = useRouter();
-const playerStore = usePlayerStore();
 const searchStore = useSearchStore();
 
-const searchDetail = ref<any>();
-const searchType = computed(() => searchStore.searchType as number);
-const searchDetailLoading = ref(false);
 const searchHistory = ref<Array<{ keyword: string; type: number }>>([]);
-
-// 添加分页相关的状态
-const ITEMS_PER_PAGE = 30; // 每页数量
-const page = ref(0);
-const hasMore = ref(true);
-const isLoadingMore = ref(false);
-const currentKeyword = ref('');
-
-const getSearchListAnimation = (index: number) => {
-  return setAnimationDelay(index % ITEMS_PER_PAGE, 50);
-};
 
 // 从 localStorage 加载搜索历史
 const loadSearchHistory = () => {
@@ -184,18 +110,15 @@ const loadSearchHistory = () => {
   searchHistory.value = history ? JSON.parse(history) : [];
 };
 
-// 保存搜索历史，改为保存关键词和类型
+// 保存搜索历史
 const saveSearchHistory = (keyword: string, type: number) => {
   if (!keyword) return;
   const history = searchHistory.value;
-  // 移除重复的关键词
   const index = history.findIndex((item) => item.keyword === keyword);
   if (index > -1) {
     history.splice(index, 1);
   }
-  // 添加到开头
   history.unshift({ keyword, type });
-  // 只保留最近的20条记录
   if (history.length > 20) {
     history.pop();
   }
@@ -209,7 +132,7 @@ const clearSearchHistory = () => {
   localStorage.removeItem('searchHistory');
 };
 
-// 删除搜索历史
+// 删除单条历史
 const handleCloseSearchHistory = (item: { keyword: string; type: number }) => {
   searchHistory.value = searchHistory.value.filter((h) => h.keyword !== item.keyword);
   localStorage.setItem('searchHistory', JSON.stringify(searchHistory.value));
@@ -222,353 +145,52 @@ const loadHotSearch = async () => {
   hotSearchData.value = data;
 };
 
+const handleSearch = (keyword: string, type?: number) => {
+  const searchType = type ?? searchStore.searchType;
+  saveSearchHistory(keyword, searchType);
+  searchStore.searchValue = keyword;
+  searchStore.searchType = searchType;
+
+  router.push({
+    path: '/search-result',
+    query: {
+      keyword,
+      type: searchType
+    }
+  });
+};
+
 onMounted(() => {
   loadHotSearch();
   loadSearchHistory();
-  // 注意：路由参数的处理已经在 watch route.query 中处理了
 });
-
-const hotKeyword = ref(route.query.keyword || t('search.title.searchList'));
-
-const loadSearch = async (keywords: any, type: any = null, isLoadMore = false) => {
-  if (!keywords) return;
-
-  // 使用传入的类型或当前类型
-  const searchTypeToUse = type !== null ? type : searchType.value;
-
-  if (!isLoadMore) {
-    hotKeyword.value = keywords;
-    searchDetail.value = undefined;
-    page.value = 0;
-    hasMore.value = true;
-    currentKeyword.value = keywords;
-
-    // 保存搜索历史
-    saveSearchHistory(keywords, searchTypeToUse);
-
-    // 始终更新搜索框内容和类型
-    searchStore.searchType = searchTypeToUse;
-    searchStore.searchValue = keywords;
-  } else if (isLoadingMore.value || !hasMore.value) {
-    return;
-  }
-
-  if (isLoadMore) {
-    isLoadingMore.value = true;
-  } else {
-    searchDetailLoading.value = true;
-  }
-
-  try {
-    // B站搜索
-    if (searchTypeToUse === SEARCH_TYPE.BILIBILI) {
-      const response = await searchBilibili({
-        keyword: currentKeyword.value,
-        page: page.value + 1,
-        pagesize: ITEMS_PER_PAGE
-      });
-      console.log('response', response);
-
-      const bilibiliVideos = response.data.data.result.map((item: any) => ({
-        id: item.aid,
-        bvid: item.bvid,
-        title: item.title,
-        author: item.author,
-        pic: getBilibiliProxyUrl(item.pic),
-        duration: item.duration,
-        pubdate: item.pubdate,
-        description: item.description,
-        view: item.play,
-        danmaku: item.video_review
-      }));
-
-      if (isLoadMore && searchDetail.value) {
-        // 合并数据
-        searchDetail.value.bilibili = [...searchDetail.value.bilibili, ...bilibiliVideos];
-      } else {
-        searchDetail.value = {
-          bilibili: bilibiliVideos
-        };
-      }
-
-      // 判断是否还有更多数据
-      hasMore.value = bilibiliVideos.length === ITEMS_PER_PAGE;
-    }
-    // 音乐搜索
-    else {
-      const { data } = await getSearch({
-        keywords: currentKeyword.value,
-        type: searchTypeToUse,
-        limit: ITEMS_PER_PAGE,
-        offset: page.value * ITEMS_PER_PAGE
-      });
-
-      const songs = data.result.songs || [];
-      const albums = data.result.albums || [];
-      const mvs = (data.result.mvs || []).map((item: any) => ({
-        ...item,
-        picUrl: item.cover,
-        playCount: item.playCount,
-        desc: item.artists.map((artist: any) => artist.name).join('/'),
-        type: 'mv'
-      }));
-
-      const playlists = (data.result.playlists || []).map((item: any) => ({
-        ...item,
-        picUrl: item.coverImgUrl,
-        playCount: item.playCount,
-        desc: item.creator.nickname,
-        type: 'playlist'
-      }));
-
-      // songs map 替换属性
-      songs.forEach((item: any) => {
-        item.picUrl = item.al.picUrl;
-        item.artists = item.ar;
-      });
-      albums.forEach((item: any) => {
-        item.desc = `${item.artist.name} ${item.company} ${dateFormat(item.publishTime)}`;
-      });
-
-      if (isLoadMore && searchDetail.value) {
-        // 合并数据
-        searchDetail.value.songs = [...searchDetail.value.songs, ...songs];
-        searchDetail.value.albums = [...searchDetail.value.albums, ...albums];
-        searchDetail.value.mvs = [...searchDetail.value.mvs, ...mvs];
-        searchDetail.value.playlists = [...searchDetail.value.playlists, ...playlists];
-      } else {
-        searchDetail.value = {
-          songs,
-          albums,
-          mvs,
-          playlists
-        };
-      }
-
-      // 判断是否还有更多数据
-      hasMore.value =
-        songs.length === ITEMS_PER_PAGE ||
-        albums.length === ITEMS_PER_PAGE ||
-        mvs.length === ITEMS_PER_PAGE ||
-        playlists.length === ITEMS_PER_PAGE;
-    }
-
-    page.value++;
-  } catch (error) {
-    console.error(t('search.error.searchFailed'), error);
-  } finally {
-    searchDetailLoading.value = false;
-    isLoadingMore.value = false;
-  }
-};
-
-watch(
-  () => searchStore.searchValue,
-  (value) => {
-    loadSearch(value);
-  }
-);
-
-watch(
-  () => searchType.value,
-  () => {
-    if (searchStore.searchValue) {
-      loadSearch(searchStore.searchValue);
-    }
-  }
-);
-// 修改 store.state 的访问
-if (searchStore.searchValue) {
-  loadSearch(searchStore.searchValue);
-}
-
-// 修改 store.state 的设置
-searchStore.searchValue = route.query.keyword as string;
-
-const dateFormat = (time: any) => useDateFormat(time, 'YYYY.MM.DD').value;
-
-// 添加滚动处理函数
-const handleScroll = (e: any) => {
-  const { scrollTop, scrollHeight, clientHeight } = e.target;
-  // 距离底部100px时加载更多
-  if (scrollTop + clientHeight >= scrollHeight - 100 && !isLoadingMore.value && hasMore.value) {
-    loadSearch(currentKeyword.value, null, true);
-  }
-};
-
-watch(
-  () => route.query,
-  (query) => {
-    if (route.path === '/search' && query.keyword) {
-      const routeKeyword = query.keyword as string;
-      const routeType = query.type ? Number(query.type) : searchType.value;
-
-      // 更新搜索类型和值
-      searchStore.searchType = routeType;
-      searchStore.searchValue = routeKeyword;
-
-      // 加载搜索结果
-      loadSearch(routeKeyword, routeType);
-    }
-  },
-  { immediate: true }
-);
-
-const handlePlay = (item: any) => {
-  // 添加到下一首
-  playerStore.addToNextPlay(item);
-};
-
-// 点击搜索历史
-const handleSearchHistory = (item: { keyword: string; type: number }) => {
-  // 更新搜索类型
-  searchStore.searchType = item.type;
-  // 先更新搜索值到 store
-  searchStore.searchValue = item.keyword;
-  // 使用关键词和类型加载搜索
-  loadSearch(item.keyword, item.type);
-};
-
-// 处理B站视频播放
-const handlePlayBilibili = async (item: IBilibiliSearchResult) => {
-  try {
-    // 获取视频详情以判断是否为单个视频
-    const videoDetail = await getBilibiliVideoDetail(item.bvid);
-    const pages = videoDetail.data.pages;
-
-    // 如果是单个视频（只有一个分P），直接播放
-    if (pages && pages.length === 1) {
-      // 获取音频URL并播放
-      const audioUrl = await getBilibiliAudioUrl(item.bvid, pages[0].cid);
-
-      // 使用公用方法创建播放项目
-      const playItem = createSimpleBilibiliSong(item, audioUrl);
-      playItem.bilibiliData = {
-        bvid: item.bvid,
-        cid: pages[0].cid
-      };
-
-      // 添加到播放列表并开始播放
-      playerStore.setPlay(playItem);
-    } else {
-      // 多P视频，跳转到详情页面
-      router.push(`/bilibili/${item.bvid}`);
-    }
-  } catch (error) {
-    console.error('处理B站视频播放失败:', error);
-    // 出错时回退到原来的逻辑，跳转详情页
-    router.push(`/bilibili/${item.bvid}`);
-  }
-};
-
-const handlePlayAll = () => {
-  if (!searchDetail.value?.songs?.length) return;
-
-  // 设置播放列表为搜索结果中的所有歌曲
-  playerStore.setPlayList(searchDetail.value.songs);
-
-  // 开始播放第一首歌
-  if (searchDetail.value.songs[0]) {
-    playerStore.setPlay(searchDetail.value.songs[0]);
-  }
-};
 </script>
 
 <style lang="scss" scoped>
-.search-page {
-  @apply flex h-full;
+.search-page-container {
+  position: relative;
 }
 
-.hot-search {
-  @apply mr-4 rounded-xl flex-1 overflow-hidden;
-  @apply bg-light-100 dark:bg-dark-100;
-  animation-duration: 0.2s;
-  min-width: 400px;
-  height: 100%;
+.animate-item {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
 
-  &-list {
-    @apply pb-28;
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
-  &-item {
-    @apply px-4 py-3 text-lg rounded-xl cursor-pointer;
-    @apply text-gray-900 dark:text-white;
-    transition: all 0.3s ease;
-
-    &:hover {
-      @apply bg-light-100 dark:bg-dark-200;
-    }
-
-    &-count {
-      @apply inline-block ml-3 w-8;
-      @apply text-green-500;
-
-      &-3 {
-        @apply font-bold inline-block ml-3 w-8;
-        @apply text-red-500;
-      }
+.hot-search-card {
+  &:hover {
+    .hot-search-item-count {
+      @apply text-primary;
     }
   }
-}
-
-.search-list {
-  @apply flex-1 rounded-xl;
-  @apply bg-light-100 dark:bg-dark-100;
-  height: 100%;
-  animation-duration: 0.2s;
-
-  &-box {
-    @apply pb-28;
-  }
-}
-
-.title {
-  @apply text-xl font-bold my-2 mx-4 flex items-center;
-  @apply text-gray-900 dark:text-white;
-
-  &-play-all {
-    @apply ml-auto;
-  }
-}
-
-.play-all-btn {
-  @apply flex items-center gap-1 px-3 py-1 rounded-full cursor-pointer transition-all;
-  @apply text-sm font-normal text-gray-900 dark:text-white hover:bg-light-300 dark:hover:bg-dark-300 hover:text-green-500;
-
-  i {
-    @apply text-xl;
-  }
-}
-
-.search-history {
-  &-header {
-    @apply flex justify-between items-center mb-4;
-    @apply text-gray-900 dark:text-white;
-  }
-
-  &-list {
-    @apply flex flex-wrap gap-2 px-4;
-  }
-
-  &-item {
-    @apply cursor-pointer;
-    animation-duration: 0.2s;
-  }
-}
-
-.mobile {
-  .hot-search {
-    @apply mr-0 w-full;
-  }
-}
-
-.loading-more {
-  @apply flex justify-center items-center py-4;
-  @apply text-gray-500 dark:text-gray-400;
-}
-
-.no-more {
-  @apply text-center py-4;
-  @apply text-gray-500 dark:text-gray-400;
 }
 </style>
