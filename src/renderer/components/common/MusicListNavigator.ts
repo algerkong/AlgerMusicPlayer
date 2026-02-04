@@ -13,7 +13,7 @@ export function navigateToMusicList(
     id?: string | number;
     type?: 'album' | 'playlist' | 'dailyRecommend' | string;
     name: string;
-    songList: any[];
+    songList?: any[];
     listInfo?: any;
     canRemove?: boolean;
   }
@@ -23,7 +23,11 @@ export function navigateToMusicList(
 
   // 如果是每日推荐，不需要设置 musicStore，直接从 recommendStore 获取
   if (type !== 'dailyRecommend') {
-    musicStore.setCurrentMusicList(songList, name, listInfo, canRemove);
+    if (songList) {
+      musicStore.setCurrentMusicList(songList, name, listInfo, canRemove);
+    } else {
+      musicStore.setBasicListInfo(name, listInfo, canRemove);
+    }
   } else {
     // 确保 musicStore 的数据被清空，避免显示旧的列表
     musicStore.clearCurrentMusicList();

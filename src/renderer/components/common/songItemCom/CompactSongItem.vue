@@ -204,24 +204,24 @@ const formatDuration = (ms: number): string => {
     }
 
     &-title {
-      @apply flex-[2.5] min-w-0 text-sm cursor-pointer text-gray-900 dark:text-white;
+      @apply flex-[2.5] min-w-0 text-sm cursor-pointer text-gray-900 dark:text-white flex items-center;
     }
 
     &-artist {
-      @apply flex-[1.5] min-w-0 text-sm text-gray-500 dark:text-gray-400;
+      @apply flex-[1.5] min-w-0 text-sm text-gray-500 dark:text-gray-400 flex items-center;
     }
 
     &-album {
-      @apply flex-[1.5] min-w-0 text-sm text-gray-500 dark:text-gray-400;
+      @apply flex-[1.5] min-w-0 text-sm text-gray-500 dark:text-gray-400 flex items-center;
     }
 
     &-duration {
-      @apply w-14 flex-shrink-0 text-sm text-gray-500 dark:text-gray-400 justify-end;
+      @apply w-14 flex-shrink-0 text-sm text-gray-500 dark:text-gray-400 flex items-center justify-end;
     }
   }
 
   .song-item-operating-compact {
-    @apply border-none bg-transparent gap-2 flex items-center;
+    @apply border-none bg-transparent gap-3 flex items-center justify-end min-w-[160px];
 
     .song-item-operating-like,
     .song-item-operating-play,

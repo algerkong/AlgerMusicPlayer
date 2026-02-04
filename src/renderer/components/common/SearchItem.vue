@@ -1,26 +1,56 @@
 <template>
-  <div class="search-item" :class="[shape, item.type]" @click="handleClick">
-    <div class="search-item-img">
+  <div
+    class="search-item group cursor-pointer transition-all duration-300"
+    :class="[item.type === 'mv' ? 'flex flex-col' : 'flex flex-col']"
+    @click="handleClick"
+  >
+    <!-- Image Container -->
+    <div
+      class="relative overflow-hidden rounded-2xl shadow-sm transition-all duration-500 group-hover:shadow-xl group-hover:-translate-y-1"
+      :class="[item.type === 'mv' ? 'aspect-video' : 'aspect-square']"
+    >
       <n-image
-        class="w-full h-full"
-        :src="getImgUrl(item.picUrl, item.type === 'mv' ? '320y180' : '200y200')"
+        class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+        :src="getImgUrl(item.picUrl, item.type === 'mv' ? '400y225' : '400y400')"
         lazy
         preview-disabled
       />
-      <div v-if="item.type === 'mv'" class="play">
-        <i class="iconfont icon icon-play"></i>
+
+      <!-- Play Overlay (for MV) -->
+      <div
+        v-if="item.type === 'mv'"
+        class="absolute inset-0 flex items-center justify-center bg-black/0 transition-all duration-300 group-hover:bg-black/30"
+      >
+        <div
+          class="play-icon flex h-12 w-12 items-center justify-center rounded-full bg-white/90 opacity-0 scale-75 transition-all duration-300 shadow-xl group-hover:opacity-100 group-hover:scale-100"
+        >
+          <i class="ri-play-fill text-2xl text-neutral-900 ml-1" />
+        </div>
+      </div>
+
+      <!-- Item Size Badge (for Album) -->
+      <div
+        v-if="item.type === '专辑' && item.size"
+        class="absolute top-2 right-2 flex items-center gap-1 rounded-lg bg-black/40 px-2 py-1 text-[10px] font-bold text-white backdrop-blur-md opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+      >
+        <i class="ri-music-2-line" />
+        <span>{{ item.size }}</span>
       </div>
     </div>
-    <div class="search-item-info">
-      <p class="search-item-name">{{ item.name }}</p>
-      <p class="search-item-artist">{{ item.desc }}</p>
+
+    <!-- Info Section -->
+    <div class="mt-3 space-y-1 px-1">
+      <h3
+        class="line-clamp-1 text-sm font-bold text-neutral-800 transition-colors duration-200 group-hover:text-primary dark:text-neutral-200 dark:group-hover:text-white md:text-base"
+      >
+        {{ item.name }}
+      </h3>
+      <p class="line-clamp-1 text-xs font-medium text-neutral-500 dark:text-neutral-400">
+        {{ item.desc }}
+      </p>
     </div>
 
-    <div v-if="item.type === '专辑'" class="search-item-size">
-      <i class="ri-music-2-line"></i>
-      <span>{{ item.size }}</span>
-    </div>
-
+    <!-- MV Player Component -->
     <mv-player
       v-if="item.type === 'mv'"
       v-model:show="showPop"
@@ -31,90 +61,73 @@
 </template>
 
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-import { getAlbum, getListDetail } from '@/api/list';
+import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import MvPlayer from '@/components/MvPlayer.vue';
-import { useMusicStore } from '@/store/modules/music';
+import { usePodcastRadioHistory } from '@/hooks/PodcastRadioHistoryHook';
 import { usePlayerStore } from '@/store/modules/player';
 import { IMvItem } from '@/types/mv';
 import { getImgUrl } from '@/utils';
 
-const props = withDefaults(
-  defineProps<{
-    shape?: 'square' | 'rectangle';
-    zIndex?: number;
-    item: {
-      picUrl: string;
-      name: string;
-      desc: string;
-      type: string;
-      [key: string]: any;
-    };
-  }>(),
-  {
-    shape: 'rectangle'
-  }
-);
-
-const songList = ref<any[]>([]);
+const props = defineProps<{
+  item: {
+    id: number;
+    picUrl: string;
+    name: string;
+    desc: string;
+    type: string;
+    [key: string]: any;
+  };
+}>();
 
 const showPop = ref(false);
-const listInfo = ref<any>(null);
 
 const playerStore = usePlayerStore();
 const router = useRouter();
-const musicStore = useMusicStore();
+const { addPodcastRadio } = usePodcastRadioHistory();
 
 const getCurrentMv = () => {
   return {
     id: props.item.id,
-    name: props.item.name
+    name: props.item.name,
+    cover: props.item.picUrl,
+    artistName: props.item.desc
   } as unknown as IMvItem;
 };
 
 const handleClick = async () => {
-  listInfo.value = null;
   if (props.item.type === '专辑') {
-    const res = await getAlbum(props.item.id);
-    songList.value = res.data.songs.map((song: any) => {
-      song.al.picUrl = song.al.picUrl || props.item.picUrl;
-      return song;
-    });
-    listInfo.value = {
-      ...res.data.album,
-      creator: {
-        avatarUrl: res.data.album.artist.img1v1Url,
-        nickname: `${res.data.album.artist.name} - ${res.data.album.company}`
-      },
-      description: res.data.album.description
-    };
-
-    // 保存数据到store
-    musicStore.setCurrentMusicList(songList.value, props.item.name, listInfo.value, false);
-
-    // 使用路由跳转
-    router.push({
-      name: 'musicList',
-      params: { id: props.item.id },
-      query: { type: 'album' }
+    navigateToMusicList(router, {
+      id: props.item.id,
+      type: 'album',
+      name: props.item.name,
+      listInfo: { picUrl: props.item.picUrl },
+      canRemove: false
     });
   } else if (props.item.type === 'playlist') {
-    const res = await getListDetail(props.item.id);
-    songList.value = res.data.playlist.tracks;
-    listInfo.value = res.data.playlist;
-
-    // 保存数据到store
-    musicStore.setCurrentMusicList(songList.value, props.item.name, listInfo.value, false);
-
-    // 使用路由跳转
-    router.push({
-      name: 'musicList',
-      params: { id: props.item.id },
-      query: { type: 'playlist' }
+    navigateToMusicList(router, {
+      id: props.item.id,
+      type: 'playlist',
+      name: props.item.name,
+      listInfo: { picUrl: props.item.picUrl },
+      canRemove: false
     });
   } else if (props.item.type === 'mv') {
     handleShowMv();
+  } else if (props.item.type === 'djRadio') {
+    addPodcastRadio({
+      id: props.item.id,
+      name: props.item.name,
+      picUrl: props.item.picUrl,
+      dj: props.item.dj,
+      type: 'djRadio'
+    });
+    router.push({
+      name: 'podcastRadio',
+      params: { id: props.item.id }
+    });
   }
 };
 
@@ -125,77 +138,10 @@ const handleShowMv = async () => {
 </script>
 
 <style scoped lang="scss">
-.search-item {
-  @apply rounded-lg p-0 flex items-center hover:bg-transparent transition cursor-pointer border-none;
-
-  &.square {
-    @apply flex-col relative;
-
-    .search-item-img {
-      @apply w-full aspect-square mb-2 mr-0 rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 shadow-sm shadow-black/20 dark:shadow-white/20;
-      img {
-        @apply object-cover w-full h-full transition-transform duration-500;
-      }
-    }
-
-    .search-item-info {
-      @apply w-full text-left px-0;
-
-      .search-item-name {
-        @apply truncate mb-1 font-medium text-base text-gray-800 dark:text-gray-200;
-      }
-
-      .search-item-artist {
-        @apply truncate text-sm text-gray-500 dark:text-gray-400;
-      }
-    }
-
-    .search-item-size {
-      @apply absolute top-2 right-2 text-xs text-white px-2 py-1 rounded-full bg-black/30 backdrop-blur-sm;
-      i {
-        @apply text-xs;
-      }
-    }
-  }
-
-  &.rectangle {
-    @apply hover:bg-light-200 dark:hover:bg-dark-200 p-3;
-    .search-item-img {
-      @apply w-12 h-12 mr-4 rounded-lg overflow-hidden;
-    }
-  }
-
-  .search-item-info {
-    @apply flex-1 overflow-hidden;
-    &-name {
-      @apply text-white text-sm text-center;
-    }
-    &-artist {
-      @apply text-gray-400 text-xs text-center;
-    }
-  }
-}
-
-.search-item.mv {
-  &:hover {
-    .play {
-      @apply opacity-60;
-    }
-  }
-  .search-item-img {
-    width: 160px !important;
-    height: 90px !important;
-    @apply rounded-lg relative;
-  }
-  .play {
-    @apply absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity;
-    .icon {
-      @apply text-white text-5xl;
-    }
-  }
-}
-
-.search-item-size {
-  @apply flex items-center gap-2 text-gray-400;
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>
