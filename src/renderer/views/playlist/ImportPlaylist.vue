@@ -1,214 +1,319 @@
 <template>
-  <div class="import-playlist-page">
-    <div class="import-header" :class="setAnimationClass('animate__fadeInLeft')">
-      <div class="import-header-left">
-        <h2>{{ t('comp.playlist.import.title') }}</h2>
-        <div class="import-desc">{{ t('comp.playlist.import.description') }}</div>
+  <div
+    class="h-full w-full bg-gray-50 dark:bg-black transition-colors duration-500 overflow-hidden flex flex-col relative"
+  >
+    <!-- 背景装饰 -->
+    <div
+      class="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none"
+    ></div>
+
+    <!-- 头部区域 -->
+    <div class="flex-shrink-0 z-10 px-6 pt-8 pb-4 relative">
+      <div class="max-w-5xl mx-auto w-full flex items-end justify-between">
+        <div>
+          <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary"
+            >
+              <i class="ri-import-fill text-xl"></i>
+            </div>
+            {{ t('comp.playlist.import.title') }}
+          </h2>
+          <p class="text-base text-gray-500 dark:text-gray-400 ml-13">
+            {{ t('comp.playlist.import.description') }}
+          </p>
+        </div>
       </div>
     </div>
 
-    <div class="import-content" :class="setAnimationClass('animate__fadeInUp')">
-      <n-card class="import-card">
-        <n-tabs type="line" animated>
-          <!-- 链接导入 -->
-          <n-tab-pane name="link" :tab="t('comp.playlist.import.linkTab')">
-            <div class="tab-content">
-              <div class="link-inputs">
-                <div v-for="(link, index) in linkInputs" :key="index" class="link-row">
-                  <n-input
-                    v-model:value="link.value"
-                    :placeholder="t('comp.playlist.import.linkPlaceholder')"
-                    class="link-input"
-                  />
-                  <n-button
-                    quaternary
-                    circle
-                    type="error"
-                    @click="removeLinkRow(index)"
-                    v-if="linkInputs.length > 1"
-                  >
-                    <template #icon>
-                      <i class="iconfont ri-delete-bin-line"></i>
-                    </template>
-                  </n-button>
-                </div>
-                <div class="link-actions">
-                  <n-button @click="addLinkRow" secondary size="small">
-                    <template #icon>
-                      <i class="iconfont ri-add-line"></i>
-                    </template>
-                    {{ t('comp.playlist.import.addLinkButton') }}
-                  </n-button>
-                </div>
-              </div>
-              <div class="link-tips">
-                <p>{{ t('comp.playlist.import.linkTips') }}</p>
-                <ul>
-                  <li>{{ t('comp.playlist.import.linkTip1') }}</li>
-                  <li>{{ t('comp.playlist.import.linkTip2') }}</li>
-                  <li>{{ t('comp.playlist.import.linkTip3') }}</li>
-                </ul>
-              </div>
-              <div class="action-buttons">
-                <n-checkbox v-model:checked="importToStarPlaylist">
-                  {{ t('comp.playlist.import.importToStarPlaylist') }}
-                </n-checkbox>
-                <n-input
-                  v-if="!importToStarPlaylist"
-                  v-model:value="playlistName"
-                  :placeholder="t('comp.playlist.import.playlistNamePlaceholder')"
-                  class="playlist-name-input"
-                />
-                <n-button
-                  type="primary"
-                  :loading="importing"
-                  :disabled="!isLinkInputValid"
-                  @click="handleImportByLink"
-                >
-                  {{ t('comp.playlist.import.importButton') }}
-                </n-button>
-              </div>
+    <!-- 内容区域 -->
+    <n-scrollbar class="flex-1">
+      <div class="w-full max-w-5xl mx-auto p-6 pb-24">
+        <!-- 自定义 Tab 切换 -->
+        <div class="flex justify-center mb-8">
+          <div
+            class="bg-white dark:bg-white/5 p-1.5 rounded-2xl shadow-sm border border-gray-100 dark:border-white/10 flex gap-1 relative"
+          >
+            <div
+              v-for="tab in tabs"
+              :key="tab.id"
+              class="relative z-10 px-6 py-2.5 rounded-xl text-sm font-medium cursor-pointer transition-all duration-300 flex items-center gap-2"
+              :class="
+                currentTab === tab.id
+                  ? 'text-white'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+              "
+              @click="currentTab = tab.id"
+            >
+              <i :class="tab.icon"></i>
+              {{ tab.label }}
             </div>
-          </n-tab-pane>
 
-          <!-- 文字导入 -->
-          <n-tab-pane name="text" :tab="t('comp.playlist.import.textTab')">
-            <div class="tab-content">
-              <n-input
-                v-model:value="textInput"
-                type="textarea"
-                :placeholder="t('comp.playlist.import.textPlaceholder')"
-                :rows="6"
-              />
-              <div class="text-tips">
-                <p>{{ t('comp.playlist.import.textTips') }}</p>
-                <p class="text-format">{{ t('comp.playlist.import.textFormat') }}</p>
-              </div>
-              <div class="action-buttons">
-                <n-checkbox v-model:checked="importToStarPlaylist">
-                  {{ t('comp.playlist.import.importToStarPlaylist') }}
-                </n-checkbox>
-                <n-input
-                  v-if="!importToStarPlaylist"
-                  v-model:value="playlistName"
-                  :placeholder="t('comp.playlist.import.playlistNamePlaceholder')"
-                  class="playlist-name-input"
-                />
-                <n-button
-                  type="primary"
-                  :loading="importing"
-                  :disabled="!textInput.trim()"
-                  @click="handleImportByText"
-                >
-                  {{ t('comp.playlist.import.importButton') }}
-                </n-button>
-              </div>
-            </div>
-          </n-tab-pane>
-
-          <!-- 元数据导入 -->
-          <n-tab-pane name="local" :tab="t('comp.playlist.import.localTab')">
-            <div class="tab-content">
-              <div class="metadata-inputs">
-                <div v-for="(item, index) in localMetadata" :key="index" class="metadata-row">
-                  <n-input
-                    v-model:value="item.name"
-                    :placeholder="t('comp.playlist.import.songNamePlaceholder')"
-                    class="metadata-input"
-                  />
-                  <n-input
-                    v-model:value="item.artist"
-                    :placeholder="t('comp.playlist.import.artistNamePlaceholder')"
-                    class="metadata-input"
-                  />
-                  <n-input
-                    v-model:value="item.album"
-                    :placeholder="t('comp.playlist.import.albumNamePlaceholder')"
-                    class="metadata-input"
-                  />
-                  <n-button
-                    quaternary
-                    circle
-                    type="error"
-                    @click="removeMetadataRow(index)"
-                    v-if="localMetadata.length > 1"
-                  >
-                    <template #icon>
-                      <i class="iconfont ri-delete-bin-line"></i>
-                    </template>
-                  </n-button>
-                </div>
-                <div class="metadata-actions">
-                  <n-button @click="addMetadataRow" secondary size="small">
-                    <template #icon>
-                      <i class="iconfont ri-add-line"></i>
-                    </template>
-                    {{ t('comp.playlist.import.addSongButton') }}
-                  </n-button>
-                </div>
-              </div>
-              <div class="local-tips">
-                <p>{{ t('comp.playlist.import.localTips') }}</p>
-              </div>
-              <div class="action-buttons">
-                <n-checkbox v-model:checked="importToStarPlaylist">
-                  {{ t('comp.playlist.import.importToStarPlaylist') }}
-                </n-checkbox>
-                <n-input
-                  v-if="!importToStarPlaylist"
-                  v-model:value="playlistName"
-                  :placeholder="t('comp.playlist.import.playlistNamePlaceholder')"
-                  class="playlist-name-input"
-                />
-                <n-button
-                  type="primary"
-                  :loading="importing"
-                  :disabled="!isLocalMetadataValid"
-                  @click="handleImportByLocal"
-                >
-                  {{ t('comp.playlist.import.importButton') }}
-                </n-button>
-              </div>
-            </div>
-          </n-tab-pane>
-        </n-tabs>
-      </n-card>
-
-      <!-- 导入状态 -->
-      <n-card v-if="taskId" class="import-status-card">
-        <div class="status-header">
-          <h3>{{ t('comp.playlist.import.importStatus') }}</h3>
-          <n-button text @click="refreshStatus">
-            <template #icon>
-              <i class="iconfont ri-refresh-line"></i>
-            </template>
-            {{ t('comp.playlist.import.refresh') }}
-          </n-button>
+            <!-- 滑动背景 -->
+            <div
+              class="absolute top-1.5 bottom-1.5 bg-primary rounded-xl shadow-md transition-all duration-300 ease-out"
+              :style="tabIndicatorStyle"
+            ></div>
+          </div>
         </div>
-        <n-spin :show="checkingStatus">
-          <div class="status-content">
-            <div class="status-item">
-              <span class="status-label">{{ t('comp.playlist.import.taskId') }}:</span>
-              <span class="status-value">{{ taskId }}</span>
+
+        <!-- 主内容卡片 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          <!-- 左侧：输入区域 -->
+          <div class="lg:col-span-2 space-y-6">
+            <div
+              class="bg-white dark:bg-neutral-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none overflow-hidden p-1 transition-all duration-300"
+            >
+              <!-- 链接导入内容 -->
+              <div v-if="currentTab === 'link'" class="p-6 space-y-6 animate-fade-in">
+                <div class="space-y-4">
+                  <div v-for="(link, index) in linkInputs" :key="index" class="group relative">
+                    <input
+                      v-model="link.value"
+                      :placeholder="t('comp.playlist.import.linkPlaceholder')"
+                      class="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-primary/50 focus:bg-white dark:focus:bg-black rounded-2xl px-5 py-4 outline-none transition-all duration-300 text-gray-900 dark:text-white placeholder-gray-400"
+                    />
+                    <button
+                      v-if="linkInputs.length > 1"
+                      class="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all opacity-0 group-hover:opacity-100"
+                      @click="removeLinkRow(index)"
+                    >
+                      <i class="ri-delete-bin-line"></i>
+                    </button>
+                  </div>
+
+                  <button
+                    class="w-full py-3 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700 text-gray-500 hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all duration-300 flex items-center justify-center gap-2 font-medium"
+                    @click="addLinkRow"
+                  >
+                    <i class="ri-add-line text-lg"></i>
+                    {{ t('comp.playlist.import.addLinkButton') }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- 文字导入内容 -->
+              <div v-if="currentTab === 'text'" class="p-6 space-y-6 animate-fade-in">
+                <textarea
+                  v-model="textInput"
+                  :placeholder="t('comp.playlist.import.textPlaceholder')"
+                  rows="12"
+                  class="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-primary/50 focus:bg-white dark:focus:bg-black rounded-2xl px-5 py-4 outline-none transition-all duration-300 text-gray-900 dark:text-white placeholder-gray-400 font-mono text-sm resize-none"
+                ></textarea>
+                <div class="flex items-center gap-2 text-xs text-gray-400 px-2">
+                  <i class="ri-information-line"></i>
+                  {{ t('comp.playlist.import.textFormat') }}
+                </div>
+              </div>
+
+              <!-- 元数据导入内容 -->
+              <div v-if="currentTab === 'local'" class="p-6 space-y-6 animate-fade-in">
+                <div class="space-y-3">
+                  <div
+                    v-for="(item, index) in localMetadata"
+                    :key="index"
+                    class="flex gap-3 items-center group"
+                  >
+                    <div class="w-6 text-center text-xs text-gray-300 font-mono">
+                      {{ index + 1 }}
+                    </div>
+                    <input
+                      v-model="item.name"
+                      :placeholder="t('comp.playlist.import.songNamePlaceholder')"
+                      class="flex-1 bg-gray-50 dark:bg-white/5 border-transparent focus:border-primary/50 rounded-xl px-4 py-2.5 outline-none text-sm transition-all border-2"
+                    />
+                    <input
+                      v-model="item.artist"
+                      :placeholder="t('comp.playlist.import.artistNamePlaceholder')"
+                      class="flex-1 bg-gray-50 dark:bg-white/5 border-transparent focus:border-primary/50 rounded-xl px-4 py-2.5 outline-none text-sm transition-all border-2"
+                    />
+                    <input
+                      v-model="item.album"
+                      :placeholder="t('comp.playlist.import.albumNamePlaceholder')"
+                      class="flex-1 bg-gray-50 dark:bg-white/5 border-transparent focus:border-primary/50 rounded-xl px-4 py-2.5 outline-none text-sm transition-all border-2"
+                    />
+                    <button
+                      v-if="localMetadata.length > 1"
+                      class="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all opacity-0 group-hover:opacity-100"
+                      @click="removeMetadataRow(index)"
+                    >
+                      <i class="ri-delete-bin-line"></i>
+                    </button>
+                  </div>
+                  <button
+                    class="ml-9 px-4 py-2 rounded-xl text-sm font-medium text-primary hover:bg-primary/10 transition-colors flex items-center gap-1"
+                    @click="addMetadataRow"
+                  >
+                    <i class="ri-add-line"></i>
+                    {{ t('comp.playlist.import.addSongButton') }}
+                  </button>
+                </div>
+              </div>
             </div>
-            <div class="status-item">
-              <span class="status-label">{{ t('comp.playlist.import.status') }}:</span>
-              <span class="status-value" :class="`status-${taskStatus}`">
-                {{ getStatusText(taskStatus) }}
-              </span>
-            </div>
-            <div v-if="taskStatus === 'success'" class="status-item">
-              <span class="status-label">{{ t('comp.playlist.import.successCount') }}:</span>
-              <span class="status-value success-count">{{ successCount }}</span>
-            </div>
-            <div v-if="taskStatus === 'failed'" class="status-item">
-              <span class="status-label">{{ t('comp.playlist.import.failReason') }}:</span>
-              <span class="status-value fail-reason">{{ failReason }}</span>
+
+            <!-- 帮助提示 (根据 Tab 变化) -->
+            <div
+              class="bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl p-5 border border-blue-100 dark:border-blue-900/20"
+            >
+              <div class="flex gap-3">
+                <div class="mt-0.5 text-blue-500">
+                  <i class="ri-lightbulb-flash-line text-lg"></i>
+                </div>
+                <div class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                  <div class="font-medium text-gray-900 dark:text-gray-200 mb-1">
+                    {{ t('comp.playlist.import.linkTips') }}
+                  </div>
+                  <ul class="list-disc list-inside opacity-80 space-y-1">
+                    <li v-if="currentTab === 'link'">{{ t('comp.playlist.import.linkTip1') }}</li>
+                    <li v-if="currentTab === 'link'">{{ t('comp.playlist.import.linkTip2') }}</li>
+                    <li v-if="currentTab === 'link'">{{ t('comp.playlist.import.linkTip3') }}</li>
+                    <li v-if="currentTab === 'text'">{{ t('comp.playlist.import.textTips') }}</li>
+                    <li v-if="currentTab === 'local'">{{ t('comp.playlist.import.localTips') }}</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
-        </n-spin>
-      </n-card>
-    </div>
+
+          <!-- 右侧：选项与操作 -->
+          <div class="space-y-6">
+            <!-- 选项卡片 -->
+            <div
+              class="bg-white dark:bg-neutral-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none p-6"
+            >
+              <h3 class="font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <i class="ri-settings-4-line text-primary"></i>
+                {{ t('comp.playlist.import.options') }}
+              </h3>
+
+              <div class="space-y-4">
+                <!-- 导入到星标歌单开关 -->
+                <div
+                  class="flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all border-2"
+                  :class="
+                    importToStarPlaylist
+                      ? 'bg-primary/5 border-primary/50'
+                      : 'bg-gray-50 dark:bg-white/5 border-transparent hover:bg-gray-100 dark:hover:bg-white/10'
+                  "
+                  @click="importToStarPlaylist = !importToStarPlaylist"
+                >
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="w-10 h-10 rounded-full bg-white dark:bg-white/10 flex items-center justify-center text-lg"
+                      :class="importToStarPlaylist ? 'text-primary' : 'text-gray-400'"
+                    >
+                      <i class="ri-heart-3-fill" v-if="importToStarPlaylist"></i>
+                      <i class="ri-heart-3-line" v-else></i>
+                    </div>
+                    <span class="font-medium text-sm">{{
+                      t('comp.playlist.import.importToStarPlaylist')
+                    }}</span>
+                  </div>
+                  <div
+                    class="w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors"
+                    :class="
+                      importToStarPlaylist
+                        ? 'border-primary bg-primary'
+                        : 'border-gray-300 dark:border-gray-600'
+                    "
+                  >
+                    <i class="ri-check-line text-white text-xs" v-show="importToStarPlaylist"></i>
+                  </div>
+                </div>
+
+                <!-- 自定义歌单名 -->
+                <div
+                  class="relative group"
+                  :class="{ 'opacity-50 pointer-events-none': importToStarPlaylist }"
+                >
+                  <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <i class="ri-play-list-line text-gray-400"></i>
+                  </div>
+                  <input
+                    v-model="playlistName"
+                    :placeholder="t('comp.playlist.import.playlistNamePlaceholder')"
+                    class="w-full bg-gray-50 dark:bg-white/5 border-2 border-transparent focus:border-primary/50 rounded-2xl pl-11 pr-4 py-3.5 outline-none transition-all text-sm text-gray-900 dark:text-white"
+                  />
+                </div>
+              </div>
+
+              <!-- 主操作按钮 -->
+              <button
+                class="w-full mt-6 py-4 rounded-2xl bg-primary text-white font-bold text-lg shadow-lg shadow-primary/30 hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-300 flex items-center justify-center gap-2"
+                :disabled="isImportDisabled"
+                @click="handleImport"
+              >
+                <i class="ri-loader-4-line animate-spin text-xl" v-if="importing"></i>
+                <i class="ri-download-cloud-2-line text-xl" v-else></i>
+                {{
+                  importing
+                    ? t('comp.playlist.import.statusProcessing')
+                    : t('comp.playlist.import.importButton')
+                }}
+              </button>
+            </div>
+
+            <!-- 状态反馈 -->
+            <div v-if="taskId" class="animate-fade-in-up">
+              <div
+                class="bg-white dark:bg-neutral-900 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-none p-6"
+              >
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    {{ t('comp.playlist.import.importStatus') }}
+                  </h3>
+                  <button class="text-xs text-primary hover:underline" @click="refreshStatus">
+                    {{ t('comp.playlist.import.refresh') }}
+                  </button>
+                </div>
+
+                <div class="relative pt-2">
+                  <div class="flex items-center gap-4 mb-4">
+                    <div
+                      class="w-12 h-12 rounded-full flex items-center justify-center text-2xl transition-colors"
+                      :class="{
+                        'bg-blue-50 text-blue-500':
+                          taskStatus === 'processing' || taskStatus === 'pending',
+                        'bg-green-50 text-green-500': taskStatus === 'success',
+                        'bg-red-50 text-red-500': taskStatus === 'failed'
+                      }"
+                    >
+                      <i
+                        class="ri-loader-4-line animate-spin"
+                        v-if="taskStatus === 'processing' || taskStatus === 'pending'"
+                      ></i>
+                      <i class="ri-check-line" v-else-if="taskStatus === 'success'"></i>
+                      <i class="ri-close-line" v-else-if="taskStatus === 'failed'"></i>
+                    </div>
+                    <div>
+                      <div class="font-bold text-lg text-gray-900 dark:text-white">
+                        {{ getStatusText(taskStatus) }}
+                      </div>
+                      <div class="text-xs text-gray-400 font-mono">{{ taskId }}</div>
+                    </div>
+                  </div>
+
+                  <div
+                    v-if="taskStatus === 'success'"
+                    class="bg-green-50 dark:bg-green-900/10 rounded-xl p-3 text-green-700 dark:text-green-400 text-sm flex justify-between"
+                  >
+                    <span>{{ t('comp.playlist.import.successCount') }}</span>
+                    <span class="font-bold">{{ successCount }}</span>
+                  </div>
+
+                  <div
+                    v-if="taskStatus === 'failed'"
+                    class="bg-red-50 dark:bg-red-900/10 rounded-xl p-3 text-red-700 dark:text-red-400 text-sm"
+                  >
+                    {{ failReason }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </n-scrollbar>
   </div>
 </template>
 
@@ -218,10 +323,28 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { getImportTaskStatus, importPlaylist } from '@/api/playlist';
-import { setAnimationClass } from '@/utils';
 
 const { t } = useI18n();
 const message = useMessage();
+
+// Tab 配置
+const currentTab = ref('link');
+const tabs = computed(() => [
+  { id: 'link', label: t('comp.playlist.import.linkTab'), icon: 'ri-link' },
+  { id: 'text', label: t('comp.playlist.import.textTab'), icon: 'ri-text' },
+  { id: 'local', label: t('comp.playlist.import.localTab'), icon: 'ri-file-list-3-line' }
+]);
+
+// 计算 Tab 指示器位置
+const tabIndicatorStyle = computed(() => {
+  const index = tabs.value.findIndex((tab) => tab.id === currentTab.value);
+  // 假设每个 tab 宽度大概一致，这里简单计算百分比
+  // 在真实项目中可能需要获取 DOM 元素宽度
+  return {
+    left: `calc(${(100 / 3) * index}% + 6px)`,
+    width: `calc(${100 / 3}% - 12px)`
+  };
+});
 
 // 表单数据
 const linkInputs = ref([{ value: '' }]);
@@ -239,11 +362,6 @@ const removeLinkRow = (index: number) => {
   linkInputs.value.splice(index, 1);
 };
 
-// 验证链接是否有效
-const isLinkInputValid = computed(() => {
-  return linkInputs.value.some((item) => item.value.trim() !== '');
-});
-
 // 元数据相关函数
 const addMetadataRow = () => {
   localMetadata.value.push({ name: '', artist: '', album: '' });
@@ -253,12 +371,21 @@ const removeMetadataRow = (index: number) => {
   localMetadata.value.splice(index, 1);
 };
 
-// 验证元数据是否有效
-const isLocalMetadataValid = computed(() => {
-  return localMetadata.value.some((item) => item.name.trim() !== '');
+// 验证逻辑
+const isLinkInputValid = computed(() => linkInputs.value.some((item) => item.value.trim() !== ''));
+const isLocalMetadataValid = computed(() =>
+  localMetadata.value.some((item) => item.name.trim() !== '')
+);
+
+const isImportDisabled = computed(() => {
+  if (importing.value) return true;
+  if (currentTab.value === 'link') return !isLinkInputValid.value;
+  if (currentTab.value === 'text') return !textInput.value.trim();
+  if (currentTab.value === 'local') return !isLocalMetadataValid.value;
+  return true;
 });
 
-// 导入状态
+// 统一导入处理
 const importing = ref(false);
 const taskId = ref('');
 const taskStatus = ref('');
@@ -267,26 +394,24 @@ const failReason = ref('');
 const checkingStatus = ref(false);
 const statusCheckInterval = ref<number | null>(null);
 
-// 处理链接导入
-const handleImportByLink = async () => {
-  if (!isLinkInputValid.value) {
-    message.warning(t('comp.playlist.import.emptyLinkWarning'));
-    return;
-  }
+const handleImport = async () => {
+  if (isImportDisabled.value) return;
 
   try {
     importing.value = true;
+    let params: any = {};
 
-    // 处理链接格式
-    const links = linkInputs.value
-      .filter((link) => link.value.trim())
-      .map((link) => link.value.trim());
-
-    const encodedLinks = JSON.stringify(links);
-
-    const params: any = {
-      link: encodedLinks
-    };
+    if (currentTab.value === 'link') {
+      const links = linkInputs.value
+        .filter((link) => link.value.trim())
+        .map((link) => link.value.trim());
+      params.link = JSON.stringify(links);
+    } else if (currentTab.value === 'text') {
+      params.text = encodeURIComponent(textInput.value);
+    } else if (currentTab.value === 'local') {
+      const filteredData = localMetadata.value.filter((item) => item.name.trim() !== '');
+      params.local = JSON.stringify(filteredData);
+    }
 
     if (importToStarPlaylist.value) {
       params.importStarPlaylist = true;
@@ -311,140 +436,34 @@ const handleImportByLink = async () => {
   }
 };
 
-// 处理文字导入
-const handleImportByText = async () => {
-  if (!textInput.value.trim()) {
-    message.warning(t('comp.playlist.import.emptyTextWarning'));
-    return;
-  }
-
-  try {
-    importing.value = true;
-
-    const encodedText = encodeURIComponent(textInput.value);
-
-    const params: any = {
-      text: encodedText
-    };
-
-    if (importToStarPlaylist.value) {
-      params.importStarPlaylist = true;
-    } else if (playlistName.value) {
-      params.playlistName = playlistName.value;
-    }
-
-    const res = await importPlaylist(params);
-
-    if (res.data.code === 200) {
-      message.success(t('comp.playlist.import.importSuccess'));
-      taskId.value = res.data.data.taskId;
-      startStatusCheck();
-    } else {
-      message.error(res.data.message || t('comp.playlist.import.importFailed'));
-    }
-  } catch (error) {
-    console.error('导入歌单失败:', error);
-    message.error(t('comp.playlist.import.importFailed'));
-  } finally {
-    importing.value = false;
-  }
-};
-
-// 处理元数据导入
-const handleImportByLocal = async () => {
-  if (!isLocalMetadataValid.value) {
-    message.warning(t('comp.playlist.import.emptyLocalWarning'));
-    return;
-  }
-
-  try {
-    importing.value = true;
-
-    // 过滤掉空的行
-    const filteredData = localMetadata.value.filter((item) => item.name.trim() !== '');
-
-    const encodedLocal = JSON.stringify(filteredData);
-
-    const params: any = {
-      local: encodedLocal
-    };
-
-    if (importToStarPlaylist.value) {
-      params.importStarPlaylist = true;
-    } else if (playlistName.value) {
-      params.playlistName = playlistName.value;
-    }
-
-    const res = await importPlaylist(params);
-
-    if (res.data.code === 200) {
-      message.success(t('comp.playlist.import.importSuccess'));
-      taskId.value = res.data.data.taskId;
-      startStatusCheck();
-    } else {
-      message.error(res.data.message || t('comp.playlist.import.importFailed'));
-    }
-  } catch (error) {
-    console.error('导入歌单失败:', error);
-    message.error(t('comp.playlist.import.importFailed'));
-  } finally {
-    importing.value = false;
-  }
-};
-
-// 开始检查任务状态
+// 任务状态检查逻辑 (复用之前的逻辑)
 const startStatusCheck = () => {
-  // 清除之前的定时器
-  if (statusCheckInterval.value) {
-    clearInterval(statusCheckInterval.value);
-  }
-
-  // 立即检查一次
+  if (statusCheckInterval.value) clearInterval(statusCheckInterval.value);
   checkTaskStatus();
-
-  // 设置定时检查
-  statusCheckInterval.value = window.setInterval(() => {
-    checkTaskStatus();
-  }, 3000); // 每3秒检查一次
+  statusCheckInterval.value = window.setInterval(checkTaskStatus, 3000);
 };
 
-// 检查任务状态
 const checkTaskStatus = async () => {
   if (!taskId.value) return;
-
   try {
     checkingStatus.value = true;
     const res = await getImportTaskStatus(taskId.value);
+    if (res.data.code === 200 && res.data.data.tasks?.length > 0) {
+      const taskData = res.data.data.tasks[0];
+      const statusMap: Record<string, string> = {
+        PENDING: 'pending',
+        PROCESSING: 'processing',
+        COMPLETE: 'success',
+        FAILED: 'failed'
+      };
+      taskStatus.value = statusMap[taskData.status] || 'pending';
 
-    if (res.data.code === 200) {
-      // 新的API返回格式处理
-      if (res.data.data.tasks && res.data.data.tasks.length > 0) {
-        const taskData = res.data.data.tasks[0];
-        // 将API返回的status映射到组件内部使用的taskStatus
-        const statusMap: Record<string, string> = {
-          PENDING: 'pending',
-          PROCESSING: 'processing',
-          COMPLETE: 'success',
-          FAILED: 'failed'
-        };
-
-        taskStatus.value = statusMap[taskData.status] || 'pending';
-
-        if (taskStatus.value === 'success') {
-          successCount.value = taskData.succCount || 0;
-          // 成功后停止检查
-          if (statusCheckInterval.value) {
-            clearInterval(statusCheckInterval.value);
-            statusCheckInterval.value = null;
-          }
-        } else if (taskStatus.value === 'failed') {
-          failReason.value = taskData.msg || t('comp.playlist.import.unknownError');
-          // 失败后停止检查
-          if (statusCheckInterval.value) {
-            clearInterval(statusCheckInterval.value);
-            statusCheckInterval.value = null;
-          }
-        }
+      if (taskStatus.value === 'success') {
+        successCount.value = taskData.succCount || 0;
+        if (statusCheckInterval.value) clearInterval(statusCheckInterval.value);
+      } else if (taskStatus.value === 'failed') {
+        failReason.value = taskData.msg || t('comp.playlist.import.unknownError');
+        if (statusCheckInterval.value) clearInterval(statusCheckInterval.value);
       }
     }
   } catch (error) {
@@ -454,12 +473,8 @@ const checkTaskStatus = async () => {
   }
 };
 
-// 手动刷新状态
-const refreshStatus = () => {
-  checkTaskStatus();
-};
+const refreshStatus = () => checkTaskStatus();
 
-// 获取状态文本
 const getStatusText = (status: string) => {
   switch (status) {
     case 'pending':
@@ -476,157 +491,40 @@ const getStatusText = (status: string) => {
 };
 
 onMounted(() => {
-  // 如果有任务ID，开始检查状态
-  if (taskId.value) {
-    startStatusCheck();
-  }
+  if (taskId.value) startStatusCheck();
 });
 
 onUnmounted(() => {
-  // 清除定时器
-  if (statusCheckInterval.value) {
-    clearInterval(statusCheckInterval.value);
-    statusCheckInterval.value = null;
-  }
+  if (statusCheckInterval.value) clearInterval(statusCheckInterval.value);
 });
 </script>
 
 <style lang="scss" scoped>
-.import-playlist-page {
-  @apply h-full overflow-auto pr-4;
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out;
 }
 
-.import-header {
-  @apply flex justify-between items-center mb-6;
-
-  .import-header-left {
-    h2 {
-      @apply text-2xl font-bold text-gray-900 dark:text-white mb-2;
-    }
-
-    .import-desc {
-      @apply text-sm text-gray-500 dark:text-gray-400;
-    }
-  }
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
-.import-content {
-  @apply space-y-6;
-}
-
-.import-card {
-  @apply rounded-lg;
-
-  .tab-content {
-    @apply mt-4 space-y-4;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
   }
-
-  .link-tips,
-  .text-tips,
-  .local-tips {
-    @apply text-sm text-gray-500 dark:text-gray-400;
-
-    ul {
-      @apply list-disc pl-5 mt-2;
-    }
-  }
-
-  .text-format,
-  .local-format {
-    @apply mt-2 font-medium;
-  }
-
-  .code-example {
-    @apply mt-2 p-3 bg-gray-100 dark:bg-gray-800 rounded text-sm overflow-auto;
-  }
-
-  .link-inputs {
-    @apply space-y-3;
-
-    .link-row {
-      @apply flex items-center space-x-2;
-
-      .link-input {
-        @apply flex-1;
-      }
-    }
-
-    .link-actions {
-      @apply mt-3 flex justify-end;
-    }
-  }
-
-  .metadata-inputs {
-    @apply space-y-3;
-
-    .metadata-row {
-      @apply flex items-center space-x-2;
-
-      .metadata-input {
-        @apply flex-1;
-      }
-    }
-
-    .metadata-actions {
-      @apply mt-3 flex justify-end;
-    }
-  }
-
-  .action-buttons {
-    @apply flex items-center space-x-4 mt-6;
-
-    .playlist-name-input {
-      @apply max-w-xs;
-    }
+  to {
+    opacity: 1;
   }
 }
 
-.import-status-card {
-  @apply rounded-lg;
-
-  .status-header {
-    @apply flex justify-between items-center mb-4;
-
-    h3 {
-      @apply text-lg font-medium text-gray-900 dark:text-white;
-    }
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-
-  .status-content {
-    @apply space-y-3;
-  }
-
-  .status-item {
-    @apply flex items-center;
-
-    .status-label {
-      @apply text-gray-500 dark:text-gray-400 w-24;
-    }
-
-    .status-value {
-      @apply font-medium;
-    }
-
-    .status-pending,
-    .status-processing {
-      @apply text-blue-500;
-    }
-
-    .status-success {
-      @apply text-green-500;
-    }
-
-    .status-failed {
-      @apply text-red-500;
-    }
-
-    .success-count {
-      @apply text-green-500;
-    }
-
-    .fail-reason {
-      @apply text-red-500;
-    }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

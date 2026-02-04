@@ -1,54 +1,120 @@
 <template>
-  <div class="mv-list">
-    <div class="play-list-type">
-      <n-scrollbar x-scrollable>
-        <div class="categories-wrapper">
-          <span
-            v-for="(category, index) in categories"
-            :key="category.value"
-            class="play-list-type-item"
-            :class="[
-              setAnimationClass('animate__bounceIn'),
-              { active: selectedCategory === category.value }
-            ]"
-            :style="getAnimationDelay(index)"
-            @click="selectedCategory = category.value"
-          >
-            {{ category.label }}
-          </span>
-        </div>
-      </n-scrollbar>
-    </div>
-    <n-scrollbar :size="100" @scroll="handleScroll">
-      <div
-        v-loading="initLoading"
-        class="mv-list-content"
-        :class="setAnimationClass('animate__bounceInLeft')"
-      >
-        <div
-          v-for="(item, index) in mvList"
-          :key="item.id"
-          class="mv-item"
-          :class="setAnimationClass('animate__bounceIn')"
-          :style="getAnimationDelay(index)"
-        >
-          <div class="mv-item-img" @click="handleShowMv(item, index)">
-            <n-image
-              class="mv-item-img-img"
-              :src="getImgUrl(item.cover, '320y180')"
-              lazy
-              preview-disabled
-            />
-            <div class="top">
-              <div class="play-count">{{ formatNumber(item.playCount) }}</div>
-              <i class="iconfont icon-videofill"></i>
-            </div>
+  <div class="mv-list-page h-full w-full bg-white dark:bg-black transition-colors duration-500">
+    <n-scrollbar class="h-full" @scroll="handleScroll">
+      <div class="mv-content w-full pb-32 pt-6 px-4 sm:px-6 lg:px-8 lg:pl-0">
+        <!-- Hero Section -->
+        <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <h1
+              class="text-3xl md:text-4xl font-bold tracking-tight text-neutral-900 dark:text-white mb-2"
+            >
+              MV
+            </h1>
+            <p class="text-neutral-500 dark:text-neutral-400">探索精彩视频内容</p>
           </div>
-          <div class="mv-item-title">{{ item.name }}</div>
+
+          <!-- Category Selector (Pills) -->
+          <div class="flex flex-wrap gap-2">
+            <button
+              v-for="category in categories"
+              :key="category.value"
+              class="px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-300"
+              :class="[
+                selectedCategory === category.value
+                  ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-105'
+                  : 'bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800'
+              ]"
+              @click="selectedCategory = category.value"
+            >
+              {{ category.label }}
+            </button>
+          </div>
         </div>
 
-        <div v-if="loadingMore" class="loading-more">加载中...</div>
-        <div v-if="!hasMore && !initLoading" class="no-more">没有更多了</div>
+        <!-- MV Grid Container -->
+        <div class="mv-grid-container">
+          <!-- Loading State -->
+          <div v-if="initLoading" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div v-for="i in 12" :key="i" class="space-y-3">
+              <div
+                class="aspect-video animate-pulse rounded-2xl bg-neutral-200 dark:bg-neutral-800"
+              />
+              <div class="h-4 w-3/4 animate-pulse rounded bg-neutral-200 dark:bg-neutral-800" />
+              <div class="h-3 w-1/2 animate-pulse rounded bg-neutral-200 dark:bg-neutral-800" />
+            </div>
+          </div>
+
+          <!-- Content State -->
+          <div v-else class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div
+              v-for="(item, index) in mvList"
+              :key="item.id"
+              class="mv-card group cursor-pointer animate-item"
+              :style="{ animationDelay: calculateAnimationDelay(index, 0.05) }"
+              @click="handleShowMv(item, index)"
+            >
+              <!-- Cover Image -->
+              <div
+                class="relative aspect-video overflow-hidden rounded-2xl shadow-md group-hover:shadow-xl transition-all duration-500"
+              >
+                <img
+                  :src="getImgUrl(item.cover, '400y225')"
+                  :alt="item.name"
+                  class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  loading="lazy"
+                />
+
+                <!-- Play Overlay -->
+                <div
+                  class="absolute inset-0 bg-transparent group-hover:bg-black/40 transition-colors duration-300 flex items-center justify-center"
+                >
+                  <div
+                    class="play-icon w-12 h-12 rounded-full bg-white/90 flex items-center justify-center opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 shadow-xl"
+                  >
+                    <i class="ri-play-fill text-2xl text-neutral-900 ml-1"></i>
+                  </div>
+                </div>
+
+                <!-- Play Count Badge -->
+                <div
+                  class="absolute top-3 right-3 px-2 py-1 rounded-lg bg-black/40 backdrop-blur-md text-white text-[10px] font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                >
+                  <i class="ri-play-fill"></i>
+                  {{ formatNumber(item.playCount) }}
+                </div>
+              </div>
+
+              <!-- Info -->
+              <div class="mt-3 space-y-1">
+                <h3
+                  class="text-sm md:text-base font-bold text-neutral-900 dark:text-white line-clamp-1 group-hover:text-primary transition-colors"
+                >
+                  {{ item.name }}
+                </h3>
+                <p class="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1">
+                  {{ item.artistName }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loading More / No More -->
+          <div class="mt-12 py-8 border-t border-neutral-100 dark:border-neutral-800">
+            <div v-if="loadingMore" class="flex flex-col items-center gap-4">
+              <n-spin size="small" />
+              <span class="text-xs text-neutral-400 font-medium tracking-widest uppercase">
+                加载更多中...
+              </span>
+            </div>
+            <div v-if="!hasMore && !initLoading" class="text-center">
+              <span
+                class="text-xs text-neutral-400 font-medium tracking-widest uppercase opacity-50"
+              >
+                — 已加载全部内容 —
+              </span>
+            </div>
+          </div>
+        </div>
       </div>
     </n-scrollbar>
 
@@ -70,7 +136,7 @@ import MvPlayer from '@/components/MvPlayer.vue';
 import { audioService } from '@/services/audioService';
 import { usePlayerStore } from '@/store/modules/player';
 import { IMvItem } from '@/types/mv';
-import { formatNumber, getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
+import { calculateAnimationDelay, formatNumber, getImgUrl } from '@/utils';
 
 defineOptions({
   name: 'Mv'
@@ -83,7 +149,7 @@ const initLoading = ref(false);
 const loadingMore = ref(false);
 const currentIndex = ref(0);
 const offset = ref(0);
-const limit = ref(42);
+const limit = ref(40); // 调整为40，方便4列布局 (10行)
 const hasMore = ref(true);
 
 const categories = [
@@ -104,11 +170,6 @@ watch(selectedCategory, async () => {
   hasMore.value = true;
   await loadMvList();
 });
-
-const getAnimationDelay = (index: number) => {
-  const currentPageIndex = index % limit.value;
-  return setAnimationDelay(currentPageIndex, 30);
-};
 
 onMounted(async () => {
   await loadMvList();
@@ -187,7 +248,7 @@ const loadMvList = async () => {
 const handleScroll = (e: Event) => {
   const target = e.target as Element;
   const { scrollTop, clientHeight, scrollHeight } = target;
-  const threshold = 100;
+  const threshold = 150;
 
   if (scrollHeight - (scrollTop + clientHeight) < threshold) {
     loadMvList();
@@ -198,107 +259,30 @@ const isPrevDisabled = computed(() => currentIndex.value === 0);
 </script>
 
 <style scoped lang="scss">
-.mv-list {
-  @apply h-full flex-1 flex flex-col overflow-hidden;
+.mv-list-page {
+  position: relative;
+}
 
-  &-title {
-    @apply text-xl font-bold pb-2;
-    @apply text-gray-900 dark:text-white;
+.animate-item {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
   }
-
-  // 添加歌单分类样式
-  .play-list-type {
-    .title {
-      @apply text-lg font-bold mb-2;
-      @apply text-gray-900 dark:text-white;
-    }
-
-    .categories-wrapper {
-      @apply flex items-center py-2;
-      white-space: nowrap;
-    }
-
-    &-item {
-      @apply py-2 px-3 mr-3 inline-block rounded-xl cursor-pointer transition-all duration-300;
-      @apply bg-light dark:bg-black text-gray-900 dark:text-white;
-      @apply border border-gray-200 dark:border-gray-700;
-
-      &:hover {
-        @apply bg-green-50 dark:bg-green-900;
-      }
-
-      &.active {
-        @apply bg-green-500 border-green-500 text-white;
-      }
-    }
-  }
-
-  &-content {
-    @apply grid gap-4 pb-28 mt-2 pr-4;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  }
-
-  .mv-item {
-    @apply p-2 rounded-lg;
-    @apply bg-light dark:bg-black;
-    @apply border border-gray-200 dark:border-gray-700;
-
-    &-img {
-      @apply rounded-lg overflow-hidden relative;
-      aspect-ratio: 16/9;
-      line-height: 0;
-
-      &:hover img {
-        @apply hover:scale-110 transition-all duration-300 ease-in-out object-top;
-      }
-
-      &-img {
-        @apply w-full h-full object-cover rounded-lg overflow-hidden;
-      }
-
-      .top {
-        @apply absolute w-full h-full top-0 left-0 flex justify-center items-center transition-all duration-300 ease-in-out cursor-pointer;
-        @apply bg-black bg-opacity-60;
-        opacity: 0;
-
-        i {
-          @apply text-4xl text-white;
-        }
-
-        .play-count {
-          @apply absolute top-2 right-2 text-sm;
-          @apply text-white text-opacity-90;
-        }
-
-        &:hover {
-          opacity: 1;
-        }
-      }
-    }
-
-    &-title {
-      @apply mt-2 text-sm line-clamp-1;
-      @apply text-gray-900 dark:text-white;
-    }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-.loading-more {
-  @apply text-center py-4 col-span-full;
-  @apply text-gray-500 dark:text-gray-400;
-}
-
-.no-more {
-  @apply text-center py-4 col-span-full;
-  @apply text-gray-500 dark:text-gray-400;
-}
-
-.mobile {
-  .mv-list-content {
-    @apply pl-4 pr-4;
-  }
-  .categories-wrapper {
-    @apply pl-4;
+.mv-card {
+  &:hover {
+    .play-icon {
+      @apply opacity-100 scale-100;
+    }
   }
 }
 </style>

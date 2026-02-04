@@ -1,188 +1,418 @@
 <template>
-  <n-scrollbar v-loading="loading" class="artist-page">
-    <!-- 歌手信息头部 -->
-    <div class="artist-header">
-      <div class="artist-cover">
-        <n-image
-          :src="getImgUrl(artistInfo?.avatar, '300y300')"
-          class="artist-avatar"
-          preview-disabled
-        />
-      </div>
-      <div class="artist-info">
-        <h1 class="artist-name">{{ artistInfo?.name }}</h1>
-        <div v-if="artistInfo?.alias?.length" class="artist-alias">
-          {{ artistInfo.alias.join(' / ') }}
-        </div>
-        <div v-if="artistInfo?.briefDesc" class="artist-desc">
-          {{ artistInfo.briefDesc }}
-        </div>
-      </div>
-    </div>
-
-    <!-- 标签页切换 -->
-    <n-tabs v-model:value="activeTab" class="content-tabs" type="line" animated>
-      <n-tab-pane name="songs" :tab="t('artist.hotSongs')">
-        <!-- 添加歌曲操作工具栏 -->
-        <div class="songs-toolbar">
-          <div class="toolbar-left">
-            <n-tooltip placement="bottom" trigger="hover">
-              <template #trigger>
-                <div class="action-button hover-green" @click="handlePlayAll">
-                  <i class="icon iconfont ri-play-fill"></i>
-                </div>
-              </template>
-              {{ t('comp.musicList.playAll') }}
-            </n-tooltip>
-
-            <n-tooltip placement="bottom" trigger="hover">
-              <template #trigger>
-                <div class="action-button hover-green" @click="addToPlaylist">
-                  <i class="icon iconfont ri-add-line"></i>
-                </div>
-              </template>
-              {{ t('comp.musicList.addToPlaylist') }}
-            </n-tooltip>
-          </div>
-
-          <div class="toolbar-right">
-            <!-- 布局切换按钮 -->
-            <div class="layout-toggle" v-if="!isMobile">
-              <n-tooltip placement="bottom" trigger="hover">
-                <template #trigger>
-                  <div class="toggle-button hover-green" @click="toggleLayout">
-                    <i
-                      class="icon iconfont"
-                      :class="isCompactLayout ? 'ri-list-check-2' : 'ri-grid-line'"
-                    ></i>
+  <div
+    class="artist-detail-page h-full w-full bg-white dark:bg-neutral-900 transition-colors duration-500"
+  >
+    <n-scrollbar ref="scrollbarRef" class="h-full">
+      <div class="artist-detail-content w-full pb-32">
+        <!-- Loading State -->
+        <div v-if="loading" class="artist-content">
+          <!-- Hero Skeleton -->
+          <div class="hero-section relative h-[400px] overflow-hidden rounded-tl-2xl">
+            <div class="hero-bg absolute inset-0 -top-20">
+              <div class="absolute inset-0 bg-neutral-200 dark:bg-neutral-800" />
+            </div>
+            <div class="hero-content relative z-10 px-4 pb-6 pt-4 md:px-8 md:pt-8">
+              <div class="flex flex-col items-center gap-6 md:flex-row md:items-end md:gap-10">
+                <n-skeleton class="h-36 w-36 rounded-full md:h-48 md:w-48" />
+                <div class="flex-1 space-y-4 text-center md:text-left">
+                  <n-skeleton class="h-6 w-20 rounded-full" />
+                  <n-skeleton class="h-10 w-1/2 md:h-12" />
+                  <div class="flex justify-center gap-4 md:justify-start">
+                    <n-skeleton class="h-6 w-24" />
+                    <n-skeleton class="h-6 w-24" />
                   </div>
-                </template>
-                {{
-                  isCompactLayout
-                    ? t('comp.musicList.switchToNormal')
-                    : t('comp.musicList.switchToCompact')
-                }}
-              </n-tooltip>
+                </div>
+              </div>
             </div>
-
-            <!-- 搜索框 -->
-            <div class="search-container" :class="{ 'search-expanded': isSearchVisible }">
-              <template v-if="isSearchVisible">
-                <n-input
-                  v-model:value="searchKeyword"
-                  :placeholder="t('comp.musicList.searchSongs')"
-                  clearable
-                  round
-                  size="small"
-                  @blur="handleSearchBlur"
-                >
-                  <template #prefix>
-                    <i class="icon iconfont ri-search-line text-sm"></i>
-                  </template>
-                  <template #suffix>
-                    <i
-                      class="icon iconfont ri-close-line text-sm cursor-pointer"
-                      @click="closeSearch"
-                    ></i>
-                  </template>
-                </n-input>
-              </template>
-              <template v-else>
-                <n-tooltip placement="bottom" trigger="hover">
-                  <template #trigger>
-                    <div class="search-button" @click="showSearch">
-                      <i class="icon iconfont ri-search-line"></i>
-                    </div>
-                  </template>
-                  {{ t('comp.musicList.searchSongs') }}
-                </n-tooltip>
-              </template>
+          </div>
+          <!-- Content Skeleton -->
+          <div class="mt-8 px-4 md:px-8">
+            <div class="space-y-4">
+              <div v-for="i in 8" :key="i" class="flex items-center gap-4">
+                <n-skeleton class="h-12 w-12 rounded-xl" />
+                <div class="flex-1 space-y-2">
+                  <n-skeleton text class="w-1/3" />
+                  <n-skeleton text class="w-1/4" />
+                </div>
+                <n-skeleton class="h-8 w-8 rounded-full" />
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="songs-list">
-          <div class="song-list-content">
-            <div v-if="filteredSongs.length === 0 && searchKeyword" class="no-result">
-              {{ t('comp.musicList.noSearchResults') }}
+        <!-- Main Content -->
+        <div v-else-if="artistInfo" class="artist-content">
+          <!-- Hero Section -->
+          <section class="hero-section relative overflow-hidden overflow-hidden rounded-tl-2xl">
+            <!-- Background Image with Blur -->
+            <div class="hero-bg absolute inset-0 -top-20">
+              <div
+                class="absolute inset-0 bg-cover bg-center scale-110 blur-2xl opacity-40 dark:opacity-30"
+                :style="{
+                  backgroundImage: `url(${getImgUrl(artistInfo.cover || artistInfo.picUrl, '800y800')})`
+                }"
+              />
+              <div
+                class="absolute inset-0 bg-gradient-to-b from-transparent via-white/80 to-white dark:via-neutral-900/80 dark:to-neutral-900"
+              />
             </div>
 
-            <!-- 替换原来的 v-for 循环为虚拟列表 -->
-            <n-virtual-list
-              ref="songListRef"
-              class="song-virtual-list"
-              style="height: calc(80vh - 60px)"
-              :items="filteredSongs"
-              :item-size="isCompactLayout ? 50 : 70"
-              item-resizable
-              key-field="id"
-              @scroll="handleVirtualScroll"
-            >
-              <template #default="{ item, index }">
-                <div>
-                  <div class="double-item">
-                    <song-item
-                      :index="index"
-                      :compact="isCompactLayout"
-                      :item="formatSong(item)"
-                      @play="handlePlay"
+            <!-- Hero Content -->
+            <div class="hero-content relative z-10 px-4 md:px-8 pt-4 md:pt-8 pb-6">
+              <div class="flex flex-col md:flex-row gap-6 md:gap-10 items-center md:items-end">
+                <!-- Artist Avatar -->
+                <div class="artist-avatar-wrapper relative group">
+                  <div
+                    class="avatar-glow absolute -inset-2 rounded-full bg-gradient-to-br from-primary/30 via-primary/10 to-transparent blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                  />
+                  <div
+                    class="avatar-container relative w-36 h-36 md:w-48 md:h-48 rounded-full overflow-hidden shadow-2xl ring-4 ring-white/50 dark:ring-neutral-800/50"
+                  >
+                    <img
+                      :src="getImgUrl(artistInfo.cover || artistInfo.picUrl, '500y500')"
+                      :alt="artistInfo.name"
+                      class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />
+                    <!-- Play overlay on avatar -->
+                    <div
+                      class="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-all duration-300"
+                    >
+                      <div
+                        class="play-icon w-14 h-14 rounded-full bg-white/90 flex items-center justify-center opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 shadow-xl cursor-pointer hover:scale-110 active:scale-95"
+                        @click="handlePlayAll"
+                      >
+                        <i class="iconfont icon-playfill text-2xl text-neutral-900 ml-1" />
+                      </div>
+                    </div>
                   </div>
-                  <div v-if="index === filteredSongs.length - 1" class="h-36"></div>
                 </div>
-              </template>
-            </n-virtual-list>
 
-            <div v-if="songLoading" class="loading-more">{{ t('common.loading') }}</div>
+                <!-- Artist Info -->
+                <div class="artist-info flex-1 text-center md:text-left">
+                  <div class="artist-badge mb-2 md:mb-3">
+                    <span
+                      class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 dark:bg-primary/20 text-primary text-xs font-semibold uppercase tracking-wider"
+                    >
+                      <i class="iconfont icon-verified text-sm" />
+                      Artist
+                    </span>
+                  </div>
+                  <h1
+                    class="artist-name text-3xl md:text-4xl lg:text-5xl font-bold text-neutral-900 dark:text-white tracking-tight"
+                  >
+                    {{ artistInfo.name }}
+                  </h1>
+
+                  <!-- Stats -->
+                  <div
+                    class="artist-stats flex flex-wrap items-center justify-center md:justify-start gap-4 md:gap-6 mt-4 md:mt-5"
+                  >
+                    <div v-if="artistInfo.musicSize" class="stat-item flex items-center gap-2">
+                      <i class="iconfont icon-music text-primary text-lg" />
+                      <span class="text-sm font-medium text-neutral-600 dark:text-neutral-300">
+                        <span class="font-bold text-neutral-900 dark:text-white">{{
+                          artistInfo.musicSize
+                        }}</span>
+                        {{ t('artist.hotSongs') }}
+                      </span>
+                    </div>
+                    <div v-if="artistInfo.albumSize" class="stat-item flex items-center gap-2">
+                      <i class="iconfont icon-album text-primary text-lg" />
+                      <span class="text-sm font-medium text-neutral-600 dark:text-neutral-300">
+                        <span class="font-bold text-neutral-900 dark:text-white">{{
+                          artistInfo.albumSize
+                        }}</span>
+                        {{ t('artist.albums') }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Action Bar -->
+          <section
+            class="action-bar sticky top-0 z-20 px-4 md:px-8 py-3 md:py-4 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-b border-neutral-100 dark:border-neutral-800/50"
+          >
+            <div class="flex items-center justify-between gap-3">
+              <!-- Left Actions -->
+              <div class="flex items-center gap-2 md:gap-3">
+                <!-- Play All Button -->
+                <button
+                  class="play-all-btn flex items-center gap-2 px-4 md:px-5 py-2 md:py-2.5 rounded-full bg-primary hover:bg-primary/90 text-white font-semibold text-sm transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg shadow-primary/25"
+                  @click="handlePlayAll"
+                >
+                  <i class="iconfont icon-playfill text-lg" />
+                  <span class="hidden sm:inline">{{ t('comp.musicList.playAll') }}</span>
+                </button>
+
+                <!-- Add to Playlist Button -->
+                <button
+                  class="add-btn flex items-center justify-center w-10 h-10 md:w-auto md:h-auto md:px-4 md:py-2.5 rounded-full md:rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 font-medium text-sm transition-all duration-200 hover:scale-105 active:scale-95"
+                  @click="addToPlaylist"
+                >
+                  <i class="iconfont icon-add text-lg" />
+                  <span class="hidden md:inline ml-2">{{ t('comp.musicList.addToPlaylist') }}</span>
+                </button>
+              </div>
+
+              <!-- Right Actions -->
+              <div class="flex items-center gap-2">
+                <!-- Search Toggle -->
+                <button
+                  v-if="activeTab === 'songs'"
+                  class="action-btn w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-105 active:scale-95"
+                  :class="
+                    isSearchVisible
+                      ? 'bg-primary/10 dark:bg-primary/20 text-primary'
+                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700'
+                  "
+                  @click="isSearchVisible ? closeSearch() : showSearch()"
+                >
+                  <i class="iconfont" :class="isSearchVisible ? 'icon-close' : 'icon-search'" />
+                </button>
+
+                <!-- Layout Toggle (Desktop only) -->
+                <button
+                  v-if="activeTab === 'songs' && !isMobile"
+                  class="action-btn w-10 h-10 rounded-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-all duration-200 hover:scale-105 active:scale-95"
+                  :title="
+                    isCompactLayout
+                      ? t('comp.musicList.switchToNormal')
+                      : t('comp.musicList.switchToCompact')
+                  "
+                  @click="toggleLayout"
+                >
+                  <i class="iconfont" :class="isCompactLayout ? 'icon-list' : 'icon-menu'" />
+                </button>
+              </div>
+            </div>
+
+            <!-- Search Input (Expandable) -->
+            <Transition name="search-slide">
+              <div v-if="isSearchVisible && activeTab === 'songs'" class="search-container mt-3">
+                <div
+                  class="relative flex items-center bg-neutral-100 dark:bg-neutral-800 rounded-xl overflow-hidden"
+                >
+                  <i class="iconfont icon-search text-neutral-400 dark:text-neutral-500 ml-4" />
+                  <input
+                    v-model="searchKeyword"
+                    type="text"
+                    :placeholder="t('comp.musicList.searchSongs')"
+                    class="flex-1 px-3 py-2.5 bg-transparent text-sm text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500 outline-none"
+                    @blur="handleSearchBlur"
+                  />
+                  <button
+                    v-if="searchKeyword"
+                    class="px-3 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                    @click="searchKeyword = ''"
+                  >
+                    <i class="iconfont icon-close text-sm" />
+                  </button>
+                </div>
+              </div>
+            </Transition>
+          </section>
+
+          <!-- Tab Navigation -->
+          <section class="tab-nav px-4 md:px-8 pt-4 md:pt-6">
             <div
-              v-else-if="songPage.hasMore"
-              ref="songsLoadMoreRef"
-              class="load-more-trigger"
-            ></div>
-          </div>
-        </div>
-      </n-tab-pane>
+              class="tab-list relative flex gap-1 p-1 bg-neutral-100 dark:bg-neutral-800/50 rounded-xl w-fit"
+            >
+              <button
+                v-for="tab in tabs"
+                :key="tab.value"
+                class="tab-item relative px-4 md:px-6 py-2 md:py-2.5 rounded-lg text-sm font-medium transition-all duration-200"
+                :class="
+                  activeTab === tab.value
+                    ? 'text-neutral-900 dark:text-white'
+                    : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
+                "
+                @click="activeTab = tab.value"
+              >
+                <span class="relative z-10">{{ tab.label }}</span>
+                <!-- Active indicator -->
+                <Transition name="tab-indicator">
+                  <div
+                    v-if="activeTab === tab.value"
+                    class="absolute inset-0 bg-white dark:bg-neutral-700 rounded-lg shadow-sm"
+                  />
+                </Transition>
+              </button>
+            </div>
+          </section>
 
-      <n-tab-pane name="albums" :tab="t('artist.albums')">
-        <div class="albums-list">
-          <div class="albums-grid">
-            <search-item
-              v-for="album in albums"
-              :key="album.id"
-              shape="square"
-              :item="{
-                id: album.id,
-                picUrl: album.picUrl,
-                name: album.name,
-                desc: formatPublishTime(album.publishTime),
-                size: album.size,
-                type: '专辑'
-              }"
-            />
-            <div v-if="albumLoading" class="loading-more">{{ t('common.loading') }}</div>
-            <div
-              v-else-if="albumPage.hasMore"
-              ref="albumsLoadMoreRef"
-              class="load-more-trigger"
-            ></div>
-          </div>
-        </div>
-      </n-tab-pane>
+          <!-- Tab Content -->
+          <section class="tab-content px-4 md:px-8 py-6 md:py-8">
+            <!-- Songs Tab -->
+            <div v-show="activeTab === 'songs'" class="songs-tab">
+              <!-- No Results -->
+              <div
+                v-if="filteredSongs.length === 0 && searchKeyword"
+                class="empty-state flex flex-col items-center justify-center py-16"
+              >
+                <i
+                  class="iconfont icon-search text-5xl text-neutral-300 dark:text-neutral-600 mb-4"
+                />
+                <p class="text-neutral-500 dark:text-neutral-400">
+                  {{ t('comp.musicList.noSearchResults') }}
+                </p>
+              </div>
 
-      <n-tab-pane name="about" :tab="t('artist.description')">
-        <div class="artist-description">
-          <div class="description-content" v-html="artistInfo?.briefDesc"></div>
-        </div>
-      </n-tab-pane>
-    </n-tabs>
+              <!-- Song List with CSS optimization -->
+              <div v-else class="song-list" :class="{ 'compact-mode': isCompactLayout }">
+                <div
+                  v-for="(song, index) in filteredSongs"
+                  :key="song.id"
+                  class="song-item-container"
+                >
+                  <song-item
+                    :item="formatSong(song)"
+                    :compact="isCompactLayout"
+                    :index="index"
+                    @play="handlePlay(song)"
+                  />
+                </div>
+              </div>
 
+              <!-- Load More Trigger -->
+              <div ref="songsLoadMoreRef" class="load-more-trigger py-8">
+                <div v-if="songLoading" class="flex items-center justify-center gap-2">
+                  <div
+                    class="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin"
+                  />
+                  <span class="text-sm text-neutral-400 dark:text-neutral-500">{{
+                    t('common.loading') || 'Loading...'
+                  }}</span>
+                </div>
+                <div
+                  v-else-if="!songPage.hasMore && songs.length > 0"
+                  class="text-center text-sm text-neutral-400 dark:text-neutral-500"
+                >
+                  — {{ t('common.noMore') || 'No more' }} —
+                </div>
+              </div>
+            </div>
+
+            <!-- Albums Tab -->
+            <div v-show="activeTab === 'albums'" class="albums-tab">
+              <!-- Album Grid -->
+              <div
+                v-if="albums.length > 0"
+                class="album-grid grid grid-cols-2 gap-4 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+              >
+                <div
+                  v-for="(album, index) in albums"
+                  :key="album.id"
+                  class="album-card group cursor-pointer"
+                  :style="{ animationDelay: calculateAnimationDelay(index, 0.03) }"
+                  @click="handleAlbumClick(album)"
+                >
+                  <!-- Cover -->
+                  <div
+                    class="album-cover relative aspect-square overflow-hidden rounded-2xl shadow-lg"
+                  >
+                    <img
+                      :src="getImgUrl(album.picUrl, '500y500')"
+                      :alt="album.name"
+                      class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <!-- Play Overlay -->
+                    <div
+                      class="play-overlay absolute inset-0 flex items-center justify-center bg-black/0 opacity-0 group-hover:bg-black/20 group-hover:opacity-100 transition-all duration-300"
+                    >
+                      <div
+                        class="play-icon w-12 h-12 rounded-full bg-white/90 flex items-center justify-center scale-75 group-hover:scale-100 transition-transform duration-300 shadow-xl"
+                      >
+                        <i class="iconfont icon-playfill text-xl text-neutral-900 ml-0.5" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Info -->
+                  <div class="album-info mt-3">
+                    <h3
+                      class="album-name line-clamp-2 text-sm font-semibold text-neutral-800 dark:text-neutral-100 group-hover:text-primary dark:group-hover:text-primary transition-colors"
+                    >
+                      {{ album.name }}
+                    </h3>
+                    <p class="album-date mt-1 text-xs text-neutral-400 dark:text-neutral-500">
+                      {{ formatPublishTime(album.publishTime) }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Load More Trigger -->
+              <div ref="albumsLoadMoreRef" class="load-more-trigger py-8">
+                <div v-if="albumLoading" class="flex items-center justify-center gap-2">
+                  <div
+                    class="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin"
+                  />
+                  <span class="text-sm text-neutral-400 dark:text-neutral-500">{{
+                    t('common.loading') || 'Loading...'
+                  }}</span>
+                </div>
+                <div
+                  v-else-if="!albumPage.hasMore && albums.length > 0"
+                  class="text-center text-sm text-neutral-400 dark:text-neutral-500"
+                >
+                  — {{ t('common.noMore') || 'No more' }} —
+                </div>
+              </div>
+            </div>
+
+            <!-- About Tab -->
+            <div v-show="activeTab === 'about'" class="about-tab">
+              <div class="about-content">
+                <h2
+                  class="text-xl md:text-2xl font-bold text-neutral-900 dark:text-white mb-4 md:mb-6"
+                >
+                  {{ t('artist.description') }}
+                </h2>
+                <div
+                  v-if="artistInfo.briefDesc"
+                  class="prose prose-neutral dark:prose-invert max-w-none"
+                >
+                  <p
+                    class="text-sm md:text-base leading-relaxed text-neutral-600 dark:text-neutral-300 whitespace-pre-line"
+                  >
+                    {{ artistInfo.briefDesc }}
+                  </p>
+                </div>
+                <div
+                  v-else
+                  class="empty-state flex flex-col items-center justify-center py-16 text-neutral-400 dark:text-neutral-500"
+                >
+                  <i class="iconfont icon-info text-5xl mb-4 opacity-50" />
+                  <p>{{ t('common.noData') || 'No description available' }}</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Empty State (No Artist) -->
+        <div
+          v-else
+          class="empty-state flex flex-col items-center justify-center min-h-[60vh] text-neutral-400 dark:text-neutral-500"
+        >
+          <i class="iconfont icon-user text-6xl mb-4 opacity-30" />
+          <p>{{ t('common.noData') || 'Artist not found' }}</p>
+        </div>
+      </div>
+    </n-scrollbar>
+
+    <!-- Bottom Player Spacer -->
     <play-bottom />
-  </n-scrollbar>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { useDateFormat } from '@vueuse/core';
-import { useMessage } from 'naive-ui';
+import { NScrollbar, useMessage } from 'naive-ui';
 import PinyinMatch from 'pinyin-match';
 import {
   computed,
@@ -199,12 +429,13 @@ import { useRoute } from 'vue-router';
 
 import { getArtistAlbums, getArtistDetail, getArtistTopSongs } from '@/api/artist';
 import { getMusicDetail } from '@/api/music';
+import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import PlayBottom from '@/components/common/PlayBottom.vue';
-import SearchItem from '@/components/common/SearchItem.vue';
 import SongItem from '@/components/common/SongItem.vue';
+import router from '@/router';
 import { usePlayerStore } from '@/store';
 import { IArtist } from '@/types/artist';
-import { getImgUrl, isMobile } from '@/utils';
+import { calculateAnimationDelay, getImgUrl, isMobile } from '@/utils';
 
 defineOptions({
   name: 'ArtistDetail'
@@ -217,6 +448,15 @@ const message = useMessage();
 
 const artistId = computed(() => Number(route.params.id));
 const activeTab = ref('songs');
+
+const scrollbarRef = ref<any>(null);
+
+// Tab configuration
+const tabs = computed(() => [
+  { value: 'songs', label: t('artist.hotSongs') },
+  { value: 'albums', label: t('artist.albums') },
+  { value: 'about', label: t('artist.description') }
+]);
 
 // 歌手信息
 const artistInfo = ref<IArtist>();
@@ -263,9 +503,33 @@ const isCompactLayout = ref(
   isMobile.value ? false : localStorage.getItem('musicListLayout') === 'compact'
 );
 
+// 导航到专辑详情
+const handleAlbumClick = async (album: any) => {
+  try {
+    navigateToMusicList(router, {
+      id: album.id,
+      type: 'album',
+      name: album.name,
+      listInfo: {
+        ...album,
+        coverImgUrl: album.picUrl
+      },
+      canRemove: false
+    });
+  } catch (error) {
+    console.error('Failed to navigate to album:', error);
+    message.error(t('common.loadFailed'));
+  }
+};
+
 // 加载歌手信息
 const loadArtistInfo = async () => {
   if (!artistId.value) return;
+
+  // 滚动到顶部
+  nextTick(() => {
+    scrollbarRef.value?.scrollTo(0, 0);
+  });
 
   // 简化缓存检查
   const cacheKey = getCacheKey(artistId.value);
@@ -606,6 +870,11 @@ onActivated(() => {
   if (route.name === 'artistDetail') {
     const currentId = route.params.id as string;
 
+    // 滚动到顶部
+    nextTick(() => {
+      scrollbarRef.value?.scrollTo(0, 0);
+    });
+
     // 首次加载或ID变化时加载数据
     if (!previousId.value || previousId.value !== currentId) {
       console.log('ID已变化，加载新数据');
@@ -646,10 +915,7 @@ onUnmounted(() => {
   }
 });
 
-// 定义在script setup部分
-const songListRef = ref(null);
-
-// 格式化歌曲（使用在虚拟列表中）
+// 格式化歌曲（使用在列表中）
 const formatSong = (item: any) => {
   if (!item) {
     return null;
@@ -659,168 +925,150 @@ const formatSong = (item: any) => {
     picUrl: item.al?.picUrl || item.picUrl
   };
 };
-
-// 处理虚拟列表滚动
-const handleVirtualScroll = (e: any) => {
-  if (!e || !e.target) return;
-
-  const { scrollTop, scrollHeight, clientHeight } = e.target;
-  const threshold = 200;
-
-  if (
-    scrollHeight - scrollTop - clientHeight < threshold &&
-    !songLoading.value &&
-    songPage.value.hasMore &&
-    !searchKeyword.value // 搜索状态下不触发加载更多
-  ) {
-    loadSongs();
-  }
-};
 </script>
 
 <style lang="scss" scoped>
-.artist-page {
-  @apply min-h-screen w-full bg-light dark:bg-dark pb-24;
+/* Artist Detail Page Styles */
+.artist-detail-page {
+  position: relative;
+}
 
-  .nav-header {
-    @apply flex items-center px-4 py-3 sticky top-0 bg-light dark:bg-dark z-10;
+/* Hero Section */
+.hero-section {
+  min-height: 200px;
+}
 
-    i {
-      @apply text-xl mr-4 cursor-pointer;
-    }
+/* Action Bar Sticky Behavior */
+.action-bar {
+  transition:
+    background-color 0.3s,
+    box-shadow 0.3s;
+}
 
-    .page-title {
-      @apply text-base font-medium truncate;
-    }
+/* Tab Indicator Animation */
+.tab-item {
+  z-index: 1;
+}
+
+.tab-item > div {
+  z-index: -1;
+}
+
+.tab-indicator-enter-active,
+.tab-indicator-leave-active {
+  transition: all 0.2s ease;
+}
+
+.tab-indicator-enter-from,
+.tab-indicator-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+/* Search Slide Animation */
+.search-slide-enter-active,
+.search-slide-leave-active {
+  transition: all 0.25s ease;
+}
+
+.search-slide-enter-from,
+.search-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+  max-height: 0;
+  margin-top: 0;
+}
+
+.search-slide-enter-to,
+.search-slide-leave-from {
+  max-height: 60px;
+}
+
+/* Virtual Song List */
+.virtual-song-list {
+  @apply w-full;
+}
+
+.song-list {
+  @apply w-full;
+}
+
+/* CSS-based virtualization for performance */
+.song-item-container {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 72px; /* 预估高度，防止布局抖动 */
+}
+
+/* Compact layout - smaller item height */
+.song-list.compact-mode .song-item-container {
+  contain-intrinsic-size: 0 52px;
+}
+
+/* Album Card Animation */
+.album-card {
+  animation: fadeInUp 0.4s ease backwards;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-
-  .artist-header {
-    @apply flex flex-col md:flex-row gap-4 md:gap-6 px-4 pb-4;
-
-    .artist-cover {
-      @apply flex justify-center md:justify-start;
-
-      .artist-avatar {
-        @apply w-40 h-40 md:w-48 md:h-48 rounded-2xl object-cover;
-      }
-    }
-
-    .artist-info {
-      @apply flex-1;
-
-      .artist-name {
-        @apply text-2xl md:text-4xl font-bold mb-2 text-center md:text-left;
-      }
-
-      .artist-alias {
-        @apply text-gray-500 dark:text-gray-400 mb-2 text-center md:text-left;
-      }
-
-      .artist-desc {
-        @apply text-sm text-gray-600 dark:text-gray-300 line-clamp-3 text-center md:text-left;
-      }
-    }
-  }
-
-  .content-tabs {
-    @apply px-4;
-
-    :deep(.n-tabs-nav) {
-      @apply sticky top-0 bg-light dark:bg-dark z-10;
-    }
-  }
-
-  .albums-grid {
-    @apply grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 pb-40;
-  }
-
-  .loading-more {
-    @apply text-center py-4 text-gray-500 dark:text-gray-400;
-  }
-
-  .load-more-trigger {
-    @apply h-4 w-full;
-  }
-
-  .artist-description {
-    .description-content {
-      @apply text-sm leading-relaxed whitespace-pre-wrap;
-    }
-  }
-
-  // 添加歌曲工具栏样式
-  .songs-toolbar {
-    @apply flex items-center justify-between mb-4;
-
-    .toolbar-left,
-    .toolbar-right {
-      @apply flex items-center gap-2;
-    }
-  }
-
-  // 搜索框样式
-  .search-container {
-    @apply max-w-md transition-all duration-300 ease-in-out;
-
-    &.search-expanded {
-      @apply w-52;
-    }
-
-    .search-button {
-      @apply w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-light-300 dark:hover:bg-dark-300 transition-colors text-gray-500 dark:text-gray-400 hover:text-green-500;
-
-      .icon {
-        @apply text-lg;
-      }
-    }
-
-    :deep(.n-input) {
-      @apply bg-light-200 dark:bg-dark-200;
-    }
-  }
-
-  // 操作按钮样式
-  .layout-toggle .toggle-button,
-  .action-button {
-    @apply w-8 h-8 rounded-full flex items-center justify-center cursor-pointer hover:bg-light-300 dark:hover:bg-dark-300 transition-colors text-gray-500 dark:text-gray-400;
-
-    .icon {
-      @apply text-lg;
-    }
-
-    &.hover-green:hover {
-      .icon {
-        @apply text-green-500;
-      }
-    }
-  }
-
-  // 搜索无结果样式
-  .no-result {
-    @apply text-center py-8 text-gray-500 dark:text-gray-400;
-  }
-
-  // 虚拟列表样式
-  .song-virtual-list {
-    :deep(.n-virtual-list__scroll) {
-      scrollbar-width: thin;
-      &::-webkit-scrollbar {
-        width: 4px;
-      }
-      &::-webkit-scrollbar-thumb {
-        @apply bg-gray-400 dark:bg-gray-600 rounded;
-      }
-    }
-  }
-
-  .double-item {
-    @apply mb-2 bg-light-100 bg-opacity-30 dark:bg-dark-100 dark:bg-opacity-20 rounded-3xl;
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-.mobile {
-  .songs-toolbar {
-    @apply mb-0;
+/* Loading Spinner */
+.loading-spinner {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
   }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+/* Hover Effects */
+.album-cover {
+  transition: box-shadow 0.3s ease;
+}
+
+.album-card:hover .album-cover {
+  @apply shadow-2xl shadow-primary/10;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  .hero-section {
+    min-height: auto;
+  }
+
+  .action-bar {
+    @apply py-2;
+  }
+
+  .tab-list {
+    @apply w-full;
+  }
+
+  .tab-item {
+    @apply flex-1 text-center;
+  }
+}
+
+/* Focus states for accessibility */
+button:focus-visible {
+  @apply outline-none ring-2 ring-primary ring-offset-2 ring-offset-white dark:ring-offset-neutral-900;
+}
+
+input:focus-visible {
+  @apply outline-none ring-2 ring-primary/50;
 }
 </style>

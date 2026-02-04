@@ -1,425 +1,439 @@
 <template>
-  <div class="download-page">
-    <div class="page-header">
-      <h1 class="page-title">{{ t('download.title') }}</h1>
-      <div class="flex items-center gap-3">
-        <n-button size="small" @click="showSettingsDrawer = true">
-          <template #icon><i class="iconfont ri-settings-3-line"></i></template>
-          {{ t('download.settings') }}
-        </n-button>
-        <div class="segment-control">
-          <div
-            class="segment-item"
-            :class="{ active: tabName === 'downloading' }"
-            @click="tabName = 'downloading'"
-          >
-            {{ t('download.tabs.downloading') }}
+  <div class="download-page h-full w-full bg-white dark:bg-black transition-colors duration-500">
+    <n-scrollbar class="h-full">
+      <div class="download-content pb-32">
+        <!-- Hero Section -->
+        <section class="hero-section relative overflow-hidden rounded-tl-2xl">
+          <!-- Background with Blur -->
+          <div class="hero-bg absolute inset-0 -top-20">
+            <div
+              class="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/10 blur-3xl opacity-50 dark:opacity-30"
+            ></div>
+            <div
+              class="absolute inset-0 bg-gradient-to-b from-transparent via-white/80 to-white dark:via-black/80 dark:to-black"
+            ></div>
           </div>
-          <div
-            class="segment-item"
-            :class="{ active: tabName === 'downloaded' }"
-            @click="tabName = 'downloaded'"
-          >
-            {{ t('download.tabs.downloaded') }}
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <div class="page-content">
-      <!-- 下载列表 -->
-      <div v-show="tabName === 'downloading'" class="tab-content">
-        <div class="download-list">
-          <div v-if="downloadList.length === 0" class="empty-state">
-            <div class="empty-icon">
-              <i class="iconfont ri-download-cloud-2-line"></i>
-            </div>
-            <h3 class="empty-title">{{ t('download.empty.noTasks') }}</h3>
-          </div>
-          <template v-else>
-            <div class="total-progress">
-              <div class="progress-header">
-                <div class="progress-title">
-                  {{ t('download.progress.total', { progress: totalProgress.toFixed(1) }) }}
-                </div>
-                <div class="progress-info">{{ downloadList.length }} {{ t('download.items') }}</div>
-              </div>
-              <div class="progress-bar-wrapper">
-                <div class="progress-bar">
-                  <div class="progress-fill" :style="{ width: `${totalProgress}%` }"></div>
+          <!-- Hero Content -->
+          <div class="hero-content relative z-10 px-4 md:px-8 pt-10 pb-8">
+            <div class="flex flex-col md:flex-row gap-8 items-center md:items-end">
+              <div class="cover-wrapper relative group">
+                <div
+                  class="cover-container relative w-32 h-32 md:w-40 md:h-40 rounded-2xl bg-primary/10 flex items-center justify-center shadow-2xl ring-4 ring-white/50 dark:ring-neutral-800/50"
+                >
+                  <i class="ri-download-cloud-2-line text-6xl text-primary opacity-80" />
                 </div>
               </div>
-            </div>
 
-            <div class="download-items">
-              <div v-for="item in downloadList" :key="item.path" class="download-item">
-                <div class="item-left flex items-center gap-3">
-                  <div class="item-cover">
-                    <img :src="getImgUrl(item.songInfo?.picUrl, '200y200')" alt="Cover" />
-                  </div>
-                  <div class="item-info flex items-center gap-4 w-full">
-                    <div
-                      class="item-name min-w-[160px] max-w-[160px] truncate"
-                      :title="item.filename"
-                    >
-                      {{ item.filename }}
-                    </div>
-                    <div class="item-artist min-w-[120px] max-w-[120px] truncate">
-                      {{
-                        item.songInfo?.ar?.map((a) => a.name).join(', ') ||
-                        t('download.artist.unknown')
-                      }}
-                    </div>
-                    <div class="item-progress flex-1 min-w-0">
-                      <div class="progress-bar">
-                        <div
-                          class="progress-fill"
-                          :class="[`status-${item.status}`]"
-                          :style="{ width: `${item.progress}%` }"
-                        ></div>
-                      </div>
-                    </div>
-                    <div class="item-details min-w-[120px] max-w-[120px] flex flex-col items-end">
-                      <span class="item-size">
-                        {{ formatSize(item.loaded) }} / {{ formatSize(item.total) }}
-                      </span>
-                      <span class="item-status-badge" :class="[`status-${item.status}`]">
-                        {{ getStatusText(item) }}
-                      </span>
-                    </div>
-                  </div>
+              <div class="info-content text-center md:text-left">
+                <div class="badge mb-3">
+                  <span
+                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 dark:bg-primary/20 text-primary text-xs font-semibold uppercase tracking-wider"
+                  >
+                    {{ t('download.title') }}
+                  </span>
                 </div>
+                <h1
+                  class="text-3xl md:text-4xl lg:text-5xl font-bold text-neutral-900 dark:text-white tracking-tight"
+                >
+                  {{
+                    tabName === 'downloading'
+                      ? t('download.tabs.downloading')
+                      : t('download.tabs.downloaded')
+                  }}
+                </h1>
+                <p class="mt-4 text-sm md:text-base text-neutral-500 dark:text-neutral-400">
+                  {{
+                    tabName === 'downloading'
+                      ? t('download.progress.total', { progress: totalProgress.toFixed(1) })
+                      : t('download.count', { count: downloadedList.length })
+                  }}
+                </p>
               </div>
             </div>
-          </template>
-        </div>
-      </div>
+          </div>
+        </section>
 
-      <!-- 已下载列表 -->
-      <div v-show="tabName === 'downloaded'" class="tab-content">
-        <div class="downloaded-list">
-          <div v-if="isLoadingDownloaded" class="loading-state">
-            <div class="spinner"></div>
-            <span class="loading-text">{{ t('download.loading') }}</span>
-          </div>
-          <div v-else-if="downloadedList.length === 0" class="empty-state">
-            <div class="empty-icon">
-              <i class="iconfont ri-inbox-archive-line"></i>
-            </div>
-            <h3 class="empty-title">{{ t('download.empty.noDownloaded') }}</h3>
-            <p class="empty-text">{{ t('download.empty.noDownloadedHint') }}</p>
-          </div>
-          <template v-else>
-            <div class="downloaded-header">
-              <div class="header-info">
-                <i class="iconfont ri-archive-line"></i>
-                <span>{{ t('download.count', { count: downloadedList.length }) }}</span>
-              </div>
-              <button class="clear-button" @click="showClearConfirm = true">
-                <i class="iconfont ri-delete-bin-line"></i>
-                <span>{{ t('download.clearAll') }}</span>
+        <!-- Action Bar (Sticky) -->
+        <section
+          class="action-bar sticky top-0 z-20 px-4 md:px-8 py-3 md:py-4 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-neutral-100 dark:border-neutral-800/50"
+        >
+          <div class="flex items-center justify-between gap-4">
+            <!-- Tabs (Segment Control) -->
+            <div class="flex items-center gap-2 bg-neutral-100 dark:bg-neutral-900 p-1 rounded-xl">
+              <button
+                v-for="tab in ['downloading', 'downloaded']"
+                :key="tab"
+                class="px-6 py-1.5 rounded-lg text-sm font-medium transition-all"
+                :class="
+                  tabName === tab
+                    ? 'bg-white dark:bg-neutral-800 text-primary shadow-sm'
+                    : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
+                "
+                @click="tabName = tab"
+              >
+                {{ t(`download.tabs.${tab}`) }}
               </button>
             </div>
 
-            <div class="downloaded-items">
-              <div v-for="item in downList" :key="item.path" class="downloaded-item">
-                <div class="item-cover">
-                  <img :src="getImgUrl(item.picUrl, '200y200')" alt="Cover" />
-                </div>
-                <div class="item-info flex items-center gap-4 w-full">
-                  <div
-                    class="item-name min-w-[160px] max-w-[160px] truncate"
-                    :title="item.displayName || item.filename"
-                  >
-                    {{ item.displayName || item.filename }}
-                  </div>
-                  <div
-                    class="item-artist min-w-[120px] max-w-[120px] flex items-center gap-1 truncate"
-                  >
-                    <i class="iconfont ri-user-line"></i>
-                    <span>{{ item.ar?.map((a) => a.name).join(', ') }}</span>
-                  </div>
-                  <div class="item-size min-w-[80px] max-w-[80px] flex items-center gap-1">
-                    <i class="iconfont ri-file-line"></i>
-                    <span>{{ formatSize(item.size) }}</span>
-                  </div>
-                  <div
-                    class="item-path min-w-[220px] max-w-[220px] flex items-center gap-1"
-                    :title="item.path"
-                  >
-                    <i class="iconfont ri-folder-path-line"></i>
-                    <span>{{ shortenPath(item.path) }}</span>
-                    <button class="copy-button" @click="copyPath(item.path)">
-                      <i class="iconfont ri-file-copy-line"></i>
-                    </button>
-                  </div>
-                  <div class="item-actions flex gap-1 ml-2">
-                    <button class="action-btn play" @click="handlePlayMusic(item)">
-                      <i class="iconfont ri-play-circle-line"></i>
-                    </button>
-                    <button class="action-btn open" @click="openDirectory(item.path)">
-                      <i class="iconfont ri-folder-open-line"></i>
-                    </button>
-                    <button class="action-btn delete" @click="handleDelete(item)">
-                      <i class="iconfont ri-delete-bin-line"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </template>
-        </div>
-      </div>
-    </div>
-  </div>
+            <!-- Right Actions -->
+            <div class="flex items-center gap-3">
+              <button
+                v-if="tabName === 'downloaded' && downloadedList.length > 0"
+                class="action-btn-pill flex items-center gap-2 px-4 py-2 rounded-full font-semibold text-sm transition-all hover:bg-red-50 dark:hover:bg-red-900/10 text-red-500 border border-neutral-200 dark:border-neutral-800"
+                @click="showClearConfirm = true"
+              >
+                <i class="ri-delete-bin-line text-lg" />
+                <span class="hidden md:inline">{{ t('download.clearAll') }}</span>
+              </button>
 
-  <!-- 删除确认对话框 -->
-  <div class="modal-overlay" v-if="showDeleteConfirm" @click="showDeleteConfirm = false">
-    <div class="modal-content" @click.stop>
-      <div class="modal-header">
-        <i class="iconfont ri-error-warning-line"></i>
-        <span>{{ t('download.delete.title') }}</span>
-      </div>
-      <div class="modal-body">
-        {{
-          t('download.delete.message', {
-            filename: itemToDelete?.displayName || itemToDelete?.filename
-          })
-        }}
-      </div>
-      <div class="modal-footer">
-        <button class="modal-btn cancel" @click="showDeleteConfirm = false">
-          {{ t('download.delete.cancel') }}
-        </button>
-        <button class="modal-btn confirm" @click="confirmDelete">
-          {{ t('download.delete.confirm') }}
-        </button>
-      </div>
-    </div>
-  </div>
+              <button
+                class="action-btn-icon w-10 h-10 rounded-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-all"
+                @click="openDownloadPath"
+              >
+                <i class="ri-folder-open-line text-lg" />
+              </button>
 
-  <!-- 清空确认对话框 -->
-  <div class="modal-overlay" v-if="showClearConfirm" @click="showClearConfirm = false">
-    <div class="modal-content" @click.stop>
-      <div class="modal-header">
-        <i class="iconfont ri-delete-bin-line"></i>
-        <span>{{ t('download.clear.title') }}</span>
-      </div>
-      <div class="modal-body">
-        {{ t('download.clear.message') }}
-      </div>
-      <div class="modal-footer">
-        <button class="modal-btn cancel" @click="showClearConfirm = false">
-          {{ t('download.clear.cancel') }}
-        </button>
-        <button class="modal-btn confirm" @click="clearDownloadRecords">
-          {{ t('download.clear.confirm') }}
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 下载设置抽屉 -->
-  <n-drawer v-model:show="showSettingsDrawer" :width="380" placement="right" :z-index="999999999">
-    <n-drawer-content :native-scrollbar="false">
-      <template #header>
-        <div class="flex items-center justify-between">
-          <div class="text-lg font-bold">{{ t('download.settingsPanel.title') }}</div>
-          <n-button type="primary" @click="saveDownloadSettings">
-            {{ t('common.save') }}
-          </n-button>
-        </div>
-      </template>
-      <div class="download-settings">
-        <!-- 下载路径设置 -->
-        <div class="setting-item">
-          <div class="setting-title">{{ t('download.settingsPanel.path') }}</div>
-          <div class="setting-desc">{{ t('download.settingsPanel.pathDesc') }}</div>
-          <div class="flex flex-col gap-2 mt-2">
-            <n-input
-              v-model:value="downloadSettings.path"
-              :placeholder="t('download.settingsPanel.pathPlaceholder')"
-              readonly
-              class="flex-1"
-            />
-            <div class="flex items-center gap-2">
-              <n-button class="flex-1" @click="selectDownloadPath">{{
-                t('download.settingsPanel.select')
-              }}</n-button>
-              <n-button class="flex-1" @click="openDownloadPath">
-                {{ t('download.settingsPanel.open') }}
-                <i class="iconfont ri-folder-open-line"></i>
-              </n-button>
+              <button
+                class="action-btn-icon w-10 h-10 rounded-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-all"
+                @click="showSettingsDrawer = true"
+              >
+                <i class="ri-settings-3-line text-lg" />
+              </button>
             </div>
           </div>
-        </div>
+        </section>
 
-        <!-- 文件名格式设置 -->
-        <div class="setting-item">
-          <div class="setting-title">{{ t('download.settingsPanel.fileFormat') }}</div>
-          <div class="setting-desc">{{ t('download.settingsPanel.fileFormatDesc') }}</div>
-
-          <!-- 预设模板 -->
-          <div class="flex gap-2 my-2">
-            <n-button
-              size="small"
-              :type="
-                downloadSettings.nameFormat === '{songName} - {artistName}' ? 'primary' : 'default'
-              "
-              @click="downloadSettings.nameFormat = '{songName} - {artistName}'"
-            >
-              {{ t('download.settingsPanel.presets.songArtist') }}
-            </n-button>
-            <n-button
-              size="small"
-              :type="
-                downloadSettings.nameFormat === '{artistName} - {songName}' ? 'primary' : 'default'
-              "
-              @click="downloadSettings.nameFormat = '{artistName} - {songName}'"
-            >
-              {{ t('download.settingsPanel.presets.artistSong') }}
-            </n-button>
-            <n-button
-              size="small"
-              :type="downloadSettings.nameFormat === '{songName}' ? 'primary' : 'default'"
-              @click="downloadSettings.nameFormat = '{songName}'"
-            >
-              {{ t('download.settingsPanel.presets.songOnly') }}
-            </n-button>
-          </div>
-
-          <!-- 分隔符设置 -->
-          <div class="my-3">
-            <div class="text-sm text-gray-500 mb-2">
-              {{ t('download.settingsPanel.separator') || '分隔符' }}
-            </div>
-            <div class="flex items-center gap-2">
-              <n-button
-                size="small"
-                :type="downloadSettings.separator === ' - ' ? 'primary' : 'default'"
-                @click="downloadSettings.separator = ' - '"
-              >
-                {{ t('download.settingsPanel.separators.dash') || '空格-空格' }}
-              </n-button>
-              <n-button
-                size="small"
-                :type="downloadSettings.separator === '_' ? 'primary' : 'default'"
-                @click="downloadSettings.separator = '_'"
-              >
-                {{ t('download.settingsPanel.separators.underscore') || '下划线' }}
-              </n-button>
-              <n-button
-                size="small"
-                :type="downloadSettings.separator === ' ' ? 'primary' : 'default'"
-                @click="downloadSettings.separator = ' '"
-              >
-                {{ t('download.settingsPanel.separators.space') || '空格' }}
-              </n-button>
-              <n-input
-                v-model:value="downloadSettings.separator"
-                size="small"
-                style="width: 100px"
-                placeholder="自定义"
+        <!-- List Section -->
+        <section class="list-section px-4 md:px-8 mt-6">
+          <!-- Downloading List -->
+          <div v-if="tabName === 'downloading'" class="downloading-container">
+            <div v-if="downloadList.length === 0" class="empty-state py-20 text-center">
+              <i
+                class="ri-download-cloud-2-line text-5xl mb-4 text-neutral-200 dark:text-neutral-800"
               />
+              <p class="text-neutral-400">{{ t('download.empty.noTasks') }}</p>
+            </div>
+            <div v-else class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+              <div
+                v-for="item in downloadList"
+                :key="item.path"
+                class="downloading-item group p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-100 dark:border-neutral-800/50 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all"
+              >
+                <div class="flex items-center gap-4">
+                  <n-image
+                    :src="getImgUrl(item.songInfo?.picUrl, '100y100')"
+                    class="w-12 h-12 rounded-xl flex-shrink-0"
+                    preview-disabled
+                  />
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between mb-2">
+                      <div class="truncate pr-4">
+                        <span class="text-sm font-bold text-neutral-900 dark:text-white">{{
+                          item.filename
+                        }}</span>
+                        <span class="ml-2 text-xs text-neutral-400">{{
+                          item.songInfo?.ar?.map((a) => a.name).join(', ')
+                        }}</span>
+                      </div>
+                      <span
+                        class="text-xs font-medium"
+                        :class="item.status === 'error' ? 'text-red-500' : 'text-primary'"
+                      >
+                        {{ getStatusText(item) }}
+                      </span>
+                    </div>
+                    <div
+                      class="relative h-1.5 bg-neutral-200 dark:bg-neutral-800 rounded-full overflow-hidden"
+                    >
+                      <div
+                        class="absolute inset-y-0 left-0 bg-primary transition-all duration-300"
+                        :class="{ 'bg-red-500': item.status === 'error' }"
+                        :style="{ width: `${item.progress}%` }"
+                      ></div>
+                    </div>
+                    <div class="flex items-center justify-between mt-2">
+                      <span class="text-[10px] text-neutral-400"
+                        >{{ formatSize(item.loaded) }} / {{ formatSize(item.total) }}</span
+                      >
+                      <span class="text-[10px] text-neutral-400"
+                        >{{ item.progress.toFixed(1) }}%</span
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- 组件排序 -->
-          <div class="my-3">
-            <div class="text-sm text-gray-500 mb-2">
-              {{ t('download.settingsPanel.dragToArrange') }}
+          <!-- Downloaded List -->
+          <div v-else class="downloaded-container">
+            <n-spin :show="isLoadingDownloaded">
+              <div v-if="downloadedList.length === 0" class="empty-state py-20 text-center">
+                <i
+                  class="ri-inbox-archive-line text-5xl mb-4 text-neutral-200 dark:text-neutral-800"
+                />
+                <p class="text-neutral-400">{{ t('download.empty.noDownloaded') }}</p>
+                <p class="text-xs text-neutral-500 mt-2">
+                  {{ t('download.empty.noDownloadedHint') }}
+                </p>
+              </div>
+              <div v-else class="space-y-2">
+                <div
+                  v-for="(item, index) in downList"
+                  :key="item.path"
+                  class="downloaded-item group animate-item p-3 rounded-2xl flex items-center gap-4 hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-all"
+                  :style="{ animationDelay: `${index * 0.03}s` }"
+                >
+                  <div
+                    class="relative w-12 h-12 rounded-xl overflow-hidden shadow-lg flex-shrink-0"
+                  >
+                    <img
+                      :src="getImgUrl(item.picUrl, '100y100')"
+                      class="w-full h-full object-cover"
+                    />
+                    <div
+                      class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                      @click="handlePlayMusic(item)"
+                    >
+                      <i class="ri-play-fill text-white text-xl" />
+                    </div>
+                  </div>
+
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm font-bold text-neutral-900 dark:text-white truncate">{{
+                        item.displayName || item.filename
+                      }}</span>
+                      <span class="text-xs text-neutral-400 flex-shrink-0">{{
+                        formatSize(item.size)
+                      }}</span>
+                    </div>
+                    <div class="flex items-center gap-4 mt-1">
+                      <span class="text-xs text-neutral-500 truncate max-w-[150px]">{{
+                        item.ar?.map((a) => a.name).join(', ')
+                      }}</span>
+                      <div
+                        class="hidden md:flex items-center gap-1 text-[10px] text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-full truncate"
+                      >
+                        <i class="ri-folder-line" />
+                        <span class="truncate">{{ shortenPath(item.path) }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-1">
+                    <n-tooltip trigger="hover">
+                      <template #trigger>
+                        <button
+                          class="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-primary hover:bg-primary/10 transition-all"
+                          @click="copyPath(item.path)"
+                        >
+                          <i class="ri-file-copy-line" />
+                        </button>
+                      </template>
+                      {{ t('download.path.copy') || '复制路径' }}
+                    </n-tooltip>
+                    <n-tooltip trigger="hover">
+                      <template #trigger>
+                        <button
+                          class="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-primary hover:bg-primary/10 transition-all"
+                          @click="openDirectory(item.path)"
+                        >
+                          <i class="ri-folder-open-line" />
+                        </button>
+                      </template>
+                      {{ t('download.settingsPanel.open') }}
+                    </n-tooltip>
+                    <n-tooltip trigger="hover">
+                      <template #trigger>
+                        <button
+                          class="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                          @click="handleDelete(item)"
+                        >
+                          <i class="ri-delete-bin-line" />
+                        </button>
+                      </template>
+                      {{ t('common.delete') }}
+                    </n-tooltip>
+                  </div>
+                </div>
+              </div>
+            </n-spin>
+          </div>
+        </section>
+      </div>
+    </n-scrollbar>
+
+    <!-- 删除确认对话框 -->
+    <n-modal
+      v-model:show="showDeleteConfirm"
+      preset="dialog"
+      type="warning"
+      :title="t('download.delete.title')"
+      :content="
+        t('download.delete.message', {
+          filename: itemToDelete?.displayName || itemToDelete?.filename
+        })
+      "
+      :positive-text="t('download.delete.confirm')"
+      :negative-text="t('download.delete.cancel')"
+      @positive-click="confirmDelete"
+    />
+
+    <!-- 清空确认对话框 -->
+    <n-modal
+      v-model:show="showClearConfirm"
+      preset="dialog"
+      type="error"
+      :title="t('download.clear.title')"
+      :content="t('download.clear.message')"
+      :positive-text="t('download.clear.confirm')"
+      :negative-text="t('download.clear.cancel')"
+      @positive-click="clearDownloadRecords"
+    />
+
+    <!-- 下载设置抽屉 -->
+    <n-drawer v-model:show="showSettingsDrawer" :width="400" placement="right">
+      <n-drawer-content :title="t('download.settingsPanel.title')" closable>
+        <div class="download-settings-content space-y-8 py-4">
+          <!-- Path Section -->
+          <div class="setting-group">
+            <h3 class="text-sm font-bold text-neutral-900 dark:text-white mb-2">
+              {{ t('download.settingsPanel.path') }}
+            </h3>
+            <p class="text-xs text-neutral-500 mb-4">{{ t('download.settingsPanel.pathDesc') }}</p>
+            <div class="space-y-3">
+              <n-input :value="downloadSettings.path" readonly placeholder="Select path..." />
+              <div class="flex gap-2">
+                <n-button class="flex-1" @click="selectDownloadPath">{{
+                  t('download.settingsPanel.select')
+                }}</n-button>
+                <n-button class="flex-1" @click="openDownloadPath">{{
+                  t('download.settingsPanel.open')
+                }}</n-button>
+              </div>
             </div>
-            <div class="format-components">
-              <div
-                v-for="(component, index) in formatComponents"
-                :key="component.id"
-                class="format-item"
-              >
-                <div class="flex items-center justify-between w-full">
-                  <span>{{ t(`download.settingsPanel.components.${component.type}`) }}</span>
-                  <div class="flex items-center">
+          </div>
+
+          <!-- Format Section -->
+          <div class="setting-group">
+            <h3 class="text-sm font-bold text-neutral-900 dark:text-white mb-2">
+              {{ t('download.settingsPanel.fileFormat') }}
+            </h3>
+            <p class="text-xs text-neutral-500 mb-4">
+              {{ t('download.settingsPanel.fileFormatDesc') }}
+            </p>
+
+            <div class="space-y-4">
+              <div class="flex flex-wrap gap-2">
+                <n-button
+                  v-for="preset in [
+                    { label: 'songArtist', value: '{songName} - {artistName}' },
+                    { label: 'artistSong', value: '{artistName} - {songName}' },
+                    { label: 'songOnly', value: '{songName}' }
+                  ]"
+                  :key="preset.label"
+                  size="small"
+                  :type="downloadSettings.nameFormat === preset.value ? 'primary' : 'default'"
+                  @click="downloadSettings.nameFormat = preset.value"
+                >
+                  {{ t(`download.settingsPanel.presets.${preset.label}`) }}
+                </n-button>
+              </div>
+
+              <div>
+                <p class="text-[10px] text-neutral-400 mb-2 uppercase font-bold">
+                  {{ t('download.settingsPanel.separator') }}
+                </p>
+                <div class="flex items-center gap-2">
+                  <n-button
+                    v-for="sep in [' - ', '_', ' ']"
+                    :key="sep"
+                    size="small"
+                    :type="downloadSettings.separator === sep ? 'primary' : 'default'"
+                    @click="downloadSettings.separator = sep"
+                  >
+                    {{ sep === ' ' ? 'Space' : sep }}
+                  </n-button>
+                  <n-input v-model:value="downloadSettings.separator" size="small" class="w-20" />
+                </div>
+              </div>
+
+              <div>
+                <p class="text-[10px] text-neutral-400 mb-2 uppercase font-bold">
+                  {{ t('download.settingsPanel.dragToArrange') }}
+                </p>
+                <div class="space-y-2">
+                  <div
+                    v-for="(comp, idx) in formatComponents"
+                    :key="comp.id"
+                    class="flex items-center justify-between p-2 bg-neutral-50 dark:bg-neutral-900 rounded-lg"
+                  >
+                    <span class="text-xs">{{
+                      t(`download.settingsPanel.components.${comp.type}`)
+                    }}</span>
+                    <div class="flex items-center gap-1">
+                      <n-button
+                        quaternary
+                        circle
+                        size="tiny"
+                        :disabled="idx === 0"
+                        @click="handleMoveUp(idx)"
+                        ><i class="ri-arrow-up-s-line"
+                      /></n-button>
+                      <n-button
+                        quaternary
+                        circle
+                        size="tiny"
+                        :disabled="idx === formatComponents.length - 1"
+                        @click="handleMoveDown(idx)"
+                        ><i class="ri-arrow-down-s-line"
+                      /></n-button>
+                      <n-button
+                        quaternary
+                        circle
+                        size="tiny"
+                        :disabled="formatComponents.length <= 1"
+                        @click="removeFormatComponent(idx)"
+                        ><i class="ri-close-line"
+                      /></n-button>
+                    </div>
+                  </div>
+                  <div class="flex flex-wrap gap-2 mt-2">
                     <n-button
-                      quaternary
-                      circle
-                      size="small"
-                      @click="handleMoveUp(index)"
-                      :disabled="index === 0"
+                      v-for="type in ['songName', 'artistName', 'albumName']"
+                      :key="type"
+                      size="tiny"
+                      :disabled="formatComponents.some((c) => c.type === type)"
+                      @click="addFormatComponent(type)"
                     >
-                      <template #icon><i class="iconfont ri-arrow-up-s-line"></i></template>
-                    </n-button>
-                    <n-button
-                      quaternary
-                      circle
-                      size="small"
-                      @click="handleMoveDown(index)"
-                      :disabled="index === formatComponents.length - 1"
-                    >
-                      <template #icon><i class="iconfont ri-arrow-down-s-line"></i></template>
-                    </n-button>
-                    <n-button
-                      quaternary
-                      circle
-                      size="small"
-                      @click="removeFormatComponent(index)"
-                      :disabled="formatComponents.length <= 1"
-                    >
-                      <template #icon><i class="iconfont ri-close-line"></i></template>
+                      + {{ t(`download.settingsPanel.components.${type}`) }}
                     </n-button>
                   </div>
                 </div>
               </div>
-              <div class="mt-2 flex gap-2">
-                <n-button
-                  size="small"
-                  @click="addFormatComponent('songName')"
-                  :disabled="formatComponents.some((c) => c.type === 'songName')"
-                >
-                  +{{ t('download.settingsPanel.components.songName') }}
-                </n-button>
-                <n-button
-                  size="small"
-                  @click="addFormatComponent('artistName')"
-                  :disabled="formatComponents.some((c) => c.type === 'artistName')"
-                >
-                  +{{ t('download.settingsPanel.components.artistName') }}
-                </n-button>
-                <n-button
-                  size="small"
-                  @click="addFormatComponent('albumName')"
-                  :disabled="formatComponents.some((c) => c.type === 'albumName')"
-                >
-                  +{{ t('download.settingsPanel.components.albumName') }}
-                </n-button>
+
+              <div
+                class="p-3 bg-neutral-50 dark:bg-neutral-900 rounded-xl border border-dashed border-neutral-200 dark:border-neutral-800"
+              >
+                <p class="text-[10px] text-neutral-400 mb-1 uppercase font-bold">
+                  {{ t('download.settingsPanel.preview') }}
+                </p>
+                <p class="text-sm font-medium text-primary truncate">{{ formatNamePreview }}</p>
               </div>
             </div>
           </div>
-
-          <!-- 自定义格式 -->
-          <div class="my-3">
-            <div class="text-sm text-gray-500 mb-2">
-              {{ t('download.settingsPanel.customFormat') }}
-            </div>
-            <n-input
-              v-model:value="downloadSettings.nameFormat"
-              placeholder="{artistName} - {songName} - {albumName}"
-            />
-          </div>
-
-          <div class="mt-2 text-xs text-amber-500">
-            <i class="iconfont ri-information-line"></i>
-            {{ t('download.settingsPanel.formatVariables') }}:<br />
-            {songName}, {artistName}, {albumName}
-          </div>
-
-          <!-- 预览 -->
-          <div class="format-preview mt-3 bg-gray-100 dark:bg-dark-300 p-2 rounded">
-            <div class="text-xs text-gray-500 mb-1">{{ t('download.settingsPanel.preview') }}</div>
-            <div class="preview-content">{{ formatNamePreview }}</div>
-          </div>
         </div>
-      </div>
-    </n-drawer-content>
-  </n-drawer>
+
+        <template #footer>
+          <n-button type="primary" block @click="saveDownloadSettings">{{
+            t('common.save')
+          }}</n-button>
+        </template>
+      </n-drawer-content>
+    </n-drawer>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -1058,404 +1072,22 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-/* macOS style with Neumorphism */
 .download-page {
-  @apply h-full w-full flex flex-col overflow-hidden;
-  @apply bg-gray-50 dark:bg-dark-200;
-  @apply text-gray-900 dark:text-gray-100;
+  position: relative;
 }
 
-.page-header {
-  @apply px-4 py-3;
-  @apply bg-white/90 dark:bg-dark-100/90;
-  @apply border-b border-gray-200/50 dark:border-gray-700/50;
-  @apply backdrop-blur-xl backdrop-saturate-150;
-  @apply sticky top-0 z-10;
-  @apply flex items-center justify-between;
+.hero-section {
+  min-height: 240px;
 }
 
-.page-title {
-  @apply text-lg font-medium;
-  @apply text-gray-800 dark:text-gray-200;
+.animate-item {
+  animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
-.segment-control {
-  @apply flex rounded-lg overflow-hidden;
-  @apply bg-gray-100 dark:bg-dark-300;
-  @apply w-max;
-  @apply border border-gray-200/60 dark:border-gray-700/60;
-}
-
-.segment-item {
-  @apply px-3 py-1 cursor-pointer text-sm font-medium;
-  @apply text-gray-500 dark:text-gray-400;
-  @apply transition-all duration-200;
-  @apply hover:bg-light-300 dark:hover:bg-dark-300;
-
-  &.active {
-    @apply bg-white dark:bg-dark-200;
-    @apply text-gray-900 dark:text-gray-100;
-    @apply shadow-sm;
-  }
-}
-
-.page-content {
-  @apply flex-1 overflow-hidden;
-}
-
-.tab-content {
-  @apply h-full overflow-auto pb-16;
-}
-
-/* Empty & Loading States */
-.empty-state,
-.loading-state {
-  @apply flex flex-col items-center justify-center h-full;
-  @apply py-16;
-}
-
-.empty-icon {
-  @apply text-4xl mb-3 text-gray-300 dark:text-gray-600;
-}
-
-.empty-title {
-  @apply text-base font-medium mb-1;
-  @apply text-gray-500 dark:text-gray-400;
-}
-
-.empty-text {
-  @apply text-xs text-gray-400 dark:text-gray-500;
-}
-
-.spinner {
-  @apply w-8 h-8 rounded-full border border-t-primary;
-  @apply animate-spin mb-3;
-}
-
-.loading-text {
-  @apply text-sm text-gray-500 dark:text-gray-400;
-}
-
-/* Progress Bar */
-.total-progress {
-  @apply px-4 py-3;
-  @apply bg-white/90 dark:bg-dark-100/90;
-  @apply backdrop-blur-lg backdrop-saturate-150;
-  @apply border-b border-gray-200/50 dark:border-gray-700/50;
-  @apply sticky top-0 z-10;
-}
-
-.progress-header {
-  @apply flex justify-between items-center mb-2;
-}
-
-.progress-title {
-  @apply text-xs font-medium;
-  @apply text-gray-700 dark:text-gray-300;
-}
-
-.progress-info {
-  @apply text-xs;
-  @apply text-gray-500 dark:text-gray-400;
-}
-
-.progress-bar-wrapper {
-  @apply w-full;
-}
-
-.progress-bar {
-  @apply h-1.5 rounded-full w-full;
-  @apply bg-gray-200 dark:bg-dark-300;
-  @apply overflow-hidden;
-}
-
-.progress-fill {
-  @apply h-full rounded-full;
-  @apply bg-primary;
-  @apply transition-all duration-300;
-
-  &.status-downloading {
-    @apply bg-primary;
-  }
-
-  &.status-completed {
-    @apply bg-green-500;
-  }
-
-  &.status-error {
-    @apply bg-red-500;
-  }
-}
-
-/* Download Items */
-.download-items {
-  @apply p-4 space-y-3;
-}
-
-.download-item {
-  @apply rounded-lg p-3;
-  @apply bg-white dark:bg-dark-100;
-  @apply border border-gray-200/60 dark:border-gray-700/50;
-  @apply shadow-sm;
-  @apply transition-all duration-300;
-
-  &:hover {
-    @apply shadow-md;
-    @apply transform -translate-y-0.5;
-  }
-
-  .item-left {
-    @apply flex gap-3;
-  }
-
-  .item-cover {
-    @apply w-12 h-12 rounded-md overflow-hidden;
-    @apply flex-shrink-0;
-    @apply bg-gray-100 dark:bg-dark-300;
-    @apply shadow-sm;
-
-    img {
-      @apply w-full h-full object-cover;
-    }
-  }
-
-  .item-info {
-    @apply flex-1 min-w-0 flex items-center justify-between;
-  }
-
-  .item-name {
-    @apply text-sm font-medium truncate;
-  }
-
-  .item-artist {
-    @apply text-xs text-gray-500 dark:text-gray-400;
-  }
-
-  .item-progress {
-    @apply mb-2;
-  }
-
-  .item-details {
-    @apply flex justify-between items-center;
-  }
-
-  .item-size {
-    @apply text-xs text-gray-500 dark:text-gray-400;
-  }
-
-  .item-status-badge {
-    @apply text-xs px-2 py-0.5 rounded-full;
-    @apply bg-gray-100 dark:bg-dark-300;
-
-    &.status-downloading {
-      @apply bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400;
-    }
-
-    &.status-completed {
-      @apply bg-green-50 text-green-600 dark:bg-green-900/20 dark:text-green-400;
-    }
-
-    &.status-error {
-      @apply bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400;
-    }
-  }
-}
-
-/* Downloaded List */
-.downloaded-header {
-  @apply px-4 py-3;
-  @apply bg-white/90 dark:bg-dark-100/90;
-  @apply backdrop-blur-lg backdrop-saturate-150;
-  @apply border-b border-gray-200/50 dark:border-gray-700/50;
-  @apply sticky top-0 z-10;
-  @apply flex items-center justify-between;
-}
-
-.header-info {
-  @apply flex items-center gap-2;
-  @apply text-xs font-medium;
-  @apply text-gray-700 dark:text-gray-300;
-
-  i {
-    @apply text-gray-400 dark:text-gray-500;
-  }
-}
-
-.clear-button {
-  @apply flex items-center gap-1;
-  @apply px-2 py-1 rounded-md;
-  @apply text-xs font-medium;
-  @apply bg-gray-100 dark:bg-dark-300;
-  @apply text-gray-700 dark:text-gray-300;
-  @apply hover:bg-gray-200 dark:hover:bg-dark-300;
-  @apply transition-colors duration-200;
-}
-
-.downloaded-items {
-  @apply p-4 space-y-3;
-}
-
-.downloaded-item {
-  @apply p-3 rounded-lg;
-  @apply bg-white dark:bg-dark-100;
-  @apply border border-gray-200/60 dark:border-gray-700/50;
-  @apply shadow-sm;
-  @apply flex gap-3;
-  @apply transition-all duration-300;
-
-  &:hover {
-    @apply shadow-md;
-    @apply transform -translate-y-0.5;
-  }
-
-  .item-cover {
-    @apply w-14 h-14 rounded-md overflow-hidden;
-    @apply flex-shrink-0;
-    @apply bg-gray-100 dark:bg-dark-300;
-    @apply shadow-sm;
-
-    img {
-      @apply w-full h-full object-cover;
-    }
-  }
-
-  .item-info {
-    @apply flex-1 flex justify-between items-center;
-    @apply min-w-0;
-  }
-
-  .item-primary {
-    @apply flex-1 min-w-0 flex items-center justify-between;
-  }
-
-  .item-name {
-    @apply text-sm font-medium truncate;
-  }
-
-  .item-artist,
-  .item-size {
-    @apply flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400;
-
-    i {
-      @apply text-gray-400 dark:text-gray-500;
-    }
-  }
-
-  .item-path {
-    @apply flex items-center gap-1 text-xs;
-    @apply text-gray-500 dark:text-gray-400;
-    @apply bg-gray-50 dark:bg-dark-300;
-    @apply rounded-md py-1 px-2;
-    @apply truncate;
-
-    i {
-      @apply text-gray-400 dark:text-gray-500 flex-shrink-0;
-    }
-
-    span {
-      @apply truncate flex-1;
-    }
-
-    .copy-button {
-      @apply ml-1 opacity-0;
-      @apply text-gray-400 hover:text-primary;
-      @apply transition-all duration-200;
-    }
-
-    &:hover .copy-button {
-      @apply opacity-100;
-    }
-  }
-
-  .item-actions {
-    @apply flex gap-1;
-    @apply ml-2;
-  }
-
-  .action-btn {
-    @apply flex items-center gap-1;
-    @apply px-2 py-1 rounded-md;
-    @apply text-xs;
-    @apply transition-colors duration-200;
-
-    &.play {
-      @apply text-primary dark:text-white;
-      @apply hover:bg-gray-100 dark:hover:bg-dark-300 hover:text-green-500;
-    }
-
-    &.open {
-      @apply text-gray-600 dark:text-gray-300;
-      @apply hover:bg-gray-100 dark:hover:bg-dark-300;
-    }
-
-    &.delete {
-      @apply text-red-500;
-      @apply hover:bg-red-500/10;
-    }
-  }
-}
-
-/* Modal */
-.modal-overlay {
-  @apply fixed inset-0 z-50;
-  @apply bg-black/40 backdrop-blur-sm;
-  @apply flex items-center justify-center;
-}
-
-.modal-content {
-  @apply bg-white dark:bg-dark-100;
-  @apply rounded-lg overflow-hidden;
-  @apply shadow-xl;
-  @apply w-full max-w-sm;
-  @apply border border-gray-200/60 dark:border-gray-700/50;
-  @apply animate-fade-in;
-}
-
-.modal-header {
-  @apply flex items-center gap-2;
-  @apply px-4 py-3;
-  @apply border-b border-gray-100 dark:border-gray-800;
-  @apply text-gray-900 dark:text-gray-100;
-  @apply font-medium;
-
-  i {
-    @apply text-amber-500 dark:text-amber-400;
-  }
-}
-
-.modal-body {
-  @apply px-4 py-4;
-  @apply text-sm text-gray-700 dark:text-gray-300;
-}
-
-.modal-footer {
-  @apply px-4 py-3;
-  @apply flex justify-end gap-2;
-  @apply border-t border-gray-100 dark:border-gray-800;
-}
-
-.modal-btn {
-  @apply px-3 py-1.5 rounded-md;
-  @apply text-sm font-medium;
-  @apply transition-colors duration-200;
-
-  &.cancel {
-    @apply bg-gray-100 dark:bg-dark-300;
-    @apply text-gray-700 dark:text-gray-300;
-    @apply hover:bg-gray-200 dark:hover:bg-dark-300;
-  }
-
-  &.confirm {
-    @apply bg-amber-500 dark:bg-amber-600;
-    @apply text-white;
-    @apply hover:bg-amber-600 dark:hover:bg-amber-700;
-  }
-}
-
-@keyframes fade-in {
+@keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -1463,51 +1095,22 @@ onMounted(() => {
   }
 }
 
-.animate-fade-in {
-  animation: fade-in 0.2s ease-out;
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
+.action-btn-pill {
+  @apply transition-all border-neutral-200 dark:border-neutral-800;
+  &:hover:not(:disabled) {
+    @apply border-primary/30 bg-primary/5;
   }
 }
 
-.download-settings {
-  @apply flex flex-col gap-6;
+.action-btn-icon {
+  @apply transition-all;
+  &:hover {
+    @apply scale-110 text-primary bg-primary/10;
+  }
 }
 
-.setting-item {
-  @apply bg-white dark:bg-dark-200 p-3 rounded-lg shadow-sm;
-  @apply border border-gray-200/60 dark:border-gray-700/50;
-}
-
-.setting-title {
-  @apply text-base font-medium;
-  @apply text-gray-800 dark:text-gray-200;
-}
-
-.setting-desc {
-  @apply text-sm text-gray-500 dark:text-gray-400 mt-1;
-}
-
-.format-components {
-  @apply flex flex-col gap-2;
-}
-
-.format-item {
-  @apply flex items-center px-3 py-2 bg-gray-100 dark:bg-dark-300 rounded;
-  @apply border border-gray-200 dark:border-gray-700;
-}
-
-.format-preview {
-  @apply text-sm;
+.downloading-item,
+.downloaded-item {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 </style>

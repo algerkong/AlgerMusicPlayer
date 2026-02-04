@@ -263,6 +263,8 @@ watch(
   (newLock: boolean) => {
     if (newLock) {
       isHovering.value = false;
+      // 锁定时自动关闭主题色面板
+      showThemeColorPanel.value = false;
     }
   }
 );
