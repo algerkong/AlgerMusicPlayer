@@ -11,7 +11,12 @@ export default {
   categoryTabs: {
     songs: '楽曲',
     playlists: 'プレイリスト',
-    albums: 'アルバム'
+    albums: 'アルバム',
+    podcasts: 'ポッドキャスト'
+  },
+  podcastTabs: {
+    episodes: 'エピソード',
+    radios: 'ラジオ'
   },
   noDescription: '説明なし',
   noData: '記録なし',

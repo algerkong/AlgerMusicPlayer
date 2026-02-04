@@ -6,7 +6,12 @@ export default {
   categoryTabs: {
     songs: '歌曲',
     playlists: '歌單',
-    albums: '專輯'
+    albums: '專輯',
+    podcasts: '播客'
+  },
+  podcastTabs: {
+    episodes: '節目',
+    radios: '電台'
   },
   tabs: {
     all: '全部記錄',

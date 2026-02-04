@@ -10,7 +10,8 @@ export default {
   },
   empty: {
     noTasks: '다운로드 작업이 없습니다',
-    noDownloaded: '다운로드된 곡이 없습니다'
+    noDownloaded: '다운로드된 곡이 없습니다',
+    noDownloadedHint: '좋아하는 곡을 다운로드하세요'
   },
   progress: {
     total: '전체 진행률: {progress}%'
@@ -50,6 +51,7 @@ export default {
   playStarted: '재생 시작: {name}',
   playFailed: '재생 실패: {name}',
   path: {
+    copy: '경로 복사',
     copied: '경로가 클립보드에 복사됨',
     copyFailed: '경로 복사 실패'
   },

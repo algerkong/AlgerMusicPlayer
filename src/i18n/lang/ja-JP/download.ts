@@ -10,7 +10,8 @@ export default {
   },
   empty: {
     noTasks: 'ダウンロードタスクがありません',
-    noDownloaded: 'ダウンロード済みの楽曲がありません'
+    noDownloaded: 'ダウンロード済みの楽曲がありません',
+    noDownloadedHint: '好きな曲をダウンロードしましょう'
   },
   progress: {
     total: '全体の進行状況: {progress}%'
@@ -50,6 +51,7 @@ export default {
   playStarted: '再生開始: {name}',
   playFailed: '再生失敗: {name}',
   path: {
+    copy: 'パスをコピー',
     copied: 'パスをクリップボードにコピーしました',
     copyFailed: 'パスのコピーに失敗しました'
   },

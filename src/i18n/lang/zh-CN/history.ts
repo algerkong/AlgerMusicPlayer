@@ -6,7 +6,12 @@ export default {
   categoryTabs: {
     songs: '歌曲',
     playlists: '歌单',
-    albums: '专辑'
+    albums: '专辑',
+    podcasts: '播客'
+  },
+  podcastTabs: {
+    episodes: '节目',
+    radios: '电台'
   },
   tabs: {
     all: '全部记录',

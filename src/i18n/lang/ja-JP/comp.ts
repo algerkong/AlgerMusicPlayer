@@ -1,4 +1,8 @@
 export default {
+  more: 'もっと見る',
+  homeListItem: {
+    loading: '読み込み中...'
+  },
   installApp: {
     description: 'アプリをインストールして、より良い体験を',
     noPrompt: '今後表示しない',
@@ -104,7 +108,51 @@ export default {
     songlist: '毎日のおすすめリスト'
   },
   recommendSonglist: {
-    title: '今週の人気音楽'
+    title: '今週の人気音楽',
+    empty: 'おすすめのプレイリストがありません'
+  },
+  dailyRecommend: {
+    title: '毎日のおすすめ',
+    badge: 'おすすめ',
+    empty: 'おすすめの曲がありません',
+    intelligenceHint: 'インテリジェンスモードをオンにして、もっと好きな音楽を見つけましょう'
+  },
+  recommendMV: {
+    title: 'おすすめMV'
+  },
+  newAlbum: {
+    title: '新着アルバム',
+    empty: '新しいアルバムがありません'
+  },
+  recommendNewMusic: {
+    title: '新曲速報'
+  },
+  privateContent: {
+    title: '独占配信'
+  },
+  djProgram: {
+    title: 'おすすめラジオ'
+  },
+  homeHero: {
+    dailyRecommend: '毎日のおすすめ',
+    songs: '曲',
+    playNow: '今すぐ再生',
+    intelligenceMode: 'インテリジェンスモード',
+    intelligenceModeOn: '再生中',
+    intelligenceModeDesc: 'スマート推薦を開始',
+    intelligenceModeActiveDesc: 'あなたの好みに基づくスマート推薦',
+    startIntelligence: '開始',
+    stopIntelligence: '停止',
+    playing: '再生中',
+    toplistDesc: 'トレンド',
+    mvDesc: 'ミュージックビデオ',
+    playlistDesc: '厳選プレイリスト',
+    quickNav: {
+      myFavorite: 'お気に入り',
+      playHistory: '再生履歴',
+      myProfile: 'マイページ',
+      toplist: 'ランキング'
+    }
   },
   searchBar: {
     login: 'ログイン',
@@ -174,6 +222,7 @@ export default {
       albumNamePlaceholder: 'アルバム名',
       addSongButton: '楽曲を追加',
       addLinkButton: 'リンクを追加',
+      options: 'オプション',
       importToStarPlaylist: 'お気に入りの音楽にインポート',
       playlistNamePlaceholder: 'プレイリスト名を入力してください',
       importButton: 'インポート開始',
@@ -218,5 +267,6 @@ export default {
   list: 'プレイリスト',
   mv: 'MV',
   home: 'ホーム',
-  search: '検索'
+  search: '検索',
+  album: 'アルバム'
 };

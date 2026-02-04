@@ -1,4 +1,8 @@
 export default {
+  more: '更多',
+  homeListItem: {
+    loading: '加载中...'
+  },
   installApp: {
     description: '安装应用程序，获得更好的体验',
     noPrompt: '不再提示',
@@ -98,7 +102,51 @@ export default {
     songlist: '每日推荐列表'
   },
   recommendSonglist: {
-    title: '本周最热音乐'
+    title: '本周最热音乐',
+    empty: '暂无推荐歌单'
+  },
+  dailyRecommend: {
+    title: '每日推荐',
+    badge: '推荐',
+    empty: '暂无推荐歌曲',
+    intelligenceHint: '开启心动模式，发现更多喜欢的音乐'
+  },
+  recommendMV: {
+    title: '推荐MV'
+  },
+  newAlbum: {
+    title: '新碟上架',
+    empty: '暂无新专辑'
+  },
+  recommendNewMusic: {
+    title: '新歌速递'
+  },
+  privateContent: {
+    title: '独家放送'
+  },
+  djProgram: {
+    title: '推荐电台'
+  },
+  homeHero: {
+    dailyRecommend: '每日推荐',
+    songs: '首',
+    playNow: '立即播放',
+    intelligenceMode: '心动模式',
+    intelligenceModeOn: '心动中',
+    intelligenceModeDesc: '开启智能推荐播放',
+    intelligenceModeActiveDesc: '根据你的喜好智能推荐',
+    startIntelligence: '开启心动',
+    stopIntelligence: '关闭心动',
+    playing: '播放中',
+    toplistDesc: '热门榜单',
+    mvDesc: '音乐视频',
+    playlistDesc: '精选歌单',
+    quickNav: {
+      myFavorite: '我的收藏',
+      playHistory: '播放历史',
+      myProfile: '我的主页',
+      toplist: '排行榜'
+    }
   },
   searchBar: {
     login: '登录',
@@ -168,6 +216,7 @@ export default {
       albumNamePlaceholder: '专辑名称',
       addSongButton: '添加歌曲',
       addLinkButton: '添加链接',
+      options: '选项',
       importToStarPlaylist: '导入到我喜欢的音乐',
       playlistNamePlaceholder: '请输入歌单名称',
       importButton: '开始导入',
@@ -211,5 +260,6 @@ export default {
   list: '歌单',
   mv: 'MV',
   home: '首页',
-  search: '搜索'
+  search: '搜索',
+  album: '专辑'
 };

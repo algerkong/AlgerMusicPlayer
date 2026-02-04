@@ -88,6 +88,10 @@ export default {
       'GD Music Station intelligently resolves music from multiple platforms automatically',
     autoPlay: 'Auto Play',
     autoPlayDesc: 'Auto resume playback when reopening the app',
+    audioDevice: 'Audio Output Device',
+    audioDeviceDesc: 'Select audio output device such as speakers, headphones or Bluetooth devices',
+    testAudio: 'Test',
+    selectAudioDevice: 'Select output device',
     showStatusBar: 'Show Status Bar',
     showStatusBarContent:
       'You can display the music control function in your mac status bar (effective after a restart)',

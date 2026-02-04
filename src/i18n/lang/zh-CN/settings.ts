@@ -84,6 +84,10 @@ export default {
     gdmusicInfo: 'GD音乐台可自动解析多个平台音源，自动选择最佳结果',
     autoPlay: '自动播放',
     autoPlayDesc: '重新打开应用时是否自动继续播放',
+    audioDevice: '音频输出设备',
+    audioDeviceDesc: '选择音频输出设备，如扬声器、耳机或蓝牙设备',
+    testAudio: '测试',
+    selectAudioDevice: '选择输出设备',
     showStatusBar: '是否显示状态栏控制功能',
     showStatusBarContent: '可以在您的mac状态栏显示音乐控制功能(重启后生效)',
 

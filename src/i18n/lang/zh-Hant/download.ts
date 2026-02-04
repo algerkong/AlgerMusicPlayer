@@ -10,7 +10,8 @@ export default {
   },
   empty: {
     noTasks: '暫無下載任務',
-    noDownloaded: '暫無已下載歌曲'
+    noDownloaded: '暫無已下載歌曲',
+    noDownloadedHint: '去下載你喜歡的歌曲吧'
   },
   progress: {
     total: '總進度: {progress}%'
@@ -49,6 +50,7 @@ export default {
   playStarted: '開始播放: {name}',
   playFailed: '播放失敗: {name}',
   path: {
+    copy: '複製路徑',
     copied: '路徑已複製到剪貼簿',
     copyFailed: '複製路徑失敗'
   },

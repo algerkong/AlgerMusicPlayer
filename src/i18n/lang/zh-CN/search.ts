@@ -23,6 +23,7 @@ export default {
     album: '专辑',
     playlist: '歌单',
     mv: 'MV',
+    djradio: '电台',
     bilibili: 'B站'
   },
   history: '搜索历史',

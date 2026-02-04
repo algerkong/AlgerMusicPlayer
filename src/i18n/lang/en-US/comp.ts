@@ -1,4 +1,8 @@
 export default {
+  more: 'More',
+  homeListItem: {
+    loading: 'Loading...'
+  },
   installApp: {
     description: 'Install the application for a better experience',
     noPrompt: 'Do not prompt again',
@@ -104,7 +108,51 @@ export default {
     songlist: 'Daily Recommendation List'
   },
   recommendSonglist: {
-    title: 'Weekly Hot Music'
+    title: 'Weekly Hot Music',
+    empty: 'No playlists available'
+  },
+  dailyRecommend: {
+    title: 'Daily Recommendation',
+    badge: 'Recommended',
+    empty: 'No recommended songs',
+    intelligenceHint: 'Turn on Intelligence Mode to discover more music you love'
+  },
+  recommendMV: {
+    title: 'Recommended MVs'
+  },
+  newAlbum: {
+    title: 'New Albums',
+    empty: 'No new albums'
+  },
+  recommendNewMusic: {
+    title: 'New Songs'
+  },
+  privateContent: {
+    title: 'Exclusive Content'
+  },
+  djProgram: {
+    title: 'Recommended Radio'
+  },
+  homeHero: {
+    dailyRecommend: 'Daily Recommend',
+    songs: 'Songs',
+    playNow: 'Play Now',
+    intelligenceMode: 'Intelligence Mode',
+    intelligenceModeOn: 'On Air',
+    intelligenceModeDesc: 'Start smart recommendation',
+    intelligenceModeActiveDesc: 'Smart recommendations based on your taste',
+    startIntelligence: 'Start',
+    stopIntelligence: 'Stop',
+    playing: 'Playing',
+    toplistDesc: 'Trending now',
+    mvDesc: 'Music videos',
+    playlistDesc: 'Curated playlists',
+    quickNav: {
+      myFavorite: 'My Favorites',
+      playHistory: 'History',
+      myProfile: 'My Profile',
+      toplist: 'Top Charts'
+    }
   },
   searchBar: {
     login: 'Login',
@@ -174,6 +222,7 @@ export default {
       albumNamePlaceholder: 'Album Name',
       addSongButton: 'Add Song',
       addLinkButton: 'Add Link',
+      options: 'Options',
       importToStarPlaylist: 'Import to My Favorite Music',
       playlistNamePlaceholder: 'Enter playlist name',
       importButton: 'Start Import',
@@ -218,5 +267,6 @@ export default {
   list: 'Playlist',
   mv: 'MV',
   home: 'Home',
-  search: 'Search'
+  search: 'Search',
+  album: 'Album'
 };

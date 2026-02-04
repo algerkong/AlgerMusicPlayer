@@ -23,8 +23,10 @@ export default {
     album: '앨범',
     playlist: '플레이리스트',
     mv: 'MV',
+    djradio: '라디오',
     bilibili: 'B站'
   },
+
   history: '검색 기록',
   hot: '인기 검색',
   suggestions: '검색 제안'

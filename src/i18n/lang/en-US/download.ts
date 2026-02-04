@@ -53,6 +53,7 @@ export default {
   playStarted: 'Play started: {name}',
   playFailed: 'Play failed: {name}',
   path: {
+    copy: 'Copy Path',
     copied: 'Path copied to clipboard',
     copyFailed: 'Failed to copy path'
   },

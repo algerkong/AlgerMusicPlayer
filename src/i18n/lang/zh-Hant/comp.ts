@@ -1,4 +1,8 @@
 export default {
+  more: '更多',
+  homeListItem: {
+    loading: '載入中...'
+  },
   installApp: {
     description: '安裝應用程式，獲得更好的體驗',
     noPrompt: '不再提示',
@@ -98,7 +102,51 @@ export default {
     songlist: '每日推薦清單'
   },
   recommendSonglist: {
-    title: '本週最熱音樂'
+    title: '本週最熱音樂',
+    empty: '暫無推薦歌單'
+  },
+  dailyRecommend: {
+    title: '每日推薦',
+    badge: '推薦',
+    empty: '暫無推薦歌曲',
+    intelligenceHint: '開啟心動模式，發現更多喜歡的音樂'
+  },
+  recommendMV: {
+    title: '推薦MV'
+  },
+  newAlbum: {
+    title: '新碟上架',
+    empty: '暫無新專輯'
+  },
+  recommendNewMusic: {
+    title: '新歌速遞'
+  },
+  privateContent: {
+    title: '獨家放送'
+  },
+  djProgram: {
+    title: '推薦電台'
+  },
+  homeHero: {
+    dailyRecommend: '每日推薦',
+    songs: '首',
+    playNow: '立即播放',
+    intelligenceMode: '心動模式',
+    intelligenceModeOn: '心動中',
+    intelligenceModeDesc: '開啟智慧推薦播放',
+    intelligenceModeActiveDesc: '根據你的喜好智慧推薦',
+    startIntelligence: '開啟心動',
+    stopIntelligence: '關閉心動',
+    playing: '播放中',
+    toplistDesc: '熱門榜單',
+    mvDesc: '音樂視訊',
+    playlistDesc: '精選播放清單',
+    quickNav: {
+      myFavorite: '我的收藏',
+      playHistory: '播放歷史',
+      myProfile: '我的主頁',
+      toplist: '排行榜'
+    }
   },
   searchBar: {
     login: '登入',
@@ -168,6 +216,7 @@ export default {
       albumNamePlaceholder: '專輯名稱',
       addSongButton: '新增歌曲',
       addLinkButton: '新增連結',
+      options: '選項',
       importToStarPlaylist: '匯入到我喜歡的音樂',
       playlistNamePlaceholder: '請輸入播放清單名稱',
       importButton: '開始匯入',
@@ -211,5 +260,6 @@ export default {
   list: '播放清單',
   mv: 'MV',
   home: '首頁',
-  search: '搜尋'
+  search: '搜尋',
+  album: '專輯'
 };

@@ -23,6 +23,7 @@ export default {
     album: 'Album',
     playlist: 'Playlist',
     mv: 'MV',
+    djradio: 'Podcast',
     bilibili: 'Bilibili'
   },
   history: 'Search History',

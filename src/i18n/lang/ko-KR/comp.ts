@@ -1,4 +1,8 @@
 export default {
+  more: '더 보기',
+  homeListItem: {
+    loading: '로딩 중...'
+  },
   installApp: {
     description: '앱을 설치하여 더 나은 경험을 얻으세요',
     noPrompt: '다시 묻지 않기',
@@ -103,7 +107,51 @@ export default {
     songlist: '일일 추천 목록'
   },
   recommendSonglist: {
-    title: '이번 주 인기 음악'
+    title: '이번 주 인기 음악',
+    empty: '추천 플레이리스트가 없습니다'
+  },
+  dailyRecommend: {
+    title: '일일 추천',
+    badge: '추천',
+    empty: '추천 곡이 없습니다',
+    intelligenceHint: '하트 모드를 켜서 더 좋아하는 음악을 발견하세요'
+  },
+  recommendMV: {
+    title: '추천 MV'
+  },
+  newAlbum: {
+    title: '신곡 앨범',
+    empty: '새 앨범이 없습니다'
+  },
+  recommendNewMusic: {
+    title: '신곡 속보'
+  },
+  privateContent: {
+    title: '독점 콘텐츠'
+  },
+  djProgram: {
+    title: '추천 라디오'
+  },
+  homeHero: {
+    dailyRecommend: '일일 추천',
+    songs: '곡',
+    playNow: '지금 재생',
+    intelligenceMode: '하트 모드',
+    intelligenceModeOn: '재생 중',
+    intelligenceModeDesc: '스마트 추천 시작',
+    intelligenceModeActiveDesc: '취향에 맞는 스마트 추천',
+    startIntelligence: '시작',
+    stopIntelligence: '중지',
+    playing: '재생 중',
+    toplistDesc: '인기 차트',
+    mvDesc: '뮤직비디오',
+    playlistDesc: '엄선된 플레이리스트',
+    quickNav: {
+      myFavorite: '내 즐겨찾기',
+      playHistory: '재생 기록',
+      myProfile: '내 프로필',
+      toplist: '순위'
+    }
   },
   searchBar: {
     login: '로그인',
@@ -173,6 +221,7 @@ export default {
       albumNamePlaceholder: '앨범명',
       addSongButton: '곡 추가',
       addLinkButton: '링크 추가',
+      options: '옵션',
       importToStarPlaylist: '내가 좋아하는 음악으로 가져오기',
       playlistNamePlaceholder: '플레이리스트 이름을 입력하세요',
       importButton: '가져오기 시작',
@@ -217,5 +266,6 @@ export default {
   list: '플레이리스트',
   mv: 'MV',
   home: '홈',
-  search: '검색'
+  search: '검색',
+  album: '앨범'
 };
