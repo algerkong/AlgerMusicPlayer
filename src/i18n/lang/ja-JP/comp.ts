@@ -268,5 +268,6 @@ export default {
   mv: 'MV',
   home: 'ホーム',
   search: '検索',
-  album: 'アルバム'
+  album: 'アルバム',
+  localMusic: 'ローカル音楽'
 };

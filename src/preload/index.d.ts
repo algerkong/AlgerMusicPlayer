@@ -28,6 +28,12 @@ interface API {
   getSearchSuggestions: (keyword: string) => Promise<any>;
   lxMusicHttpRequest: (request: { url: string; options: any; requestId: string }) => Promise<any>;
   lxMusicHttpCancel: (requestId: string) => Promise<void>;
+  /** 扫描指定文件夹中的本地音乐文件 */
+  scanLocalMusic: (folderPath: string) => Promise<{ files: string[]; count: number }>;
+  /** 批量解析本地音乐文件元数据 */
+  parseLocalMusicMetadata: (
+    filePaths: string[]
+  ) => Promise<import('../renderer/types/localMusic').LocalMusicMeta[]>;
 }
 
 // 自定义IPC渲染进程通信接口

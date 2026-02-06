@@ -8,6 +8,7 @@ import { loadLyricWindow } from './lyric';
 import { initializeConfig } from './modules/config';
 import { initializeFileManager } from './modules/fileManager';
 import { initializeFonts } from './modules/fonts';
+import { initializeLocalMusicScanner } from './modules/localMusicScanner';
 import { initializeLoginWindow } from './modules/loginWindow';
 import { initLxMusicHttp } from './modules/lxMusicHttp';
 import { initializeOtherApi } from './modules/otherApi';
@@ -48,6 +49,8 @@ function initialize(configStore: any) {
   initializeFonts();
   // 初始化登录窗口
   initializeLoginWindow();
+  // 初始化本地音乐扫描模块
+  initializeLocalMusicScanner();
 
   // 创建主窗口
   mainWindow = createMainWindow(icon);

@@ -644,52 +644,61 @@ async function downloadMusic(
       if (songInfo?.picUrl || songInfo?.al?.picUrl) {
         const picUrl = songInfo.picUrl || songInfo.al?.picUrl;
         if (picUrl && picUrl !== '/images/default_cover.png') {
-          const coverResponse = await axios({
-            url: picUrl.replace('http://', 'https://'),
-            method: 'GET',
-            responseType: 'arraybuffer',
-            timeout: 10000
-          });
-
-          const originalCoverBuffer = Buffer.from(coverResponse.data);
-          const TWO_MB = 2 * 1024 * 1024;
-          // 检查图片大小是否超过2MB
-          if (originalCoverBuffer.length > TWO_MB) {
-            const originalSizeMB = (originalCoverBuffer.length / (1024 * 1024)).toFixed(2);
-            console.log(`封面图大于2MB (${originalSizeMB} MB)，开始压缩...`);
-            try {
-              // 使用 Electron nativeImage 进行压缩
-              const image = nativeImage.createFromBuffer(originalCoverBuffer);
-              const size = image.getSize();
-
-              // 计算新尺寸，保持宽高比，最大1600px
-              const maxSize = 1600;
-              let newWidth = size.width;
-              let newHeight = size.height;
-
-              if (size.width > maxSize || size.height > maxSize) {
-                const ratio = Math.min(maxSize / size.width, maxSize / size.height);
-                newWidth = Math.round(size.width * ratio);
-                newHeight = Math.round(size.height * ratio);
-              }
-
-              // 调整大小并转换为 JPEG 格式（质量 80）
-              const resizedImage = image.resize({
-                width: newWidth,
-                height: newHeight,
-                quality: 'good'
-              });
-              coverImageBuffer = resizedImage.toJPEG(80);
-
-              const compressedSizeMB = (coverImageBuffer.length / (1024 * 1024)).toFixed(2);
-              console.log(`封面图压缩完成，新大小: ${compressedSizeMB} MB`);
-            } catch (compressionError) {
-              console.error('封面图压缩失败，将使用原图:', compressionError);
-              coverImageBuffer = originalCoverBuffer; // 如果压缩失败，则回退使用原始图片
+          // 处理 base64 Data URL（本地音乐扫描提取的封面）
+          if (picUrl.startsWith('data:')) {
+            const base64Match = picUrl.match(/^data:[^;]+;base64,(.+)$/);
+            if (base64Match) {
+              coverImageBuffer = Buffer.from(base64Match[1], 'base64');
+              console.log('从 base64 Data URL 提取封面');
             }
           } else {
-            // 如果图片不大于2MB，直接使用原图
-            coverImageBuffer = originalCoverBuffer;
+            const coverResponse = await axios({
+              url: picUrl.replace('http://', 'https://'),
+              method: 'GET',
+              responseType: 'arraybuffer',
+              timeout: 10000
+            });
+
+            const originalCoverBuffer = Buffer.from(coverResponse.data);
+            const TWO_MB = 2 * 1024 * 1024;
+            // 检查图片大小是否超过2MB
+            if (originalCoverBuffer.length > TWO_MB) {
+              const originalSizeMB = (originalCoverBuffer.length / (1024 * 1024)).toFixed(2);
+              console.log(`封面图大于2MB (${originalSizeMB} MB)，开始压缩...`);
+              try {
+                // 使用 Electron nativeImage 进行压缩
+                const image = nativeImage.createFromBuffer(originalCoverBuffer);
+                const size = image.getSize();
+
+                // 计算新尺寸，保持宽高比，最大1600px
+                const maxSize = 1600;
+                let newWidth = size.width;
+                let newHeight = size.height;
+
+                if (size.width > maxSize || size.height > maxSize) {
+                  const ratio = Math.min(maxSize / size.width, maxSize / size.height);
+                  newWidth = Math.round(size.width * ratio);
+                  newHeight = Math.round(size.height * ratio);
+                }
+
+                // 调整大小并转换为 JPEG 格式（质量 80）
+                const resizedImage = image.resize({
+                  width: newWidth,
+                  height: newHeight,
+                  quality: 'good'
+                });
+                coverImageBuffer = resizedImage.toJPEG(80);
+
+                const compressedSizeMB = (coverImageBuffer.length / (1024 * 1024)).toFixed(2);
+                console.log(`封面图压缩完成，新大小: ${compressedSizeMB} MB`);
+              } catch (compressionError) {
+                console.error('封面图压缩失败，将使用原图:', compressionError);
+                coverImageBuffer = originalCoverBuffer; // 如果压缩失败，则回退使用原始图片
+              }
+            } else {
+              // 如果图片不大于2MB，直接使用原图
+              coverImageBuffer = originalCoverBuffer;
+            }
           }
 
           console.log('封面已准备好，将写入元数据');

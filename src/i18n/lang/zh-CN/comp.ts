@@ -261,5 +261,6 @@ export default {
   mv: 'MV',
   home: '首页',
   search: '搜索',
-  album: '专辑'
+  album: '专辑',
+  localMusic: '本地音乐'
 };

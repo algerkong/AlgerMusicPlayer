@@ -51,7 +51,9 @@ const api = {
       'get-system-fonts',
       'get-cached-lyric',
       'cache-lyric',
-      'clear-lyric-cache'
+      'clear-lyric-cache',
+      'scan-local-music',
+      'parse-local-music-metadata'
     ];
     if (validChannels.includes(channel)) {
       return ipcRenderer.invoke(channel, ...args);
@@ -65,7 +67,12 @@ const api = {
   lxMusicHttpRequest: (request: { url: string; options: any; requestId: string }) =>
     ipcRenderer.invoke('lx-music-http-request', request),
 
-  lxMusicHttpCancel: (requestId: string) => ipcRenderer.invoke('lx-music-http-cancel', requestId)
+  lxMusicHttpCancel: (requestId: string) => ipcRenderer.invoke('lx-music-http-cancel', requestId),
+
+  // 本地音乐扫描相关
+  scanLocalMusic: (folderPath: string) => ipcRenderer.invoke('scan-local-music', folderPath),
+  parseLocalMusicMetadata: (filePaths: string[]) =>
+    ipcRenderer.invoke('parse-local-music-metadata', filePaths)
 };
 
 // 创建带类型的ipcRenderer对象，暴露给渲染进程

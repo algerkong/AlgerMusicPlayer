@@ -267,5 +267,6 @@ export default {
   mv: 'MV',
   home: '홈',
   search: '검색',
-  album: '앨범'
+  album: '앨범',
+  localMusic: '로컬 음악'
 };

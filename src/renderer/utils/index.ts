@@ -76,6 +76,9 @@ export const formatNumber = (num: string | number) => {
 export const getImgUrl = (url: string | undefined, size: string = '') => {
   if (!url) return '';
 
+  // base64 Data URL 和本地文件路径不需要添加尺寸参数
+  if (url.startsWith('data:') || url.startsWith('local://')) return url;
+
   if (url.includes('thumbnail')) {
     // 只替换最后一个 thumbnail 参数的尺寸
     return url.replace(/thumbnail=\d+y\d+(?!.*thumbnail)/, `thumbnail=${size}`);

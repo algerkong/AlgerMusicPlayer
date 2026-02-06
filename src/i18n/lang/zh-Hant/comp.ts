@@ -261,5 +261,6 @@ export default {
   mv: 'MV',
   home: '首頁',
   search: '搜尋',
-  album: '專輯'
+  album: '專輯',
+  localMusic: '本地音樂'
 };
