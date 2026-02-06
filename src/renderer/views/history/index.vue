@@ -266,12 +266,8 @@ import AlbumItem from '@/components/common/AlbumItem.vue';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import PlaylistItem from '@/components/common/PlaylistItem.vue';
 import SongItem from '@/components/common/SongItem.vue';
-import { useAlbumHistory } from '@/hooks/AlbumHistoryHook';
-import { useMusicHistory } from '@/hooks/MusicHistoryHook';
-import { usePlaylistHistory } from '@/hooks/PlaylistHistoryHook';
-import { usePodcastHistory } from '@/hooks/PodcastHistoryHook';
-import { usePodcastRadioHistory } from '@/hooks/PodcastRadioHistoryHook';
 import { usePlayerStore } from '@/store/modules/player';
+import { usePlayHistoryStore } from '@/store/modules/playHistory';
 import { useUserStore } from '@/store/modules/user';
 import type { SongResult } from '@/types/music';
 import { isMobile, setAnimationClass, setAnimationDelay } from '@/utils';
@@ -291,11 +287,7 @@ interface HistoryRecord extends Partial<SongResult> {
 const { t } = useI18n();
 const message = useMessage();
 const router = useRouter();
-const { delMusic, musicList } = useMusicHistory();
-const { delPlaylist, playlistList } = usePlaylistHistory();
-const { delAlbum, albumList } = useAlbumHistory();
-const { delPodcast, podcastList } = usePodcastHistory();
-const { delPodcastRadio, podcastRadioList } = usePodcastRadioHistory();
+const playHistoryStore = usePlayHistoryStore();
 const userStore = useUserStore();
 const scrollbarRef = ref();
 const loading = ref(false);
@@ -407,29 +399,29 @@ const getCurrentList = (): any[] => {
   if (currentCategory.value === 'songs') {
     switch (currentTab.value) {
       case 'local':
-        return musicList.value;
+        return playHistoryStore.musicHistory;
       case 'cloud':
         return cloudRecords.value.filter((item) => item.id);
     }
   } else if (currentCategory.value === 'playlists') {
     switch (currentTab.value) {
       case 'local':
-        return playlistList.value;
+        return playHistoryStore.playlistHistory;
       case 'cloud':
         return cloudPlaylists.value;
     }
   } else if (currentCategory.value === 'albums') {
     switch (currentTab.value) {
       case 'local':
-        return albumList.value;
+        return playHistoryStore.albumHistory;
       case 'cloud':
         return cloudAlbums.value;
     }
   } else if (currentCategory.value === 'podcasts') {
     if (currentPodcastSubTab.value === 'episodes') {
-      return podcastList.value;
+      return playHistoryStore.podcastHistory;
     } else {
-      return podcastRadioList.value;
+      return playHistoryStore.podcastRadioHistory;
     }
   }
   return [];
@@ -499,13 +491,13 @@ const handleAlbumClick = async (item: any) => {
 
 // 删除歌单记录
 const handleDelPlaylist = (item: any) => {
-  delPlaylist(item);
+  playHistoryStore.delPlaylist(item);
   displayList.value = displayList.value.filter((playlist) => playlist.id !== item.id);
 };
 
 // 删除专辑记录
 const handleDelAlbum = (item: any) => {
-  delAlbum(item);
+  playHistoryStore.delAlbum(item);
   displayList.value = displayList.value.filter((album) => album.id !== item.id);
 };
 
@@ -538,12 +530,12 @@ const handlePodcastRadioClick = (item: any) => {
 };
 
 const handleDelPodcast = (item: any) => {
-  delPodcast(item);
+  playHistoryStore.delPodcast(item);
   displayList.value = displayList.value.filter((p) => p.id !== item.id);
 };
 
 const handleDelPodcastRadio = (item: any) => {
-  delPodcastRadio(item);
+  playHistoryStore.delPodcastRadio(item);
   displayList.value = displayList.value.filter((r) => r.id !== item.id);
 };
 
@@ -563,28 +555,47 @@ const loadHistoryData = async () => {
 
     // 根据分类处理不同的数据
     if (currentCategory.value === 'songs') {
-      // 处理歌曲数据
-      const neteaseItems = currentPageItems.filter((item) => item.source !== 'bilibili');
+      // 区分本地歌曲和网易云歌曲
+      const localItems: any[] = [];
+      const neteaseItems: any[] = [];
 
+      currentPageItems.forEach((item) => {
+        if (item.playMusicUrl?.startsWith('local://') || typeof item.id === 'string') {
+          localItems.push(item);
+        } else if (item.source !== 'bilibili') {
+          neteaseItems.push(item);
+        }
+      });
+
+      // 获取网易云歌曲详情
       let neteaseSongs: SongResult[] = [];
       if (neteaseItems.length > 0) {
-        const currentIds = neteaseItems.map((item) => item.id as number);
-        const res = await getMusicDetail(currentIds);
-        if (res.data.songs) {
-          neteaseSongs = res.data.songs.map((song: SongResult) => {
-            const historyItem = neteaseItems.find((item) => item.id === song.id);
-            return {
-              ...song,
-              picUrl: song.al?.picUrl || '',
-              count: historyItem?.count || 0,
-              source: 'netease'
-            };
-          });
+        try {
+          const currentIds = neteaseItems.map((item) => item.id as number);
+          const res = await getMusicDetail(currentIds);
+          if (res.data.songs) {
+            neteaseSongs = res.data.songs.map((song: SongResult) => {
+              const historyItem = neteaseItems.find((item) => item.id === song.id);
+              return {
+                ...song,
+                picUrl: song.al?.picUrl || '',
+                count: historyItem?.count || 0,
+                source: 'netease'
+              };
+            });
+          }
+        } catch (error) {
+          console.error('获取网易云歌曲详情失败:', error);
         }
       }
 
+      // 按原始顺序合并结果
       const newSongs = currentPageItems
         .map((item) => {
+          if (item.playMusicUrl?.startsWith('local://') || typeof item.id === 'string') {
+            // 本地歌曲直接使用历史记录中的数据
+            return item as SongResult;
+          }
           return neteaseSongs.find((song) => song.id === item.id);
         })
         .filter((song): song is SongResult => !!song);
@@ -660,7 +671,13 @@ onMounted(async () => {
 
 // 监听历史列表变化，变化时重置并重新加载
 watch(
-  [musicList, playlistList, albumList, podcastList, podcastRadioList],
+  () => [
+    playHistoryStore.musicHistory,
+    playHistoryStore.playlistHistory,
+    playHistoryStore.albumHistory,
+    playHistoryStore.podcastHistory,
+    playHistoryStore.podcastRadioHistory
+  ],
   async () => {
     if (hasLoaded.value) {
       currentPage.value = 1;
@@ -673,8 +690,7 @@ watch(
 
 // 重写删除方法，需要同时更新 displayList
 const handleDelMusic = async (item: SongResult) => {
-  delMusic(item);
-  musicList.value = musicList.value.filter((music) => music.id !== item.id);
+  playHistoryStore.delMusic(item);
   displayList.value = displayList.value.filter((music) => music.id !== item.id);
 };
 

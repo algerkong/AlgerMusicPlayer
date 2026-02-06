@@ -298,8 +298,8 @@ import {
 } from '@/api/podcast';
 import CategorySelector from '@/components/common/CategorySelector.vue';
 import RadioCard from '@/components/podcast/RadioCard.vue';
-import { usePodcastHistory } from '@/hooks/PodcastHistoryHook';
 import { usePlayerStore, usePlaylistStore, useUserStore } from '@/store';
+import { usePlayHistoryStore } from '@/store/modules/playHistory';
 import type { DjCategory, DjProgram, DjRadio } from '@/types/podcast';
 import { calculateAnimationDelay, formatNumber, getImgUrl, secondToMinute } from '@/utils';
 import { mapDjProgramToSongResult } from '@/utils/podcastUtils';
@@ -316,7 +316,7 @@ const route = useRoute();
 const playlistStore = usePlaylistStore();
 const playerStore = usePlayerStore();
 const userStore = useUserStore();
-const { podcastList, clearPodcastHistory } = usePodcastHistory();
+const playHistoryStore = usePlayHistoryStore();
 
 const contentScrollbarRef = ref();
 const recommendedSection = ref<HTMLElement | null>(null);
@@ -350,7 +350,7 @@ const displayRecentPrograms = computed(() => {
   if (userStore.user) {
     return recentPrograms.value.slice(0, 5);
   }
-  return podcastList.value.slice(0, 5);
+  return playHistoryStore.podcastHistory.slice(0, 5);
 });
 
 const subscribedIdSet = computed(() => new Set(subscribedRadios.value.map((radio) => radio.id)));
@@ -439,7 +439,7 @@ const scrollToRecommended = async () => {
 };
 
 const clearLocalHistory = () => {
-  clearPodcastHistory();
+  playHistoryStore.clearPodcastHistory();
 };
 
 const handleSubscribe = async (radio: DjRadio) => {

@@ -5,8 +5,6 @@ import { computed, ref } from 'vue';
 
 import i18n from '@/../i18n/renderer';
 import { getParsingMusicUrl } from '@/api/music';
-import { useMusicHistory } from '@/hooks/MusicHistoryHook';
-import { usePodcastHistory } from '@/hooks/PodcastHistoryHook';
 import { useLyrics, useSongDetail } from '@/hooks/usePlayerHooks';
 import { audioService } from '@/services/audioService';
 import { playbackRequestManager } from '@/services/playbackRequestManager';
@@ -17,8 +15,8 @@ import type { Platform, SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
 import { getImageLinearBackground } from '@/utils/linearColor';
 
-const musicHistory = useMusicHistory();
-const podcastHistory = usePodcastHistory();
+import { usePlayHistoryStore } from './playHistory';
+
 const { message } = createDiscreteApi(['message']);
 
 /**
@@ -243,6 +241,7 @@ export const usePlayerCoreStore = defineStore(
       }
 
       const originalMusic = { ...music };
+
       const { loadLrc } = useLyrics();
       const { getSongDetail } = useSongDetail();
 
@@ -290,12 +289,13 @@ export const usePlayerCoreStore = defineStore(
 
       try {
         // 添加到历史记录
+        const playHistoryStore = usePlayHistoryStore();
         if (music.isPodcast) {
           if (music.program) {
-            podcastHistory.addPodcast(music.program);
+            playHistoryStore.addPodcast(music.program);
           }
         } else {
-          musicHistory.addMusic(music);
+          playHistoryStore.addMusic(music);
         }
 
         // 获取歌曲详情

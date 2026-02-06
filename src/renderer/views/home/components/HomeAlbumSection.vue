@@ -181,13 +181,14 @@ const playAlbum = async (album: any) => {
       const playerCore = usePlayerCoreStore();
       const playlistStore = usePlaylistStore();
 
+      const albumCover = data.album?.picUrl || album.picUrl;
       const playlist = data.songs.map((s: any) => ({
         id: s.id,
         name: s.name,
-        picUrl: s.al?.picUrl || album.picUrl,
         source: 'netease',
         song: s,
         ...s,
+        picUrl: s.al?.picUrl || albumCover,
         playLoading: false
       }));
 

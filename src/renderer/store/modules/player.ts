@@ -13,6 +13,7 @@ import { computed } from 'vue';
 import { useFavoriteStore } from './favorite';
 import { useIntelligenceModeStore } from './intelligenceMode';
 import { usePlayerCoreStore } from './playerCore';
+import { usePlayHistoryStore } from './playHistory';
 import { usePlaylistStore } from './playlist';
 import { type SleepTimerInfo, SleepTimerType, useSleepTimerStore } from './sleepTimer';
 
@@ -61,6 +62,10 @@ export const usePlayerStore = defineStore('player', () => {
    * 初始化播放状态（从 localStorage 恢复）
    */
   const initializePlayState = async () => {
+    // 从旧的 localStorage 迁移播放记录到 Pinia store
+    const playHistoryStore = usePlayHistoryStore();
+    playHistoryStore.migrateFromLocalStorage();
+
     await playerCore.initializePlayState();
     await playlist.initializePlaylist();
   };

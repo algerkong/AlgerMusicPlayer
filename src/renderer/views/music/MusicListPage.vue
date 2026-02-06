@@ -178,6 +178,14 @@
                   {{ t('favorite.download', { count: selectedSongs.length }) }}
                 </button>
                 <button
+                  class="px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-all"
+                  :disabled="selectedSongs.length === 0"
+                  @click="handleAddToPlaylist"
+                >
+                  <i class="ri-play-list-add-line mr-1" />
+                  {{ t('comp.musicList.addToPlaylist') }}
+                </button>
+                <button
                   class="text-xs text-neutral-400 hover:text-neutral-600"
                   @click="cancelSelect"
                 >
@@ -271,10 +279,9 @@ import {
 } from '@/api/music';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import SongItem from '@/components/common/SongItem.vue';
-import { useAlbumHistory } from '@/hooks/AlbumHistoryHook';
-import { usePlaylistHistory } from '@/hooks/PlaylistHistoryHook';
 import { useDownload } from '@/hooks/useDownload';
 import { useMusicStore, usePlayerStore, useRecommendStore, useUserStore } from '@/store';
+import { usePlayHistoryStore } from '@/store/modules/playHistory';
 import { SongResult } from '@/types/music';
 import { calculateAnimationDelay, getImgUrl, isElectron, isMobile } from '@/utils';
 import { getLoginErrorMessage, hasPermission } from '@/utils/auth';
@@ -290,8 +297,7 @@ const musicStore = useMusicStore();
 const recommendStore = useRecommendStore();
 const userStore = useUserStore();
 const message = useMessage();
-const { addPlaylist } = usePlaylistHistory();
-const { addAlbum } = useAlbumHistory();
+const playHistoryStore = usePlayHistoryStore();
 
 const loading = ref(false);
 
@@ -441,9 +447,11 @@ const resetListState = () => {
 
 const formatSong = (item: any) => {
   if (!item) return null;
+  // 专辑歌曲的 al.picUrl 可能为空，使用专辑封面兜底
+  const picUrl = item.al?.picUrl || item.picUrl || (isAlbum.value ? getCoverImgUrl.value : '');
   return {
     ...item,
-    picUrl: item.al?.picUrl || item.picUrl,
+    picUrl,
     song: {
       artists: item.ar || item.artists,
       name: item.name,
@@ -595,7 +603,7 @@ const loadMoreSongs = async () => {
 const saveHistory = () => {
   if (!listInfo.value?.id) return;
   if (isAlbum.value) {
-    addAlbum({
+    playHistoryStore.addAlbum({
       id: listInfo.value.id,
       name: listInfo.value.name || '',
       picUrl: getCoverImgUrl.value,
@@ -603,7 +611,7 @@ const saveHistory = () => {
       artist: listInfo.value.artist
     });
   } else if (route.query.type === 'playlist') {
-    addPlaylist({
+    playHistoryStore.addPlaylist({
       id: listInfo.value.id,
       name: listInfo.value.name || '',
       coverImgUrl: getCoverImgUrl.value,
@@ -677,6 +685,26 @@ const handleBatchDownload = async () => {
     .map((id) => filteredSongs.value.find((s) => s.id === id))
     .filter((s) => s) as SongResult[];
   await batchDownloadMusic(list);
+  cancelSelect();
+};
+
+const handleAddToPlaylist = () => {
+  const songs = selectedSongs.value
+    .map((id) => filteredSongs.value.find((s) => s.id === id))
+    .filter((s) => s)
+    .map((s) => formatSong(s))
+    .filter((s) => s) as SongResult[];
+  if (songs.length === 0) return;
+
+  const currentList = playerStore.playList;
+  const newSongs = songs.filter((s) => !currentList.some((item) => item.id === s.id));
+  if (newSongs.length === 0) {
+    message.warning(t('comp.musicList.songsAlreadyInPlaylist'));
+    return;
+  }
+
+  playerStore.setPlayList([...currentList, ...newSongs], true);
+  message.success(t('comp.musicList.addToPlaylistSuccess', { count: newSongs.length }));
   cancelSelect();
 };
 

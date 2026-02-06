@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { usePodcastHistory } from '@/hooks/PodcastHistoryHook';
 import { usePlayerStore } from '@/store';
+import { usePlayHistoryStore } from '@/store/modules/playHistory';
 import type { SongResult } from '@/types/music';
 import type { DjProgram } from '@/types/podcast';
 import { formatNumber, getImgUrl, secondToMinute } from '@/utils';
@@ -11,7 +11,7 @@ defineProps<{
 }>();
 
 const playerStore = usePlayerStore();
-const { addPodcast } = usePodcastHistory();
+const playHistoryStore = usePlayHistoryStore();
 
 const formatDate = (timestamp: number): string => {
   const date = new Date(timestamp);
@@ -98,7 +98,7 @@ const playProgram = async (program: DjProgram) => {
     };
 
     await playerStore.setPlay(songData);
-    addPodcast(program);
+    playHistoryStore.addPodcast(program);
   } catch (error) {
     console.error('播放节目失败:', error);
   }

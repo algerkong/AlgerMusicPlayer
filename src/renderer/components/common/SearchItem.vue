@@ -66,8 +66,8 @@ import { useRouter } from 'vue-router';
 
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import MvPlayer from '@/components/MvPlayer.vue';
-import { usePodcastRadioHistory } from '@/hooks/PodcastRadioHistoryHook';
 import { usePlayerStore } from '@/store/modules/player';
+import { usePlayHistoryStore } from '@/store/modules/playHistory';
 import { IMvItem } from '@/types/mv';
 import { getImgUrl } from '@/utils';
 
@@ -86,7 +86,7 @@ const showPop = ref(false);
 
 const playerStore = usePlayerStore();
 const router = useRouter();
-const { addPodcastRadio } = usePodcastRadioHistory();
+const playHistoryStore = usePlayHistoryStore();
 
 const getCurrentMv = () => {
   return {
@@ -117,7 +117,7 @@ const handleClick = async () => {
   } else if (props.item.type === 'mv') {
     handleShowMv();
   } else if (props.item.type === 'djRadio') {
-    addPodcastRadio({
+    playHistoryStore.addPodcastRadio({
       id: props.item.id,
       name: props.item.name,
       picUrl: props.item.picUrl,

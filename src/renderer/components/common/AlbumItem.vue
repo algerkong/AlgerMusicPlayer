@@ -26,7 +26,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n';
 
-import type { AlbumHistoryItem } from '@/hooks/AlbumHistoryHook';
+import type { AlbumHistoryItem } from '@/store/modules/playHistory';
 import { getImgUrl } from '@/utils';
 
 interface Props {

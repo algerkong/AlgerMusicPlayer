@@ -1,5 +1,9 @@
 <template>
-  <div class="list-item group cursor-pointer" :style="{ animationDelay }" @click="$emit('click')">
+  <div
+    class="home-list-card group cursor-pointer"
+    :style="{ animationDelay }"
+    @click="$emit('click')"
+  >
     <!-- Cover -->
     <div
       class="relative aspect-square overflow-hidden rounded-2xl bg-neutral-100 shadow-sm transition-all duration-300 ease-out group-hover:shadow-xl dark:bg-neutral-800"
@@ -191,7 +195,7 @@ const extractColor = async () => {
 </script>
 
 <style scoped>
-.list-item {
+.home-list-card {
   animation: itemFadeIn 0.5s ease-out backwards;
 }
 

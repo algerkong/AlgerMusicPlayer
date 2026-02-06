@@ -148,13 +148,13 @@
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import { useMusicHistory } from '@/hooks/MusicHistoryHook';
 import { usePlayerStore } from '@/store/modules/player';
+import { usePlayHistoryStore } from '@/store/modules/playHistory';
 import type { SongResult } from '@/types/music';
 import { setAnimationClass } from '@/utils';
 
 const { t } = useI18n();
-const { musicList } = useMusicHistory();
+const playHistoryStore = usePlayHistoryStore();
 const playerStore = usePlayerStore();
 const loading = ref(true);
 
@@ -220,7 +220,7 @@ const processHistoryData = () => {
     const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
 
     // 遍历音乐历史记录
-    musicList.value.forEach((music: SongResult & { count?: number }) => {
+    playHistoryStore.musicHistory.forEach((music: SongResult & { count?: number }) => {
       // 假设每次播放都记录在当前时间，我们根据 count 分散到最近的日期
       const playCount = music.count || 1;
       const now = Date.now();
@@ -300,14 +300,14 @@ const mostPlayedSong = computed<{
   artist: string;
   playCount: number;
 } | null>(() => {
-  if (musicList.value.length === 0) return null;
+  if (playHistoryStore.musicHistory.length === 0) return null;
 
   const songPlayCounts = new Map<
     string | number,
     { id: string | number; name: string; artist: string; playCount: number }
   >();
 
-  musicList.value.forEach((music: SongResult & { count?: number }) => {
+  playHistoryStore.musicHistory.forEach((music: SongResult & { count?: number }) => {
     const id = music.id;
     const count = music.count || 1;
     const name = music.name || 'Unknown';
@@ -365,14 +365,17 @@ const latestNightSong = computed<{
   artist: string;
   time: string;
 } | null>(() => {
-  if (musicList.value.length === 0) return null;
+  if (playHistoryStore.musicHistory.length === 0) return null;
 
   // 模拟一些播放时间数据（实际应该从历史记录中获取）
   // 这里简化处理，随机选择一首歌作为凌晨播放
-  const nightSongs = musicList.value.filter(() => Math.random() > 0.8);
+  const nightSongs = playHistoryStore.musicHistory.filter(() => Math.random() > 0.8);
 
-  if (nightSongs.length === 0 && musicList.value.length > 0) {
-    const randomSong = musicList.value[Math.floor(Math.random() * musicList.value.length)];
+  if (nightSongs.length === 0 && playHistoryStore.musicHistory.length > 0) {
+    const randomSong =
+      playHistoryStore.musicHistory[
+        Math.floor(Math.random() * playHistoryStore.musicHistory.length)
+      ];
     const randomHour = Math.floor(Math.random() * 6); // 0-5点
     const randomMinute = Math.floor(Math.random() * 60);
 
@@ -402,7 +405,7 @@ const latestNightSong = computed<{
 
 // 播放歌曲
 const handlePlaySong = async (songId: string | number) => {
-  const song = musicList.value.find((music) => music.id === songId);
+  const song = playHistoryStore.musicHistory.find((music) => music.id === songId);
   if (song) {
     await playerStore.setPlay(song);
     playerStore.setPlayMusic(true);
