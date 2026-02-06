@@ -513,64 +513,25 @@ class AudioService {
     seekTime: number = 0,
     existingSound?: Howl
   ): Promise<Howl> {
-    // 每次调用play方法时，尝试强制重置锁（注意：仅在页面刷新后的第一次播放时应用）
-    if (!this.currentSound) {
-      console.log('首次播放请求，强制重置操作锁');
-      this.forceResetOperationLock();
-    }
-
-    // 如果有操作锁，且不是同一个 track 的操作，则等待
-    if (this.operationLock) {
-      console.log('audioService: 操作锁激活中，等待...');
-      return Promise.reject(new Error('操作锁激活中'));
-    }
-
-    if (!this.setOperationLock()) {
-      console.log('audioService: 获取操作锁失败');
-      return Promise.reject(new Error('操作锁激活中'));
-    }
-
-    // 如果操作锁已激活，但持续时间超过安全阈值，强制重置
-    if (this.operationLock) {
-      const currentTime = Date.now();
-      const lockDuration = currentTime - this.operationLockStartTime;
-
-      if (lockDuration > 2000) {
-        console.warn(`操作锁已激活 ${lockDuration}ms，超过安全阈值，强制重置`);
-        this.forceResetOperationLock();
-      }
-    }
-
-    // 获取锁
-    if (!this.setOperationLock()) {
-      console.log('audioService: 操作锁激活，强制执行当前播放请求');
-
-      // 如果只是要继续播放当前音频，直接执行
-      if (this.currentSound && !url && !track) {
-        if (this.seekLock && this.seekDebounceTimer) {
-          clearTimeout(this.seekDebounceTimer);
-          this.seekLock = false;
-        }
-        this.currentSound.play();
-        return Promise.resolve(this.currentSound);
-      }
-
-      // 强制释放锁并继续执行
-      this.forceResetOperationLock();
-
-      // 这里不再返回错误，而是继续执行播放逻辑
-    }
-
-    // 如果没有提供新的 URL 和 track，且当前有音频实例，则继续播放
+    // 如果没有提供新的 URL 和 track，且当前有音频实例，则继续播放当前音频
     if (this.currentSound && !url && !track) {
-      // 如果有进行中的seek操作，等待其完成
       if (this.seekLock && this.seekDebounceTimer) {
         clearTimeout(this.seekDebounceTimer);
         this.seekLock = false;
       }
       this.currentSound.play();
-      this.releaseOperationLock();
       return Promise.resolve(this.currentSound);
+    }
+
+    // 新播放请求：强制重置旧锁，确保不会被遗留锁阻塞
+    this.forceResetOperationLock();
+
+    // 获取操作锁
+    if (!this.setOperationLock()) {
+      // 理论上不会到这里（刚刚 forceReset 过），但作为防御性编程
+      console.warn('audioService: 获取操作锁失败，强制继续');
+      this.forceResetOperationLock();
+      this.setOperationLock();
     }
 
     // 如果没有提供必要的参数，返回错误
@@ -642,11 +603,6 @@ class AudioService {
           if (!isHotSwap) {
             console.log('audioService: 清理 EQ');
             await this.disposeEQ(true);
-          }
-
-          // 如果不是热切换，立即更新 currentTrack
-          if (!isHotSwap) {
-            this.currentTrack = track;
           }
 
           // 如果不是热切换，立即更新 currentTrack
@@ -1061,6 +1017,8 @@ class AudioService {
    * 验证音频图是否正确连接
    * 用于检测音频播放前的图状态
    */
+  // 检查音频图是否连接（调试用，保留供 EQ 诊断）
+  // @ts-ignore 保留供调试使用
   private isAudioGraphConnected(): boolean {
     if (!this.context || !this.gainNode || !this.source) {
       return false;
@@ -1150,18 +1108,14 @@ class AudioService {
     if (!this.currentSound) return false;
 
     try {
-      // 综合判断:
-      // 1. Howler API是否报告正在播放
-      // 2. 是否不在加载状态
-      // 3. 确保音频上下文状态正常
-      // 4. 确保音频图正确连接（在 Electron 环境中）
+      // 核心判断：Howler API 是否报告正在播放 + 音频上下文是否正常
+      // 注意：不再检查 isAudioGraphConnected()，因为 EQ 重建期间
+      // source/gainNode 会暂时为 null，导致误判为未播放
       const isPlaying = this.currentSound.playing();
       const isLoading = this.isLoading();
       const contextRunning = Howler.ctx && Howler.ctx.state === 'running';
-      const graphConnected = isElectron ? this.isAudioGraphConnected() : true;
 
-      // 只有在所有条件都满足时才认为是真正在播放
-      return isPlaying && !isLoading && contextRunning && graphConnected;
+      return isPlaying && !isLoading && contextRunning;
     } catch (error) {
       console.error('检查播放状态出错:', error);
       return false;

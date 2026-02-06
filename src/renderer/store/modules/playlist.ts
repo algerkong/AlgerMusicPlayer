@@ -563,9 +563,12 @@ export const usePlaylistStore = defineStore(
 
         // 检查URL是否已过期
         if (song.expiredAt && song.expiredAt < Date.now()) {
-          console.info(`歌曲URL已过期，重新获取: ${song.name}`);
-          song.playMusicUrl = undefined;
-          song.expiredAt = undefined;
+          // 本地音乐（local:// 协议）不会过期
+          if (!song.playMusicUrl?.startsWith('local://')) {
+            console.info(`歌曲URL已过期，重新获取: ${song.name}`);
+            song.playMusicUrl = undefined;
+            song.expiredAt = undefined;
+          }
         }
 
         // 如果是当前正在播放的音乐，则切换播放/暂停状态

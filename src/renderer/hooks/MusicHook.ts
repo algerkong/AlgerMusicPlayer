@@ -397,6 +397,8 @@ const setupMusicWatchers = () => {
 
 const setupAudioListeners = () => {
   let interval: any = null;
+  // 播放状态恢复定时器：当 interval 因异常被清除时，自动恢复
+  let recoveryTimer: any = null;
 
   const clearInterval = () => {
     if (interval) {
@@ -405,8 +407,90 @@ const setupAudioListeners = () => {
     }
   };
 
+  const stopRecovery = () => {
+    if (recoveryTimer) {
+      window.clearInterval(recoveryTimer);
+      recoveryTimer = null;
+    }
+  };
+
+  /**
+   * 启动进度更新 interval
+   * 从 audioService 实时获取 sound 引用，避免闭包中 sound.value 过期
+   */
+  const startProgressInterval = () => {
+    clearInterval();
+    interval = window.setInterval(() => {
+      try {
+        // 每次从 audioService 获取最新的 sound 引用，而不是依赖闭包中的 sound.value
+        const currentSound = audioService.getCurrentSound();
+        if (!currentSound) {
+          // sound 暂时为空（可能在切歌/重建中），不清除 interval，等待恢复
+          return;
+        }
+
+        if (typeof currentSound.seek !== 'function') {
+          // seek 方法不可用，跳过本次更新，不清除 interval
+          return;
+        }
+
+        const currentTime = currentSound.seek() as number;
+        if (typeof currentTime !== 'number' || Number.isNaN(currentTime)) {
+          // 无效时间，跳过本次更新
+          return;
+        }
+
+        // 同步 sound.value 引用（确保外部也能拿到最新的）
+        if (sound.value !== currentSound) {
+          sound.value = currentSound;
+        }
+
+        nowTime.value = currentTime;
+        allTime.value = currentSound.duration() as number;
+        const newIndex = getLrcIndex(nowTime.value);
+        if (newIndex !== nowIndex.value) {
+          nowIndex.value = newIndex;
+          if (isElectron && isLyricWindowOpen.value) {
+            sendLyricToWin();
+          }
+        }
+        if (isElectron && isLyricWindowOpen.value) {
+          sendLyricToWin();
+        }
+      } catch (error) {
+        console.error('进度更新 interval 出错:', error);
+        // 出错时不清除 interval，让下一次 tick 继续尝试
+      }
+    }, 50);
+  };
+
+  /**
+   * 启动播放状态恢复监控
+   * 每 500ms 检查一次：如果 store 认为在播放但 interval 已丢失，则恢复
+   */
+  const startRecoveryMonitor = () => {
+    stopRecovery();
+    recoveryTimer = window.setInterval(() => {
+      try {
+        const store = getPlayerStore();
+        if (store.play && !interval) {
+          const currentSound = audioService.getCurrentSound();
+          if (currentSound && currentSound.playing()) {
+            console.warn('[MusicHook] 检测到播放中但 interval 丢失，自动恢复');
+            startProgressInterval();
+          }
+        }
+      } catch {
+        // 静默忽略
+      }
+    }, 500);
+  };
+
   // 清理所有事件监听器
   audioService.clearAllListeners();
+
+  // 启动恢复监控
+  startRecoveryMonitor();
 
   // 监听seek开始事件，立即更新UI
   audioService.on('seek_start', (time) => {
@@ -417,7 +501,7 @@ const setupAudioListeners = () => {
   // 监听seek完成事件
   audioService.on('seek', () => {
     try {
-      const currentSound = sound.value;
+      const currentSound = audioService.getCurrentSound();
       if (currentSound) {
         // 立即更新显示时间，不进行任何检查
         const currentTime = currentSound.seek() as number;
@@ -465,49 +549,8 @@ const setupAudioListeners = () => {
     if (isElectron) {
       window.api.sendSong(cloneDeep(getPlayerStore().playMusic));
     }
-    clearInterval();
-    interval = window.setInterval(() => {
-      try {
-        const currentSound = sound.value;
-        if (!currentSound) {
-          console.error('Invalid sound object: sound is null or undefined');
-          clearInterval();
-          return;
-        }
-
-        // 确保 seek 方法存在且可调用
-        if (typeof currentSound.seek !== 'function') {
-          console.error('Invalid sound object: seek function not available');
-          clearInterval();
-          return;
-        }
-
-        const currentTime = currentSound.seek() as number;
-        if (typeof currentTime !== 'number' || Number.isNaN(currentTime)) {
-          console.error('Invalid current time:', currentTime);
-          clearInterval();
-          return;
-        }
-
-        nowTime.value = currentTime;
-        allTime.value = currentSound.duration() as number;
-        const newIndex = getLrcIndex(nowTime.value);
-        if (newIndex !== nowIndex.value) {
-          nowIndex.value = newIndex;
-          // 注意：我们不在这里设置 currentLrcProgress 为 0
-          // 因为这会与全局进度更新冲突
-          if (isElectron && isLyricWindowOpen.value) {
-            sendLyricToWin();
-          }
-        }
-        if (isElectron && isLyricWindowOpen.value) {
-          sendLyricToWin();
-        }
-      } catch (error) {
-        console.error('Error in interval:', error);
-        clearInterval();
-      }
-    }, 50);
+    // 启动进度更新
+    startProgressInterval();
   });
 
   // 监听暂停
@@ -520,14 +563,16 @@ const setupAudioListeners = () => {
     }
   });
 
-  const replayMusic = async () => {
+  const replayMusic = async (retryCount: number = 0) => {
+    const MAX_REPLAY_RETRIES = 3;
     try {
       // 如果当前有音频实例，先停止并销毁
-      if (sound.value) {
-        sound.value.stop();
-        sound.value.unload();
-        sound.value = null;
+      const currentSound = audioService.getCurrentSound();
+      if (currentSound) {
+        currentSound.stop();
+        currentSound.unload();
       }
+      sound.value = null;
 
       // 重新播放当前歌曲
       if (getPlayerStore().playMusicUrl && playMusic.value) {
@@ -535,12 +580,18 @@ const setupAudioListeners = () => {
         sound.value = newSound as Howl;
         setupAudioListeners();
       } else {
-        console.error('No music URL or playMusic data available');
+        console.error('单曲循环：无可用 URL 或歌曲数据');
         getPlayerStore().nextPlay();
       }
     } catch (error) {
-      console.error('Error replaying song:', error);
-      getPlayerStore().nextPlay();
+      console.error('单曲循环重播失败:', error);
+      if (retryCount < MAX_REPLAY_RETRIES) {
+        console.log(`单曲循环重试 ${retryCount + 1}/${MAX_REPLAY_RETRIES}`);
+        setTimeout(() => replayMusic(retryCount + 1), 1000 * (retryCount + 1));
+      } else {
+        console.error('单曲循环重试次数用尽，切换下一首');
+        getPlayerStore().nextPlay();
+      }
     }
   };
 
@@ -551,9 +602,7 @@ const setupAudioListeners = () => {
 
     if (getPlayerStore().playMode === 1) {
       // 单曲循环模式
-      if (sound.value) {
-        replayMusic();
-      }
+      replayMusic();
     } else {
       // 顺序播放、列表循环、随机播放模式都使用统一的nextPlay方法
       getPlayerStore().nextPlay();
@@ -568,7 +617,10 @@ const setupAudioListeners = () => {
     getPlayerStore().nextPlay();
   });
 
-  return clearInterval;
+  return () => {
+    clearInterval();
+    stopRecovery();
+  };
 };
 
 export const play = () => {

@@ -315,8 +315,11 @@ export const useSongDetail = () => {
     }
 
     if (playMusic.expiredAt && playMusic.expiredAt < Date.now()) {
-      console.info(`歌曲已过期，重新获取: ${playMusic.name}`);
-      playMusic.playMusicUrl = undefined;
+      // 本地音乐（local:// 协议）不会过期，跳过清除
+      if (!playMusic.playMusicUrl?.startsWith('local://')) {
+        console.info(`歌曲已过期，重新获取: ${playMusic.name}`);
+        playMusic.playMusicUrl = undefined;
+      }
     }
 
     try {

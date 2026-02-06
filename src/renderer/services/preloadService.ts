@@ -64,12 +64,29 @@ class PreloadService {
     const duration = sound.duration();
     const expectedDuration = (song.dt || 0) / 1000;
 
-    // 时长差异只记录警告，不自动触发重新解析
-    // 用户可以通过 ReparsePopover 手动选择正确的音源
-    if (expectedDuration > 0 && Math.abs(duration - expectedDuration) > 5) {
-      console.warn(
-        `[PreloadService] 时长差异警告：实际 ${duration.toFixed(1)}s, 预期 ${expectedDuration.toFixed(1)}s (${song.name})`
-      );
+    if (expectedDuration > 0 && duration > 0) {
+      const durationDiff = Math.abs(duration - expectedDuration);
+      // 如果实际时长远小于预期（可能是试听版），记录警告
+      if (duration < expectedDuration * 0.5 && durationDiff > 10) {
+        console.warn(
+          `[PreloadService] 时长严重不足：实际 ${duration.toFixed(1)}s, 预期 ${expectedDuration.toFixed(1)}s (${song.name})，可能是试听版`
+        );
+        // 通过自定义事件通知上层，可用于后续自动切换音源
+        window.dispatchEvent(
+          new CustomEvent('audio-duration-mismatch', {
+            detail: {
+              songId: song.id,
+              songName: song.name,
+              actualDuration: duration,
+              expectedDuration
+            }
+          })
+        );
+      } else if (durationDiff > 5) {
+        console.warn(
+          `[PreloadService] 时长差异警告：实际 ${duration.toFixed(1)}s, 预期 ${expectedDuration.toFixed(1)}s (${song.name})`
+        );
+      }
     }
 
     return sound;

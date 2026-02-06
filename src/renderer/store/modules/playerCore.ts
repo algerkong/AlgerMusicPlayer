@@ -110,8 +110,9 @@ export const usePlayerCoreStore = defineStore(
 
     /**
      * 播放状态检测
+     * 在播放开始后延迟检查音频是否真正在播放，防止无声播放
      */
-    const checkPlaybackState = (song: SongResult, requestId?: string, timeout: number = 4000) => {
+    const checkPlaybackState = (song: SongResult, requestId?: string, timeout: number = 6000) => {
       if (checkPlayTime) {
         clearTimeout(checkPlayTime);
       }
@@ -125,6 +126,10 @@ export const usePlayerCoreStore = defineStore(
         console.log(`[${actualRequestId}] 播放事件触发，歌曲成功开始播放`);
         audioService.off('play', onPlayHandler);
         audioService.off('playerror', onPlayErrorHandler);
+        if (checkPlayTime) {
+          clearTimeout(checkPlayTime);
+          checkPlayTime = null;
+        }
       };
 
       const onPlayErrorHandler = async () => {
@@ -140,7 +145,10 @@ export const usePlayerCoreStore = defineStore(
 
         if (userPlayIntent.value && play.value) {
           console.log('播放失败，尝试刷新URL并重新播放');
-          playMusic.value.playMusicUrl = undefined;
+          // 本地音乐不需要刷新 URL
+          if (!playMusic.value.playMusicUrl?.startsWith('local://')) {
+            playMusic.value.playMusicUrl = undefined;
+          }
           const refreshedSong = { ...song, isFirstPlay: true };
           await handlePlayMusic(refreshedSong, true);
         }
@@ -158,16 +166,46 @@ export const usePlayerCoreStore = defineStore(
           return;
         }
 
+        // 双重确认：Howler 报告未播放 + 用户仍想播放
+        // 额外检查底层 HTMLAudioElement 的状态，避免 EQ 重建期间的误判
+        const currentSound = audioService.getCurrentSound();
+        let htmlPlaying = false;
+        if (currentSound) {
+          try {
+            const sounds = (currentSound as any)._sounds as any[];
+            if (sounds?.[0]?._node instanceof HTMLMediaElement) {
+              const node = sounds[0]._node as HTMLMediaElement;
+              htmlPlaying = !node.paused && !node.ended && node.readyState > 2;
+            }
+          } catch {
+            // 静默忽略
+          }
+        }
+
+        if (htmlPlaying) {
+          // 底层 HTMLAudioElement 实际在播放，不需要重试
+          console.log('底层音频元素正在播放，跳过超时重试');
+          audioService.off('play', onPlayHandler);
+          audioService.off('playerror', onPlayErrorHandler);
+          return;
+        }
+
         if (!audioService.isActuallyPlaying() && userPlayIntent.value && play.value) {
           console.log(`${timeout}ms后歌曲未真正播放且用户仍希望播放，尝试重新获取URL`);
           audioService.off('play', onPlayHandler);
           audioService.off('playerror', onPlayErrorHandler);
 
-          playMusic.value.playMusicUrl = undefined;
+          // 本地音乐不需要刷新 URL
+          if (!playMusic.value.playMusicUrl?.startsWith('local://')) {
+            playMusic.value.playMusicUrl = undefined;
+          }
           (async () => {
             const refreshedSong = { ...song, isFirstPlay: true };
             await handlePlayMusic(refreshedSong, true);
           })();
+        } else {
+          audioService.off('play', onPlayHandler);
+          audioService.off('playerror', onPlayErrorHandler);
         }
       }, timeout);
     };
@@ -418,11 +456,10 @@ export const usePlayerCoreStore = defineStore(
         return newSound;
       } catch (error) {
         console.error('播放音频失败:', error);
-        setPlayMusic(false);
 
         const errorMsg = error instanceof Error ? error.message : String(error);
 
-        // 操作锁错误处理
+        // 操作锁错误不应该停止播放状态，只需要重试
         if (errorMsg.includes('操作锁激活')) {
           console.log('由于操作锁正在使用，将在1000ms后重试');
 
@@ -442,14 +479,17 @@ export const usePlayerCoreStore = defineStore(
             if (userPlayIntent.value && play.value) {
               playAudio(requestId).catch((e) => {
                 console.error('重试播放失败:', e);
+                setPlayMusic(false);
               });
             }
           }, 1000);
         } else {
+          // 非操作锁错误，停止播放并通知用户
+          setPlayMusic(false);
           console.warn('播放音频失败（非操作锁错误），由调用方处理重试');
+          message.error(i18n.global.t('player.playFailed'));
         }
 
-        message.error(i18n.global.t('player.playFailed'));
         return null;
       }
     };
@@ -556,8 +596,15 @@ export const usePlayerCoreStore = defineStore(
           console.log('恢复上次播放的音乐:', playMusic.value.name);
           const isPlaying = settingStore.setData.autoPlay;
 
+          // 本地音乐（local:// 协议）不需要重新获取 URL，保留原始路径
+          const isLocalMusic = playMusic.value.playMusicUrl?.startsWith('local://');
+
           await handlePlayMusic(
-            { ...playMusic.value, isFirstPlay: true, playMusicUrl: undefined },
+            {
+              ...playMusic.value,
+              isFirstPlay: true,
+              playMusicUrl: isLocalMusic ? playMusic.value.playMusicUrl : undefined
+            },
             isPlaying
           );
         } catch (error) {
