@@ -37,14 +37,18 @@
                     />
                     <!-- Play overlay on cover -->
                     <div
-                      class="absolute inset-0 flex items-center justify-center bg-transparent group-hover:bg-black/30 transition-all duration-300 cursor-pointer"
-                      @click="handlePlayAll"
+                      class="absolute inset-0 flex items-center justify-center bg-transparent group-hover:bg-black/30 transition-all duration-300"
+                      :class="isMobile ? 'pointer-events-none' : 'cursor-pointer'"
+                      @click="!isMobile && handlePlayAll()"
                     >
-                      <div
-                        class="play-icon w-16 h-16 rounded-full bg-white/90 flex items-center justify-center opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 shadow-xl hover:scale-110 active:scale-95"
+                      <button
+                        v-if="!isMobile"
+                        type="button"
+                        class="play-icon w-16 h-16 rounded-full bg-white/90 flex items-center justify-center opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 shadow-xl hover:scale-110 active:scale-95 pointer-events-auto"
+                        @click.stop="handlePlayAll"
                       >
                         <i class="ri-play-fill text-3xl text-neutral-900 ml-1" />
-                      </div>
+                      </button>
                     </div>
                   </div>
                 </div>

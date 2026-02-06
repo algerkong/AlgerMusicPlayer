@@ -133,16 +133,15 @@ const otherRouter = [
     component: () => import('@/views/podcast/radio.vue')
   },
   {
-    path: '/podcast/category/:id',
-    name: 'podcastCategory',
+    path: '/favorite',
+    name: 'favorite',
     meta: {
-      title: 'podcast.category',
-      keepAlive: false,
-      showInMenu: false,
-      back: true,
-      isMobile: true
+      title: 'comp.homeHero.quickNav.myFavorite',
+      icon: 'ri-heart-fill',
+      keepAlive: true,
+      back: true
     },
-    component: () => import('@/views/podcast/category.vue')
+    component: () => import('@/views/favorite/index.vue')
   },
   {
     path: '/search-result',

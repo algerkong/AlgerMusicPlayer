@@ -92,7 +92,12 @@ const loading = ref(true);
 const albumTracksMap = reactive<Record<number, any[]>>({});
 
 // Calculate display count to fill exactly N rows
-const displayCount = computed(() => props.columns * props.rows);
+const displayCount = computed(() => {
+  if (isMobile.value) {
+    return 6;
+  }
+  return props.columns * props.rows;
+});
 
 const displayAlbums = computed(() => {
   const count = displayCount.value;

@@ -1,35 +1,37 @@
 <script setup lang="ts">
-import { useMessage } from 'naive-ui';
 import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
-import { usePodcastStore, useUserStore } from '@/store';
 import type { DjProgram, DjRadio } from '@/types/podcast';
 import { formatNumber, getImgUrl } from '@/utils';
 
-const props = defineProps<{
-  radio: DjRadio;
-  program?: DjProgram;
-  showSubscribeButton?: boolean;
-  animationDelay?: string;
+const props = withDefaults(
+  defineProps<{
+    radio: DjRadio;
+    program?: DjProgram;
+    showSubscribeButton?: boolean;
+    isSubscribed?: boolean;
+    animationDelay?: string;
+  }>(),
+  {
+    showSubscribeButton: false,
+    isSubscribed: false
+  }
+);
+
+const emit = defineEmits<{
+  subscribe: [radio: DjRadio];
 }>();
 
-const podcastStore = usePodcastStore();
-const userStore = useUserStore();
 const router = useRouter();
-const message = useMessage();
 const { t } = useI18n();
 
-const isSubscribed = computed(() => podcastStore.isRadioSubscribed(props.radio.id));
+const isSubscribed = computed(() => props.isSubscribed);
 
-const handleSubscribe = async (e: Event) => {
+const handleSubscribe = (e: Event) => {
   e.stopPropagation();
-  if (!userStore.user) {
-    message.warning(t('history.needLogin'));
-    return;
-  }
-  await podcastStore.toggleSubscribe(props.radio);
+  emit('subscribe', props.radio);
 };
 
 const goToDetail = () => {

@@ -1,27 +1,13 @@
 <template>
   <div class="list-page h-full w-full bg-white dark:bg-black transition-colors duration-500">
     <!-- 专辑地区分类 - 保持固定在顶部 -->
-    <div
-      class="play-list-type border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-black z-10"
-    >
-      <n-scrollbar ref="scrollbarRef" x-scrollable>
-        <div class="categories-wrapper py-4 pr-4 sm:pr-6 lg:pr-8" @wheel.prevent="handleWheel">
-          <span
-            v-for="(item, index) in areas"
-            :key="item.value"
-            class="play-list-type-item"
-            :class="[
-              setAnimationClass('animate__bounceIn'),
-              { active: currentArea === item.value }
-            ]"
-            :style="getAnimationDelay(index)"
-            @click="handleClickArea(item)"
-          >
-            {{ item.name }}
-          </span>
-        </div>
-      </n-scrollbar>
-    </div>
+    <category-selector
+      :model-value="currentArea"
+      :categories="areas"
+      label-key="name"
+      value-key="value"
+      @change="handleAreaChange"
+    />
 
     <!-- 专辑列表 -->
     <n-scrollbar
@@ -31,7 +17,7 @@
       :size="100"
       @scroll="handleScroll"
     >
-      <div class="list-content w-full pb-32 pt-6 pr-4 sm:pr-6 lg:pr-8">
+      <div class="list-content w-full pb-32 pt-6 px-4 sm:px-6 lg:px-8 lg:pl-0">
         <!-- 列表标题 -->
         <div class="mb-8">
           <h1 class="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-white mb-2">
@@ -127,16 +113,17 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
 import { getNewAlbums } from '@/api/album';
 import { getAlbum } from '@/api/list';
+import CategorySelector from '@/components/common/CategorySelector.vue';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import { usePlayerCoreStore } from '@/store/modules/playerCore';
 import { usePlaylistStore } from '@/store/modules/playlist';
-import { calculateAnimationDelay, getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
+import { calculateAnimationDelay, getImgUrl } from '@/utils';
 
 defineOptions({
   name: 'Album'
@@ -167,9 +154,12 @@ const currentAreaName = computed(
   () => areas.find((a) => a.value === currentArea.value)?.name || '全部'
 );
 
-const getAnimationDelay = computed(() => {
-  return (index: number) => setAnimationDelay(index, 30);
-});
+const contentScrollbarRef = ref();
+
+const handleAreaChange = (value: string) => {
+  router.replace({ query: { area: value } });
+  loadList(value);
+};
 
 const loadList = async (area: string, isLoadMore = false) => {
   if (!hasMore.value && isLoadMore) return;
@@ -179,6 +169,7 @@ const loadList = async (area: string, isLoadMore = false) => {
     loading.value = true;
     page.value = 0;
     albumList.value = [];
+    await nextTick();
     contentScrollbarRef.value?.scrollTo({ top: 0 });
   }
 
@@ -215,24 +206,6 @@ const handleScroll = (e: any) => {
   const { scrollTop, scrollHeight, clientHeight } = e.target;
   if (scrollTop + clientHeight >= scrollHeight - 100 && !isLoadingMore.value && hasMore.value) {
     loadList(currentArea.value, true);
-  }
-};
-
-const handleClickArea = (item: { name: string; value: string }) => {
-  if (currentArea.value === item.value) return;
-  currentArea.value = item.value;
-  router.replace({ query: { area: item.value } });
-  loadList(item.value);
-};
-
-const scrollbarRef = ref();
-const contentScrollbarRef = ref();
-
-const handleWheel = (e: WheelEvent) => {
-  const scrollbar = scrollbarRef.value;
-  if (scrollbar) {
-    const delta = e.deltaY || e.detail;
-    scrollbar.scrollBy({ left: delta });
   }
 };
 
@@ -302,24 +275,6 @@ watch(
 </script>
 
 <style lang="scss" scoped>
-.play-list-type {
-  .categories-wrapper {
-    @apply flex items-center;
-    white-space: nowrap;
-  }
-
-  &-item {
-    @apply py-1.5 px-4 mr-3 inline-block rounded-full cursor-pointer transition-all duration-300;
-    @apply text-sm font-medium;
-    @apply bg-gray-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400;
-    @apply hover:bg-gray-200 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white;
-
-    &.active {
-      @apply bg-primary text-white shadow-lg shadow-primary/25 scale-105;
-    }
-  }
-}
-
 .animate-item {
   animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }

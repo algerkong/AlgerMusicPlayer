@@ -222,13 +222,14 @@ import { useRouter } from 'vue-router';
 
 import { getHotSearch, getPersonalFM } from '@/api/home';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
-import { useIntelligenceModeStore, useRecommendStore } from '@/store';
+import { useIntelligenceModeStore, useRecommendStore, useUserStore } from '@/store';
 import { calculateAnimationDelay, getImgUrl } from '@/utils';
 
 const { t } = useI18n();
 const router = useRouter();
 const recommendStore = useRecommendStore();
 const intelligenceModeStore = useIntelligenceModeStore();
+const userStore = useUserStore();
 
 const loading = ref(false);
 const personalFmSong = ref<any>(null);
@@ -240,68 +241,100 @@ const personalFmCover = computed(() => personalFmSong.value?.album?.picUrl || ''
 const isIntelligenceMode = computed(() => intelligenceModeStore.isIntelligenceMode);
 
 // Quick Nav Configuration
-const quickNavItems = computed(() => [
-  {
-    key: 'intelligence',
-    label: t('comp.homeHero.intelligenceMode'),
-    icon: 'ri-heart-pulse-fill',
-    iconBg: 'bg-rose-100 dark:bg-rose-900/40',
-    iconColor: 'text-rose-500 dark:text-rose-400',
-    active: isIntelligenceMode.value,
-    badge: isIntelligenceMode.value ? t('comp.homeHero.playing') : null,
-    action: toggleIntelligenceMode
-  },
-  {
-    key: 'toplist',
-    label: t('comp.toplist'),
-    icon: 'ri-trophy-fill',
-    iconBg: 'bg-amber-100 dark:bg-amber-900/40',
-    iconColor: 'text-amber-500 dark:text-amber-400',
-    active: false,
-    badge: null,
-    action: () => router.push('/toplist')
-  },
-  {
-    key: 'mv',
-    label: t('comp.mv'),
-    icon: 'ri-movie-2-fill',
-    iconBg: 'bg-violet-100 dark:bg-violet-900/40',
-    iconColor: 'text-violet-500 dark:text-violet-400',
-    active: false,
-    badge: null,
-    action: () => router.push('/mv')
-  },
-  {
-    key: 'playlist',
-    label: t('comp.list'),
-    icon: 'ri-play-list-2-fill',
-    iconBg: 'bg-sky-100 dark:bg-sky-900/40',
-    iconColor: 'text-sky-500 dark:text-sky-400',
-    active: false,
-    badge: null,
-    action: () => router.push('/list')
-  },
-  {
-    key: 'album',
-    label: t('comp.newAlbum.title'),
-    icon: 'ri-album-fill',
-    iconBg: 'bg-orange-100 dark:bg-orange-900/40',
-    iconColor: 'text-orange-500 dark:text-orange-400',
-    active: false,
-    badge: null,
-    action: () => router.push('/album')
-  },
-  {
-    key: 'history',
-    label: t('comp.history'),
-    icon: 'ri-history-fill',
-    iconBg: 'bg-emerald-100 dark:bg-emerald-900/40',
-    iconColor: 'text-emerald-500 dark:text-emerald-400',
-    active: false,
-    badge: null,
-    action: () => router.push('/history')
-  }
-]);
+const quickNavItems = computed(() => {
+  const items = [
+    {
+      key: 'intelligence',
+      label: t('comp.homeHero.intelligenceMode'),
+      icon: 'ri-heart-pulse-fill',
+      iconBg: 'bg-rose-100 dark:bg-rose-900/40',
+      iconColor: 'text-rose-500 dark:text-rose-400',
+      active: isIntelligenceMode.value,
+      badge: isIntelligenceMode.value ? t('comp.homeHero.playing') : null,
+      action: toggleIntelligenceMode,
+      show: !!userStore.user
+    },
+    {
+      key: 'toplist',
+      label: t('comp.toplist'),
+      icon: 'ri-trophy-fill',
+      iconBg: 'bg-amber-100 dark:bg-amber-900/40',
+      iconColor: 'text-amber-500 dark:text-amber-400',
+      active: false,
+      badge: null,
+      action: () => router.push('/toplist'),
+      show: true
+    },
+    {
+      key: 'favorite',
+      label: t('comp.homeHero.quickNav.myFavorite'),
+      icon: 'ri-heart-fill',
+      iconBg: 'bg-red-100 dark:bg-red-900/40',
+      iconColor: 'text-red-500 dark:text-red-400',
+      active: false,
+      badge: null,
+      action: () => router.push('/favorite'),
+      show: true
+    },
+    {
+      key: 'podcast',
+      label: t('podcast.podcast'),
+      icon: 'ri-radio-2-fill',
+      iconBg: 'bg-cyan-100 dark:bg-cyan-900/40',
+      iconColor: 'text-cyan-500 dark:text-cyan-400',
+      active: false,
+      badge: null,
+      action: () => router.push('/podcast'),
+      show: true
+    },
+    {
+      key: 'mv',
+      label: t('comp.mv'),
+      icon: 'ri-movie-2-fill',
+      iconBg: 'bg-violet-100 dark:bg-violet-900/40',
+      iconColor: 'text-violet-500 dark:text-violet-400',
+      active: false,
+      badge: null,
+      action: () => router.push('/mv'),
+      show: true
+    },
+    {
+      key: 'playlist',
+      label: t('comp.list'),
+      icon: 'ri-play-list-2-fill',
+      iconBg: 'bg-sky-100 dark:bg-sky-900/40',
+      iconColor: 'text-sky-500 dark:text-sky-400',
+      active: false,
+      badge: null,
+      action: () => router.push('/list'),
+      show: true
+    },
+    {
+      key: 'album',
+      label: t('comp.newAlbum.title'),
+      icon: 'ri-album-fill',
+      iconBg: 'bg-orange-100 dark:bg-orange-900/40',
+      iconColor: 'text-orange-500 dark:text-orange-400',
+      active: false,
+      badge: null,
+      action: () => router.push('/album'),
+      show: true
+    },
+    {
+      key: 'history',
+      label: t('comp.history'),
+      icon: 'ri-history-fill',
+      iconBg: 'bg-emerald-100 dark:bg-emerald-900/40',
+      iconColor: 'text-emerald-500 dark:text-emerald-400',
+      active: false,
+      badge: null,
+      action: () => router.push('/history'),
+      show: true
+    }
+  ];
+
+  return items.filter((item) => item.show);
+});
 
 const fetchHeroData = async () => {
   try {

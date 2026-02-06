@@ -212,7 +212,11 @@ const { zoomFactor, initZoomFactor, increaseZoom, decreaseZoom, resetZoom, isZoo
 
 // 显示返回按钮
 const showBackButton = computed(() => {
-  return router.currentRoute.value.meta.back === true;
+  const meta = router.currentRoute.value.meta;
+  if (!settingsStore.isMobile && meta.isMobile === false) {
+    return false;
+  }
+  return meta.back === true;
 });
 
 // 返回上一页

@@ -61,9 +61,22 @@ const layoutRouter = [
       title: 'comp.mv',
       icon: 'icon-recordfill',
       keepAlive: true,
-      isMobile: false
+      isMobile: false,
+      back: true
     },
     component: () => import('@/views/mv/index.vue')
+  },
+  {
+    path: '/podcast',
+    name: 'podcast',
+    meta: {
+      title: 'podcast.podcast',
+      icon: 'ri-radio-fill',
+      keepAlive: true,
+      isMobile: false,
+      back: true
+    },
+    component: () => import('@/views/podcast/index.vue')
   },
   {
     path: '/history',
@@ -87,17 +100,6 @@ const layoutRouter = [
       isMobile: true
     },
     component: () => import('@/views/user/index.vue')
-  },
-  {
-    path: '/podcast',
-    name: 'podcast',
-    meta: {
-      title: 'podcast.podcast',
-      icon: 'ri-radio-fill',
-      keepAlive: true,
-      isMobile: true
-    },
-    component: () => import('@/views/podcast/index.vue')
   },
   {
     path: '/set',

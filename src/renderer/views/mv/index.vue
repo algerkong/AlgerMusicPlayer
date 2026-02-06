@@ -1,34 +1,29 @@
 <template>
   <div class="mv-list-page h-full w-full bg-white dark:bg-black transition-colors duration-500">
-    <n-scrollbar class="h-full" @scroll="handleScroll">
-      <div class="mv-content w-full pb-32 pt-6 px-4 sm:px-6 lg:px-8 lg:pl-0">
-        <!-- Hero Section -->
-        <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <h1
-              class="text-3xl md:text-4xl font-bold tracking-tight text-neutral-900 dark:text-white mb-2"
-            >
-              MV
-            </h1>
-            <p class="text-neutral-500 dark:text-neutral-400">探索精彩视频内容</p>
-          </div>
+    <!-- MV 分类 - 保持固定在顶部 -->
+    <category-selector
+      :model-value="selectedCategory"
+      :categories="categories"
+      @change="handleCategoryChange"
+    />
 
-          <!-- Category Selector (Pills) -->
-          <div class="flex flex-wrap gap-2">
-            <button
-              v-for="category in categories"
-              :key="category.value"
-              class="px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-300"
-              :class="[
-                selectedCategory === category.value
-                  ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-105'
-                  : 'bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800'
-              ]"
-              @click="selectedCategory = category.value"
-            >
-              {{ category.label }}
-            </button>
-          </div>
+    <!-- MV 列表内容 -->
+    <n-scrollbar
+      ref="contentScrollbarRef"
+      class="h-full"
+      style="height: calc(100% - 73px)"
+      :size="100"
+      @scroll="handleScroll"
+    >
+      <div class="mv-content w-full pb-32 pt-6 px-4 sm:px-6 lg:px-8 lg:pl-0">
+        <!-- 页面标题 -->
+        <div class="mb-8">
+          <h1
+            class="text-3xl md:text-4xl font-bold tracking-tight text-neutral-900 dark:text-white mb-2"
+          >
+            MV
+          </h1>
+          <p class="text-neutral-500 dark:text-neutral-400">探索精彩视频内容</p>
         </div>
 
         <!-- MV Grid Container -->
@@ -129,9 +124,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
 import { getAllMv, getTopMv } from '@/api/mv';
+import CategorySelector from '@/components/common/CategorySelector.vue';
 import MvPlayer from '@/components/MvPlayer.vue';
 import { audioService } from '@/services/audioService';
 import { usePlayerStore } from '@/store/modules/player';
@@ -162,16 +159,38 @@ const categories = [
 ];
 const selectedCategory = ref('全部');
 
+const router = useRouter();
+const route = useRoute();
+const contentScrollbarRef = ref();
+
 const playerStore = usePlayerStore();
 
-watch(selectedCategory, async () => {
+const handleCategoryChange = async (value: string) => {
+  selectedCategory.value = value;
   offset.value = 0;
   mvList.value = [];
   hasMore.value = true;
+  // 更新路由参数
+  router.replace({ query: { ...route.query, area: value } });
   await loadMvList();
-});
+};
+
+// 监听路由变化
+watch(
+  () => route.query,
+  async (newParams) => {
+    if (route.path !== '/mv') return;
+    const newArea = (newParams.area as string) || '全部';
+    // 如果路由参数变化，且与当前分类不同，则重新加载
+    if (newArea !== selectedCategory.value) {
+      selectedCategory.value = newArea;
+    }
+  }
+);
 
 onMounted(async () => {
+  // 从路由获取初始分类
+  selectedCategory.value = (route.query.area as string) || '全部';
   await loadMvList();
 });
 
@@ -259,10 +278,6 @@ const isPrevDisabled = computed(() => currentIndex.value === 0);
 </script>
 
 <style scoped lang="scss">
-.mv-list-page {
-  position: relative;
-}
-
 .animate-item {
   animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
