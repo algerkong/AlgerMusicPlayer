@@ -33,6 +33,7 @@ android/app/release
 .windsurf
 .agent
 .claude
+.kiro
 CLAUDE.md
 AGENTS.md
 .sisyphus

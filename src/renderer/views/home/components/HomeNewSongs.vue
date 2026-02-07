@@ -108,12 +108,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Typography System */
-.section-title {
-  @apply text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight;
-}
-
-/* Optimized grid */
+/* 网格 */
 .songs-grid {
   grid-auto-rows: auto;
 }

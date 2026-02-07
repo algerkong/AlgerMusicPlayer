@@ -2,7 +2,7 @@
   <div class="h-full w-full bg-white dark:bg-black transition-colors duration-500 flex flex-col">
     <!-- 顶部导航区 -->
     <div
-      class="flex-shrink-0 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-black z-10 pr-4 sm:pr-6 lg:pr-8 pt-6 pb-2"
+      class="flex-shrink-0 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-black z-10 page-padding pt-6 pb-2"
     >
       <h1 class="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-white mb-6">
         {{ t('common.settings') }}
@@ -25,7 +25,7 @@
 
     <!-- 内容区域 -->
     <n-scrollbar class="flex-1">
-      <div class="w-full mx-auto pb-32 pt-6 px-4 sm:px-6 lg:px-8">
+      <div class="w-full mx-auto pb-32 pt-6 page-padding">
         <!-- 基础设置 -->
         <div v-show="currentSection === 'basic'" class="animate-fade-in">
           <setting-section :title="t('settings.sections.basic')">

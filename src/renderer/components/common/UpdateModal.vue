@@ -5,65 +5,102 @@
     :show-icon="false"
     :mask-closable="!downloading"
     :closable="!downloading"
-    class="update-app-modal"
+    class="update-modal"
     style="width: 800px; max-width: 90vw"
   >
-    <div class="modal-content">
-      <div class="modal-header">
-        <div class="app-icon">
-          <img src="@/assets/logo.png" alt="App Icon" />
+    <div class="p-6 pb-4">
+      <!-- 头部：图标 + 版本信息 -->
+      <div class="flex items-center mb-6">
+        <div
+          class="w-20 h-20 mr-5 flex-shrink-0 overflow-hidden rounded-2xl shadow-lg ring-2 ring-neutral-100 dark:ring-neutral-800"
+        >
+          <img src="@/assets/logo.png" alt="App Icon" class="w-full h-full object-cover" />
         </div>
-        <div class="app-info">
-          <h2 class="app-name">{{ t('comp.update.title') }} {{ updateInfo.latestVersion }}</h2>
-          <p class="app-desc mb-2">
-            {{ t('comp.update.currentVersion') }} {{ updateInfo.currentVersion }}
-          </p>
+        <div class="flex-1 min-w-0">
+          <h2 class="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white mb-1.5">
+            {{ t('comp.update.title') }} {{ updateInfo.latestVersion }}
+          </h2>
+          <div class="flex items-center gap-2">
+            <span
+              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+            >
+              {{ t('comp.update.currentVersion') }} {{ updateInfo.currentVersion }}
+            </span>
+            <span
+              class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary dark:bg-primary/20"
+            >
+              NEW
+            </span>
+          </div>
         </div>
       </div>
-      <div class="update-info">
+
+      <!-- 更新日志 -->
+      <div class="mb-6 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 overflow-hidden">
         <n-scrollbar style="max-height: 300px">
-          <div class="update-body" v-html="parsedReleaseNotes"></div>
+          <div
+            class="update-body p-5 text-sm leading-relaxed text-neutral-600 dark:text-neutral-300"
+            v-html="parsedReleaseNotes"
+          />
         </n-scrollbar>
       </div>
-      <div v-if="downloading" class="download-status mt-6">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-sm text-gray-500">{{ downloadStatus }}</span>
-          <span class="text-sm font-medium">{{ downloadProgress }}%</span>
+
+      <!-- 下载进度 -->
+      <div v-if="downloading" class="mb-6 rounded-2xl bg-neutral-50 dark:bg-neutral-800/50 p-4">
+        <div class="flex items-center justify-between mb-2.5">
+          <span class="text-sm text-neutral-500 dark:text-neutral-400">{{ downloadStatus }}</span>
+          <span class="text-sm font-bold text-primary">{{ downloadProgress }}%</span>
         </div>
-        <div class="progress-bar-wrapper">
-          <div class="progress-bar" :style="{ width: `${downloadProgress}%` }"></div>
+        <div
+          class="relative h-2 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700"
+        >
+          <div
+            class="absolute inset-y-0 left-0 rounded-full bg-primary transition-all duration-300 ease-out shadow-[0_0_10px_rgba(34,197,94,0.4)]"
+            :style="{ width: `${downloadProgress}%` }"
+          />
         </div>
       </div>
-      <div class="modal-actions" :class="{ 'mt-6': !downloading }">
-        <n-button class="cancel-btn" :disabled="downloading" @click="closeModal">
+
+      <!-- 操作按钮 -->
+      <div class="flex gap-3" :class="{ 'mt-6': !downloading }">
+        <button
+          class="flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all duration-200 bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="downloading"
+          @click="closeModal"
+        >
           {{ t('comp.update.cancel') }}
-        </n-button>
-        <n-button
+        </button>
+        <button
           v-if="!downloading"
-          type="primary"
-          class="update-btn"
+          class="flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all duration-200 bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/25 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
           :disabled="downloading"
           @click="handleUpdate"
         >
           {{ downloadBtnText }}
-        </n-button>
-        <!-- 后台下载 -->
-        <n-button v-else class="update-btn" type="primary" @click="closeModal">
+        </button>
+        <button
+          v-else
+          class="flex-1 rounded-xl py-2.5 text-sm font-semibold transition-all duration-200 bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/25 hover:scale-[1.02] active:scale-95"
+          @click="closeModal"
+        >
           {{ t('comp.update.backgroundDownload') }}
-        </n-button>
+        </button>
       </div>
-      <div v-if="!downloading" class="modal-desc mt-4 text-center">
-        <p class="text-xs text-gray-400">
-          {{ t('comp.installApp.downloadProblem') }}
-          <a
-            class="text-green-500"
-            target="_blank"
-            href="https://github.com/algerkong/AlgerMusicPlayer/releases"
-            >GitHub</a
-          >
-          {{ t('comp.installApp.downloadProblemLinkText') }}
-        </p>
-      </div>
+
+      <!-- 底部提示 -->
+      <p
+        v-if="!downloading"
+        class="mt-4 text-center text-xs text-neutral-400 dark:text-neutral-500"
+      >
+        {{ t('comp.installApp.downloadProblem') }}
+        <a
+          class="text-primary hover:text-primary/80 transition-colors"
+          target="_blank"
+          href="https://github.com/algerkong/AlgerMusicPlayer/releases"
+          >GitHub</a
+        >
+        {{ t('comp.installApp.downloadProblemLinkText') }}
+      </p>
     </div>
   </n-modal>
 </template>
@@ -82,13 +119,14 @@ const { t } = useI18n();
 const dialog = useDialog();
 const message = useMessage();
 
-// 配置 marked
-marked.setOptions({
-  breaks: true, // 支持 GitHub 风格的换行
-  gfm: true // 启用 GitHub 风格的 Markdown
-});
+// 配置 marked（只需执行一次）
+marked.setOptions({ breaks: true, gfm: true });
+
+const GITHUB_RELEASE_BASE = 'https://github.com/algerkong/AlgerMusicPlayer/releases/download';
+const GITHUB_RELEASES_URL = 'https://github.com/algerkong/AlgerMusicPlayer/releases';
 
 const settingsStore = useSettingsStore();
+const ipc = window.electron.ipcRenderer;
 
 const showModal = computed({
   get: () => settingsStore.showUpdateModal,
@@ -102,22 +140,170 @@ const updateInfo = ref<UpdateResult>({
   releaseInfo: null
 });
 
-// 解析 Markdown
+const downloading = ref(false);
+const downloadProgress = ref(0);
+const downloadStatus = ref(t('comp.update.prepareDownload'));
+const isDialogShown = ref(false);
+
 const parsedReleaseNotes = computed(() => {
-  if (!updateInfo.value.releaseInfo?.body) return '';
+  const body = updateInfo.value.releaseInfo?.body;
+  if (!body) return '';
   try {
-    return marked.parse(updateInfo.value.releaseInfo.body);
+    return marked.parse(body);
   } catch (error) {
-    console.error('Error parsing markdown:', error);
-    return updateInfo.value.releaseInfo.body;
+    console.error('Markdown 解析失败:', error);
+    return body;
   }
 });
+
+const downloadBtnText = computed(() =>
+  downloading.value ? t('comp.update.downloading') : t('comp.update.nowUpdate')
+);
 
 const closeModal = () => {
   showModal.value = false;
 };
 
-const checkForUpdates = async () => {
+// ---- 下载 URL 解析 ----
+
+const buildReleaseUrl = (version: string, suffix: string): string =>
+  `${GITHUB_RELEASE_BASE}/v${version}/AlgerMusicPlayer-${version}${suffix}`;
+
+const resolveDownloadUrl = (
+  assets: any[],
+  platform: string,
+  arch: string,
+  version: string
+): string => {
+  // 从 release assets 中按平台/架构匹配
+  const findAsset = (keywords: string[]): string | undefined =>
+    assets.find((a) => keywords.every((k) => a.name.includes(k)))?.browser_download_url;
+
+  if (platform === 'darwin') {
+    const macArch = arch === 'arm64' ? 'arm64' : 'x64';
+    return findAsset(['mac', macArch]) || buildReleaseUrl(version, `-${macArch}.dmg`);
+  }
+
+  if (platform === 'win32') {
+    const winArch = arch === 'x64' ? 'x64' : 'ia32';
+    return (
+      findAsset(['win', winArch]) ||
+      buildReleaseUrl(version, `-win-${winArch}.exe`) ||
+      buildReleaseUrl(version, '-win.exe')
+    );
+  }
+
+  if (platform === 'linux') {
+    return (
+      findAsset(['x64', '.AppImage']) ||
+      findAsset(['x64', '.deb']) ||
+      buildReleaseUrl(version, '-linux-x64.AppImage')
+    );
+  }
+
+  return '';
+};
+
+// ---- IPC 事件处理 ----
+
+const onDownloadProgress = (_event: any, progress: number, status: string) => {
+  downloadProgress.value = progress;
+  downloadStatus.value = status;
+};
+
+const showInstallDialog = (filePath: string) => {
+  const copyFilePath = () => {
+    navigator.clipboard
+      .writeText(filePath)
+      .then(() => message.success(t('comp.update.copySuccess')))
+      .catch(() => message.error(t('comp.update.copyFailed')));
+  };
+
+  const dialogRef = dialog.create({
+    title: t('comp.update.installConfirmTitle'),
+    content: () =>
+      h('div', { class: 'flex flex-col gap-3' }, [
+        h(
+          'p',
+          { class: 'text-base font-medium text-neutral-800 dark:text-neutral-100' },
+          t('comp.update.installConfirmContent')
+        ),
+        h('div', { class: 'h-px bg-neutral-200 dark:bg-neutral-700' }),
+        h(
+          'p',
+          { class: 'text-sm text-neutral-500 dark:text-neutral-400' },
+          t('comp.update.manualInstallTip')
+        ),
+        h('div', { class: 'flex items-center gap-3 mt-1' }, [
+          h('div', { class: 'flex-1 min-w-0' }, [
+            h(
+              'p',
+              { class: 'text-xs text-neutral-400 dark:text-neutral-500 mb-1' },
+              t('comp.update.fileLocation')
+            ),
+            h(
+              'div',
+              {
+                class:
+                  'rounded-xl bg-neutral-100 dark:bg-neutral-800 px-3 py-2 text-xs font-mono text-neutral-700 dark:text-neutral-300 break-all'
+              },
+              filePath
+            )
+          ]),
+          h(
+            'button',
+            {
+              class:
+                'flex items-center gap-1.5 rounded-xl bg-neutral-200 dark:bg-neutral-700 px-3 py-2 text-xs text-neutral-600 dark:text-neutral-300 cursor-pointer transition-colors hover:bg-neutral-300 dark:hover:bg-neutral-600 flex-shrink-0',
+              onClick: copyFilePath
+            },
+            [h('i', { class: 'ri-file-copy-line text-sm' }), h('span', t('comp.update.copy'))]
+          )
+        ])
+      ]),
+    positiveText: t('comp.update.yesInstall'),
+    negativeText: t('comp.update.noThanks'),
+    onPositiveClick: () => {
+      ipc.send('install-update', filePath);
+    },
+    onNegativeClick: () => {
+      dialogRef.destroy();
+    },
+    onClose: () => {
+      isDialogShown.value = false;
+    }
+  });
+};
+
+const onDownloadComplete = (_event: any, success: boolean, filePath: string) => {
+  downloading.value = false;
+  closeModal();
+
+  if (success && !isDialogShown.value) {
+    isDialogShown.value = true;
+    showInstallDialog(filePath);
+  } else if (!success) {
+    message.error(t('comp.update.downloadFailed'));
+  }
+};
+
+// ---- 生命周期 ----
+
+const registerIpcListeners = () => {
+  // 先移除旧监听，防止重复注册
+  ipc.removeListener('download-progress', onDownloadProgress);
+  ipc.removeListener('download-complete', onDownloadComplete);
+  ipc.on('download-progress', onDownloadProgress);
+  ipc.on('download-complete', onDownloadComplete);
+};
+
+const removeIpcListeners = () => {
+  ipc.removeListener('download-progress', onDownloadProgress);
+  ipc.removeListener('download-complete', onDownloadComplete);
+};
+
+onMounted(async () => {
+  registerIpcListeners();
   try {
     const result = await checkUpdate(config.version);
     if (result) {
@@ -127,407 +313,148 @@ const checkForUpdates = async () => {
   } catch (error) {
     console.error('检查更新失败:', error);
   }
-};
-
-const downloading = ref(false);
-const downloadProgress = ref(0);
-const downloadStatus = ref(t('comp.update.prepareDownload'));
-const downloadBtnText = computed(() => {
-  if (downloading.value) return t('comp.update.downloading');
-  return t('comp.update.nowUpdate');
 });
 
-// 下载完成后的文件路径
-const downloadedFilePath = ref('');
-// 防止对话框重复弹出
-const isDialogShown = ref(false);
-
-// 处理下载状态更新
-const handleDownloadProgress = (_event: any, progress: number, status: string) => {
-  downloadProgress.value = progress;
-  downloadStatus.value = status;
-};
-
-// 处理下载完成
-const handleDownloadComplete = (_event: any, success: boolean, filePath: string) => {
-  downloading.value = false;
-  closeModal();
-
-  if (success && !isDialogShown.value) {
-    downloadedFilePath.value = filePath;
-    isDialogShown.value = true;
-
-    // 复制文件路径到剪贴板
-    const copyFilePath = () => {
-      navigator.clipboard
-        .writeText(filePath)
-        .then(() => {
-          message.success(t('comp.update.copySuccess'));
-        })
-        .catch(() => {
-          message.error(t('comp.update.copyFailed'));
-        });
-    };
-
-    // 使用naive-ui的对话框询问用户是否安装
-    const dialogRef = dialog.create({
-      title: t('comp.update.installConfirmTitle'),
-      content: () =>
-        h('div', { class: 'update-dialog-content' }, [
-          h('p', { class: 'content-text' }, t('comp.update.installConfirmContent')),
-          h('div', { class: 'divider' }),
-          h('p', { class: 'manual-tip' }, t('comp.update.manualInstallTip')),
-          h('div', { class: 'file-path-container' }, [
-            h('div', { class: 'file-path-box' }, [
-              h('p', { class: 'file-path-label' }, t('comp.update.fileLocation')),
-              h('div', { class: 'file-path-value' }, filePath)
-            ]),
-            h(
-              'div',
-              {
-                class: 'copy-btn',
-                onClick: copyFilePath
-              },
-              [h('i', { class: 'ri-file-copy-line' }), h('span', t('comp.update.copy'))]
-            )
-          ])
-        ]),
-      positiveText: t('comp.update.yesInstall'),
-      negativeText: t('comp.update.noThanks'),
-      onPositiveClick: () => {
-        window.electron.ipcRenderer.send('install-update', filePath);
-      },
-      onNegativeClick: () => {
-        closeModal();
-        // 关闭当前窗口
-        dialogRef.destroy();
-      },
-      onClose: () => {
-        isDialogShown.value = false;
-      }
-    });
-  } else if (!success) {
-    message.error(t('comp.update.downloadFailed'));
-  }
-};
-
-// 监听下载事件
-onMounted(() => {
-  checkForUpdates();
-  // 确保事件监听器只注册一次
-  window.electron.ipcRenderer.removeListener('download-progress', handleDownloadProgress);
-  window.electron.ipcRenderer.removeListener('download-complete', handleDownloadComplete);
-
-  window.electron.ipcRenderer.on('download-progress', handleDownloadProgress);
-  window.electron.ipcRenderer.on('download-complete', handleDownloadComplete);
-});
-
-// 清理事件监听
 onUnmounted(() => {
-  window.electron.ipcRenderer.removeListener('download-progress', handleDownloadProgress);
-  window.electron.ipcRenderer.removeListener('download-complete', handleDownloadComplete);
+  removeIpcListeners();
   isDialogShown.value = false;
 });
 
+// ---- 触发更新下载 ----
+
 const handleUpdate = async () => {
-  const assets = updateInfo.value.releaseInfo?.assets || [];
+  const { releaseInfo, latestVersion } = updateInfo.value;
+  const assets = releaseInfo?.assets ?? [];
   const { platform } = window.electron.process;
-  const arch = window.electron.ipcRenderer.sendSync('get-arch');
-  const version = updateInfo.value.latestVersion;
-  const downUrls = {
-    win32: {
-      all: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}/AlgerMusicPlayer-${version}-win.exe`,
-      x64: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}/AlgerMusicPlayer-${version}-win-x64.exe`,
-      ia32: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}/AlgerMusicPlayer-${version}-win-ia32.exe`
-    },
-    darwin: {
-      x64: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}/AlgerMusicPlayer-${version}-x64.dmg`,
-      arm64: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}/AlgerMusicPlayer-${version}-arm64.dmg`
-    },
-    linux: {
-      AppImage: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}/AlgerMusicPlayer-${version}-linux-x64.AppImage`,
-      deb: `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}/AlgerMusicPlayer-${version}-linux-x64.deb`
-    }
-  };
+  const arch = ipc.sendSync('get-arch');
 
-  let downloadUrl = '';
+  const downloadUrl = resolveDownloadUrl(assets, platform, arch, latestVersion);
 
-  // 根据平台和架构选择对应的安装包
-  if (platform === 'darwin') {
-    // macOS - 根据芯片架构选择对应的 DMG
-    const macArch = arch === 'arm64' ? 'arm64' : 'x64';
-    const macAsset = assets.find(
-      (asset) => asset.name.includes('mac') && asset.name.includes(macArch)
-    );
-    downloadUrl = macAsset?.browser_download_url || downUrls.darwin[macArch] || '';
-  } else if (platform === 'win32') {
-    // Windows
-    const winAsset = assets.find(
-      (asset) =>
-        asset.name.includes('win') &&
-        (arch === 'x64' ? asset.name.includes('x64') : asset.name.includes('ia32'))
-    );
-    downloadUrl =
-      winAsset?.browser_download_url || downUrls.win32[arch] || downUrls.win32.all || '';
-  } else if (platform === 'linux') {
-    // Linux
-    const linuxAsset = assets.find(
-      (asset) =>
-        (asset.name.endsWith('.AppImage') || asset.name.endsWith('.deb')) &&
-        asset.name.includes('x64')
-    );
-    downloadUrl = linuxAsset?.browser_download_url || downUrls.linux[arch] || '';
+  if (!downloadUrl) {
+    message.error(t('comp.update.noDownloadUrl'));
+    window.open(`${GITHUB_RELEASES_URL}/latest`, '_blank');
+    return;
   }
 
-  if (downloadUrl) {
-    try {
-      downloading.value = true;
-      downloadStatus.value = t('comp.update.prepareDownload');
-      isDialogShown.value = false;
+  try {
+    downloading.value = true;
+    downloadProgress.value = 0;
+    downloadStatus.value = t('comp.update.prepareDownload');
+    isDialogShown.value = false;
 
-      // 获取代理节点列表
-      const proxyHosts = await getProxyNodes();
-      const proxyDownloadUrl = `${proxyHosts[0]}/${downloadUrl}`;
-
-      // 发送所有可能的下载地址到主进程
-      window.electron.ipcRenderer.send('start-download', proxyDownloadUrl);
-    } catch (error) {
-      downloading.value = false;
-      message.error(t('comp.update.startFailed'));
-      console.error('下载失败:', error);
-    }
-  } else {
-    message.error(t('comp.update.noDownloadUrl'));
-    window.open('https://github.com/algerkong/AlgerMusicPlayer/releases/latest', '_blank');
+    const proxyHosts = await getProxyNodes();
+    ipc.send('start-download', `${proxyHosts[0]}/${downloadUrl}`);
+  } catch (error) {
+    downloading.value = false;
+    message.error(t('comp.update.startFailed'));
+    console.error('下载失败:', error);
   }
 };
 </script>
 
-<style lang="scss" scoped>
-.update-app-modal {
-  :deep(.n-modal) {
-    @apply max-w-4xl;
-  }
-  .modal-content {
-    @apply p-6 pb-4;
-    .modal-header {
-      @apply flex items-center mb-6;
-      .app-icon {
-        @apply w-24 h-24 mr-6 rounded-2xl overflow-hidden;
-        img {
-          @apply w-full h-full object-cover;
-        }
-      }
-      .app-info {
-        @apply flex-1;
-        .app-name {
-          @apply text-2xl font-bold mb-2;
-        }
-        .app-desc {
-          @apply text-base text-gray-400;
-        }
-      }
-    }
-    .update-info {
-      @apply mb-6 rounded-lg bg-gray-50 dark:bg-gray-800;
-      .update-title {
-        @apply text-base font-medium p-4 pb-2;
-      }
-      .update-body {
-        @apply p-4 pt-2 text-gray-600 dark:text-gray-300 rounded-lg overflow-hidden;
-
-        :deep(h1) {
-          @apply text-xl font-bold mb-3;
-        }
-        :deep(h2) {
-          @apply text-lg font-bold mb-3;
-        }
-        :deep(h3) {
-          @apply text-base font-bold mb-2;
-        }
-        :deep(p) {
-          @apply mb-3 leading-relaxed;
-        }
-        :deep(ul) {
-          @apply list-disc list-inside mb-3;
-        }
-        :deep(ol) {
-          @apply list-decimal list-inside mb-3;
-        }
-        :deep(li) {
-          @apply mb-2 leading-relaxed;
-        }
-        :deep(code) {
-          @apply px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200;
-        }
-        :deep(pre) {
-          @apply p-3 rounded bg-gray-100 dark:bg-gray-700 overflow-x-auto mb-3;
-          code {
-            @apply bg-transparent p-0;
-          }
-        }
-        :deep(blockquote) {
-          @apply pl-4 border-l-4 border-gray-200 dark:border-gray-600 mb-3;
-        }
-        :deep(a) {
-          @apply text-green-500 hover:text-green-600 dark:hover:text-green-400;
-        }
-        :deep(hr) {
-          @apply my-4 border-gray-200 dark:border-gray-600;
-        }
-        :deep(table) {
-          @apply w-full mb-3;
-          th,
-          td {
-            @apply px-3 py-2 border border-gray-200 dark:border-gray-600;
-          }
-          th {
-            @apply bg-gray-100 dark:bg-gray-700;
-          }
-        }
-      }
-    }
-    .download-status {
-      @apply p-2;
-      .progress-bar-wrapper {
-        @apply w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden;
-        .progress-bar {
-          @apply h-full bg-green-500 rounded-full transition-all duration-300 ease-out;
-          box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
-        }
-      }
-    }
-    .modal-actions {
-      @apply flex gap-4;
-      .n-button {
-        @apply flex-1 text-base py-2;
-      }
-      .cancel-btn {
-        @apply bg-gray-800 text-gray-300 border-none;
-        &:hover {
-          @apply bg-gray-700;
-        }
-        &:disabled {
-          @apply opacity-50 cursor-not-allowed;
-        }
-      }
-      .update-btn {
-        @apply bg-green-600 border-none;
-        &:hover {
-          @apply bg-green-500;
-        }
-        &:disabled {
-          @apply opacity-50 cursor-not-allowed;
-        }
-      }
-    }
-  }
-}
-</style>
-
-<style lang="scss" scoped>
-/* 对话框内容样式 */
-.update-dialog-content {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-
-  .content-text {
-    font-size: 16px;
-    font-weight: 500;
-  }
-
-  .divider {
-    width: 100%;
-    height: 1px;
-    background-color: #e5e7eb;
-    margin: 4px 0;
-  }
-
-  .manual-tip {
-    font-size: 14px;
-    color: #6b7280;
-  }
-
-  .file-path-container {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-top: 8px;
-
-    .file-path-box {
-      flex: 1;
-
-      .file-path-label {
-        font-size: 12px;
-        color: #6b7280;
-        margin-bottom: 4px;
-      }
-
-      .file-path-value {
-        padding: 8px;
-        border-radius: 4px;
-        background-color: #f3f4f6;
-        font-size: 12px;
-        font-family: monospace;
-        color: #1f2937;
-        word-break: break-all;
-      }
-    }
-
-    .copy-btn {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 8px 12px;
-      border-radius: 4px;
-      background-color: #e5e7eb;
-      color: #4b5563;
-      font-size: 12px;
-      cursor: pointer;
-      transition: background-color 0.2s;
-
-      &:hover {
-        background-color: #d1d5db;
-      }
-
-      i {
-        font-size: 14px;
-      }
-    }
-  }
+<style scoped>
+/* 弹窗圆角 */
+.update-modal :deep(.n-dialog) {
+  border-radius: 1.25rem; /* 20px — rounded-2xl 级别 */
+  overflow: hidden;
 }
 
-/* 深色模式样式 */
-.dark .update-dialog-content {
-  .divider {
-    background-color: #374151;
-  }
-
-  .manual-tip {
-    color: #9ca3af;
-  }
-
-  .file-path-container {
-    .file-path-box {
-      .file-path-label {
-        color: #9ca3af;
-      }
-
-      .file-path-value {
-        background-color: #1f2937;
-        color: #d1d5db;
-      }
-    }
-
-    .copy-btn {
-      background-color: #374151;
-      color: #d1d5db;
-
-      &:hover {
-        background-color: #4b5563;
-      }
-    }
-  }
+/* 更新日志 Markdown 渲染样式 */
+.update-body :deep(h1) {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+.update-body :deep(h2) {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+.update-body :deep(h3) {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.update-body :deep(p) {
+  margin-bottom: 0.75rem;
+  line-height: 1.625;
+}
+.update-body :deep(ul) {
+  list-style-type: disc;
+  list-style-position: inside;
+  margin-bottom: 0.75rem;
+}
+.update-body :deep(ol) {
+  list-style-type: decimal;
+  list-style-position: inside;
+  margin-bottom: 0.75rem;
+}
+.update-body :deep(li) {
+  margin-bottom: 0.5rem;
+  line-height: 1.625;
+}
+.update-body :deep(code) {
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  background-color: rgb(245 245 245);
+}
+.dark .update-body :deep(code) {
+  background-color: rgb(64 64 64);
+}
+.update-body :deep(pre) {
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  overflow-x: auto;
+  margin-bottom: 0.75rem;
+  background-color: rgb(245 245 245);
+}
+.dark .update-body :deep(pre) {
+  background-color: rgb(64 64 64);
+}
+.update-body :deep(pre code) {
+  background-color: transparent;
+  padding: 0;
+}
+.update-body :deep(blockquote) {
+  padding-left: 1rem;
+  border-left: 4px solid rgb(229 229 229);
+  margin-bottom: 0.75rem;
+}
+.dark .update-body :deep(blockquote) {
+  border-left-color: rgb(82 82 82);
+}
+.update-body :deep(a) {
+  color: #22c55e;
+  transition: color 0.2s;
+}
+.update-body :deep(a:hover) {
+  color: rgb(34 197 94 / 0.8);
+}
+.update-body :deep(hr) {
+  margin: 1rem 0;
+  border-color: rgb(229 229 229);
+}
+.dark .update-body :deep(hr) {
+  border-color: rgb(82 82 82);
+}
+.update-body :deep(table) {
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+.update-body :deep(th),
+.update-body :deep(td) {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgb(229 229 229);
+}
+.dark .update-body :deep(th),
+.dark .update-body :deep(td) {
+  border-color: rgb(82 82 82);
+}
+.update-body :deep(th) {
+  background-color: rgb(245 245 245);
+}
+.dark .update-body :deep(th) {
+  background-color: rgb(64 64 64);
 }
 </style>

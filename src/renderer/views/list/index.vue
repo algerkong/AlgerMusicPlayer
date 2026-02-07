@@ -17,7 +17,7 @@
       :size="100"
       @scroll="handleScroll"
     >
-      <div class="list-content w-full pb-32 pt-6 px-4 sm:px-6 lg:px-8 lg:pl-0">
+      <div class="list-content w-full pb-32 pt-6 page-padding">
         <!-- 列表标题 -->
         <div class="mb-8">
           <h1 class="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-white mb-2">

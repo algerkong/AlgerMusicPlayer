@@ -1,67 +1,128 @@
 <template>
-  <div class="follows-page">
-    <div class="content-wrapper">
-      <div class="page-title" v-if="targetUserName">
-        {{ targetUserName + t('user.follow.userFollowsTitle') }}
-      </div>
-      <div class="page-title" v-else>
-        {{ t('user.follow.myFollowsTitle') }}
-      </div>
-
-      <n-spin v-if="followListLoading && followList.length === 0" size="large" />
-      <n-scrollbar v-else class="scrollbar-container">
-        <div v-if="followList.length === 0" class="empty-follow">
-          {{ t('user.follow.noFollowings') }}
-        </div>
-        <div class="follow-grid" :class="setAnimationClass('animate__fadeInUp')">
-          <div
-            v-for="(item, index) in followList"
-            :key="index"
-            class="follow-item"
-            :class="setAnimationClass('animate__fadeInUp')"
-            :style="setAnimationDelay(index, 30)"
-            @click="viewUserDetail(item.userId, item.nickname)"
-          >
-            <div class="follow-item-inner">
-              <div class="follow-avatar">
-                <n-avatar round :size="70" :src="getImgUrl(item.avatarUrl, '70y70')" />
-                <div v-if="isArtist(item)" class="artist-badge">
-                  <i class="ri-verified-badge-fill"></i>
-                </div>
-              </div>
-              <div class="follow-info">
-                <div class="follow-name" :class="{ 'is-artist': isArtist(item) }">
-                  {{ item.nickname }}
-                  <n-tooltip v-if="isArtist(item)" trigger="hover">
-                    <template #trigger>
-                      <i class="ri-verified-badge-fill artist-icon"></i>
-                    </template>
-                    歌手
-                  </n-tooltip>
-                </div>
-                <div class="follow-signature">
-                  {{ item.signature || t('user.follow.noSignature') }}
-                </div>
+  <div class="h-full w-full bg-white dark:bg-neutral-900 transition-colors duration-500">
+    <n-scrollbar class="h-full">
+      <div class="w-full pb-32">
+        <!-- Loading State -->
+        <div v-if="followListLoading && followList.length === 0">
+          <div class="page-padding-x pt-8">
+            <n-skeleton class="h-8 w-48 mb-6" />
+            <div
+              class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+            >
+              <div v-for="i in 12" :key="i" class="flex flex-col items-center space-y-3">
+                <n-skeleton class="h-20 w-20 rounded-full" />
+                <n-skeleton text class="w-16" />
+                <n-skeleton text class="w-24" />
               </div>
             </div>
           </div>
         </div>
 
-        <n-space v-if="followListLoading" justify="center" class="loading-more">
-          <n-spin size="small" />
-        </n-space>
+        <!-- Main Content -->
+        <template v-else>
+          <!-- Header Section -->
+          <section class="page-padding-x pt-6 md:pt-8 pb-4">
+            <h1
+              class="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-white tracking-tight"
+            >
+              <template v-if="targetUserName">
+                {{ targetUserName + t('user.follow.userFollowsTitle') }}
+              </template>
+              <template v-else>
+                {{ t('user.follow.myFollowsTitle') }}
+              </template>
+            </h1>
+          </section>
 
-        <n-button
-          v-else-if="hasMoreFollows"
-          class="load-more-btn"
-          secondary
-          block
-          @click="loadMoreFollows"
-        >
-          {{ t('user.follow.loadMore') }}
-        </n-button>
-      </n-scrollbar>
-    </div>
+          <!-- Empty State -->
+          <div
+            v-if="followList.length === 0"
+            class="flex flex-col items-center justify-center py-20 text-neutral-400 dark:text-neutral-500"
+          >
+            <i class="ri-user-follow-line text-5xl mb-4 opacity-50" />
+            <p>{{ t('user.follow.noFollowings') }}</p>
+          </div>
+
+          <!-- User Grid -->
+          <section v-else class="page-padding-x">
+            <div
+              class="grid grid-cols-2 gap-4 gap-y-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+            >
+              <div
+                v-for="(item, index) in followList"
+                :key="item.userId"
+                class="user-card group cursor-pointer"
+                :style="{ animationDelay: `${index * 0.03}s` }"
+                @click="viewUserDetail(item.userId, item.nickname)"
+              >
+                <!-- Avatar -->
+                <div class="relative mx-auto w-fit">
+                  <div
+                    class="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-lg ring-2 ring-transparent group-hover:ring-primary/30 transition-all duration-300"
+                  >
+                    <img
+                      :src="getImgUrl(item.avatarUrl, '100y100')"
+                      :alt="item.nickname"
+                      class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      loading="lazy"
+                    />
+                  </div>
+                  <!-- Artist Badge -->
+                  <div
+                    v-if="isArtist(item)"
+                    class="absolute -bottom-0.5 -right-0.5 w-6 h-6 rounded-full bg-white dark:bg-neutral-800 flex items-center justify-center shadow-md"
+                  >
+                    <i class="ri-verified-badge-fill text-primary text-sm" />
+                  </div>
+                </div>
+
+                <!-- Info -->
+                <div class="mt-3 text-center">
+                  <h3
+                    class="text-sm font-semibold text-neutral-800 dark:text-neutral-100 group-hover:text-primary transition-colors truncate px-1"
+                  >
+                    {{ item.nickname }}
+                  </h3>
+                  <p class="mt-1 text-xs text-neutral-400 dark:text-neutral-500 line-clamp-1 px-1">
+                    {{ item.signature || t('user.follow.noSignature') }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Loading More -->
+            <div v-if="followListLoading" class="flex items-center justify-center gap-2 py-8">
+              <div
+                class="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin"
+              />
+              <span class="text-sm text-neutral-400 dark:text-neutral-500">
+                {{ t('common.loading') }}
+              </span>
+            </div>
+
+            <!-- Load More Button -->
+            <div v-else-if="hasMoreFollows" class="flex justify-center py-8">
+              <button
+                class="px-6 py-2.5 rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700 text-sm font-medium text-neutral-700 dark:text-neutral-200 transition-all duration-200 hover:scale-105 active:scale-95"
+                @click="loadMoreFollows"
+              >
+                {{ t('user.follow.loadMore') }}
+              </button>
+            </div>
+
+            <!-- No More -->
+            <div
+              v-else-if="followList.length > 0"
+              class="text-center text-sm text-neutral-400 dark:text-neutral-500 py-8"
+            >
+              — {{ t('common.noMore') || '没有更多了' }} —
+            </div>
+          </section>
+        </template>
+      </div>
+    </n-scrollbar>
+
+    <play-bottom />
   </div>
 </template>
 
@@ -72,9 +133,10 @@ import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
 import { getUserFollows } from '@/api/user';
+import PlayBottom from '@/components/common/PlayBottom.vue';
 import { useUserStore } from '@/store/modules/user';
 import type { IUserFollow } from '@/types/user';
-import { getImgUrl, setAnimationClass, setAnimationDelay } from '@/utils';
+import { getImgUrl } from '@/utils';
 import { checkLoginStatus as checkAuthStatus } from '@/utils/auth';
 
 defineOptions({
@@ -109,47 +171,38 @@ const checkTargetUser = () => {
     return true;
   }
 
-  // 如果没有指定用户ID，则显示当前登录用户的关注列表
   return checkLoginStatus();
 };
 
 // 检查登录状态
 const checkLoginStatus = () => {
   const loginInfo = checkAuthStatus();
-
   if (!loginInfo.isLoggedIn) {
     router.push('/login');
     return false;
   }
-
-  // 如果store中没有用户数据，但localStorage中有，则恢复用户数据
   if (!userStore.user && loginInfo.user) {
     userStore.setUser(loginInfo.user);
   }
-
   return true;
 };
 
 // 加载关注列表
 const loadFollowList = async () => {
-  // 确定要加载哪个用户的关注列表
   const userId = targetUserId.value || user.value?.userId;
-
   if (!userId) return;
 
   try {
     followListLoading.value = true;
     const { data } = await getUserFollows(userId, followLimit.value, followOffset.value);
 
-    if (!data || !data.follow) {
+    if (!data?.follow) {
       hasMoreFollows.value = false;
       return;
     }
 
     const newFollows = data.follow as IUserFollow[];
     followList.value = [...followList.value, ...newFollows];
-
-    // 判断是否还有更多关注
     hasMoreFollows.value = newFollows.length >= followLimit.value;
   } catch (error) {
     console.error('加载关注列表失败:', error);
@@ -159,13 +212,11 @@ const loadFollowList = async () => {
   }
 };
 
-// 加载更多关注
 const loadMoreFollows = async () => {
   followOffset.value += followLimit.value;
   await loadFollowList();
 };
 
-// 查看用户详情
 const viewUserDetail = (userId: number, nickname: string) => {
   router.push({
     path: `/user/detail/${userId}`,
@@ -173,26 +224,22 @@ const viewUserDetail = (userId: number, nickname: string) => {
   });
 };
 
-// 判断是否为歌手
 const isArtist = (user: IUserFollow) => {
-  // 根据用户类型判断是否为歌手，userType 为 4 表示是官方认证的音乐人
   return user.userType === 4 || user.userType === 2 || user.accountType === 2;
 };
 
-// 页面挂载时加载数据
 onMounted(() => {
   if (checkTargetUser()) {
     loadFollowList();
   }
 });
 
-// 监听路由变化重新加载数据
 watch(
   () => route.query,
   (newQuery) => {
     if (newQuery.uid && newQuery.uid !== targetUserId.value?.toString()) {
-      followList.value = []; // 清空列表
-      followOffset.value = 0; // 重置偏移量
+      followList.value = [];
+      followOffset.value = 0;
       checkTargetUser();
       loadFollowList();
     }
@@ -201,83 +248,23 @@ watch(
 </script>
 
 <style lang="scss" scoped>
-.follows-page {
-  @apply h-full flex flex-col;
-
-  .content-wrapper {
-    @apply flex-1 overflow-hidden p-4;
-    @apply flex flex-col;
-  }
-
-  .scrollbar-container {
-    @apply h-full;
-  }
+.user-card {
+  animation: fadeInUp 0.4s ease backwards;
 }
 
-.follow-grid {
-  @apply grid gap-4 w-full;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-}
-
-.follow-item {
-  @apply rounded-xl overflow-hidden cursor-pointer;
-  @apply transition-all duration-200;
-  @apply hover:scale-105;
-
-  &-inner {
-    @apply flex flex-col items-center p-4 h-full;
-    @apply bg-light-100 dark:bg-dark-100;
-    @apply transition-all duration-200;
-    @apply hover:bg-light-200 dark:hover:bg-dark-200;
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-
-  .follow-avatar {
-    @apply relative;
-
-    .artist-badge {
-      @apply absolute bottom-0 right-0;
-      @apply text-blue-500 text-lg;
-    }
-  }
-
-  .follow-info {
-    @apply mt-3 text-center w-full;
-
-    .follow-name {
-      @apply text-gray-900 dark:text-white text-base font-medium;
-      @apply flex items-center justify-center;
-
-      &.is-artist {
-        @apply text-blue-500;
-      }
-
-      .artist-icon {
-        @apply ml-1 text-blue-500;
-      }
-    }
-
-    .follow-signature {
-      @apply text-gray-500 dark:text-gray-400 text-xs mt-1;
-      @apply line-clamp-2 text-center;
-      max-height: 2.4em;
-    }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-.empty-follow {
-  @apply text-center py-8 text-gray-500 dark:text-gray-400;
-}
-
-.load-more-btn {
-  @apply mt-4 mb-8;
-}
-
-.loading-more {
-  @apply my-4;
-}
-
-.page-title {
-  @apply text-xl font-bold mb-4;
-  @apply text-gray-900 dark:text-white;
+button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--primary-color);
 }
 </style>

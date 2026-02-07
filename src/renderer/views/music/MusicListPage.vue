@@ -20,7 +20,7 @@
             </div>
 
             <!-- Hero Content -->
-            <div class="hero-content relative z-10 px-4 md:px-8 pt-4 md:pt-10 pb-8">
+            <div class="hero-content relative z-10 page-padding-x pt-4 md:pt-10 pb-8">
               <div class="flex flex-col md:flex-row gap-8 md:gap-12 items-center md:items-end">
                 <!-- Playlist Cover -->
                 <div class="cover-wrapper relative group">
@@ -114,7 +114,7 @@
         <!-- Action Bar (Sticky) -->
         <section
           v-if="songList.length > 0"
-          class="action-bar sticky top-0 z-20 px-4 md:px-8 py-3 md:py-4 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-neutral-100 dark:border-neutral-800/50"
+          class="action-bar sticky top-0 z-20 page-padding-x py-3 md:py-4 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-neutral-100 dark:border-neutral-800/50"
         >
           <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-3">
@@ -225,7 +225,7 @@
         </section>
 
         <!-- List Content -->
-        <section class="song-list-section px-4 md:px-8 mt-6">
+        <section class="song-list-section page-padding-x mt-6">
           <n-spin :show="loadingList">
             <div
               v-if="filteredSongs.length === 0 && searchKeyword"

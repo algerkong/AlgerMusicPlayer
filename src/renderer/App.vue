@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container" :class="{ mobile: isMobile, noElectron: !isElectron }">
+  <div class="app-container h-full w-full" :class="{ mobile: isMobile, noElectron: !isElectron }">
     <n-config-provider :theme="theme === 'dark' ? darkTheme : lightTheme">
       <n-dialog-provider>
         <n-message-provider>
@@ -177,7 +177,6 @@ onMounted(async () => {
 
 <style lang="scss" scoped>
 .app-container {
-  @apply h-full w-full;
   user-select: none;
 }
 

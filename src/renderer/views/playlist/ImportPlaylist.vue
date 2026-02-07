@@ -8,7 +8,7 @@
     ></div>
 
     <!-- 头部区域 -->
-    <div class="flex-shrink-0 z-10 px-6 pt-8 pb-4 relative">
+    <div class="flex-shrink-0 z-10 page-padding pt-8 pb-4 relative">
       <div class="max-w-5xl mx-auto w-full flex items-end justify-between">
         <div>
           <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-3">

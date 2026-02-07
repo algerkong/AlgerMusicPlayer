@@ -1,5 +1,5 @@
 <template>
-  <div class="flex gap-6 h-full pb-4 px-6 pt-6 bg-white dark:bg-black">
+  <div class="flex gap-6 h-full pb-4 page-padding pt-6 bg-white dark:bg-black">
     <favorite class="flex-item" v-if="!isMobile" />
     <history-list class="flex-item" />
   </div>

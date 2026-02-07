@@ -15,7 +15,7 @@
       :size="100"
       @scroll="handleScroll"
     >
-      <div class="mv-content w-full pb-32 pt-6 px-4 sm:px-6 lg:px-8 lg:pl-0">
+      <div class="mv-content w-full pb-32 pt-6 page-padding">
         <!-- 页面标题 -->
         <div class="mb-8">
           <h1

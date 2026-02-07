@@ -26,7 +26,7 @@
             </div>
           </div>
           <!-- Content Skeleton -->
-          <div class="mt-8 px-4 md:px-8">
+          <div class="mt-8 page-padding-x">
             <div class="space-y-4">
               <div v-for="i in 8" :key="i" class="flex items-center gap-4">
                 <n-skeleton class="h-12 w-12 rounded-xl" />
@@ -58,7 +58,7 @@
             </div>
 
             <!-- Hero Content -->
-            <div class="hero-content relative z-10 px-4 md:px-8 pt-4 md:pt-8 pb-6">
+            <div class="hero-content relative z-10 page-padding-x pt-4 md:pt-8 pb-6">
               <div class="flex flex-col md:flex-row gap-6 md:gap-10 items-center md:items-end">
                 <!-- Artist Avatar -->
                 <div class="artist-avatar-wrapper relative group">
@@ -133,7 +133,7 @@
 
           <!-- Action Bar -->
           <section
-            class="action-bar sticky top-0 z-20 px-4 md:px-8 py-3 md:py-4 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-b border-neutral-100 dark:border-neutral-800/50"
+            class="action-bar sticky top-0 z-20 page-padding-x py-3 md:py-4 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl border-b border-neutral-100 dark:border-neutral-800/50"
           >
             <div class="flex items-center justify-between gap-3">
               <!-- Left Actions -->
@@ -216,7 +216,7 @@
           </section>
 
           <!-- Tab Navigation -->
-          <section class="tab-nav px-4 md:px-8 pt-4 md:pt-6">
+          <section class="tab-nav page-padding-x pt-4 md:pt-6">
             <div
               class="tab-list relative flex gap-1 p-1 bg-neutral-100 dark:bg-neutral-800/50 rounded-xl w-fit"
             >
@@ -244,7 +244,7 @@
           </section>
 
           <!-- Tab Content -->
-          <section class="tab-content px-4 md:px-8 py-6 md:py-8">
+          <section class="tab-content page-padding-x py-6 md:py-8">
             <!-- Songs Tab -->
             <div v-show="activeTab === 'songs'" class="songs-tab">
               <!-- No Results -->

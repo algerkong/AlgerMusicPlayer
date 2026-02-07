@@ -15,7 +15,7 @@
           </div>
 
           <!-- Hero 内容 -->
-          <div class="hero-content relative z-10 px-4 md:px-8 pt-10 pb-8">
+          <div class="hero-content relative z-10 page-padding-x pt-10 pb-8">
             <div class="flex flex-col md:flex-row gap-8 items-center md:items-end">
               <div class="cover-wrapper relative group">
                 <div
@@ -48,7 +48,7 @@
 
         <!-- Action Bar (Sticky) -->
         <section
-          class="action-bar sticky top-0 z-20 px-4 md:px-8 py-3 md:py-4 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-neutral-100 dark:border-neutral-800/50"
+          class="action-bar sticky top-0 z-20 page-padding-x py-3 md:py-4 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-neutral-100 dark:border-neutral-800/50"
         >
           <div class="flex items-center justify-between gap-4">
             <!-- 左侧：搜索框 -->
@@ -111,7 +111,7 @@
         </section>
 
         <!-- 扫描进度提示 -->
-        <section v-if="localMusicStore.scanning" class="px-4 md:px-8 mt-6">
+        <section v-if="localMusicStore.scanning" class="page-padding-x mt-6">
           <div
             class="flex items-center gap-4 p-4 rounded-2xl bg-primary/5 dark:bg-primary/10 border border-primary/20"
           >
@@ -128,7 +128,7 @@
         </section>
 
         <!-- 歌曲列表 -->
-        <section class="list-section px-4 md:px-8 mt-6">
+        <section class="list-section page-padding-x mt-6">
           <!-- 空状态 -->
           <div
             v-if="!localMusicStore.scanning && filteredList.length === 0"

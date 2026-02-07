@@ -5,13 +5,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 页面内容区域统一边距工具类 */
+.page-padding {
+  padding-left: var(--page-pl);
+  padding-right: var(--page-pr);
+}
+
+/* 左右对称边距（用于 hero 区域等需要两侧都有边距的场景） */
+.page-padding-x {
+  padding-left: var(--page-pr);
+  padding-right: var(--page-pr);
+}
+
 .n-image img {
   background-color: #111111;
   width: 100%;
 }
 
 .n-slider-handle-indicator--top {
-  @apply bg-transparent text-2xl px-2 py-1 shadow-none mb-0 text-white bg-dark-300 dark:bg-gray-800 bg-opacity-80 rounded-lg  !important;
+  background-color: transparent;
+  font-size: 1.5rem;
+  padding: 0.25rem 0.5rem;
+  box-shadow: none;
+  margin-bottom: 0;
+  color: white;
+  background-color: rgb(31 41 55 / 0.8);
+  border-radius: 0.5rem;
   mix-blend-mode: difference !important;
 }
 
@@ -20,7 +39,9 @@
 }
 
 .text-el {
-  @apply overflow-ellipsis overflow-hidden whitespace-nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .theme-dark {
@@ -68,8 +89,50 @@
   --safe-area-inset-right: 0px;
   --safe-area-inset-bottom: 10px;
   --safe-area-inset-left: 0px;
+
+  /* 页面内容区域统一边距 */
+  --page-px: 1rem; /* 默认 16px，对应 px-4 */
+  --page-pl: 1rem; /* 左边距，PC 端有菜单时为 0 */
+  --page-pr: 1rem; /* 右边距 */
+}
+
+/* PC 端：有左侧菜单，左边距为 0 */
+.pc {
+  --page-pl: 0px;
+}
+
+/* 响应式边距 */
+@media (min-width: 640px) {
+  :root {
+    --page-px: 1.5rem; /* 24px，对应 sm:px-6 */
+    --page-pr: 1.5rem;
+  }
+  .mobile {
+    --page-pl: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --page-px: 2rem; /* 32px，对应 lg:px-8 */
+    --page-pr: 2rem;
+  }
 }
 
 :root[class='dark'] {
   --text-color: #ffffffdd;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+
+  @media (min-width: 768px) {
+    font-size: 1.875rem;
+  }
+
+  @media (min-width: 1024px) {
+    font-size: 2.25rem;
+  }
 }

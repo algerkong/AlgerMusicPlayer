@@ -5,7 +5,7 @@
     <n-scrollbar class="h-full" @scroll="handleScroll">
       <div class="search-result-content pb-32">
         <!-- Header Section -->
-        <section class="header-section px-4 md:px-8 pt-8 pb-6">
+        <section class="header-section page-padding-x pt-8 pb-6">
           <div class="flex flex-col gap-6">
             <div>
               <h1
@@ -40,7 +40,7 @@
         <!-- Action Bar (Sticky) -->
         <section
           v-if="searchDetail?.songs?.length && searchType === SEARCH_TYPE.MUSIC"
-          class="action-bar sticky top-0 z-20 px-4 md:px-8 py-3 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-neutral-100 dark:border-neutral-800/50"
+          class="action-bar sticky top-0 z-20 page-padding-x py-3 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-neutral-100 dark:border-neutral-800/50"
         >
           <div class="flex items-center justify-between gap-4">
             <div class="flex items-center gap-3">
@@ -110,7 +110,7 @@
         </section>
 
         <!-- Results Section -->
-        <section class="results-section px-4 md:px-8 mt-6">
+        <section class="results-section page-padding-x mt-6">
           <n-spin :show="searchDetailLoading">
             <div
               v-if="searchDetailLoading && !isLoadingMore"

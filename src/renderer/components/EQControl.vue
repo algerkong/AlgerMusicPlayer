@@ -1,7 +1,7 @@
 <template>
-  <div class="eq-control">
-    <div class="eq-header">
-      <h3>
+  <div class="eq-control p-6 rounded-lg bg-gray-100 dark:bg-gray-900 w-full max-w-[700px]">
+    <div class="eq-header flex justify-between items-center mb-4">
+      <h3 class="text-xl font-semibold text-gray-800 dark:text-gray-200">
         {{ t('player.eq.title') }}
         <n-tag type="warning" size="small" round v-if="!isElectron">
           桌面版可用，网页端不支持
@@ -15,7 +15,7 @@
       </div>
     </div>
 
-    <div class="eq-presets">
+    <div class="eq-presets mb-2 relative h-10">
       <n-scrollbar x-scrollable>
         <n-space :size="6" :wrap="false">
           <n-tag
@@ -34,9 +34,19 @@
       </n-scrollbar>
     </div>
 
-    <div class="eq-sliders">
-      <div v-for="freq in frequencies" :key="freq" class="eq-slider">
-        <div class="freq-label">{{ formatFreq(freq) }}</div>
+    <div
+      class="eq-sliders flex justify-between items-end bg-gray-50 dark:bg-gray-800 gap-1 rounded-lg p-2 h-[300px]"
+    >
+      <div
+        v-for="freq in frequencies"
+        :key="freq"
+        class="eq-slider flex flex-col items-center w-[45px] h-full"
+      >
+        <div
+          class="freq-label text-xs font-medium text-center text-gray-600 dark:text-gray-400 whitespace-nowrap m-2 h-5"
+        >
+          {{ formatFreq(freq) }}
+        </div>
         <n-slider
           v-model:value="eqValues[freq.toString()]"
           :min="-12"
@@ -45,8 +55,13 @@
           vertical
           :disabled="!isEnabled"
           @update:value="updateEQ(freq.toString(), $event)"
+          class="flex-1 my-3 min-h-[180px]"
         />
-        <div class="gain-value">{{ eqValues[freq.toString()] }}dB</div>
+        <div
+          class="gain-value text-xs font-medium text-center text-gray-600 dark:text-gray-400 whitespace-nowrap my-1 h-4"
+        >
+          {{ eqValues[freq.toString()] }}dB
+        </div>
       </div>
     </div>
   </div>
@@ -267,91 +282,39 @@ const formatFreq = (freq: number) => {
 </script>
 
 <style lang="scss" scoped>
-.eq-control {
-  @apply p-6 rounded-lg;
-  @apply bg-light dark:bg-dark;
-  width: 100%;
-  max-width: 700px;
+:deep(.n-scrollbar) {
+  margin-left: -0.5rem;
+  margin-right: -0.5rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
 
-  .eq-header {
-    @apply flex justify-between items-center mb-4;
+:deep(.n-tag) {
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
 
-    h3 {
-      @apply text-xl font-semibold;
-      @apply text-gray-800 dark:text-gray-200;
-    }
+  &:hover {
+    transform: translateY(-2px);
   }
+}
 
-  .eq-presets {
-    @apply mb-2 relative;
-    height: 40px;
-
-    :deep(.n-scrollbar) {
-      @apply -mx-2 px-2;
-    }
-
-    :deep(.n-tag) {
-      @apply cursor-pointer transition-all duration-200;
-      text-align: center;
-
-      &:hover {
-        transform: translateY(-2px);
-      }
-    }
-
-    :deep(.n-space) {
-      flex-wrap: nowrap;
-      padding: 4px 0;
-    }
-  }
-
-  .eq-sliders {
-    @apply flex justify-between items-end;
-    @apply bg-gray-50 dark:bg-gray-800 gap-1;
-    @apply rounded-lg p-2;
-    height: 300px;
-
-    .eq-slider {
-      @apply flex flex-col items-center;
-      width: 45px;
-      height: 100%;
-
-      .n-slider {
-        flex: 1;
-        margin: 12px 0;
-        min-height: 180px;
-      }
-
-      .freq-label {
-        @apply text-xs font-medium text-center;
-        @apply text-gray-600 dark:text-gray-400;
-        white-space: nowrap;
-        margin: 8px 0;
-        height: 20px;
-      }
-
-      .gain-value {
-        @apply text-xs font-medium text-center;
-        @apply text-gray-600 dark:text-gray-400;
-        white-space: nowrap;
-        margin: 4px 0;
-        height: 16px;
-      }
-    }
-  }
+:deep(.n-space) {
+  flex-wrap: nowrap;
+  padding: 4px 0;
 }
 
 :deep(.n-slider) {
   --n-rail-height: 4px;
-  --n-rail-color: theme('colors.gray.200');
-  --n-rail-color-hover: theme('colors.gray.300');
-  --n-fill-color: theme('colors.green.500');
-  --n-fill-color-hover: theme('colors.green.600');
-  --n-handle-color: theme('colors.green.500');
+  --n-rail-color: #e5e7eb;
+  --n-rail-color-hover: #d1d5db;
+  --n-fill-color: #22c55e;
+  --n-fill-color-hover: #16a34a;
+  --n-handle-color: #22c55e;
   --n-handle-box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
   .n-slider-handle {
-    @apply transition-all duration-200;
+    transition: all 0.2s;
     &:hover {
       transform: scale(1.2);
     }

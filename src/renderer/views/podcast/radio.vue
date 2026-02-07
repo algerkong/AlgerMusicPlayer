@@ -22,7 +22,7 @@
               </div>
 
               <!-- Hero Content -->
-              <div class="hero-content relative z-10 px-4 md:px-8 pt-4 md:pt-8 pb-6">
+              <div class="hero-content relative z-10 page-padding-x pt-4 md:pt-8 pb-6">
                 <div class="flex flex-col md:flex-row gap-6 md:gap-10 items-center md:items-end">
                   <!-- Radio Cover -->
                   <div class="radio-cover-wrapper relative group">
@@ -103,7 +103,7 @@
 
             <!-- Action Bar -->
             <section
-              class="action-bar sticky top-0 z-20 px-4 md:px-8 py-3 md:py-4 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-neutral-100 dark:border-neutral-800/50"
+              class="action-bar sticky top-0 z-20 page-padding-x py-3 md:py-4 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-neutral-100 dark:border-neutral-800/50"
             >
               <div class="flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
@@ -139,7 +139,7 @@
             </section>
 
             <!-- Program List Section -->
-            <section class="tab-content px-4 md:px-8 py-6 md:py-8">
+            <section class="tab-content page-padding-x py-6 md:py-8">
               <div class="mb-6 flex items-center gap-3">
                 <h2
                   class="text-xl font-bold tracking-tight text-neutral-900 md:text-2xl dark:text-white"

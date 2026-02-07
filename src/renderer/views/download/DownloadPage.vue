@@ -15,7 +15,7 @@
           </div>
 
           <!-- Hero Content -->
-          <div class="hero-content relative z-10 px-4 md:px-8 pt-10 pb-8">
+          <div class="hero-content relative z-10 page-padding-x pt-10 pb-8">
             <div class="flex flex-col md:flex-row gap-8 items-center md:items-end">
               <div class="cover-wrapper relative group">
                 <div
@@ -56,7 +56,7 @@
 
         <!-- Action Bar (Sticky) -->
         <section
-          class="action-bar sticky top-0 z-20 px-4 md:px-8 py-3 md:py-4 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-neutral-100 dark:border-neutral-800/50"
+          class="action-bar sticky top-0 z-20 page-padding-x py-3 md:py-4 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-neutral-100 dark:border-neutral-800/50"
         >
           <div class="flex items-center justify-between gap-4">
             <!-- Tabs (Segment Control) -->
@@ -105,7 +105,7 @@
         </section>
 
         <!-- List Section -->
-        <section class="list-section px-4 md:px-8 mt-6">
+        <section class="list-section page-padding-x mt-6">
           <!-- Downloading List -->
           <div v-if="tabName === 'downloading'" class="downloading-container">
             <div v-if="downloadList.length === 0" class="empty-state py-20 text-center">

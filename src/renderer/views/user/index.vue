@@ -585,7 +585,8 @@ const currentLoginType = computed(() => userStore.loginType);
 
 .mobile {
   .user-page {
-    @apply px-4;
+    padding-left: var(--page-pl);
+    padding-right: var(--page-pr);
   }
 
   .login-container {

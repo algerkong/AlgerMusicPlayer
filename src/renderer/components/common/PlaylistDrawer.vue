@@ -1,104 +1,140 @@
 <template>
   <n-drawer
     :show="modelValue"
-    :width="400"
+    :width="420"
     placement="right"
     @update:show="$emit('update:modelValue', $event)"
     :unstable-show-mask="false"
     :show-mask="false"
   >
-    <n-drawer-content :title="t('comp.playlistDrawer.title')" class="mac-style-drawer">
+    <n-drawer-content class="!p-0">
+      <template #header>
+        <div class="flex items-center gap-3">
+          <h2 class="text-lg font-bold tracking-tight text-neutral-900 dark:text-white">
+            {{ t('comp.playlistDrawer.title') }}
+          </h2>
+          <div class="h-1.5 w-1.5 rounded-full bg-primary" />
+        </div>
+      </template>
+
       <n-scrollbar class="h-full">
-        <div class="playlist-drawer">
-          <!-- 创建新歌单按钮和表单 -->
-          <div class="create-playlist-section">
-            <div
-              class="create-playlist-button"
-              :class="{ 'is-expanded': isCreating }"
+        <div class="flex flex-col gap-5 px-5 py-4">
+          <!-- 创建新歌单 -->
+          <div class="flex flex-col">
+            <button
+              class="flex items-center gap-4 rounded-2xl p-3 transition-all duration-200"
+              :class="
+                isCreating
+                  ? 'bg-neutral-100 dark:bg-neutral-800'
+                  : 'bg-neutral-50 hover:bg-neutral-100 dark:bg-neutral-800/50 dark:hover:bg-neutral-800'
+              "
               @click="toggleCreateForm"
             >
-              <div class="create-playlist-icon">
-                <i class="iconfont" :class="isCreating ? 'ri-close-line' : 'ri-add-line'"></i>
+              <div
+                class="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-white shadow-lg shadow-primary/25 transition-transform duration-300"
+                :class="{ 'rotate-45': isCreating }"
+              >
+                <i class="iconfont text-xl" :class="isCreating ? 'ri-close-line' : 'ri-add-line'" />
               </div>
-              <div class="create-playlist-text">
+              <span class="text-sm font-semibold text-neutral-700 dark:text-neutral-200">
                 {{
                   isCreating
                     ? t('comp.playlistDrawer.cancelCreate')
                     : t('comp.playlistDrawer.createPlaylist')
                 }}
-              </div>
-            </div>
+              </span>
+            </button>
 
             <!-- 创建歌单表单 -->
-            <div class="create-playlist-form" :class="{ 'is-visible': isCreating }">
-              <n-input
-                v-model:value="formValue.name"
-                :placeholder="t('comp.playlistDrawer.playlistName')"
-                maxlength="40"
-                class="mac-style-input"
-                :status="inputError ? 'error' : undefined"
-              >
-                <template #prefix>
-                  <i class="iconfont ri-music-2-line"></i>
-                </template>
-              </n-input>
-              <div class="privacy-switch">
-                <div class="privacy-label">
-                  <i
-                    class="iconfont"
-                    :class="formValue.privacy ? 'ri-lock-line' : 'ri-earth-line'"
-                  ></i>
-                  <span>{{
-                    formValue.privacy
-                      ? t('comp.playlistDrawer.privatePlaylist')
-                      : t('comp.playlistDrawer.publicPlaylist')
-                  }}</span>
+            <div
+              class="overflow-hidden transition-all duration-300 ease-in-out"
+              :class="isCreating ? 'mt-4 max-h-[200px] opacity-100' : 'max-h-0 opacity-0'"
+            >
+              <div class="flex flex-col gap-4 px-1">
+                <n-input
+                  v-model:value="formValue.name"
+                  :placeholder="t('comp.playlistDrawer.playlistName')"
+                  maxlength="40"
+                  round
+                  :status="inputError ? 'error' : undefined"
+                >
+                  <template #prefix>
+                    <i class="iconfont ri-music-2-line text-neutral-400" />
+                  </template>
+                </n-input>
+
+                <div class="flex items-center justify-between px-1">
+                  <div class="flex items-center gap-2.5">
+                    <i
+                      class="iconfont text-base"
+                      :class="
+                        formValue.privacy
+                          ? 'ri-lock-line text-primary'
+                          : 'ri-earth-line text-neutral-400 dark:text-neutral-500'
+                      "
+                    />
+                    <span class="text-sm font-medium text-neutral-600 dark:text-neutral-300">
+                      {{
+                        formValue.privacy
+                          ? t('comp.playlistDrawer.privatePlaylist')
+                          : t('comp.playlistDrawer.publicPlaylist')
+                      }}
+                    </span>
+                  </div>
+                  <n-switch v-model:value="formValue.privacy">
+                    <template #checked>{{ t('comp.playlistDrawer.private') }}</template>
+                    <template #unchecked>{{ t('comp.playlistDrawer.public') }}</template>
+                  </n-switch>
                 </div>
-                <n-switch v-model:value="formValue.privacy" class="mac-style-switch">
-                  <template #checked>{{ t('comp.playlistDrawer.private') }}</template>
-                  <template #unchecked>{{ t('comp.playlistDrawer.public') }}</template>
-                </n-switch>
-              </div>
-              <div class="form-actions">
-                <n-button
-                  type="primary"
-                  quaternary
-                  class="mac-style-button"
-                  :loading="creating"
-                  :disabled="!formValue.name"
+
+                <button
+                  class="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white shadow-lg shadow-primary/25 transition-all duration-200 hover:bg-primary/90 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  :disabled="!formValue.name || creating"
                   @click="handleCreatePlaylist"
                 >
-                  {{ t('comp.playlistDrawer.create') }}
-                </n-button>
+                  <n-spin v-if="creating" :size="14" />
+                  <span>{{ t('comp.playlistDrawer.create') }}</span>
+                </button>
               </div>
             </div>
           </div>
 
           <!-- 歌单列表 -->
-          <div class="playlist-list">
+          <div class="flex flex-col gap-1.5 pb-32">
             <div
-              v-for="playlist in playlists"
+              v-for="(playlist, index) in playlists"
               :key="playlist.id"
-              class="playlist-item"
+              class="group flex cursor-pointer items-center gap-3.5 rounded-2xl p-2.5 transition-all duration-200 hover:bg-neutral-50 active:scale-[0.98] dark:hover:bg-neutral-800/60"
+              :style="{ animationDelay: `${index * 0.03}s` }"
               @click="handleAddToPlaylist(playlist)"
             >
-              <n-image
-                :src="getImgUrl(playlist.coverImgUrl || playlist.picUrl, '100y100')"
-                class="playlist-item-img"
-                preview-disabled
-                :img-props="{
-                  crossorigin: 'anonymous'
-                }"
-              />
-              <div class="playlist-item-info">
-                <div class="playlist-item-name">{{ playlist.name }}</div>
-                <div class="playlist-item-count">
-                  {{ playlist.trackCount }}
-                  {{ t('comp.playlistDrawer.count') }}
+              <!-- 封面 -->
+              <div
+                class="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl bg-neutral-100 shadow-sm dark:bg-neutral-800"
+              >
+                <n-image
+                  :src="getImgUrl(playlist.coverImgUrl || playlist.picUrl, '100y100')"
+                  class="h-full w-full object-cover"
+                  preview-disabled
+                  :img-props="{ crossorigin: 'anonymous' }"
+                />
+              </div>
+
+              <!-- 信息 -->
+              <div class="min-w-0 flex-1">
+                <div class="truncate text-sm font-semibold text-neutral-800 dark:text-neutral-100">
+                  {{ playlist.name }}
+                </div>
+                <div class="mt-0.5 text-xs font-medium text-neutral-400 dark:text-neutral-500">
+                  {{ playlist.trackCount }} {{ t('comp.playlistDrawer.count') }}
                 </div>
               </div>
-              <div class="playlist-item-action">
-                <i class="iconfont ri-add-line"></i>
+
+              <!-- 添加按钮 -->
+              <div
+                class="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full text-neutral-300 transition-all duration-200 group-hover:bg-primary/10 group-hover:text-primary dark:text-neutral-600 dark:group-hover:text-primary"
+              >
+                <i class="iconfont ri-add-line text-xl" />
               </div>
             </div>
           </div>
@@ -255,142 +291,7 @@ watch(
 );
 </script>
 
-<style lang="scss" scoped>
-.mac-style-drawer {
-  @apply h-full;
-
-  :deep(.n-drawer-header__main) {
-    @apply text-base font-medium;
-  }
-
-  :deep(.n-drawer-content) {
-    @apply h-full;
-  }
-
-  :deep(.n-drawer-content-wrapper) {
-    @apply h-full;
-  }
-
-  :deep(.n-scrollbar-rail) {
-    @apply right-0.5;
-  }
-}
-
-.playlist-drawer {
-  @apply flex flex-col gap-6 py-6;
-}
-
-.create-playlist-section {
-  @apply flex flex-col;
-}
-
-.create-playlist-button {
-  @apply flex items-center gap-4 p-3 rounded-xl cursor-pointer transition-all duration-200
-         bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700;
-
-  &.is-expanded {
-    @apply bg-gray-100 dark:bg-gray-700;
-
-    .create-playlist-icon {
-      transform: rotate(45deg);
-    }
-  }
-
-  &-icon {
-    @apply w-10 h-10 rounded-xl bg-green-500 flex items-center justify-center text-white
-           transition-all duration-300;
-
-    .iconfont {
-      @apply text-xl transition-transform duration-300;
-    }
-  }
-
-  &-text {
-    @apply text-sm font-medium transition-colors duration-300;
-  }
-}
-
-.create-playlist-form {
-  @apply max-h-0 overflow-hidden transition-all duration-300 ease-in-out opacity-0;
-
-  &.is-visible {
-    @apply max-h-[200px] mt-4 opacity-100;
-  }
-
-  .mac-style-input {
-    @apply rounded-lg;
-    :deep(.n-input-wrapper) {
-      @apply bg-gray-50 dark:bg-gray-800 border-0;
-    }
-    :deep(.n-input__input) {
-      @apply text-sm;
-    }
-    :deep(.n-input__prefix) {
-      @apply text-gray-400;
-    }
-  }
-
-  .form-actions {
-    @apply mt-4;
-    .mac-style-button {
-      @apply w-full rounded-lg text-sm py-2 bg-green-500 hover:bg-green-600 text-white;
-    }
-  }
-}
-
-.privacy-switch {
-  @apply flex items-center justify-between mt-4 px-2;
-
-  .privacy-label {
-    @apply flex items-center gap-2;
-
-    .iconfont {
-      @apply text-base text-gray-500 dark:text-gray-400;
-    }
-    span {
-      @apply text-sm;
-    }
-  }
-
-  :deep(.n-switch) {
-    @apply h-5 min-w-[40px];
-  }
-}
-
-.playlist-list {
-  @apply flex flex-col gap-2 pb-40;
-}
-
-.playlist-item {
-  @apply flex items-center gap-3 p-2 rounded-xl cursor-pointer transition-all duration-200
-         hover:bg-gray-50 dark:hover:bg-gray-800;
-
-  &-img {
-    @apply w-10 h-10 rounded-xl;
-  }
-
-  &-info {
-    @apply flex-1 min-w-0;
-  }
-
-  &-name {
-    @apply text-sm font-medium truncate;
-  }
-
-  &-count {
-    @apply text-xs text-gray-500 dark:text-gray-400;
-  }
-
-  &-action {
-    @apply w-8 h-8 rounded-lg flex items-center justify-center
-           text-gray-400 hover:text-green-500 transition-colors duration-200;
-
-    .iconfont {
-      @apply text-xl;
-    }
-  }
-}
-
+<style scoped>
 :deep(.n-drawer-body-content-wrapper) {
   padding-bottom: 0 !important;
   padding-top: 0 !important;

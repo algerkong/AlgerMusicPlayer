@@ -14,7 +14,13 @@
     <div
       v-else
       ref="scrollContainer"
-      class="artists-scroll relative -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 overflow-x-auto overflow-y-hidden pt-2"
+      class="artists-scroll relative overflow-x-auto overflow-y-hidden pt-2"
+      style="
+        margin-left: calc(var(--page-pl) * -1);
+        margin-right: calc(var(--page-pr) * -1);
+        padding-left: var(--page-pl);
+        padding-right: var(--page-pr);
+      "
       @wheel="handleWheel"
     >
       <div class="artists-track flex gap-6 md:gap-8 lg:gap-10">
@@ -137,12 +143,7 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Typography System */
-.section-title {
-  @apply text-2xl md:text-3xl lg:text-4xl font-bold tracking-tight;
-}
-
-/* Optimized horizontal scroll */
+/* 优化水平滚动 */
 .artists-scroll {
   /* Hide scrollbar while maintaining functionality */
   scrollbar-width: none;

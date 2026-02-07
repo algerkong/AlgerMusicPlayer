@@ -487,9 +487,11 @@ onActivated(() => {
   animation: fadeInUp 0.5s ease-out backwards;
 }
 
-/* FM Wave Animation */
+/* FM 波形动画 */
 .fm-wave-bar {
-  @apply w-[3px] rounded-full bg-white/60;
+  width: 3px;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.6);
   height: 12px;
   animation: fmWave 1s ease-in-out infinite;
 }

@@ -74,7 +74,3 @@ defineEmits<{
   (e: 'click'): void;
 }>();
 </script>
-
-<style scoped>
-/* 使用 Tailwind CSS，无需额外样式 */
-</style>

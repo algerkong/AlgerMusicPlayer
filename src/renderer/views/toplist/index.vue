@@ -1,7 +1,7 @@
 <template>
   <div class="toplist-page h-full w-full bg-white dark:bg-black transition-colors duration-500">
     <n-scrollbar class="h-full">
-      <div class="toplist-content w-full pb-32 pt-6 px-4 sm:px-6 lg:px-8 lg:pl-0">
+      <div class="toplist-content w-full pb-32 pt-6 page-padding">
         <!-- Hero Section -->
         <div class="mb-10">
           <h1

@@ -3,10 +3,7 @@
     class="category-selector border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-black z-10"
   >
     <n-scrollbar ref="scrollbarRef" x-scrollable>
-      <div
-        class="categories-wrapper py-4 px-4 sm:px-6 lg:px-8 lg:pl-0"
-        @wheel.prevent="handleWheel"
-      >
+      <div class="categories-wrapper py-4 page-padding" @wheel.prevent="handleWheel">
         <span
           v-for="(category, index) in categories"
           :key="getItemKey(category, index)"

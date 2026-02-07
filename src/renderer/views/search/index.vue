@@ -3,7 +3,7 @@
     class="search-page-container h-full w-full bg-white dark:bg-black transition-colors duration-500"
   >
     <n-scrollbar class="h-full">
-      <div class="search-content w-full pb-32 pt-6 px-4 sm:px-6 lg:px-8 lg:pl-0">
+      <div class="search-content w-full pb-32 pt-6 page-padding">
         <!-- Search Header / Hero -->
         <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>

@@ -13,7 +13,7 @@
 
     <!-- Main Content Scrollbar -->
     <n-scrollbar ref="contentScrollbarRef" class="flex-1" :size="100" @scroll="handleScroll">
-      <div class="podcast-content w-full pb-32 pt-6 px-4 sm:px-6 lg:px-8 lg:pl-0">
+      <div class="podcast-content w-full pb-32 pt-6 page-padding">
         <!-- Dashboard View (Recommend) -->
         <div v-if="currentCategoryId === -1">
           <!-- Hero Section -->
