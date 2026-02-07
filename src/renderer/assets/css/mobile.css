@@ -1,0 +1,95 @@
+/* 移动端 message 容器：移到底部 */
+.mobile .n-message-container {
+  top: auto !important;
+  bottom: calc(200px + var(--safe-area-inset-bottom, 0px)) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: auto !important;
+  min-width: 70vw !important;
+  max-width: 90vw !important;
+  padding: 0 !important;
+  z-index: 99999999999 !important;
+}
+
+/* 移动端 message 项目样式 */
+.mobile .n-message-wrapper {
+  margin: 0 0 8px 0 !important;
+}
+
+.mobile .n-message {
+  padding: 12px 20px !important;
+  border-radius: 24px !important;
+  font-size: 14px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+  backdrop-filter: blur(10px) !important;
+  max-width: 85vw !important;
+}
+
+/* 深色模式下的 message */
+.mobile.noElectron .n-message {
+  background: rgba(50, 50, 50, 0.95) !important;
+  color: #fff !important;
+}
+
+/* 浅色模式下的 message */
+.mobile:not(.noElectron) .n-message,
+.mobile .theme-light .n-message {
+  background: rgba(255, 255, 255, 0.5) !important;
+  color: #333 !important;
+}
+
+/* 成功消息 */
+.mobile .n-message--success-type {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.95), rgba(22, 163, 74, 0.95)) !important;
+  color: #fff !important;
+}
+
+.mobile .n-message--success-type .n-message__icon {
+  color: #fff !important;
+}
+
+/* 错误消息 */
+.mobile .n-message--error-type {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.95), rgba(220, 38, 38, 0.95)) !important;
+  color: #fff !important;
+}
+
+.mobile .n-message--error-type .n-message__icon {
+  color: #fff !important;
+}
+
+/* 警告消息 */
+.mobile .n-message--warning-type {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.95), rgba(217, 119, 6, 0.95)) !important;
+  color: #fff !important;
+}
+
+.mobile .n-message--warning-type .n-message__icon {
+  color: #fff !important;
+}
+
+/* 信息消息 */
+.mobile .n-message--info-type {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(37, 99, 235, 0.95)) !important;
+  color: #fff !important;
+}
+
+.mobile .n-message--info-type .n-message__icon {
+  color: #fff !important;
+}
+
+/* loading 消息 */
+.mobile .n-message--loading-type {
+  background: rgba(50, 50, 50, 0.95) !important;
+  color: #fff !important;
+}
+
+/* 隐藏关闭按钮让设计更简洁 */
+.mobile .n-message__close {
+  display: none !important;
+}
+
+/* 图标样式调整 */
+.mobile .n-message__icon {
+  margin-right: 8px !important;
+}
