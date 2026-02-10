@@ -25,7 +25,7 @@ interface KugouSuggestionResponse {
   data: Suggestion[];
 }
 
-// 网易云搜索建议返回的数据结构（部分字段）
+// 搜索建议返回的数据结构（部分字段）
 interface NeteaseSuggestResult {
   result?: {
     songs?: Array<{ name: string }>;
@@ -36,7 +36,7 @@ interface NeteaseSuggestResult {
 }
 
 /**
- * 从酷狗获取搜索建议
+ * 获取搜索建议
  * @param keyword 搜索关键词
  */
 export const getSearchSuggestions = async (keyword: string) => {
@@ -54,7 +54,7 @@ export const getSearchSuggestions = async (keyword: string) => {
       console.log('[API] Running in Electron, using IPC proxy.');
       responseData = await window.api.getSearchSuggestions(keyword);
     } else {
-      // 非 Electron 环境下，使用网易云接口
+      // 非 Electron 环境下，使用接口
       const res = await request.get<NeteaseSuggestResult>('/search/suggest', {
         params: { keywords: keyword }
       });
@@ -67,7 +67,7 @@ export const getSearchSuggestions = async (keyword: string) => {
 
       // 去重并截取前10个
       const unique = Array.from(new Set(names)).slice(0, 10);
-      console.log('[API] getSearchSuggestions: 网易云建议解析成功:', unique);
+      console.log('[API] getSearchSuggestions: 解析成功:', unique);
       return unique;
     }
 

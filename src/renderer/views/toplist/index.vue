@@ -83,7 +83,7 @@
                   {{ item.name }}
                 </h3>
                 <p class="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1">
-                  {{ item.updateFrequency || '网易云音乐榜单' }}
+                  {{ item.updateFrequency }}
                 </p>
               </div>
             </div>

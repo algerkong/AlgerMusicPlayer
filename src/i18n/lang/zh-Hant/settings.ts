@@ -98,14 +98,17 @@ export default {
 
     // 音源標籤
     sourceLabels: {
-      migu: '咪咕音樂',
-      kugou: '酷狗音樂',
-      pyncmd: '網易雲（內建）',
+      migu: 'migu',
+      kugou: 'kugou',
+      kuwo: 'kuwo',
+      pyncmd: 'pyncmd',
+      qq: 'qq',
+      joox: 'JOOX',
       bilibili: 'Bilibili',
-      gdmusic: 'GD音樂台',
+      gdmusic: 'gdmusic',
+      lxMusic: 'lxMusic',
       custom: '自訂 API'
     },
-
     customApi: {
       sectionTitle: '自訂 API 設定',
       importConfig: '匯入 JSON 設定',

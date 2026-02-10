@@ -20,7 +20,7 @@ export default {
     language: '语言设置',
     languageDesc: '切换显示语言',
     tokenManagement: 'Cookie管理',
-    tokenManagementDesc: '管理网易云音乐登录Cookie',
+    tokenManagementDesc: '管理音乐登录Cookie',
     tokenStatus: '当前Cookie状态',
     tokenSet: '已设置',
     tokenNotSet: '未设置',
@@ -61,7 +61,7 @@ export default {
   },
   playback: {
     quality: '音质设置',
-    qualityDesc: '选择音乐播放音质（网易云VIP）',
+    qualityDesc: '选择音乐播放音质（不确保有效）',
     qualityOptions: {
       standard: '标准',
       higher: '较高',
@@ -99,11 +99,15 @@ export default {
 
     // 音源标签
     sourceLabels: {
-      migu: '咪咕音乐',
-      kugou: '酷狗音乐',
-      pyncmd: '网易云（内置）',
+      migu: 'migu',
+      kugou: 'kugou',
+      kuwo: 'kuwo',
+      pyncmd: 'pyncmd',
+      qq: 'qq',
+      joox: 'JOOX',
       bilibili: 'Bilibili',
-      gdmusic: 'GD音乐台',
+      gdmusic: 'gdmusic',
+      lxMusic: 'lxMusic',
       custom: '自定义 API'
     },
 
@@ -414,7 +418,7 @@ export default {
   },
   cookie: {
     title: 'Cookie设置',
-    description: '请输入网易云音乐的Cookie：',
+    description: '请输入音乐的Cookie：',
     placeholder: '请粘贴完整的Cookie...',
     help: {
       format: 'Cookie通常以 "MUSIC_U=" 开头',

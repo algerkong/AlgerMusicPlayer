@@ -105,9 +105,13 @@ export default {
     sourceLabels: {
       migu: 'Migu',
       kugou: 'Kugou',
+      kuwo: 'Kuwo',
       pyncmd: 'NetEase (Built-in)',
+      qq: 'QQ Music',
+      joox: 'JOOX',
       bilibili: 'Bilibili',
       gdmusic: 'GD Music',
+      lxMusic: 'LX Music',
       custom: 'Custom API'
     },
 

@@ -108,7 +108,7 @@ const convertToLxMusicInfo = (songResult: SongResult): LxMusicInfo => {
     singer: artistName,
     album: albumName,
     albumId,
-    source: 'wy', // 默认使用网易云作为源，因为我们的数据来自网易云
+    source: 'wy',
     interval,
     img: songResult.picUrl || songResult.al?.picUrl || ''
   };
@@ -116,13 +116,11 @@ const convertToLxMusicInfo = (songResult: SongResult): LxMusicInfo => {
 
 /**
  * 获取最佳匹配的落雪音源
- * 因为我们的数据来自网易云，优先尝试 wy 音源
  */
 const getBestMatchingSource = (
   availableSources: LxSourceKey[],
   _songSource?: string
 ): LxSourceKey | null => {
-  // 优先级顺序：网易云 > 酷我 > 咪咕 > 酷狗 > QQ音乐
   const priority: LxSourceKey[] = ['wy', 'kw', 'mg', 'kg', 'tx'];
 
   for (const source of priority) {
@@ -196,7 +194,9 @@ export class LxMusicStrategy {
         return null;
       }
 
-      console.log(`[LxMusicStrategy] 使用激活的音源: ${activeScript.name} (ID: ${activeScript.id})`);
+      console.log(
+        `[LxMusicStrategy] 使用激活的音源: ${activeScript.name} (ID: ${activeScript.id})`
+      );
 
       // 获取或初始化执行器
       let runner = getLxMusicRunner();

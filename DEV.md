@@ -15,7 +15,7 @@
 - **国际化**：vue-i18n
 - **HTTP 客户端**：axios
 - **本地存储**：electron-store localstorage
-- **网易云音乐 API**：netease-cloud-music-api
+- **音乐 API**：netease-cloud-music-api
 - **音乐解锁**：@unblockneteasemusic/server
 
 ### 项目结构
@@ -93,7 +93,7 @@ AlgerMusicPlayer/
 
 - **index.ts**: 应用主入口，负责创建窗口和应用生命周期管理
 - **lyric.ts**: 歌词解析和处理
-- **unblockMusic.ts**: 网易云音乐解锁功能
+- **unblockMusic.ts**: 音乐解锁功能
 - **server.ts**: 本地服务器
 
 #### 预加载脚本 (src/preload)

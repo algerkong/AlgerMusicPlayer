@@ -33,15 +33,15 @@
               </p>
 
               <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-                <!-- Standard Sources -->
                 <div
-                  v-for="source in MUSIC_SOURCES"
+                  v-for="source in allSources"
                   :key="source.key"
                   class="group relative flex items-center p-2.5 rounded-xl border transition-all duration-200 cursor-pointer"
                   :class="[
                     isSourceSelected(source.key)
                       ? 'bg-emerald-50/50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20'
-                      : 'bg-white dark:bg-white/5 border-gray-100 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/10'
+                      : 'bg-white dark:bg-white/5 border-gray-100 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/10',
+                    { 'opacity-60 cursor-not-allowed': !source.available }
                   ]"
                   @click="toggleSource(source.key)"
                 >
@@ -53,7 +53,7 @@
                     }"
                     :class="{ 'bg-gray-100 dark:bg-white/10': !isSourceSelected(source.key) }"
                   >
-                    <i class="ri-music-2-fill text-base"></i>
+                    <i :class="source.icon" class="text-base"></i>
                   </div>
 
                   <div class="flex-1 min-w-0">
@@ -75,102 +75,22 @@
                         ></i>
                       </div>
                     </div>
-                  </div>
-                </div>
-
-                <!-- LX Music Source -->
-                <div
-                  class="group relative flex items-center p-2.5 rounded-xl border transition-all duration-200 cursor-pointer"
-                  :class="[
-                    isSourceSelected('lxMusic')
-                      ? 'bg-emerald-50/50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20'
-                      : 'bg-white dark:bg-white/5 border-gray-100 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/10',
-                    { 'opacity-60 cursor-not-allowed': !activeLxApiId || lxMusicApis.length === 0 }
-                  ]"
-                  @click="toggleSource('lxMusic')"
-                >
-                  <div
-                    class="flex items-center justify-center w-8 h-8 rounded-full mr-2.5 transition-colors shrink-0"
-                    :class="[
-                      isSourceSelected('lxMusic')
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-gray-100 dark:bg-white/10 text-emerald-500'
-                    ]"
-                  >
-                    <i class="ri-netease-cloud-music-fill text-base"></i>
-                  </div>
-
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center justify-between">
-                      <span class="font-semibold text-gray-900 dark:text-white text-sm truncate"
-                        >落雪音源</span
-                      >
-                      <div
-                        class="w-4 h-4 rounded-full border flex items-center justify-center transition-colors shrink-0 ml-1"
-                        :class="[
-                          isSourceSelected('lxMusic')
-                            ? 'bg-emerald-500 border-emerald-500'
-                            : 'border-gray-300 dark:border-gray-600'
-                        ]"
-                      >
-                        <i
-                          v-if="isSourceSelected('lxMusic')"
-                          class="ri-check-line text-white text-xs scale-75"
-                        ></i>
-                      </div>
-                    </div>
-                    <p class="text-[10px] text-gray-500 mt-0.5 truncate">
+                    <!-- lxMusic 子描述 -->
+                    <p
+                      v-if="source.key === 'lxMusic'"
+                      class="text-[10px] text-gray-500 mt-0.5 truncate"
+                    >
                       {{
                         activeLxApiId && lxMusicScriptInfo
                           ? lxMusicScriptInfo.name
                           : t('settings.playback.lxMusic.scripts.notConfigured')
                       }}
                     </p>
-                  </div>
-                </div>
-
-                <!-- Custom API Source -->
-                <div
-                  class="group relative flex items-center p-2.5 rounded-xl border transition-all duration-200 cursor-pointer"
-                  :class="[
-                    isSourceSelected('custom')
-                      ? 'bg-emerald-50/50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/20'
-                      : 'bg-white dark:bg-white/5 border-gray-100 dark:border-white/5 hover:bg-gray-50 dark:hover:bg-white/10',
-                    { 'opacity-60 cursor-not-allowed': !settingsStore.setData.customApiPlugin }
-                  ]"
-                  @click="toggleSource('custom')"
-                >
-                  <div
-                    class="flex items-center justify-center w-8 h-8 rounded-full mr-2.5 transition-colors shrink-0"
-                    :class="[
-                      isSourceSelected('custom')
-                        ? 'bg-violet-500 text-white'
-                        : 'bg-gray-100 dark:bg-white/10 text-violet-500'
-                    ]"
-                  >
-                    <i class="ri-plug-fill text-base"></i>
-                  </div>
-
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center justify-between">
-                      <span class="font-semibold text-gray-900 dark:text-white text-sm truncate">{{
-                        t('settings.playback.sourceLabels.custom')
-                      }}</span>
-                      <div
-                        class="w-4 h-4 rounded-full border flex items-center justify-center transition-colors shrink-0 ml-1"
-                        :class="[
-                          isSourceSelected('custom')
-                            ? 'bg-emerald-500 border-emerald-500'
-                            : 'border-gray-300 dark:border-gray-600'
-                        ]"
-                      >
-                        <i
-                          v-if="isSourceSelected('custom')"
-                          class="ri-check-line text-white text-xs scale-75"
-                        ></i>
-                      </div>
-                    </div>
-                    <p class="text-[10px] text-gray-500 mt-0.5 truncate">
+                    <!-- custom 子描述 -->
+                    <p
+                      v-else-if="source.key === 'custom'"
+                      class="text-[10px] text-gray-500 mt-0.5 truncate"
+                    >
                       {{
                         settingsStore.setData.customApiPlugin
                           ? t('settings.playback.customApi.status.imported')
@@ -377,24 +297,7 @@ import {
 import { useSettingsStore } from '@/store';
 import type { LxMusicScriptConfig, LxScriptInfo, LxSourceKey } from '@/types/lxMusic';
 import { type Platform } from '@/types/music';
-
-// ==================== 类型定义 ====================
-type ExtendedPlatform = Platform | 'custom' | 'lxMusic';
-
-interface MusicSourceConfig {
-  key: string;
-  description?: string;
-  color: string;
-  disabled?: boolean;
-}
-
-// ==================== 音源配置 ====================
-const MUSIC_SOURCES: MusicSourceConfig[] = [
-  { key: 'migu', color: '#ff6600' },
-  { key: 'kugou', color: '#2979ff' },
-  { key: 'kuwo', color: '#ff8c00' },
-  { key: 'pyncmd', color: '#ec4141' }
-];
+import { useMusicSources } from '@/utils/musicSourceConfig';
 
 // ==================== Props & Emits ====================
 const props = defineProps({
@@ -403,8 +306,8 @@ const props = defineProps({
     default: false
   },
   sources: {
-    type: Array as () => ExtendedPlatform[],
-    default: () => ['migu', 'kugou', 'kuwo', 'pyncmd'] as ExtendedPlatform[]
+    type: Array as () => Platform[],
+    default: () => ['migu', 'kugou', 'kuwo', 'pyncmd'] as Platform[]
   }
 });
 
@@ -415,8 +318,9 @@ const { t } = useI18n();
 const settingsStore = useSettingsStore();
 const message = useMessage();
 const visible = ref(props.show);
-const selectedSources = ref<ExtendedPlatform[]>([...props.sources]);
+const selectedSources = ref<Platform[]>([...props.sources]);
 const activeTab = ref('sources');
+const { allSources } = useMusicSources();
 
 const tabs = computed(() => [
   { key: 'sources', label: t('settings.playback.lxMusic.tabs.sources') },
@@ -459,7 +363,7 @@ const renameInputRef = ref<HTMLInputElement | null>(null);
 
 // ==================== 计算属性 ====================
 const isSourceSelected = (sourceKey: string): boolean => {
-  return selectedSources.value.includes(sourceKey as ExtendedPlatform);
+  return selectedSources.value.includes(sourceKey as Platform);
 };
 
 // ==================== 方法 ====================
@@ -488,7 +392,7 @@ const toggleSource = (sourceKey: string) => {
     }
   }
 
-  const index = selectedSources.value.indexOf(sourceKey as ExtendedPlatform);
+  const index = selectedSources.value.indexOf(sourceKey as Platform);
   if (index > -1) {
     // 至少保留一个音源
     if (selectedSources.value.length <= 1) {
@@ -497,7 +401,7 @@ const toggleSource = (sourceKey: string) => {
     }
     selectedSources.value.splice(index, 1);
   } else {
-    selectedSources.value.push(sourceKey as ExtendedPlatform);
+    selectedSources.value.push(sourceKey as Platform);
   }
 };
 
@@ -749,7 +653,7 @@ const saveScriptName = (apiId: string) => {
  * 确认选择
  */
 const handleConfirm = () => {
-  const defaultPlatforms: ExtendedPlatform[] = ['migu', 'kugou', 'kuwo', 'pyncmd'];
+  const defaultPlatforms: Platform[] = ['migu', 'kugou', 'kuwo', 'pyncmd'];
   const valuesToEmit =
     selectedSources.value.length > 0 ? [...new Set(selectedSources.value)] : defaultPlatforms;
   emit('update:sources', valuesToEmit);
@@ -812,7 +716,7 @@ watch(
 // 同步外部sources属性变化
 watch(
   () => props.sources,
-  (newVal: ExtendedPlatform[]) => {
+  (newVal: Platform[]) => {
     selectedSources.value = [...newVal];
   },
   { deep: true }

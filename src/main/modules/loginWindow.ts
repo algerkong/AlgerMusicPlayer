@@ -42,7 +42,7 @@ const openLoginWindow = async (mainWin: BrowserWindow) => {
     }
   });
 
-  // 打开网易云登录页面
+  // 打开登录页面
   loginWindow.loadURL(loginUrl);
 
   // 阻止新窗口创建

@@ -5,14 +5,14 @@ export default {
     cookie: 'Cookie登录',
     uid: 'UID登录'
   },
-  qrTip: '使用网易云APP扫码登录',
-  phoneTip: '使用网易云账号登录',
-  tokenTip: '输入有效的网易云音乐Cookie即可登录',
+  qrTip: '使用APP扫码登录',
+  phoneTip: '使用账号登录',
+  tokenTip: '输入有效的音乐Cookie即可登录',
   uidTip: '输入用户ID快速登录',
   placeholder: {
     phone: '手机号',
     password: '密码',
-    cookie: '请输入网易云音乐Cookie（token）',
+    cookie: '请输入音乐Cookie（token）',
     uid: '请输入用户ID（UID）'
   },
   button: {
@@ -45,7 +45,7 @@ export default {
     phoneLoginFailed: '手机号登录失败，请检查手机号和密码是否正确',
     autoGetCookieSuccess: '自动获取Cookie成功',
     autoGetCookieFailed: '自动获取Cookie失败',
-    autoGetCookieTip: '将打开网易云音乐登录页面，请完成登录后关闭窗口',
+    autoGetCookieTip: '将打开音乐登录页面，请完成登录后关闭窗口',
     qrCheckFailed: '检查二维码状态失败，请刷新重试',
     qrLoading: '正在加载二维码...',
     qrExpired: '二维码已过期，请点击刷新',
@@ -57,6 +57,6 @@ export default {
     qrConfirmed: '登录成功，正在跳转...',
     qrGenerating: '正在生成二维码...'
   },
-  qrTitle: '扫码登录网易云音乐',
+  qrTitle: '扫码登录',
   uidWarning: '注意：UID登录仅用于查看用户公开信息，无法访问需要登录权限的功能'
 };

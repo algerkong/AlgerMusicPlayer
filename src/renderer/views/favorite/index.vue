@@ -257,10 +257,9 @@ const getFavoriteSongs = async () => {
   try {
     const currentIds = getCurrentPageIds();
 
-    // 分离网易云音乐ID和B站视频ID
     const musicIds = currentIds.filter((id) => typeof id === 'number') as number[];
 
-    // 处理网易云音乐数据
+    // 处理音乐数据
     let neteaseSongs: SongResult[] = [];
     if (musicIds.length > 0) {
       const res = await getMusicDetail(musicIds);
@@ -282,7 +281,7 @@ const getFavoriteSongs = async () => {
       .map((id) => {
         const strId = String(id);
 
-        // 查找网易云音乐
+        // 查找音乐
         const found = neteaseSongs.find((song) => String(song.id) === strId);
         return found;
       })

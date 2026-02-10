@@ -23,12 +23,6 @@ export type LxQuality = '128k' | '320k' | 'flac' | 'flac24bit';
 
 /**
  * 支持的音源 key
- * - kw: 酷我
- * - kg: 酷狗
- * - tx: QQ音乐
- * - wy: 网易云
- * - mg: 咪咕
- * - local: 本地音乐
  */
 export type LxSourceKey = 'kw' | 'kg' | 'tx' | 'wy' | 'mg' | 'local';
 
@@ -122,12 +116,12 @@ export const LX_EVENT_NAMES = {
  * 落雪音源 key 到平台名称的映射
  */
 export const LX_SOURCE_NAMES: Record<LxSourceKey, string> = {
-  kw: '酷我',
-  kg: '酷狗',
-  tx: 'QQ音乐',
-  wy: '网易云',
-  mg: '咪咕',
-  local: '本地'
+  kw: 'kw',
+  kg: 'kg',
+  tx: 'tx',
+  wy: 'wy',
+  mg: 'mg',
+  local: 'local'
 };
 
 /**

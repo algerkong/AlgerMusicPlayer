@@ -555,7 +555,7 @@ const loadHistoryData = async () => {
 
     // 根据分类处理不同的数据
     if (currentCategory.value === 'songs') {
-      // 区分本地歌曲和网易云歌曲
+      // 区分本地歌曲和云歌曲
       const localItems: any[] = [];
       const neteaseItems: any[] = [];
 
@@ -567,7 +567,7 @@ const loadHistoryData = async () => {
         }
       });
 
-      // 获取网易云歌曲详情
+      // 获取歌曲详情
       let neteaseSongs: SongResult[] = [];
       if (neteaseItems.length > 0) {
         try {
@@ -585,7 +585,7 @@ const loadHistoryData = async () => {
             });
           }
         } catch (error) {
-          console.error('获取网易云歌曲详情失败:', error);
+          console.error('获取歌曲详情失败:', error);
         }
       }
 

@@ -22,37 +22,58 @@
     <div class="reparse-popover bg-light-100 dark:bg-dark-100 p-4 rounded-xl max-w-60">
       <div class="text-base font-medium mb-2">{{ t('player.reparse.title') }}</div>
       <div class="text-sm opacity-70 mb-3">{{ t('player.reparse.desc') }}</div>
-      <div class="mb-3">
+      <div class="mb-3 max-h-80 overflow-y-auto">
         <div class="flex flex-col space-y-2">
-          <div
-            v-for="source in musicSourceOptions"
-            :key="source.value"
-            class="source-button flex items-center p-2 rounded-lg cursor-pointer transition-all duration-200 bg-light-200 dark:bg-dark-200 hover:bg-light-300 dark:hover:bg-dark-300"
-            :class="{
-              'bg-green-50 dark:bg-green-900/20 text-green-500': isCurrentSource(source.value),
-              'opacity-50 cursor-not-allowed': isReparsing
-            }"
-            @click="directReparseMusic(source.value)"
-          >
-            <div class="flex items-center justify-center w-6 h-6 mr-3 text-lg">
-              <i :class="getSourceIcon(source.value)"></i>
-            </div>
-            <div class="flex-1 text-sm whitespace-nowrap overflow-hidden text-ellipsis">
-              {{ source.label }}
-            </div>
+          <template v-for="(group, groupIndex) in groupedSources" :key="group.key">
+            <!-- 分组分隔线 -->
             <div
-              v-if="isReparsing && currentReparsingSource === source.value"
-              class="w-5 h-5 flex items-center justify-center"
-            >
-              <i class="ri-loader-4-line animate-spin"></i>
-            </div>
+              v-if="groupIndex > 0"
+              class="border-t border-gray-200 dark:border-gray-700 my-1"
+            ></div>
             <div
-              v-else-if="isCurrentSource(source.value)"
-              class="w-5 h-5 flex items-center justify-center"
+              v-for="source in group.sources"
+              :key="source.id"
+              class="source-button flex items-center p-2 rounded-lg transition-all duration-200"
+              :class="[
+                source.available
+                  ? 'cursor-pointer bg-light-200 dark:bg-dark-200 hover:bg-light-300 dark:hover:bg-dark-300'
+                  : 'opacity-40 cursor-not-allowed bg-light-200 dark:bg-dark-200',
+                {
+                  'bg-green-50 dark:bg-green-900/20 text-green-500': isCurrentSource(source.id),
+                  'opacity-50 cursor-not-allowed': isReparsing && source.available
+                }
+              ]"
+              @click="source.available && handleSourceClick(source)"
             >
-              <i class="ri-check-line"></i>
+              <div
+                class="flex items-center justify-center w-6 h-6 mr-3 text-lg"
+                :style="{ color: source.color }"
+              >
+                <i :class="source.icon"></i>
+              </div>
+              <div class="flex-1 text-sm whitespace-nowrap overflow-hidden text-ellipsis">
+                <span>{{ source.label }}</span>
+                <n-tooltip v-if="!source.available && source.configHint" trigger="hover">
+                  <template #trigger>
+                    <i class="ri-information-line text-xs ml-1 opacity-60"></i>
+                  </template>
+                  {{ t(source.configHint) }}
+                </n-tooltip>
+              </div>
+              <div
+                v-if="isReparsing && currentReparsingId === source.id"
+                class="w-5 h-5 flex items-center justify-center"
+              >
+                <i class="ri-loader-4-line animate-spin"></i>
+              </div>
+              <div
+                v-else-if="isCurrentSource(source.id)"
+                class="w-5 h-5 flex items-center justify-center"
+              >
+                <i class="ri-check-line"></i>
+              </div>
             </div>
-          </div>
+          </template>
         </div>
       </div>
       <!-- 清除自定义音源 -->
@@ -78,50 +99,101 @@ import { useI18n } from 'vue-i18n';
 
 import { CacheManager } from '@/api/musicParser';
 import { playMusic } from '@/hooks/MusicHook';
+import { initLxMusicRunner, setLxMusicRunner } from '@/services/LxMusicSourceRunner';
 import { SongSourceConfigManager } from '@/services/SongSourceConfigManager';
+import { useSettingsStore } from '@/store';
 import { usePlayerStore } from '@/store/modules/player';
+import type { LxMusicScriptConfig } from '@/types/lxMusic';
 import type { Platform } from '@/types/music';
+import { type MusicSourceGroup, useMusicSources } from '@/utils/musicSourceConfig';
+
+type ReparseSourceItem = {
+  id: string;
+  platform: Platform;
+  label: string;
+  icon: string;
+  color: string;
+  group: MusicSourceGroup;
+  available: boolean;
+  configHint?: string;
+  lxScriptId?: string;
+};
 
 const playerStore = usePlayerStore();
+const settingsStore = useSettingsStore();
 const { t } = useI18n();
 const message = useMessage();
+const { allSources } = useMusicSources();
 
 // 音源重新解析状态
 const isReparsing = ref(false);
-const currentReparsingSource = ref<Platform | null>(null);
+const currentReparsingId = ref<string | null>(null);
 
-// 实际存储选中音源的值
-const selectedSourcesValue = ref<Platform[]>([]);
+// 当前选中的音源条目 id（唯一标识，区分不同 lxMusic 脚本）
+const selectedSourceId = ref<string | null>(null);
 
-const isReparse = computed(() => selectedSourcesValue.value.length > 0);
+const isReparse = computed(() => selectedSourceId.value !== null);
 
-// 可选音源列表
-const musicSourceOptions = ref([
-  { label: 'MiGu', value: 'migu' as Platform },
-  { label: 'KuGou', value: 'kugou' as Platform },
-  { label: 'pyncmd', value: 'pyncmd' as Platform },
-  { label: 'GdMuisc', value: 'gdmusic' as Platform }
-]);
+// 构建重解析音源列表：将 lxMusic 展开为每个导入的脚本
+const reparseSourceList = computed<ReparseSourceItem[]>(() => {
+  const result: ReparseSourceItem[] = [];
+  for (const source of allSources.value) {
+    if (source.key === 'lxMusic') {
+      const scripts: LxMusicScriptConfig[] = settingsStore.setData.lxMusicScripts || [];
+      for (const script of scripts) {
+        result.push({
+          id: `lxMusic:${script.id}`,
+          platform: 'lxMusic',
+          label: script.name,
+          icon: source.icon,
+          color: source.color,
+          group: source.group,
+          available: true,
+          lxScriptId: script.id
+        });
+      }
+      // 没有导入任何脚本时显示占位
+      if (scripts.length === 0) {
+        result.push({
+          id: 'lxMusic',
+          platform: 'lxMusic',
+          label: 'lxMusic',
+          icon: source.icon,
+          color: source.color,
+          group: source.group,
+          available: false,
+          configHint: 'settings.playback.lxMusic.scripts.notConfigured'
+        });
+      }
+    } else {
+      result.push({
+        id: source.key,
+        platform: source.key,
+        label: source.key,
+        icon: source.icon,
+        color: source.color,
+        group: source.group,
+        available: source.available,
+        configHint: source.configHint
+      });
+    }
+  }
+  return result;
+});
 
-// 检查音源是否被选中
-const isCurrentSource = (source: Platform) => {
-  return selectedSourcesValue.value.includes(source);
-};
+// 按分组排列音源
+const GROUP_ORDER: MusicSourceGroup[] = ['unblock', 'extended', 'plugin'];
 
-// 获取音源图标
-const getSourceIcon = (source: Platform) => {
-  const iconMap: Record<Platform, string> = {
-    migu: 'ri-music-2-fill',
-    kugou: 'ri-music-fill',
-    qq: 'ri-qq-fill',
-    joox: 'ri-disc-fill',
-    pyncmd: 'ri-netease-cloud-music-fill',
-    gdmusic: 'ri-google-fill',
-    kuwo: 'ri-music-fill',
-    lxMusic: 'ri-leaf-fill'
-  };
+const groupedSources = computed(() => {
+  return GROUP_ORDER.map((groupKey) => ({
+    key: groupKey,
+    sources: reparseSourceList.value.filter((s) => s.group === groupKey)
+  })).filter((g) => g.sources.length > 0);
+});
 
-  return iconMap[source] || 'ri-music-2-fill';
+// 检查音源条目是否被选中
+const isCurrentSource = (sourceId: string) => {
+  return selectedSourceId.value === sourceId;
 };
 
 // 初始化选中的音源
@@ -129,40 +201,59 @@ const initSelectedSources = () => {
   const songId = playMusic.value.id;
   const config = SongSourceConfigManager.getConfig(songId);
 
-  if (config) {
-    selectedSourcesValue.value = config.sources;
+  if (config && config.sources.length > 0) {
+    const platform = config.sources[0];
+    if (platform === 'lxMusic') {
+      // lxMusic 需要结合当前激活的脚本 id 来定位
+      const activeId = settingsStore.setData.activeLxMusicApiId;
+      selectedSourceId.value = activeId ? `lxMusic:${activeId}` : null;
+    } else {
+      selectedSourceId.value = platform;
+    }
   } else {
-    selectedSourcesValue.value = [];
+    selectedSourceId.value = null;
   }
 };
 
 // 清除自定义音源
 const clearCustomSource = () => {
   SongSourceConfigManager.clearConfig(playMusic.value.id);
-  selectedSourcesValue.value = [];
+  selectedSourceId.value = null;
 };
 
-// 直接重新解析当前歌曲
-const directReparseMusic = async (source: Platform) => {
-  if (isReparsing.value) {
-    return;
+// 点击音源条目
+const handleSourceClick = async (source: ReparseSourceItem) => {
+  if (source.lxScriptId) {
+    await reparseWithLxScript(source);
+  } else {
+    await directReparseMusic(source);
   }
+};
+
+// 使用指定 lxMusic 脚本重新解析
+const reparseWithLxScript = async (source: ReparseSourceItem) => {
+  if (isReparsing.value || !source.lxScriptId) return;
+
+  const scripts: LxMusicScriptConfig[] = settingsStore.setData.lxMusicScripts || [];
+  const script = scripts.find((s) => s.id === source.lxScriptId);
+  if (!script) return;
 
   try {
     isReparsing.value = true;
-    currentReparsingSource.value = source;
+    currentReparsingId.value = source.id;
+
+    // 激活该脚本的 runner
+    setLxMusicRunner(null);
+    await initLxMusicRunner(script.script);
+    settingsStore.setSetData({ activeLxMusicApiId: script.id });
 
     const songId = Number(playMusic.value.id);
-
     await CacheManager.clearMusicCache(songId);
 
-    // 更新选中的音源值为当前点击的音源
-    selectedSourcesValue.value = [source];
+    selectedSourceId.value = source.id;
+    SongSourceConfigManager.setConfig(songId, ['lxMusic'], 'manual');
 
-    // 使用 SongSourceConfigManager 保存配置（手动选择）
-    SongSourceConfigManager.setConfig(songId, [source], 'manual');
-
-    const success = await playerStore.reparseCurrentSong(source, false);
+    const success = await playerStore.reparseCurrentSong('lxMusic', false);
 
     if (success) {
       message.success(t('player.reparse.success'));
@@ -174,7 +265,37 @@ const directReparseMusic = async (source: Platform) => {
     message.error(t('player.reparse.failed'));
   } finally {
     isReparsing.value = false;
-    currentReparsingSource.value = null;
+    currentReparsingId.value = null;
+  }
+};
+
+// 直接重新解析当前歌曲（非 lxMusic）
+const directReparseMusic = async (source: ReparseSourceItem) => {
+  if (isReparsing.value) return;
+
+  try {
+    isReparsing.value = true;
+    currentReparsingId.value = source.id;
+
+    const songId = Number(playMusic.value.id);
+    await CacheManager.clearMusicCache(songId);
+
+    selectedSourceId.value = source.id;
+    SongSourceConfigManager.setConfig(songId, [source.platform], 'manual');
+
+    const success = await playerStore.reparseCurrentSong(source.platform, false);
+
+    if (success) {
+      message.success(t('player.reparse.success'));
+    } else {
+      message.error(t('player.reparse.failed'));
+    }
+  } catch (error) {
+    console.error('解析失败:', error);
+    message.error(t('player.reparse.failed'));
+  } finally {
+    isReparsing.value = false;
+    currentReparsingId.value = null;
   }
 };
 
@@ -209,7 +330,7 @@ watch(
 }
 
 .source-button {
-  &:hover:not(.opacity-50) {
+  &:hover:not(.opacity-50):not(.opacity-40) {
     @apply transform -translate-y-0.5 shadow-sm;
   }
 }
