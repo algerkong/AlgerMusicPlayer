@@ -67,7 +67,9 @@ async function startMusicApi(): Promise<void> {
 
   try {
     await server.serveNcmApi({
-      port
+      port,
+      // 安全默认值：仅监听本机回环地址，避免对局域网暴露
+      host: '127.0.0.1'
     });
     console.log(`MUSIC API STARTED on port ${port}`);
   } catch (error) {
