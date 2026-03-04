@@ -4,10 +4,13 @@
 import { ipcMain } from 'electron';
 import * as fs from 'fs';
 import * as mm from 'music-metadata';
+import * as os from 'os';
 import * as path from 'path';
 
 /** 支持的音频文件格式 */
 const SUPPORTED_AUDIO_FORMATS = ['.mp3', '.flac', '.wav', '.ogg', '.m4a', '.aac'] as const;
+const METADATA_PARSE_CONCURRENCY = Math.min(8, Math.max(2, os.cpus().length));
+const MAX_COVER_BYTES = 1024 * 1024;
 
 /**
  * 主进程返回的原始音乐元数据
@@ -72,6 +75,9 @@ function extractCoverAsDataUrl(picture: mm.IPicture | undefined): string | null 
     return null;
   }
   try {
+    if (picture.data.length > MAX_COVER_BYTES) {
+      return null;
+    }
     const mime = picture.format ?? 'image/jpeg';
     const base64 = Buffer.from(picture.data).toString('base64');
     return `data:${mime};base64,${base64}`;
@@ -263,13 +269,23 @@ async function parseMetadata(filePath: string): Promise<LocalMusicMeta> {
  * @returns 元数据对象列表
  */
 async function batchParseMetadata(filePaths: string[]): Promise<LocalMusicMeta[]> {
-  const results: LocalMusicMeta[] = [];
-
-  for (const filePath of filePaths) {
-    const meta = await parseMetadata(filePath);
-    results.push(meta);
+  if (filePaths.length === 0) {
+    return [];
   }
 
+  const results = new Array<LocalMusicMeta>(filePaths.length);
+  const workerCount = Math.min(METADATA_PARSE_CONCURRENCY, filePaths.length);
+  let index = 0;
+
+  const workers = Array.from({ length: workerCount }, async () => {
+    while (index < filePaths.length) {
+      const current = index;
+      index += 1;
+      results[current] = await parseMetadata(filePaths[current]);
+    }
+  });
+
+  await Promise.all(workers);
   return results;
 }
 
