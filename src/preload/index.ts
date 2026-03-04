@@ -1,4 +1,5 @@
 import { electronAPI } from '@electron-toolkit/preload';
+import type { IpcRendererEvent } from 'electron';
 import { contextBridge, ipcRenderer } from 'electron';
 
 // Custom APIs for renderer
@@ -87,9 +88,10 @@ const ipc = {
   },
   // 监听主进程消息
   on: (channel: string, listener: (...args: any[]) => void) => {
-    ipcRenderer.on(channel, (_, ...args) => listener(...args));
+    const wrappedListener = (_event: IpcRendererEvent, ...args: any[]) => listener(...args);
+    ipcRenderer.on(channel, wrappedListener);
     return () => {
-      ipcRenderer.removeListener(channel, listener);
+      ipcRenderer.removeListener(channel, wrappedListener);
     };
   },
   // 移除所有监听器
