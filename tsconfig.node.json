@@ -4,6 +4,7 @@
     "electron.vite.config.*",
     "src/main/**/*",
     "src/preload/**/*",
+    "src/shared/**/*",
     "src/i18n/**/*"
   ],
   "compilerOptions": {

@@ -13,7 +13,7 @@ import { initializeLoginWindow } from './modules/loginWindow';
 import { initLxMusicHttp } from './modules/lxMusicHttp';
 import { initializeOtherApi } from './modules/otherApi';
 import { initializeRemoteControl } from './modules/remoteControl';
-import { initializeShortcuts, registerShortcuts } from './modules/shortcuts';
+import { initializeShortcuts } from './modules/shortcuts';
 import { initializeTray, updateCurrentSong, updatePlayState, updateTrayMenu } from './modules/tray';
 import { setupUpdateHandlers } from './modules/update';
 import { createMainWindow, initializeWindowManager, setAppQuitting } from './modules/window';
@@ -147,11 +147,6 @@ if (!isSingleInstance) {
     app.on('activate', () => {
       if (mainWindow === null) initialize(store);
     });
-  });
-
-  // 监听快捷键更新
-  ipcMain.on('update-shortcuts', () => {
-    registerShortcuts(mainWindow);
   });
 
   // 监听语言切换

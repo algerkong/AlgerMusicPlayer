@@ -1,122 +1,398 @@
-import { globalShortcut, ipcMain } from 'electron';
+import { type BrowserWindow, globalShortcut, ipcMain } from 'electron';
 
+import {
+  defaultShortcuts,
+  getReservedAccelerators,
+  getShortcutConflicts,
+  hasShortcutAction,
+  isModifierOnlyShortcut,
+  normalizeShortcutAccelerator,
+  normalizeShortcutsConfig,
+  type ShortcutAction,
+  shortcutActionOrder,
+  type ShortcutPlatform,
+  type ShortcutsConfig,
+  type ShortcutScope
+} from '../../shared/shortcuts';
 import { getStore } from './config';
 
-// 添加获取平台信息的 IPC 处理程序
-ipcMain.on('get-platform', (event) => {
-  event.returnValue = process.platform;
-});
+type ShortcutRegistrationFailureReason = 'invalid' | 'occupied';
 
-// 定义快捷键配置接口
-export interface ShortcutConfig {
+type ShortcutRegistrationFailure = {
+  action: ShortcutAction;
   key: string;
-  enabled: boolean;
-  scope: 'global' | 'app';
-}
-
-export interface ShortcutsConfig {
-  [key: string]: ShortcutConfig;
-}
-
-// 定义默认快捷键
-export const defaultShortcuts: ShortcutsConfig = {
-  togglePlay: { key: 'CommandOrControl+Alt+P', enabled: true, scope: 'global' },
-  prevPlay: { key: 'Alt+Left', enabled: true, scope: 'global' },
-  nextPlay: { key: 'Alt+Right', enabled: true, scope: 'global' },
-  volumeUp: { key: 'Alt+Up', enabled: true, scope: 'app' },
-  volumeDown: { key: 'Alt+Down', enabled: true, scope: 'app' },
-  toggleFavorite: { key: 'CommandOrControl+Alt+L', enabled: true, scope: 'app' },
-  toggleWindow: { key: 'CommandOrControl+Alt+Shift+M', enabled: true, scope: 'global' }
+  reason: ShortcutRegistrationFailureReason;
 };
 
-let mainWindowRef: Electron.BrowserWindow | null = null;
+type ShortcutRegistrationResult = {
+  success: boolean;
+  failed: ShortcutRegistrationFailure[];
+};
 
-// 注册快捷键
-export function registerShortcuts(
-  mainWindow: Electron.BrowserWindow,
-  shortcutsConfig?: ShortcutsConfig
-) {
-  mainWindowRef = mainWindow;
+type ShortcutValidationReason = 'invalid' | 'conflict' | 'reserved';
+
+type ShortcutValidationIssue = {
+  action: ShortcutAction;
+  key: string;
+  scope: ShortcutScope;
+  reason: ShortcutValidationReason;
+  conflictWith?: ShortcutAction;
+};
+
+type ShortcutValidationResult = {
+  shortcuts: ShortcutsConfig;
+  hasBlockingIssue: boolean;
+  issues: ShortcutValidationIssue[];
+};
+
+type ShortcutSaveResult = {
+  ok: boolean;
+  validation: ShortcutValidationResult;
+  registration: ShortcutRegistrationResult;
+};
+
+let mainWindowRef: BrowserWindow | null = null;
+let shortcutsEnabled = true;
+let shortcutIpcReady = false;
+
+const managedGlobalShortcuts = new Map<ShortcutAction, string>();
+
+function currentPlatform(): ShortcutPlatform {
+  if (
+    process.platform === 'darwin' ||
+    process.platform === 'win32' ||
+    process.platform === 'linux'
+  ) {
+    return process.platform;
+  }
+  return 'linux';
+}
+
+function hasAvailableMainWindow(): boolean {
+  return Boolean(mainWindowRef && !mainWindowRef.isDestroyed());
+}
+
+function isShortcutsConfigEqual(left: ShortcutsConfig, right: ShortcutsConfig): boolean {
+  return shortcutActionOrder.every((action) => {
+    const leftConfig = left[action];
+    const rightConfig = right[action];
+    return (
+      leftConfig.key === rightConfig.key &&
+      leftConfig.enabled === rightConfig.enabled &&
+      leftConfig.scope === rightConfig.scope
+    );
+  });
+}
+
+function getStoredShortcuts(): ShortcutsConfig {
   const store = getStore();
-  const shortcuts =
-    shortcutsConfig || (store.get('shortcuts') as ShortcutsConfig) || defaultShortcuts;
+  const rawShortcuts = store.get('shortcuts');
+  const normalizedShortcuts = normalizeShortcutsConfig(rawShortcuts);
 
-  // 注销所有已注册的快捷键
-  globalShortcut.unregisterAll();
+  const serializedRaw = JSON.stringify(rawShortcuts ?? null);
+  const serializedNormalized = JSON.stringify(normalizedShortcuts);
 
-  // 对旧格式数据进行兼容处理
-  if (shortcuts && typeof shortcuts.togglePlay === 'string') {
-    // 将 shortcuts 强制转换为 unknown，再转为 Record<string, string>
-    const oldShortcuts = { ...shortcuts } as unknown as Record<string, string>;
-    const newShortcuts: ShortcutsConfig = {};
+  if (serializedRaw !== serializedNormalized) {
+    store.set('shortcuts', normalizedShortcuts);
+  }
 
-    Object.entries(oldShortcuts).forEach(([key, value]) => {
-      newShortcuts[key] = {
-        key: value,
-        enabled: true,
-        scope: ['volumeUp', 'volumeDown', 'toggleFavorite'].includes(key) ? 'app' : 'global'
-      };
-    });
+  return normalizedShortcuts;
+}
 
-    store.set('shortcuts', newShortcuts);
-    registerShortcuts(mainWindow, newShortcuts);
+function persistShortcuts(shortcuts: ShortcutsConfig) {
+  const store = getStore();
+  const currentShortcuts = normalizeShortcutsConfig(store.get('shortcuts'));
+
+  if (!isShortcutsConfigEqual(currentShortcuts, shortcuts)) {
+    store.set('shortcuts', shortcuts);
+  }
+}
+
+function emitShortcutsChanged(
+  shortcuts: ShortcutsConfig,
+  registration: ShortcutRegistrationResult
+): void {
+  if (!hasAvailableMainWindow()) {
     return;
   }
 
-  // 注册全局快捷键
-  Object.entries(shortcuts).forEach(([action, config]) => {
-    const { key, enabled, scope } = config as ShortcutConfig;
+  mainWindowRef!.webContents.send('update-app-shortcuts', shortcuts);
+  mainWindowRef!.webContents.send('shortcuts-updated', shortcuts, registration);
+}
 
-    // 只注册启用且作用域为全局的快捷键
-    if (!enabled || scope !== 'global') return;
+function unregisterManagedGlobalShortcuts() {
+  managedGlobalShortcuts.forEach((accelerator) => {
+    try {
+      globalShortcut.unregister(accelerator);
+    } catch (error) {
+      console.error(`[Shortcuts] 注销快捷键失败: ${accelerator}`, error);
+    }
+  });
+  managedGlobalShortcuts.clear();
+}
+
+function handleShortcutAction(action: ShortcutAction) {
+  if (!hasAvailableMainWindow()) {
+    return;
+  }
+
+  const mainWindow = mainWindowRef!;
+
+  if (action === 'toggleWindow') {
+    if (mainWindow.isVisible() && mainWindow.isFocused()) {
+      mainWindow.hide();
+      return;
+    }
+
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore();
+    }
+    mainWindow.show();
+    mainWindow.focus();
+    return;
+  }
+
+  mainWindow.webContents.send('global-shortcut', action);
+}
+
+function registerManagedGlobalShortcuts(shortcuts: ShortcutsConfig): ShortcutRegistrationResult {
+  unregisterManagedGlobalShortcuts();
+
+  const failed: ShortcutRegistrationFailure[] = [];
+
+  if (!shortcutsEnabled) {
+    return {
+      success: true,
+      failed
+    };
+  }
+
+  shortcutActionOrder.forEach((action) => {
+    const config = shortcuts[action];
+    if (!config.enabled || config.scope !== 'global') {
+      return;
+    }
+
+    const accelerator = normalizeShortcutAccelerator(config.key);
+    if (!accelerator || isModifierOnlyShortcut(accelerator)) {
+      failed.push({
+        action,
+        key: config.key,
+        reason: 'invalid'
+      });
+      return;
+    }
 
     try {
-      switch (action) {
-        case 'toggleWindow':
-          globalShortcut.register(key, () => {
-            if (mainWindow.isVisible()) {
-              mainWindow.hide();
-            } else {
-              mainWindow.show();
-            }
-          });
-          break;
-        default:
-          globalShortcut.register(key, () => {
-            mainWindow.webContents.send('global-shortcut', action);
-          });
-          break;
+      const registered = globalShortcut.register(accelerator, () => {
+        handleShortcutAction(action);
+      });
+
+      if (!registered) {
+        failed.push({
+          action,
+          key: accelerator,
+          reason: 'occupied'
+        });
+        return;
       }
+
+      managedGlobalShortcuts.set(action, accelerator);
     } catch (error) {
-      console.error(`注册快捷键 ${key} 失败:`, error);
+      console.error(`[Shortcuts] 注册快捷键失败: ${accelerator}`, error);
+      failed.push({
+        action,
+        key: accelerator,
+        reason: 'invalid'
+      });
     }
   });
 
-  // 通知渲染进程更新应用内快捷键
-  mainWindow.webContents.send('update-app-shortcuts', shortcuts);
+  return {
+    success: failed.length === 0,
+    failed
+  };
 }
 
-// 初始化快捷键
-export function initializeShortcuts(mainWindow: Electron.BrowserWindow) {
-  mainWindowRef = mainWindow;
-  registerShortcuts(mainWindow);
+function validateShortcuts(rawShortcuts: unknown): ShortcutValidationResult {
+  const shortcuts = normalizeShortcutsConfig(rawShortcuts);
+  const issues: ShortcutValidationIssue[] = [];
+  const issueKeys = new Set<string>();
 
-  // 监听禁用快捷键事件
+  const rawShortcutMap =
+    rawShortcuts && typeof rawShortcuts === 'object'
+      ? (rawShortcuts as Record<string, unknown>)
+      : {};
+
+  const pushIssue = (issue: ShortcutValidationIssue) => {
+    const issueKey = `${issue.reason}:${issue.action}:${issue.scope}:${issue.key}:${issue.conflictWith ?? ''}`;
+    if (issueKeys.has(issueKey)) {
+      return;
+    }
+    issueKeys.add(issueKey);
+    issues.push(issue);
+  };
+
+  shortcutActionOrder.forEach((action) => {
+    const rawActionConfig = rawShortcutMap[action];
+    if (!rawActionConfig) {
+      return;
+    }
+
+    const rawKey =
+      typeof rawActionConfig === 'string'
+        ? rawActionConfig
+        : typeof rawActionConfig === 'object' && rawActionConfig !== null
+          ? (rawActionConfig as { key?: unknown }).key
+          : null;
+
+    if (typeof rawKey !== 'string') {
+      return;
+    }
+
+    const normalizedKey = normalizeShortcutAccelerator(rawKey);
+    if (!normalizedKey || isModifierOnlyShortcut(rawKey)) {
+      pushIssue({
+        action,
+        key: rawKey,
+        scope: shortcuts[action].scope,
+        reason: 'invalid'
+      });
+    }
+  });
+
+  const conflicts = getShortcutConflicts(shortcuts);
+  conflicts.forEach((conflict) => {
+    conflict.actions.forEach((action, index) => {
+      const conflictWith = conflict.actions[(index + 1) % conflict.actions.length];
+      pushIssue({
+        action,
+        key: conflict.key,
+        scope: conflict.scope,
+        reason: 'conflict',
+        conflictWith
+      });
+    });
+  });
+
+  const reservedAccelerators = new Set(getReservedAccelerators(currentPlatform()));
+  shortcutActionOrder.forEach((action) => {
+    const config = shortcuts[action];
+    if (!config.enabled || config.scope !== 'global') {
+      return;
+    }
+
+    const accelerator = normalizeShortcutAccelerator(config.key);
+    if (accelerator && reservedAccelerators.has(accelerator)) {
+      pushIssue({
+        action,
+        key: accelerator,
+        scope: config.scope,
+        reason: 'reserved'
+      });
+    }
+  });
+
+  return {
+    shortcuts,
+    hasBlockingIssue: issues.length > 0,
+    issues
+  };
+}
+
+function applyShortcuts(shortcuts: ShortcutsConfig): ShortcutRegistrationResult {
+  const registration = registerManagedGlobalShortcuts(shortcuts);
+  emitShortcutsChanged(shortcuts, registration);
+  return registration;
+}
+
+function saveShortcuts(rawShortcuts: unknown): ShortcutSaveResult {
+  const validation = validateShortcuts(rawShortcuts);
+
+  if (validation.hasBlockingIssue) {
+    return {
+      ok: false,
+      validation,
+      registration: {
+        success: false,
+        failed: []
+      }
+    };
+  }
+
+  persistShortcuts(validation.shortcuts);
+  const registration = applyShortcuts(validation.shortcuts);
+
+  return {
+    ok: true,
+    validation,
+    registration
+  };
+}
+
+function setupShortcutIpcHandlers() {
+  if (shortcutIpcReady) {
+    return;
+  }
+
+  shortcutIpcReady = true;
+
+  ipcMain.on('get-platform', (event) => {
+    event.returnValue = process.platform;
+  });
+
   ipcMain.on('disable-shortcuts', () => {
-    globalShortcut.unregisterAll();
+    shortcutsEnabled = false;
+    unregisterManagedGlobalShortcuts();
   });
 
-  // 监听启用快捷键事件
   ipcMain.on('enable-shortcuts', () => {
-    if (mainWindowRef) {
-      registerShortcuts(mainWindowRef);
-    }
+    shortcutsEnabled = true;
+    const shortcuts = getStoredShortcuts();
+    applyShortcuts(shortcuts);
   });
 
-  // 监听快捷键更新事件
-  ipcMain.on('update-shortcuts', (_, shortcutsConfig: ShortcutsConfig) => {
-    if (mainWindowRef) {
-      registerShortcuts(mainWindowRef, shortcutsConfig);
-    }
+  ipcMain.on('update-shortcuts', (_, shortcutsConfig: unknown) => {
+    saveShortcuts(shortcutsConfig);
+  });
+
+  ipcMain.handle('shortcuts:get-config', () => {
+    return getStoredShortcuts();
+  });
+
+  ipcMain.handle('shortcuts:validate', (_, shortcutsConfig: unknown) => {
+    return validateShortcuts(shortcutsConfig);
+  });
+
+  ipcMain.handle('shortcuts:save', (_, shortcutsConfig: unknown) => {
+    return saveShortcuts(shortcutsConfig);
   });
 }
+
+export function registerShortcuts(mainWindow: BrowserWindow, shortcutsConfig?: ShortcutsConfig) {
+  mainWindowRef = mainWindow;
+
+  const shortcuts = shortcutsConfig
+    ? normalizeShortcutsConfig(shortcutsConfig)
+    : getStoredShortcuts();
+
+  if (shortcutsConfig) {
+    persistShortcuts(shortcuts);
+  }
+
+  return applyShortcuts(shortcuts);
+}
+
+export function initializeShortcuts(mainWindow: BrowserWindow) {
+  mainWindowRef = mainWindow;
+  setupShortcutIpcHandlers();
+
+  const shortcuts = getStoredShortcuts();
+  applyShortcuts(shortcuts);
+}
+
+export function isShortcutActionSupported(action: string): action is ShortcutAction {
+  return hasShortcutAction(action);
+}
+
+export { defaultShortcuts };

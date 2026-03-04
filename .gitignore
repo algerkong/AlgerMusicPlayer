@@ -32,6 +32,7 @@ android/app/release
 .cursor
 .windsurf
 .agent
+.agents
 .claude
 .kiro
 CLAUDE.md

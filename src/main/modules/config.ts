@@ -1,8 +1,8 @@
 import { app, ipcMain } from 'electron';
 import Store from 'electron-store';
 
+import { createDefaultShortcuts, type ShortcutsConfig } from '../../shared/shortcuts';
 import set from '../set.json';
-import { defaultShortcuts } from './shortcuts';
 
 type SetConfig = {
   isProxy: boolean;
@@ -29,7 +29,7 @@ type SetConfig = {
 };
 interface StoreType {
   set: SetConfig;
-  shortcuts: typeof defaultShortcuts;
+  shortcuts: ShortcutsConfig;
 }
 
 let store: Store<StoreType>;
@@ -42,7 +42,7 @@ export function initializeConfig() {
     name: 'config',
     defaults: {
       set: set as SetConfig,
-      shortcuts: defaultShortcuts
+      shortcuts: createDefaultShortcuts()
     }
   });
 

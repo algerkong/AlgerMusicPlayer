@@ -11,7 +11,6 @@ import pinia from '@/store';
 
 import App from './App.vue';
 import directives from './directive';
-import { initAppShortcuts } from './utils/appShortcuts';
 
 const app = createApp(App);
 
@@ -23,6 +22,3 @@ app.use(pinia);
 app.use(router);
 app.use(i18n as any);
 app.mount('#app');
-
-// 初始化应用内快捷键
-initAppShortcuts();

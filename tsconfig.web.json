@@ -4,6 +4,7 @@
     "src/preload/*.d.ts",
     "src/renderer/**/*",
     "src/renderer/**/*.vue",
+    "src/shared/**/*",
     "src/i18n/**/*",
     "src/main/modules/config.ts",
     "src/main/modules/shortcuts.ts"
