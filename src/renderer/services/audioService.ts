@@ -642,6 +642,7 @@ class AudioService {
 
             newSound.on('loaderror', (_, error) => {
               console.error('Audio load error:', error);
+              this.emit('loaderror', { track, error });
               if (retryCount < maxRetries && !existingSound) {
                 // 预加载的音频通常已经 loaded，不应重试
                 retryCount++;
@@ -657,6 +658,7 @@ class AudioService {
 
             newSound.on('playerror', (_, error) => {
               console.error('Audio play error:', error);
+              this.emit('playerror', { track, error });
               if (retryCount < maxRetries) {
                 retryCount++;
                 console.log(`Retrying playback (${retryCount}/${maxRetries})...`);

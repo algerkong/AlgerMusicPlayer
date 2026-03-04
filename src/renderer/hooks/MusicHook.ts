@@ -78,12 +78,8 @@ const setupKeyboardListeners = () => {
     const store = getPlayerStore();
     switch (e.code) {
       case 'Space':
-        if (store.play) {
-          store.setPlayMusic(false);
-          audioService.getCurrentSound()?.pause();
-        } else {
-          store.setPlayMusic(true);
-          audioService.getCurrentSound()?.play();
+        if (store.playMusic?.id) {
+          void store.setPlay({ ...store.playMusic });
         }
         break;
       default:
@@ -97,6 +93,7 @@ const { message } = createDiscreteApi(['message']);
 let progressAnimationInitialized = false;
 let globalAnimationFrameId: number | null = null;
 const lastSavedTime = ref(0);
+let audioListenersInitialized = false;
 
 // 全局停止函数
 const stopProgressAnimation = () => {
@@ -396,6 +393,12 @@ const setupMusicWatchers = () => {
 };
 
 const setupAudioListeners = () => {
+  // 监听器只注册一次，避免重复绑定和误清理全局恢复监听器
+  if (audioListenersInitialized) {
+    return () => {};
+  }
+  audioListenersInitialized = true;
+
   let interval: any = null;
   // 播放状态恢复定时器：当 interval 因异常被清除时，自动恢复
   let recoveryTimer: any = null;
@@ -485,9 +488,6 @@ const setupAudioListeners = () => {
       }
     }, 500);
   };
-
-  // 清理所有事件监听器
-  audioService.clearAllListeners();
 
   // 启动恢复监控
   startRecoveryMonitor();
@@ -1010,13 +1010,8 @@ if (isElectron) {
   windowData.electron.ipcRenderer.on('lyric-control-back', (_, command: string) => {
     switch (command) {
       case 'playpause':
-        if (getPlayerStore().play) {
-          getPlayerStore().setPlayMusic(false);
-          audioService.getCurrentSound()?.pause();
-        } else {
-          getPlayerStore().setPlayMusic(true);
-
-          audioService.getCurrentSound()?.play();
+        if (getPlayerStore().playMusic?.id) {
+          void getPlayerStore().setPlay({ ...getPlayerStore().playMusic });
         }
         break;
       case 'prev':

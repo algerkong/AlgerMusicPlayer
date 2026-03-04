@@ -1,7 +1,6 @@
 import { onMounted, onUnmounted } from 'vue';
 
 import i18n from '@/../i18n/renderer';
-import { audioService } from '@/services/audioService';
 import { usePlayerStore, useSettingsStore } from '@/store';
 
 import { isElectron } from '.';
@@ -80,11 +79,13 @@ export async function handleShortcutAction(action: string) {
     switch (action) {
       case 'togglePlay':
         if (playerStore.play) {
-          await audioService.pause();
+          await playerStore.handlePause();
           showToast(t('player.playBar.pause'), 'ri-pause-circle-line');
         } else {
-          await audioService.getCurrentSound()?.play();
-          showToast(t('player.playBar.play'), 'ri-play-circle-line');
+          if (playerStore.playMusic?.id) {
+            await playerStore.setPlay({ ...playerStore.playMusic });
+            showToast(t('player.playBar.play'), 'ri-play-circle-line');
+          }
         }
         break;
       case 'prevPlay':

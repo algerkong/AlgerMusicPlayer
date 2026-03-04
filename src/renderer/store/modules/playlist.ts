@@ -405,6 +405,12 @@ export const usePlaylistStore = defineStore(
         const nowPlayListIndex = (playListIndex.value + 1) % playList.value.length;
         const nextSong = { ...playList.value[nowPlayListIndex] };
 
+        // 同一首歌重试时强制刷新在线 URL，避免卡在失效链接上
+        if (singleTrackRetryCount > 0 && !nextSong.playMusicUrl?.startsWith('local://')) {
+          nextSong.playMusicUrl = undefined;
+          nextSong.expiredAt = undefined;
+        }
+
         console.log(
           `[nextPlay] 尝试播放: ${nextSong.name}, 索引: ${currentIndex} -> ${nowPlayListIndex}, 单曲重试: ${singleTrackRetryCount}/${SINGLE_TRACK_MAX_RETRIES}, 连续失败: ${consecutiveFailCount.value}/${MAX_CONSECUTIVE_FAILS}`
         );
@@ -591,6 +597,20 @@ export const usePlaylistStore = defineStore(
               sound.play();
               // 在恢复播放时也进行状态检测，防止URL已过期导致无声
               playerCore.checkPlaybackState(playerCore.playMusic);
+            } else {
+              console.warn('[PlaylistStore.setPlay] 无可用音频实例，尝试重建播放链路');
+              const recoverSong = {
+                ...playerCore.playMusic,
+                isFirstPlay: true,
+                playMusicUrl: playerCore.playMusic.playMusicUrl?.startsWith('local://')
+                  ? playerCore.playMusic.playMusicUrl
+                  : undefined
+              };
+              const recovered = await playerCore.handlePlayMusic(recoverSong, true);
+              if (!recovered) {
+                playerCore.setIsPlay(false);
+                message.error(i18n.global.t('player.playFailed'));
+              }
             }
           }
           return;
