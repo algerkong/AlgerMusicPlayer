@@ -74,6 +74,9 @@ class CacheManager {
 export const cacheManager = new CacheManager();
 
 export function initializeCacheManager() {
+  // 兼容历史通道命名
+  const CLEAR_LYRIC_CHANNELS = ['clear-lyric-cache', 'clear-lyrics-cache'] as const;
+
   // 添加歌词缓存相关的 IPC 处理
   ipcMain.handle('cache-lyric', async (_, id: number, lyricData: any) => {
     return await cacheManager.cacheLyric(id, lyricData);
@@ -83,7 +86,9 @@ export function initializeCacheManager() {
     return await cacheManager.getCachedLyric(id);
   });
 
-  ipcMain.handle('clear-lyric-cache', async () => {
-    return await cacheManager.clearLyricCache();
-  });
+  for (const channel of CLEAR_LYRIC_CHANNELS) {
+    ipcMain.handle(channel, async () => {
+      return await cacheManager.clearLyricCache();
+    });
+  }
 }

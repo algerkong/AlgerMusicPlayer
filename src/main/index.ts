@@ -5,6 +5,7 @@ import { join } from 'path';
 import type { Language } from '../i18n/main';
 import i18n from '../i18n/main';
 import { loadLyricWindow } from './lyric';
+import { initializeCacheManager } from './modules/cache';
 import { initializeConfig } from './modules/config';
 import { initializeFileManager } from './modules/fileManager';
 import { initializeFonts } from './modules/fonts';
@@ -41,6 +42,8 @@ function initialize(configStore: any) {
 
   // 初始化文件管理
   initializeFileManager();
+  // 初始化歌词缓存管理
+  initializeCacheManager();
   // 初始化其他 API （搜索建议等）
   initializeOtherApi();
   // 初始化窗口管理
