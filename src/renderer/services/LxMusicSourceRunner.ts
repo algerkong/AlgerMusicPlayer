@@ -3,7 +3,7 @@
  *
  * 核心职责：
  * 1. 解析脚本元信息
- * 2. 在隔离环境中执行用户脚本
+ * 2. 在 Worker 隔离环境执行用户脚本
  * 3. 模拟 globalThis.lx API
  * 4. 处理初始化和音乐解析请求
  */
@@ -17,7 +17,80 @@ import type {
   LxSourceConfig,
   LxSourceKey
 } from '@/types/lxMusic';
-import * as lxCrypto from '@/utils/lxCrypto';
+
+type WorkerInitializeMessage = {
+  type: 'initialize';
+  script: string;
+  scriptInfo: LxScriptInfo;
+};
+
+type WorkerInvokeMessage = {
+  type: 'invoke-request';
+  callId: string;
+  payload: any;
+};
+
+type WorkerHttpResponseMessage = {
+  type: 'http-response';
+  requestId: string;
+  response: any;
+  body: any;
+  error?: string;
+};
+
+type RunnerToWorkerMessage =
+  | WorkerInitializeMessage
+  | WorkerInvokeMessage
+  | WorkerHttpResponseMessage;
+
+type WorkerInitializedMessage = {
+  type: 'initialized';
+  data: LxInitedData;
+};
+
+type WorkerScriptErrorMessage = {
+  type: 'script-error';
+  message: string;
+};
+
+type WorkerInvokeResultMessage = {
+  type: 'invoke-result';
+  callId: string;
+  result: any;
+};
+
+type WorkerInvokeErrorMessage = {
+  type: 'invoke-error';
+  callId: string;
+  message: string;
+};
+
+type WorkerHttpRequestMessage = {
+  type: 'http-request';
+  requestId: string;
+  url: string;
+  options: any;
+};
+
+type WorkerLogMessage = {
+  type: 'log';
+  level: 'log' | 'warn' | 'error' | 'info';
+  args: any[];
+};
+
+type WorkerToRunnerMessage =
+  | WorkerInitializedMessage
+  | WorkerScriptErrorMessage
+  | WorkerInvokeResultMessage
+  | WorkerInvokeErrorMessage
+  | WorkerHttpRequestMessage
+  | WorkerLogMessage;
+
+type PendingInvocation = {
+  resolve: (value: any) => void;
+  reject: (error: Error) => void;
+  timeoutId: number;
+};
 
 /**
  * 解析脚本头部注释中的元信息
@@ -28,8 +101,6 @@ export const parseScriptInfo = (script: string): LxScriptInfo => {
     rawScript: script
   };
 
-  // 尝试匹配不同格式的头部注释块
-  // 支持 /** ... */ 和 /* ... */ 格式
   const headerMatch = script.match(/^\/\*+[\s\S]*?\*\//);
   if (!headerMatch) {
     console.warn('[parseScriptInfo] 未找到脚本头部注释块');
@@ -37,13 +108,10 @@ export const parseScriptInfo = (script: string): LxScriptInfo => {
   }
 
   const header = headerMatch[0];
-  console.log('[parseScriptInfo] 解析脚本头部:', header.substring(0, 200));
 
-  // 解析各个字段（支持 * 前缀和无前缀两种格式）
   const nameMatch = header.match(/@name\s+(.+?)(?:\r?\n|\*\/)/);
   if (nameMatch) {
     info.name = nameMatch[1].trim().replace(/^\*\s*/, '');
-    console.log('[parseScriptInfo] 解析到名称:', info.name);
   } else {
     console.warn('[parseScriptInfo] 未找到 @name 标签');
   }
@@ -56,7 +124,6 @@ export const parseScriptInfo = (script: string): LxScriptInfo => {
   const versionMatch = header.match(/@version\s+(.+?)(?:\r?\n|\*\/)/);
   if (versionMatch) {
     info.version = versionMatch[1].trim().replace(/^\*\s*/, '');
-    console.log('[parseScriptInfo] 解析到版本:', info.version);
   }
 
   const authorMatch = header.match(/@author\s+(.+?)(?:\r?\n|\*\/)/);
@@ -74,15 +141,24 @@ export const parseScriptInfo = (script: string): LxScriptInfo => {
 
 /**
  * 落雪音源脚本执行器
- * 使用 Worker 或 iframe 隔离执行用户脚本
+ * 通过 Worker 隔离用户脚本执行，避免主线程直接执行动态脚本
  */
 export class LxMusicSourceRunner {
   private script: string;
   private scriptInfo: LxScriptInfo;
   private sources: Partial<Record<LxSourceKey, LxSourceConfig>> = {};
-  private requestHandler: ((data: any) => Promise<any>) | null = null;
   private initialized = false;
   private initPromise: Promise<LxInitedData> | null = null;
+
+  private worker: Worker | null = null;
+  private pendingInvocations = new Map<string, PendingInvocation>();
+  private pendingHttpCancels = new Map<string, () => void>();
+  private callSequence = 0;
+
+  private initResolver: ((data: LxInitedData) => void) | null = null;
+  private initRejecter: ((error: Error) => void) | null = null;
+  private initTimeoutId: number | null = null;
+
   // 临时存储最后一次 HTTP 请求返回的音乐 URL（用于脚本返回 undefined 时的后备）
   private lastMusicUrl: string | null = null;
 
@@ -105,245 +181,202 @@ export class LxMusicSourceRunner {
     return this.sources;
   }
 
+  private ensureWorker(): Worker {
+    if (this.worker) {
+      return this.worker;
+    }
+
+    const worker = new Worker(new URL('./workers/lxScriptSandbox.worker.ts', import.meta.url), {
+      type: 'module'
+    });
+
+    worker.onmessage = (event: MessageEvent<WorkerToRunnerMessage>) => {
+      this.handleWorkerMessage(event.data);
+    };
+    worker.onerror = (event) => {
+      const message = event.message || '脚本 Worker 运行错误';
+      console.error('[LxMusicRunner] Worker error:', message);
+      this.rejectInitialization(new Error(message));
+      this.rejectAllInvocations(new Error(message));
+    };
+
+    this.worker = worker;
+    return worker;
+  }
+
+  private clearInitState() {
+    this.initResolver = null;
+    this.initRejecter = null;
+    if (this.initTimeoutId) {
+      clearTimeout(this.initTimeoutId);
+      this.initTimeoutId = null;
+    }
+  }
+
+  private rejectInitialization(error: Error) {
+    if (this.initRejecter) {
+      this.initRejecter(error);
+    }
+    this.clearInitState();
+    this.initPromise = null;
+  }
+
+  private resolveInitialization(data: LxInitedData) {
+    if (this.initResolver) {
+      this.initResolver(data);
+    }
+    this.clearInitState();
+  }
+
+  private rejectAllInvocations(error: Error) {
+    this.pendingInvocations.forEach((pending) => {
+      clearTimeout(pending.timeoutId);
+      pending.reject(error);
+    });
+    this.pendingInvocations.clear();
+  }
+
+  private settleInvocationResult(callId: string, result: any) {
+    const pending = this.pendingInvocations.get(callId);
+    if (!pending) return;
+    clearTimeout(pending.timeoutId);
+    this.pendingInvocations.delete(callId);
+    pending.resolve(result);
+  }
+
+  private settleInvocationError(callId: string, message: string) {
+    const pending = this.pendingInvocations.get(callId);
+    if (!pending) return;
+    clearTimeout(pending.timeoutId);
+    this.pendingInvocations.delete(callId);
+    pending.reject(new Error(message));
+  }
+
+  private postToWorker(message: RunnerToWorkerMessage) {
+    const worker = this.ensureWorker();
+    worker.postMessage(message);
+  }
+
+  private handleWorkerMessage(message: WorkerToRunnerMessage) {
+    switch (message.type) {
+      case 'initialized':
+        this.sources = message.data.sources;
+        this.initialized = true;
+        console.log('[LxMusicRunner] 初始化成功:', message.data.sources);
+        this.resolveInitialization(message.data);
+        break;
+
+      case 'script-error':
+        console.error('[LxMusicRunner] 脚本初始化失败:', message.message);
+        this.rejectInitialization(new Error(message.message));
+        break;
+
+      case 'http-request':
+        this.handleWorkerHttpRequest(message);
+        break;
+
+      case 'invoke-result':
+        this.settleInvocationResult(message.callId, message.result);
+        break;
+
+      case 'invoke-error':
+        this.settleInvocationError(message.callId, message.message);
+        break;
+
+      case 'log':
+        if (message.level === 'error') {
+          console.error('[LxScript]', ...message.args);
+        } else if (message.level === 'warn') {
+          console.warn('[LxScript]', ...message.args);
+        } else if (message.level === 'info') {
+          console.info('[LxScript]', ...message.args);
+        } else {
+          console.log('[LxScript]', ...message.args);
+        }
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  private handleWorkerHttpRequest(message: WorkerHttpRequestMessage) {
+    const cancel = this.handleHttpRequest(
+      message.url,
+      message.options,
+      (error: Error | null, response: any, body: any) => {
+        this.pendingHttpCancels.delete(message.requestId);
+
+        if (body && typeof body.url === 'string') {
+          this.lastMusicUrl = body.url;
+        }
+
+        this.postToWorker({
+          type: 'http-response',
+          requestId: message.requestId,
+          response,
+          body,
+          error: error?.message
+        });
+      }
+    );
+
+    this.pendingHttpCancels.set(message.requestId, cancel);
+  }
+
+  private async invokeRequest(payload: any, timeoutMs = 20000): Promise<any> {
+    if (!this.initialized) {
+      throw new Error('脚本尚未初始化');
+    }
+
+    const callId = `call_${Date.now()}_${this.callSequence++}`;
+    return await new Promise((resolve, reject) => {
+      const timeoutId = window.setTimeout(() => {
+        this.pendingInvocations.delete(callId);
+        reject(new Error('脚本请求超时'));
+      }, timeoutMs);
+
+      this.pendingInvocations.set(callId, {
+        resolve,
+        reject,
+        timeoutId
+      });
+
+      this.postToWorker({
+        type: 'invoke-request',
+        callId,
+        payload
+      });
+    });
+  }
+
   /**
    * 初始化执行器
    */
   async initialize(): Promise<LxInitedData> {
     if (this.initPromise) return this.initPromise;
+    if (this.initialized) {
+      return {
+        openDevTools: false,
+        sources: this.sources
+      };
+    }
 
     this.initPromise = new Promise<LxInitedData>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error('脚本初始化超时'));
+      this.initResolver = resolve;
+      this.initRejecter = reject;
+      this.initTimeoutId = window.setTimeout(() => {
+        this.rejectInitialization(new Error('脚本初始化超时'));
       }, 10000);
+    });
 
-      try {
-        // 创建沙盒环境并执行脚本
-        this.executeSandboxed(
-          (initedData) => {
-            clearTimeout(timeout);
-            this.sources = initedData.sources;
-            this.initialized = true;
-            console.log('[LxMusicRunner] 初始化成功:', initedData.sources);
-            resolve(initedData);
-          },
-          (error) => {
-            clearTimeout(timeout);
-            reject(error);
-          }
-        );
-      } catch (error) {
-        clearTimeout(timeout);
-        reject(error);
-      }
+    this.postToWorker({
+      type: 'initialize',
+      script: this.script,
+      scriptInfo: this.scriptInfo
     });
 
     return this.initPromise;
-  }
-
-  /**
-   * 在沙盒中执行脚本
-   */
-  private executeSandboxed(
-    onInited: (data: LxInitedData) => void,
-    onError: (error: Error) => void
-  ): void {
-    // 构建沙盒执行环境
-    const sandbox = this.createSandbox(onInited, onError);
-
-    try {
-      // 使用 Function 构造器在受限环境中执行
-      // 注意：不能使用 const/let 声明 globalThis，因为它是保留标识符
-      const sandboxedScript = `
-        (function() {
-          ${sandbox.apiSetup}
-          ${this.script}
-        }).call(this);
-      `;
-
-      // 创建执行上下文
-      const context = sandbox.context;
-      const executor = new Function(sandboxedScript);
-
-      // 在隔离上下文中执行，context 将作为 this
-      executor.call(context);
-    } catch (error) {
-      onError(error as Error);
-    }
-  }
-
-  /**
-   * 创建沙盒环境
-   */
-  private createSandbox(
-    onInited: (data: LxInitedData) => void,
-    _onError: (error: Error) => void
-  ): { apiSetup: string; context: any } {
-    const self = this;
-
-    // 创建 globalThis.lx 对象
-    // 版本号使用落雪音乐最新版本以通过脚本版本检测
-    const context = {
-      lx: {
-        version: '2.8.0',
-        env: 'desktop',
-        appInfo: {
-          version: '2.8.0',
-          versionNum: 208,
-          locale: 'zh-cn'
-        },
-        currentScriptInfo: this.scriptInfo,
-        EVENT_NAMES: {
-          inited: 'inited',
-          request: 'request',
-          updateAlert: 'updateAlert'
-        },
-        on: (eventName: string, handler: (data: any) => Promise<any>) => {
-          if (eventName === 'request') {
-            self.requestHandler = handler;
-          }
-        },
-        send: (eventName: string, data: any) => {
-          if (eventName === 'inited') {
-            onInited(data as LxInitedData);
-          } else if (eventName === 'updateAlert') {
-            console.log('[LxMusicRunner] 更新提醒:', data);
-          }
-        },
-        request: (
-          url: string,
-          options: any,
-          callback: (err: Error | null, resp: any, body: any) => void
-        ) => {
-          return self.handleHttpRequest(url, options, callback);
-        },
-        utils: {
-          buffer: {
-            from: (data: any, _encoding?: string) => {
-              if (typeof data === 'string') {
-                return new TextEncoder().encode(data);
-              }
-              return new Uint8Array(data);
-            },
-            bufToString: (buffer: Uint8Array, encoding?: string) => {
-              return new TextDecoder(encoding || 'utf-8').decode(buffer);
-            }
-          },
-          crypto: {
-            md5: lxCrypto.md5,
-            sha1: lxCrypto.sha1,
-            sha256: lxCrypto.sha256,
-            randomBytes: lxCrypto.randomBytes,
-            aesEncrypt: lxCrypto.aesEncrypt,
-            aesDecrypt: lxCrypto.aesDecrypt,
-            rsaEncrypt: lxCrypto.rsaEncrypt,
-            rsaDecrypt: lxCrypto.rsaDecrypt,
-            base64Encode: lxCrypto.base64Encode,
-            base64Decode: lxCrypto.base64Decode
-          },
-          zlib: {
-            inflate: async (buffer: ArrayBuffer) => {
-              try {
-                const ds = new DecompressionStream('deflate');
-                const writer = ds.writable.getWriter();
-                writer.write(buffer);
-                writer.close();
-                const reader = ds.readable.getReader();
-                const chunks: Uint8Array[] = [];
-                let done = false;
-                while (!done) {
-                  const result = await reader.read();
-                  done = result.done;
-                  if (result.value) chunks.push(result.value);
-                }
-                const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
-                const result = new Uint8Array(totalLength);
-                let offset = 0;
-                for (const chunk of chunks) {
-                  result.set(chunk, offset);
-                  offset += chunk.length;
-                }
-                return result.buffer;
-              } catch {
-                return buffer;
-              }
-            },
-            deflate: async (buffer: ArrayBuffer) => {
-              try {
-                const cs = new CompressionStream('deflate');
-                const writer = cs.writable.getWriter();
-                writer.write(buffer);
-                writer.close();
-                const reader = cs.readable.getReader();
-                const chunks: Uint8Array[] = [];
-                let done = false;
-                while (!done) {
-                  const result = await reader.read();
-                  done = result.done;
-                  if (result.value) chunks.push(result.value);
-                }
-                const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
-                const result = new Uint8Array(totalLength);
-                let offset = 0;
-                for (const chunk of chunks) {
-                  result.set(chunk, offset);
-                  offset += chunk.length;
-                }
-                return result.buffer;
-              } catch {
-                return buffer;
-              }
-            }
-          }
-        }
-      },
-      console: {
-        log: (...args: any[]) => console.log('[LxScript]', ...args),
-        error: (...args: any[]) => console.error('[LxScript]', ...args),
-        warn: (...args: any[]) => console.warn('[LxScript]', ...args),
-        info: (...args: any[]) => console.info('[LxScript]', ...args)
-      },
-      setTimeout,
-      setInterval,
-      clearTimeout,
-      clearInterval,
-      Promise,
-      JSON,
-      Object,
-      Array,
-      String,
-      Number,
-      Boolean,
-      Date,
-      Math,
-      RegExp,
-      Error,
-      Map,
-      Set,
-      WeakMap,
-      WeakSet,
-      Symbol,
-      Proxy,
-      Reflect,
-      encodeURIComponent,
-      decodeURIComponent,
-      encodeURI,
-      decodeURI,
-      atob,
-      btoa,
-      TextEncoder,
-      TextDecoder,
-      Uint8Array,
-      ArrayBuffer,
-      crypto
-    };
-
-    // 只设置 lx 和 globalThis，不解构变量避免与脚本内部声明冲突
-    const apiSetup = `
-      var lx = this.lx;
-      var globalThis = this;
-    `;
-
-    return { apiSetup, context };
   }
 
   /**
@@ -359,13 +392,9 @@ export class LxMusicSourceRunner {
     const timeout = options.timeout || 30000;
     const requestId = `lx_http_${Date.now()}_${Math.random().toString(36).substring(7)}`;
 
-    // 尝试使用主进程 HTTP 请求（如果可用）
     const hasMainProcessHttp = typeof window.api?.lxMusicHttpRequest === 'function';
 
     if (hasMainProcessHttp) {
-      // 使用主进程 HTTP 请求（绕过 CORS）
-      console.log(`[LxMusicRunner] 使用主进程 HTTP 请求`);
-
       window.api
         .lxMusicHttpRequest({
           url,
@@ -376,106 +405,84 @@ export class LxMusicSourceRunner {
           requestId
         })
         .then((response: any) => {
-          console.log(`[LxMusicRunner] HTTP 响应: ${response.statusCode} ${url}`);
-
-          // 如果响应中包含 URL，缓存下来以备后用
-          if (response.body && response.body.url && typeof response.body.url === 'string') {
-            this.lastMusicUrl = response.body.url;
-          }
-
           callback(null, response, response.body);
         })
         .catch((error: Error) => {
-          console.error(`[LxMusicRunner] HTTP 请求失败: ${url}`, error.message);
           callback(error, null, null);
         });
 
-      // 返回取消函数
       return () => {
         void window.api?.lxMusicHttpCancel?.(requestId);
       };
-    } else {
-      // 回退到渲染进程 fetch（可能受 CORS 限制）
-      console.log(`[LxMusicRunner] 主进程 HTTP 不可用，使用渲染进程 fetch`);
-
-      const controller = new AbortController();
-
-      const fetchOptions: RequestInit = {
-        method: options.method || 'GET',
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          ...options.headers
-        },
-        signal: controller.signal,
-        mode: 'cors',
-        credentials: 'omit'
-      };
-
-      if (options.body) {
-        fetchOptions.body = options.body;
-      } else if (options.form) {
-        fetchOptions.body = new URLSearchParams(options.form);
-        fetchOptions.headers = {
-          ...fetchOptions.headers,
-          'Content-Type': 'application/x-www-form-urlencoded'
-        };
-      } else if (options.formData) {
-        const formData = new FormData();
-        for (const [key, value] of Object.entries(options.formData)) {
-          formData.append(key, value as string);
-        }
-        fetchOptions.body = formData;
-      }
-
-      const timeoutId = setTimeout(() => {
-        console.warn(`[LxMusicRunner] HTTP 请求超时: ${url}`);
-        controller.abort();
-      }, timeout);
-
-      fetch(url, fetchOptions)
-        .then(async (response) => {
-          clearTimeout(timeoutId);
-          console.log(`[LxMusicRunner] HTTP 响应: ${response.status} ${url}`);
-
-          const rawBody = await response.text();
-
-          // 尝试解析 JSON
-          let parsedBody: any = rawBody;
-          const contentType = response.headers.get('content-type') || '';
-          if (
-            contentType.includes('application/json') ||
-            rawBody.startsWith('{') ||
-            rawBody.startsWith('[')
-          ) {
-            try {
-              parsedBody = JSON.parse(rawBody);
-              if (parsedBody && parsedBody.url && typeof parsedBody.url === 'string') {
-                this.lastMusicUrl = parsedBody.url;
-              }
-            } catch {
-              // 解析失败则使用原始字符串
-            }
-          }
-
-          callback(
-            null,
-            {
-              statusCode: response.status,
-              headers: Object.fromEntries(response.headers.entries()),
-              body: parsedBody
-            },
-            parsedBody
-          );
-        })
-        .catch((error) => {
-          clearTimeout(timeoutId);
-          console.error(`[LxMusicRunner] HTTP 请求失败: ${url}`, error.message);
-          callback(error, null, null);
-        });
-
-      // 返回取消函数
-      return () => controller.abort();
     }
+
+    const controller = new AbortController();
+    const fetchOptions: RequestInit = {
+      method: options.method || 'GET',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        ...options.headers
+      },
+      signal: controller.signal,
+      mode: 'cors',
+      credentials: 'omit'
+    };
+
+    if (options.body) {
+      fetchOptions.body = options.body;
+    } else if (options.form) {
+      fetchOptions.body = new URLSearchParams(options.form);
+      fetchOptions.headers = {
+        ...fetchOptions.headers,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      };
+    } else if (options.formData) {
+      const formData = new FormData();
+      for (const [key, value] of Object.entries(options.formData)) {
+        formData.append(key, value as string);
+      }
+      fetchOptions.body = formData;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      controller.abort();
+    }, timeout);
+
+    fetch(url, fetchOptions)
+      .then(async (response) => {
+        clearTimeout(timeoutId);
+        const rawBody = await response.text();
+
+        let parsedBody: any = rawBody;
+        const contentType = response.headers.get('content-type') || '';
+        if (
+          contentType.includes('application/json') ||
+          rawBody.startsWith('{') ||
+          rawBody.startsWith('[')
+        ) {
+          try {
+            parsedBody = JSON.parse(rawBody);
+          } catch {
+            // keep raw text
+          }
+        }
+
+        callback(
+          null,
+          {
+            statusCode: response.status,
+            headers: Object.fromEntries(response.headers.entries()),
+            body: parsedBody
+          },
+          parsedBody
+        );
+      })
+      .catch((error) => {
+        clearTimeout(timeoutId);
+        callback(error, null, null);
+      });
+
+    return () => controller.abort();
   }
 
   /**
@@ -490,10 +497,6 @@ export class LxMusicSourceRunner {
       await this.initialize();
     }
 
-    if (!this.requestHandler) {
-      throw new Error('脚本未注册请求处理器');
-    }
-
     const sourceConfig = this.sources[source];
     if (!sourceConfig) {
       throw new Error(`脚本不支持音源: ${source}`);
@@ -503,10 +506,8 @@ export class LxMusicSourceRunner {
       throw new Error(`音源 ${source} 不支持获取音乐 URL`);
     }
 
-    // 选择最佳音质
     let targetQuality = quality;
     if (!sourceConfig.qualitys.includes(quality)) {
-      // 按优先级选择可用音质
       const qualityPriority: LxQuality[] = ['flac24bit', 'flac', '320k', '128k'];
       for (const q of qualityPriority) {
         if (sourceConfig.qualitys.includes(q)) {
@@ -516,10 +517,8 @@ export class LxMusicSourceRunner {
       }
     }
 
-    console.log(`[LxMusicRunner] 请求音乐 URL: 音源=${source}, 音质=${targetQuality}`);
-
     try {
-      const result = await this.requestHandler({
+      const result = await this.invokeRequest({
         source,
         action: 'musicUrl',
         info: {
@@ -528,30 +527,22 @@ export class LxMusicSourceRunner {
         }
       });
 
-      console.log(`[LxMusicRunner] 脚本返回结果:`, result, typeof result);
-
-      // 脚本可能返回对象或字符串
       let url: string | undefined;
       if (typeof result === 'string') {
         url = result;
       } else if (result && typeof result === 'object') {
-        // 某些脚本可能返回 { url: '...' } 格式
         url = result.url || result.data || result;
       }
 
       if (typeof url !== 'string' || !url) {
-        // 如果脚本返回 undefined，尝试使用缓存的 URL
         if (this.lastMusicUrl) {
-          console.log('[LxMusicRunner] 脚本返回 undefined，使用缓存的 URL');
           url = this.lastMusicUrl;
-          this.lastMusicUrl = null; // 清除缓存
+          this.lastMusicUrl = null;
         } else {
-          console.error('[LxMusicRunner] 无效的返回值:', result);
           throw new Error(result?.message || result?.msg || '获取音乐 URL 失败');
         }
       }
 
-      console.log('[LxMusicRunner] 获取到 URL:', url.substring(0, 80) + '...');
       return url;
     } catch (error) {
       console.error('[LxMusicRunner] 获取音乐 URL 失败:', error);
@@ -567,17 +558,13 @@ export class LxMusicSourceRunner {
       await this.initialize();
     }
 
-    if (!this.requestHandler) {
-      return null;
-    }
-
     const sourceConfig = this.sources[source];
     if (!sourceConfig || !sourceConfig.actions.includes('lyric')) {
       return null;
     }
 
     try {
-      const result = await this.requestHandler({
+      const result = await this.invokeRequest({
         source,
         action: 'lyric',
         info: {
@@ -601,17 +588,13 @@ export class LxMusicSourceRunner {
       await this.initialize();
     }
 
-    if (!this.requestHandler) {
-      return null;
-    }
-
     const sourceConfig = this.sources[source];
     if (!sourceConfig || !sourceConfig.actions.includes('pic')) {
       return null;
     }
 
     try {
-      const url = await this.requestHandler({
+      const result = await this.invokeRequest({
         source,
         action: 'pic',
         info: {
@@ -619,8 +602,7 @@ export class LxMusicSourceRunner {
           musicInfo
         }
       });
-
-      return typeof url === 'string' ? url : null;
+      return typeof result === 'string' ? result : null;
     } catch (error) {
       console.error('[LxMusicRunner] 获取封面失败:', error);
       return null;
@@ -632,6 +614,33 @@ export class LxMusicSourceRunner {
    */
   isInitialized(): boolean {
     return this.initialized;
+  }
+
+  /**
+   * 销毁执行器
+   */
+  dispose() {
+    this.pendingHttpCancels.forEach((cancel) => {
+      try {
+        cancel();
+      } catch {
+        // ignore
+      }
+    });
+    this.pendingHttpCancels.clear();
+
+    this.rejectAllInvocations(new Error('执行器已销毁'));
+    this.clearInitState();
+
+    if (this.worker) {
+      this.worker.terminate();
+      this.worker = null;
+    }
+
+    this.initialized = false;
+    this.initPromise = null;
+    this.sources = {};
+    this.lastMusicUrl = null;
   }
 }
 
@@ -649,6 +658,9 @@ export const getLxMusicRunner = (): LxMusicSourceRunner | null => {
  * 设置落雪音源执行器实例
  */
 export const setLxMusicRunner = (runner: LxMusicSourceRunner | null): void => {
+  if (runnerInstance && runnerInstance !== runner) {
+    runnerInstance.dispose();
+  }
   runnerInstance = runner;
 };
 
@@ -656,10 +668,10 @@ export const setLxMusicRunner = (runner: LxMusicSourceRunner | null): void => {
  * 初始化落雪音源执行器（从脚本内容）
  */
 export const initLxMusicRunner = async (script: string): Promise<LxMusicSourceRunner> => {
-  // 销毁旧实例
-  runnerInstance = null;
+  if (runnerInstance) {
+    runnerInstance.dispose();
+  }
 
-  // 创建新实例
   const runner = new LxMusicSourceRunner(script);
   await runner.initialize();
 
