@@ -54,6 +54,7 @@ const api = {
       'cache-lyric',
       'clear-lyric-cache',
       'scan-local-music',
+      'scan-local-music-with-stats',
       'parse-local-music-metadata'
     ];
     if (validChannels.includes(channel)) {
@@ -72,6 +73,8 @@ const api = {
 
   // 本地音乐扫描相关
   scanLocalMusic: (folderPath: string) => ipcRenderer.invoke('scan-local-music', folderPath),
+  scanLocalMusicWithStats: (folderPath: string) =>
+    ipcRenderer.invoke('scan-local-music-with-stats', folderPath),
   parseLocalMusicMetadata: (filePaths: string[]) =>
     ipcRenderer.invoke('parse-local-music-metadata', filePaths)
 };

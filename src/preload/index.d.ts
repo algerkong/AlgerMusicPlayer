@@ -30,6 +30,10 @@ interface API {
   lxMusicHttpCancel: (requestId: string) => Promise<void>;
   /** 扫描指定文件夹中的本地音乐文件 */
   scanLocalMusic: (folderPath: string) => Promise<{ files: string[]; count: number }>;
+  /** 扫描指定文件夹中的本地音乐文件（包含修改时间） */
+  scanLocalMusicWithStats: (
+    folderPath: string
+  ) => Promise<{ files: { path: string; modifiedTime: number }[]; count: number }>;
   /** 批量解析本地音乐文件元数据 */
   parseLocalMusicMetadata: (
     filePaths: string[]

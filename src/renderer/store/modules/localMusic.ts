@@ -8,7 +8,7 @@ import { ref } from 'vue';
 
 import useIndexedDB from '@/hooks/IndexDBHook';
 import type { LocalMusicEntry } from '@/types/localMusic';
-import { getChangedFiles, removeStaleEntries } from '@/utils/localMusicUtils';
+import { removeStaleEntries } from '@/utils/localMusicUtils';
 
 const { message } = createDiscreteApi(['message']);
 
@@ -120,12 +120,16 @@ export const useLocalMusicStore = defineStore(
 
         // 加载当前缓存数据用于增量对比
         const cachedEntries = await localDB.getAllData(LOCAL_MUSIC_STORE);
+        const cachedMap = new Map<string, LocalMusicEntry>();
+        for (const entry of cachedEntries) {
+          cachedMap.set(entry.filePath, entry);
+        }
 
         // 遍历每个文件夹进行扫描
         for (const folderPath of folderPaths.value) {
           try {
-            // 1. 调用 IPC 扫描文件夹，获取文件路径列表
-            const result = await window.api.scanLocalMusic(folderPath);
+            // 1. 调用 IPC 扫描文件夹，获取文件路径与修改时间
+            const result = await window.api.scanLocalMusicWithStats(folderPath);
 
             // 检查是否返回错误
             if ((result as any).error) {
@@ -137,51 +141,25 @@ export const useLocalMusicStore = defineStore(
             const { files } = result;
             scanProgress.value += files.length;
 
-            // 2. 增量扫描：对比缓存，找出需要重新解析的文件
-            const cachedMap = new Map<string, LocalMusicEntry>();
-            for (const entry of cachedEntries) {
-              cachedMap.set(entry.filePath, entry);
+            // 2. 增量扫描：基于修改时间筛选需重新解析的文件
+            const parseTargets: string[] = [];
+            for (const file of files) {
+              const cached = cachedMap.get(file.path);
+              if (!cached || cached.modifiedTime !== file.modifiedTime) {
+                parseTargets.push(file.path);
+              }
             }
 
-            // 缓存中不存在的新文件，一定需要解析
-            const newFiles = files.filter((f) => !cachedMap.has(f));
-            // 缓存中已存在的文件，需要检查修改时间是否变更
-            const existingFiles = files.filter((f) => cachedMap.has(f));
-
-            // 3. 解析新文件的元数据并存入 IndexedDB
-            if (newFiles.length > 0) {
-              const newMetas = await window.api.parseLocalMusicMetadata(newFiles);
-              for (const meta of newMetas) {
+            // 3. 仅解析新增或变更文件，避免对未变更文件重复解析元数据
+            if (parseTargets.length > 0) {
+              const metas = await window.api.parseLocalMusicMetadata(parseTargets);
+              for (const meta of metas) {
                 const entry: LocalMusicEntry = {
                   ...meta,
                   id: generateId(meta.filePath)
                 };
                 await localDB.saveData(LOCAL_MUSIC_STORE, entry);
-              }
-            }
-
-            // 4. 对已有文件进行增量对比，仅重新解析修改时间变更的文件
-            if (existingFiles.length > 0) {
-              // 解析已有文件的元数据以获取最新修改时间
-              const existingMetas = await window.api.parseLocalMusicMetadata(existingFiles);
-              const existingWithTime = existingMetas.map((meta) => ({
-                path: meta.filePath,
-                modifiedTime: meta.modifiedTime
-              }));
-
-              // 使用 getChangedFiles 对比修改时间，找出变更文件
-              const changedFilePaths = getChangedFiles(existingWithTime, cachedEntries);
-              const changedSet = new Set(changedFilePaths);
-
-              // 对于修改时间变更的文件，直接使用已解析的元数据更新缓存（避免重复解析）
-              for (const meta of existingMetas) {
-                if (changedSet.has(meta.filePath)) {
-                  const entry: LocalMusicEntry = {
-                    ...meta,
-                    id: generateId(meta.filePath)
-                  };
-                  await localDB.saveData(LOCAL_MUSIC_STORE, entry);
-                }
+                cachedMap.set(entry.filePath, entry);
               }
             }
           } catch (error) {

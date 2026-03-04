@@ -34,6 +34,11 @@ type LocalMusicMeta = {
   modifiedTime: number;
 };
 
+type ScannedMusicFile = {
+  path: string;
+  modifiedTime: number;
+};
+
 /**
  * 判断文件扩展名是否为支持的音频格式
  * @param ext 文件扩展名（含点号，如 .mp3）
@@ -147,6 +152,58 @@ async function scanMusicFiles(folderPath: string): Promise<string[]> {
 }
 
 /**
+ * 递归扫描指定文件夹，返回包含修改时间的音乐文件信息
+ * @param folderPath 要扫描的文件夹路径
+ * @returns 音乐文件信息列表
+ */
+async function scanMusicFilesWithStats(folderPath: string): Promise<ScannedMusicFile[]> {
+  const results: ScannedMusicFile[] = [];
+
+  if (!fs.existsSync(folderPath)) {
+    throw new Error(`文件夹不存在: ${folderPath}`);
+  }
+
+  const stat = await fs.promises.stat(folderPath);
+  if (!stat.isDirectory()) {
+    throw new Error(`路径不是文件夹: ${folderPath}`);
+  }
+
+  async function walkDirectory(dirPath: string): Promise<void> {
+    try {
+      const entries = await fs.promises.readdir(dirPath, { withFileTypes: true });
+
+      for (const entry of entries) {
+        const fullPath = path.join(dirPath, entry.name);
+
+        if (entry.isDirectory()) {
+          await walkDirectory(fullPath);
+        } else if (entry.isFile()) {
+          const ext = path.extname(entry.name);
+          if (!isSupportedFormat(ext)) {
+            continue;
+          }
+
+          try {
+            const fileStat = await fs.promises.stat(fullPath);
+            results.push({
+              path: fullPath,
+              modifiedTime: fileStat.mtimeMs
+            });
+          } catch (error) {
+            console.error(`读取文件信息失败: ${fullPath}`, error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error(`扫描目录失败: ${dirPath}`, error);
+    }
+  }
+
+  await walkDirectory(folderPath);
+  return results;
+}
+
+/**
  * 解析单个音乐文件的元数据
  * 解析失败时使用 fallback 默认值（文件名作标题），不抛出异常
  * @param filePath 音乐文件绝对路径
@@ -228,6 +285,17 @@ export function initializeLocalMusicScanner(): void {
       return { files, count: files.length };
     } catch (error: any) {
       console.error('扫描本地音乐失败:', error);
+      return { error: error.message || '扫描失败' };
+    }
+  });
+
+  // 扫描指定文件夹中的音乐文件（包含修改时间）
+  ipcMain.handle('scan-local-music-with-stats', async (_, folderPath: string) => {
+    try {
+      const files = await scanMusicFilesWithStats(folderPath);
+      return { files, count: files.length };
+    } catch (error: any) {
+      console.error('扫描本地音乐(含文件信息)失败:', error);
       return { error: error.message || '扫描失败' };
     }
   });
