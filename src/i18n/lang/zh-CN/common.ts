@@ -29,6 +29,7 @@ export default {
   retry: '重试',
   reset: '重置',
   loadFailed: '加载失败',
+  noData: '暂无数据',
   back: '返回',
   copySuccess: '已复制到剪贴板',
   copyFailed: '复制失败',

@@ -195,6 +195,35 @@ export default {
   system: {
     cache: 'キャッシュ管理',
     cacheDesc: 'キャッシュをクリア',
+    diskCache: 'ディスクキャッシュ',
+    diskCacheDesc: '再生した音楽と歌詞をローカルディスクへ保存し、再生速度を向上します',
+    cacheDirectory: 'キャッシュディレクトリ',
+    cacheDirectoryDesc: '音楽・歌詞キャッシュの保存先を指定',
+    selectDirectory: 'ディレクトリ選択',
+    openDirectory: 'ディレクトリを開く',
+    cacheMaxSize: 'キャッシュ上限',
+    cacheMaxSizeDesc: '上限に達すると古いキャッシュを自動削除します',
+    cleanupPolicy: 'クリーンアップポリシー',
+    cleanupPolicyDesc: 'キャッシュ上限到達時の自動削除ルール',
+    cleanupPolicyOptions: {
+      lru: '最近未使用優先',
+      fifo: '先入れ先出し'
+    },
+    cacheStatus: 'キャッシュ状態',
+    cacheStatusDesc: '使用量 {used} / 上限 {limit}',
+    cacheStatusDetail: '音楽 {musicCount} 曲、歌詞 {lyricCount} 曲',
+    manageDiskCache: '手動キャッシュクリア',
+    manageDiskCacheDesc: '種類ごとにキャッシュを削除',
+    clearMusicCache: '音楽キャッシュを削除',
+    clearLyricCache: '歌詞キャッシュを削除',
+    clearAllCache: 'すべて削除',
+    switchDirectoryMigrateTitle: '既存キャッシュを検出',
+    switchDirectoryMigrateContent: '旧ディレクトリのキャッシュを新ディレクトリへ移行しますか？',
+    switchDirectoryMigrateConfirm: '移行する',
+    switchDirectoryDestroyTitle: '旧キャッシュを削除',
+    switchDirectoryDestroyContent: '移行しない場合、旧ディレクトリのキャッシュを削除しますか？',
+    switchDirectoryDestroyConfirm: '削除する',
+    switchDirectoryKeepOld: '旧キャッシュを保持',
     cacheClearTitle: 'クリアするキャッシュタイプを選択してください：',
     cacheTypes: {
       history: {
@@ -229,7 +258,15 @@ export default {
     restart: '再起動',
     restartDesc: 'アプリを再起動',
     messages: {
-      clearSuccess: 'クリア成功。一部の設定は再起動後に有効になります'
+      clearSuccess: 'クリア成功。一部の設定は再起動後に有効になります',
+      diskCacheClearSuccess: 'ディスクキャッシュを削除しました',
+      diskCacheClearFailed: 'ディスクキャッシュの削除に失敗しました',
+      diskCacheStatsLoadFailed: 'キャッシュ状態の取得に失敗しました',
+      switchDirectorySuccess: 'キャッシュディレクトリを切り替えました（旧キャッシュは保持）',
+      switchDirectoryFailed: 'キャッシュディレクトリの切り替えに失敗しました',
+      switchDirectoryMigrated: 'キャッシュディレクトリを切り替え、{count} 件を移行しました',
+      switchDirectoryDestroyed:
+        'キャッシュディレクトリを切り替え、旧キャッシュ {count} 件を削除しました'
     }
   },
   about: {

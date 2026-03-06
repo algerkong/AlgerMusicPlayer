@@ -29,6 +29,7 @@ export default {
   retry: '重試',
   reset: '重設',
   loadFailed: '載入失敗',
+  noData: '暫無資料',
   back: '返回',
   copySuccess: '已複製到剪貼簿',
   copyFailed: '複製失敗',

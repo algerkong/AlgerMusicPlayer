@@ -40,7 +40,8 @@ export default {
     message: '確定要清空所有下載記錄嗎？此操作不會刪除已下載的音樂檔案，但將清空所有記錄。',
     confirm: '確定清空',
     cancel: '取消',
-    success: '下載記錄已清空'
+    success: '下載記錄已清空',
+    failed: '清空下載記錄失敗'
   },
   message: {
     downloadComplete: '{filename} 下載完成',

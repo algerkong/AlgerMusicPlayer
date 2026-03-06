@@ -1,5 +1,6 @@
 import { app, ipcMain } from 'electron';
 import Store from 'electron-store';
+import * as path from 'path';
 
 import { createDefaultShortcuts, type ShortcutsConfig } from '../../shared/shortcuts';
 import set from '../set.json';
@@ -26,6 +27,11 @@ type SetConfig = {
   language: string;
   showTopAction: boolean;
   enableGpuAcceleration: boolean;
+  downloadPath: string;
+  enableDiskCache: boolean;
+  diskCacheDir: string;
+  diskCacheMaxSizeMB: number;
+  diskCacheCleanupPolicy: 'lru' | 'fifo';
 };
 interface StoreType {
   set: SetConfig;
@@ -47,6 +53,17 @@ export function initializeConfig() {
   });
 
   store.get('set.downloadPath') || store.set('set.downloadPath', app.getPath('downloads'));
+  store.get('set.diskCacheDir') ||
+    store.set('set.diskCacheDir', path.join(app.getPath('userData'), 'cache'));
+  if (store.get('set.diskCacheMaxSizeMB') === undefined) {
+    store.set('set.diskCacheMaxSizeMB', 4096);
+  }
+  if (!store.get('set.diskCacheCleanupPolicy')) {
+    store.set('set.diskCacheCleanupPolicy', 'lru');
+  }
+  if (store.get('set.enableDiskCache') === undefined) {
+    store.set('set.enableDiskCache', true);
+  }
 
   // 定义ipcRenderer监听事件
   ipcMain.on('set-store-value', (_, key, value) => {

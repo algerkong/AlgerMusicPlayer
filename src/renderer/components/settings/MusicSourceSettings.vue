@@ -396,7 +396,7 @@ const toggleSource = (sourceKey: string) => {
   if (index > -1) {
     // 至少保留一个音源
     if (selectedSources.value.length <= 1) {
-      message.warning(t('settings.playback.musicSourcesMinWarning'));
+      message.warning(t('settings.playback.musicSourcesWarning'));
       return;
     }
     selectedSources.value.splice(index, 1);

@@ -41,7 +41,8 @@ export default {
       '모든 다운로드 기록을 지우시겠습니까? 이 작업은 다운로드된 음악 파일을 삭제하지 않지만 모든 기록을 지웁니다.',
     confirm: '지우기 확인',
     cancel: '취소',
-    success: '다운로드 기록이 지워졌습니다'
+    success: '다운로드 기록이 지워졌습니다',
+    failed: '다운로드 기록 삭제에 실패했습니다'
   },
   message: {
     downloadComplete: '{filename} 다운로드 완료',

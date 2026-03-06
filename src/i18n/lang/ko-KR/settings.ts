@@ -196,6 +196,36 @@ export default {
   system: {
     cache: '캐시 관리',
     cacheDesc: '캐시 지우기',
+    diskCache: '디스크 캐시',
+    diskCacheDesc: '재생한 음악과 가사를 로컬 디스크에 캐시하여 재생 속도를 높입니다',
+    cacheDirectory: '캐시 디렉터리',
+    cacheDirectoryDesc: '음악 및 가사 캐시 저장 경로를 사용자 지정',
+    selectDirectory: '디렉터리 선택',
+    openDirectory: '디렉터리 열기',
+    cacheMaxSize: '캐시 용량 제한',
+    cacheMaxSizeDesc: '용량 제한 도달 시 오래된 캐시를 자동 정리합니다',
+    cleanupPolicy: '정리 정책',
+    cleanupPolicyDesc: '캐시 용량 제한 도달 시 적용할 자동 정리 규칙',
+    cleanupPolicyOptions: {
+      lru: '최근 사용 안 함 우선',
+      fifo: '선입선출'
+    },
+    cacheStatus: '캐시 상태',
+    cacheStatusDesc: '사용량 {used} / 제한 {limit}',
+    cacheStatusDetail: '음악 {musicCount}곡, 가사 {lyricCount}곡',
+    manageDiskCache: '수동 디스크 캐시 정리',
+    manageDiskCacheDesc: '캐시 유형별로 정리',
+    clearMusicCache: '음악 캐시 정리',
+    clearLyricCache: '가사 캐시 정리',
+    clearAllCache: '전체 캐시 정리',
+    switchDirectoryMigrateTitle: '기존 캐시가 감지되었습니다',
+    switchDirectoryMigrateContent: '기존 캐시를 새 디렉터리로 마이그레이션할까요?',
+    switchDirectoryMigrateConfirm: '마이그레이션',
+    switchDirectoryDestroyTitle: '기존 캐시 삭제',
+    switchDirectoryDestroyContent:
+      '마이그레이션하지 않을 경우, 이전 디렉터리의 캐시 파일을 삭제할까요?',
+    switchDirectoryDestroyConfirm: '삭제',
+    switchDirectoryKeepOld: '기존 캐시 유지',
     cacheClearTitle: '지울 캐시 유형을 선택하세요：',
     cacheTypes: {
       history: {
@@ -230,7 +260,14 @@ export default {
     restart: '재시작',
     restartDesc: '앱 재시작',
     messages: {
-      clearSuccess: '지우기 성공, 일부 설정은 재시작 후 적용됩니다'
+      clearSuccess: '지우기 성공, 일부 설정은 재시작 후 적용됩니다',
+      diskCacheClearSuccess: '디스크 캐시를 정리했습니다',
+      diskCacheClearFailed: '디스크 캐시 정리에 실패했습니다',
+      diskCacheStatsLoadFailed: '캐시 상태를 불러오지 못했습니다',
+      switchDirectorySuccess: '캐시 디렉터리가 변경되었습니다. 기존 캐시는 유지됩니다',
+      switchDirectoryFailed: '캐시 디렉터리 변경에 실패했습니다',
+      switchDirectoryMigrated: '캐시 디렉터리를 변경하고 {count}개 파일을 마이그레이션했습니다',
+      switchDirectoryDestroyed: '캐시 디렉터리를 변경하고 기존 캐시 {count}개 파일을 삭제했습니다'
     }
   },
   about: {

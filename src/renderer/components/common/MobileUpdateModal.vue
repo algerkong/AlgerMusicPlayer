@@ -33,7 +33,7 @@
                   <span
                     class="px-3 py-1 text-xs font-medium text-white bg-gradient-to-r from-green-500 to-emerald-600 rounded-full"
                   >
-                    {{ t('comp.update.newVersion') }}
+                    {{ t('comp.update.title') }}
                   </span>
                 </div>
                 <h2 class="text-2xl font-bold text-gray-900 dark:text-white truncate">
@@ -65,7 +65,7 @@
               @click="handleLater"
               class="flex-1 py-4 px-4 rounded-2xl text-base font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 active:scale-[0.98] transition-all duration-200"
             >
-              {{ t('comp.update.later') }}
+              {{ t('comp.update.noThanks') }}
             </button>
             <button
               @click="handleUpdate"
@@ -73,7 +73,7 @@
             >
               <span class="flex items-center justify-center gap-2">
                 <i class="ri-download-2-line text-lg"></i>
-                {{ t('comp.update.updateNow') }}
+                {{ t('comp.update.nowUpdate') }}
               </span>
             </button>
           </div>

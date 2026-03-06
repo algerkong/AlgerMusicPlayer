@@ -34,5 +34,9 @@
   "customApiPluginName": "",
   "lxMusicScripts": [],
   "activeLxMusicApiId": null,
-  "enableGpuAcceleration": true
+  "enableGpuAcceleration": true,
+  "enableDiskCache": true,
+  "diskCacheDir": "",
+  "diskCacheMaxSizeMB": 4096,
+  "diskCacheCleanupPolicy": "lru"
 }

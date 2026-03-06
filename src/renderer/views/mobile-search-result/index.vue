@@ -67,7 +67,7 @@
       <!-- 无结果 -->
       <div v-else-if="!loading" class="empty-state">
         <i class="ri-search-line"></i>
-        <span>{{ t('search.noResult') }}</span>
+        <span>{{ t('comp.musicList.noSearchResults') }}</span>
       </div>
     </div>
   </div>

@@ -204,7 +204,7 @@ const loadFollowerList = async () => {
     hasMoreFollowers.value = newFollowers.length >= followerLimit.value;
   } catch (error) {
     console.error('加载粉丝列表失败:', error);
-    message.error(t('user.follower.loadFailed'));
+    message.error(t('common.loadFailed'));
   } finally {
     followerListLoading.value = false;
   }

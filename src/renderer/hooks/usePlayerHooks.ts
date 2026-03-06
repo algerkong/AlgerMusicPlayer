@@ -6,11 +6,56 @@ import { getMusicLrc, getMusicUrl, getParsingMusicUrl } from '@/api/music';
 import { playbackRequestManager } from '@/services/playbackRequestManager';
 import { SongSourceConfigManager } from '@/services/SongSourceConfigManager';
 import type { ILyric, ILyricText, IWordData, SongResult } from '@/types/music';
-import { getImgUrl } from '@/utils';
+import { getImgUrl, isElectron } from '@/utils';
 import { getImageLinearBackground } from '@/utils/linearColor';
 import { parseLyrics as parseYrcLyrics } from '@/utils/yrcParser';
 
 const { message } = createDiscreteApi(['message']);
+
+type DiskCacheResolveResult = {
+  url?: string;
+  cached?: boolean;
+  queued?: boolean;
+};
+
+const getSongArtistText = (songData: SongResult): string => {
+  if (songData?.ar?.length) {
+    return songData.ar.map((artist) => artist.name).join(' / ');
+  }
+
+  if (songData?.song?.artists?.length) {
+    return songData.song.artists.map((artist) => artist.name).join(' / ');
+  }
+
+  return '';
+};
+
+const resolveCachedPlaybackUrl = async (
+  url: string | null | undefined,
+  songData: SongResult
+): Promise<string | null | undefined> => {
+  if (!url || !isElectron || !/^https?:\/\//i.test(url)) {
+    return url;
+  }
+
+  try {
+    const result = (await window.electron.ipcRenderer.invoke('resolve-cached-music-url', {
+      songId: Number(songData.id),
+      source: songData.source,
+      url,
+      title: songData.name,
+      artist: getSongArtistText(songData)
+    })) as DiskCacheResolveResult;
+
+    if (result?.url) {
+      return result.url;
+    }
+  } catch (error) {
+    console.warn('解析缓存播放地址失败，回退到在线地址:', error);
+  }
+
+  return url;
+};
 
 /**
  * 获取歌曲播放URL（独立函数）
@@ -35,7 +80,8 @@ export const getSongUrl = async (
     }
 
     if (songData.playMusicUrl) {
-      return songData.playMusicUrl;
+      if (isDownloaded) return songData.playMusicUrl;
+      return await resolveCachedPlaybackUrl(songData.playMusicUrl, songData);
     }
 
     // ==================== 自定义API最优先 ====================
@@ -70,7 +116,7 @@ export const getSongUrl = async (
         ) {
           console.log('自定义API解析成功！');
           if (isDownloaded) return customResult.data.data as any;
-          return customResult.data.data.url;
+          return await resolveCachedPlaybackUrl(customResult.data.data.url, songData);
         } else {
           console.log('自定义API解析失败，将使用默认降级流程...');
           message.warning(i18n.global.t('player.reparse.customApiFailed'));
@@ -98,7 +144,7 @@ export const getSongUrl = async (
         }
 
         if (res && res.data && res.data.data && res.data.data.url) {
-          return res.data.data.url;
+          return await resolveCachedPlaybackUrl(res.data.data.url, songData);
         }
         console.warn('自定义音源解析失败，使用默认音源');
       } catch (error) {
@@ -133,12 +179,13 @@ export const getSongUrl = async (
           throw new Error('Request cancelled');
         }
         if (isDownloaded) return res?.data?.data as any;
-        return res?.data?.data?.url || null;
+        const parsedUrl = res?.data?.data?.url || null;
+        return await resolveCachedPlaybackUrl(parsedUrl, songData);
       }
 
       console.log('官方API解析成功！');
       if (isDownloaded) return songDetail as any;
-      return songDetail.url;
+      return await resolveCachedPlaybackUrl(songDetail.url, songData);
     }
 
     console.log('官方API返回数据结构异常，进入内置备用解析...');
@@ -149,7 +196,8 @@ export const getSongUrl = async (
       throw new Error('Request cancelled');
     }
     if (isDownloaded) return res?.data?.data as any;
-    return res?.data?.data?.url || null;
+    const parsedUrl = res?.data?.data?.url || null;
+    return await resolveCachedPlaybackUrl(parsedUrl, songData);
   } catch (error) {
     if ((error as Error).message === 'Request cancelled') {
       throw error;
@@ -157,7 +205,8 @@ export const getSongUrl = async (
     console.error('官方API请求失败，进入内置备用解析流程:', error);
     const res = await getParsingMusicUrl(numericId, cloneDeep(songData));
     if (isDownloaded) return res?.data?.data as any;
-    return res?.data?.data?.url || null;
+    const parsedUrl = res?.data?.data?.url || null;
+    return await resolveCachedPlaybackUrl(parsedUrl, songData);
   }
 };
 
@@ -218,7 +267,28 @@ const parseLyrics = (lyricsString: string): { lyrics: ILyricText[]; times: numbe
 export const loadLrc = async (id: string | number): Promise<ILyric> => {
   try {
     const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
-    const { data } = await getMusicLrc(numericId);
+    let lyricData: any;
+
+    if (isElectron) {
+      try {
+        lyricData = await window.electron.ipcRenderer.invoke('get-cached-lyric', numericId);
+      } catch (error) {
+        console.warn('读取磁盘歌词缓存失败:', error);
+      }
+    }
+
+    if (!lyricData) {
+      const { data } = await getMusicLrc(numericId);
+      lyricData = data;
+
+      if (isElectron && lyricData) {
+        void window.electron.ipcRenderer
+          .invoke('cache-lyric', numericId, lyricData)
+          .catch((error) => console.warn('写入磁盘歌词缓存失败:', error));
+      }
+    }
+
+    const data = lyricData ?? {};
     const { lyrics, times } = parseLyrics(data?.yrc?.lyric || data?.lrc?.lyric);
 
     // 检查是否有逐字歌词

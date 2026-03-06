@@ -25,7 +25,6 @@ export default {
     tokenSet: '已設定',
     tokenNotSet: '未設定',
     setToken: '設定Cookie',
-    setCookie: '設定Cookie',
     modifyToken: '修改Cookie',
     clearToken: '清除Cookie',
     font: '字體設定',
@@ -190,6 +189,35 @@ export default {
   system: {
     cache: '快取管理',
     cacheDesc: '清除快取',
+    diskCache: '磁碟快取',
+    diskCacheDesc: '將播放過的音樂與歌詞快取到本機磁碟，加速二次播放',
+    cacheDirectory: '快取目錄',
+    cacheDirectoryDesc: '自訂音樂與歌詞快取儲存位置',
+    selectDirectory: '選擇目錄',
+    openDirectory: '開啟目錄',
+    cacheMaxSize: '快取上限',
+    cacheMaxSizeDesc: '達到上限時會自動清理較舊快取',
+    cleanupPolicy: '清理策略',
+    cleanupPolicyDesc: '快取達到上限時的自動清理規則',
+    cleanupPolicyOptions: {
+      lru: '最近最少使用',
+      fifo: '先進先出'
+    },
+    cacheStatus: '快取狀態',
+    cacheStatusDesc: '已用 {used} / 上限 {limit}',
+    cacheStatusDetail: '音樂 {musicCount} 首，歌詞 {lyricCount} 首',
+    manageDiskCache: '手動清理磁碟快取',
+    manageDiskCacheDesc: '依快取類型進行清理',
+    clearMusicCache: '清理音樂快取',
+    clearLyricCache: '清理歌詞快取',
+    clearAllCache: '清理全部快取',
+    switchDirectoryMigrateTitle: '偵測到既有快取',
+    switchDirectoryMigrateContent: '是否將舊目錄快取搬移到新目錄？',
+    switchDirectoryMigrateConfirm: '搬移',
+    switchDirectoryDestroyTitle: '是否刪除舊快取',
+    switchDirectoryDestroyContent: '不搬移時，是否刪除舊目錄的快取檔案？',
+    switchDirectoryDestroyConfirm: '刪除',
+    switchDirectoryKeepOld: '保留舊快取',
     cacheClearTitle: '請選擇要清除的快取類型：',
     cacheTypes: {
       history: {
@@ -224,7 +252,14 @@ export default {
     restart: '重新啟動',
     restartDesc: '重新啟動應用程式',
     messages: {
-      clearSuccess: '清除成功，部分設定在重啟後生效'
+      clearSuccess: '清除成功，部分設定在重啟後生效',
+      diskCacheClearSuccess: '磁碟快取已清理',
+      diskCacheClearFailed: '清理磁碟快取失敗',
+      diskCacheStatsLoadFailed: '讀取快取狀態失敗',
+      switchDirectorySuccess: '快取目錄已切換，舊快取已保留',
+      switchDirectoryFailed: '快取目錄切換失敗',
+      switchDirectoryMigrated: '快取目錄已切換，已搬移 {count} 個快取檔案',
+      switchDirectoryDestroyed: '快取目錄已切換，已刪除 {count} 個舊快取檔案'
     }
   },
   about: {

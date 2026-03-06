@@ -55,7 +55,7 @@ const getDescription = () => {
   }
 
   if (props.item.size !== undefined) {
-    parts.push(t('user.album.songCount', { count: props.item.size }));
+    parts.push(t('common.songCount', { count: props.item.size }));
   }
 
   return parts.join(' · ') || t('history.noDescription');

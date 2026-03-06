@@ -213,9 +213,9 @@ let timerInterval: number | null = null;
 const hasTimerActive = computed(() => playerStore.hasSleepTimerActive);
 
 const timerStatusText = computed(() => {
-  if (sleepTimer.value.type === 'time') return t('player.sleepTimer.activeTime');
-  if (sleepTimer.value.type === 'songs') return t('player.sleepTimer.activeSongs');
-  if (sleepTimer.value.type === 'end') return t('player.sleepTimer.activeEnd');
+  if (sleepTimer.value.type === 'time') return t('player.sleepTimer.timeMode');
+  if (sleepTimer.value.type === 'songs') return t('player.sleepTimer.songsMode');
+  if (sleepTimer.value.type === 'end') return t('player.sleepTimer.afterPlaylist');
   return '';
 });
 

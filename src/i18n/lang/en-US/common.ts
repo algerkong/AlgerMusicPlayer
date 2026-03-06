@@ -29,6 +29,7 @@ export default {
   retry: 'Retry',
   reset: 'Reset',
   loadFailed: 'Load Failed',
+  noData: 'No data',
   back: 'Back',
   copySuccess: 'Copied to clipboard',
   copyFailed: 'Copy failed',
@@ -36,9 +37,7 @@ export default {
     required: 'This field is required',
     invalidInput: 'Invalid input',
     selectRequired: 'Please select an option',
-    numberRange: 'Please enter a number between {min} and {max}',
-    ipAddress: 'Please enter a valid IP address',
-    portNumber: 'Please enter a valid port number (1-65535)'
+    numberRange: 'Please enter a number between {min} and {max}'
   },
   viewMore: 'View More',
   noMore: 'No more',

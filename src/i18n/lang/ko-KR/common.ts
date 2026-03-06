@@ -29,6 +29,7 @@ export default {
   retry: '다시 시도',
   reset: '재설정',
   loadFailed: '로드 실패',
+  noData: '데이터 없음',
   back: '뒤로',
   copySuccess: '클립보드에 복사됨',
   copyFailed: '복사 실패',

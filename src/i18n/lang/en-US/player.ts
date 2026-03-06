@@ -131,10 +131,7 @@ export default {
     timerEnded: 'Sleep timer ended',
     playbackStopped: 'Music playback stopped',
     minutesRemaining: '{minutes} min remaining',
-    songsRemaining: '{count} songs remaining',
-    activeTime: 'Timer Active',
-    activeSongs: 'Counting Songs',
-    activeEnd: 'End After List'
+    songsRemaining: '{count} songs remaining'
   },
   playList: {
     clearAll: 'Clear Playlist',

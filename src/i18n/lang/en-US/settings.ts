@@ -196,6 +196,36 @@ export default {
   system: {
     cache: 'Cache Management',
     cacheDesc: 'Clear cache',
+    diskCache: 'Disk Cache',
+    diskCacheDesc: 'Cache played music and lyrics on local disk to speed up repeated playback',
+    cacheDirectory: 'Cache Directory',
+    cacheDirectoryDesc: 'Custom directory for music and lyric cache files',
+    selectDirectory: 'Select Directory',
+    openDirectory: 'Open Directory',
+    cacheMaxSize: 'Cache Size Limit',
+    cacheMaxSizeDesc: 'Older cache items are cleaned automatically when limit is reached',
+    cleanupPolicy: 'Cleanup Policy',
+    cleanupPolicyDesc: 'Auto cleanup rule when cache reaches the size limit',
+    cleanupPolicyOptions: {
+      lru: 'Least Recently Used',
+      fifo: 'First In, First Out'
+    },
+    cacheStatus: 'Cache Status',
+    cacheStatusDesc: 'Used {used} / Limit {limit}',
+    cacheStatusDetail: 'Music {musicCount}, Lyrics {lyricCount}',
+    manageDiskCache: 'Manual Disk Cache Cleanup',
+    manageDiskCacheDesc: 'Clean cache by category',
+    clearMusicCache: 'Clear Music Cache',
+    clearLyricCache: 'Clear Lyric Cache',
+    clearAllCache: 'Clear All Cache',
+    switchDirectoryMigrateTitle: 'Existing Cache Detected',
+    switchDirectoryMigrateContent: 'Do you want to migrate old cache files to the new directory?',
+    switchDirectoryMigrateConfirm: 'Migrate',
+    switchDirectoryDestroyTitle: 'Destroy Old Cache',
+    switchDirectoryDestroyContent:
+      'If you do not migrate, do you want to destroy old cache files in the previous directory?',
+    switchDirectoryDestroyConfirm: 'Destroy',
+    switchDirectoryKeepOld: 'Keep Old Cache',
     cacheClearTitle: 'Select cache types to clear:',
     cacheTypes: {
       history: {
@@ -230,7 +260,14 @@ export default {
     restart: 'Restart',
     restartDesc: 'Restart application',
     messages: {
-      clearSuccess: 'Cache cleared successfully, some settings will take effect after restart'
+      clearSuccess: 'Cache cleared successfully, some settings will take effect after restart',
+      diskCacheClearSuccess: 'Disk cache cleaned',
+      diskCacheClearFailed: 'Failed to clean disk cache',
+      diskCacheStatsLoadFailed: 'Failed to load cache status',
+      switchDirectorySuccess: 'Cache directory switched, old cache is kept',
+      switchDirectoryFailed: 'Failed to switch cache directory',
+      switchDirectoryMigrated: 'Cache directory switched, migrated {count} cache files',
+      switchDirectoryDestroyed: 'Cache directory switched, destroyed {count} old cache files'
     }
   },
   about: {

@@ -193,6 +193,35 @@ export default {
   system: {
     cache: '缓存管理',
     cacheDesc: '清除缓存',
+    diskCache: '磁盘缓存',
+    diskCacheDesc: '将播放过的音乐与歌词缓存到本地磁盘，提升二次播放速度',
+    cacheDirectory: '缓存目录',
+    cacheDirectoryDesc: '自定义音乐与歌词缓存保存目录',
+    selectDirectory: '选择目录',
+    openDirectory: '打开目录',
+    cacheMaxSize: '缓存上限',
+    cacheMaxSizeDesc: '达到上限后将自动清理最旧缓存',
+    cleanupPolicy: '清理策略',
+    cleanupPolicyDesc: '达到缓存上限时的自动清理规则',
+    cleanupPolicyOptions: {
+      lru: '最近最少使用',
+      fifo: '先进先出'
+    },
+    cacheStatus: '缓存状态',
+    cacheStatusDesc: '已用 {used} / 上限 {limit}',
+    cacheStatusDetail: '音乐 {musicCount} 首，歌词 {lyricCount} 首',
+    manageDiskCache: '手动清理磁盘缓存',
+    manageDiskCacheDesc: '按缓存类型进行清理',
+    clearMusicCache: '清理音乐缓存',
+    clearLyricCache: '清理歌词缓存',
+    clearAllCache: '清理全部缓存',
+    switchDirectoryMigrateTitle: '检测到已有缓存',
+    switchDirectoryMigrateContent: '是否将旧目录缓存迁移到新目录？',
+    switchDirectoryMigrateConfirm: '迁移',
+    switchDirectoryDestroyTitle: '是否销毁旧缓存',
+    switchDirectoryDestroyContent: '不迁移时，是否销毁旧目录缓存文件？',
+    switchDirectoryDestroyConfirm: '销毁',
+    switchDirectoryKeepOld: '保留旧缓存',
     cacheClearTitle: '请选择要清除的缓存类型：',
     cacheTypes: {
       history: {
@@ -227,7 +256,14 @@ export default {
     restart: '重启',
     restartDesc: '重启应用',
     messages: {
-      clearSuccess: '清除成功，部分设置在重启后生效'
+      clearSuccess: '清除成功，部分设置在重启后生效',
+      diskCacheClearSuccess: '磁盘缓存已清理',
+      diskCacheClearFailed: '清理磁盘缓存失败',
+      diskCacheStatsLoadFailed: '读取缓存状态失败',
+      switchDirectorySuccess: '缓存目录已切换，旧缓存已保留',
+      switchDirectoryFailed: '缓存目录切换失败',
+      switchDirectoryMigrated: '缓存目录已切换，已迁移 {count} 个缓存文件',
+      switchDirectoryDestroyed: '缓存目录已切换，已销毁 {count} 个旧缓存文件'
     }
   },
   about: {

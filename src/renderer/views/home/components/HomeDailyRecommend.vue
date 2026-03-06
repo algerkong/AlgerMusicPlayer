@@ -16,7 +16,7 @@
           @click="playAll"
         >
           <i class="iconfont icon-playfill text-sm" />
-          <span>{{ t('musicList.playAll') }}</span>
+          <span>{{ t('comp.musicList.playAll') }}</span>
         </button>
       </div>
     </div>

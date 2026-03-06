@@ -16,7 +16,6 @@ export default {
   progress: {
     total: 'Total Progress: {progress}%'
   },
-  items: 'items',
   status: {
     downloading: 'Downloading',
     completed: 'Completed',
@@ -42,12 +41,12 @@ export default {
       'Are you sure you want to clear all download records? This will not delete the actual music files, but will clear all records.',
     confirm: 'Clear',
     cancel: 'Cancel',
-    success: 'Download records cleared'
+    success: 'Download records cleared',
+    failed: 'Failed to clear download records'
   },
   message: {
     downloadComplete: '{filename} download completed',
-    downloadFailed: '{filename} download failed: {error}',
-    alreadyDownloading: '{filename} is already downloading'
+    downloadFailed: '{filename} download failed: {error}'
   },
   loading: 'Loading...',
   playStarted: 'Play started: {name}',

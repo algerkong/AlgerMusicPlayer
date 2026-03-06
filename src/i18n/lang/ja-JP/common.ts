@@ -29,6 +29,7 @@ export default {
   retry: '再試行',
   reset: 'リセット',
   loadFailed: '読み込みに失敗しました',
+  noData: 'データがありません',
   back: '戻る',
   copySuccess: 'クリップボードにコピーしました',
   copyFailed: 'コピーに失敗しました',

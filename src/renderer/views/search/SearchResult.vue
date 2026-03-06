@@ -207,7 +207,7 @@
                 class="flex flex-col items-center justify-center py-20 text-neutral-400"
               >
                 <i class="ri-search-line text-6xl mb-4 opacity-20"></i>
-                <p>{{ t('search.noResults') }}</p>
+                <p>{{ t('comp.musicList.noSearchResults') }}</p>
               </div>
 
               <!-- Loading More / Footer -->

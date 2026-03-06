@@ -342,7 +342,7 @@ const categoryList = computed(() => {
 });
 
 const currentCategoryName = computed(() => {
-  if (currentCategoryId.value === -1) return t('podcast.recommend');
+  if (currentCategoryId.value === -1) return t('podcast.recommended');
   return categories.value.find((c) => c.id === currentCategoryId.value)?.name || '';
 });
 

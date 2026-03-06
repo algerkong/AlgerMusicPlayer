@@ -23,7 +23,6 @@ export default {
   merging: 'Merging records...',
   noDescription: 'No description',
   noData: 'No records',
-  newKey: 'New translation',
   heatmap: {
     title: 'Play Heatmap',
     loading: 'Loading data...',
