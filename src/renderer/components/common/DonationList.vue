@@ -55,7 +55,7 @@
     </div>
 
     <!-- 捐赠者列表 -->
-    <div class="donors-list">
+    <div class="donors-list px-4">
       <div class="flex items-center justify-between mb-4 px-1">
         <h4 class="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <i class="ri-user-heart-line text-primary"></i>
@@ -69,23 +69,23 @@
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         <div
-          v-for="(donor, index) in donors"
+          v-for="(donor, index) in visibleDonors"
           :key="donor.id"
-          class="donor-card group animate-fade-in-up"
-          :style="{ animationDelay: `${index * 10}ms` }"
+          class="donor-card group"
+          :class="index < FIRST_BATCH ? 'animate-fade-in-up' : ''"
+          :style="index < FIRST_BATCH ? { animationDelay: `${index * 10}ms` } : undefined"
         >
           <div
             class="h-full bg-white dark:bg-neutral-800/50 border border-gray-100 dark:border-gray-800 rounded-xl p-3 flex gap-3 hover:border-primary/30 hover:shadow-md hover:bg-white dark:hover:bg-neutral-800 transition-all duration-300"
           >
             <!-- 头像 -->
             <div class="relative flex-shrink-0">
-              <n-avatar
-                :src="donor.avatar"
-                :fallback-src="defaultAvatar"
-                round
-                :size="40"
-                class="border border-gray-100 dark:border-gray-700"
-              />
+              <div
+                class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold border border-gray-100 dark:border-gray-700"
+                :class="avatarColorClass(donor.name)"
+              >
+                {{ avatarInitial(donor.name) }}
+              </div>
               <div
                 v-if="index < 3"
                 class="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[10px] text-white border border-white dark:border-gray-800"
@@ -110,16 +110,13 @@
 
               <!-- 留言或日期 -->
               <div class="mt-1">
-                <n-popover v-if="donor.message" trigger="hover" placement="top">
-                  <template #trigger>
-                    <div
-                      class="text-xs text-gray-500 dark:text-gray-400 truncate cursor-help border-b border-dashed border-gray-300 dark:border-gray-600 inline-block max-w-full"
-                    >
-                      "{{ donor.message }}"
-                    </div>
-                  </template>
-                  <div class="max-w-[200px] text-xs">{{ donor.message }}</div>
-                </n-popover>
+                <div
+                  v-if="donor.message"
+                  class="text-xs text-gray-500 dark:text-gray-400 truncate border-b border-dashed border-gray-300 dark:border-gray-600 inline-block max-w-full"
+                  :title="donor.message"
+                >
+                  "{{ donor.message }}"
+                </div>
                 <div v-else class="text-xs text-gray-400 dark:text-gray-600">
                   {{ donor.date }}
                 </div>
@@ -128,12 +125,15 @@
           </div>
         </div>
       </div>
+
+      <!-- 自动加载哨兵 -->
+      <div v-if="hasMore" ref="sentinelRef" class="h-1"></div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onActivated, onMounted, ref } from 'vue';
+import { computed, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import type { Donor } from '@/api/donation';
@@ -143,21 +143,81 @@ import wechat from '@/assets/wechat.png';
 
 const { t } = useI18n();
 
-const defaultAvatar = 'https://avatars.githubusercontent.com/u/0?v=4';
-const donors = ref<Donor[]>([]);
+const PAGE_SIZE = 40;
+const FIRST_BATCH = 16;
+
+const AVATAR_COLORS = [
+  'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
+  'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+  'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
+  'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
+  'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400',
+  'bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400',
+  'bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400',
+  'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400'
+];
+
+const allDonors = ref<Donor[]>([]);
+const visibleCount = ref(PAGE_SIZE);
 const isLoading = ref(false);
+const sentinelRef = ref<HTMLElement | null>(null);
+let observer: IntersectionObserver | null = null;
+
+const visibleDonors = computed(() => allDonors.value.slice(0, visibleCount.value));
+const hasMore = computed(() => visibleCount.value < allDonors.value.length);
+
+const isTextChar = (ch: string) => /[\p{L}\p{N}]/u.test(ch);
+
+const avatarInitial = (name: string) => {
+  if (!name) return '?';
+  for (const ch of name) {
+    if (isTextChar(ch)) {
+      return ch.toUpperCase();
+    }
+  }
+  return '?';
+};
+
+const avatarColorClass = (name: string) => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+};
+
+const loadMore = () => {
+  visibleCount.value = Math.min(visibleCount.value + PAGE_SIZE, allDonors.value.length);
+};
+
+const setupObserver = () => {
+  if (observer) observer.disconnect();
+  if (!sentinelRef.value) return;
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting && hasMore.value) {
+        loadMore();
+      }
+    },
+    { rootMargin: '200px' }
+  );
+  observer.observe(sentinelRef.value);
+};
+
+watch(sentinelRef, (el) => {
+  if (el) setupObserver();
+});
+
+onBeforeUnmount(() => {
+  observer?.disconnect();
+});
 
 const fetchDonors = async () => {
   isLoading.value = true;
   try {
     const data = await getDonationList();
-    // Sort by amount desc
-    donors.value = data
-      .sort((a, b) => Number(b.amount) - Number(a.amount))
-      .map((donor) => ({
-        ...donor,
-        avatar: `https://api.dicebear.com/7.x/micah/svg?seed=${donor.name}`
-      }));
+    allDonors.value = data.sort((a, b) => Number(b.amount) - Number(a.amount));
+    visibleCount.value = PAGE_SIZE;
   } catch (error) {
     console.error('Failed to fetch donors:', error);
   } finally {
@@ -173,7 +233,7 @@ onMounted(() => fetchDonors());
 onActivated(() => fetchDonors());
 </script>
 
-<style lang="scss" scoped>
+<style scoped>
 .animate-fade-in-up {
   animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
