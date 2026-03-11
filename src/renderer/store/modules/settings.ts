@@ -14,11 +14,14 @@ import {
   watchSystemTheme
 } from '@/utils/theme';
 
+import { type AppUpdateState,createDefaultAppUpdateState } from '../../../shared/appUpdate';
+
 export const useSettingsStore = defineStore('settings', () => {
   const theme = ref<ThemeType>(getCurrentTheme());
   const isMobile = ref(false);
   const isMiniMode = ref(false);
   const showUpdateModal = ref(false);
+  const appUpdateState = ref<AppUpdateState>(createDefaultAppUpdateState());
   const showArtistDrawer = ref(false);
   const currentArtistId = ref<number | null>(null);
   const systemFonts = ref<{ label: string; value: string }[]>([
@@ -147,6 +150,10 @@ export const useSettingsStore = defineStore('settings', () => {
     showUpdateModal.value = value;
   };
 
+  const setAppUpdateState = (value: AppUpdateState) => {
+    appUpdateState.value = value;
+  };
+
   const setShowArtistDrawer = (show: boolean) => {
     showArtistDrawer.value = show;
     if (!show) {
@@ -263,6 +270,7 @@ export const useSettingsStore = defineStore('settings', () => {
     isMobile,
     isMiniMode,
     showUpdateModal,
+    appUpdateState,
     showArtistDrawer,
     currentArtistId,
     systemFonts,
@@ -272,6 +280,7 @@ export const useSettingsStore = defineStore('settings', () => {
     setAutoTheme,
     setMiniMode,
     setShowUpdateModal,
+    setAppUpdateState,
     setShowArtistDrawer,
     setCurrentArtistId,
     setSystemFonts,

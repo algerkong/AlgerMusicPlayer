@@ -277,6 +277,7 @@ export default {
     latest: '현재 최신 버전입니다',
     hasUpdate: '새 버전 발견',
     gotoUpdate: '업데이트하러 가기',
+    manualUpdate: '수동 업데이트',
     gotoGithub: 'Github로 이동',
     author: '작성자',
     authorDesc: 'algerkong 별점🌟 부탁드려요',

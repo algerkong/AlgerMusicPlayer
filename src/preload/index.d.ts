@@ -1,5 +1,7 @@
 import { ElectronAPI } from '@electron-toolkit/preload';
 
+import type { AppUpdateState } from '../shared/appUpdate';
+
 interface API {
   minimize: () => void;
   maximize: () => void;
@@ -17,11 +19,14 @@ interface API {
   sendSong: (data: any) => void;
   unblockMusic: (id: number, data: any, enabledSources?: string[]) => Promise<any>;
   onLyricWindowClosed: (callback: () => void) => void;
-  startDownload: (url: string) => void;
-  onDownloadProgress: (callback: (progress: number, status: string) => void) => void;
-  onDownloadComplete: (callback: (success: boolean, filePath: string) => void) => void;
+  getAppUpdateState: () => Promise<AppUpdateState>;
+  checkAppUpdate: (manual?: boolean) => Promise<AppUpdateState>;
+  downloadAppUpdate: () => Promise<AppUpdateState>;
+  installAppUpdate: () => Promise<boolean>;
+  openAppUpdatePage: () => Promise<boolean>;
+  onAppUpdateState: (callback: (state: AppUpdateState) => void) => void;
+  removeAppUpdateListeners: () => void;
   onLanguageChanged: (callback: (locale: string) => void) => void;
-  removeDownloadListeners: () => void;
   importCustomApiPlugin: () => Promise<{ name: string; content: string } | null>;
   importLxMusicScript: () => Promise<{ name: string; content: string } | null>;
   invoke: (channel: string, ...args: any[]) => Promise<any>;

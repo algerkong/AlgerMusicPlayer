@@ -276,6 +276,7 @@ export default {
     latest: '現在最新バージョンです',
     hasUpdate: '新しいバージョンが見つかりました',
     gotoUpdate: '更新へ',
+    manualUpdate: '手動更新',
     gotoGithub: 'Githubへ',
     author: '作者',
     authorDesc: 'algerkong スターを付けてください🌟',

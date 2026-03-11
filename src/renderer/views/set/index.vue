@@ -614,10 +614,15 @@
             <!-- 版本信息 -->
             <setting-item :title="t('settings.about.version')">
               <template #description>
-                {{ updateInfo.currentVersion }}
-                <n-tag v-if="updateInfo.hasUpdate" type="success" class="ml-2">
-                  {{ t('settings.about.hasUpdate') }} {{ updateInfo.latestVersion }}
-                </n-tag>
+                <div class="flex flex-wrap items-center gap-2">
+                  <span>{{ updateInfo.currentVersion }}</span>
+                  <n-tag v-if="updateInfo.hasUpdate" type="success">
+                    {{ t('settings.about.hasUpdate') }} {{ updateInfo.latestVersion }}
+                  </n-tag>
+                </div>
+                <div v-if="hasManualUpdateFallback" class="mt-2 text-xs text-amber-600">
+                  {{ appUpdateState.errorMessage || t('settings.about.messages.checkError') }}
+                </div>
               </template>
               <template #action>
                 <div class="flex items-center gap-2 flex-wrap">
@@ -626,6 +631,14 @@
                   </n-button>
                   <n-button v-if="updateInfo.hasUpdate" size="small" @click="openReleasePage">
                     {{ t('settings.about.gotoUpdate') }}
+                  </n-button>
+                  <n-button
+                    v-if="hasManualUpdateFallback"
+                    size="small"
+                    tertiary
+                    @click="openManualUpdatePage"
+                  >
+                    {{ t('settings.about.manualUpdate') }}
                   </n-button>
                 </div>
               </template>
@@ -705,6 +718,11 @@ import { openDirectory, selectDirectory } from '@/utils/fileOperation';
 import { checkUpdate, UpdateResult } from '@/utils/update';
 
 import config from '../../../../package.json';
+import {
+  APP_UPDATE_STATUS,
+  createDefaultAppUpdateState,
+  hasAvailableAppUpdate
+} from '../../../shared/appUpdate';
 import SettingItem from './SettingItem.vue';
 import SettingSection from './SettingSection.vue';
 
@@ -853,19 +871,62 @@ const handleGpuAccelerationChange = (enabled: boolean) => {
 
 // ==================== 更新检查 ====================
 const checking = ref(false);
-const updateInfo = ref<UpdateResult>({
+const webUpdateInfo = ref<UpdateResult>({
   hasUpdate: false,
   latestVersion: '',
   currentVersion: config.version,
   releaseInfo: null
 });
 
+const appUpdateState = computed(() => settingsStore.appUpdateState);
+const hasAppUpdate = computed(() => hasAvailableAppUpdate(appUpdateState.value));
+const hasManualUpdateFallback = computed(
+  () => isElectron && appUpdateState.value.status === APP_UPDATE_STATUS.error
+);
+
+const updateInfo = computed<UpdateResult>(() => {
+  if (!isElectron) {
+    return webUpdateInfo.value;
+  }
+
+  return {
+    hasUpdate: hasAppUpdate.value,
+    latestVersion: appUpdateState.value.availableVersion ?? '',
+    currentVersion: appUpdateState.value.currentVersion || config.version,
+    releaseInfo: appUpdateState.value.availableVersion
+      ? {
+          tag_name: appUpdateState.value.availableVersion,
+          body: appUpdateState.value.releaseNotes,
+          html_url: appUpdateState.value.releasePageUrl,
+          assets: []
+        }
+      : null
+  };
+});
+
 const checkForUpdates = async (isClick = false) => {
   checking.value = true;
   try {
+    if (isElectron) {
+      const result = await window.api.checkAppUpdate(isClick);
+      settingsStore.setAppUpdateState(result);
+
+      if (hasAvailableAppUpdate(result)) {
+        if (isClick) {
+          settingsStore.setShowUpdateModal(true);
+        }
+      } else if (result.status === APP_UPDATE_STATUS.notAvailable && isClick) {
+        message.success(t('settings.about.latest'));
+      } else if (result.status === APP_UPDATE_STATUS.error && isClick) {
+        message.error(result.errorMessage || t('settings.about.messages.checkError'));
+      }
+
+      return;
+    }
+
     const result = await checkUpdate(config.version);
     if (result) {
-      updateInfo.value = result;
+      webUpdateInfo.value = result;
       if (!result.hasUpdate && isClick) {
         message.success(t('settings.about.latest'));
       }
@@ -883,7 +944,21 @@ const checkForUpdates = async (isClick = false) => {
 };
 
 const openReleasePage = () => {
-  settingsStore.showUpdateModal = true;
+  if (isElectron) {
+    settingsStore.setShowUpdateModal(true);
+    return;
+  }
+
+  window.open(updateInfo.value.releaseInfo?.html_url || setData.value.authorUrl);
+};
+
+const openManualUpdatePage = async () => {
+  if (isElectron) {
+    await window.api.openAppUpdatePage();
+    return;
+  }
+
+  window.open(updateInfo.value.releaseInfo?.html_url || setData.value.authorUrl);
 };
 
 const openAuthor = () => {
@@ -1399,7 +1474,9 @@ const currentSection = ref('basic');
 
 // ==================== 初始化 ====================
 onMounted(async () => {
-  checkForUpdates();
+  if (isElectron && settingsStore.appUpdateState.currentVersion === '') {
+    settingsStore.setAppUpdateState(createDefaultAppUpdateState(config.version));
+  }
   if (setData.value.proxyConfig) {
     proxyForm.value = { ...setData.value.proxyConfig };
   }

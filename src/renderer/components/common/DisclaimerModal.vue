@@ -1,7 +1,6 @@
 <template>
   <Teleport to="body">
     <Transition name="disclaimer-modal">
-      <!-- 免责声明页面 -->
       <div
         v-if="showDisclaimer"
         class="fixed inset-0 z-[999999] flex items-center justify-center bg-black/60 backdrop-blur-md"
@@ -9,17 +8,13 @@
         <div
           class="w-full max-w-md mx-4 bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-2xl"
         >
-          <!-- 顶部渐变装饰 -->
           <div class="h-2 bg-gradient-to-r from-amber-400 via-orange-500 to-red-500"></div>
-          <!-- 标题 -->
           <h2 class="text-2xl font-bold text-center text-gray-900 dark:text-white px-6 mt-10">
             {{ t('comp.disclaimer.title') }}
           </h2>
 
-          <!-- 内容区域 -->
           <div class="px-6 py-6">
             <div class="space-y-4 text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
-              <!-- 警告框 -->
               <div
                 class="p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800"
               >
@@ -31,7 +26,6 @@
                 </div>
               </div>
 
-              <!-- 免责条款列表 -->
               <div class="space-y-3">
                 <div class="flex items-start gap-3">
                   <div
@@ -63,7 +57,6 @@
             </div>
           </div>
 
-          <!-- 操作按钮 -->
           <div class="px-6 pb-8 space-y-3">
             <button
               @click="handleAgree"
@@ -86,7 +79,6 @@
       </div>
     </Transition>
 
-    <!-- 捐赠页面 -->
     <Transition name="donate-modal">
       <div
         v-if="showDonate"
@@ -95,10 +87,8 @@
         <div
           class="w-full max-w-md mx-4 bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-2xl"
         >
-          <!-- 顶部渐变装饰 -->
           <div class="h-2 bg-gradient-to-r from-pink-400 via-rose-500 to-red-500"></div>
 
-          <!-- 图标区域 -->
           <div class="flex justify-center pt-8 pb-4">
             <div
               class="w-20 h-20 rounded-2xl bg-gradient-to-br from-pink-400 to-rose-500 flex items-center justify-center shadow-lg"
@@ -107,7 +97,6 @@
             </div>
           </div>
 
-          <!-- 标题 -->
           <h2 class="text-2xl font-bold text-center text-gray-900 dark:text-white px-6">
             {{ t('comp.donate.title') }}
           </h2>
@@ -116,9 +105,7 @@
             {{ t('comp.donate.subtitle') }}
           </p>
 
-          <!-- 内容区域 -->
           <div class="px-6 py-6">
-            <!-- 提示信息 -->
             <div
               class="p-4 rounded-2xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 mb-6"
             >
@@ -130,7 +117,6 @@
               </div>
             </div>
 
-            <!-- 捐赠方式 -->
             <div class="grid grid-cols-2 gap-4">
               <button
                 @click="openDonateLink('wechat')"
@@ -158,7 +144,6 @@
             </div>
           </div>
 
-          <!-- 进入应用按钮 -->
           <div class="px-6 pb-8">
             <button
               @click="handleEnterApp"
@@ -178,7 +163,6 @@
       </div>
     </Transition>
 
-    <!-- 收款码弹窗 -->
     <Transition name="qrcode-modal">
       <div
         v-if="showQRCode"
@@ -188,7 +172,6 @@
         <div
           class="w-full max-w-sm mx-4 bg-white dark:bg-gray-900 rounded-3xl overflow-hidden shadow-2xl"
         >
-          <!-- 顶部渐变装饰 -->
           <div
             class="h-2"
             :class="
@@ -198,7 +181,6 @@
             "
           ></div>
 
-          <!-- 标题 -->
           <div class="flex items-center justify-between px-6 py-4">
             <h3 class="text-lg font-bold text-gray-900 dark:text-white">
               {{ qrcodeType === 'wechat' ? t('comp.donate.wechatQR') : t('comp.donate.alipayQR') }}
@@ -211,7 +193,6 @@
             </button>
           </div>
 
-          <!-- 二维码图片 -->
           <div class="px-6 pb-6">
             <div class="bg-white p-4 rounded-2xl">
               <img
@@ -234,28 +215,33 @@
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-// 导入收款码图片
 import alipayQRCode from '@/assets/alipay.png';
 import wechatQRCode from '@/assets/wechat.png';
 import { isElectron, isLyricWindow } from '@/utils';
 
+import config from '../../../../package.json';
+
 const { t } = useI18n();
 
-// 缓存键
 const DISCLAIMER_AGREED_KEY = 'disclaimer_agreed_timestamp';
+const DONATION_SHOWN_VERSION_KEY = 'donation_shown_version';
 
 const showDisclaimer = ref(false);
 const showDonate = ref(false);
 const showQRCode = ref(false);
 const qrcodeType = ref<'wechat' | 'alipay'>('wechat');
-const isTransitioning = ref(false); // 防止用户点击过快
+const isTransitioning = ref(false);
 
-// 检查是否需要显示免责声明
 const shouldShowDisclaimer = () => {
   return !localStorage.getItem(DISCLAIMER_AGREED_KEY);
 };
 
-// 处理同意
+const shouldShowDonateAfterUpdate = () => {
+  if (!localStorage.getItem(DISCLAIMER_AGREED_KEY)) return false;
+  const shownVersion = localStorage.getItem(DONATION_SHOWN_VERSION_KEY);
+  return shownVersion !== config.version;
+};
+
 const handleAgree = () => {
   if (isTransitioning.value) return;
   isTransitioning.value = true;
@@ -267,22 +253,18 @@ const handleAgree = () => {
   }, 300);
 };
 
-// 处理不同意 - 退出应用
 const handleDisagree = () => {
   if (isTransitioning.value) return;
   isTransitioning.value = true;
 
   if (isElectron) {
-    // Electron 环境下强制退出应用
     window.api?.quitApp?.();
   } else {
-    // Web 环境下尝试关闭窗口
     window.close();
   }
   isTransitioning.value = false;
 };
 
-// 打开捐赠链接
 const openDonateLink = (type: 'wechat' | 'alipay') => {
   if (isTransitioning.value) return;
 
@@ -290,18 +272,16 @@ const openDonateLink = (type: 'wechat' | 'alipay') => {
   showQRCode.value = true;
 };
 
-// 关闭二维码弹窗
 const closeQRCode = () => {
   showQRCode.value = false;
 };
 
-// 进入应用
 const handleEnterApp = () => {
   if (isTransitioning.value) return;
   isTransitioning.value = true;
 
-  // 记录同意时间
   localStorage.setItem(DISCLAIMER_AGREED_KEY, Date.now().toString());
+  localStorage.setItem(DONATION_SHOWN_VERSION_KEY, config.version);
   showDonate.value = false;
 
   setTimeout(() => {
@@ -310,18 +290,20 @@ const handleEnterApp = () => {
 };
 
 onMounted(() => {
-  // 歌词窗口不显示免责声明
   if (isLyricWindow.value) return;
 
-  // 检查是否需要显示免责声明
   if (shouldShowDisclaimer()) {
     showDisclaimer.value = true;
+    return;
+  }
+
+  if (shouldShowDonateAfterUpdate()) {
+    showDonate.value = true;
   }
 });
 </script>
 
 <style scoped>
-/* 免责声明弹窗动画 */
 .disclaimer-modal-enter-active,
 .disclaimer-modal-leave-active {
   transition: opacity 0.3s ease;
@@ -332,7 +314,6 @@ onMounted(() => {
   opacity: 0;
 }
 
-/* 捐赠弹窗动画 */
 .donate-modal-enter-active,
 .donate-modal-leave-active {
   transition: opacity 0.3s ease;
@@ -343,7 +324,6 @@ onMounted(() => {
   opacity: 0;
 }
 
-/* 二维码弹窗动画 */
 .qrcode-modal-enter-active,
 .qrcode-modal-leave-active {
   transition: opacity 0.3s ease;

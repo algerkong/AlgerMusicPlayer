@@ -277,6 +277,7 @@ export default {
     latest: 'Already latest version',
     hasUpdate: 'New version available',
     gotoUpdate: 'Go to Update',
+    manualUpdate: 'Manual Update',
     gotoGithub: 'Go to Github',
     author: 'Author',
     authorDesc: 'algerkong Give a star🌟',

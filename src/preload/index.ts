@@ -2,6 +2,8 @@ import { electronAPI } from '@electron-toolkit/preload';
 import type { IpcRendererEvent } from 'electron';
 import { contextBridge, ipcRenderer } from 'electron';
 
+import type { AppUpdateState } from '../shared/appUpdate';
+
 // Custom APIs for renderer
 const api = {
   minimize: () => ipcRenderer.send('minimize-window'),
@@ -26,23 +28,23 @@ const api = {
   onLyricWindowClosed: (callback: () => void) => {
     ipcRenderer.on('lyric-window-closed', () => callback());
   },
-  // 更新相关
-  startDownload: (url: string) => ipcRenderer.send('start-download', url),
-  onDownloadProgress: (callback: (progress: number, status: string) => void) => {
-    ipcRenderer.on('download-progress', (_event, progress, status) => callback(progress, status));
+  getAppUpdateState: () => ipcRenderer.invoke('app-update:get-state') as Promise<AppUpdateState>,
+  checkAppUpdate: (manual = false) =>
+    ipcRenderer.invoke('app-update:check', { manual }) as Promise<AppUpdateState>,
+  downloadAppUpdate: () => ipcRenderer.invoke('app-update:download') as Promise<AppUpdateState>,
+  installAppUpdate: () => ipcRenderer.invoke('app-update:quit-and-install') as Promise<boolean>,
+  openAppUpdatePage: () => ipcRenderer.invoke('app-update:open-release-page') as Promise<boolean>,
+  onAppUpdateState: (callback: (state: AppUpdateState) => void) => {
+    ipcRenderer.on('app-update:state', (_event, state: AppUpdateState) => callback(state));
   },
-  onDownloadComplete: (callback: (success: boolean, filePath: string) => void) => {
-    ipcRenderer.on('download-complete', (_event, success, filePath) => callback(success, filePath));
+  removeAppUpdateListeners: () => {
+    ipcRenderer.removeAllListeners('app-update:state');
   },
   // 语言相关
   onLanguageChanged: (callback: (locale: string) => void) => {
     ipcRenderer.on('language-changed', (_event, locale) => {
       callback(locale);
     });
-  },
-  removeDownloadListeners: () => {
-    ipcRenderer.removeAllListeners('download-progress');
-    ipcRenderer.removeAllListeners('download-complete');
   },
   // 歌词缓存相关
   invoke: (channel: string, ...args: any[]) => {

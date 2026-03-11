@@ -37,11 +37,17 @@ export default {
     title: 'New version found',
     currentVersion: 'Current version',
     cancel: 'Do not update',
+    checking: 'Checking for updates...',
     prepareDownload: 'Preparing to download...',
     downloading: 'Downloading...',
+    readyToInstall: 'The update package is ready to install',
     nowUpdate: 'Update now',
     downloadFailed: 'Download failed, please try again or download manually',
     startFailed: 'Start download failed, please try again or download manually',
+    autoUpdateFailed: 'Automatic update failed',
+    openOfficialSite: 'Open official download page',
+    manualFallbackHint:
+      'If automatic update fails, you can download the latest version from the official release page.',
     noDownloadUrl:
       'No suitable installation package found for the current system, please download manually',
     installConfirmTitle: 'Install Update',

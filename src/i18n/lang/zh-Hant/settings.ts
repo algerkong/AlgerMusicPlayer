@@ -269,6 +269,7 @@ export default {
     latest: '目前已是最新版本',
     hasUpdate: '發現新版本',
     gotoUpdate: '前往更新',
+    manualUpdate: '官網更新',
     gotoGithub: '前往 Github',
     author: '作者',
     authorDesc: 'algerkong 點個star🌟呗',

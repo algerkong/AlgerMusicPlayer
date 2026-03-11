@@ -6,12 +6,25 @@ on:
       - 'v*'
 
 jobs:
-  release:
+  build:
     runs-on: ${{ matrix.os }}
 
     strategy:
+      fail-fast: false
       matrix:
-        os: [macos-latest, windows-latest, ubuntu-latest]
+        include:
+          - id: mac-x64
+            os: macos-latest
+            build_command: npm run build:mac:x64
+          - id: mac-arm64
+            os: macos-latest
+            build_command: npm run build:mac:arm64
+          - id: windows
+            os: windows-latest
+            build_command: npm run build:win
+          - id: linux
+            os: ubuntu-latest
+            build_command: npm run build:linux
 
     steps:
       - name: Check out Git repository
@@ -21,68 +34,82 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: npm
 
-      - name: Install Dependencies
-        run: npm install
+      - name: Install dependencies
+        run: npm ci
 
-      # MacOS Build
-      - name: Build MacOS
-        if: matrix.os == 'macos-latest'
-        run: |
-          export ELECTRON_BUILDER_EXTRA_ARGS="--universal"
-          npm run build:mac
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-          DEBUG: electron-builder
-
-      # Windows Build
-      - name: Build Windows
-        if: matrix.os == 'windows-latest'
-        run: npm run build:win
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # Linux Build
-      - name: Build Linux
+      - name: Install Linux build dependencies
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 libappindicator3-dev librsvg2-dev patchelf
-          npm run build:linux
+
+      - name: Build artifacts
+        run: ${{ matrix.build_command }}
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
-      # Get version from tag
-      - name: Get version from tag
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
-        shell: bash
+      - name: Prepare mac update metadata
+        if: startsWith(matrix.id, 'mac-')
+        run: rm -f dist/latest-mac.yml
 
-      # Read release notes
-      - name: Read release notes
-        id: release_notes
-        run: |
-          NOTES=$(awk "/## \[v${{ env.VERSION }}\]/{p=1;print;next} /## \[v/{p=0}p" CHANGELOG.md)
-          echo "NOTES<<EOF" >> $GITHUB_ENV
-          echo "$NOTES" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-        shell: bash
-
-      # Upload artifacts
-      - name: Upload artifacts
-        uses: softprops/action-gh-release@v1
+      - name: Upload release bundle
+        uses: actions/upload-artifact@v4
         with:
-          files: |
+          name: ${{ matrix.id }}
+          if-no-files-found: error
+          path: |
             dist/*.dmg
+            dist/*.zip
             dist/*.exe
             dist/*.deb
             dist/*.rpm
             dist/*.AppImage
             dist/latest*.yml
             dist/*.blockmap
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+
+      - name: Read release notes
+        run: |
+          NOTES=$(awk "/## \[v${{ env.VERSION }}\]/{p=1;print;next} /## \[v/{p=0}p" CHANGELOG.md)
+          echo "NOTES<<EOF" >> $GITHUB_ENV
+          echo "$NOTES" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release-upload
+          find release-artifacts -type f \
+            ! -name 'latest-mac-x64.yml' \
+            ! -name 'latest-mac-arm64.yml' \
+            -exec cp {} release-upload/ \;
+          node scripts/merge_latest_mac_yml.mjs \
+            release-artifacts/mac-x64/latest-mac-x64.yml \
+            release-artifacts/mac-arm64/latest-mac-arm64.yml \
+            release-upload/latest-mac.yml
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
           body: ${{ env.NOTES }}
           draft: false
           prerelease: false
+          files: release-upload/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

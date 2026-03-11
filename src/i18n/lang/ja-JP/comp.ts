@@ -37,11 +37,17 @@ export default {
     title: '新しいバージョンが見つかりました',
     currentVersion: '現在のバージョン',
     cancel: '後で更新',
+    checking: '更新を確認中...',
     prepareDownload: 'ダウンロード準備中...',
     downloading: 'ダウンロード中...',
+    readyToInstall: '更新パッケージのダウンロードが完了しました。今すぐインストールできます',
     nowUpdate: '今すぐ更新',
     downloadFailed: 'ダウンロードに失敗しました。再試行するか手動でダウンロードしてください',
     startFailed: 'ダウンロードの開始に失敗しました。再試行するか手動でダウンロードしてください',
+    autoUpdateFailed: '自動更新に失敗しました',
+    openOfficialSite: '公式サイトから更新',
+    manualFallbackHint:
+      '自動更新に失敗した場合は、公式リリースページから最新版をダウンロードできます。',
     noDownloadUrl:
       '現在のシステムに適したインストールパッケージが見つかりません。手動でダウンロードしてください',
     installConfirmTitle: '更新をインストール',
