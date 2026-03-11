@@ -19,11 +19,9 @@
           <!-- Loading State -->
           <div v-if="loading" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
             <div v-for="i in 15" :key="i" class="space-y-3">
-              <div
-                class="aspect-square animate-pulse rounded-2xl bg-neutral-200 dark:bg-neutral-800"
-              />
-              <div class="h-4 w-3/4 animate-pulse rounded bg-neutral-200 dark:bg-neutral-800" />
-              <div class="h-3 w-1/2 animate-pulse rounded bg-neutral-200 dark:bg-neutral-800" />
+              <div class="aspect-square skeleton-shimmer rounded-2xl" />
+              <div class="h-4 w-3/4 skeleton-shimmer rounded-lg" />
+              <div class="h-3 w-1/2 skeleton-shimmer rounded-lg" />
             </div>
           </div>
 

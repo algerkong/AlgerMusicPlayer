@@ -69,6 +69,10 @@ import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 import { isElectron } from '@/utils';
 
+// 关键布局组件同步导入（始终可见，避免加载闪烁）
+import AppMenu from './components/AppMenu.vue';
+import SearchBar from './components/SearchBar.vue';
+import TitleBar from './components/TitleBar.vue';
 // 移动端专用布局
 import MobileLayout from './MobileLayout.vue';
 
@@ -87,11 +91,9 @@ const keepAliveInclude = computed(() => {
     .filter(Boolean);
 });
 
-const AppMenu = defineAsyncComponent(() => import('./components/AppMenu.vue'));
+// 非关键组件保持异步加载
 const PlayBar = defineAsyncComponent(() => import('@/components/player/PlayBar.vue'));
 const MobilePlayBar = defineAsyncComponent(() => import('@/components/player/MobilePlayBar.vue'));
-const SearchBar = defineAsyncComponent(() => import('./components/SearchBar.vue'));
-const TitleBar = defineAsyncComponent(() => import('./components/TitleBar.vue'));
 const PlayingListDrawer = defineAsyncComponent(
   () => import('@/components/player/PlayingListDrawer.vue')
 );
@@ -151,7 +153,7 @@ provide('openPlaylistDrawer', openPlaylistDrawer);
 }
 
 .menu {
-  @apply h-full;
+  @apply h-full bg-light dark:bg-black;
 }
 
 .main {

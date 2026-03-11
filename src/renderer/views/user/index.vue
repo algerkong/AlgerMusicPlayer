@@ -1,30 +1,32 @@
 <template>
   <div class="user-page">
     <template v-if="infoLoading">
-      <div class="left bg-gray-200 p-4 dark:bg-gray-800">
+      <div
+        class="left-skeleton flex-1 max-w-[600px] rounded-2xl overflow-hidden p-4 bg-light-200 dark:bg-dark-100"
+      >
         <div class="flex flex-col gap-6">
           <div class="flex justify-between">
-            <n-skeleton text class="h-8 w-32" />
-            <n-skeleton text class="h-6 w-20" />
+            <div class="h-8 w-32 skeleton-shimmer rounded-lg" />
+            <div class="h-6 w-20 skeleton-shimmer rounded-lg" />
           </div>
           <div class="flex items-center gap-4">
-            <n-skeleton class="h-[50px] w-[50px] rounded-full" />
+            <div class="h-[50px] w-[50px] skeleton-shimmer rounded-full" />
             <div class="flex w-2/5 justify-around">
               <div v-for="i in 3" :key="i" class="flex flex-col items-center gap-1">
-                <n-skeleton text class="h-5 w-8" />
-                <n-skeleton text class="h-4 w-12" />
+                <div class="h-5 w-8 skeleton-shimmer rounded-lg" />
+                <div class="h-4 w-12 skeleton-shimmer rounded-lg" />
               </div>
             </div>
           </div>
-          <n-skeleton text class="h-4 w-3/4" />
+          <div class="h-4 w-3/4 skeleton-shimmer rounded-lg" />
           <div class="mt-4 rounded-xl bg-light p-4 dark:bg-black">
-            <n-skeleton class="mb-4 h-8 w-full rounded-xl" />
+            <div class="mb-4 h-8 w-full skeleton-shimmer rounded-xl" />
             <div class="space-y-4">
               <div v-for="i in 5" :key="i" class="flex gap-3">
-                <n-skeleton class="h-[50px] w-[50px] rounded-xl" />
+                <div class="h-[50px] w-[50px] skeleton-shimmer rounded-xl flex-shrink-0" />
                 <div class="flex flex-1 flex-col justify-center gap-2">
-                  <n-skeleton text class="h-4 w-1/2" />
-                  <n-skeleton text class="h-3 w-1/3" />
+                  <div class="h-4 w-1/2 skeleton-shimmer rounded-lg" />
+                  <div class="h-3 w-1/3 skeleton-shimmer rounded-lg" />
                 </div>
               </div>
             </div>
@@ -32,7 +34,7 @@
         </div>
       </div>
       <div v-if="!isMobile" class="right">
-        <div class="title"><n-skeleton text class="h-8 w-32" /></div>
+        <div class="title"><div class="h-8 w-32 skeleton-shimmer rounded-lg" /></div>
         <div class="rounded-2xl bg-light p-4 dark:bg-black">
           <div class="space-y-2">
             <div
@@ -40,11 +42,11 @@
               :key="i"
               class="flex items-center gap-4 rounded-2xl bg-light-100 p-2 dark:bg-dark-100"
             >
-              <n-skeleton class="h-10 w-10 rounded-full" />
-              <n-skeleton class="h-10 w-10 rounded-xl" />
+              <div class="h-10 w-10 skeleton-shimmer rounded-full flex-shrink-0" />
+              <div class="h-10 w-10 skeleton-shimmer rounded-xl flex-shrink-0" />
               <div class="flex flex-1 flex-col gap-2">
-                <n-skeleton text class="h-4 w-1/3" />
-                <n-skeleton text class="h-3 w-1/4" />
+                <div class="h-4 w-1/3 skeleton-shimmer rounded-lg" />
+                <div class="h-3 w-1/4 skeleton-shimmer rounded-lg" />
               </div>
             </div>
           </div>

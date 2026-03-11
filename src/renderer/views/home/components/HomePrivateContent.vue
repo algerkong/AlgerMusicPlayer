@@ -18,7 +18,7 @@
       <div
         v-for="i in 3"
         :key="i"
-        class="skeleton-item animate-pulse rounded-2xl md:rounded-3xl bg-neutral-100 dark:bg-neutral-800/50"
+        class="skeleton-shimmer rounded-2xl md:rounded-3xl"
         style="aspect-ratio: 16/9"
       />
     </div>

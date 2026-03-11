@@ -12,7 +12,7 @@
         class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
         loading="lazy"
       />
-      <div v-else class="h-full w-full animate-pulse bg-neutral-200 dark:bg-neutral-800" />
+      <div v-else class="h-full w-full skeleton-shimmer" />
 
       <!-- 播放按钮遮罩 (Apple Music 风格) -->
       <div

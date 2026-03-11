@@ -31,11 +31,9 @@
           <!-- Loading State -->
           <div v-if="initLoading" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             <div v-for="i in 12" :key="i" class="space-y-3">
-              <div
-                class="aspect-video animate-pulse rounded-2xl bg-neutral-200 dark:bg-neutral-800"
-              />
-              <div class="h-4 w-3/4 animate-pulse rounded bg-neutral-200 dark:bg-neutral-800" />
-              <div class="h-3 w-1/2 animate-pulse rounded bg-neutral-200 dark:bg-neutral-800" />
+              <div class="aspect-video skeleton-shimmer rounded-2xl" />
+              <div class="h-4 w-3/4 skeleton-shimmer rounded-lg" />
+              <div class="h-3 w-1/2 skeleton-shimmer rounded-lg" />
             </div>
           </div>
 

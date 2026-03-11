@@ -5,14 +5,14 @@
         <!-- Loading State -->
         <div v-if="followListLoading && followList.length === 0">
           <div class="page-padding-x pt-8">
-            <n-skeleton class="h-8 w-48 mb-6" />
+            <div class="h-8 w-48 mb-6 skeleton-shimmer rounded-xl" />
             <div
               class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
             >
               <div v-for="i in 12" :key="i" class="flex flex-col items-center space-y-3">
-                <n-skeleton class="h-20 w-20 rounded-full" />
-                <n-skeleton text class="w-16" />
-                <n-skeleton text class="w-24" />
+                <div class="h-20 w-20 skeleton-shimmer rounded-full" />
+                <div class="h-4 w-16 skeleton-shimmer rounded-lg" />
+                <div class="h-3 w-24 skeleton-shimmer rounded-lg" />
               </div>
             </div>
           </div>

@@ -2,11 +2,9 @@
   <section class="artists-section">
     <!-- Loading Skeleton -->
     <div v-if="loading" class="artists-scroll flex gap-6 md:gap-8 overflow-x-hidden pb-4">
-      <div v-for="i in 8" :key="i" class="artist-skeleton flex flex-col items-center gap-3">
-        <div
-          class="h-20 w-20 md:h-24 md:w-24 lg:h-28 lg:w-28 animate-pulse rounded-full bg-neutral-200 dark:bg-neutral-800"
-        />
-        <div class="h-3 w-16 animate-pulse rounded bg-neutral-100 dark:bg-neutral-800" />
+      <div v-for="i in 8" :key="i" class="flex flex-col items-center gap-3">
+        <div class="h-20 w-20 md:h-24 md:w-24 lg:h-28 lg:w-28 skeleton-shimmer rounded-full" />
+        <div class="h-3 w-16 skeleton-shimmer rounded-lg" />
       </div>
     </div>
 

@@ -6,16 +6,12 @@
         <div
           v-for="i in 6"
           :key="i"
-          class="skeleton-pill h-10 w-24 flex-shrink-0 animate-pulse rounded-full bg-neutral-200 dark:bg-neutral-800"
+          class="h-10 w-24 flex-shrink-0 skeleton-shimmer rounded-full"
         />
       </div>
       <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div
-          class="skeleton-card aspect-[2.2/1] animate-pulse rounded-2xl bg-neutral-200 dark:bg-neutral-800"
-        />
-        <div
-          class="skeleton-card aspect-[2.2/1] animate-pulse rounded-2xl bg-neutral-200 dark:bg-neutral-800"
-        />
+        <div class="aspect-[2.2/1] skeleton-shimmer rounded-2xl" />
+        <div class="aspect-[2.2/1] skeleton-shimmer rounded-2xl" />
       </div>
     </div>
 

@@ -37,9 +37,8 @@ import otherRouter from '@/router/other';
 import { useMenuStore } from '@/store/modules/menu';
 import { usePlayerStore } from '@/store/modules/player';
 
+import AppMenu from './components/AppMenu.vue';
 import MobileHeader from './components/MobileHeader.vue';
-
-const AppMenu = defineAsyncComponent(() => import('./components/AppMenu.vue'));
 const MobilePlayBar = defineAsyncComponent(() => import('@/components/player/MobilePlayBar.vue'));
 const PlayingListDrawer = defineAsyncComponent(
   () => import('@/components/player/PlayingListDrawer.vue')

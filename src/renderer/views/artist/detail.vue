@@ -9,17 +9,19 @@
           <!-- Hero Skeleton -->
           <div class="hero-section relative h-[400px] overflow-hidden rounded-tl-2xl">
             <div class="hero-bg absolute inset-0 -top-20">
-              <div class="absolute inset-0 bg-neutral-200 dark:bg-neutral-800" />
+              <div class="absolute inset-0 skeleton-shimmer" />
             </div>
             <div class="hero-content relative z-10 px-4 pb-6 pt-4 md:px-8 md:pt-8">
               <div class="flex flex-col items-center gap-6 md:flex-row md:items-end md:gap-10">
-                <n-skeleton class="h-36 w-36 rounded-full md:h-48 md:w-48" />
+                <div
+                  class="h-36 w-36 md:h-48 md:w-48 skeleton-shimmer rounded-full flex-shrink-0"
+                />
                 <div class="flex-1 space-y-4 text-center md:text-left">
-                  <n-skeleton class="h-6 w-20 rounded-full" />
-                  <n-skeleton class="h-10 w-1/2 md:h-12" />
+                  <div class="h-6 w-20 skeleton-shimmer rounded-full" />
+                  <div class="h-10 w-1/2 md:h-12 skeleton-shimmer rounded-xl" />
                   <div class="flex justify-center gap-4 md:justify-start">
-                    <n-skeleton class="h-6 w-24" />
-                    <n-skeleton class="h-6 w-24" />
+                    <div class="h-6 w-24 skeleton-shimmer rounded-lg" />
+                    <div class="h-6 w-24 skeleton-shimmer rounded-lg" />
                   </div>
                 </div>
               </div>
@@ -29,12 +31,12 @@
           <div class="mt-8 page-padding-x">
             <div class="space-y-4">
               <div v-for="i in 8" :key="i" class="flex items-center gap-4">
-                <n-skeleton class="h-12 w-12 rounded-xl" />
+                <div class="h-12 w-12 skeleton-shimmer rounded-xl flex-shrink-0" />
                 <div class="flex-1 space-y-2">
-                  <n-skeleton text class="w-1/3" />
-                  <n-skeleton text class="w-1/4" />
+                  <div class="h-4 w-1/3 skeleton-shimmer rounded-lg" />
+                  <div class="h-3 w-1/4 skeleton-shimmer rounded-lg" />
                 </div>
-                <n-skeleton class="h-8 w-8 rounded-full" />
+                <div class="h-8 w-8 skeleton-shimmer rounded-full flex-shrink-0" />
               </div>
             </div>
           </div>

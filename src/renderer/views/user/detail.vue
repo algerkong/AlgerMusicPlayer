@@ -6,30 +6,32 @@
         <div v-if="loading">
           <!-- Hero Skeleton -->
           <div class="relative h-[300px] overflow-hidden rounded-tl-2xl">
-            <div class="absolute inset-0 bg-neutral-200 dark:bg-neutral-800" />
+            <div class="absolute inset-0 skeleton-shimmer" />
             <div class="relative z-10 page-padding-x pt-8 pb-6">
               <div class="flex flex-col items-center gap-6 md:flex-row md:items-end md:gap-10">
-                <n-skeleton class="h-28 w-28 rounded-full md:h-40 md:w-40" />
+                <div
+                  class="h-28 w-28 md:h-40 md:w-40 skeleton-shimmer rounded-full flex-shrink-0"
+                />
                 <div class="flex-1 space-y-4 text-center md:text-left">
-                  <n-skeleton class="h-8 w-40" />
+                  <div class="h-8 w-40 skeleton-shimmer rounded-xl" />
                   <div class="flex justify-center gap-6 md:justify-start">
-                    <n-skeleton class="h-12 w-16" />
-                    <n-skeleton class="h-12 w-16" />
-                    <n-skeleton class="h-12 w-16" />
+                    <div class="h-12 w-16 skeleton-shimmer rounded-xl" />
+                    <div class="h-12 w-16 skeleton-shimmer rounded-xl" />
+                    <div class="h-12 w-16 skeleton-shimmer rounded-xl" />
                   </div>
-                  <n-skeleton class="h-4 w-2/3" />
+                  <div class="h-4 w-2/3 skeleton-shimmer rounded-lg" />
                 </div>
               </div>
             </div>
           </div>
           <!-- Content Skeleton -->
           <div class="mt-8 page-padding-x">
-            <n-skeleton class="h-10 w-48 mb-6" />
+            <div class="h-10 w-48 mb-6 skeleton-shimmer rounded-xl" />
             <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               <div v-for="i in 10" :key="i" class="space-y-2">
-                <n-skeleton class="aspect-square w-full rounded-2xl" />
-                <n-skeleton text class="w-3/4" />
-                <n-skeleton text class="w-1/2" />
+                <div class="aspect-square w-full skeleton-shimmer rounded-2xl" />
+                <div class="h-4 w-3/4 skeleton-shimmer rounded-lg" />
+                <div class="h-3 w-1/2 skeleton-shimmer rounded-lg" />
               </div>
             </div>
           </div>
