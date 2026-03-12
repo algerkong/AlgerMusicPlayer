@@ -1,4 +1,5 @@
 import { useThrottleFn } from '@vueuse/core';
+import { debounce } from 'lodash';
 import { createDiscreteApi } from 'naive-ui';
 import { defineStore, storeToRefs } from 'pinia';
 import { computed, ref, shallowRef, triggerRef } from 'vue';
@@ -15,6 +16,53 @@ import { usePlayerCoreStore } from './playerCore';
 import { useSleepTimerStore } from './sleepTimer';
 
 const { message } = createDiscreteApi(['message']);
+
+/**
+ * 精简 SongResult 对象，只保留持久化必要字段
+ * 排除大体积字段：lyric, song, playMusicUrl, backgroundColor, primaryColor
+ */
+const minifySong = (s: SongResult) => ({
+  id: s.id,
+  name: s.name,
+  picUrl: s.picUrl,
+  ar: s.ar?.map((a) => ({ id: a.id, name: a.name })),
+  al: s.al,
+  source: s.source,
+  dt: s.dt
+});
+
+const minifySongList = (list: SongResult[] | undefined) => list?.map(minifySong) ?? [];
+
+/**
+ * 防抖 localStorage 包装，降低写入频率
+ * 通过 pendingWrites 跟踪未写入数据，beforeunload 时刷新
+ */
+const pendingWrites = new Map<string, string>();
+
+const flushPendingWrites = () => {
+  pendingWrites.forEach((value, key) => {
+    localStorage.setItem(key, value);
+  });
+  pendingWrites.clear();
+};
+
+const debouncedSetItem = debounce((key: string, value: string) => {
+  localStorage.setItem(key, value);
+  pendingWrites.delete(key);
+}, 2000);
+
+const debouncedLocalStorage = {
+  getItem: (key: string) => localStorage.getItem(key),
+  setItem: (key: string, value: string) => {
+    pendingWrites.set(key, value);
+    debouncedSetItem(key, value);
+  }
+};
+
+// 正常关闭时刷新未写入的数据
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', flushPendingWrites);
+}
 
 /**
  * 播放列表管理 Store
@@ -711,12 +759,21 @@ export const usePlaylistStore = defineStore(
     };
   },
   {
-    // 配置 pinia-plugin-persistedstate
+    // 配置 pinia-plugin-persistedstate（精简序列化 + 防抖写入）
     persist: {
       key: 'playlist-store',
-      storage: localStorage,
-      // 持久化所有状态，除了 playListDrawerVisible（UI 状态不需要持久化）
-      pick: ['playList', 'playListIndex', 'playMode', 'originalPlayList']
+      storage: debouncedLocalStorage,
+      pick: ['playList', 'playListIndex', 'playMode', 'originalPlayList'],
+      serializer: {
+        serialize: (state: any) => {
+          return JSON.stringify({
+            ...state,
+            playList: minifySongList(state.playList),
+            originalPlayList: minifySongList(state.originalPlayList)
+          });
+        },
+        deserialize: JSON.parse
+      }
     }
   }
 );
