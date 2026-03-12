@@ -19,6 +19,7 @@ interface API {
   sendSong: (data: any) => void;
   unblockMusic: (id: number, data: any, enabledSources?: string[]) => Promise<any>;
   onLyricWindowClosed: (callback: () => void) => void;
+  onLyricWindowReady: (callback: () => void) => void;
   getAppUpdateState: () => Promise<AppUpdateState>;
   checkAppUpdate: (manual?: boolean) => Promise<AppUpdateState>;
   downloadAppUpdate: () => Promise<AppUpdateState>;

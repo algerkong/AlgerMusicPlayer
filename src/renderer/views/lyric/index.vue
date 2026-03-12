@@ -642,6 +642,9 @@ onMounted(() => {
       console.error('Error parsing lyric data:', error);
     }
   });
+
+  // 通知主窗口歌词窗口已就绪，请求发送完整歌词数据
+  windowData.electron.ipcRenderer.send('lyric-ready');
 });
 
 onUnmounted(() => {

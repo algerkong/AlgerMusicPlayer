@@ -172,6 +172,13 @@ export const loadLyricWindow = (ipcMain: IpcMain, mainWin: BrowserWindow): void 
     });
   });
 
+  // 歌词窗口 Vue 应用加载完成，通知主窗口发送完整歌词数据
+  ipcMain.on('lyric-ready', () => {
+    if (mainWin && !mainWin.isDestroyed()) {
+      mainWin.webContents.send('lyric-window-ready');
+    }
+  });
+
   ipcMain.on('send-lyric', (_, data) => {
     if (lyricWindow && !lyricWindow.isDestroyed()) {
       try {

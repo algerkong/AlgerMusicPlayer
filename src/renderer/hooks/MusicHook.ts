@@ -821,9 +821,11 @@ export const openLyric = () => {
       sendLyricToWin();
     }
 
-    // 设置定时器，确保500ms后再次发送数据，以防窗口加载延迟
+    // 延迟重发一次，以防窗口加载略慢
     setTimeout(() => {
-      sendLyricToWin();
+      if (isLyricWindowOpen.value) {
+        sendLyricToWin();
+      }
     }, 500);
 
     // 启动歌词同步
@@ -936,10 +938,16 @@ export const initAudioListeners = async () => {
     // 初始化音频监听器
     setupAudioListeners();
 
-    // 监听歌词窗口关闭事件
+    // 监听歌词窗口事件
     if (isElectron) {
       window.api.onLyricWindowClosed(() => {
         isLyricWindowOpen.value = false;
+      });
+      // 歌词窗口 Vue 加载完成后，发送完整歌词数据
+      window.api.onLyricWindowReady(() => {
+        if (isLyricWindowOpen.value) {
+          sendLyricToWin();
+        }
       });
     }
 

@@ -28,6 +28,10 @@ const api = {
   onLyricWindowClosed: (callback: () => void) => {
     ipcRenderer.on('lyric-window-closed', () => callback());
   },
+  // 歌词窗口就绪事件（Vue 加载完成，可以接收数据）
+  onLyricWindowReady: (callback: () => void) => {
+    ipcRenderer.on('lyric-window-ready', () => callback());
+  },
   getAppUpdateState: () => ipcRenderer.invoke('app-update:get-state') as Promise<AppUpdateState>,
   checkAppUpdate: (manual = false) =>
     ipcRenderer.invoke('app-update:check', { manual }) as Promise<AppUpdateState>,
