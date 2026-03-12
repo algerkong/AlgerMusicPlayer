@@ -1,7 +1,7 @@
 import { useThrottleFn } from '@vueuse/core';
 import { createDiscreteApi } from 'naive-ui';
 import { defineStore, storeToRefs } from 'pinia';
-import { computed, ref, shallowRef } from 'vue';
+import { computed, ref, shallowRef, triggerRef } from 'vue';
 
 import i18n from '@/../i18n/renderer';
 import { useSongDetail } from '@/hooks/usePlayerHooks';
@@ -83,6 +83,8 @@ export const usePlaylistStore = defineStore(
             playList.value[startIndex + index] = song;
           }
         });
+        // 触发 shallowRef 响应式更新（直接修改元素不会自动触发）
+        triggerRef(playList);
 
         // 预加载下一首歌曲的音频和封面
         if (nextSong) {

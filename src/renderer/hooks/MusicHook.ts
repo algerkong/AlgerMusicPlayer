@@ -402,6 +402,7 @@ const setupAudioListeners = () => {
   let interval: any = null;
   // 播放状态恢复定时器：当 interval 因异常被清除时，自动恢复
   let recoveryTimer: any = null;
+  let lyricThrottleCounter = 0;
 
   const clearInterval = () => {
     if (interval) {
@@ -457,8 +458,21 @@ const setupAudioListeners = () => {
             sendLyricToWin();
           }
         }
-        if (isElectron && isLyricWindowOpen.value) {
-          sendLyricToWin();
+        // 节流发送轻量歌词进度更新（每 ~200ms / 约每 4 个 tick）
+        lyricThrottleCounter++;
+        if (isElectron && isLyricWindowOpen.value && lyricThrottleCounter % 4 === 0) {
+          try {
+            window.api.sendLyric(
+              JSON.stringify({
+                type: 'update',
+                nowIndex: nowIndex.value,
+                nowTime: nowTime.value,
+                isPlay: getPlayerStore().play
+              })
+            );
+          } catch {
+            // 忽略发送失败
+          }
         }
       } catch (error) {
         console.error('进度更新 interval 出错:', error);

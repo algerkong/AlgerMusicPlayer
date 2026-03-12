@@ -335,17 +335,8 @@ export const usePlayerCoreStore = defineStore(
           console.warn('预加载触发失败（可能是依赖未加载或循环依赖），已忽略:', e);
         }
 
-        let playInProgress = false;
-
         try {
-          if (playInProgress) {
-            console.warn('播放操作正在进行中，避免重复调用');
-            return true;
-          }
-
-          playInProgress = true;
           const result = await playAudio(requestId);
-          playInProgress = false;
 
           if (result) {
             playbackRequestManager.completeRequest(requestId);
@@ -356,7 +347,6 @@ export const usePlayerCoreStore = defineStore(
           }
         } catch (error) {
           console.error('自动播放音频失败:', error);
-          playInProgress = false;
           playbackRequestManager.failRequest(requestId);
           return false;
         }
