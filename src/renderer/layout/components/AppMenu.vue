@@ -57,7 +57,7 @@ const props = defineProps({
   },
   selectColor: {
     type: String,
-    default: '#10B981'
+    default: '#22c55e'
   },
   menus: {
     type: Array as any,
