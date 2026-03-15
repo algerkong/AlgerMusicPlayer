@@ -272,5 +272,39 @@ export default {
   home: '首頁',
   search: '搜尋',
   album: '專輯',
-  localMusic: '本地音樂'
+  localMusic: '本地音樂',
+  pages: {
+    toplist: {
+      desc: '最具權威的音樂榜單，發現當下最熱門的音樂'
+    },
+    mv: {
+      desc: '探索精彩影片內容',
+      loadingMore: '載入更多中...',
+      noMore: '— 已載入全部內容 —',
+      area: {
+        all: '全部',
+        mainland: '內地',
+        hktw: '港台',
+        western: '歐美',
+        japan: '日本',
+        korea: '韓國'
+      }
+    },
+    list: {
+      desc: '發現更多好聽的播放清單',
+      dailyRecommend: '每日推薦'
+    },
+    search: {
+      desc: '探索當下最熱門的搜尋趨勢'
+    },
+    album: {
+      area: {
+        all: '全部',
+        chinese: '華語',
+        western: '歐美',
+        korea: '韓國',
+        japan: '日本'
+      }
+    }
+  }
 };

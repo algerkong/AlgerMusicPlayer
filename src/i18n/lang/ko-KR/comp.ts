@@ -279,5 +279,39 @@ export default {
   home: '홈',
   search: '검색',
   album: '앨범',
-  localMusic: '로컬 음악'
+  localMusic: '로컬 음악',
+  pages: {
+    toplist: {
+      desc: '가장 권위 있는 음악 차트, 지금 가장 핫한 음악을 발견하세요'
+    },
+    mv: {
+      desc: '멋진 영상 콘텐츠 탐색',
+      loadingMore: '더 불러오는 중...',
+      noMore: '— 모든 콘텐츠 로드 완료 —',
+      area: {
+        all: '전체',
+        mainland: '중국 대륙',
+        hktw: '홍콩/대만',
+        western: '서양',
+        japan: '일본',
+        korea: '한국'
+      }
+    },
+    list: {
+      desc: '더 많은 멋진 플레이리스트를 발견하세요',
+      dailyRecommend: '오늘의 추천'
+    },
+    search: {
+      desc: '지금 가장 핫한 검색 트렌드를 탐색하세요'
+    },
+    album: {
+      area: {
+        all: '전체',
+        chinese: '중화권',
+        western: '서양',
+        korea: '한국',
+        japan: '일본'
+      }
+    }
+  }
 };

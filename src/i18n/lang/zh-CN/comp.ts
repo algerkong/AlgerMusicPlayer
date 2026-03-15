@@ -272,5 +272,39 @@ export default {
   home: '首页',
   search: '搜索',
   album: '专辑',
-  localMusic: '本地音乐'
+  localMusic: '本地音乐',
+  pages: {
+    toplist: {
+      desc: '最具权威的音乐榜单，发现当下最热门的音乐'
+    },
+    mv: {
+      desc: '探索精彩视频内容',
+      loadingMore: '加载更多中...',
+      noMore: '— 已加载全部内容 —',
+      area: {
+        all: '全部',
+        mainland: '内地',
+        hktw: '港台',
+        western: '欧美',
+        japan: '日本',
+        korea: '韩国'
+      }
+    },
+    list: {
+      desc: '发现更多好听的歌单',
+      dailyRecommend: '每日推荐'
+    },
+    search: {
+      desc: '探索当下最热门的搜索趋势'
+    },
+    album: {
+      area: {
+        all: '全部',
+        chinese: '华语',
+        western: '欧美',
+        korea: '韩国',
+        japan: '日本'
+      }
+    }
+  }
 };

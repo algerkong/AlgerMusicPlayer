@@ -23,7 +23,7 @@
           >
             MV
           </h1>
-          <p class="text-neutral-500 dark:text-neutral-400">探索精彩视频内容</p>
+          <p class="text-neutral-500 dark:text-neutral-400">{{ t('comp.pages.mv.desc') }}</p>
         </div>
 
         <!-- MV Grid Container -->
@@ -96,14 +96,14 @@
             <div v-if="loadingMore" class="flex flex-col items-center gap-4">
               <n-spin size="small" />
               <span class="text-xs text-neutral-400 font-medium tracking-widest uppercase">
-                加载更多中...
+                {{ t('comp.pages.mv.loadingMore') }}
               </span>
             </div>
             <div v-if="!hasMore && !initLoading" class="text-center">
               <span
                 class="text-xs text-neutral-400 font-medium tracking-widest uppercase opacity-50"
               >
-                — 已加载全部内容 —
+                {{ t('comp.pages.mv.noMore') }}
               </span>
             </div>
           </div>
@@ -122,7 +122,8 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
 import { getAllMv, getTopMv } from '@/api/mv';
@@ -137,6 +138,7 @@ defineOptions({
   name: 'Mv'
 });
 
+const { t } = useI18n();
 const showMv = ref(false);
 const mvList = ref<Array<IMvItem>>([]);
 const playMvItem = ref<IMvItem>();
@@ -147,14 +149,14 @@ const offset = ref(0);
 const limit = ref(40); // 调整为40，方便4列布局 (10行)
 const hasMore = ref(true);
 
-const categories = [
-  { label: '全部', value: '全部' },
-  { label: '内地', value: '内地' },
-  { label: '港台', value: '港台' },
-  { label: '欧美', value: '欧美' },
-  { label: '日本', value: '日本' },
-  { label: '韩国', value: '韩国' }
-];
+const categories = computed(() => [
+  { label: t('comp.pages.mv.area.all'), value: '全部' },
+  { label: t('comp.pages.mv.area.mainland'), value: '内地' },
+  { label: t('comp.pages.mv.area.hktw'), value: '港台' },
+  { label: t('comp.pages.mv.area.western'), value: '欧美' },
+  { label: t('comp.pages.mv.area.japan'), value: '日本' },
+  { label: t('comp.pages.mv.area.korea'), value: '韩国' }
+]);
 const selectedCategory = ref('全部');
 
 const router = useRouter();

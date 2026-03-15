@@ -12,7 +12,7 @@
             >
               {{ t('search.title.hotSearch') }}
             </h1>
-            <p class="text-neutral-500 dark:text-neutral-400">探索当下最热门的搜索趋势</p>
+            <p class="text-neutral-500 dark:text-neutral-400">{{ t('comp.pages.search.desc') }}</p>
           </div>
         </div>
 

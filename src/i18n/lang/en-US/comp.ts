@@ -280,5 +280,39 @@ export default {
   home: 'Home',
   search: 'Search',
   album: 'Album',
-  localMusic: 'Local Music'
+  localMusic: 'Local Music',
+  pages: {
+    toplist: {
+      desc: 'The most authoritative music charts, discover the hottest music'
+    },
+    mv: {
+      desc: 'Explore amazing video content',
+      loadingMore: 'Loading more...',
+      noMore: '— All content loaded —',
+      area: {
+        all: 'All',
+        mainland: 'Mainland',
+        hktw: 'HK/TW',
+        western: 'Western',
+        japan: 'Japan',
+        korea: 'Korea'
+      }
+    },
+    list: {
+      desc: 'Discover more great playlists',
+      dailyRecommend: 'Daily Picks'
+    },
+    search: {
+      desc: 'Explore the hottest search trends'
+    },
+    album: {
+      area: {
+        all: 'All',
+        chinese: 'Chinese',
+        western: 'Western',
+        korea: 'Korea',
+        japan: 'Japan'
+      }
+    }
+  }
 };

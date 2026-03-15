@@ -7,10 +7,10 @@
           <h1
             class="text-3xl md:text-4xl font-bold tracking-tight text-neutral-900 dark:text-white mb-2"
           >
-            排行榜
+            {{ t('comp.toplist') }}
           </h1>
           <p class="text-neutral-500 dark:text-neutral-400">
-            最具权威的音乐榜单，发现当下最热门的音乐
+            {{ t('comp.pages.toplist.desc') }}
           </p>
         </div>
 
@@ -94,6 +94,7 @@
 
 <script lang="ts" setup>
 import { onMounted, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
 import { getToplist } from '@/api/list';
@@ -104,6 +105,7 @@ defineOptions({
   name: 'Toplist'
 });
 
+const { t } = useI18n();
 const router = useRouter();
 const topList = ref<any[]>([]);
 const loading = ref(false);

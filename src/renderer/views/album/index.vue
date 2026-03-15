@@ -133,13 +133,13 @@ const route = useRoute();
 
 const TOTAL_ITEMS = 30; // 每页数量
 
-const areas = [
-  { name: '全部', value: 'ALL' },
-  { name: '华语', value: 'ZH' },
-  { name: '欧美', value: 'EA' },
-  { name: '韩国', value: 'KR' },
-  { name: '日本', value: 'JP' }
-];
+const areas = computed(() => [
+  { name: t('comp.pages.album.area.all'), value: 'ALL' },
+  { name: t('comp.pages.album.area.chinese'), value: 'ZH' },
+  { name: t('comp.pages.album.area.western'), value: 'EA' },
+  { name: t('comp.pages.album.area.korea'), value: 'KR' },
+  { name: t('comp.pages.album.area.japan'), value: 'JP' }
+]);
 
 const albumList = ref<any[]>([]);
 const page = ref(0);
@@ -149,7 +149,8 @@ const loading = ref(false);
 
 const currentArea = ref((route.query.area as string) || 'ALL');
 const currentAreaName = computed(
-  () => areas.find((a) => a.value === currentArea.value)?.name || '全部'
+  () =>
+    areas.value.find((a) => a.value === currentArea.value)?.name || t('comp.pages.album.area.all')
 );
 
 const contentScrollbarRef = ref();

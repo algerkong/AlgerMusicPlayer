@@ -23,7 +23,7 @@
           <h1 class="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-white mb-2">
             {{ listTitle }}
           </h1>
-          <p class="text-neutral-500 dark:text-neutral-400">发现更多好听的歌单</p>
+          <p class="text-neutral-500 dark:text-neutral-400">{{ t('comp.pages.list.desc') }}</p>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
@@ -96,10 +96,10 @@
         <!-- 加载更多 -->
         <div v-if="isLoadingMore" class="flex justify-center items-center py-8">
           <n-spin size="small" />
-          <span class="ml-2 text-neutral-500">加载中...</span>
+          <span class="ml-2 text-neutral-500">{{ t('common.loading') }}</span>
         </div>
         <div v-if="!hasMore && recommendList.length > 0" class="text-center py-8 text-neutral-500">
-          没有更多了
+          {{ t('common.noMore') }}
         </div>
       </div>
     </n-scrollbar>
@@ -108,6 +108,7 @@
 
 <script lang="ts" setup>
 import { nextTick, onDeactivated, onMounted, reactive, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
 import { getPlaylistCategory } from '@/api/home';
@@ -121,6 +122,7 @@ defineOptions({
   name: 'List'
 });
 
+const { t } = useI18n();
 const TOTAL_ITEMS = 42; // 每页数量
 
 const recommendList = ref<any[]>([]);
@@ -142,7 +144,8 @@ const openPlaylist = (item: any) => {
 };
 
 const route = useRoute();
-const listTitle = ref((route.query.type as string) || '每日推荐');
+const DEFAULT_CAT = '每日推荐';
+const listTitle = ref((route.query.type as string) || t('comp.pages.list.dailyRecommend'));
 
 const loading = ref(false);
 const loadList = async (type: string, isLoadMore = false) => {
@@ -159,7 +162,7 @@ const loadList = async (type: string, isLoadMore = false) => {
 
   try {
     const params = {
-      cat: type === '每日推荐' ? '' : type,
+      cat: type === DEFAULT_CAT ? '' : type,
       limit: TOTAL_ITEMS,
       offset: page.value * TOTAL_ITEMS
     };
@@ -190,7 +193,7 @@ const handleScroll = (e: any) => {
 
 // 添加歌单分类相关的代码
 const playlistCategory = ref<IPlayListSort>();
-const currentType = ref((route.query.type as string) || '每日推荐');
+const currentType = ref((route.query.type as string) || DEFAULT_CAT);
 
 const contentScrollbarRef = ref();
 
@@ -201,7 +204,7 @@ const loadPlaylistCategory = async () => {
     ...data,
     sub: [
       {
-        name: '每日推荐',
+        name: DEFAULT_CAT,
         category: 0
       },
       ...data.sub
@@ -227,10 +230,10 @@ watch(
   () => route.query,
   async (newParams) => {
     if (route.path !== '/list') return;
-    const newType = (newParams.type as string) || '每日推荐';
+    const newType = (newParams.type as string) || DEFAULT_CAT;
     // 如果路由参数变化，且与当前类型不同，则重新加载
     if (newType !== currentType.value) {
-      listTitle.value = newType;
+      listTitle.value = newType === DEFAULT_CAT ? t('comp.pages.list.dailyRecommend') : newType;
       currentType.value = newType;
       loading.value = true;
       loadList(newType);

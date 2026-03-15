@@ -280,5 +280,39 @@ export default {
   home: 'ホーム',
   search: '検索',
   album: 'アルバム',
-  localMusic: 'ローカル音楽'
+  localMusic: 'ローカル音楽',
+  pages: {
+    toplist: {
+      desc: '最も権威ある音楽チャート、今一番ホットな音楽を発見'
+    },
+    mv: {
+      desc: '素晴らしい動画コンテンツを探索',
+      loadingMore: 'もっと読み込み中...',
+      noMore: '— すべて読み込みました —',
+      area: {
+        all: 'すべて',
+        mainland: '中国大陸',
+        hktw: '香港・台湾',
+        western: '欧米',
+        japan: '日本',
+        korea: '韓国'
+      }
+    },
+    list: {
+      desc: 'もっと素敵なプレイリストを発見',
+      dailyRecommend: 'デイリーおすすめ'
+    },
+    search: {
+      desc: '今最もホットな検索トレンドを探索'
+    },
+    album: {
+      area: {
+        all: 'すべて',
+        chinese: '中華圏',
+        western: '欧米',
+        korea: '韓国',
+        japan: '日本'
+      }
+    }
+  }
 };
