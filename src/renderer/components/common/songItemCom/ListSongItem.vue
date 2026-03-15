@@ -61,8 +61,8 @@
 
     <!-- 操作插槽 -->
     <template #operating>
-      <div class="song-item-operating song-item-operating-list">
-        <div v-if="favorite" class="song-item-operating-like">
+      <div class="song-item-operating-list">
+        <div v-if="favorite" class="song-item-operating-list-like">
           <i
             class="iconfont icon-likefill"
             :class="{ 'like-active': isFavorite }"
@@ -70,7 +70,7 @@
           ></i>
         </div>
         <div
-          class="song-item-operating-play bg-gray-300 dark:bg-gray-800 animate__animated"
+          class="song-item-operating-list-play bg-gray-300 dark:bg-gray-800 animate__animated"
           :class="{ 'bg-green-600': isPlaying, animate__flipInY: playLoading }"
           @click="onPlayMusic"
         >
@@ -133,7 +133,6 @@ const onImageLoad = (event: Event) => baseItem.value?.imageLoad(event);
 const onArtistClick = (id: number) => baseItem.value?.handleArtistClick(id);
 const onToggleFavorite = (event: Event) => {
   baseItem.value?.toggleFavorite(event);
-  // 可选：emit 收藏事件
 };
 const onPlayMusic = () => {
   baseItem.value?.playMusicEvent(props.item);
@@ -143,54 +142,131 @@ const onPlayMusic = () => {
 
 <style lang="scss" scoped>
 .list-song-item {
-  @apply p-2 rounded-xl mb-2 border dark:border-gray-800 border-gray-200;
+  padding: 0.5rem; /* p-2 */
+  border-radius: 0.75rem; /* rounded-xl */
+  margin-bottom: 0.5rem; /* mb-2 */
+  border-width: 1px;
+  border-color: rgb(229 231 235); /* border-gray-200 */
 
   &:hover {
-    @apply bg-gray-50 dark:bg-gray-800;
+    background-color: rgb(249 250 251); /* bg-gray-50 */
   }
 
   .song-item-img {
-    @apply w-10 h-10 rounded-xl mr-3;
+    width: 2.5rem; /* w-10 */
+    height: 2.5rem; /* h-10 */
+    border-radius: 0.75rem; /* rounded-xl */
+    margin-right: 0.75rem; /* mr-3 */
   }
 
   .song-item-content {
-    @apply flex items-center flex-1;
+    display: flex;
+    align-items: center;
+    flex: 1;
 
     &-wrapper {
-      @apply flex items-center flex-1 text-sm;
+      display: flex;
+      align-items: center;
+      flex: 1;
+      font-size: 0.875rem; /* text-sm */
+      line-height: 1.25rem;
     }
 
     &-title {
-      @apply flex-shrink-0 max-w-[45%] text-gray-900 dark:text-white;
+      flex-shrink: 0;
+      max-width: 45%;
+      color: rgb(17 24 39); /* text-gray-900 */
     }
 
     &-divider {
-      @apply mx-2 text-gray-500 dark:text-gray-400;
+      margin-left: 0.5rem; /* mx-2 */
+      margin-right: 0.5rem;
+      color: rgb(107 114 128); /* text-gray-500 */
     }
 
     &-name {
-      @apply flex-1 min-w-0 text-gray-500 dark:text-gray-400;
+      flex: 1;
+      min-width: 0;
+      color: rgb(107 114 128); /* text-gray-500 */
     }
   }
 
   .song-item-operating-list {
-    @apply flex items-center gap-2;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* gap-2 */
 
     &-like {
-      @apply cursor-pointer hover:scale-110 transition-transform;
+      cursor: pointer;
+      transition-property: transform;
+      transition-duration: 0.15s;
+
+      &:hover {
+        transform: scale(1.1); /* hover:scale-110 */
+      }
 
       .iconfont {
-        @apply text-base text-gray-500 dark:text-gray-400 hover:text-red-500;
+        font-size: 1rem;
+        color: rgb(107 114 128); /* text-gray-500 */
+
+        &:hover {
+          color: rgb(239 68 68); /* hover:text-red-500 */
+        }
+      }
+
+      .like-active {
+        color: rgb(239 68 68) !important;
       }
     }
 
     &-play {
-      @apply w-7 h-7 cursor-pointer hover:scale-110 transition-transform;
+      width: 1.75rem; /* w-7 */
+      height: 1.75rem; /* h-7 */
+      cursor: pointer;
+      transition-property: transform;
+      transition-duration: 0.15s;
+      border-radius: 9999px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      &:hover {
+        transform: scale(1.1); /* hover:scale-110 */
+      }
 
       .iconfont {
-        @apply text-base;
+        font-size: 1rem; /* text-base */
+      }
+
+      &.bg-green-600 {
+        background-color: rgb(34 197 94);
+        color: white;
       }
     }
+  }
+}
+
+/* dark mode */
+.dark .list-song-item {
+  border-color: rgb(31 41 55); /* dark:border-gray-800 */
+
+  &:hover {
+    background-color: rgb(31 41 55); /* dark:bg-gray-800 */
+  }
+
+  .song-item-content {
+    &-title {
+      color: white;
+    }
+
+    &-divider,
+    &-name {
+      color: rgb(156 163 175); /* dark:text-gray-400 */
+    }
+  }
+
+  .song-item-operating-list-like .iconfont {
+    color: rgb(156 163 175); /* dark:text-gray-400 */
   }
 }
 </style>

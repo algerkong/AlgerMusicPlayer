@@ -130,7 +130,6 @@ const onImageLoad = (event: Event) => baseItem.value?.imageLoad(event);
 const onArtistClick = (id: number) => baseItem.value?.handleArtistClick(id);
 const onToggleFavorite = (event: Event) => {
   baseItem.value?.toggleFavorite(event);
-  // 可选：emit 收藏事件
 };
 const onPlayMusic = () => {
   baseItem.value?.playMusicEvent(props.item);
@@ -140,55 +139,122 @@ const onPlayMusic = () => {
 
 <style lang="scss" scoped>
 .mini-song-item {
-  @apply p-2 rounded-xl;
+  padding: 0.5rem; /* p-2 */
+  border-radius: 0.75rem; /* rounded-xl */
 
   &:hover {
-    @apply bg-light-100 dark:bg-dark-100;
+    background-color: rgb(249 250 251); /* bg-gray-50 */
   }
 
   .song-item-img {
-    @apply w-10 h-10 mr-2 rounded-xl;
+    width: 2.5rem; /* w-10 */
+    height: 2.5rem; /* h-10 */
+    margin-right: 0.5rem; /* mr-2 */
+    border-radius: 0.75rem; /* rounded-xl */
   }
 
   .song-item-content {
-    @apply flex-1;
+    flex: 1;
 
     &-title {
-      @apply text-sm text-gray-900 dark:text-white;
+      font-size: 0.875rem; /* text-sm */
+      line-height: 1.25rem;
+      color: rgb(17 24 39); /* text-gray-900 */
     }
 
     &-name {
-      @apply text-xs text-gray-500 dark:text-gray-400;
+      font-size: 0.75rem; /* text-xs */
+      line-height: 1rem;
+      color: rgb(107 114 128); /* text-gray-500 */
     }
   }
 
   .song-item-operating {
-    @apply flex items-center rounded-full ml-4 pl-2 border dark:border-gray-700 border-gray-200 bg-light dark:bg-black;
+    display: flex;
+    align-items: center;
+    border-radius: 9999px; /* rounded-full */
+    margin-left: 1rem; /* ml-4 */
+    padding-left: 0.5rem; /* pl-2 */
+    border-width: 1px;
+    border-color: rgb(229 231 235); /* border-gray-200 */
+    background-color: #fff; /* bg-light fallback */
 
     .iconfont {
-      @apply text-base;
+      font-size: 1rem; /* text-base */
     }
 
     &-like {
-      @apply mr-1 ml-1 cursor-pointer;
+      margin-right: 0.25rem; /* mr-1 */
+      margin-left: 0.25rem; /* ml-1 */
+      cursor: pointer;
 
       .icon-likefill {
-        @apply text-base transition text-gray-500 dark:text-gray-400 hover:text-red-500;
+        font-size: 1rem;
+        transition-property: color;
+        transition-duration: 0.15s;
+        color: rgb(107 114 128); /* text-gray-500 */
+
+        &:hover {
+          color: rgb(239 68 68); /* hover:text-red-500 */
+        }
       }
 
       .like-active {
-        @apply text-red-500 dark:text-red-500;
+        color: rgb(239 68 68) !important; /* text-red-500 */
       }
     }
 
     &-play {
-      @apply cursor-pointer rounded-full w-8 h-8 flex justify-center items-center transition
-             border dark:border-gray-700 border-gray-200 text-gray-900 dark:text-white;
+      cursor: pointer;
+      border-radius: 9999px; /* rounded-full */
+      width: 2rem; /* w-8 */
+      height: 2rem; /* h-8 */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition-property: all;
+      transition-duration: 0.15s;
+      border-width: 1px;
+      border-color: rgb(229 231 235); /* border-gray-200 */
+      color: rgb(17 24 39); /* text-gray-900 */
 
       &:hover,
       &.bg-green-600 {
-        @apply bg-green-500 border-green-500 text-white;
+        background-color: rgb(34 197 94); /* bg-green-500 = #22c55e */
+        border-color: rgb(34 197 94);
+        color: white;
       }
+    }
+  }
+}
+
+/* dark mode */
+.dark .mini-song-item {
+  &:hover {
+    background-color: rgb(31 41 55); /* dark:bg-gray-800 */
+  }
+
+  .song-item-content {
+    &-title {
+      color: white;
+    }
+
+    &-name {
+      color: rgb(156 163 175); /* dark:text-gray-400 */
+    }
+  }
+
+  .song-item-operating {
+    border-color: rgb(55 65 81); /* dark:border-gray-700 */
+    background-color: black; /* dark:bg-black */
+
+    &-like .icon-likefill {
+      color: rgb(156 163 175); /* dark:text-gray-400 */
+    }
+
+    &-play {
+      border-color: rgb(55 65 81); /* dark:border-gray-700 */
+      color: white; /* dark:text-white */
     }
   }
 }
