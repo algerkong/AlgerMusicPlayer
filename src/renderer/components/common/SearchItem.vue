@@ -103,7 +103,10 @@ const handleClick = async () => {
       id: props.item.id,
       type: 'album',
       name: props.item.name,
-      listInfo: { picUrl: props.item.picUrl },
+      listInfo: {
+        ...props.item,
+        coverImgUrl: props.item.picUrl
+      },
       canRemove: false
     });
   } else if (props.item.type === 'playlist') {

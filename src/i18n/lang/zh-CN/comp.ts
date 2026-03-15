@@ -166,7 +166,11 @@ export default {
     zoom: '页面缩放',
     zoom100: '标准缩放100%',
     resetZoom: '点击重置缩放',
-    zoomDefault: '标准缩放'
+    zoomDefault: '标准缩放',
+    tabPlaylist: '播放列表',
+    tabMv: 'MV',
+    tabCharts: '排行榜',
+    cancelSearch: '取消'
   },
   titleBar: {
     closeTitle: '请选择关闭方式',
@@ -192,6 +196,7 @@ export default {
     addToPlaylist: '添加到播放列表',
     addToPlaylistSuccess: '添加到播放列表成功',
     songsAlreadyInPlaylist: '歌曲已存在于播放列表中',
+    locateCurrent: '定位当前播放',
     historyRecommend: '历史日推',
     fetchDatesFailed: '获取日期列表失败',
     fetchSongsFailed: '获取歌曲列表失败',

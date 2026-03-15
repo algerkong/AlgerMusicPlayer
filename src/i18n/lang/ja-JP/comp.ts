@@ -173,7 +173,11 @@ export default {
     zoom: 'ページズーム',
     zoom100: '標準ズーム100%',
     resetZoom: 'クリックしてズームをリセット',
-    zoomDefault: '標準ズーム'
+    zoomDefault: '標準ズーム',
+    tabPlaylist: 'プレイリスト',
+    tabMv: 'MV',
+    tabCharts: 'チャート',
+    cancelSearch: 'キャンセル'
   },
   titleBar: {
     closeTitle: '閉じる方法を選択してください',
@@ -199,6 +203,7 @@ export default {
     addToPlaylist: 'プレイリストに追加',
     addToPlaylistSuccess: 'プレイリストに追加しました',
     songsAlreadyInPlaylist: '楽曲は既にプレイリストに存在します',
+    locateCurrent: '再生中の曲を表示',
     historyRecommend: '履歴の日次推薦',
     fetchDatesFailed: '日付リストの取得に失敗しました',
     fetchSongsFailed: '楽曲リストの取得に失敗しました',

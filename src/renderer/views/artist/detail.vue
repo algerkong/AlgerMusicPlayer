@@ -100,6 +100,7 @@
                     </span>
                   </div>
                   <h1
+                    ref="titleElRef"
                     class="artist-name text-3xl md:text-4xl lg:text-5xl font-bold text-neutral-900 dark:text-white tracking-tight"
                   >
                     {{ artistInfo.name }}
@@ -434,6 +435,7 @@ import { getMusicDetail } from '@/api/music';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import SongItem from '@/components/common/SongItem.vue';
+import { useScrollTitle } from '@/hooks/useScrollTitle';
 import router from '@/router';
 import { usePlayerStore } from '@/store';
 import { IArtist } from '@/types/artist';
@@ -464,6 +466,10 @@ const tabs = computed(() => [
 const artistInfo = ref<IArtist>();
 const songs = ref<any[]>([]);
 const albums = ref<any[]>([]);
+
+const titleElRef = ref<HTMLElement | null>(null);
+const artistTitle = computed(() => artistInfo.value?.name ?? '');
+useScrollTitle(artistTitle, titleElRef);
 
 // 加载状态
 const loading = ref(false);

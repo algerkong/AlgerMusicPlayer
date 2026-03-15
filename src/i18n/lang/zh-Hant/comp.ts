@@ -166,7 +166,11 @@ export default {
     zoom: '頁面縮放',
     zoom100: '標準縮放100%',
     resetZoom: '點擊重設縮放',
-    zoomDefault: '標準縮放'
+    zoomDefault: '標準縮放',
+    tabPlaylist: '播放清單',
+    tabMv: 'MV',
+    tabCharts: '排行榜',
+    cancelSearch: '取消'
   },
   titleBar: {
     closeTitle: '請選擇關閉方式',
@@ -192,6 +196,7 @@ export default {
     addToPlaylist: '新增至播放清單',
     addToPlaylistSuccess: '新增至播放清單成功',
     songsAlreadyInPlaylist: '歌曲已存在於播放清單中',
+    locateCurrent: '定位當前播放',
     historyRecommend: '歷史日推',
     fetchDatesFailed: '獲取日期列表失敗',
     fetchSongsFailed: '獲取歌曲列表失敗',

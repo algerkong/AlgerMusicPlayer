@@ -1,6 +1,6 @@
 <template>
   <div class="music-list-page h-full w-full bg-white dark:bg-black transition-colors duration-500">
-    <n-scrollbar class="h-full" @scroll="handleScroll">
+    <n-scrollbar ref="scrollbarRef" class="h-full" @scroll="handleScroll">
       <div class="music-list-content pb-32">
         <!-- Hero Section 和 Action Bar -->
         <n-spin :show="loading">
@@ -63,6 +63,7 @@
                     </span>
                   </div>
                   <h1
+                    ref="titleElRef"
                     class="playlist-name text-3xl md:text-4xl lg:text-5xl font-bold text-neutral-900 dark:text-white tracking-tight mb-4"
                   >
                     {{ name }}
@@ -212,6 +213,16 @@
                 </n-input>
               </div>
 
+              <!-- Locate Current Song -->
+              <button
+                v-if="currentPlayingIndex >= 0"
+                class="action-btn-icon w-10 h-10 rounded-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-all"
+                :title="t('comp.musicList.locateCurrent', '定位当前播放')"
+                @click="scrollToCurrentSong"
+              >
+                <i class="ri-focus-3-line text-lg" />
+              </button>
+
               <!-- Layout Toggle -->
               <button
                 v-if="!isMobile"
@@ -226,36 +237,59 @@
 
         <!-- List Content -->
         <section class="song-list-section page-padding-x mt-6">
-          <n-spin :show="loadingList">
+          <div
+            v-if="filteredSongs.length === 0 && searchKeyword"
+            class="empty-state py-20 text-center text-neutral-400"
+          >
+            <i class="ri-search-line text-4xl mb-4 opacity-20" />
+            <p>{{ t('comp.musicList.noSearchResults') }}</p>
+          </div>
+
+          <div v-else class="song-list-container">
             <div
-              v-if="filteredSongs.length === 0 && searchKeyword"
-              class="empty-state py-20 text-center text-neutral-400"
+              v-for="(item, index) in filteredSongs"
+              :key="item.id"
+              class="mb-2"
+              :class="{ 'animate-item': index < initialAnimateCount }"
+              :style="
+                index < initialAnimateCount
+                  ? { animationDelay: calculateAnimationDelay(index, 0.03) }
+                  : undefined
+              "
             >
-              <i class="ri-search-line text-4xl mb-4 opacity-20" />
-              <p>{{ t('comp.musicList.noSearchResults') }}</p>
+              <song-item
+                :index="index"
+                :compact="isCompactLayout"
+                :item="formatSong(item)"
+                :can-remove="canRemove"
+                :selectable="isSelecting"
+                :selected="selectedSongs.includes(item.id as number)"
+                @play="handlePlayItem(item)"
+                @remove-song="handleRemoveSong"
+                @select="(id, selected) => handleSelect(id, selected)"
+              />
             </div>
 
-            <div v-else class="song-list-container">
-              <div
-                v-for="(item, index) in filteredSongs"
-                :key="item.id"
-                class="mb-2 animate-item"
-                :style="{ animationDelay: calculateAnimationDelay(index % 20, 0.03) }"
-              >
-                <song-item
-                  :index="index"
-                  :compact="isCompactLayout"
-                  :item="formatSong(item)"
-                  :can-remove="canRemove"
-                  :selectable="isSelecting"
-                  :selected="selectedSongs.includes(item.id as number)"
-                  @play="handlePlayItem(item)"
-                  @remove-song="handleRemoveSong"
-                  @select="(id, selected) => handleSelect(id, selected)"
-                />
-              </div>
+            <!-- 未渲染项占位，保持滚动条高度稳定 -->
+            <div v-if="placeholderHeight > 0" :style="{ height: placeholderHeight + 'px' }" />
+
+            <!-- 底部加载指示器 -->
+            <div v-if="loadingList" class="flex items-center justify-center py-6 gap-2">
+              <n-spin :size="18" />
+              <span class="text-sm text-neutral-400">{{ t('common.loading') }}</span>
             </div>
-          </n-spin>
+            <div
+              v-else-if="
+                !hasMore &&
+                renderLimit >= allFilteredSongs.length &&
+                filteredSongs.length > 0 &&
+                !searchKeyword
+              "
+              class="py-6 text-center text-sm text-neutral-300 dark:text-neutral-600"
+            >
+              — {{ t('common.noMore') }} —
+            </div>
+          </div>
         </section>
       </div>
     </n-scrollbar>
@@ -266,7 +300,7 @@
 <script setup lang="ts">
 import { useMessage } from 'naive-ui';
 import PinyinMatch from 'pinyin-match';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 
@@ -280,6 +314,7 @@ import {
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import SongItem from '@/components/common/SongItem.vue';
 import { useDownload } from '@/hooks/useDownload';
+import { useScrollTitle } from '@/hooks/useScrollTitle';
 import { useMusicStore, usePlayerStore, useRecommendStore, useUserStore } from '@/store';
 import { usePlayHistoryStore } from '@/store/modules/playHistory';
 import { SongResult } from '@/types/music';
@@ -370,6 +405,9 @@ const name = computed(() => {
   return musicStore.currentMusicListName || '';
 });
 
+const titleElRef = ref<HTMLElement | null>(null);
+useScrollTitle(name, titleElRef);
+
 const songList = computed(() => {
   if (isDailyRecommend.value) return recommendStore.dailyRecommendSongs;
   return musicStore.currentMusicList || [];
@@ -388,7 +426,9 @@ const canRemove = computed(() => {
 const canCollect = ref(false);
 const isCollected = ref(false);
 const pageSize = 40;
+const initialAnimateCount = 20; // 仅前 20 项有入场动画
 const displayedSongs = ref<SongResult[]>([]);
+const renderLimit = ref(pageSize); // DOM 渲染上限，数据全部在内存
 const loadingList = ref(false);
 const loadedIds = ref(new Set<number>());
 const isPlaylistLoading = ref(false);
@@ -417,24 +457,37 @@ const getCoverImgUrl = computed(() => {
   return song?.picUrl || song?.al?.picUrl || song?.album?.picUrl || '';
 });
 
-const filteredSongs = computed(() => {
+// 全量歌曲列表（用于"播放全部"等操作）
+const allFilteredSongs = computed(() => {
   const sourceList = isDailyRecommend.value ? songList.value : displayedSongs.value;
-  const dislikeFilteredList = sourceList.filter((s) => !playerStore.dislikeList.includes(s.id));
+  return sourceList.filter((s) => !playerStore.dislikeList.includes(s.id));
+});
 
-  if (!searchKeyword.value) return dislikeFilteredList;
+// 实际渲染到 DOM 的歌曲（搜索时显示全部匹配，非搜索时按 renderLimit 分页渲染）
+const filteredSongs = computed(() => {
+  if (searchKeyword.value) {
+    const keyword = searchKeyword.value.toLowerCase().trim();
+    return allFilteredSongs.value.filter((song) => {
+      const songName = song.name?.toLowerCase() || '';
+      const albumName = song.al?.name?.toLowerCase() || '';
+      const artists = song.ar || song.artists || [];
+      return (
+        songName.includes(keyword) ||
+        albumName.includes(keyword) ||
+        artists.some((a: any) => a.name?.toLowerCase().includes(keyword)) ||
+        PinyinMatch.match(songName, keyword)
+      );
+    });
+  }
+  return allFilteredSongs.value.slice(0, renderLimit.value);
+});
 
-  const keyword = searchKeyword.value.toLowerCase().trim();
-  return dislikeFilteredList.filter((song) => {
-    const songName = song.name?.toLowerCase() || '';
-    const albumName = song.al?.name?.toLowerCase() || '';
-    const artists = song.ar || song.artists || [];
-    return (
-      songName.includes(keyword) ||
-      albumName.includes(keyword) ||
-      artists.some((a: any) => a.name?.toLowerCase().includes(keyword)) ||
-      PinyinMatch.match(songName, keyword)
-    );
-  });
+// 未渲染项的占位高度，让滚动条从一开始就反映真实总高度
+const estimatedItemHeight = computed(() => (isCompactLayout.value ? 50 : 70));
+const placeholderHeight = computed(() => {
+  if (searchKeyword.value) return 0;
+  const unrenderedCount = allFilteredSongs.value.length - filteredSongs.value.length;
+  return Math.max(0, unrenderedCount) * estimatedItemHeight.value;
 });
 
 const resetListState = () => {
@@ -520,7 +573,7 @@ const handlePlayAll = () => {
     ? filteredSongs.value
     : isFullPlaylistLoaded.value
       ? completePlaylist.value
-      : displayedSongs.value;
+      : allFilteredSongs.value;
   playerStore.setPlayList(list.map(formatSong));
   playerStore.setPlay(formatSong(list[0]));
   if (!isFullPlaylistLoaded.value) loadFullPlaylist();
@@ -553,17 +606,32 @@ const handleRemoveSong = async (songId: number) => {
   }
 };
 
+// 根据滚动位置计算需要渲染多少项，快速滚动也不会出现空白
 const handleScroll = (e: Event) => {
-  const target = e.target as HTMLElement;
-  const { scrollTop, scrollHeight, clientHeight } = target;
+  if (searchKeyword.value) return;
 
-  // 懒加载：滚动到底部时加载更多
-  if (
-    scrollHeight - scrollTop - clientHeight < 200 &&
-    !loadingList.value &&
-    hasMore.value &&
-    !searchKeyword.value
-  ) {
+  const target = e.target as HTMLElement;
+  const { scrollTop, clientHeight } = target;
+
+  // 列表区域在滚动内容中的起始偏移（hero + action bar + margin）
+  const listSection = document.querySelector('.song-list-section') as HTMLElement;
+  const listStart = listSection?.offsetTop || 0;
+
+  // 当前可见区域底部在列表中的位置
+  const visibleBottom = scrollTop + clientHeight - listStart;
+  if (visibleBottom <= 0) return;
+
+  // 计算需要渲染到第几项（多渲染一屏作为缓冲）
+  const bufferHeight = clientHeight;
+  const neededIndex = Math.ceil((visibleBottom + bufferHeight) / estimatedItemHeight.value);
+  const allCount = allFilteredSongs.value.length;
+
+  if (neededIndex > renderLimit.value) {
+    renderLimit.value = Math.min(neededIndex, allCount);
+  }
+
+  // 内存数据全部渲染完但还有更多数据需要从 API 加载
+  if (renderLimit.value >= allCount && !loadingList.value && hasMore.value) {
     loadMoreSongs();
   }
 };
@@ -585,16 +653,10 @@ const loadMoreSongs = async () => {
         .map((i) => i.id)
         .filter((id) => !loadedIds.value.has(id));
       if (ids.length > 0) await loadSongs(ids);
-    } else {
-      const newSongs = songList.value.slice(start, end);
-      newSongs.forEach((s) => {
-        if (!loadedIds.value.has(s.id)) {
-          loadedIds.value.add(s.id);
-          displayedSongs.value.push(s);
-        }
-      });
     }
     hasMore.value = displayedSongs.value.length < total.value;
+    // 新数据加载后扩展渲染窗口
+    renderLimit.value = displayedSongs.value.length;
   } finally {
     loadingList.value = false;
   }
@@ -708,6 +770,60 @@ const handleAddToPlaylist = () => {
   cancelSelect();
 };
 
+// 当前播放歌曲在列表中的索引
+const currentPlayingIndex = computed(() => {
+  const currentId = playerStore.playMusic?.id;
+  if (!currentId) return -1;
+  return allFilteredSongs.value.findIndex((s) => s.id === currentId);
+});
+
+const scrollbarRef = ref<any>(null);
+
+// 滚动到当前播放歌曲
+const scrollToCurrentSong = async () => {
+  const index = currentPlayingIndex.value;
+  if (index < 0) return;
+
+  // 确保目标歌曲已渲染到 DOM
+  if (index >= renderLimit.value) {
+    renderLimit.value = index + 5;
+    await nextTick();
+  }
+
+  const container = document.querySelector('.song-list-container') as HTMLElement;
+  const target = container?.children[index] as HTMLElement;
+  if (!target || !scrollbarRef.value) return;
+
+  // 获取 n-scrollbar 内部的可滚动容器
+  const scrollEl = document.querySelector('.music-list-page .n-scrollbar-container') as HTMLElement;
+  if (!scrollEl) return;
+
+  // 用 getBoundingClientRect 精确测量目标位置
+  const scrollRect = scrollEl.getBoundingClientRect();
+  const targetRect = target.getBoundingClientRect();
+  const currentScrollTop = scrollEl.scrollTop;
+
+  // 目标在滚动内容中的绝对位置
+  const targetAbsoluteTop = currentScrollTop + targetRect.top - scrollRect.top;
+
+  // 粘性 action bar 占用的高度
+  const actionBarEl = document.querySelector('.action-bar') as HTMLElement;
+  const actionBarHeight = actionBarEl?.offsetHeight || 0;
+
+  // 可视区域高度（去掉 action bar）
+  const visibleHeight = scrollRect.height - actionBarHeight;
+
+  // 滚动到目标居中（在可视区域中间）
+  const scrollTop = targetAbsoluteTop - actionBarHeight - visibleHeight / 2 + targetRect.height / 2;
+
+  scrollbarRef.value.scrollTo({ top: Math.max(0, scrollTop), behavior: 'smooth' });
+
+  // 短暂高亮效果
+  await nextTick();
+  target.classList.add('song-highlight');
+  setTimeout(() => target.classList.remove('song-highlight'), 2000);
+};
+
 const toggleLayout = () => {
   isCompactLayout.value = !isCompactLayout.value;
   localStorage.setItem('musicListLayout', isCompactLayout.value ? 'compact' : 'normal');
@@ -730,6 +846,7 @@ watch(
   songList,
   (newSongs) => {
     resetListState();
+    renderLimit.value = pageSize; // 重置 DOM 渲染窗口
     if (newSongs.length > 0) {
       displayedSongs.value = [...newSongs];
       newSongs.forEach((s) => loadedIds.value.add(s.id));
@@ -789,6 +906,21 @@ onMounted(checkCollectionStatus);
 
 .song-list-container {
   padding-bottom: 100px;
+}
+
+.song-highlight {
+  animation: highlightPulse 2s ease-out;
+}
+
+@keyframes highlightPulse {
+  0%,
+  30% {
+    background-color: rgba(var(--primary-color-rgb, 64, 128, 255), 0.15);
+    border-radius: 12px;
+  }
+  100% {
+    background-color: transparent;
+  }
 }
 
 .mobile {

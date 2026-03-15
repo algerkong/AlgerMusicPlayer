@@ -9,6 +9,7 @@
           <div class="flex flex-col gap-6">
             <div>
               <h1
+                ref="titleElRef"
                 class="text-3xl md:text-4xl font-bold tracking-tight text-neutral-900 dark:text-white mb-1"
               >
                 {{ currentKeyword }}
@@ -245,6 +246,7 @@ import SearchItem from '@/components/common/SearchItem.vue';
 import SongItem from '@/components/common/SongItem.vue';
 import { SEARCH_TYPE, SEARCH_TYPES } from '@/const/bar-const';
 import { useDownload } from '@/hooks/useDownload';
+import { useScrollTitle } from '@/hooks/useScrollTitle';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSearchStore } from '@/store/modules/search';
 import type { SongResult } from '@/types/music';
@@ -282,6 +284,9 @@ const page = ref(0);
 const hasMore = ref(true);
 const isLoadingMore = ref(false);
 const currentKeyword = computed(() => (route.query.keyword as string) || '');
+
+const titleElRef = ref<HTMLElement | null>(null);
+useScrollTitle(currentKeyword, titleElRef);
 
 const searchTypeOptions = computed(() => {
   return SEARCH_TYPES.map((type) => ({
@@ -406,6 +411,7 @@ const loadSearch = async (isLoadMore = false) => {
       item.artists = item.ar;
     });
     albums.forEach((item: any) => {
+      item.type = '专辑';
       item.desc = `${item.artist.name} ${item.company} ${dateFormat(item.publishTime)}`;
     });
 

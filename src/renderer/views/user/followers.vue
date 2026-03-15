@@ -23,6 +23,7 @@
           <!-- Header Section -->
           <section class="page-padding-x pt-6 md:pt-8 pb-4">
             <h1
+              ref="titleElRef"
               class="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-white tracking-tight"
             >
               <template v-if="targetUserName">
@@ -134,6 +135,7 @@ import { useRoute, useRouter } from 'vue-router';
 
 import { getUserFollowers } from '@/api/user';
 import PlayBottom from '@/components/common/PlayBottom.vue';
+import { useScrollTitle } from '@/hooks/useScrollTitle';
 import { useUserStore } from '@/store/modules/user';
 import type { IUserFollow } from '@/types/user';
 import { getImgUrl } from '@/utils';
@@ -159,6 +161,14 @@ const targetUserId = ref<number | null>(null);
 const targetUserName = ref<string>('');
 
 const user = computed(() => userStore.user);
+
+const titleElRef = ref<HTMLElement | null>(null);
+const followersTitle = computed(() =>
+  targetUserName.value
+    ? targetUserName.value + t('user.follower.userFollowersTitle')
+    : t('user.follower.myFollowersTitle')
+);
+useScrollTitle(followersTitle, titleElRef);
 
 const checkTargetUser = () => {
   const uid = route.query.uid;

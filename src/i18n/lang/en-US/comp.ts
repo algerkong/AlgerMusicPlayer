@@ -173,7 +173,11 @@ export default {
     zoom: 'Zoom',
     zoom100: 'Zoom 100%',
     resetZoom: 'Reset Zoom',
-    zoomDefault: 'Default Zoom'
+    zoomDefault: 'Default Zoom',
+    tabPlaylist: 'Playlist',
+    tabMv: 'MV',
+    tabCharts: 'Charts',
+    cancelSearch: 'Cancel'
   },
   titleBar: {
     closeTitle: 'Choose how to close',
@@ -199,6 +203,7 @@ export default {
     addToPlaylistSuccess: 'Add to Playlist Success',
     operationFailed: 'Operation Failed',
     songsAlreadyInPlaylist: 'Songs already in playlist',
+    locateCurrent: 'Locate current song',
     historyRecommend: 'Daily History',
     fetchDatesFailed: 'Failed to fetch dates',
     fetchSongsFailed: 'Failed to fetch songs',

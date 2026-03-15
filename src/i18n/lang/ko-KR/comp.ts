@@ -172,7 +172,11 @@ export default {
     zoom: '페이지 확대/축소',
     zoom100: '표준 확대/축소 100%',
     resetZoom: '클릭하여 확대/축소 재설정',
-    zoomDefault: '표준 확대/축소'
+    zoomDefault: '표준 확대/축소',
+    tabPlaylist: '플레이리스트',
+    tabMv: 'MV',
+    tabCharts: '차트',
+    cancelSearch: '취소'
   },
   titleBar: {
     closeTitle: '닫기 방법을 선택해주세요',
@@ -198,6 +202,7 @@ export default {
     addToPlaylist: '재생 목록에 추가',
     addToPlaylistSuccess: '재생 목록에 추가 성공',
     songsAlreadyInPlaylist: '곡이 이미 재생 목록에 있습니다',
+    locateCurrent: '현재 재생 곡 찾기',
     historyRecommend: '일일 기록 권장',
     fetchDatesFailed: '날짜를 가져오지 못했습니다',
     fetchSongsFailed: '곡을 가져오지 못했습니다',
