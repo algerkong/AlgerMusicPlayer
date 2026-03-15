@@ -99,14 +99,15 @@
 
     <!-- 歌词显示区域 -->
     <div ref="containerRef" class="lyric-container">
-      <div class="lyric-scroll">
+      <!-- ① 滚动模式（默认） -->
+      <div v-if="displayMode === 'scroll'" class="lyric-scroll">
         <div class="lyric-wrapper" :style="wrapperStyle">
           <template v-if="staticData.lrcArray?.length > 0">
             <div
               v-for="(line, index) in staticData.lrcArray"
               :key="index"
               class="lyric-line"
-              :style="getDynamicLineStyle(line)"
+              :style="getDynamicLineStyle(line, showTranslation)"
               :class="{
                 'lyric-line-current': index === currentIndex,
                 'lyric-line-passed': index < currentIndex,
@@ -114,7 +115,6 @@
               }"
             >
               <div class="lyric-text" :style="{ fontSize: `${fontSize}px` }">
-                <!-- 逐字歌词显示 -->
                 <div
                   v-if="line.hasWordByWord && line.words && line.words.length > 0"
                   class="word-by-word-lyric"
@@ -122,16 +122,16 @@
                   <template v-for="(word, wordIndex) in line.words" :key="wordIndex">
                     <span class="lyric-word" :style="getWordStyle(index, wordIndex, word)">
                       {{ word.text }} </span
-                    ><span class="lyric-word" v-if="word.space">&nbsp;</span></template
-                  >
+                    ><span v-if="word.space" class="lyric-word">&nbsp;</span>
+                  </template>
                 </div>
-                <!-- 普通歌词显示 -->
                 <span v-else class="lyric-text-inner" :style="getLyricStyle(index)">
                   {{ line.text || '' }}
                 </span>
               </div>
+              <!-- ★ 翻译行：加入 showTranslation 控制 -->
               <div
-                v-if="line.trText"
+                v-if="showTranslation && line.trText"
                 class="lyric-translation"
                 :style="{ fontSize: `${fontSize * 0.6}px` }"
               >
@@ -141,6 +141,81 @@
           </template>
           <div v-else class="lyric-empty">无歌词</div>
         </div>
+      </div>
+
+      <!-- ② 单行模式 -->
+      <div v-else-if="displayMode === 'single'" class="lyric-single-mode">
+        <template v-if="staticData.lrcArray?.length > 0">
+          <div class="lyric-line lyric-line-current">
+            <div class="lyric-text" :style="{ fontSize: `${fontSize}px` }">
+              <div
+                v-if="
+                  staticData.lrcArray[currentIndex] != null &&
+                  staticData.lrcArray[currentIndex].hasWordByWord &&
+                  (staticData.lrcArray[currentIndex].words?.length ?? 0) > 0
+                "
+                class="word-by-word-lyric"
+              >
+                <template
+                  v-for="(word, wordIndex) in staticData.lrcArray[currentIndex]!.words"
+                  :key="wordIndex"
+                >
+                  <span class="lyric-word" :style="getWordStyle(currentIndex, wordIndex, word)">
+                    {{ word.text }} </span
+                  ><span v-if="word.space" class="lyric-word">&nbsp;</span>
+                </template>
+              </div>
+              <span v-else class="lyric-text-inner" :style="getLyricStyle(currentIndex)">
+                {{ staticData.lrcArray[currentIndex]?.text || '' }}
+              </span>
+            </div>
+            <div
+              v-if="showTranslation && staticData.lrcArray[currentIndex]?.trText"
+              class="lyric-translation"
+              :style="{ fontSize: `${fontSize * 0.6}px` }"
+            >
+              {{ staticData.lrcArray[currentIndex]?.trText }}
+            </div>
+          </div>
+        </template>
+        <div v-else class="lyric-empty">无歌词</div>
+      </div>
+
+      <!-- ③ 双行模式（固定分组，每 2 行为一组） -->
+      <div v-else class="lyric-double-mode" :class="{ 'group-fade': isGroupTransitioning }">
+        <template v-if="staticData.lrcArray?.length > 0">
+          <!-- currentGroupLines 最多 2 条，最后一组只有 1 行时自动只显示 1 行 -->
+          <div
+            v-for="line in currentGroupLines"
+            :key="line.index"
+            class="lyric-line"
+            :class="{ 'lyric-line-current': line.index === currentIndex }"
+          >
+            <div class="lyric-text" :style="{ fontSize: `${fontSize}px` }">
+              <div
+                v-if="line.hasWordByWord && line.words && line.words.length > 0"
+                class="word-by-word-lyric"
+              >
+                <template v-for="(word, wordIndex) in line.words" :key="wordIndex">
+                  <span class="lyric-word" :style="getWordStyle(line.index, wordIndex, word)">
+                    {{ word.text }} </span
+                  ><span v-if="word.space" class="lyric-word">&nbsp;</span>
+                </template>
+              </div>
+              <span v-else class="lyric-text-inner" :style="getLyricStyle(line.index)">
+                {{ line.text || '' }}
+              </span>
+            </div>
+            <div
+              v-if="showTranslation && line.trText"
+              class="lyric-translation"
+              :style="{ fontSize: `${fontSize * 0.6}px` }"
+            >
+              {{ line.trText }}
+            </div>
+          </div>
+        </template>
+        <div v-else class="lyric-empty">无歌词</div>
       </div>
     </div>
   </div>
@@ -407,22 +482,13 @@ const wrapperStyle = computed(() => {
 });
 
 // 新增：根据是否有翻译文本动态计算每行的样式
-const getDynamicLineStyle = (line: { text: string; trText: string }) => {
-  // 默认行高
+const getDynamicLineStyle = (line: { text: string; trText: string }, withTranslation = true) => {
   const defaultHeight = lineHeight.value;
-
-  // 如果有翻译文本，增加额外高度
-  if (line.trText) {
-    // 计算翻译文本的额外高度 (字体大小的0.6倍 * 行高比例1.4)
+  if (withTranslation && line.trText) {
     const extraHeight = Math.round(fontSize.value * 0.6 * 1.4);
-    return {
-      height: `${defaultHeight + extraHeight}px`
-    };
+    return { height: `${defaultHeight + extraHeight}px` };
   }
-
-  return {
-    height: `${defaultHeight}px`
-  };
+  return { height: `${defaultHeight}px` };
 };
 
 // 更新容器高度和行高
@@ -814,11 +880,7 @@ const validateAndFixColorSettings = () => {
 // 暴露函数
 defineExpose({
   resetThemeColor,
-  validateAndFixColorSettings,
-  // 以下供后续 Task（模板更新）使用，避免 noUnusedLocals 报错
-  hasTranslation,
-  currentGroupLines,
-  isGroupTransitioning
+  validateAndFixColorSettings
 });
 
 const updateCSSVariable = (name: string, value: string) => {
