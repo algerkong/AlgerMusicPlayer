@@ -962,6 +962,10 @@ const handleMouseDown = (e: MouseEvent) => {
 // 组件卸载时清理
 onUnmounted(() => {
   isDragging.value = false;
+  if (groupFadeTimer !== null) {
+    clearTimeout(groupFadeTimer);
+    groupFadeTimer = null;
+  }
 });
 
 onMounted(() => {
