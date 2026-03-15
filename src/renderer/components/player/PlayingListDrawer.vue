@@ -16,6 +16,7 @@
           ? 'animate__slideInUp'
           : 'animate__slideInRight'
     ]"
+    @animationend="onAnimationEnd"
   >
     <div class="playlist-panel-header">
       <div class="title">{{ t('player.playBar.playList') }}</div>
@@ -99,12 +100,8 @@ watch(
       // 如果已经是关闭状态，不需要处理
       if (!internalVisible.value) return;
 
-      // 开始关闭动画
+      // 开始关闭动画，等 animationend 后再隐藏
       closing.value = true;
-      // 等待动画完成后再隐藏组件
-      setTimeout(() => {
-        internalVisible.value = false;
-      }, 400); // 动画持续时间
     }
   },
   { immediate: true }
@@ -119,6 +116,13 @@ const playListRef = ref<any>(null);
 // 关闭面板
 const closePanel = () => {
   show.value = false;
+};
+
+// 动画结束后隐藏组件
+const onAnimationEnd = () => {
+  if (closing.value) {
+    internalVisible.value = false;
+  }
 };
 
 // 清空播放列表
