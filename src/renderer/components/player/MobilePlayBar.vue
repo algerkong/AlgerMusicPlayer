@@ -195,9 +195,9 @@ watch(
           --n-rail-height: 3px;
           --n-rail-color: rgba(255, 255, 255, 0.15);
           --n-rail-color-dark: rgba(255, 255, 255, 0.15);
-          --n-fill-color: #1ed760; /* Spotify绿色，可调整为其他绿色 */
+          --n-fill-color: #22c55e;
           --n-handle-size: 0px; /* 隐藏滑块 */
-          --n-handle-color: #1ed760;
+          --n-handle-color: #22c55e;
 
           &:hover {
             --n-handle-size: 10px; /* 鼠标悬停时显示滑块 */

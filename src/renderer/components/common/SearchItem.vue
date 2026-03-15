@@ -10,7 +10,7 @@
       :class="[item.type === 'mv' ? 'aspect-video' : 'aspect-square']"
     >
       <n-image
-        class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+        class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         :src="getImgUrl(item.picUrl, item.type === 'mv' ? '400y225' : '400y400')"
         lazy
         preview-disabled

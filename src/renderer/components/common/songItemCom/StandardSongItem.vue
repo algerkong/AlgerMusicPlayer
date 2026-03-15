@@ -159,7 +159,7 @@ const onPlayNext = () => {
   }
 
   .song-item-img {
-    @apply w-12 h-12 rounded-2xl mr-4;
+    @apply w-12 h-12 rounded-xl mr-4;
   }
 
   .song-item-content {

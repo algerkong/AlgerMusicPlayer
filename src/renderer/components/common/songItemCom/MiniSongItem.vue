@@ -140,7 +140,7 @@ const onPlayMusic = () => {
 
 <style lang="scss" scoped>
 .mini-song-item {
-  @apply p-2 rounded-2xl;
+  @apply p-2 rounded-xl;
 
   &:hover {
     @apply bg-light-100 dark:bg-dark-100;

@@ -178,7 +178,7 @@ const formatDuration = (ms: number): string => {
 
 <style lang="scss" scoped>
 .compact-song-item {
-  @apply rounded-lg p-2 h-12 mb-1 border-b dark:border-gray-800 border-gray-100;
+  @apply rounded-xl p-2 h-12 mb-1 border-b dark:border-gray-800 border-gray-100;
 
   &:hover {
     @apply bg-gray-50 dark:bg-gray-700;

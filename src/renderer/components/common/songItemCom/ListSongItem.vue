@@ -143,14 +143,14 @@ const onPlayMusic = () => {
 
 <style lang="scss" scoped>
 .list-song-item {
-  @apply p-2 rounded-lg mb-2 border dark:border-gray-800 border-gray-200;
+  @apply p-2 rounded-xl mb-2 border dark:border-gray-800 border-gray-200;
 
   &:hover {
     @apply bg-gray-50 dark:bg-gray-800;
   }
 
   .song-item-img {
-    @apply w-10 h-10 rounded-lg mr-3;
+    @apply w-10 h-10 rounded-xl mr-3;
   }
 
   .song-item-content {
