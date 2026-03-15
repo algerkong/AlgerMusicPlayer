@@ -43,6 +43,8 @@ export const usePlayerCoreStore = defineStore(
     const availableAudioDevices = ref<AudioOutputDevice[]>([]);
 
     let checkPlayTime: NodeJS.Timeout | null = null;
+    let checkPlaybackRetryCount = 0;
+    const MAX_CHECKPLAYBACK_RETRIES = 3;
 
     // ==================== Computed ====================
     const currentSong = computed(() => playMusic.value);
@@ -124,6 +126,7 @@ export const usePlayerCoreStore = defineStore(
         console.log(`[${actualRequestId}] 播放事件触发，歌曲成功开始播放`);
         audioService.off('play', onPlayHandler);
         audioService.off('playerror', onPlayErrorHandler);
+        checkPlaybackRetryCount = 0; // 播放成功，重置重试计数
         if (checkPlayTime) {
           clearTimeout(checkPlayTime);
           checkPlayTime = null;
@@ -141,8 +144,19 @@ export const usePlayerCoreStore = defineStore(
           return;
         }
 
+        // 检查重试次数限制
+        if (checkPlaybackRetryCount >= MAX_CHECKPLAYBACK_RETRIES) {
+          console.warn(`播放重试已达上限 (${MAX_CHECKPLAYBACK_RETRIES} 次)，停止重试`);
+          checkPlaybackRetryCount = 0;
+          setPlayMusic(false);
+          return;
+        }
+
         if (userPlayIntent.value && play.value) {
-          console.log('播放失败，尝试刷新URL并重新播放');
+          checkPlaybackRetryCount++;
+          console.log(
+            `播放失败，尝试刷新URL并重新播放 (重试 ${checkPlaybackRetryCount}/${MAX_CHECKPLAYBACK_RETRIES})`
+          );
           // 本地音乐不需要刷新 URL
           if (!playMusic.value.playMusicUrl?.startsWith('local://')) {
             playMusic.value.playMusicUrl = undefined;
@@ -189,9 +203,21 @@ export const usePlayerCoreStore = defineStore(
         }
 
         if (!audioService.isActuallyPlaying() && userPlayIntent.value && play.value) {
-          console.log(`${timeout}ms后歌曲未真正播放且用户仍希望播放，尝试重新获取URL`);
           audioService.off('play', onPlayHandler);
           audioService.off('playerror', onPlayErrorHandler);
+
+          // 检查重试次数限制
+          if (checkPlaybackRetryCount >= MAX_CHECKPLAYBACK_RETRIES) {
+            console.warn(`超时重试已达上限 (${MAX_CHECKPLAYBACK_RETRIES} 次)，停止重试`);
+            checkPlaybackRetryCount = 0;
+            setPlayMusic(false);
+            return;
+          }
+
+          checkPlaybackRetryCount++;
+          console.log(
+            `${timeout}ms后歌曲未真正播放，尝试重新获取URL (重试 ${checkPlaybackRetryCount}/${MAX_CHECKPLAYBACK_RETRIES})`
+          );
 
           // 本地音乐不需要刷新 URL
           if (!playMusic.value.playMusicUrl?.startsWith('local://')) {
@@ -211,10 +237,11 @@ export const usePlayerCoreStore = defineStore(
     /**
      * 核心播放处理函数
      */
-    const handlePlayMusic = async (music: SongResult, isPlay: boolean = true) => {
-      // 如果是新歌曲，重置已尝试的音源（使用 SongSourceConfigManager 按歌曲隔离）
+    const handlePlayMusic = async (music: SongResult, shouldPlay: boolean = true) => {
+      // 如果是新歌曲，重置已尝试的音源和重试计数
       if (music.id !== playMusic.value.id) {
         SongSourceConfigManager.clearTriedSources(music.id);
+        checkPlaybackRetryCount = 0;
       }
 
       // 创建新的播放请求并取消之前的所有请求
@@ -273,9 +300,11 @@ export const usePlayerCoreStore = defineStore(
       music.primaryColor = primaryColor;
       music.playLoading = true;
 
-      // 更新 playMusic
+      // 更新 playMusic 和播放状态
       playMusic.value = music;
-      play.value = isPlay;
+      play.value = shouldPlay;
+      isPlay.value = shouldPlay;
+      userPlayIntent.value = shouldPlay;
 
       // 更新标题
       let title = music.name;
@@ -339,6 +368,8 @@ export const usePlayerCoreStore = defineStore(
           const result = await playAudio(requestId);
 
           if (result) {
+            // 播放成功，清除 isFirstPlay 标记，避免暂停时被误判为新歌
+            playMusic.value.isFirstPlay = false;
             playbackRequestManager.completeRequest(requestId);
             return true;
           } else {

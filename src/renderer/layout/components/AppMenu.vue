@@ -175,8 +175,6 @@ const toggleMenu = () => {
     position: relative;
     bottom: 0;
     left: 0;
-    z-index: 99;
-    @apply bg-light dark:bg-black border-t border-gray-200 dark:border-gray-700;
     z-index: 99999;
     @apply bg-light dark:bg-black border-none border-gray-200 dark:border-gray-700;
 

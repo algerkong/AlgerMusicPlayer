@@ -395,15 +395,11 @@ const setMusicFull = () => {
     }
 
     .progress-bar {
-      height: 2px !important;
+      height: 3px !important;
+      transform: scaleY(0.67);
 
       &:hover {
-        height: 3px !important;
-
-        .progress-track,
-        .progress-fill {
-          height: 3px !important;
-        }
+        transform: scaleY(1);
       }
     }
   }
@@ -496,21 +492,19 @@ const setMusicFull = () => {
 
 .progress-bar {
   @apply relative w-full cursor-pointer;
-  height: 2px;
+  height: 4px;
+  transform: scaleY(0.5);
+  transform-origin: bottom center;
+  transition: transform 0.2s ease;
 
   &:hover {
-    height: 4px;
-
-    .progress-track,
-    .progress-fill {
-      height: 4px;
-    }
+    transform: scaleY(1);
   }
 }
 
 .progress-track {
-  @apply absolute inset-x-0 bottom-0 transition-all duration-200;
-  height: 2px;
+  @apply absolute inset-x-0 bottom-0 transition-colors duration-200;
+  height: 4px;
   background: rgba(0, 0, 0, 0.1);
 
   .dark & {
@@ -519,9 +513,10 @@ const setMusicFull = () => {
 }
 
 .progress-fill {
-  @apply absolute bottom-0 left-0 transition-all duration-200;
-  height: 2px;
+  @apply absolute bottom-0 left-0;
+  height: 4px;
   background: var(--primary-color, #18a058);
+  transition: background-color 0.2s ease;
 }
 
 .like-active {
