@@ -1,7 +1,11 @@
 <template>
-  <div id="title-bar" @mousedown="drag">
+  <div
+    id="title-bar"
+    class="flex justify-between px-6 py-2 select-none relative text-dark dark:text-white"
+    @mousedown="drag"
+  >
     <div id="title">Alger Music</div>
-    <div id="buttons">
+    <div id="buttons" class="flex gap-4">
       <n-button
         v-if="!isElectron"
         type="primary"
@@ -14,13 +18,13 @@
         下载桌面版
       </n-button>
       <template v-if="isElectron">
-        <div class="button" @click="miniWindow">
+        <div class="text-gray-600 dark:text-gray-400 hover:text-green-500" @click="miniWindow">
           <i class="iconfont ri-picture-in-picture-line"></i>
         </div>
-        <div class="button" @click="minimize">
+        <div class="text-gray-600 dark:text-gray-400 hover:text-green-500" @click="minimize">
           <i class="iconfont icon-minisize"></i>
         </div>
-        <div class="button" @click="handleClose">
+        <div class="text-gray-600 dark:text-gray-400 hover:text-green-500" @click="handleClose">
           <i class="iconfont icon-close"></i>
         </div>
       </template>
@@ -188,25 +192,10 @@ const drag = (event: MouseEvent) => {
 <style scoped lang="scss">
 #title-bar {
   -webkit-app-region: drag;
-  @apply flex justify-between px-6 py-2 select-none relative;
-  @apply text-dark dark:text-white;
   z-index: 3000;
 }
 
 #buttons {
-  @apply flex gap-4;
   -webkit-app-region: no-drag;
-}
-
-.button {
-  @apply text-gray-600 dark:text-gray-400 hover:text-green-500;
-}
-
-.close-dialog-content {
-  @apply flex flex-col gap-4;
-}
-
-.dialog-footer {
-  @apply flex gap-4 justify-end;
 }
 </style>

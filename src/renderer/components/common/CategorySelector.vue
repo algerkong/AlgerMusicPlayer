@@ -1,14 +1,19 @@
 <template>
-  <div
-    class="category-selector border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-black z-10"
-  >
+  <div class="border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-black z-10">
     <n-scrollbar ref="scrollbarRef" x-scrollable>
-      <div class="categories-wrapper py-4 page-padding" @wheel.prevent="handleWheel">
+      <div
+        class="flex items-center py-4 page-padding"
+        style="white-space: nowrap"
+        @wheel.prevent="handleWheel"
+      >
         <span
           v-for="(category, index) in categories"
           :key="getItemKey(category, index)"
-          class="category-item"
-          :class="[animationClass, { active: isActive(category) }]"
+          class="py-1.5 px-4 mr-3 inline-block rounded-full cursor-pointer transition-all duration-300 text-sm font-medium bg-gray-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-gray-200 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white"
+          :class="[
+            animationClass,
+            isActive(category) ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-105' : ''
+          ]"
           :style="getAnimationDelay(index)"
           @click="handleClickCategory(category)"
         >
@@ -96,23 +101,3 @@ defineExpose({
   scrollbarRef
 });
 </script>
-
-<style lang="scss" scoped>
-.category-selector {
-  .categories-wrapper {
-    @apply flex items-center;
-    white-space: nowrap;
-  }
-
-  .category-item {
-    @apply py-1.5 px-4 mr-3 inline-block rounded-full cursor-pointer transition-all duration-300;
-    @apply text-sm font-medium;
-    @apply bg-gray-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400;
-    @apply hover:bg-gray-200 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white;
-
-    &.active {
-      @apply bg-primary text-white shadow-lg shadow-primary/25 scale-105;
-    }
-  }
-}
-</style>
