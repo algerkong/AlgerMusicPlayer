@@ -47,6 +47,37 @@
         <!-- <div class="control-button" @click="handleTop">
           <i class="ri-pushpin-line" :class="{ active: lyricSetting.isTop }"></i>
         </div> -->
+        <!-- 翻译开关按钮（仅当歌词有翻译时显示） -->
+        <div
+          v-if="hasTranslation"
+          class="control-button"
+          :title="showTranslation ? '隐藏翻译' : '显示翻译'"
+          @click="lyricSetting.showTranslation = !lyricSetting.showTranslation"
+        >
+          <i class="ri-translate-2" :class="{ active: showTranslation }"></i>
+        </div>
+
+        <!-- 显示模式切换按钮（scroll → single → double → scroll 循环） -->
+        <div
+          class="control-button"
+          :title="
+            displayMode === 'scroll'
+              ? '滚动模式'
+              : displayMode === 'single'
+                ? '单行模式'
+                : '双行模式'
+          "
+          @click="cycleDisplayMode"
+        >
+          <i
+            :class="{
+              'ri-align-justify': displayMode === 'scroll',
+              'ri-subtract-line': displayMode === 'single',
+              'ri-layout-row-line': displayMode === 'double'
+            }"
+          ></i>
+        </div>
+
         <div id="lyric-lock" class="control-button" @click="handleLock">
           <i v-if="lyricSetting.isLock" class="ri-lock-line"></i>
           <i v-else class="ri-lock-unlock-line"></i>
@@ -849,6 +880,12 @@ const handleLock = () => {
 
 const handleClose = () => {
   windowData.electron.ipcRenderer.send('close-lyric');
+};
+
+const cycleDisplayMode = () => {
+  const modes: Array<'scroll' | 'single' | 'double'> = ['scroll', 'single', 'double'];
+  const current = modes.indexOf(lyricSetting.value.displayMode);
+  lyricSetting.value.displayMode = modes[(current + 1) % modes.length];
 };
 
 // 安全保存歌词设置
