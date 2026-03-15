@@ -1270,6 +1270,50 @@ body,
   z-index: 100;
 }
 
+// 单行模式容器：垂直居中，单行展示
+.lyric-single-mode {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+
+  .lyric-line {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+// 双行模式容器
+.lyric-double-mode {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 20px;
+  // 分组切换淡出淡入
+  transition: opacity 0.15s ease;
+
+  &.group-fade {
+    opacity: 0;
+  }
+
+  .lyric-line {
+    width: 100%;
+    text-align: center;
+    // 同组非当前行：稍微暗化
+    opacity: 0.55;
+    transition: opacity 0.25s ease;
+
+    &.lyric-line-current {
+      opacity: 1;
+      transform: scale(1.03);
+    }
+  }
+}
+
 .lyric-scroll {
   height: 100%;
   overflow: hidden;
