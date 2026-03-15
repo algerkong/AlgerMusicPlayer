@@ -454,7 +454,7 @@ const handleTypeChange = (type: number) => {
 
 const handleScroll = (e: any) => {
   const { scrollTop, scrollHeight, clientHeight } = e.target;
-  if (scrollTop + clientHeight >= scrollHeight - 150 && !isLoadingMore.value && hasMore.value) {
+  if (scrollTop + clientHeight >= scrollHeight - 100 && !isLoadingMore.value && hasMore.value) {
     loadSearch(true);
   }
 };
