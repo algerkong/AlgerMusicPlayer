@@ -188,7 +188,11 @@ const loadLyricSettings = () => {
         isTop: parsed.isTop ?? false,
         theme: parsed.theme === 'light' || parsed.theme === 'dark' ? parsed.theme : 'dark',
         isLock: parsed.isLock ?? false,
-        highlightColor: validatedHighlightColor
+        highlightColor: validatedHighlightColor,
+        showTranslation: parsed.showTranslation ?? true,
+        displayMode: (['scroll', 'single', 'double'].includes(parsed.displayMode)
+          ? parsed.displayMode
+          : 'scroll') as 'scroll' | 'single' | 'double'
       };
     }
   } catch (error) {
@@ -200,7 +204,9 @@ const loadLyricSettings = () => {
     isTop: false,
     theme: 'dark' as 'light' | 'dark',
     isLock: false,
-    highlightColor: undefined as string | undefined
+    highlightColor: undefined as string | undefined,
+    showTranslation: true,
+    displayMode: 'scroll' as 'scroll' | 'single' | 'double'
   };
 };
 
@@ -424,13 +430,19 @@ onMounted(() => {
 // 实际播放时间
 const actualTime = ref(0);
 
-// 计算当前行的进度
+// 计算当前行的进度（从本地 lrcTimeArray 取时间，避免依赖 IPC 传入的 startCurrentTime/nextTime）
+// 注意：lrcTimeArray 单位为毫秒（来自 yrcParser），actualTime 单位为秒，需要 * 1000 对齐
 const currentProgress = computed(() => {
-  const { startCurrentTime, nextTime } = dynamicData.value;
-  if (!startCurrentTime || !nextTime) return 0;
+  const times = staticData.value.lrcTimeArray;
+  const idx = currentIndex.value;
+  const startTimeMs = times[idx];
+  const endTimeMs = times[idx + 1];
+  // 使用严格判断，避免 startTimeMs=0 时被误判为无效
+  if (startTimeMs === undefined || endTimeMs === undefined || endTimeMs <= startTimeMs) return 0;
 
-  const duration = nextTime - startCurrentTime;
-  const elapsed = actualTime.value - startCurrentTime;
+  const currentTimeMs = actualTime.value * 1000; // seconds → ms，与 lrcTimeArray 单位对齐
+  const elapsed = currentTimeMs - startTimeMs;
+  const duration = endTimeMs - startTimeMs;
   return Math.min(Math.max(elapsed / duration, 0), 1);
 });
 
