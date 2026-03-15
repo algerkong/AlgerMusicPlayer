@@ -212,6 +212,28 @@ const loadLyricSettings = () => {
 
 const lyricSetting = ref(loadLyricSettings());
 
+// 是否有翻译（控制翻译按钮是否显示）
+const hasTranslation = computed(() => staticData.value.lrcArray.some((line) => line.trText));
+
+// 双行模式：当前组索引（每 2 行为一组）
+const currentGroupIndex = computed(() => Math.floor(currentIndex.value / 2));
+
+// 双行模式：当前组的行数据（带原始索引）
+// 注：slice 在越界时自动截断，最后一组只有 1 行时安全返回长度为 1 的数组
+const currentGroupLines = computed(() => {
+  const start = currentGroupIndex.value * 2;
+  return staticData.value.lrcArray
+    .slice(start, start + 2)
+    .map((line, i) => ({ ...line, index: start + i }));
+});
+
+// 双行模式过渡动画状态
+const isGroupTransitioning = ref(false);
+
+// displayMode 和 showTranslation 的快捷 computed，template 中更简洁
+const displayMode = computed(() => lyricSetting.value.displayMode);
+const showTranslation = computed(() => lyricSetting.value.showTranslation);
+
 let hideControlsTimer: number | null = null;
 
 const isHovering = ref(false);
@@ -288,6 +310,11 @@ onUnmounted(() => {
 
 // 计算歌词滚动位置
 const wrapperStyle = computed(() => {
+  // 非 scroll 模式不渲染 .lyric-wrapper，提前返回空对象避免无效计算
+  if (displayMode.value !== 'scroll') {
+    return {};
+  }
+
   if (!containerHeight.value) {
     return {
       transform: 'translateY(0)',
@@ -301,7 +328,8 @@ const wrapperStyle = computed(() => {
   // 计算每行的实际高度
   const getLineHeight = (line: { text: string; trText: string }) => {
     const baseHeight = lineHeight.value;
-    if (line.trText) {
+    if (showTranslation.value && line.trText) {
+      // 新增 showTranslation.value 判断
       const extraHeight = Math.round(fontSize.value * 0.6 * 1.4);
       return baseHeight + extraHeight;
     }
@@ -755,7 +783,11 @@ const validateAndFixColorSettings = () => {
 // 暴露函数
 defineExpose({
   resetThemeColor,
-  validateAndFixColorSettings
+  validateAndFixColorSettings,
+  // 以下供后续 Task（模板更新）使用，避免 noUnusedLocals 报错
+  hasTranslation,
+  currentGroupLines,
+  isGroupTransitioning
 });
 
 const updateCSSVariable = (name: string, value: string) => {
@@ -847,6 +879,20 @@ watch(
     }
   }
 );
+
+// 双行模式：分组切换时触发淡出淡入过渡
+// timer 类型必须为 ReturnType<typeof setTimeout> | null，不能用 number
+let groupFadeTimer: ReturnType<typeof setTimeout> | null = null;
+
+watch(currentGroupIndex, () => {
+  if (displayMode.value !== 'double') return;
+  if (groupFadeTimer !== null) clearTimeout(groupFadeTimer);
+  isGroupTransitioning.value = true;
+  groupFadeTimer = setTimeout(() => {
+    isGroupTransitioning.value = false;
+    groupFadeTimer = null;
+  }, 300);
+});
 
 // 添加拖动相关变量
 const isDragging = ref(false);
