@@ -61,7 +61,7 @@ export const getPersonalizedPlaylist = (limit: number = 30) => {
   return request.get<any>('/personalized', { params: { limit } });
 };
 
-// 获取私人漫游
+// 获取私人漫游（request 拦截器已自动添加 timestamp）
 export const getPersonalFM = () => {
   return request.get<any>('/personal_fm');
 };

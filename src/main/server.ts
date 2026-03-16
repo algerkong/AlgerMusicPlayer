@@ -1,7 +1,7 @@
 import { ipcMain } from 'electron';
 import Store from 'electron-store';
 import fs from 'fs';
-import server from 'netease-cloud-music-api-alger/server';
+import server from 'NeteaseCloudMusicApi/server';
 import os from 'os';
 import path from 'path';
 
