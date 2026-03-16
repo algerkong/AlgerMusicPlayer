@@ -68,6 +68,7 @@
       @play="onPlayMusic"
       @play-next="handlePlayNext"
       @download="downloadMusic"
+      @download-lyric="downloadLyric(item)"
       @toggle-favorite="toggleFavorite"
       @toggle-dislike="toggleDislike"
       @remove="$emit('remove-song', $event)"
@@ -121,7 +122,8 @@ const {
   handlePlayNext,
   handleMenuClick,
   handleArtistClick,
-  downloadMusic
+  downloadMusic,
+  downloadLyric
 } = useSongItem(props);
 
 const onPlayMusic = () => {

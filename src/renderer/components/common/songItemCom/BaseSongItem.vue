@@ -25,6 +25,7 @@
       @play="playMusicEvent(item)"
       @play-next="handlePlayNext"
       @download="downloadMusic(item)"
+      @download-lyric="downloadLyric(item)"
       @toggle-favorite="toggleFavorite"
       @toggle-dislike="toggleDislike"
       @remove="$emit('remove-song', $event)"
@@ -71,7 +72,8 @@ const {
   handleArtistClick,
   handleMouseEnter,
   handleMouseLeave,
-  downloadMusic
+  downloadMusic,
+  downloadLyric
 } = useSongItem(props);
 
 // 处理图片加载

@@ -316,6 +316,21 @@
             </div>
           </div>
 
+          <!-- Save Lyric File -->
+          <div class="setting-group">
+            <div class="flex items-center justify-between">
+              <div>
+                <h3 class="text-sm font-bold text-neutral-900 dark:text-white">
+                  {{ t('download.settingsPanel.saveLyric') }}
+                </h3>
+                <p class="text-xs text-neutral-500 mt-1">
+                  {{ t('download.settingsPanel.saveLyricDesc') }}
+                </p>
+              </div>
+              <n-switch v-model:value="downloadSettings.saveLyric" />
+            </div>
+          </div>
+
           <!-- Format Section -->
           <div class="setting-group">
             <h3 class="text-sm font-bold text-neutral-900 dark:text-white mb-2">
@@ -875,7 +890,8 @@ const showSettingsDrawer = ref(false);
 const downloadSettings = ref({
   path: '',
   nameFormat: '{songName} - {artistName}',
-  separator: ' - '
+  separator: ' - ',
+  saveLyric: false
 });
 
 // 格式组件（用于拖拽排序）
@@ -992,6 +1008,11 @@ const saveDownloadSettings = () => {
     'set.downloadSeparator',
     downloadSettings.value.separator
   );
+  window.electron.ipcRenderer.send(
+    'set-store-value',
+    'set.downloadSaveLyric',
+    downloadSettings.value.saveLyric
+  );
 
   // 如果是在已下载页面，刷新列表以更新显示
   if (tabName.value === 'downloaded') {
@@ -1014,11 +1035,16 @@ const initDownloadSettings = async () => {
     'get-store-value',
     'set.downloadSeparator'
   );
+  const saveLyric = await window.electron.ipcRenderer.invoke(
+    'get-store-value',
+    'set.downloadSaveLyric'
+  );
 
   downloadSettings.value = {
     path: path || (await window.electron.ipcRenderer.invoke('get-downloads-path')),
     nameFormat: nameFormat || '{songName} - {artistName}',
-    separator: separator || ' - '
+    separator: separator || ' - ',
+    saveLyric: saveLyric || false
   };
 
   // 初始化排序组件

@@ -64,6 +64,8 @@ export default {
     noPathSelected: '먼저 다운로드 경로를 선택해주세요',
     select: '폴더 선택',
     open: '폴더 열기',
+    saveLyric: '가사 파일 별도 저장',
+    saveLyricDesc: '곡 다운로드 시 .lrc 가사 파일도 함께 저장합니다',
     fileFormat: '파일명 형식',
     fileFormatDesc: '음악 다운로드 시 파일 이름 형식 설정',
     customFormat: '사용자 정의 형식',

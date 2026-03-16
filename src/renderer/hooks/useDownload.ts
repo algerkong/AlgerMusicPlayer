@@ -3,6 +3,7 @@ import { useMessage } from 'naive-ui';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import { getMusicLrc } from '@/api/music';
 import { getSongUrl } from '@/store/modules/player';
 import type { SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
@@ -302,9 +303,91 @@ export const useDownload = () => {
     }
   };
 
+  /**
+   * 下载单首歌曲的歌词（.lrc 文件）
+   * @param song 歌曲信息
+   */
+  const downloadLyric = async (song: SongResult) => {
+    try {
+      const res = await getMusicLrc(song.id as number);
+      const lyricData = res?.data;
+
+      if (!lyricData?.lrc?.lyric) {
+        message.warning(t('songItem.message.noLyric'));
+        return;
+      }
+
+      // 构建 LRC 内容：保留原始歌词，如有翻译则合并
+      let lrcContent = lyricData.lrc.lyric;
+      if (lyricData.tlyric?.lyric) {
+        lrcContent = mergeLrcWithTranslation(lyricData.lrc.lyric, lyricData.tlyric.lyric);
+      }
+
+      // 构建文件名
+      const artistNames = (song.ar || song.song?.artists)?.map((a) => a.name).join(',');
+      const filename = `${song.name} - ${artistNames}`;
+
+      const result = await ipcRenderer?.invoke('save-lyric-file', { filename, lrcContent });
+
+      if (result?.success) {
+        message.success(t('songItem.message.lyricDownloaded'));
+      } else {
+        message.error(t('songItem.message.lyricDownloadFailed'));
+      }
+    } catch (error) {
+      console.error('Download lyric error:', error);
+      message.error(t('songItem.message.lyricDownloadFailed'));
+    }
+  };
+
   return {
     isDownloading,
     downloadMusic,
+    downloadLyric,
     batchDownloadMusic
   };
 };
+
+/**
+ * 将原文歌词和翻译歌词合并为一个 LRC 字符串
+ */
+function mergeLrcWithTranslation(originalText: string, translationText: string): string {
+  const originalMap = parseLrcText(originalText);
+  const translationMap = parseLrcText(translationText);
+
+  const mergedLines: string[] = [];
+
+  for (const [timeTag, content] of originalMap.entries()) {
+    mergedLines.push(`${timeTag}${content}`);
+    const translated = translationMap.get(timeTag);
+    if (translated) {
+      mergedLines.push(`${timeTag}${translated}`);
+    }
+  }
+
+  // 按时间排序
+  mergedLines.sort((a, b) => {
+    const ta = a.match(/\[\d{2}:\d{2}(\.\d{1,3})?\]/)?.[0] || '';
+    const tb = b.match(/\[\d{2}:\d{2}(\.\d{1,3})?\]/)?.[0] || '';
+    return ta.localeCompare(tb);
+  });
+
+  return mergedLines.join('\n');
+}
+
+/**
+ * 解析 LRC 文本为 Map<timeTag, content>
+ */
+function parseLrcText(text: string): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const line of text.split('\n')) {
+    const tags = line.match(/\[\d{2}:\d{2}(\.\d{1,3})?\]/g);
+    if (!tags) continue;
+    const content = line.replace(/\[\d{2}:\d{2}(\.\d{1,3})?\]/g, '').trim();
+    if (!content) continue;
+    for (const tag of tags) {
+      map.set(tag, content);
+    }
+  }
+  return map;
+}

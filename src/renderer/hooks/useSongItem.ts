@@ -16,7 +16,7 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
   const playerStore = usePlayerStore();
   const recommendStore = useRecommendStore();
   const message = useMessage();
-  const { downloadMusic } = useDownload();
+  const { downloadMusic, downloadLyric } = useDownload();
   const { navigateToArtist } = useArtist();
 
   // 状态变量
@@ -220,6 +220,7 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
     handleArtistClick,
     handleMouseEnter,
     handleMouseLeave,
-    downloadMusic
+    downloadMusic,
+    downloadLyric
   };
 }

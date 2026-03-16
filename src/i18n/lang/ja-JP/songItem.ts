@@ -3,6 +3,7 @@ export default {
     play: '再生',
     playNext: '次に再生',
     download: '楽曲をダウンロード',
+    downloadLyric: '歌詞をダウンロード',
     addToPlaylist: 'プレイリストに追加',
     favorite: 'いいね',
     unfavorite: 'いいね解除',
@@ -15,7 +16,11 @@ export default {
     downloadFailed: 'ダウンロードに失敗しました',
     downloadQueued: 'ダウンロードキューに追加しました',
     addedToNextPlay: '次の再生に追加しました',
-    getUrlFailed: '音楽ダウンロードアドレスの取得に失敗しました。ログインしているか確認してください'
+    getUrlFailed:
+      '音楽ダウンロードアドレスの取得に失敗しました。ログインしているか確認してください',
+    noLyric: 'この楽曲には歌詞がありません',
+    lyricDownloaded: '歌詞のダウンロードが完了しました',
+    lyricDownloadFailed: '歌詞のダウンロードに失敗しました'
   },
   dialog: {
     dislike: {

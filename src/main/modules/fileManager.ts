@@ -246,6 +246,33 @@ export function initializeFileManager() {
     };
   });
 
+  // 保存歌词文件
+  ipcMain.handle(
+    'save-lyric-file',
+    async (_, { filename, lrcContent }: { filename: string; lrcContent: string }) => {
+      try {
+        const configStore = getStore();
+        const downloadPath =
+          (configStore.get('set.downloadPath') as string) || app.getPath('downloads');
+        const sanitizedName = sanitizeFilename(filename);
+        let filePath = path.join(downloadPath, `${sanitizedName}.lrc`);
+
+        // 文件已存在时添加序号
+        let counter = 1;
+        while (fs.existsSync(filePath)) {
+          filePath = path.join(downloadPath, `${sanitizedName} (${counter}).lrc`);
+          counter++;
+        }
+
+        await fs.promises.writeFile(filePath, lrcContent, 'utf-8');
+        return { success: true, path: filePath };
+      } catch (error: any) {
+        console.error('保存歌词文件失败:', error);
+        return { success: false, error: error.message };
+      }
+    }
+  );
+
   // 添加清除下载历史的处理函数
   ipcMain.on('clear-downloads-history', () => {
     downloadStore.set('history', []);
@@ -783,6 +810,17 @@ async function downloadMusic(
         console.log('FLAC tags written successfully');
       } catch (err) {
         console.error('Error writing FLAC tags:', err);
+      }
+    }
+
+    // 如果启用了单独保存歌词文件，将歌词保存为 .lrc 文件
+    if (lyricsContent && configStore.get('set.downloadSaveLyric')) {
+      try {
+        const lrcFilePath = finalFilePath.replace(/\.[^.]+$/, '.lrc');
+        await fs.promises.writeFile(lrcFilePath, lyricsContent, 'utf-8');
+        console.log('歌词文件已保存:', lrcFilePath);
+      } catch (lrcError) {
+        console.error('保存歌词文件失败:', lrcError);
       }
     }
 

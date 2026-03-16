@@ -3,6 +3,7 @@ export default {
     play: '播放',
     playNext: '下一首播放',
     download: '下載歌曲',
+    downloadLyric: '下載歌詞',
     addToPlaylist: '新增至播放清單',
     favorite: '喜歡',
     unfavorite: '取消喜歡',
@@ -15,7 +16,10 @@ export default {
     downloadFailed: '下載失敗',
     downloadQueued: '已加入下載佇列',
     addedToNextPlay: '已新增至下一首播放',
-    getUrlFailed: '取得音樂下載位址失敗，請檢查是否登入'
+    getUrlFailed: '取得音樂下載位址失敗，請檢查是否登入',
+    noLyric: '該歌曲暫無歌詞',
+    lyricDownloaded: '歌詞下載成功',
+    lyricDownloadFailed: '歌詞下載失敗'
   },
   dialog: {
     dislike: {

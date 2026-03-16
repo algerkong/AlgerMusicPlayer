@@ -64,6 +64,8 @@ export default {
     noPathSelected: 'Please select download path first',
     select: 'Select Folder',
     open: 'Open Folder',
+    saveLyric: 'Save Lyrics File',
+    saveLyricDesc: 'Save a separate .lrc lyrics file alongside the downloaded song',
     fileFormat: 'Filename Format',
     fileFormatDesc: 'Set how downloaded music files will be named',
     customFormat: 'Custom Format',

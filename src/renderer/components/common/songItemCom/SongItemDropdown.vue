@@ -41,6 +41,7 @@ const emits = defineEmits([
   'play',
   'play-next',
   'download',
+  'download-lyric',
   'add-to-playlist',
   'toggle-favorite',
   'toggle-dislike',
@@ -154,6 +155,11 @@ const dropdownOptions = computed<MenuOption[]>(() => {
       icon: () => h('i', { class: 'iconfont ri-download-line' })
     },
     {
+      label: t('songItem.menu.downloadLyric'),
+      key: 'downloadLyric',
+      icon: () => h('i', { class: 'iconfont ri-file-text-line' })
+    },
+    {
       label: t('songItem.menu.addToPlaylist'),
       key: 'addToPlaylist',
       icon: () => h('i', { class: 'iconfont ri-folder-add-line' }),
@@ -202,6 +208,9 @@ const handleSelect = (key: string | number) => {
   switch (key) {
     case 'download':
       emits('download');
+      break;
+    case 'downloadLyric':
+      emits('download-lyric');
       break;
     case 'playNext':
       emits('play-next');

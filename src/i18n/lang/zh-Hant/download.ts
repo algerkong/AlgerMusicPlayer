@@ -63,6 +63,8 @@ export default {
     noPathSelected: '請先選擇下載路徑',
     select: '選擇資料夾',
     open: '開啟資料夾',
+    saveLyric: '單獨儲存歌詞檔案',
+    saveLyricDesc: '下載歌曲時同時儲存一份 .lrc 歌詞檔案',
     fileFormat: '檔名格式',
     fileFormatDesc: '設定下載音樂時的檔案命名格式',
     customFormat: '自訂格式',
