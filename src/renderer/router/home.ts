@@ -62,7 +62,8 @@ const layoutRouter = [
       icon: 'icon-recordfill',
       keepAlive: true,
       isMobile: false,
-      back: true
+      back: true,
+      hideInSidebar: true
     },
     component: () => import('@/views/mv/index.vue')
   },
@@ -97,7 +98,8 @@ const layoutRouter = [
       icon: 'ri-folder-music-fill',
       keepAlive: true,
       isMobile: false,
-      electronOnly: true
+      electronOnly: true,
+      hideInSidebar: true
     },
     component: () => import('@/views/local-music/index.vue')
   },

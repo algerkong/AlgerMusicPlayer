@@ -1,113 +1,95 @@
 <template>
-  <div class="list-page h-full w-full bg-white dark:bg-black transition-colors duration-500">
-    <!-- 专辑地区分类 - 保持固定在顶部 -->
-    <category-selector
-      :model-value="currentArea"
-      :categories="areas"
-      label-key="name"
-      value-key="value"
-      @change="handleAreaChange"
-    />
-
-    <!-- 专辑列表 -->
-    <n-scrollbar
-      ref="contentScrollbarRef"
-      class="h-full"
-      style="height: calc(100% - 73px)"
-      :size="100"
-      @scroll="handleScroll"
-    >
-      <div class="list-content w-full pb-32 pt-6 page-padding">
-        <!-- 列表标题 -->
-        <div class="mb-8">
-          <h1 class="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-white mb-2">
-            {{ currentAreaName }}
-          </h1>
-          <p class="text-neutral-500 dark:text-neutral-400">{{ t('comp.newAlbum.title') }}</p>
+  <sticky-tab-page
+    ref="pageRef"
+    :title="t('comp.newAlbum.title')"
+    :description="currentAreaName"
+    :model-value="currentArea"
+    :categories="areas"
+    label-key="name"
+    value-key="value"
+    @change="handleAreaChange"
+    @scroll="handleScroll"
+  >
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+      <!-- Loading State -->
+      <template v-if="loading && page === 0">
+        <div v-for="i in 15" :key="`loading-${i}`" class="space-y-3">
+          <div class="aspect-square skeleton-shimmer rounded-2xl" />
+          <div class="h-4 w-3/4 skeleton-shimmer rounded-lg" />
+          <div class="h-3 w-1/2 skeleton-shimmer rounded-lg" />
         </div>
+      </template>
 
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          <!-- Loading State -->
-          <template v-if="loading && page === 0">
-            <div v-for="i in 15" :key="`loading-${i}`" class="space-y-3">
-              <div class="aspect-square skeleton-shimmer rounded-2xl" />
-              <div class="h-4 w-3/4 skeleton-shimmer rounded-lg" />
-              <div class="h-3 w-1/2 skeleton-shimmer rounded-lg" />
-            </div>
-          </template>
+      <!-- Content State -->
+      <template v-else>
+        <div
+          v-for="(album, index) in albumList"
+          :key="album.id"
+          class="list-card group cursor-pointer animate-item"
+          :style="{ animationDelay: calculateAnimationDelay(index % TOTAL_ITEMS, 0.05) }"
+          @click.stop="openAlbum(album)"
+        >
+          <!-- Cover Image -->
+          <div
+            class="relative aspect-square overflow-hidden rounded-2xl shadow-md group-hover:shadow-xl transition-all duration-500"
+          >
+            <img
+              :src="getImgUrl(album.picUrl, '400y400')"
+              :alt="album.name"
+              class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              loading="lazy"
+              crossorigin="anonymous"
+            />
 
-          <!-- Content State -->
-          <template v-else>
+            <!-- Play Overlay -->
             <div
-              v-for="(album, index) in albumList"
-              :key="album.id"
-              class="list-card group cursor-pointer animate-item"
-              :style="{ animationDelay: calculateAnimationDelay(index % TOTAL_ITEMS, 0.05) }"
-              @click.stop="openAlbum(album)"
+              class="absolute inset-0 bg-transparent group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center"
             >
-              <!-- Cover Image -->
               <div
-                class="relative aspect-square overflow-hidden rounded-2xl shadow-md group-hover:shadow-xl transition-all duration-500"
+                class="play-icon w-12 h-12 rounded-full bg-white/90 flex items-center justify-center opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 shadow-xl"
+                @click.stop="playAlbum(album)"
               >
-                <img
-                  :src="getImgUrl(album.picUrl, '400y400')"
-                  :alt="album.name"
-                  class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  loading="lazy"
-                  crossorigin="anonymous"
-                />
-
-                <!-- Play Overlay -->
-                <div
-                  class="absolute inset-0 bg-transparent group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center"
-                >
-                  <div
-                    class="play-icon w-12 h-12 rounded-full bg-white/90 flex items-center justify-center opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 shadow-xl"
-                    @click.stop="playAlbum(album)"
-                  >
-                    <i class="ri-play-fill text-2xl text-neutral-900 ml-1"></i>
-                  </div>
-                </div>
-
-                <!-- Album Size Badge -->
-                <div
-                  v-if="album.size"
-                  class="absolute top-3 left-3 px-2 py-1 rounded-lg bg-black/40 backdrop-blur-md text-white text-[10px] font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                >
-                  <i class="ri-music-2-fill"></i>
-                  {{ album.size }} {{ t('comp.playlistDrawer.count') }}
-                </div>
-              </div>
-
-              <!-- Info -->
-              <div class="mt-3 space-y-1">
-                <h3
-                  class="text-sm md:text-base font-bold text-neutral-900 dark:text-white line-clamp-1 group-hover:text-primary transition-colors"
-                >
-                  {{ album.name }}
-                </h3>
-                <p
-                  v-if="getArtistNames(album)"
-                  class="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1"
-                >
-                  {{ getArtistNames(album) }}
-                </p>
+                <i class="ri-play-fill text-2xl text-neutral-900 ml-1"></i>
               </div>
             </div>
-          </template>
-        </div>
 
-        <!-- 加载更多 -->
-        <div v-if="isLoadingMore" class="flex justify-center items-center py-8">
-          <n-spin size="small" />
-          <span class="ml-2 text-neutral-500">{{ t('comp.homeListItem.loading') }}</span>
+            <!-- Album Size Badge -->
+            <div
+              v-if="album.size"
+              class="absolute top-3 left-3 px-2 py-1 rounded-lg bg-black/40 backdrop-blur-md text-white text-[10px] font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            >
+              <i class="ri-music-2-fill"></i>
+              {{ album.size }} {{ t('comp.playlistDrawer.count') }}
+            </div>
+          </div>
+
+          <!-- Info -->
+          <div class="mt-3 space-y-1">
+            <h3
+              class="text-sm md:text-base font-bold text-neutral-900 dark:text-white line-clamp-1 group-hover:text-primary transition-colors"
+            >
+              {{ album.name }}
+            </h3>
+            <p
+              v-if="getArtistNames(album)"
+              class="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1"
+            >
+              {{ getArtistNames(album) }}
+            </p>
+          </div>
         </div>
-        <div v-if="!hasMore && albumList.length > 0" class="text-center py-8 text-neutral-500">
-          {{ t('comp.recommendSonglist.empty') }}
-        </div>
-      </div>
-    </n-scrollbar>
-  </div>
+      </template>
+    </div>
+
+    <!-- 加载更多 -->
+    <div v-if="isLoadingMore" class="flex justify-center items-center py-8">
+      <n-spin size="small" />
+      <span class="ml-2 text-neutral-500">{{ t('comp.homeListItem.loading') }}</span>
+    </div>
+    <div v-if="!hasMore && albumList.length > 0" class="text-center py-8 text-neutral-500">
+      {{ t('comp.recommendSonglist.empty') }}
+    </div>
+  </sticky-tab-page>
 </template>
 
 <script lang="ts" setup>
@@ -117,7 +99,7 @@ import { useRoute, useRouter } from 'vue-router';
 
 import { getNewAlbums } from '@/api/album';
 import { getAlbum } from '@/api/list';
-import CategorySelector from '@/components/common/CategorySelector.vue';
+import StickyTabPage from '@/components/common/StickyTabPage.vue';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import { usePlayerCoreStore } from '@/store/modules/playerCore';
 import { usePlaylistStore } from '@/store/modules/playlist';
@@ -130,8 +112,9 @@ defineOptions({
 const { t } = useI18n();
 const router = useRouter();
 const route = useRoute();
+const pageRef = ref();
 
-const TOTAL_ITEMS = 30; // 每页数量
+const TOTAL_ITEMS = 30;
 
 const areas = computed(() => [
   { name: t('comp.pages.album.area.all'), value: 'ALL' },
@@ -153,8 +136,6 @@ const currentAreaName = computed(
     areas.value.find((a) => a.value === currentArea.value)?.name || t('comp.pages.album.area.all')
 );
 
-const contentScrollbarRef = ref();
-
 const handleAreaChange = (value: string) => {
   router.replace({ query: { area: value } });
   loadList(value);
@@ -169,7 +150,7 @@ const loadList = async (area: string, isLoadMore = false) => {
     page.value = 0;
     albumList.value = [];
     await nextTick();
-    contentScrollbarRef.value?.scrollTo({ top: 0 });
+    pageRef.value?.scrollTo({ top: 0 });
   }
 
   try {
@@ -179,9 +160,6 @@ const loadList = async (area: string, isLoadMore = false) => {
       offset: page.value * TOTAL_ITEMS
     };
     const { data } = await getNewAlbums(params);
-
-    // API returns { albums: [], code: 200 } or { monthData: [] } depending on endpoint
-    // /album/new returns { albums: [], total, code }
     const albums = data.albums || [];
 
     if (isLoadMore) {
@@ -190,7 +168,6 @@ const loadList = async (area: string, isLoadMore = false) => {
       albumList.value = albums;
     }
 
-    // Check if we have more data
     hasMore.value = albums.length === TOTAL_ITEMS;
     page.value++;
   } catch (error) {
@@ -287,14 +264,6 @@ watch(
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-
-.list-card {
-  &:hover {
-    .play-icon {
-      @apply opacity-100 scale-100;
-    }
   }
 }
 </style>

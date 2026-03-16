@@ -12,6 +12,7 @@
           class="py-1.5 px-4 mr-3 inline-block rounded-full cursor-pointer transition-all duration-300 text-sm font-medium bg-gray-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-gray-200 dark:hover:bg-neutral-700 hover:text-neutral-900 dark:hover:text-white"
           :class="[
             animationClass,
+            index === 0 ? 'ml-0.5' : '',
             isActive(category) ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-105' : ''
           ]"
           :style="getAnimationDelay(index)"

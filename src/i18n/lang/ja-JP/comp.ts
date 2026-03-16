@@ -127,7 +127,7 @@ export default {
     title: 'おすすめMV'
   },
   newAlbum: {
-    title: '新着アルバム',
+    title: 'アルバム',
     empty: '新しいアルバムがありません'
   },
   recommendNewMusic: {
@@ -153,6 +153,23 @@ export default {
     toplistDesc: 'トレンド',
     mvDesc: 'ミュージックビデオ',
     playlistDesc: '厳選プレイリスト',
+    personalFm: 'パーソナルFM',
+    discoverMusic: '新しい音楽を発見',
+    personalFmDesc: 'あなたの好みに基づいて',
+    recentPlays: '最近再生した曲',
+    viewAll: 'すべて表示',
+    followedArtists: 'フォロー中',
+    newSongs: '曲の新曲',
+    fromFollowedArtists: 'フォロー中のアーティストから',
+    recommendNewMusic: 'おすすめ新曲',
+    newSongExpress: '新曲速報',
+    discoverNewReleases: '最新リリースを見つけよう',
+    hotPlaylists: '人気プレイリスト',
+    hotArtists: '人気アーティスト',
+    hotArtistsTitle: '人気アーティスト',
+    hotArtistsDesc: '今最も人気のあるアーティスト',
+    fmTrash: '嫌い',
+    fmNext: '次へ',
     quickNav: {
       myFavorite: 'お気に入り',
       playHistory: '再生履歴',

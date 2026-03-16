@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
 import type { DjProgram, DjRadio } from '@/types/podcast';
@@ -8,90 +6,79 @@ import { formatNumber, getImgUrl } from '@/utils';
 
 const props = withDefaults(
   defineProps<{
-    radio: DjRadio;
+    radio?: DjRadio;
     program?: DjProgram;
-    showSubscribeButton?: boolean;
-    isSubscribed?: boolean;
     animationDelay?: string;
   }>(),
-  {
-    showSubscribeButton: false,
-    isSubscribed: false
-  }
+  {}
 );
 
-const emit = defineEmits<{
-  subscribe: [radio: DjRadio];
-}>();
-
 const router = useRouter();
-const { t } = useI18n();
-
-const isSubscribed = computed(() => props.isSubscribed);
-
-const handleSubscribe = (e: Event) => {
-  e.stopPropagation();
-  emit('subscribe', props.radio);
-};
 
 const goToDetail = () => {
-  router.push(`/podcast/radio/${props.radio.id}`);
+  if (props.radio?.id) {
+    router.push(`/podcast/radio/${props.radio.id}`);
+  }
 };
 </script>
 
 <template>
   <div
-    class="radio-card animate-item group flex flex-col rounded-2xl bg-neutral-50 dark:bg-neutral-900/50 p-4 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800/50 transition-all duration-300"
+    class="group cursor-pointer animate-item"
     :style="{ animationDelay }"
     @click="goToDetail"
   >
-    <div class="relative overflow-hidden rounded-xl">
+    <!-- Cover -->
+    <div
+      class="relative aspect-square overflow-hidden rounded-2xl shadow-md group-hover:shadow-xl transition-all duration-500"
+    >
       <img
-        :src="getImgUrl(radio.picUrl || program?.coverUrl || '', '200y200')"
-        :alt="radio.name"
-        class="w-full aspect-square object-cover group-hover:scale-105 transition-transform duration-500"
+        :src="getImgUrl(radio?.picUrl || program?.coverUrl || '', '400y400')"
+        :alt="radio?.name || ''"
+        class="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+        loading="lazy"
       />
+      <!-- Hover overlay -->
       <div
-        v-if="showSubscribeButton && radio.subCount !== undefined"
-        class="absolute top-2 right-2 z-10"
+        class="absolute inset-0 bg-transparent group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center"
       >
-        <n-button
-          :type="isSubscribed ? 'default' : 'primary'"
-          size="small"
-          round
-          @click="handleSubscribe"
+        <div
+          class="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 shadow-xl"
         >
-          {{ isSubscribed ? t('podcast.subscribed') : t('podcast.subscribe') }}
-        </n-button>
+          <i class="ri-play-fill text-2xl text-neutral-900 ml-0.5"></i>
+        </div>
       </div>
+      <!-- Recent played badge -->
       <div
         v-if="program"
-        class="absolute bottom-0 left-0 right-0 p-2 bg-black/40 backdrop-blur-sm text-white text-[10px] truncate"
+        class="absolute bottom-0 left-0 right-0 px-3 py-2 bg-gradient-to-t from-black/60 to-transparent text-white text-xs truncate"
       >
-        {{ t('podcast.recentPlayed') }}: {{ program.mainSong?.name || program.name }}
+        {{ program.mainSong?.name || program.name }}
+      </div>
+      <!-- Episode count badge -->
+      <div
+        v-if="radio?.programCount && !program"
+        class="absolute top-3 right-3 px-2 py-1 rounded-lg bg-black/40 backdrop-blur-md text-white text-[10px] font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+      >
+        <i class="ri-mic-fill"></i>
+        {{ radio.programCount }}
       </div>
     </div>
 
-    <h3
-      class="mt-3 text-sm md:text-base font-semibold text-neutral-900 dark:text-white line-clamp-2 group-hover:text-primary transition-colors"
-      :title="radio.name"
-    >
-      {{ radio.name }}
-    </h3>
-
-    <p
-      v-if="radio.desc"
-      class="mt-1 text-xs md:text-sm text-neutral-500 dark:text-neutral-400 line-clamp-2"
-    >
-      {{ radio.desc }}
-    </p>
-
-    <div
-      v-if="radio.subCount !== undefined"
-      class="mt-2 flex items-center justify-between text-xs text-neutral-400"
-    >
-      <span>{{ formatNumber(radio.subCount) }} {{ t('podcast.subscribeCount') }}</span>
-      <span>{{ radio.programCount }} {{ t('podcast.programCount') }}</span>
+    <!-- Info -->
+    <div class="mt-3 space-y-1">
+      <h3
+        class="text-sm md:text-base font-bold text-neutral-900 dark:text-white line-clamp-1 group-hover:text-primary transition-colors"
+        :title="radio?.name || ''"
+      >
+        {{ radio?.name || program?.name || '' }}
+      </h3>
+      <p
+        v-if="radio?.subCount !== undefined"
+        class="text-xs text-neutral-500 dark:text-neutral-400"
+      >
+        {{ formatNumber(radio?.subCount || 0) }} subscribers
+      </p>
     </div>
   </div>
 </template>

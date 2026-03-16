@@ -127,7 +127,7 @@ export default {
     title: 'Recommended MVs'
   },
   newAlbum: {
-    title: 'New Albums',
+    title: 'Albums',
     empty: 'No new albums'
   },
   recommendNewMusic: {
@@ -153,6 +153,23 @@ export default {
     toplistDesc: 'Trending now',
     mvDesc: 'Music videos',
     playlistDesc: 'Curated playlists',
+    personalFm: 'Personal FM',
+    discoverMusic: 'Discover Music',
+    personalFmDesc: 'Based on your taste',
+    recentPlays: 'Recent Plays',
+    viewAll: 'View All',
+    followedArtists: 'Followed Artists',
+    newSongs: ' new songs',
+    fromFollowedArtists: 'From artists you follow',
+    recommendNewMusic: 'New Music',
+    newSongExpress: 'New Releases',
+    discoverNewReleases: 'Discover the latest releases',
+    hotPlaylists: 'Hot Playlists',
+    hotArtists: 'Hot Artists',
+    hotArtistsTitle: 'Popular Artists',
+    hotArtistsDesc: 'Most popular artists right now',
+    fmTrash: 'Dislike',
+    fmNext: 'Next',
     quickNav: {
       myFavorite: 'My Favorites',
       playHistory: 'History',

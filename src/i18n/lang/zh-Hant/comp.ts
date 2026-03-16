@@ -120,7 +120,7 @@ export default {
     title: '推薦MV'
   },
   newAlbum: {
-    title: '新碟上架',
+    title: '專輯',
     empty: '暫無新專輯'
   },
   recommendNewMusic: {
@@ -146,6 +146,23 @@ export default {
     toplistDesc: '熱門榜單',
     mvDesc: '音樂視訊',
     playlistDesc: '精選播放清單',
+    personalFm: '私人FM',
+    discoverMusic: '發現新音樂',
+    personalFmDesc: '根據你的喜好推薦',
+    recentPlays: '最近播放',
+    viewAll: '查看全部',
+    followedArtists: '關注歌手',
+    newSongs: '首新歌',
+    fromFollowedArtists: '來自你關注的歌手',
+    recommendNewMusic: '推薦新音樂',
+    newSongExpress: '新歌速遞',
+    discoverNewReleases: '發現最新發行的好歌',
+    hotPlaylists: '精選歌單',
+    hotArtists: '熱門歌手',
+    hotArtistsTitle: '熱門藝人',
+    hotArtistsDesc: '當下最受歡迎的歌手',
+    fmTrash: '不喜歡',
+    fmNext: '下一首',
     quickNav: {
       myFavorite: '我的收藏',
       playHistory: '播放歷史',

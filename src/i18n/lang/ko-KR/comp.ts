@@ -126,7 +126,7 @@ export default {
     title: '추천 MV'
   },
   newAlbum: {
-    title: '신곡 앨범',
+    title: '앨범',
     empty: '새 앨범이 없습니다'
   },
   recommendNewMusic: {
@@ -152,6 +152,23 @@ export default {
     toplistDesc: '인기 차트',
     mvDesc: '뮤직비디오',
     playlistDesc: '엄선된 플레이리스트',
+    personalFm: '개인 FM',
+    discoverMusic: '새로운 음악 발견',
+    personalFmDesc: '취향에 맞춘 추천',
+    recentPlays: '최근 재생',
+    viewAll: '전체 보기',
+    followedArtists: '팔로우 아티스트',
+    newSongs: '곡의 신곡',
+    fromFollowedArtists: '팔로우한 아티스트의 신곡',
+    recommendNewMusic: '추천 신곡',
+    newSongExpress: '신곡 속보',
+    discoverNewReleases: '최신 발매 곡을 발견하세요',
+    hotPlaylists: '인기 플레이리스트',
+    hotArtists: '인기 아티스트',
+    hotArtistsTitle: '인기 아티스트',
+    hotArtistsDesc: '지금 가장 인기 있는 아티스트',
+    fmTrash: '싫어요',
+    fmNext: '다음',
     quickNav: {
       myFavorite: '내 즐겨찾기',
       playHistory: '재생 기록',

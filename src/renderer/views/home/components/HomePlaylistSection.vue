@@ -34,11 +34,13 @@
         :cover="item.picUrl"
         :title="item.name"
         :subtitle="item.copywriter"
-        :tracks="playlistTracksMap[item.id] || []"
+        :tracks="isElectron ? playlistTracksMap[item.id] || [] : []"
+        :show-hover-tracks="isElectron"
         :play-count="item.playCount"
         :animation-delay="calculateAnimationDelay(index, 0.04)"
         @click="handlePlaylistClick(item)"
         @play="playPlaylist(item)"
+        @mouseenter="isElectron && loadTracksOnHover(item.id)"
       />
     </div>
 
@@ -110,10 +112,6 @@ const fetchPlaylists = async () => {
     const { data } = await getPersonalizedPlaylist(props.limit || displayCount.value + 5);
     if (data.code === 200) {
       playlists.value = data.result || [];
-      // Preload tracks for displayed playlists (Electron only)
-      if (isElectron) {
-        preloadAllTracks();
-      }
     }
   } catch (error) {
     console.error('Failed to fetch playlists:', error);
@@ -122,29 +120,19 @@ const fetchPlaylists = async () => {
   }
 };
 
-const preloadAllTracks = async () => {
-  const playlistsToLoad = displayPlaylists.value;
-
-  // Load tracks in parallel with concurrency limit
-  const batchSize = 4;
-  for (let i = 0; i < playlistsToLoad.length; i += batchSize) {
-    const batch = playlistsToLoad.slice(i, i + batchSize);
-    await Promise.all(
-      batch.map(async (item) => {
-        if (playlistTracksMap[item.id]) return;
-        try {
-          const { data } = await getListDetail(item.id);
-          if (data.playlist?.tracks) {
-            playlistTracksMap[item.id] = data.playlist.tracks.slice(0, 3).map((s: any) => ({
-              id: s.id,
-              name: s.name
-            }));
-          }
-        } catch (error) {
-          console.debug('Failed to load tracks for playlist:', item.id, error);
-        }
-      })
-    );
+/** Lazy load tracks for a single playlist on hover */
+const loadTracksOnHover = async (id: number) => {
+  if (playlistTracksMap[id]) return;
+  try {
+    const { data } = await getListDetail(id);
+    if (data.playlist?.tracks) {
+      playlistTracksMap[id] = data.playlist.tracks.slice(0, 3).map((s: any) => ({
+        id: s.id,
+        name: s.name
+      }));
+    }
+  } catch {
+    // silent — user can retry by hovering again
   }
 };
 

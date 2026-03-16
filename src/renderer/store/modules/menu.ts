@@ -14,6 +14,9 @@ export const useMenuStore = defineStore('menu', () => {
       if (item.meta?.electronOnly && !isElectron) {
         return false;
       }
+      if (item.meta?.hideInSidebar) {
+        return false;
+      }
       if (settingsStore.isMobile) {
         return item.meta?.isMobile !== false;
       }

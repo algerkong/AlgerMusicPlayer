@@ -66,8 +66,9 @@
               trigger="hover"
               :options="searchTypeOptions"
               @select="selectSearchType"
+              @mousedown.prevent
             >
-              <div class="type-chip">
+              <div class="type-chip" @mousedown.prevent>
                 <span>{{
                   searchTypeOptions.find((i) => i.key === searchStore.searchType)?.label
                 }}</span>
@@ -238,21 +239,28 @@ const showBackButton = computed(() => {
 const goBack = () => router.back();
 
 // ── Tabs ──────────────────────────────────────────────
-const tabs = computed(() => [
-  {
-    key: 'playlist',
-    label: t('comp.searchBar.tabPlaylist'),
-    path: '/',
-    icon: 'ri-play-list-2-fill'
-  },
-  { key: 'mv', label: t('comp.searchBar.tabMv'), path: '/mv', icon: 'ri-movie-2-fill' },
-  {
-    key: 'charts',
-    label: t('comp.searchBar.tabCharts'),
-    path: '/toplist',
-    icon: 'ri-bar-chart-grouped-fill'
-  }
-]);
+const tabs = computed(() => {
+  const items = [
+    { key: 'home', label: t('comp.home'), path: '/', icon: 'ri-home-4-fill' },
+    { key: 'playlist', label: t('comp.list'), path: '/list', icon: 'ri-play-list-2-fill' },
+    { key: 'album', label: t('comp.newAlbum.title'), path: '/album', icon: 'ri-album-fill' },
+    {
+      key: 'charts',
+      label: t('comp.toplist'),
+      path: '/toplist',
+      icon: 'ri-bar-chart-grouped-fill'
+    },
+    { key: 'mv', label: t('comp.mv'), path: '/mv', icon: 'ri-movie-2-fill' },
+    {
+      key: 'localMusic',
+      label: t('comp.localMusic'),
+      path: '/local-music',
+      icon: 'ri-folder-music-fill',
+      electronOnly: true
+    }
+  ];
+  return items.filter((tab) => !tab.electronOnly || isElectron);
+});
 const isTabActive = (path: string) => route.path === path;
 
 // Sliding pill
@@ -323,6 +331,7 @@ const selectSearchType = (key: number) => {
   searchStore.searchType = key;
   if (searchValue.value)
     router.push({ path: '/search-result', query: { keyword: searchValue.value, type: key } });
+  nextTick(() => inputRef.value?.focus());
 };
 
 const rawSearchTypes = ref(SEARCH_TYPES);

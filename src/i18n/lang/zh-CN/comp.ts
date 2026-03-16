@@ -120,7 +120,7 @@ export default {
     title: '推荐MV'
   },
   newAlbum: {
-    title: '新碟上架',
+    title: '专辑',
     empty: '暂无新专辑'
   },
   recommendNewMusic: {
@@ -146,6 +146,23 @@ export default {
     toplistDesc: '热门榜单',
     mvDesc: '音乐视频',
     playlistDesc: '精选歌单',
+    personalFm: '私人FM',
+    discoverMusic: '发现新音乐',
+    personalFmDesc: '根据你的喜好推荐',
+    recentPlays: '最近播放',
+    viewAll: '查看全部',
+    followedArtists: '关注歌手',
+    newSongs: '首新歌',
+    fromFollowedArtists: '来自你关注的歌手',
+    recommendNewMusic: '推荐新音乐',
+    newSongExpress: '新歌速递',
+    discoverNewReleases: '发现最新发行的好歌',
+    hotPlaylists: '精选歌单',
+    hotArtists: '热门歌手',
+    hotArtistsTitle: '热门艺人',
+    hotArtistsDesc: '当下最受欢迎的歌手',
+    fmTrash: '不喜欢',
+    fmNext: '下一首',
     quickNav: {
       myFavorite: '我的收藏',
       playHistory: '播放历史',
