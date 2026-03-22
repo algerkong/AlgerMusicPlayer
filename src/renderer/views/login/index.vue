@@ -111,15 +111,15 @@ const router = useRouter();
 const userStore = useUserStore();
 
 // 当前激活的登录模式
-const activeMode = ref<LoginMode>(LoginMode.COOKIE);
+const activeMode = ref<LoginMode>(LoginMode.QR);
 // 用于控制内容切换动画
 const isTransitioning = ref(false);
 
 // 登录选项配置
 const loginTabs = computed(() => [
+  { key: LoginMode.QR, label: t('login.title.qr') },
   { key: LoginMode.COOKIE, label: t('login.title.cookie') },
-  { key: LoginMode.UID, label: t('login.title.uid') },
-  { key: LoginMode.QR, label: t('login.title.qr') }
+  { key: LoginMode.UID, label: t('login.title.uid') }
 ]);
 
 // 手机号登录
