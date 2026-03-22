@@ -343,7 +343,6 @@ class WindowSizeManager {
    */
   saveWindowState(win: BrowserWindow): WindowState {
     // 如果窗口已销毁，则返回之前的状态或默认状态
-    console.log('win.isDestroyed()', win.isDestroyed());
     if (win.isDestroyed()) {
       return (
         this.savedState || {

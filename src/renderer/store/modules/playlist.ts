@@ -15,7 +15,12 @@ import { useIntelligenceModeStore } from './intelligenceMode';
 import { usePlayerCoreStore } from './playerCore';
 import { useSleepTimerStore } from './sleepTimer';
 
-const { message } = createDiscreteApi(['message']);
+// 延迟初始化 message，避免 chunk 循环依赖导致 TDZ 错误
+let _message: ReturnType<typeof createDiscreteApi>['message'] | null = null;
+const getMessage = () => {
+  if (!_message) _message = createDiscreteApi(['message']).message;
+  return _message;
+};
 
 /**
  * 精简 SongResult 对象，只保留持久化必要字段
@@ -427,7 +432,7 @@ export const usePlaylistStore = defineStore(
         // 检查是否超过最大连续失败次数
         if (consecutiveFailCount.value >= MAX_CONSECUTIVE_FAILS) {
           console.error(`[nextPlay] 连续${MAX_CONSECUTIVE_FAILS}首歌曲播放失败，停止播放`);
-          message.warning(i18n.global.t('player.consecutiveFailsError'));
+          getMessage().warning(i18n.global.t('player.consecutiveFailsError'));
           consecutiveFailCount.value = 0; // 重置计数器
           playerCore.setIsPlay(false);
           return;
@@ -500,7 +505,7 @@ export const usePlaylistStore = defineStore(
             if (playList.value.length > 1) {
               // 更新索引到失败的歌曲位置，这样下次递归调用会继续往下
               playListIndex.value = nowPlayListIndex;
-              message.warning(i18n.global.t('player.parseFailedPlayNext'));
+              getMessage().warning(i18n.global.t('player.parseFailedPlayNext'));
 
               // 延迟后尝试下一首（重置单曲重试计数）
               setTimeout(() => {
@@ -508,7 +513,7 @@ export const usePlaylistStore = defineStore(
               }, 500);
             } else {
               // 只有一首歌且失败
-              message.error(i18n.global.t('player.playFailed'));
+              getMessage().error(i18n.global.t('player.playFailed'));
               playerCore.setIsPlay(false);
             }
           }
@@ -588,7 +593,7 @@ export const usePlaylistStore = defineStore(
         } else {
           console.error(`[prevPlay] 播放上一首失败，保持当前索引: ${currentIndex}`);
           playerCore.setIsPlay(false);
-          message.error(i18n.global.t('player.playFailed'));
+          getMessage().error(i18n.global.t('player.playFailed'));
         }
       } catch (error) {
         console.error('切换上一首出错:', error);
@@ -653,7 +658,7 @@ export const usePlaylistStore = defineStore(
               const recovered = await playerCore.handlePlayMusic(recoverSong, true);
               if (!recovered) {
                 playerCore.setIsPlay(false);
-                message.error(i18n.global.t('player.playFailed'));
+                getMessage().error(i18n.global.t('player.playFailed'));
               }
             }
           }
