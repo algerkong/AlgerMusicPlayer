@@ -193,7 +193,9 @@ export default {
     tabPlaylist: '플레이리스트',
     tabMv: 'MV',
     tabCharts: '차트',
-    cancelSearch: '취소'
+    cancelSearch: '취소',
+    intelligenceMode: '심쿵 모드',
+    exitIntelligence: '심쿵 모드 종료'
   },
   titleBar: {
     closeTitle: '닫기 방법을 선택해주세요',

@@ -194,7 +194,9 @@ export default {
     tabPlaylist: 'プレイリスト',
     tabMv: 'MV',
     tabCharts: 'チャート',
-    cancelSearch: 'キャンセル'
+    cancelSearch: 'キャンセル',
+    intelligenceMode: '心動モード',
+    exitIntelligence: '心動モードを終了'
   },
   titleBar: {
     closeTitle: '閉じる方法を選択してください',

@@ -105,6 +105,24 @@
       </n-badge>
     </button>
 
+    <!-- 心动模式按钮 -->
+    <n-tooltip v-if="showIntelligenceBtn" trigger="hover">
+      <template #trigger>
+        <button
+          class="action-btn"
+          :class="{ 'intelligence-active': isIntelligenceMode }"
+          @click="toggleIntelligenceMode"
+        >
+          <i class="ri-heart-pulse-line" />
+        </button>
+      </template>
+      {{
+        isIntelligenceMode
+          ? t('comp.searchBar.exitIntelligence')
+          : t('comp.searchBar.intelligenceMode')
+      }}
+    </n-tooltip>
+
     <!-- 用户 -->
     <n-popover trigger="hover" placement="bottom-end" :show-arrow="false" raw>
       <template #trigger>
@@ -205,6 +223,7 @@ import Coffee from '@/components/Coffee.vue';
 import { SEARCH_TYPES, USER_SET_OPTIONS } from '@/const/bar-const';
 import { useDownloadStatus } from '@/hooks/useDownloadStatus';
 import { useZoom } from '@/hooks/useZoom';
+import { useIntelligenceModeStore } from '@/store/modules/intelligenceMode';
 import { useNavTitleStore } from '@/store/modules/navTitle';
 import { useSearchStore } from '@/store/modules/search';
 import { useSettingsStore } from '@/store/modules/settings';
@@ -223,12 +242,24 @@ const userStore = useUserStore();
 const userSetOptions = ref(USER_SET_OPTIONS);
 const { t, locale } = useI18n();
 
+const intelligenceModeStore = useIntelligenceModeStore();
 const { downloadingCount, navigateToDownloads } = useDownloadStatus();
 const showDownloadButton = computed(
   () =>
     isElectron && (settingsStore.setData?.alwaysShowDownloadButton || downloadingCount.value > 0)
 );
 const { zoomFactor, initZoomFactor, increaseZoom, decreaseZoom, resetZoom, isZoom100 } = useZoom();
+
+// ── 心动模式 ─────────────────────────────────────────
+const isIntelligenceMode = computed(() => intelligenceModeStore.isIntelligenceMode);
+const showIntelligenceBtn = computed(() => userStore.user && userStore.loginType === 'cookie');
+const toggleIntelligenceMode = async () => {
+  if (isIntelligenceMode.value) {
+    intelligenceModeStore.clearIntelligenceMode();
+  } else {
+    await intelligenceModeStore.playIntelligenceMode();
+  }
+};
 
 // ── Back button ───────────────────────────────────────
 const showBackButton = computed(() => {
@@ -680,6 +711,16 @@ onMounted(() => {
   border-color: #166534;
   background: rgba(34, 197, 94, 0.08);
   color: #22c55e;
+}
+.action-btn.intelligence-active {
+  color: #ec4899;
+  border-color: #fbcfe8;
+  background: #fdf2f8;
+}
+.dark .action-btn.intelligence-active {
+  color: #ec4899;
+  border-color: #831843;
+  background: rgba(236, 72, 153, 0.1);
 }
 
 /* ── User button ─────────────────────────────────────── */

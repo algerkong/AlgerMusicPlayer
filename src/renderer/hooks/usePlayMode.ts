@@ -14,7 +14,7 @@ export function usePlayMode() {
   // 当前播放模式
   const playMode = computed(() => playerStore.playMode);
 
-  // 播放模式图标
+  // 播放模式图标（心动模式已移至 SearchBar，不参与循环切换）
   const playModeIcon = computed(() => {
     switch (playMode.value) {
       case 0:
@@ -23,8 +23,6 @@ export function usePlayMode() {
         return 'ri-repeat-one-line';
       case 2:
         return 'ri-shuffle-line';
-      case 3:
-        return 'ri-heart-pulse-line';
       default:
         return 'ri-repeat-2-line';
     }
@@ -39,8 +37,6 @@ export function usePlayMode() {
         return t('player.playBar.playMode.loop');
       case 2:
         return t('player.playBar.playMode.random');
-      case 3:
-        return t('player.playBar.intelligenceMode.title');
       default:
         return t('player.playBar.playMode.sequence');
     }

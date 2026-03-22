@@ -19,3 +19,8 @@ export const getArtistTopSongs = (params) => {
 export const getArtistAlbums = (params) => {
   return request.get('/artist/album', { params });
 };
+
+// 获取关注歌手新歌
+export const getArtistNewSongs = (limit: number = 20) => {
+  return request.get<any>('/artist/new/song', { params: { limit } });
+};

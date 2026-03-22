@@ -187,7 +187,9 @@ export default {
     tabPlaylist: '播放清單',
     tabMv: 'MV',
     tabCharts: '排行榜',
-    cancelSearch: '取消'
+    cancelSearch: '取消',
+    intelligenceMode: '心動模式',
+    exitIntelligence: '退出心動模式'
   },
   titleBar: {
     closeTitle: '請選擇關閉方式',

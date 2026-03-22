@@ -35,6 +35,7 @@ export const usePlayerCoreStore = defineStore(
     const playbackRate = ref(1.0);
     const volume = ref(1);
     const userPlayIntent = ref(false); // 用户是否想要播放
+    const isFmPlaying = ref(false); // 是否正在播放私人FM
 
     // 音频输出设备
     const audioOutputDeviceId = ref<string>(
@@ -689,6 +690,7 @@ export const usePlayerCoreStore = defineStore(
       playbackRate,
       volume,
       userPlayIntent,
+      isFmPlaying,
       audioOutputDeviceId,
       availableAudioDevices,
 

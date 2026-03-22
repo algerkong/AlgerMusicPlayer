@@ -467,13 +467,44 @@ const setupAudioListeners = () => {
   };
 
   // 监听结束
-  audioService.on('end', () => {
+  audioService.on('end', async () => {
     console.log('音频播放结束事件触发');
     clearInterval();
 
     if (getPlayerStore().playMode === 1) {
       // 单曲循环模式
       replayMusic();
+    } else if (getPlayerStore().isFmPlaying) {
+      // 私人FM模式：自动获取下一首
+      try {
+        const { getPersonalFM } = await import('@/api/home');
+        const res = await getPersonalFM();
+        const songs = res.data?.data;
+        if (Array.isArray(songs) && songs.length > 0) {
+          const song = songs[0];
+          const fmSong = {
+            id: song.id,
+            name: song.name,
+            picUrl: song.al?.picUrl || song.album?.picUrl,
+            ar: song.artists || song.ar,
+            al: song.al || song.album,
+            source: 'netease' as const,
+            song,
+            ...song,
+            playLoading: false
+          } as any;
+          const { usePlaylistStore } = await import('@/store/modules/playlist');
+          const playlistStore = usePlaylistStore();
+          playlistStore.setPlayList([fmSong], false, false);
+          getPlayerStore().isFmPlaying = true; // setPlayList 会清除，需重设
+          await getPlayerStore().handlePlayMusic(fmSong, true);
+        } else {
+          getPlayerStore().setIsPlay(false);
+        }
+      } catch (error) {
+        console.error('FM自动播放下一首失败:', error);
+        getPlayerStore().setIsPlay(false);
+      }
     } else {
       // 顺序播放、列表循环、随机播放模式都使用统一的nextPlay方法
       getPlayerStore().nextPlay();

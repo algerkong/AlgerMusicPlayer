@@ -260,6 +260,12 @@ export const usePlaylistStore = defineStore(
         }
       }
 
+      // 当新播放列表长度>1时，清除FM模式标志（FM播放列表只有1首）
+      if (list.length > 1) {
+        const playerCore = usePlayerCoreStore();
+        playerCore.isFmPlaying = false;
+      }
+
       if (list.length === 0) {
         playList.value = [];
         playListIndex.value = 0;
@@ -373,21 +379,14 @@ export const usePlaylistStore = defineStore(
      * 切换播放模式
      */
     const togglePlayMode = async () => {
-      const { useUserStore } = await import('./user');
-      const userStore = useUserStore();
       const wasRandom = playMode.value === 2;
       const wasIntelligence = playMode.value === 3;
 
-      let newMode = (playMode.value + 1) % 4;
-
-      // 如果要切换到心动模式，但用户未使用cookie登录，则跳过
-      if (newMode === 3 && (!userStore.user || userStore.loginType !== 'cookie')) {
-        console.log('跳过心动模式：需要cookie登录');
-        newMode = 0;
-      }
+      // 心动模式(3)不参与循环切换，仅通过 SearchBar 入口进入
+      // 如果当前是心动模式，切换回顺序播放
+      const newMode = wasIntelligence ? 0 : (playMode.value + 1) % 3;
 
       const isRandom = newMode === 2;
-      const isIntelligence = newMode === 3;
 
       console.log(`[PlaylistStore] togglePlayMode: ${playMode.value} -> ${newMode}`);
       playMode.value = newMode;
@@ -404,15 +403,8 @@ export const usePlaylistStore = defineStore(
         console.log('切换出随机模式，恢复原始顺序');
       }
 
-      // 切换到心动模式
-      if (isIntelligence && !wasIntelligence) {
-        console.log('切换到心动模式');
-        const intelligenceStore = useIntelligenceModeStore();
-        await intelligenceStore.playIntelligenceMode();
-      }
-
       // 从心动模式切换出去
-      if (!isIntelligence && wasIntelligence) {
+      if (wasIntelligence) {
         console.log('退出心动模式');
         const intelligenceStore = useIntelligenceModeStore();
         intelligenceStore.clearIntelligenceMode(true);
@@ -441,13 +433,15 @@ export const usePlaylistStore = defineStore(
           return;
         }
 
-        // 检查是否是播放列表的最后一首且设置了播放列表结束定时
-        if (
-          playMode.value === 0 &&
-          playListIndex.value === playList.value.length - 1 &&
-          sleepTimerStore.sleepTimer.type === 'end'
-        ) {
-          sleepTimerStore.stopPlayback();
+        // 顺序播放模式：播放到最后一首后停止
+        if (playMode.value === 0 && playListIndex.value >= playList.value.length - 1) {
+          if (sleepTimerStore.sleepTimer.type === 'end') {
+            sleepTimerStore.stopPlayback();
+          }
+          console.log('[nextPlay] 顺序播放模式：已播放到最后一首，停止播放');
+          playerCore.setIsPlay(false);
+          const { audioService } = await import('@/services/audioService');
+          audioService.pause();
           return;
         }
 

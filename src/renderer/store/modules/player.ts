@@ -33,8 +33,17 @@ export const usePlayerStore = defineStore('player', () => {
   const intelligenceMode = useIntelligenceModeStore();
 
   // 使用 storeToRefs 获取响应式引用
-  const { play, isPlay, playMusic, playMusicUrl, musicFull, playbackRate, volume, userPlayIntent } =
-    storeToRefs(playerCore);
+  const {
+    play,
+    isPlay,
+    playMusic,
+    playMusicUrl,
+    musicFull,
+    playbackRate,
+    volume,
+    userPlayIntent,
+    isFmPlaying
+  } = storeToRefs(playerCore);
 
   const { playList, playListIndex, playMode, originalPlayList, playListDrawerVisible } =
     storeToRefs(playlist);
@@ -88,6 +97,7 @@ export const usePlayerStore = defineStore('player', () => {
     playbackRate,
     volume,
     userPlayIntent,
+    isFmPlaying,
 
     // PlayerCore - Computed
     currentSong,

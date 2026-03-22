@@ -194,7 +194,9 @@ export default {
     tabPlaylist: 'Playlist',
     tabMv: 'MV',
     tabCharts: 'Charts',
-    cancelSearch: 'Cancel'
+    cancelSearch: 'Cancel',
+    intelligenceMode: 'Intelligence Mode',
+    exitIntelligence: 'Exit Intelligence Mode'
   },
   titleBar: {
     closeTitle: 'Choose how to close',
