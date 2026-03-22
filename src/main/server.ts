@@ -6,7 +6,7 @@ import path from 'path';
 
 import { type Platform, unblockMusic } from './unblockMusic';
 
-// 必须在 import NeteaseCloudMusicApi 之前创建 anonymous_token 文件
+// 必须在 import netease-cloud-music-api-alger 之前创建 anonymous_token 文件
 // 否则模块加载时 readFileSync 会因文件不存在而崩溃
 if (!fs.existsSync(path.resolve(os.tmpdir(), 'anonymous_token'))) {
   fs.writeFileSync(path.resolve(os.tmpdir(), 'anonymous_token'), '', 'utf-8');
@@ -68,7 +68,7 @@ async function startMusicApi(): Promise<void> {
   }
 
   try {
-    const server = require('NeteaseCloudMusicApi/server');
+    const server = require('netease-cloud-music-api-alger/server');
     await server.serveNcmApi({
       port,
       // 安全默认值：仅监听本机回环地址，避免对局域网暴露
