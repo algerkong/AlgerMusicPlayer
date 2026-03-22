@@ -121,17 +121,17 @@
             <div class="flex items-center gap-3">
               <!-- Play All Button -->
               <button
-                class="play-all-btn flex items-center gap-2 px-6 py-2.5 rounded-full bg-primary hover:bg-primary/90 text-white font-semibold text-sm transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg shadow-primary/25"
+                class="play-all-btn flex items-center gap-1.5 md:gap-2 px-3.5 md:px-6 py-1.5 md:py-2.5 rounded-full bg-primary hover:bg-primary/90 text-white font-semibold text-xs md:text-sm transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg shadow-primary/25"
                 @click="handlePlayAll"
               >
-                <i class="ri-play-circle-line text-lg" />
+                <i class="ri-play-circle-line text-base md:text-lg" />
                 <span>{{ t('comp.musicList.playAll') }}</span>
               </button>
 
               <!-- Collect Button -->
               <button
                 v-if="canCollect"
-                class="action-btn-pill flex items-center gap-2 px-6 py-2.5 rounded-full font-semibold text-sm transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm border"
+                class="action-btn-pill flex items-center gap-1.5 md:gap-2 px-3.5 md:px-6 py-1.5 md:py-2.5 rounded-full font-semibold text-xs md:text-sm transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm border"
                 :class="
                   isCollected
                     ? 'bg-neutral-100 dark:bg-neutral-800 text-red-500 border-neutral-200 dark:border-neutral-700'
@@ -139,7 +139,10 @@
                 "
                 @click="toggleCollect"
               >
-                <i :class="isCollected ? 'ri-heart-fill' : 'ri-heart-line'" class="text-lg" />
+                <i
+                  :class="isCollected ? 'ri-heart-fill' : 'ri-heart-line'"
+                  class="text-base md:text-lg"
+                />
                 <span>{{
                   isCollected ? t('comp.musicList.cancelCollect') : t('comp.musicList.collect')
                 }}</span>
