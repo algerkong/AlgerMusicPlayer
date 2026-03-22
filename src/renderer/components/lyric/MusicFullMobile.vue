@@ -1133,14 +1133,22 @@ const getLrcStyle = (index: number) => {
 
   if (index === nowIndex.value) {
     // 当前播放的歌词，使用渐变效果
+    // 只有原始样式包含 backgroundImage 时才设置 color: transparent
+    // 否则前奏阶段文字会因 transparent 而不可见
+    if (originalStyle.backgroundImage) {
+      return {
+        ...originalStyle,
+        backgroundImage: originalStyle.backgroundImage
+          .replace(/#ffffff/g, colors.active)
+          .replace(/#ffffff8a/g, `${colors.primary}`),
+        backgroundClip: 'text',
+        WebkitBackgroundClip: 'text',
+        color: 'transparent'
+      };
+    }
+    // 当前行但播放时间未到（前奏/间奏），用高亮色显示
     return {
-      ...originalStyle,
-      backgroundImage: originalStyle.backgroundImage
-        ?.replace(/#ffffff/g, colors.active)
-        .replace(/#ffffff8a/g, `${colors.primary}`),
-      backgroundClip: 'text',
-      WebkitBackgroundClip: 'text',
-      color: 'transparent'
+      color: colors.active
     };
   }
 
