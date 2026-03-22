@@ -33,11 +33,10 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
-          cache: npm
+          node-version: 24
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Install Linux build dependencies
         if: matrix.os == 'ubuntu-latest'
