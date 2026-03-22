@@ -1,7 +1,7 @@
 <template>
   <div class="home-container h-full w-full bg-white dark:bg-black transition-colors duration-500">
     <n-scrollbar class="h-full">
-      <div class="home-content w-full pb-32 pt-6 page-padding">
+      <div class="home-content w-full pb-32 page-padding">
         <!-- Hero Section -->
         <home-hero />
 
