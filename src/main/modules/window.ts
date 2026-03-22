@@ -15,6 +15,7 @@ import { join } from 'path';
 import {
   applyContentZoom,
   applyInitialState,
+  calculateMinimumWindowSize,
   DEFAULT_MAIN_HEIGHT,
   DEFAULT_MAIN_WIDTH,
   DEFAULT_MINI_HEIGHT,
@@ -204,10 +205,8 @@ export function initializeWindowManager() {
       console.log('从迷你模式恢复，使用保存的状态:', JSON.stringify(preMiniModeState));
 
       // 设置适当的最小尺寸
-      win.setMinimumSize(
-        Math.max(DEFAULT_MAIN_WIDTH * 0.5, 600),
-        Math.max(DEFAULT_MAIN_HEIGHT * 0.5, 400)
-      );
+      const { minWidth, minHeight } = calculateMinimumWindowSize();
+      win.setMinimumSize(minWidth, minHeight);
 
       // 恢复窗口状态
       win.setAlwaysOnTop(false);

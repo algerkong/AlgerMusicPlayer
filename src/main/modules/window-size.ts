@@ -13,9 +13,11 @@ export const DEFAULT_MINI_EXPANDED_HEIGHT = 400;
 // 用于存储窗口状态的键名
 export const WINDOW_STATE_KEY = 'windowState';
 
-// 最小窗口尺寸
-let MIN_WIDTH = Math.round(DEFAULT_MAIN_WIDTH * 0.5);
-let MIN_HEIGHT = Math.round(DEFAULT_MAIN_HEIGHT * 0.5);
+// 最小窗口尺寸（确保内容不会被截断）
+const ABSOLUTE_MIN_WIDTH = 900;
+const ABSOLUTE_MIN_HEIGHT = 640;
+let MIN_WIDTH = ABSOLUTE_MIN_WIDTH;
+let MIN_HEIGHT = ABSOLUTE_MIN_HEIGHT;
 
 // 标记IPC处理程序是否已注册
 let ipcHandlersRegistered = false;
@@ -98,19 +100,16 @@ class WindowSizeManager {
     try {
       const { width: workAreaWidth, height: workAreaHeight } = screen.getPrimaryDisplay().workArea;
 
-      // 根据工作区大小设置合理的最小尺寸
-      MIN_WIDTH = Math.min(Math.round(DEFAULT_MAIN_WIDTH * 0.5), Math.round(workAreaWidth * 0.3));
-      MIN_HEIGHT = Math.min(
-        Math.round(DEFAULT_MAIN_HEIGHT * 0.5),
-        Math.round(workAreaHeight * 0.3)
-      );
+      // 根据工作区大小设置合理的最小尺寸，但不低于绝对最小值
+      MIN_WIDTH = Math.max(ABSOLUTE_MIN_WIDTH, Math.round(workAreaWidth * 0.3));
+      MIN_HEIGHT = Math.max(ABSOLUTE_MIN_HEIGHT, Math.round(workAreaHeight * 0.3));
 
       console.log(`设置最小窗口尺寸: ${MIN_WIDTH}x${MIN_HEIGHT}`);
     } catch (error) {
       console.error('初始化最小窗口尺寸失败:', error);
       // 使用默认值
-      MIN_WIDTH = Math.round(DEFAULT_MAIN_WIDTH * 0.5);
-      MIN_HEIGHT = Math.round(DEFAULT_MAIN_HEIGHT * 0.5);
+      MIN_WIDTH = ABSOLUTE_MIN_WIDTH;
+      MIN_HEIGHT = ABSOLUTE_MIN_HEIGHT;
     }
   }
 
