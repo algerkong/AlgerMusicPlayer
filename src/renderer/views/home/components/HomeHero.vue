@@ -2,7 +2,7 @@
   <div class="hero-section mb-6 md:mb-10">
     <!-- Skeleton Loading -->
     <div v-if="loading" class="space-y-4">
-      <div class="flex gap-1.5 overflow-hidden">
+      <div class="flex gap-1.5 overflow-hidden md:hidden">
         <div v-for="i in 6" :key="i" class="h-9 w-20 flex-shrink-0 skeleton-shimmer rounded-full" />
       </div>
       <div class="hero-grid grid gap-3">
@@ -13,8 +13,8 @@
 
     <!-- Main Content -->
     <div v-else class="space-y-4">
-      <!-- Quick Navigation -->
-      <nav class="scrollbar-hide flex gap-1.5 overflow-x-auto pb-0.5">
+      <!-- Quick Navigation (mobile only) -->
+      <nav class="scrollbar-hide flex gap-1.5 overflow-x-auto pb-0.5 md:hidden">
         <button
           v-for="(item, index) in quickNavItems"
           :key="item.key"
@@ -440,6 +440,7 @@ const handleFmPlay = async () => {
       }
     ];
     playlistStore.setPlayList(playlist, false, false);
+    playerCore.isFmPlaying = true;
     await playerCore.handlePlayMusic(playlist[0], true);
   } catch (error) {
     console.error('Failed to play Personal FM:', error);
