@@ -127,7 +127,7 @@
               >
                 <div class="flex items-center gap-4">
                   <img
-                    :src="item.songInfo?.picUrl || '/images/default_cover.png'"
+                    :src="getImgUrl(item.songInfo?.picUrl, '100y100')"
                     class="w-12 h-12 rounded-xl flex-shrink-0 object-cover"
                     @error="handleCoverError"
                   />
