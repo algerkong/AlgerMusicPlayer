@@ -125,6 +125,9 @@ export const useLocalMusicStore = defineStore(
           cachedMap.set(entry.filePath, entry);
         }
 
+        // 磁盘上实际存在的文件路径集合（扫描时收集）
+        const diskFilePaths = new Set<string>();
+
         // 遍历每个文件夹进行扫描
         for (const folderPath of folderPaths.value) {
           try {
@@ -140,6 +143,11 @@ export const useLocalMusicStore = defineStore(
 
             const { files } = result;
             scanProgress.value += files.length;
+
+            // 记录磁盘上存在的文件
+            for (const file of files) {
+              diskFilePaths.add(file.path);
+            }
 
             // 2. 增量扫描：基于修改时间筛选需重新解析的文件
             const parseTargets: string[] = [];
@@ -165,6 +173,13 @@ export const useLocalMusicStore = defineStore(
           } catch (error) {
             console.error(`扫描文件夹出错: ${folderPath}`, error);
             message.error(`扫描文件夹出错: ${folderPath}`);
+          }
+        }
+
+        // 4. 清理已删除文件：从 IndexedDB 移除磁盘上不存在的条目
+        for (const [filePath, entry] of cachedMap) {
+          if (!diskFilePaths.has(filePath)) {
+            await localDB.deleteData(LOCAL_MUSIC_STORE, entry.id);
           }
         }
 

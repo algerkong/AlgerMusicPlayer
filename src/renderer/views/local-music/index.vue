@@ -1,172 +1,171 @@
 <template>
-  <div class="local-music-page h-full w-full bg-white dark:bg-black transition-colors duration-500">
-    <n-scrollbar class="h-full">
-      <div class="local-music-content pb-32">
-        <!-- Hero Section -->
-        <section class="hero-section relative overflow-hidden rounded-tl-2xl">
-          <!-- 背景模糊效果 -->
-          <div class="hero-bg absolute inset-0 -top-20">
-            <div
-              class="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/10 blur-3xl opacity-50 dark:opacity-30"
-            ></div>
-            <div
-              class="absolute inset-0 bg-gradient-to-b from-transparent via-white/80 to-white dark:via-black/80 dark:to-black"
-            ></div>
-          </div>
+  <div
+    class="local-music-page h-full w-full overflow-hidden bg-white dark:bg-black transition-colors duration-500"
+  >
+    <div class="local-music-content h-full flex flex-col">
+      <!-- Hero Section -->
+      <section class="hero-section relative overflow-hidden rounded-tl-2xl shrink-0">
+        <!-- 背景模糊效果 -->
+        <div class="hero-bg absolute inset-0 -top-20">
+          <div
+            class="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/10 blur-3xl opacity-50 dark:opacity-30"
+          ></div>
+          <div
+            class="absolute inset-0 bg-gradient-to-b from-transparent via-white/80 to-white dark:via-black/80 dark:to-black"
+          ></div>
+        </div>
 
-          <!-- Hero 内容 -->
-          <div class="hero-content relative z-10 page-padding-x pt-10 pb-8">
-            <div class="flex flex-col md:flex-row gap-8 items-center md:items-end">
-              <div class="cover-wrapper relative group">
-                <div
-                  class="cover-container relative w-32 h-32 md:w-40 md:h-40 rounded-2xl bg-primary/10 flex items-center justify-center shadow-2xl ring-4 ring-white/50 dark:ring-neutral-800/50"
-                >
-                  <i class="ri-folder-music-fill text-6xl text-primary opacity-80" />
-                </div>
+        <!-- Hero 内容 -->
+        <div class="hero-content relative z-10 page-padding-x pt-10 pb-8">
+          <div class="flex flex-col md:flex-row gap-8 items-center md:items-end">
+            <div class="cover-wrapper relative group">
+              <div
+                class="cover-container relative w-32 h-32 md:w-40 md:h-40 rounded-2xl bg-primary/10 flex items-center justify-center shadow-2xl ring-4 ring-white/50 dark:ring-neutral-800/50"
+              >
+                <i class="ri-folder-music-fill text-6xl text-primary opacity-80" />
               </div>
+            </div>
 
-              <div class="info-content text-center md:text-left">
-                <div class="badge mb-3">
-                  <span
-                    class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 dark:bg-primary/20 text-primary text-xs font-semibold uppercase tracking-wider"
-                  >
-                    {{ t('localMusic.title') }}
-                  </span>
-                </div>
-                <h1
-                  class="text-3xl md:text-4xl lg:text-5xl font-bold text-neutral-900 dark:text-white tracking-tight"
+            <div class="info-content text-center md:text-left">
+              <div class="badge mb-3">
+                <span
+                  class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 dark:bg-primary/20 text-primary text-xs font-semibold uppercase tracking-wider"
                 >
                   {{ t('localMusic.title') }}
-                </h1>
-                <p class="mt-4 text-sm md:text-base text-neutral-500 dark:text-neutral-400">
-                  {{ t('localMusic.songCount', { count: localMusicStore.musicList.length }) }}
-                </p>
+                </span>
               </div>
-            </div>
-          </div>
-        </section>
-
-        <!-- Action Bar (Sticky) -->
-        <section
-          class="action-bar sticky top-0 z-20 page-padding-x py-3 md:py-4 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-neutral-100 dark:border-neutral-800/50"
-        >
-          <div class="flex items-center justify-between gap-4">
-            <!-- 左侧：搜索框 -->
-            <div class="flex-1 max-w-xs">
-              <n-input
-                v-model:value="searchKeyword"
-                :placeholder="t('localMusic.search')"
-                clearable
-                size="small"
-                round
+              <h1
+                class="text-3xl md:text-4xl lg:text-5xl font-bold text-neutral-900 dark:text-white tracking-tight"
               >
-                <template #prefix>
-                  <i class="ri-search-line text-neutral-400" />
-                </template>
-              </n-input>
-            </div>
-
-            <!-- 右侧：操作按钮 -->
-            <div class="flex items-center gap-3">
-              <!-- 播放全部按钮 -->
-              <button
-                v-if="filteredList.length > 0"
-                class="action-btn-pill flex items-center gap-2 px-4 py-2 rounded-full font-semibold text-sm transition-all bg-primary text-white hover:bg-primary/90"
-                @click="handlePlayAll"
-              >
-                <i class="ri-play-fill text-lg" />
-                <span class="hidden md:inline">{{ t('localMusic.playAll') }}</span>
-              </button>
-
-              <!-- 扫描按钮 -->
-              <button
-                class="action-btn-icon w-10 h-10 rounded-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-all"
-                :disabled="localMusicStore.scanning"
-                @click="handleScan"
-              >
-                <i
-                  class="ri-refresh-line text-lg"
-                  :class="{ 'animate-spin': localMusicStore.scanning }"
-                />
-              </button>
-
-              <!-- 添加文件夹按钮 -->
-              <button
-                class="action-btn-icon w-10 h-10 rounded-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-all"
-                @click="handleAddFolder"
-              >
-                <i class="ri-folder-add-line text-lg" />
-              </button>
-
-              <!-- 文件夹管理按钮 -->
-              <button
-                v-if="localMusicStore.folderPaths.length > 0"
-                class="action-btn-icon w-10 h-10 rounded-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-all"
-                @click="showFolderManager = true"
-              >
-                <i class="ri-folder-settings-line text-lg" />
-              </button>
-            </div>
-          </div>
-        </section>
-
-        <!-- 扫描进度提示 -->
-        <section v-if="localMusicStore.scanning" class="page-padding-x mt-6">
-          <div
-            class="flex items-center gap-4 p-4 rounded-2xl bg-primary/5 dark:bg-primary/10 border border-primary/20"
-          >
-            <n-spin size="small" />
-            <div>
-              <p class="text-sm font-medium text-neutral-900 dark:text-white">
-                {{ t('localMusic.scanning') }}
-              </p>
-              <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                {{ t('localMusic.songCount', { count: localMusicStore.scanProgress }) }}
+                {{ t('localMusic.title') }}
+              </h1>
+              <p class="mt-4 text-sm md:text-base text-neutral-500 dark:text-neutral-400">
+                {{ t('localMusic.songCount', { count: localMusicStore.musicList.length }) }}
               </p>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <!-- 歌曲列表 -->
-        <section class="list-section page-padding-x mt-6">
-          <!-- 空状态 -->
-          <div
-            v-if="!localMusicStore.scanning && filteredList.length === 0"
-            class="empty-state py-20 text-center"
-          >
-            <i class="ri-folder-music-fill text-5xl mb-4 text-neutral-200 dark:text-neutral-800" />
-            <p class="text-neutral-400">{{ t('localMusic.emptyState') }}</p>
+      <!-- Action Bar (Sticky) -->
+      <section
+        class="action-bar z-20 shrink-0 page-padding-x py-3 md:py-4 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-neutral-100 dark:border-neutral-800/50"
+      >
+        <div class="flex items-center justify-between gap-4">
+          <!-- 左侧：搜索框 -->
+          <div class="flex-1 max-w-xs">
+            <n-input
+              v-model:value="searchKeyword"
+              :placeholder="t('localMusic.search')"
+              clearable
+              size="small"
+              round
+            >
+              <template #prefix>
+                <i class="ri-search-line text-neutral-400" />
+              </template>
+            </n-input>
+          </div>
+
+          <!-- 右侧：操作按钮 -->
+          <div class="flex items-center gap-3">
+            <!-- 播放全部按钮 -->
             <button
-              class="mt-6 px-6 py-2 rounded-full bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-all"
+              v-if="filteredList.length > 0"
+              class="action-btn-pill flex items-center gap-2 px-4 py-2 rounded-full font-semibold text-sm transition-all bg-primary text-white hover:bg-primary/90"
+              @click="handlePlayAll"
+            >
+              <i class="ri-play-fill text-lg" />
+              <span class="hidden md:inline">{{ t('localMusic.playAll') }}</span>
+            </button>
+
+            <!-- 扫描按钮 -->
+            <button
+              class="action-btn-icon w-10 h-10 rounded-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-all"
+              :disabled="localMusicStore.scanning"
+              @click="handleScan"
+            >
+              <i
+                class="ri-refresh-line text-lg"
+                :class="{ 'animate-spin': localMusicStore.scanning }"
+              />
+            </button>
+
+            <!-- 添加文件夹按钮 -->
+            <button
+              class="action-btn-icon w-10 h-10 rounded-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-all"
               @click="handleAddFolder"
             >
-              <i class="ri-folder-add-line mr-2" />
-              {{ t('localMusic.scanFolder') }}
+              <i class="ri-folder-add-line text-lg" />
+            </button>
+
+            <!-- 文件夹管理按钮 -->
+            <button
+              v-if="localMusicStore.folderPaths.length > 0"
+              class="action-btn-icon w-10 h-10 rounded-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-all"
+              @click="showFolderManager = true"
+            >
+              <i class="ri-folder-settings-line text-lg" />
             </button>
           </div>
+        </div>
+      </section>
 
-          <!-- 虚拟列表 -->
-          <div v-else-if="filteredList.length > 0" class="song-list-container">
-            <n-virtual-list
-              class="song-virtual-list"
-              style="max-height: calc(100vh - 280px)"
-              :items="filteredSongResults"
-              :item-size="70"
-              item-resizable
-              key-field="id"
-            >
-              <template #default="{ item, index }">
-                <div>
-                  <song-item :index="index" :item="item" @play="handlePlaySong" />
-                  <!-- 列表末尾留白 -->
-                  <div v-if="index === filteredSongResults.length - 1" class="h-36"></div>
-                </div>
-              </template>
-            </n-virtual-list>
+      <!-- 扫描进度提示 -->
+      <section v-if="localMusicStore.scanning" class="page-padding-x mt-6 shrink-0">
+        <div
+          class="flex items-center gap-4 p-4 rounded-2xl bg-primary/5 dark:bg-primary/10 border border-primary/20"
+        >
+          <n-spin size="small" />
+          <div>
+            <p class="text-sm font-medium text-neutral-900 dark:text-white">
+              {{ t('localMusic.scanning') }}
+            </p>
+            <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+              {{ t('localMusic.songCount', { count: localMusicStore.scanProgress }) }}
+            </p>
           </div>
-        </section>
-      </div>
-    </n-scrollbar>
+        </div>
+      </section>
+
+      <!-- 歌曲列表 -->
+      <section class="list-section page-padding-x mt-6 flex-1 min-h-0">
+        <!-- 空状态 -->
+        <div
+          v-if="!localMusicStore.scanning && filteredList.length === 0"
+          class="empty-state py-20 text-center"
+        >
+          <i class="ri-folder-music-fill text-5xl mb-4 text-neutral-200 dark:text-neutral-800" />
+          <p class="text-neutral-400">{{ t('localMusic.emptyState') }}</p>
+          <button
+            class="mt-6 px-6 py-2 rounded-full bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-all"
+            @click="handleAddFolder"
+          >
+            <i class="ri-folder-add-line mr-2" />
+            {{ t('localMusic.scanFolder') }}
+          </button>
+        </div>
+
+        <!-- 虚拟列表 -->
+        <div v-else-if="filteredList.length > 0" class="song-list-container h-full">
+          <n-virtual-list
+            class="song-virtual-list h-full"
+            :items="filteredSongResults"
+            :item-size="70"
+            item-resizable
+            key-field="id"
+          >
+            <template #default="{ item, index }">
+              <div>
+                <song-item :index="index" :item="item" @play="handlePlaySong" />
+                <!-- 列表末尾留白 -->
+                <div v-if="index === filteredSongResults.length - 1" class="h-36"></div>
+              </div>
+            </template>
+          </n-virtual-list>
+        </div>
+      </section>
+    </div>
 
     <!-- 文件夹管理抽屉 -->
     <n-drawer v-model:show="showFolderManager" :width="400" placement="right">
