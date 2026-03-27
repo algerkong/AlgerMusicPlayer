@@ -20,7 +20,21 @@ export default {
     downloading: '下载中',
     completed: '已完成',
     failed: '失败',
-    unknown: '未知'
+    unknown: '未知',
+    queued: '排队中',
+    paused: '已暂停',
+    cancelled: '已取消'
+  },
+  action: {
+    pause: '暂停',
+    resume: '恢复',
+    cancel: '取消',
+    cancelAll: '取消全部',
+    retrying: '重新获取链接...'
+  },
+  batch: {
+    complete: '下载完成：成功 {success}/{total} 首',
+    allComplete: '全部下载完成'
   },
   artist: {
     unknown: '未知歌手'
@@ -77,6 +91,8 @@ export default {
     dragToArrange: '拖动排序或使用箭头按钮调整顺序：',
     formatVariables: '可用变量',
     preview: '预览效果：',
+    concurrency: '最大并发数',
+    concurrencyDesc: '同时下载的最大歌曲数量（1-5）',
     saveSuccess: '下载设置已保存',
     presets: {
       songArtist: '歌曲名 - 歌手名',
@@ -88,5 +104,10 @@ export default {
       artistName: '歌手名',
       albumName: '专辑名'
     }
+  },
+  error: {
+    incomplete: '文件下载不完整',
+    urlExpired: '下载链接已过期，正在重新获取',
+    resumeFailed: '恢复下载失败'
   }
 };

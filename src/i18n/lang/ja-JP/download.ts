@@ -20,7 +20,21 @@ export default {
     downloading: 'ダウンロード中',
     completed: '完了',
     failed: '失敗',
-    unknown: '不明'
+    unknown: '不明',
+    queued: 'キュー中',
+    paused: '一時停止',
+    cancelled: 'キャンセル済み'
+  },
+  action: {
+    pause: '一時停止',
+    resume: '再開',
+    cancel: 'キャンセル',
+    cancelAll: 'すべてキャンセル',
+    retrying: 'URL再取得中...'
+  },
+  batch: {
+    complete: 'ダウンロード完了：{success}/{total}曲成功',
+    allComplete: '全てのダウンロードが完了'
   },
   artist: {
     unknown: '不明なアーティスト'
@@ -78,6 +92,8 @@ export default {
     dragToArrange: 'ドラッグで並び替えまたは矢印ボタンで順序を調整：',
     formatVariables: '使用可能な変数',
     preview: 'プレビュー効果：',
+    concurrency: '最大同時ダウンロード数',
+    concurrencyDesc: '同時にダウンロードする最大曲数（1-5）',
     saveSuccess: 'ダウンロード設定を保存しました',
     presets: {
       songArtist: '楽曲名 - アーティスト名',
@@ -89,5 +105,10 @@ export default {
       artistName: 'アーティスト名',
       albumName: 'アルバム名'
     }
+  },
+  error: {
+    incomplete: 'ファイルのダウンロードが不完全です',
+    urlExpired: 'URLの有効期限が切れました。再取得中',
+    resumeFailed: '再開に失敗しました'
   }
 };

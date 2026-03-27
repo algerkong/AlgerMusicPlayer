@@ -188,10 +188,10 @@ const setupMusicWatchers = () => {
           if (playMusic.value.lyric && typeof playMusic.value.lyric === 'object') {
             playMusic.value.lyric.hasWordByWord = hasWordByWord;
           }
-        } else {
+        } else if (lyricData && typeof lyricData === 'object' && lyricData.lrcArray?.length > 0) {
           // 使用现有的歌词数据结构
-          const rawLrc = lyricData?.lrcArray || [];
-          lrcTimeArray.value = lyricData?.lrcTimeArray || [];
+          const rawLrc = lyricData.lrcArray || [];
+          lrcTimeArray.value = lyricData.lrcTimeArray || [];
 
           try {
             const { translateLyrics } = await import('@/services/lyricTranslation');
@@ -200,6 +200,53 @@ const setupMusicWatchers = () => {
             console.error('翻译歌词失败，使用原始歌词：', e);
             lrcArray.value = rawLrc as any;
           }
+        } else if (isElectron && playMusic.value.playMusicUrl?.startsWith('local:///')) {
+          // 从下载/本地文件的 ID3/FLAC 元数据中提取嵌入歌词
+          try {
+            let filePath = decodeURIComponent(
+              playMusic.value.playMusicUrl.replace('local:///', '')
+            );
+            // 处理 Windows 路径：/C:/... → C:/...
+            if (/^\/[a-zA-Z]:\//.test(filePath)) {
+              filePath = filePath.slice(1);
+            }
+            const embeddedLyrics = await window.api.getEmbeddedLyrics(filePath);
+            if (embeddedLyrics) {
+              const {
+                lrcArray: parsedLrcArray,
+                lrcTimeArray: parsedTimeArray,
+                hasWordByWord
+              } = await parseLyricsString(embeddedLyrics);
+              lrcArray.value = parsedLrcArray;
+              lrcTimeArray.value = parsedTimeArray;
+              if (playMusic.value.lyric && typeof playMusic.value.lyric === 'object') {
+                (playMusic.value.lyric as any).hasWordByWord = hasWordByWord;
+              }
+            } else {
+              // 无嵌入歌词 — 若有数字 ID，尝试 API 兜底
+              const songId = playMusic.value.id;
+              if (songId && typeof songId === 'number') {
+                try {
+                  const { getMusicLrc } = await import('@/api/music');
+                  const res = await getMusicLrc(songId);
+                  if (res?.data?.lrc?.lyric) {
+                    const { lrcArray: apiLrcArray, lrcTimeArray: apiTimeArray } =
+                      await parseLyricsString(res.data.lrc.lyric);
+                    lrcArray.value = apiLrcArray;
+                    lrcTimeArray.value = apiTimeArray;
+                  }
+                } catch (apiErr) {
+                  console.error('API lyrics fallback failed:', apiErr);
+                }
+              }
+            }
+          } catch (err) {
+            console.error('Failed to extract embedded lyrics:', err);
+          }
+        } else {
+          // 无歌词数据
+          lrcArray.value = [];
+          lrcTimeArray.value = [];
         }
         // 当歌词数据更新时，如果歌词窗口打开，则发送数据
         if (isElectron && isLyricWindowOpen.value) {

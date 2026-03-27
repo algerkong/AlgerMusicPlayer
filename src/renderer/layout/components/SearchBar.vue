@@ -221,8 +221,8 @@ import alipay from '@/assets/alipay.png';
 import wechat from '@/assets/wechat.png';
 import Coffee from '@/components/Coffee.vue';
 import { SEARCH_TYPES, USER_SET_OPTIONS } from '@/const/bar-const';
-import { useDownloadStatus } from '@/hooks/useDownloadStatus';
 import { useZoom } from '@/hooks/useZoom';
+import { useDownloadStore } from '@/store/modules/download';
 import { useIntelligenceModeStore } from '@/store/modules/intelligenceMode';
 import { useNavTitleStore } from '@/store/modules/navTitle';
 import { useSearchStore } from '@/store/modules/search';
@@ -243,7 +243,11 @@ const userSetOptions = ref(USER_SET_OPTIONS);
 const { t, locale } = useI18n();
 
 const intelligenceModeStore = useIntelligenceModeStore();
-const { downloadingCount, navigateToDownloads } = useDownloadStatus();
+const downloadStore = useDownloadStore();
+const downloadingCount = computed(() => downloadStore.downloadingCount);
+const navigateToDownloads = () => {
+  router.push('/downloads');
+};
 const showDownloadButton = computed(
   () =>
     isElectron && (settingsStore.setData?.alwaysShowDownloadButton || downloadingCount.value > 0)

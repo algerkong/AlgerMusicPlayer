@@ -28,6 +28,25 @@ export interface IElectronAPI {
   ) => Promise<{ files: { path: string; modifiedTime: number }[]; count: number }>;
   /** 批量解析本地音乐文件元数据 */
   parseLocalMusicMetadata: (_filePaths: string[]) => Promise<LocalMusicMeta[]>;
+  // Download manager
+  downloadAdd: (_task: any) => Promise<string>;
+  downloadAddBatch: (_tasks: any) => Promise<{ batchId: string; taskIds: string[] }>;
+  downloadPause: (_taskId: string) => Promise<void>;
+  downloadResume: (_taskId: string) => Promise<void>;
+  downloadCancel: (_taskId: string) => Promise<void>;
+  downloadCancelAll: () => Promise<void>;
+  downloadGetQueue: () => Promise<any[]>;
+  downloadSetConcurrency: (_n: number) => void;
+  downloadGetCompleted: () => Promise<any[]>;
+  downloadDeleteCompleted: (_filePath: string) => Promise<boolean>;
+  downloadClearCompleted: () => Promise<boolean>;
+  getEmbeddedLyrics: (_filePath: string) => Promise<string | null>;
+  downloadProvideUrl: (_taskId: string, _url: string) => Promise<void>;
+  onDownloadProgress: (_cb: (_data: any) => void) => void;
+  onDownloadStateChange: (_cb: (_data: any) => void) => void;
+  onDownloadBatchComplete: (_cb: (_data: any) => void) => void;
+  onDownloadRequestUrl: (_cb: (_data: any) => void) => void;
+  removeDownloadListeners: () => void;
 }
 
 declare global {

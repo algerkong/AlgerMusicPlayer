@@ -20,7 +20,21 @@ export default {
     downloading: '다운로드 중',
     completed: '완료',
     failed: '실패',
-    unknown: '알 수 없음'
+    unknown: '알 수 없음',
+    queued: '대기 중',
+    paused: '일시 정지',
+    cancelled: '취소됨'
+  },
+  action: {
+    pause: '일시 정지',
+    resume: '재개',
+    cancel: '취소',
+    cancelAll: '모두 취소',
+    retrying: 'URL 재획득 중...'
+  },
+  batch: {
+    complete: '다운로드 완료: {success}/{total}곡 성공',
+    allComplete: '모든 다운로드 완료'
   },
   artist: {
     unknown: '알 수 없는 가수'
@@ -78,6 +92,8 @@ export default {
     dragToArrange: '드래그하여 정렬하거나 화살표 버튼을 사용하여 순서 조정:',
     formatVariables: '사용 가능한 변수',
     preview: '미리보기 효과:',
+    concurrency: '최대 동시 다운로드',
+    concurrencyDesc: '동시에 다운로드할 최대 곡 수 (1-5)',
     saveSuccess: '다운로드 설정이 저장됨',
     presets: {
       songArtist: '곡명 - 가수명',
@@ -89,5 +105,10 @@ export default {
       artistName: '가수명',
       albumName: '앨범명'
     }
+  },
+  error: {
+    incomplete: '파일 다운로드가 불완전합니다',
+    urlExpired: 'URL이 만료되었습니다. 재획득 중',
+    resumeFailed: '재개 실패'
   }
 };

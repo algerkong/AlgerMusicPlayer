@@ -20,7 +20,21 @@ export default {
     downloading: '下載中',
     completed: '已完成',
     failed: '失敗',
-    unknown: '未知'
+    unknown: '未知',
+    queued: '排隊中',
+    paused: '已暫停',
+    cancelled: '已取消'
+  },
+  action: {
+    pause: '暫停',
+    resume: '恢復',
+    cancel: '取消',
+    cancelAll: '取消全部',
+    retrying: '重新獲取連結...'
+  },
+  batch: {
+    complete: '下載完成：成功 {success}/{total} 首',
+    allComplete: '全部下載完成'
   },
   artist: {
     unknown: '未知歌手'
@@ -77,6 +91,8 @@ export default {
     dragToArrange: '拖曳排序或使用箭頭按鈕調整順序：',
     formatVariables: '可用變數',
     preview: '預覽效果：',
+    concurrency: '最大並發數',
+    concurrencyDesc: '同時下載的最大歌曲數量（1-5）',
     saveSuccess: '下載設定已儲存',
     presets: {
       songArtist: '歌曲名 - 歌手名',
@@ -88,5 +104,10 @@ export default {
       artistName: '歌手名',
       albumName: '專輯名'
     }
+  },
+  error: {
+    incomplete: '檔案下載不完整',
+    urlExpired: '下載連結已過期，正在重新獲取',
+    resumeFailed: '恢復下載失敗'
   }
 };

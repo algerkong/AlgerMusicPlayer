@@ -44,6 +44,25 @@ interface API {
   parseLocalMusicMetadata: (
     filePaths: string[]
   ) => Promise<import('../renderer/types/localMusic').LocalMusicMeta[]>;
+  // Download manager
+  downloadAdd: (task: any) => Promise<string>;
+  downloadAddBatch: (tasks: any) => Promise<{ batchId: string; taskIds: string[] }>;
+  downloadPause: (taskId: string) => Promise<void>;
+  downloadResume: (taskId: string) => Promise<void>;
+  downloadCancel: (taskId: string) => Promise<void>;
+  downloadCancelAll: () => Promise<void>;
+  downloadGetQueue: () => Promise<any[]>;
+  downloadSetConcurrency: (n: number) => void;
+  downloadGetCompleted: () => Promise<any[]>;
+  downloadDeleteCompleted: (filePath: string) => Promise<boolean>;
+  downloadClearCompleted: () => Promise<boolean>;
+  getEmbeddedLyrics: (filePath: string) => Promise<string | null>;
+  downloadProvideUrl: (taskId: string, url: string) => Promise<void>;
+  onDownloadProgress: (cb: (data: any) => void) => void;
+  onDownloadStateChange: (cb: (data: any) => void) => void;
+  onDownloadBatchComplete: (cb: (data: any) => void) => void;
+  onDownloadRequestUrl: (cb: (data: any) => void) => void;
+  removeDownloadListeners: () => void;
 }
 
 // 自定义IPC渲染进程通信接口

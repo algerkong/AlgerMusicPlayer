@@ -20,7 +20,21 @@ export default {
     downloading: 'Downloading',
     completed: 'Completed',
     failed: 'Failed',
-    unknown: 'Unknown'
+    unknown: 'Unknown',
+    queued: 'Queued',
+    paused: 'Paused',
+    cancelled: 'Cancelled'
+  },
+  action: {
+    pause: 'Pause',
+    resume: 'Resume',
+    cancel: 'Cancel',
+    cancelAll: 'Cancel All',
+    retrying: 'Re-resolving URL...'
+  },
+  batch: {
+    complete: 'Download complete: {success}/{total} songs succeeded',
+    allComplete: 'All downloads complete'
   },
   artist: {
     unknown: 'Unknown Artist'
@@ -78,6 +92,8 @@ export default {
     dragToArrange: 'Sort or use arrow buttons to arrange:',
     formatVariables: 'Available variables',
     preview: 'Preview:',
+    concurrency: 'Max Concurrent',
+    concurrencyDesc: 'Maximum number of simultaneous downloads (1-5)',
     saveSuccess: 'Download settings saved',
     presets: {
       songArtist: 'Song - Artist',
@@ -89,5 +105,10 @@ export default {
       artistName: 'Artist name',
       albumName: 'Album name'
     }
+  },
+  error: {
+    incomplete: 'File download incomplete',
+    urlExpired: 'URL expired, re-resolving',
+    resumeFailed: 'Resume failed'
   }
 };

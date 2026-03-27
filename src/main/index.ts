@@ -7,6 +7,7 @@ import i18n from '../i18n/main';
 import { loadLyricWindow } from './lyric';
 import { initializeCacheManager } from './modules/cache';
 import { initializeConfig } from './modules/config';
+import { initializeDownloadManager, setDownloadManagerWindow } from './modules/downloadManager';
 import { initializeFileManager } from './modules/fileManager';
 import { initializeFonts } from './modules/fonts';
 import { initializeLocalMusicScanner } from './modules/localMusicScanner';
@@ -42,6 +43,8 @@ function initialize(configStore: any) {
 
   // 初始化文件管理
   initializeFileManager();
+  // 初始化下载管理
+  initializeDownloadManager();
   // 初始化歌词缓存管理
   initializeCacheManager();
   // 初始化其他 API （搜索建议等）
@@ -57,6 +60,9 @@ function initialize(configStore: any) {
 
   // 创建主窗口
   mainWindow = createMainWindow(icon);
+
+  // 设置下载管理器窗口引用
+  setDownloadManagerWindow(mainWindow);
 
   // 初始化托盘
   initializeTray(iconPath, mainWindow);
