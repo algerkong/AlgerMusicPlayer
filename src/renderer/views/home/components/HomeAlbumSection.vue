@@ -61,7 +61,7 @@ import { useRouter } from 'vue-router';
 import { getTopAlbum } from '@/api/home';
 import { getAlbum } from '@/api/list';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
-import { usePlayerCoreStore } from '@/store/modules/playerCore';
+import { playTrack } from '@/services/playbackController';
 import { usePlaylistStore } from '@/store/modules/playlist';
 import { calculateAnimationDelay, isElectron, isMobile } from '@/utils';
 
@@ -178,7 +178,6 @@ const playAlbum = async (album: any) => {
   try {
     const { data } = await getAlbum(album.id);
     if (data.code === 200 && data.songs?.length > 0) {
-      const playerCore = usePlayerCoreStore();
       const playlistStore = usePlaylistStore();
 
       const albumCover = data.album?.picUrl || album.picUrl;
@@ -193,7 +192,7 @@ const playAlbum = async (album: any) => {
       }));
 
       playlistStore.setPlayList(playlist, false, false);
-      await playerCore.handlePlayMusic(playlist[0], true);
+      await playTrack(playlist[0], true);
     }
   } catch (error) {
     console.error('Failed to play album:', error);

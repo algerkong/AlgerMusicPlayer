@@ -1,5 +1,4 @@
 import { cloneDeep } from 'lodash';
-import { createDiscreteApi } from 'naive-ui';
 import { computed, type ComputedRef, nextTick, onUnmounted, ref, watch } from 'vue';
 
 import useIndexedDB from '@/hooks/IndexDBHook';
@@ -45,7 +44,7 @@ export const nowTime = ref(0); // 当前播放时间
 export const allTime = ref(0); // 总播放时间
 export const nowIndex = ref(0); // 当前播放歌词
 export const currentLrcProgress = ref(0); // 来存储当前歌词的进度
-export const sound = ref<Howl | null>(audioService.getCurrentSound());
+export const sound = ref<HTMLAudioElement | null>(audioService.getCurrentSound());
 export const isLyricWindowOpen = ref(false); // 新增状态
 export const textColors = ref<any>(getTextColors());
 
@@ -85,8 +84,6 @@ const setupKeyboardListeners = () => {
     }
   };
 };
-
-const { message } = createDiscreteApi(['message']);
 
 let audioListenersInitialized = false;
 
@@ -307,12 +304,7 @@ const setupAudioListeners = () => {
           return;
         }
 
-        if (typeof currentSound.seek !== 'function') {
-          // seek 方法不可用，跳过本次更新，不清除 interval
-          return;
-        }
-
-        const currentTime = currentSound.seek() as number;
+        const currentTime = currentSound.currentTime;
         if (typeof currentTime !== 'number' || Number.isNaN(currentTime)) {
           // 无效时间，跳过本次更新
           return;
@@ -324,7 +316,7 @@ const setupAudioListeners = () => {
         }
 
         nowTime.value = currentTime;
-        allTime.value = currentSound.duration() as number;
+        allTime.value = currentSound.duration;
 
         // === 歌词索引更新 ===
         const newIndex = getLrcIndex(nowTime.value);
@@ -396,7 +388,7 @@ const setupAudioListeners = () => {
         const store = getPlayerStore();
         if (store.play && !interval) {
           const currentSound = audioService.getCurrentSound();
-          if (currentSound && currentSound.playing()) {
+          if (currentSound && !currentSound.paused) {
             console.warn('[MusicHook] 检测到播放中但 interval 丢失，自动恢复');
             startProgressInterval();
           }
@@ -422,7 +414,7 @@ const setupAudioListeners = () => {
       const currentSound = audioService.getCurrentSound();
       if (currentSound) {
         // 立即更新显示时间，不进行任何检查
-        const currentTime = currentSound.seek() as number;
+        const currentTime = currentSound.currentTime;
         if (typeof currentTime === 'number' && !Number.isNaN(currentTime)) {
           nowTime.value = currentTime;
 
@@ -447,10 +439,10 @@ const setupAudioListeners = () => {
     if (currentSound) {
       try {
         // 更新当前时间和总时长
-        const currentTime = currentSound.seek() as number;
+        const currentTime = currentSound.currentTime;
         if (typeof currentTime === 'number' && !Number.isNaN(currentTime)) {
           nowTime.value = currentTime;
-          allTime.value = currentSound.duration() as number;
+          allTime.value = currentSound.duration;
         }
       } catch (error) {
         console.error('初始化时间和进度失败:', error);
@@ -481,34 +473,25 @@ const setupAudioListeners = () => {
     }
   });
 
-  const replayMusic = async (retryCount: number = 0) => {
+  const replayMusic = async (retryCount = 0) => {
     const MAX_REPLAY_RETRIES = 3;
     try {
-      // 如果当前有音频实例，先停止并销毁
-      const currentSound = audioService.getCurrentSound();
-      if (currentSound) {
-        currentSound.stop();
-        currentSound.unload();
-      }
-      sound.value = null;
-
-      // 重新播放当前歌曲
       if (getPlayerStore().playMusicUrl && playMusic.value) {
-        const newSound = await audioService.play(getPlayerStore().playMusicUrl, playMusic.value);
-        sound.value = newSound as Howl;
+        await audioService.play(getPlayerStore().playMusicUrl, playMusic.value);
+        sound.value = audioService.getCurrentSound();
         setupAudioListeners();
       } else {
         console.error('单曲循环：无可用 URL 或歌曲数据');
-        getPlayerStore().nextPlay();
+        const { usePlaylistStore } = await import('@/store/modules/playlist');
+        usePlaylistStore().nextPlayOnEnd();
       }
     } catch (error) {
       console.error('单曲循环重播失败:', error);
       if (retryCount < MAX_REPLAY_RETRIES) {
-        console.log(`单曲循环重试 ${retryCount + 1}/${MAX_REPLAY_RETRIES}`);
         setTimeout(() => replayMusic(retryCount + 1), 1000 * (retryCount + 1));
       } else {
-        console.error('单曲循环重试次数用尽，切换下一首');
-        getPlayerStore().nextPlay();
+        const { usePlaylistStore } = await import('@/store/modules/playlist');
+        usePlaylistStore().nextPlayOnEnd();
       }
     }
   };
@@ -544,7 +527,8 @@ const setupAudioListeners = () => {
           const playlistStore = usePlaylistStore();
           playlistStore.setPlayList([fmSong], false, false);
           getPlayerStore().isFmPlaying = true; // setPlayList 会清除，需重设
-          await getPlayerStore().handlePlayMusic(fmSong, true);
+          const { playTrack } = await import('@/services/playbackController');
+          await playTrack(fmSong, true);
         } else {
           getPlayerStore().setIsPlay(false);
         }
@@ -553,8 +537,9 @@ const setupAudioListeners = () => {
         getPlayerStore().setIsPlay(false);
       }
     } else {
-      // 顺序播放、列表循环、随机播放模式都使用统一的nextPlay方法
-      getPlayerStore().nextPlay();
+      // 顺序播放、列表循环、随机播放模式：歌曲自然结束
+      const { usePlaylistStore } = await import('@/store/modules/playlist');
+      usePlaylistStore().nextPlayOnEnd();
     }
   });
 
@@ -576,8 +561,6 @@ export const play = () => {
   const currentSound = audioService.getCurrentSound();
   if (currentSound) {
     currentSound.play();
-    // 在播放时也进行状态检测，防止URL已过期导致无声
-    getPlayerStore().checkPlaybackState(getPlayerStore().playMusic);
   }
 };
 
@@ -586,7 +569,7 @@ export const pause = () => {
   if (currentSound) {
     try {
       // 保存当前播放进度
-      const currentTime = currentSound.seek() as number;
+      const currentTime = currentSound.currentTime;
       if (getPlayerStore().playMusic && getPlayerStore().playMusic.id) {
         localStorage.setItem(
           'playProgress',
@@ -739,7 +722,7 @@ export const setAudioTime = (index: number) => {
   const currentSound = sound.value;
   if (!currentSound) return;
 
-  currentSound.seek(lrcTimeArray.value[index]);
+  audioService.seek(lrcTimeArray.value[index]);
   currentSound.play();
 };
 
@@ -1042,45 +1025,24 @@ export const initAudioListeners = async () => {
   }
 };
 
-// 监听URL过期事件，自动重新获取URL并恢复播放
-audioService.on('url_expired', async (expiredTrack) => {
-  if (!expiredTrack) return;
-
-  console.log('检测到URL过期事件，准备重新获取URL', expiredTrack.name);
-
-  try {
-    // 使用 handlePlayMusic 重新播放，它会自动处理 URL 获取和状态跟踪
-    // 我们将 isFirstPlay 设为 true 以强制获取新 URL
-    const trackToPlay = {
-      ...expiredTrack,
-      isFirstPlay: true,
-      playMusicUrl: undefined
-    };
-
-    await getPlayerStore().handlePlayMusic(trackToPlay, getPlayerStore().play);
-
-    message.success('已自动恢复播放');
-  } catch (error) {
-    console.error('处理URL过期事件失败:', error);
-    message.error('恢复播放失败，请手动点击播放');
-  }
-});
-
 // 添加音频就绪事件监听器
 window.addEventListener('audio-ready', ((event: CustomEvent) => {
   try {
     const { sound: newSound } = event.detail;
     if (newSound) {
       // 更新本地 sound 引用
-      sound.value = newSound as Howl;
+      sound.value = audioService.getCurrentSound();
 
       // 设置音频监听器
       setupAudioListeners();
 
       // 获取当前播放位置并更新显示
-      const currentPosition = newSound.seek() as number;
-      if (typeof currentPosition === 'number' && !Number.isNaN(currentPosition)) {
-        nowTime.value = currentPosition;
+      const currentSound = audioService.getCurrentSound();
+      if (currentSound) {
+        const currentPosition = currentSound.currentTime;
+        if (typeof currentPosition === 'number' && !Number.isNaN(currentPosition)) {
+          nowTime.value = currentPosition;
+        }
       }
 
       console.log('音频就绪，已设置监听器并更新进度显示');

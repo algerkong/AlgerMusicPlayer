@@ -1,152 +1,150 @@
-import { Howl } from 'howler';
-
 import type { SongResult } from '@/types/music';
 
+/**
+ * 预加载服务
+ *
+ * 新架构下 audioService 使用单一 HTMLAudioElement（换歌改 src），
+ * 不再需要预创建 Howl 实例。PreloadService 改为验证 URL 可用性并缓存元数据。
+ */
 class PreloadService {
-  private loadingPromises: Map<string | number, Promise<Howl>> = new Map();
-  private preloadedSounds: Map<string | number, Howl> = new Map();
+  private validatedUrls: Map<string | number, string> = new Map();
+  private loadingPromises: Map<string | number, Promise<string>> = new Map();
 
   /**
-   * 加载并验证音频
-   * 如果已经在加载中，返回现有的 Promise
-   * 如果已经加载完成，返回缓存的 Howl 实例
+   * 验证歌曲 URL 可用性
+   * 通过 HEAD 请求检查 URL 是否可访问，并缓存验证结果
    */
-  public async load(song: SongResult): Promise<Howl> {
+  public async load(song: SongResult): Promise<string> {
     if (!song || !song.id) {
       throw new Error('无效的歌曲对象');
     }
 
-    // 1. 检查是否有正在进行的加载
+    if (!song.playMusicUrl) {
+      throw new Error('歌曲没有 URL');
+    }
+
+    // 已验证过的 URL
+    if (this.validatedUrls.has(song.id)) {
+      console.log(`[PreloadService] 歌曲 ${song.name} URL 已验证，直接使用`);
+      return this.validatedUrls.get(song.id)!;
+    }
+
+    // 正在验证中
     if (this.loadingPromises.has(song.id)) {
-      console.log(`[PreloadService] 歌曲 ${song.name} 正在加载中，复用现有请求`);
+      console.log(`[PreloadService] 歌曲 ${song.name} 正在验证中，复用现有请求`);
       return this.loadingPromises.get(song.id)!;
     }
 
-    // 2. 检查是否有已完成的缓存
-    if (this.preloadedSounds.has(song.id)) {
-      const sound = this.preloadedSounds.get(song.id)!;
-      if (sound.state() === 'loaded') {
-        console.log(`[PreloadService] 歌曲 ${song.name} 已预加载完成，直接使用`);
-        return sound;
-      } else {
-        // 如果缓存的音频状态不正常，清理并重新加载
-        this.preloadedSounds.delete(song.id);
-      }
-    }
+    console.log(`[PreloadService] 开始验证歌曲: ${song.name}`);
 
-    // 3. 开始新的加载过程
-    const loadPromise = this._performLoad(song);
+    const url = song.playMusicUrl;
+    const loadPromise = this._validate(url, song);
     this.loadingPromises.set(song.id, loadPromise);
 
     try {
-      const sound = await loadPromise;
-      this.preloadedSounds.set(song.id, sound);
-      return sound;
+      const validatedUrl = await loadPromise;
+      this.validatedUrls.set(song.id, validatedUrl);
+      return validatedUrl;
     } finally {
       this.loadingPromises.delete(song.id);
     }
   }
 
   /**
-   * 执行实际的加载和验证逻辑
+   * 验证 URL 可用性（通过创建临时 Audio 元素检测是否可加载）
    */
-  private async _performLoad(song: SongResult): Promise<Howl> {
-    console.log(`[PreloadService] 开始加载歌曲: ${song.name}`);
+  private async _validate(url: string, song: SongResult): Promise<string> {
+    return new Promise<string>((resolve, reject) => {
+      const testAudio = new Audio();
+      testAudio.crossOrigin = 'anonymous';
+      testAudio.preload = 'metadata';
 
-    if (!song.playMusicUrl) {
-      throw new Error('歌曲没有 URL');
-    }
+      const cleanup = () => {
+        testAudio.removeEventListener('loadedmetadata', onLoaded);
+        testAudio.removeEventListener('error', onError);
+        testAudio.src = '';
+        testAudio.load();
+      };
 
-    // 创建初始音频实例
-    const sound = await this._createSound(song.playMusicUrl);
+      const onLoaded = () => {
+        // 检查时长
+        const duration = testAudio.duration;
+        const expectedDuration = (song.dt || 0) / 1000;
 
-    // 检查时长
-    const duration = sound.duration();
-    const expectedDuration = (song.dt || 0) / 1000;
+        if (expectedDuration > 0 && duration > 0 && isFinite(duration)) {
+          const durationDiff = Math.abs(duration - expectedDuration);
+          if (duration < expectedDuration * 0.5 && durationDiff > 10) {
+            console.warn(
+              `[PreloadService] 时长严重不足：实际 ${duration.toFixed(1)}s, 预期 ${expectedDuration.toFixed(1)}s (${song.name})，可能是试听版`
+            );
+            window.dispatchEvent(
+              new CustomEvent('audio-duration-mismatch', {
+                detail: {
+                  songId: song.id,
+                  songName: song.name,
+                  actualDuration: duration,
+                  expectedDuration
+                }
+              })
+            );
+          }
+        }
 
-    if (expectedDuration > 0 && duration > 0) {
-      const durationDiff = Math.abs(duration - expectedDuration);
-      // 如果实际时长远小于预期（可能是试听版），记录警告
-      if (duration < expectedDuration * 0.5 && durationDiff > 10) {
-        console.warn(
-          `[PreloadService] 时长严重不足：实际 ${duration.toFixed(1)}s, 预期 ${expectedDuration.toFixed(1)}s (${song.name})，可能是试听版`
-        );
-        // 通过自定义事件通知上层，可用于后续自动切换音源
-        window.dispatchEvent(
-          new CustomEvent('audio-duration-mismatch', {
-            detail: {
-              songId: song.id,
-              songName: song.name,
-              actualDuration: duration,
-              expectedDuration
-            }
-          })
-        );
-      } else if (durationDiff > 5) {
-        console.warn(
-          `[PreloadService] 时长差异警告：实际 ${duration.toFixed(1)}s, 预期 ${expectedDuration.toFixed(1)}s (${song.name})`
-        );
-      }
-    }
+        cleanup();
+        resolve(url);
+      };
 
-    return sound;
-  }
+      const onError = () => {
+        cleanup();
+        reject(new Error(`URL 验证失败: ${song.name}`));
+      };
 
-  private _createSound(url: string): Promise<Howl> {
-    return new Promise((resolve, reject) => {
-      const sound = new Howl({
-        src: [url],
-        html5: true,
-        preload: true,
-        autoplay: false,
-        onload: () => resolve(sound),
-        onloaderror: (_, err) => reject(err)
-      });
+      testAudio.addEventListener('loadedmetadata', onLoaded);
+      testAudio.addEventListener('error', onError);
+      testAudio.src = url;
+      testAudio.load();
+
+      // 5秒超时
+      setTimeout(() => {
+        cleanup();
+        // 超时不算失败，URL 可能是可用的只是服务器慢
+        resolve(url);
+      }, 5000);
     });
   }
 
   /**
-   * 取消特定歌曲的预加载（如果可能）
-   * 注意：Promise 无法真正取消，但我们可以清理结果
+   * 消耗已验证的 URL（从缓存移除）
    */
-  public cancel(songId: string | number) {
-    if (this.preloadedSounds.has(songId)) {
-      const sound = this.preloadedSounds.get(songId)!;
-      sound.unload();
-      this.preloadedSounds.delete(songId);
-    }
-    // loadingPromises 中的任务会继续执行，但因为 preloadedSounds 中没有记录，
-    // 下次请求时会重新加载（或者我们可以让 _performLoad 检查一个取消标记，但这增加了复杂性）
-  }
-
-  /**
-   * 获取已预加载的音频实例（如果存在）
-   */
-  public getPreloadedSound(songId: string | number): Howl | undefined {
-    return this.preloadedSounds.get(songId);
-  }
-
-  /**
-   * 消耗（使用）已预加载的音频
-   * 从缓存中移除但不 unload（由调用方管理生命周期）
-   * @returns 预加载的 Howl 实例，如果没有则返回 undefined
-   */
-  public consume(songId: string | number): Howl | undefined {
-    const sound = this.preloadedSounds.get(songId);
-    if (sound) {
-      this.preloadedSounds.delete(songId);
-      console.log(`[PreloadService] 消耗预加载的歌曲: ${songId}`);
-      return sound;
+  public consume(songId: string | number): string | undefined {
+    const url = this.validatedUrls.get(songId);
+    if (url) {
+      this.validatedUrls.delete(songId);
+      console.log(`[PreloadService] 消耗预验证的歌曲: ${songId}`);
+      return url;
     }
     return undefined;
   }
 
   /**
-   * 清理所有预加载资源
+   * 取消预加载
+   */
+  public cancel(songId: string | number) {
+    this.validatedUrls.delete(songId);
+  }
+
+  /**
+   * 获取已验证的 URL
+   */
+  public getPreloadedSound(songId: string | number): string | undefined {
+    return this.validatedUrls.get(songId);
+  }
+
+  /**
+   * 清理所有缓存
    */
   public clearAll() {
-    this.preloadedSounds.forEach((sound) => sound.unload());
-    this.preloadedSounds.clear();
+    this.validatedUrls.clear();
     this.loadingPromises.clear();
   }
 }

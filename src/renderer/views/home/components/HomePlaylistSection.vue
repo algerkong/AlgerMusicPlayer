@@ -60,7 +60,7 @@ import { useRouter } from 'vue-router';
 import { getPersonalizedPlaylist } from '@/api/home';
 import { getListDetail } from '@/api/list';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
-import { usePlayerCoreStore } from '@/store/modules/playerCore';
+import { playTrack } from '@/services/playbackController';
 import { usePlaylistStore } from '@/store/modules/playlist';
 import { calculateAnimationDelay, isElectron, isMobile } from '@/utils';
 
@@ -154,7 +154,6 @@ const playPlaylist = async (item: any) => {
   try {
     const { data } = await getListDetail(item.id);
     if (data.playlist?.tracks?.length > 0) {
-      const playerCore = usePlayerCoreStore();
       const playlistStore = usePlaylistStore();
 
       const playlist = data.playlist.tracks.map((s: any) => ({
@@ -168,7 +167,7 @@ const playPlaylist = async (item: any) => {
       }));
 
       playlistStore.setPlayList(playlist, false, false);
-      await playerCore.handlePlayMusic(playlist[0], true);
+      await playTrack(playlist[0], true);
     }
   } catch (error) {
     console.error('Failed to play playlist:', error);

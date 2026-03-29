@@ -28,11 +28,9 @@ export const useIntelligenceModeStore = defineStore('intelligenceMode', () => {
    */
   const playIntelligenceMode = async () => {
     const { useUserStore } = await import('./user');
-    const { usePlayerCoreStore } = await import('./playerCore');
     const { usePlaylistStore } = await import('./playlist');
 
     const userStore = useUserStore();
-    const playerCore = usePlayerCoreStore();
     const playlistStore = usePlaylistStore();
     const { t } = i18n.global;
 
@@ -101,7 +99,8 @@ export const useIntelligenceModeStore = defineStore('intelligenceMode', () => {
 
         // 替换播放列表并开始播放
         playlistStore.setPlayList(intelligenceSongs, false, true);
-        await playerCore.handlePlayMusic(intelligenceSongs[0], true);
+        const { playTrack } = await import('@/services/playbackController');
+        await playTrack(intelligenceSongs[0], true);
       } else {
         message.error(t('player.playBar.intelligenceMode.failed'));
       }

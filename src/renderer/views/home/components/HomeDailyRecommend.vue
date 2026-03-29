@@ -146,10 +146,9 @@ const getArtistNames = (song: any) => {
 };
 
 const handleSongClick = async (_song: any, index: number) => {
-  const { usePlayerCoreStore } = await import('@/store/modules/playerCore');
   const { usePlaylistStore } = await import('@/store/modules/playlist');
+  const { playTrack } = await import('@/services/playbackController');
 
-  const playerCore = usePlayerCoreStore();
   const playlistStore = usePlaylistStore();
 
   const playlist = songs.value.map((s: any) => ({
@@ -163,16 +162,15 @@ const handleSongClick = async (_song: any, index: number) => {
   }));
 
   playlistStore.setPlayList(playlist, false, false);
-  await playerCore.handlePlayMusic(playlist[index], true);
+  await playTrack(playlist[index], true);
 };
 
 const playAll = async () => {
   if (songs.value.length === 0) return;
 
-  const { usePlayerCoreStore } = await import('@/store/modules/playerCore');
   const { usePlaylistStore } = await import('@/store/modules/playlist');
+  const { playTrack } = await import('@/services/playbackController');
 
-  const playerCore = usePlayerCoreStore();
   const playlistStore = usePlaylistStore();
 
   const playlist = songs.value.map((s: any) => ({
@@ -186,7 +184,7 @@ const playAll = async () => {
   }));
 
   playlistStore.setPlayList(playlist, false, false);
-  await playerCore.handlePlayMusic(playlist[0], true);
+  await playTrack(playlist[0], true);
 };
 </script>
 

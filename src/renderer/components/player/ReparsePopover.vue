@@ -100,9 +100,9 @@ import { useI18n } from 'vue-i18n';
 import { CacheManager } from '@/api/musicParser';
 import { playMusic } from '@/hooks/MusicHook';
 import { initLxMusicRunner, setLxMusicRunner } from '@/services/LxMusicSourceRunner';
+import { reparseCurrentSong } from '@/services/playbackController';
 import { SongSourceConfigManager } from '@/services/SongSourceConfigManager';
 import { useSettingsStore } from '@/store';
-import { usePlayerStore } from '@/store/modules/player';
 import type { LxMusicScriptConfig } from '@/types/lxMusic';
 import type { Platform } from '@/types/music';
 import { type MusicSourceGroup, useMusicSources } from '@/utils/musicSourceConfig';
@@ -119,7 +119,6 @@ type ReparseSourceItem = {
   lxScriptId?: string;
 };
 
-const playerStore = usePlayerStore();
 const settingsStore = useSettingsStore();
 const { t } = useI18n();
 const message = useMessage();
@@ -253,7 +252,7 @@ const reparseWithLxScript = async (source: ReparseSourceItem) => {
     selectedSourceId.value = source.id;
     SongSourceConfigManager.setConfig(songId, ['lxMusic'], 'manual');
 
-    const success = await playerStore.reparseCurrentSong('lxMusic', false);
+    const success = await reparseCurrentSong('lxMusic', false);
 
     if (success) {
       message.success(t('player.reparse.success'));
@@ -283,7 +282,7 @@ const directReparseMusic = async (source: ReparseSourceItem) => {
     selectedSourceId.value = source.id;
     SongSourceConfigManager.setConfig(songId, [source.platform], 'manual');
 
-    const success = await playerStore.reparseCurrentSong(source.platform, false);
+    const success = await reparseCurrentSong(source.platform, false);
 
     if (success) {
       message.success(t('player.reparse.success'));

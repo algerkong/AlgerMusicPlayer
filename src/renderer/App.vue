@@ -140,6 +140,9 @@ onMounted(async () => {
 
   // 初始化 MusicHook，注入 playerStore
   initMusicHook(playerStore);
+  // 设置 URL 过期自动续播处理器
+  const { setupUrlExpiredHandler } = await import('@/services/playbackController');
+  setupUrlExpiredHandler();
   // 初始化播放状态
   await playerStore.initializePlayState();
 

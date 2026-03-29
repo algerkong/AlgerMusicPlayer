@@ -441,7 +441,8 @@ const handleFmPlay = async () => {
     ];
     playlistStore.setPlayList(playlist, false, false);
     playerCore.isFmPlaying = true;
-    await playerCore.handlePlayMusic(playlist[0], true);
+    const { playTrack } = await import('@/services/playbackController');
+    await playTrack(playlist[0], true);
   } catch (error) {
     console.error('Failed to play Personal FM:', error);
   }
@@ -597,9 +598,7 @@ const showDayRecommend = () => {
 const playDayRecommend = async () => {
   if (dayRecommendSongs.value.length === 0) return;
   try {
-    const { usePlayerCoreStore } = await import('@/store/modules/playerCore');
     const { usePlaylistStore } = await import('@/store/modules/playlist');
-    const playerCore = usePlayerCoreStore();
     const playlistStore = usePlaylistStore();
     const songs = dayRecommendSongs.value.map((s: any) => ({
       id: s.id,
@@ -611,7 +610,8 @@ const playDayRecommend = async () => {
       playLoading: false
     }));
     playlistStore.setPlayList(songs, false, false);
-    await playerCore.handlePlayMusic(songs[0], true);
+    const { playTrack } = await import('@/services/playbackController');
+    await playTrack(songs[0], true);
   } catch (error) {
     console.error('Failed to play daily recommend:', error);
   }

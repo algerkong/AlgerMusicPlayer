@@ -75,7 +75,8 @@ export const usePlayerStore = defineStore('player', () => {
     const playHistoryStore = usePlayHistoryStore();
     playHistoryStore.migrateFromLocalStorage();
 
-    await playerCore.initializePlayState();
+    const { initializePlayState: initPlayState } = await import('@/services/playbackController');
+    await initPlayState();
     await playlist.initializePlaylist();
   };
 
@@ -112,11 +113,7 @@ export const usePlayerStore = defineStore('player', () => {
     getVolume: playerCore.getVolume,
     increaseVolume: playerCore.increaseVolume,
     decreaseVolume: playerCore.decreaseVolume,
-    handlePlayMusic: playerCore.handlePlayMusic,
-    playAudio: playerCore.playAudio,
     handlePause: playerCore.handlePause,
-    checkPlaybackState: playerCore.checkPlaybackState,
-    reparseCurrentSong: playerCore.reparseCurrentSong,
 
     // ========== 播放列表管理 (Playlist) ==========
     playList,
