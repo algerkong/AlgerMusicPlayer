@@ -62,10 +62,11 @@
 <script lang="ts" setup>
 import { useSwipe } from '@vueuse/core';
 import type { Ref } from 'vue';
-import { computed, inject, onMounted, ref, watch } from 'vue';
+import { inject, onMounted, ref, watch } from 'vue';
 
 import MusicFullWrapper from '@/components/lyric/MusicFullWrapper.vue';
 import { artistList, playMusic, textColors } from '@/hooks/MusicHook';
+import { usePlaybackControl } from '@/hooks/usePlaybackControl';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 import { getImgUrl, setAnimationClass } from '@/utils';
@@ -75,24 +76,15 @@ const shouldShowMobileMenu = inject('shouldShowMobileMenu') as Ref<boolean>;
 const playerStore = usePlayerStore();
 const settingsStore = useSettingsStore();
 
-// 是否播放
-const play = computed(() => playerStore.isPlay);
+// 播放控制
+const { isPlaying: play, playMusicEvent, handleNext, handlePrev } = usePlaybackControl();
+
 // 背景颜色
 const background = ref('#000');
-
-// 播放控制
-function handleNext() {
-  playerStore.nextPlay();
-}
-
-function handlePrev() {
-  playerStore.prevPlay();
-}
 
 // 全屏播放器
 const MusicFullRef = ref<any>(null);
 
-// 设置musicFull
 const setMusicFull = () => {
   playerStore.setMusicFull(!playerStore.musicFull);
   if (playerStore.musicFull) {
@@ -107,19 +99,8 @@ watch(
   }
 );
 
-// 打开播放列表抽屉
 const openPlayListDrawer = () => {
   playerStore.setPlayListDrawerVisible(true);
-};
-
-// 播放暂停按钮事件
-const playMusicEvent = async () => {
-  try {
-    playerStore.setPlay(playMusic.value);
-  } catch (error) {
-    console.error('播放出错:', error);
-    playerStore.nextPlay();
-  }
 };
 
 // 滑动切歌

@@ -80,8 +80,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 
-import { allTime, nowTime, playMusic } from '@/hooks/MusicHook';
+import { allTime, nowTime } from '@/hooks/MusicHook';
+import { usePlaybackControl } from '@/hooks/usePlaybackControl';
 import { usePlayMode } from '@/hooks/usePlayMode';
+import { useVolumeControl } from '@/hooks/useVolumeControl';
 import { audioService } from '@/services/audioService';
 import { usePlayerStore } from '@/store/modules/player';
 import { secondToMinute } from '@/utils';
@@ -98,61 +100,14 @@ const props = withDefaults(
 const playerStore = usePlayerStore();
 const playBarRef = ref<HTMLElement | null>(null);
 
-// 播放状态
-const play = computed(() => playerStore.isPlay);
+// 播放控制
+const { isPlaying: play, playMusicEvent, handleNext, handlePrev } = usePlaybackControl();
 
 // 播放模式
 const { playMode, playModeIcon, togglePlayMode } = usePlayMode();
 
-// 音量控制
-const audioVolume = ref(
-  localStorage.getItem('volume') ? parseFloat(localStorage.getItem('volume') as string) : 1
-);
-
-const volumeSlider = computed({
-  get: () => audioVolume.value * 100,
-  set: (value) => {
-    localStorage.setItem('volume', (value / 100).toString());
-    audioService.setVolume(value / 100);
-    audioVolume.value = value / 100;
-  }
-});
-
-// 音量图标
-const getVolumeIcon = computed(() => {
-  if (audioVolume.value === 0) return 'ri-volume-mute-line';
-  if (audioVolume.value <= 0.5) return 'ri-volume-down-line';
-  return 'ri-volume-up-line';
-});
-
-// 静音切换
-const mute = () => {
-  if (volumeSlider.value === 0) {
-    volumeSlider.value = 30;
-  } else {
-    volumeSlider.value = 0;
-  }
-};
-
-// 鼠标滚轮调整音量
-const handleVolumeWheel = (e: WheelEvent) => {
-  const delta = e.deltaY < 0 ? 5 : -5;
-  const newValue = Math.min(Math.max(volumeSlider.value + delta, 0), 100);
-  volumeSlider.value = newValue;
-};
-
-// 播放控制
-const handlePrev = () => playerStore.prevPlay();
-const handleNext = () => playerStore.nextPlay();
-
-const playMusicEvent = async () => {
-  try {
-    await playerStore.setPlay({ ...playMusic.value });
-  } catch (error) {
-    console.error('播放出错:', error);
-    playerStore.nextPlay();
-  }
-};
+// 音量控制（统一通过 playerStore 管理）
+const { volumeSlider, volumeIcon: getVolumeIcon, mute, handleVolumeWheel } = useVolumeControl();
 
 // 进度条控制
 const isDragging = ref(false);

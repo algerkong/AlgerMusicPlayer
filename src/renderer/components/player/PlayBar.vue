@@ -164,7 +164,6 @@
 
 <script lang="ts" setup>
 import { useThrottleFn } from '@vueuse/core';
-import { useMessage } from 'naive-ui';
 import { storeToRefs } from 'pinia';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -182,7 +181,10 @@ import {
   textColors
 } from '@/hooks/MusicHook';
 import { useArtist } from '@/hooks/useArtist';
+import { useFavorite } from '@/hooks/useFavorite';
+import { usePlaybackControl } from '@/hooks/usePlaybackControl';
 import { usePlayMode } from '@/hooks/usePlayMode';
+import { useVolumeControl } from '@/hooks/useVolumeControl';
 import { audioService } from '@/services/audioService';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
@@ -191,9 +193,22 @@ import { getImgUrl, isElectron, isMobile, secondToMinute, setAnimationClass } fr
 const playerStore = usePlayerStore();
 const settingsStore = useSettingsStore();
 const { t } = useI18n();
-const message = useMessage();
-// 是否播放
-const play = computed(() => playerStore.isPlay);
+
+// 播放控制
+const { isPlaying: play, playMusicEvent, handleNext, handlePrev } = usePlaybackControl();
+
+// 音量控制
+const { volumeSlider, volumeIcon: getVolumeIcon, mute, handleVolumeWheel } = useVolumeControl();
+
+// 收藏
+const { isFavorite, toggleFavorite } = useFavorite();
+
+// 播放模式
+const { playMode, playModeIcon, playModeText, togglePlayMode } = usePlayMode();
+
+// 播放速度控制
+const { playbackRate } = storeToRefs(playerStore);
+
 // 背景颜色
 const background = ref('#000');
 
@@ -211,114 +226,40 @@ watch(
 const throttledSeek = useThrottleFn((value: number) => {
   audioService.seek(value);
   nowTime.value = value;
-}, 50); // 50ms 的节流延迟
+}, 50);
 
-// 拖动时的临时值，避免频繁更新 nowTime 触发重渲染
+// 拖动时的临时值
 const dragValue = ref(0);
-
-// 为滑块拖动添加状态跟踪
 const isDragging = ref(false);
 
-// 修改 timeSlider 计算属性
 const timeSlider = computed({
   get: () => (isDragging.value ? dragValue.value : nowTime.value),
   set: (value) => {
     if (isDragging.value) {
-      // 拖动中只更新临时值，不触发 nowTime 更新和 seek 操作
       dragValue.value = value;
       return;
     }
-
-    // 点击操作 (非拖动)，可以直接 seek
     throttledSeek(value);
   }
 });
 
-// 添加滑块拖动开始和结束事件处理
 const handleSliderDragStart = () => {
   isDragging.value = true;
-  // 初始化拖动值为当前时间
   dragValue.value = nowTime.value;
 };
 
 const handleSliderDragEnd = () => {
   isDragging.value = false;
-
-  // 直接应用最终的拖动值
   audioService.seek(dragValue.value);
   nowTime.value = dragValue.value;
 };
 
-// 格式化提示文本，根据拖动状态显示不同的时间
 const formatTooltip = (value: number) => {
   return `${secondToMinute(value)} / ${secondToMinute(allTime.value)}`;
 };
 
-// 音量条 - 使用 playerStore 的统一音量管理
-const getVolumeIcon = computed(() => {
-  // 0 静音 ri-volume-mute-line 0.5 ri-volume-down-line 1 ri-volume-up-line
-  if (playerStore.volume === 0) {
-    return 'ri-volume-mute-line';
-  }
-  if (playerStore.volume <= 0.5) {
-    return 'ri-volume-down-line';
-  }
-  return 'ri-volume-up-line';
-});
-
-const volumeSlider = computed({
-  get: () => playerStore.volume * 100,
-  set: (value) => {
-    playerStore.setVolume(value / 100);
-  }
-});
-
-// 静音
-const mute = () => {
-  if (volumeSlider.value === 0) {
-    volumeSlider.value = 30;
-  } else {
-    volumeSlider.value = 0;
-  }
-};
-
-// 鼠标滚轮调整音量
-const handleVolumeWheel = (e: WheelEvent) => {
-  // 向上滚动增加音量，向下滚动减少音量
-  const delta = e.deltaY < 0 ? 5 : -5;
-  const newValue = Math.min(Math.max(volumeSlider.value + delta, 0), 100);
-  volumeSlider.value = newValue;
-};
-
-// 播放模式
-const { playMode, playModeIcon, playModeText, togglePlayMode } = usePlayMode();
-
-// 播放速度控制
-const { playbackRate } = storeToRefs(playerStore);
-
-function handleNext() {
-  playerStore.nextPlay();
-}
-
-function handlePrev() {
-  playerStore.prevPlay();
-}
-
 const MusicFullRef = ref<any>(null);
 const showSliderTooltip = ref(false);
-
-// 播放暂停按钮事件
-const playMusicEvent = async () => {
-  try {
-    const result = await playerStore.setPlay({ ...playMusic.value });
-    if (result) {
-      playerStore.setPlayMusic(true);
-    }
-  } catch (error) {
-    console.error('重新获取播放链接失败:', error);
-    message.error(t('player.playFailed'));
-  }
-};
 
 const musicFullVisible = computed({
   get: () => playerStore.musicFull,
@@ -327,30 +268,11 @@ const musicFullVisible = computed({
   }
 });
 
-// 设置musicFull
 const setMusicFull = () => {
   musicFullVisible.value = !musicFullVisible.value;
   playerStore.setMusicFull(musicFullVisible.value);
   if (musicFullVisible.value) {
     settingsStore.showArtistDrawer = false;
-  }
-};
-
-const isFavorite = computed(() => {
-  if (!playMusic || !playMusic.value) return false;
-  return playerStore.favoriteList.includes(playMusic.value.id);
-});
-
-const toggleFavorite = async (e: Event) => {
-  console.log('playMusic.value', playMusic.value);
-  e.stopPropagation();
-
-  let favoriteId = playMusic.value.id;
-
-  if (isFavorite.value) {
-    playerStore.removeFromFavorite(favoriteId);
-  } else {
-    playerStore.addToFavorite(favoriteId);
   }
 };
 
@@ -365,7 +287,6 @@ const handleArtistClick = (id: number) => {
   navigateToArtist(id);
 };
 
-// 打开播放列表抽屉
 const openPlayListDrawer = () => {
   playerStore.setPlayListDrawerVisible(true);
 };
