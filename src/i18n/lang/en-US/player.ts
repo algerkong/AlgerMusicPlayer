@@ -17,6 +17,7 @@ export default {
   parseFailedPlayNext: 'Song parsing failed, playing next',
   consecutiveFailsError:
     'Playback error, possibly due to network issues or invalid source. Please switch playlist or try again later',
+  playListEnded: 'Reached the end of the playlist',
   playMode: {
     sequence: 'Sequence',
     loop: 'Loop',

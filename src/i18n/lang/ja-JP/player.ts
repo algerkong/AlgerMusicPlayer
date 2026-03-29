@@ -17,6 +17,7 @@ export default {
   parseFailedPlayNext: '楽曲の解析に失敗しました。次の曲を再生します',
   consecutiveFailsError:
     '再生エラーが発生しました。ネットワークの問題または無効な音源の可能性があります。プレイリストを切り替えるか、後でもう一度お試しください',
+  playListEnded: 'プレイリストの最後に到達しました',
   playMode: {
     sequence: '順次再生',
     loop: 'リピート再生',

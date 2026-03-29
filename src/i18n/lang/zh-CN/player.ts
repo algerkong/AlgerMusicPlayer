@@ -16,6 +16,7 @@ export default {
   playFailed: '当前歌曲播放失败，播放下一首',
   parseFailedPlayNext: '歌曲解析失败，播放下一首',
   consecutiveFailsError: '播放遇到错误，可能是网络波动或解析源失效，请切换播放列表或稍后重试',
+  playListEnded: '已播放到列表最后一首',
   playMode: {
     sequence: '顺序播放',
     loop: '单曲循环',
