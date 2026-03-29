@@ -129,6 +129,9 @@ import { computed, provide, ref, useTemplateRef } from 'vue';
 import SongItem from '@/components/common/SongItem.vue';
 import { allTime, artistList, nowTime, playMusic } from '@/hooks/MusicHook';
 import { useArtist } from '@/hooks/useArtist';
+import { useFavorite } from '@/hooks/useFavorite';
+import { usePlaybackControl } from '@/hooks/usePlaybackControl';
+import { useVolumeControl } from '@/hooks/useVolumeControl';
 import { audioService } from '@/services/audioService';
 import { usePlayerStore, useSettingsStore } from '@/store';
 import type { SongResult } from '@/types/music';
@@ -137,6 +140,15 @@ import { getImgUrl } from '@/utils';
 const playerStore = usePlayerStore();
 const settingsStore = useSettingsStore();
 const { navigateToArtist } = useArtist();
+
+// 播放控制
+const { isPlaying: play, playMusicEvent, handleNext, handlePrev } = usePlaybackControl();
+
+// 音量控制（统一通过 playerStore 管理）
+const { volumeSlider, volumeIcon: getVolumeIcon, mute, handleVolumeWheel } = useVolumeControl();
+
+// 收藏
+const { isFavorite, toggleFavorite } = useFavorite();
 
 withDefaults(
   defineProps<{
@@ -155,65 +167,8 @@ const handleClose = () => {
   }
 };
 
-// 是否播放
-const play = computed(() => playerStore.play as boolean);
 // 播放列表
 const playList = computed(() => playerStore.playList as SongResult[]);
-
-// 音量控制
-const audioVolume = ref(
-  localStorage.getItem('volume') ? parseFloat(localStorage.getItem('volume') as string) : 1
-);
-
-const volumeSlider = computed({
-  get: () => audioVolume.value * 100,
-  set: (value) => {
-    localStorage.setItem('volume', (value / 100).toString());
-    audioService.setVolume(value / 100);
-    audioVolume.value = value / 100;
-  }
-});
-
-// 音量图标
-const getVolumeIcon = computed(() => {
-  if (audioVolume.value === 0) return 'ri-volume-mute-line';
-  if (audioVolume.value <= 0.5) return 'ri-volume-down-line';
-  return 'ri-volume-up-line';
-});
-
-// 静音
-const mute = () => {
-  if (volumeSlider.value === 0) {
-    volumeSlider.value = 30;
-  } else {
-    volumeSlider.value = 0;
-  }
-};
-
-// 鼠标滚轮调整音量
-const handleVolumeWheel = (e: WheelEvent) => {
-  // 向上滚动增加音量，向下滚动减少音量
-  const delta = e.deltaY < 0 ? 5 : -5;
-  const newValue = Math.min(Math.max(volumeSlider.value + delta, 0), 100);
-  volumeSlider.value = newValue;
-};
-
-// 收藏相关
-const isFavorite = computed(() => {
-  return playerStore.favoriteList.includes(playMusic.value.id);
-});
-
-const toggleFavorite = async (e: Event) => {
-  e.stopPropagation();
-
-  let favoriteId = playMusic.value.id;
-
-  if (isFavorite.value) {
-    playerStore.removeFromFavorite(favoriteId);
-  } else {
-    playerStore.addToFavorite(favoriteId);
-  }
-};
 
 // 播放列表相关
 const palyListRef = useTemplateRef('palyListRef') as any;
@@ -306,19 +261,6 @@ const handleProgressHover = (e: MouseEvent) => {
 
 const handleProgressLeave = () => {
   isHovering.value = false;
-};
-
-// 播放控制
-const handlePrev = () => playerStore.prevPlay();
-const handleNext = () => playerStore.nextPlay();
-
-const playMusicEvent = async () => {
-  try {
-    playerStore.setPlay(playerStore.playMusic);
-  } catch (error) {
-    console.error('播放出错:', error);
-    playerStore.nextPlay();
-  }
 };
 
 // 切换到完整播放器
