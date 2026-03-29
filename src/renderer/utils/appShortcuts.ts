@@ -1,6 +1,7 @@
 import { onMounted, onUnmounted } from 'vue';
 
 import i18n from '@/../i18n/renderer';
+import { audioService } from '@/services/audioService';
 import { usePlayerStore, useSettingsStore } from '@/store';
 
 import {
@@ -35,6 +36,18 @@ const onGlobalShortcut = (_event: unknown, action: string) => {
 
 const onUpdateAppShortcuts = (_event: unknown, shortcuts: unknown) => {
   updateAppShortcuts(shortcuts);
+};
+
+const onMprisSeek = (_event: unknown, position: number) => {
+  if (audioService) {
+    audioService.seek(position);
+  }
+};
+
+const onMprisSetPosition = (_event: unknown, position: number) => {
+  if (audioService) {
+    audioService.seek(position);
+  }
 };
 
 function shouldSkipAction(action: ShortcutAction): boolean {
@@ -192,6 +205,8 @@ export function initAppShortcuts() {
 
   window.electron.ipcRenderer.on('global-shortcut', onGlobalShortcut);
   window.electron.ipcRenderer.on('update-app-shortcuts', onUpdateAppShortcuts);
+  window.electron.ipcRenderer.on('mpris-seek', onMprisSeek);
+  window.electron.ipcRenderer.on('mpris-set-position', onMprisSetPosition);
 
   const storedShortcuts = window.electron.ipcRenderer.sendSync('get-store-value', 'shortcuts');
   updateAppShortcuts(storedShortcuts);

@@ -52,6 +52,8 @@ export const textColors = ref<any>(getTextColors());
 export let playMusic: ComputedRef<SongResult>;
 export let artistList: ComputedRef<Artist[]>;
 
+let lastIndex = -1;
+
 export const musicDB = await useIndexedDB(
   'musicDB',
   [
@@ -329,6 +331,12 @@ const setupAudioListeners = () => {
             sendLyricToWin();
           }
         }
+        if (isElectron && lrcArray.value[nowIndex.value]) {
+          if (lastIndex !== nowIndex.value) {
+            sendTrayLyric(nowIndex.value);
+            lastIndex = nowIndex.value;
+          }
+        }
 
         // === 逐字歌词行内进度 ===
         const { start, end } = currentLrcTiming.value;
@@ -370,6 +378,15 @@ const setupAudioListeners = () => {
                 progress: currentTime
               })
             );
+          }
+        }
+
+        // === MPRIS 进度更新（每 ~1 秒）===
+        if (isElectron && lyricThrottleCounter % 20 === 0) {
+          try {
+            window.electron.ipcRenderer.send('mpris-position-update', currentTime);
+          } catch {
+            // 忽略发送失败
           }
         }
       } catch (error) {
@@ -419,6 +436,11 @@ const setupAudioListeners = () => {
         const currentTime = currentSound.currentTime;
         if (typeof currentTime === 'number' && !Number.isNaN(currentTime)) {
           nowTime.value = currentTime;
+
+          // === MPRIS seek 时同步进度 ===
+          if (isElectron) {
+            window.electron.ipcRenderer.send('mpris-position-update', currentTime);
+          }
 
           // 检查是否需要更新歌词
           const newIndex = getLrcIndex(nowTime.value);
@@ -804,6 +826,37 @@ export const sendLyricToWin = () => {
     }
   } catch (error) {
     console.error('Error sending lyric update:', error);
+  }
+};
+
+// 发送歌词到系统托盘歌词（TrayLyric）
+const sendTrayLyric = (index: number) => {
+  const platformValue = window.electron.ipcRenderer.sendSync('get-platform');
+  console.log(
+    '[TrayLyric] sendTrayLyric called, isElectron:',
+    isElectron,
+    'platform:',
+    platformValue
+  );
+  if (!isElectron || platformValue !== 'linux') return;
+
+  try {
+    const lyric = lrcArray.value[index];
+    if (!lyric) return;
+
+    const currentTime = lrcTimeArray.value[index] || 0;
+    const nextTime = lrcTimeArray.value[index + 1] || currentTime + 3;
+    const duration = nextTime - currentTime;
+
+    const lrcObj = JSON.stringify({
+      content: lyric.text || '',
+      time: duration.toFixed(1),
+      sender: 'AlgerMusicPlayer'
+    });
+
+    window.electron.ipcRenderer.send('tray-lyric-update', lrcObj);
+  } catch (error) {
+    console.error('[TrayLyric] Failed to send:', error);
   }
 };
 
