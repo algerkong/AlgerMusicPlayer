@@ -18,6 +18,8 @@ export default {
   consecutiveFailsError:
     '재생 오류가 발생했습니다. 네트워크 문제 또는 유효하지 않은 음원일 수 있습니다. 재생 목록을 변경하거나 나중에 다시 시도하세요',
   playListEnded: '재생 목록의 마지막 곡에 도달했습니다',
+  autoResumed: '자동으로 재생이 재개되었습니다',
+  resumeFailed: '재생 재개에 실패했습니다. 수동으로 시도해 주세요',
   playMode: {
     sequence: '순차 재생',
     loop: '한 곡 반복',

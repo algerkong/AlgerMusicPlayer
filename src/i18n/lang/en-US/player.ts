@@ -18,6 +18,8 @@ export default {
   consecutiveFailsError:
     'Playback error, possibly due to network issues or invalid source. Please switch playlist or try again later',
   playListEnded: 'Reached the end of the playlist',
+  autoResumed: 'Playback resumed automatically',
+  resumeFailed: 'Failed to resume playback, please try manually',
   playMode: {
     sequence: 'Sequence',
     loop: 'Loop',

@@ -433,17 +433,17 @@ export const setupUrlExpiredHandler = (): void => {
             }
           }, 300);
         }
-        message.success(i18n.global.t('player.autoResumed') || '已自动恢复播放');
+        message.success(i18n.global.t('player.autoResumed'));
       } else {
         // 检查歌曲是否仍然是当前歌曲
         const currentPlayerCore = await getPlayerCoreStore();
         if (currentPlayerCore.playMusic?.id === expiredTrack.id) {
-          message.error(i18n.global.t('player.resumeFailed') || '恢复播放失败，请手动点击播放');
+          message.error(i18n.global.t('player.resumeFailed'));
         }
       }
     } catch (error) {
       console.error('[playbackController] 处理URL过期事件失败:', error);
-      message.error(i18n.global.t('player.resumeFailed') || '恢复播放失败，请手动点击播放');
+      message.error(i18n.global.t('player.resumeFailed'));
     }
   });
 };
