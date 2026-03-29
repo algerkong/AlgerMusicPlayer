@@ -105,6 +105,9 @@ if (isElectron) {
       localStorage.setItem('currentRoute', router.currentRoute.value.path);
       router.push('/mini');
     } else {
+      // 清理迷你模式下设置的 body 样式
+      document.body.style.height = '';
+      document.body.style.overflow = '';
       // 恢复当前路由
       const currentRoute = localStorage.getItem('currentRoute');
       if (currentRoute) {
