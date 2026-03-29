@@ -64,25 +64,27 @@ export const musicDB = await useIndexedDB(
   3
 );
 
-// 键盘事件处理器，在初始化后设置
-const setupKeyboardListeners = () => {
-  document.onkeyup = (e) => {
-    // 检查事件目标是否是输入框元素
-    const target = e.target as HTMLElement;
-    if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
-      return;
-    }
+// 键盘事件处理器（提取为命名函数，防止重复注册）
+const handleKeyUp = (e: KeyboardEvent) => {
+  const target = e.target as HTMLElement;
+  if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+    return;
+  }
 
-    const store = getPlayerStore();
-    switch (e.code) {
-      case 'Space':
-        if (store.playMusic?.id) {
-          void store.setPlay({ ...store.playMusic });
-        }
-        break;
-      default:
-    }
-  };
+  const store = getPlayerStore();
+  switch (e.code) {
+    case 'Space':
+      if (store.playMusic?.id) {
+        void store.setPlay({ ...store.playMusic });
+      }
+      break;
+    default:
+  }
+};
+
+const setupKeyboardListeners = () => {
+  document.removeEventListener('keyup', handleKeyUp);
+  document.addEventListener('keyup', handleKeyUp);
 };
 
 let audioListenersInitialized = false;
@@ -1025,18 +1027,14 @@ export const initAudioListeners = async () => {
   }
 };
 
-// 添加音频就绪事件监听器
-window.addEventListener('audio-ready', ((event: CustomEvent) => {
+// 音频就绪事件处理器（提取为命名函数，防止重复注册）
+const handleAudioReady = ((event: CustomEvent) => {
   try {
     const { sound: newSound } = event.detail;
     if (newSound) {
-      // 更新本地 sound 引用
       sound.value = audioService.getCurrentSound();
-
-      // 设置音频监听器
       setupAudioListeners();
 
-      // 获取当前播放位置并更新显示
       const currentSound = audioService.getCurrentSound();
       if (currentSound) {
         const currentPosition = currentSound.currentTime;
@@ -1044,10 +1042,12 @@ window.addEventListener('audio-ready', ((event: CustomEvent) => {
           nowTime.value = currentPosition;
         }
       }
-
-      console.log('音频就绪，已设置监听器并更新进度显示');
     }
   } catch (error) {
     console.error('处理音频就绪事件出错:', error);
   }
-}) as EventListener);
+}) as EventListener;
+
+// 先移除再注册，防止重复
+window.removeEventListener('audio-ready', handleAudioReady);
+window.addEventListener('audio-ready', handleAudioReady);
