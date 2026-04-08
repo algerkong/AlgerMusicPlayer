@@ -94,23 +94,33 @@
           <p>{{ t('favorite.emptyTip') }}</p>
         </div>
 
-        <div v-else class="space-y-1 pb-24" :class="{ 'max-w-[400px]': isComponent }">
-          <song-item
-            v-for="(song, index) in favoriteSongs"
-            :key="song.id"
-            :item="song"
-            :favorite="false"
-            class="rounded-xl hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors"
-            :class="[
-              setAnimationClass('animate__bounceInLeft'),
-              { '!bg-primary/10': selectedSongs.includes(song.id as number) }
-            ]"
-            :style="getItemAnimationDelay(index)"
-            :selectable="isSelecting"
-            :selected="selectedSongs.includes(song.id as number)"
-            @play="handlePlay"
-            @select="handleSelect"
-          />
+        <div
+          v-else
+          class="space-y-1"
+          :class="{ 'max-w-[400px]': isComponent }"
+          :style="{ paddingBottom: contentPaddingBottom }"
+        >
+          <div class="favorite-list-section">
+            <song-item
+              v-for="(song, index) in renderedItems"
+              :key="song.id"
+              :item="song"
+              :favorite="false"
+              class="rounded-xl hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors"
+              :class="[
+                index < 20 ? setAnimationClass('animate__bounceInLeft') : '',
+                { '!bg-primary/10': selectedSongs.includes(song.id as number) }
+              ]"
+              :style="index < 20 ? getItemAnimationDelay(index) : undefined"
+              :selectable="isSelecting"
+              :selected="selectedSongs.includes(song.id as number)"
+              @play="handlePlay"
+              @select="handleSelect"
+            />
+          </div>
+
+          <!-- 未渲染项占位 -->
+          <div v-if="placeholderHeight > 0" :style="{ height: placeholderHeight + 'px' }" />
 
           <div v-if="isComponent" class="pt-4 text-center">
             <n-button text type="primary" @click="handleMore">
@@ -138,7 +148,6 @@
           </div>
         </div>
       </n-scrollbar>
-      <play-bottom />
     </div>
   </div>
 </template>
@@ -149,9 +158,9 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
 import { getMusicDetail } from '@/api/music';
-import PlayBottom from '@/components/common/PlayBottom.vue';
 import SongItem from '@/components/common/SongItem.vue';
 import { useDownload } from '@/hooks/useDownload';
+import { useProgressiveRender } from '@/hooks/useProgressiveRender';
 import { usePlayerStore } from '@/store';
 import type { SongResult } from '@/types/music';
 import { isElectron, setAnimationClass, setAnimationDelay } from '@/utils';
@@ -162,6 +171,31 @@ const favoriteList = computed(() => playerStore.favoriteList);
 const favoriteSongs = ref<SongResult[]>([]);
 const loading = ref(false);
 const noMore = ref(false);
+const scrollbarRef = ref();
+
+// 手工虚拟化
+const {
+  renderedItems,
+  placeholderHeight,
+  contentPaddingBottom,
+  handleScroll: progressiveScroll,
+  resetRenderLimit
+} = useProgressiveRender({
+  items: favoriteSongs,
+  itemHeight: 64,
+  listSelector: '.favorite-list-section',
+  initialCount: 40,
+  onReachEnd: () => {
+    if (!loading.value && !noMore.value) {
+      currentPage.value++;
+      getFavoriteSongs();
+    }
+  }
+});
+
+const handleScroll = (e: Event) => {
+  progressiveScroll(e);
+};
 
 // 多选相关
 const isSelecting = ref(false);
@@ -191,28 +225,24 @@ const handleSelect = (songId: number, selected: boolean) => {
 
 // 批量下载
 const handleBatchDownload = async () => {
-  // 获取选中歌曲的信息
   const selectedSongsList = selectedSongs.value
     .map((songId) => favoriteSongs.value.find((s) => s.id === songId))
     .filter((song) => song) as SongResult[];
 
-  // 使用hook中的批量下载功能
   await batchDownloadMusic(selectedSongsList);
-
-  // 下载完成后取消选择
   cancelSelect();
 };
 
 // 排序相关
-const isDescending = ref(true); // 默认倒序显示
+const isDescending = ref(true);
 
-// 切换排序方式
 const toggleSort = (descending: boolean) => {
   if (isDescending.value === descending) return;
   isDescending.value = descending;
   currentPage.value = 1;
   favoriteSongs.value = [];
   noMore.value = false;
+  resetRenderLimit();
   getFavoriteSongs();
 };
 
@@ -229,16 +259,14 @@ const props = defineProps({
 
 // 获取当前页的收藏歌曲ID
 const getCurrentPageIds = () => {
-  let ids = [...favoriteList.value]; // 复制一份以免修改原数组
+  let ids = [...favoriteList.value];
 
-  // 根据排序方式调整顺序
   if (isDescending.value) {
-    ids = ids.reverse(); // 倒序，最新收藏的在前面
+    ids = ids.reverse();
   }
 
   const startIndex = (currentPage.value - 1) * pageSize;
   const endIndex = startIndex + pageSize;
-  // 返回原始ID，不进行类型转换
   return ids.slice(startIndex, endIndex);
 };
 
@@ -259,7 +287,6 @@ const getFavoriteSongs = async () => {
 
     const musicIds = currentIds.filter((id) => typeof id === 'number') as number[];
 
-    // 处理音乐数据
     let neteaseSongs: SongResult[] = [];
     if (musicIds.length > 0) {
       const res = await getMusicDetail(musicIds);
@@ -272,47 +299,25 @@ const getFavoriteSongs = async () => {
       }
     }
 
-    console.log('获取数据统计:', {
-      neteaseSongs: neteaseSongs.length
-    });
-
-    // 合并数据，保持原有顺序
     const newSongs = currentIds
       .map((id) => {
         const strId = String(id);
-
-        // 查找音乐
         const found = neteaseSongs.find((song) => String(song.id) === strId);
         return found;
       })
       .filter((song): song is SongResult => !!song);
 
-    console.log(`最终歌曲列表: ${newSongs.length}首`);
-
-    // 追加新数据而不是替换
     if (currentPage.value === 1) {
       favoriteSongs.value = newSongs;
     } else {
       favoriteSongs.value = [...favoriteSongs.value, ...newSongs];
     }
 
-    // 判断是否还有更多数据
     noMore.value = favoriteSongs.value.length >= favoriteList.value.length;
   } catch (error) {
     console.error('获取收藏歌曲失败:', error);
   } finally {
     loading.value = false;
-  }
-};
-
-// 处理滚动事件
-const handleScroll = (e: any) => {
-  const { scrollTop, scrollHeight, offsetHeight } = e.target;
-  const threshold = 100; // 距离底部多少像素时加载更多
-
-  if (!loading.value && !noMore.value && scrollHeight - (scrollTop + offsetHeight) < threshold) {
-    currentPage.value++;
-    getFavoriteSongs();
   }
 };
 
@@ -326,13 +331,13 @@ onMounted(async () => {
   }
 });
 
-// 监听收藏列表变化，变化时重置并重新加载
 watch(
   favoriteList,
   async () => {
     hasLoaded.value = false;
     currentPage.value = 1;
     noMore.value = false;
+    resetRenderLimit();
     await getFavoriteSongs();
     hasLoaded.value = true;
   },
@@ -363,7 +368,6 @@ const isIndeterminate = computed(() => {
   return selectedSongs.value.length > 0 && selectedSongs.value.length < favoriteSongs.value.length;
 });
 
-// 处理全选/取消全选
 const handleSelectAll = (checked: boolean) => {
   if (checked) {
     selectedSongs.value = favoriteSongs.value.map((song) => song.id as number);

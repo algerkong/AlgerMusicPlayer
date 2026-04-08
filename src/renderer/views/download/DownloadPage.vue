@@ -1,7 +1,7 @@
 <template>
   <div class="download-page h-full w-full bg-white dark:bg-black transition-colors duration-500">
-    <n-scrollbar class="h-full">
-      <div class="download-content pb-32">
+    <n-scrollbar ref="scrollbarRef" class="h-full" @scroll="handleDownloadScroll">
+      <div class="download-content" :style="{ paddingBottom: contentPaddingBottom }">
         <!-- Hero Section -->
         <section class="hero-section relative overflow-hidden rounded-tl-2xl">
           <!-- Background with Blur -->
@@ -210,86 +210,96 @@
                 </p>
               </div>
               <div v-else class="space-y-2">
-                <div
-                  v-for="(item, index) in downloadStore.completedList"
-                  :key="item.path || item.filePath"
-                  class="downloaded-item group animate-item p-3 rounded-2xl flex items-center gap-4 hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-all"
-                  :style="{ animationDelay: `${index * 0.03}s` }"
-                >
+                <div class="downloaded-list-section">
                   <div
-                    class="relative w-12 h-12 rounded-xl overflow-hidden shadow-lg flex-shrink-0"
+                    v-for="(item, index) in renderedDownloaded"
+                    :key="item.path || item.filePath"
+                    class="downloaded-item group p-3 rounded-2xl flex items-center gap-4 hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-all"
+                    :class="{ 'animate-item': index < 20 }"
+                    :style="index < 20 ? { animationDelay: `${index * 0.03}s` } : undefined"
                   >
-                    <img
-                      :src="getImgUrl(item.picUrl, '100y100')"
-                      class="w-full h-full object-cover"
-                      @error="handleCoverError"
-                    />
                     <div
-                      class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
-                      @click="handlePlayMusic(item)"
+                      class="relative w-12 h-12 rounded-xl overflow-hidden shadow-lg flex-shrink-0"
                     >
-                      <i class="ri-play-fill text-white text-xl" />
-                    </div>
-                  </div>
-
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2">
-                      <span class="text-sm font-bold text-neutral-900 dark:text-white truncate">{{
-                        item.displayName || item.filename
-                      }}</span>
-                      <span class="text-xs text-neutral-400 flex-shrink-0">{{
-                        formatSize(item.size)
-                      }}</span>
-                    </div>
-                    <div class="flex items-center gap-4 mt-1">
-                      <span class="text-xs text-neutral-500 truncate max-w-[150px]">{{
-                        item.ar?.map((a) => a.name).join(', ')
-                      }}</span>
+                      <img
+                        :src="getImgUrl(item.picUrl, '100y100')"
+                        class="w-full h-full object-cover"
+                        @error="handleCoverError"
+                      />
                       <div
-                        class="hidden md:flex items-center gap-1 text-[10px] text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-full truncate"
+                        class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+                        @click="handlePlayMusic(item)"
                       >
-                        <i class="ri-folder-line" />
-                        <span class="truncate">{{ shortenPath(item.path || item.filePath) }}</span>
+                        <i class="ri-play-fill text-white text-xl" />
                       </div>
                     </div>
-                  </div>
 
-                  <div class="flex items-center gap-1">
-                    <n-tooltip trigger="hover">
-                      <template #trigger>
-                        <button
-                          class="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-primary hover:bg-primary/10 transition-all"
-                          @click="copyPath(item.path || item.filePath)"
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2">
+                        <span class="text-sm font-bold text-neutral-900 dark:text-white truncate">{{
+                          item.displayName || item.filename
+                        }}</span>
+                        <span class="text-xs text-neutral-400 flex-shrink-0">{{
+                          formatSize(item.size)
+                        }}</span>
+                      </div>
+                      <div class="flex items-center gap-4 mt-1">
+                        <span class="text-xs text-neutral-500 truncate max-w-[150px]">{{
+                          item.ar?.map((a) => a.name).join(', ')
+                        }}</span>
+                        <div
+                          class="hidden md:flex items-center gap-1 text-[10px] text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-full truncate"
                         >
-                          <i class="ri-file-copy-line" />
-                        </button>
-                      </template>
-                      {{ t('download.path.copy') || '复制路径' }}
-                    </n-tooltip>
-                    <n-tooltip trigger="hover">
-                      <template #trigger>
-                        <button
-                          class="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-primary hover:bg-primary/10 transition-all"
-                          @click="openDirectory(item.path || item.filePath)"
-                        >
-                          <i class="ri-folder-open-line" />
-                        </button>
-                      </template>
-                      {{ t('download.settingsPanel.open') }}
-                    </n-tooltip>
-                    <n-tooltip trigger="hover">
-                      <template #trigger>
-                        <button
-                          class="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-red-500 hover:bg-red-500/10 transition-all"
-                          @click="handleDelete(item)"
-                        >
-                          <i class="ri-delete-bin-line" />
-                        </button>
-                      </template>
-                      {{ t('common.delete') }}
-                    </n-tooltip>
+                          <i class="ri-folder-line" />
+                          <span class="truncate">{{
+                            shortenPath(item.path || item.filePath)
+                          }}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-1">
+                      <n-tooltip trigger="hover">
+                        <template #trigger>
+                          <button
+                            class="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-primary hover:bg-primary/10 transition-all"
+                            @click="copyPath(item.path || item.filePath)"
+                          >
+                            <i class="ri-file-copy-line" />
+                          </button>
+                        </template>
+                        {{ t('download.path.copy') || '复制路径' }}
+                      </n-tooltip>
+                      <n-tooltip trigger="hover">
+                        <template #trigger>
+                          <button
+                            class="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-primary hover:bg-primary/10 transition-all"
+                            @click="openDirectory(item.path || item.filePath)"
+                          >
+                            <i class="ri-folder-open-line" />
+                          </button>
+                        </template>
+                        {{ t('download.settingsPanel.open') }}
+                      </n-tooltip>
+                      <n-tooltip trigger="hover">
+                        <template #trigger>
+                          <button
+                            class="w-8 h-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                            @click="handleDelete(item)"
+                          >
+                            <i class="ri-delete-bin-line" />
+                          </button>
+                        </template>
+                        {{ t('common.delete') }}
+                      </n-tooltip>
+                    </div>
                   </div>
                 </div>
+                <!-- 未渲染项占位 -->
+                <div
+                  v-if="downloadedPlaceholderHeight > 0"
+                  :style="{ height: downloadedPlaceholderHeight + 'px' }"
+                />
               </div>
             </n-spin>
           </div>
@@ -540,6 +550,7 @@ import { useMessage } from 'naive-ui';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import { useProgressiveRender } from '@/hooks/useProgressiveRender';
 import { useDownloadStore } from '@/store/modules/download';
 import { usePlayerStore } from '@/store/modules/player';
 import type { SongResult } from '@/types/music';
@@ -551,8 +562,23 @@ const { t } = useI18n();
 const playerStore = usePlayerStore();
 const downloadStore = useDownloadStore();
 const message = useMessage();
+const scrollbarRef = ref();
 
-const tabName = ref('downloading');
+const completedList = computed(() => downloadStore.completedList);
+
+const {
+  renderedItems: renderedDownloaded,
+  placeholderHeight: downloadedPlaceholderHeight,
+  contentPaddingBottom,
+  handleScroll: handleDownloadScroll
+} = useProgressiveRender({
+  items: completedList,
+  itemHeight: 72,
+  listSelector: '.downloaded-list-section',
+  initialCount: 40
+});
+
+const tabName = ref(downloadStore.downloadingList.length > 0 ? 'downloading' : 'downloaded');
 
 // ── Status helpers ──────────────────────────────────────────────────────────
 

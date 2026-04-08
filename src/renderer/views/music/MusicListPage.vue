@@ -1,7 +1,7 @@
 <template>
   <div class="music-list-page h-full w-full bg-white dark:bg-black transition-colors duration-500">
     <n-scrollbar ref="scrollbarRef" class="h-full" @scroll="handleScroll">
-      <div class="music-list-content pb-32">
+      <div class="music-list-content" :style="{ paddingBottom: contentPaddingBottom }">
         <!-- Hero Section 和 Action Bar -->
         <n-spin :show="loading">
           <!-- Hero Section -->
@@ -217,23 +217,50 @@
               </div>
 
               <!-- Locate Current Song -->
-              <button
-                v-if="currentPlayingIndex >= 0"
-                class="action-btn-icon w-10 h-10 rounded-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-all"
-                :title="t('comp.musicList.locateCurrent', '定位当前播放')"
-                @click="scrollToCurrentSong"
-              >
-                <i class="ri-focus-3-line text-lg" />
-              </button>
+              <n-tooltip v-if="currentPlayingIndex >= 0" trigger="hover">
+                <template #trigger>
+                  <button
+                    class="action-btn-icon w-10 h-10 rounded-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-all"
+                    @click="scrollToCurrentSong"
+                  >
+                    <i class="ri-focus-3-line text-lg" />
+                  </button>
+                </template>
+                {{ t('comp.musicList.locateCurrent') }}
+              </n-tooltip>
 
               <!-- Layout Toggle -->
-              <button
-                v-if="!isMobile"
-                class="action-btn-icon w-10 h-10 rounded-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-all"
-                @click="toggleLayout"
-              >
-                <i :class="isCompactLayout ? 'ri-list-check-2' : 'ri-grid-line'" class="text-lg" />
-              </button>
+              <n-tooltip v-if="!isMobile" trigger="hover">
+                <template #trigger>
+                  <button
+                    class="action-btn-icon w-10 h-10 rounded-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-all"
+                    @click="toggleLayout"
+                  >
+                    <i
+                      :class="isCompactLayout ? 'ri-list-check-2' : 'ri-grid-line'"
+                      class="text-lg"
+                    />
+                  </button>
+                </template>
+                {{
+                  isCompactLayout
+                    ? t('comp.musicList.normalLayout')
+                    : t('comp.musicList.compactLayout')
+                }}
+              </n-tooltip>
+
+              <!-- Scroll to Top -->
+              <n-tooltip trigger="hover">
+                <template #trigger>
+                  <button
+                    class="action-btn-icon w-10 h-10 rounded-full flex items-center justify-center bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-all"
+                    @click="scrollToTop"
+                  >
+                    <i class="ri-arrow-up-line text-lg" />
+                  </button>
+                </template>
+                {{ t('comp.musicList.scrollToTop') }}
+              </n-tooltip>
             </div>
           </div>
         </section>
@@ -296,7 +323,6 @@
         </section>
       </div>
     </n-scrollbar>
-    <play-bottom />
   </div>
 </template>
 
@@ -314,7 +340,6 @@ import {
   subscribePlaylist,
   updatePlaylistTracks
 } from '@/api/music';
-import PlayBottom from '@/components/common/PlayBottom.vue';
 import SongItem from '@/components/common/SongItem.vue';
 import { useDownload } from '@/hooks/useDownload';
 import { useScrollTitle } from '@/hooks/useScrollTitle';
@@ -338,6 +363,10 @@ const message = useMessage();
 const playHistoryStore = usePlayHistoryStore();
 
 const loading = ref(false);
+const isPlaying = computed(() => !!playerStore.playMusicUrl);
+const contentPaddingBottom = computed(() =>
+  isPlaying.value && !isMobile.value ? '220px' : '80px'
+);
 
 const fetchData = async () => {
   const id = route.params.id;
@@ -428,7 +457,7 @@ const canRemove = computed(() => {
 
 const canCollect = ref(false);
 const isCollected = ref(false);
-const pageSize = 40;
+const pageSize = 200;
 const initialAnimateCount = 20; // 仅前 20 项有入场动画
 const displayedSongs = ref<SongResult[]>([]);
 const renderLimit = ref(pageSize); // DOM 渲染上限，数据全部在内存
@@ -830,6 +859,10 @@ const scrollToCurrentSong = async () => {
 const toggleLayout = () => {
   isCompactLayout.value = !isCompactLayout.value;
   localStorage.setItem('musicListLayout', isCompactLayout.value ? 'compact' : 'normal');
+};
+
+const scrollToTop = () => {
+  scrollbarRef.value?.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 const checkCollectionStatus = () => {
