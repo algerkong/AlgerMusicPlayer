@@ -325,8 +325,38 @@
       @positive-click="clearDownloadRecords"
     />
 
+    <!-- 未保存下载设置确认对话框 -->
+    <n-modal
+      v-model:show="showNotSaveConfirm"
+      preset="dialog"
+      type="warning"
+      :z-index="3200"
+      :title="t('download.save.title')"
+      :content="t('download.save.message')"
+      :positive-text="t('download.save.confirm')"
+      :negative-text="t('download.save.discard')"
+      @positive-click="saveDownloadSettings"
+      @negative-click="discardDownloadSettings"
+    >
+      <template #action>
+        <n-button @click="showNotSaveConfirm = false">{{ t('download.save.cancel') }}</n-button>
+        <n-button type="error" @click="discardDownloadSettings">{{
+          t('download.save.discard')
+        }}</n-button>
+        <n-button type="primary" @click="saveDownloadSettings">{{
+          t('download.save.confirm')
+        }}</n-button>
+      </template>
+    </n-modal>
+
     <!-- 下载设置抽屉 -->
-    <n-drawer v-model:show="showSettingsDrawer" :width="400" placement="right">
+    <n-drawer
+      :show="showSettingsDrawer"
+      :width="400"
+      placement="right"
+      :z-index="3100"
+      @update:show="handleDrawerUpdate"
+    >
       <n-drawer-content :title="t('download.settingsPanel.title')" closable>
         <div class="download-settings-content space-y-8 py-4">
           <!-- Path Section -->
@@ -705,12 +735,40 @@ const clearDownloadRecords = async () => {
 // ── Download settings ───────────────────────────────────────────────────────
 
 const showSettingsDrawer = ref(false);
+const showNotSaveConfirm = ref(false);
 const downloadSettings = ref({
   path: '',
   nameFormat: '{songName} - {artistName}',
   separator: ' - ',
   saveLyric: false
 });
+const originalDownloadSettings = ref({ ...downloadSettings.value });
+
+watch(showSettingsDrawer, (newVal) => {
+  if (newVal) {
+    originalDownloadSettings.value = { ...downloadSettings.value };
+  }
+});
+
+const handleDrawerUpdate = (show: boolean) => {
+  if (show) {
+    showSettingsDrawer.value = true;
+    return;
+  }
+  const isModified =
+    JSON.stringify(downloadSettings.value) !== JSON.stringify(originalDownloadSettings.value);
+  if (isModified) {
+    showNotSaveConfirm.value = true;
+  } else {
+    showSettingsDrawer.value = false;
+  }
+};
+
+const discardDownloadSettings = () => {
+  downloadSettings.value = { ...originalDownloadSettings.value };
+  showNotSaveConfirm.value = false;
+  showSettingsDrawer.value = false;
+};
 
 const formatComponents = ref([
   { id: 1, type: 'songName' },
@@ -824,7 +882,9 @@ const saveDownloadSettings = () => {
     downloadStore.refreshCompleted();
   }
 
+  originalDownloadSettings.value = { ...downloadSettings.value };
   message.success(t('download.settingsPanel.saveSuccess'));
+  showNotSaveConfirm.value = false;
   showSettingsDrawer.value = false;
 };
 

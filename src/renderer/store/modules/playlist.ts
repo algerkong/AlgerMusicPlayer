@@ -585,8 +585,7 @@ export const usePlaylistStore = defineStore(
         // Toggle play/pause for current song
         if (
           playerCore.playMusic.id === song.id &&
-          playerCore.playMusic.playMusicUrl === song.playMusicUrl &&
-          !song.isFirstPlay
+          playerCore.playMusic.playMusicUrl === song.playMusicUrl
         ) {
           if (playerCore.play) {
             playerCore.setPlayMusic(false);

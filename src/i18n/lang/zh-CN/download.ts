@@ -57,6 +57,14 @@ export default {
     success: '下载记录已清空',
     failed: '清空下载记录失败'
   },
+  save: {
+    title: '保存设置',
+    message: '当前下载设置未保存，是否保存更改？',
+    confirm: '保存',
+    cancel: '取消',
+    discard: '放弃',
+    saveSuccess: '下载设置已保存'
+  },
   message: {
     downloadComplete: '{filename} 下载完成',
     downloadFailed: '{filename} 下载失败: {error}'

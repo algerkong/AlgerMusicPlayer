@@ -58,6 +58,14 @@ export default {
     success: '다운로드 기록이 지워졌습니다',
     failed: '다운로드 기록 삭제에 실패했습니다'
   },
+  save: {
+    title: '설정 저장',
+    message: '현재 다운로드 설정이 저장되지 않았습니다. 변경 사항을 저장하시겠습니까?',
+    confirm: '저장',
+    cancel: '취소',
+    discard: '포기',
+    saveSuccess: '다운로드 설정이 저장됨'
+  },
   message: {
     downloadComplete: '{filename} 다운로드 완료',
     downloadFailed: '{filename} 다운로드 실패: {error}'

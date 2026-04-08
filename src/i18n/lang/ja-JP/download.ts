@@ -58,6 +58,14 @@ export default {
     success: 'ダウンロード記録をクリアしました',
     failed: 'ダウンロード記録のクリアに失敗しました'
   },
+  save: {
+    title: '設定を保存',
+    message: '現在のダウンロード設定が保存されていません。変更を保存しますか？',
+    confirm: '保存',
+    cancel: 'キャンセル',
+    discard: '破棄',
+    saveSuccess: 'ダウンロード設定を保存しました'
+  },
   message: {
     downloadComplete: '{filename}のダウンロードが完了しました',
     downloadFailed: '{filename}のダウンロードに失敗しました: {error}'

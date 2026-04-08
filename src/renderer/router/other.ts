@@ -53,7 +53,8 @@ const otherRouter = [
       showInMenu: false,
       back: true
     },
-    component: () => import('@/views/artist/detail.vue')
+    component: () => import('@/views/artist/detail.vue'),
+    props: (route) => ({ key: route.params.id })
   },
   {
     path: '/music-list/:id?',
