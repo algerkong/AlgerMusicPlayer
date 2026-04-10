@@ -605,13 +605,6 @@ class AudioService {
 
   public async getAudioOutputDevices(): Promise<AudioOutputDevice[]> {
     try {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach((track) => track.stop());
-      } catch {
-        // Continue even if permission denied
-      }
-
       const devices = await navigator.mediaDevices.enumerateDevices();
       const audioOutputs = devices.filter((d) => d.kind === 'audiooutput');
 

@@ -16,7 +16,5 @@
     <true/>
     <key>com.apple.security.files.downloads.read-write</key>
     <true/>
-    <key>com.apple.security.device.microphone</key>
-    <true/>
   </dict>
 </plist>
