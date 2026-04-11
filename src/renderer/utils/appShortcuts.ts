@@ -38,15 +38,23 @@ const onUpdateAppShortcuts = (_event: unknown, shortcuts: unknown) => {
   updateAppShortcuts(shortcuts);
 };
 
-const onMprisSeek = (_event: unknown, position: number) => {
+const onMprisSeekOrSetPosition = (_event: unknown, position: number) => {
   if (audioService) {
     audioService.seek(position);
   }
 };
 
-const onMprisSetPosition = (_event: unknown, position: number) => {
-  if (audioService) {
-    audioService.seek(position);
+const onMprisPlay = async () => {
+  const playerStore = usePlayerStore();
+  if (!playerStore.play && playerStore.playMusic?.id) {
+    await playerStore.setPlay({ ...playerStore.playMusic });
+  }
+};
+
+const onMprisPause = async () => {
+  const playerStore = usePlayerStore();
+  if (playerStore.play) {
+    await playerStore.handlePause();
   }
 };
 
@@ -205,8 +213,10 @@ export function initAppShortcuts() {
 
   window.electron.ipcRenderer.on('global-shortcut', onGlobalShortcut);
   window.electron.ipcRenderer.on('update-app-shortcuts', onUpdateAppShortcuts);
-  window.electron.ipcRenderer.on('mpris-seek', onMprisSeek);
-  window.electron.ipcRenderer.on('mpris-set-position', onMprisSetPosition);
+  window.electron.ipcRenderer.on('mpris-seek', onMprisSeekOrSetPosition);
+  window.electron.ipcRenderer.on('mpris-set-position', onMprisSeekOrSetPosition);
+  window.electron.ipcRenderer.on('mpris-play', onMprisPlay);
+  window.electron.ipcRenderer.on('mpris-pause', onMprisPause);
 
   const storedShortcuts = window.electron.ipcRenderer.sendSync('get-store-value', 'shortcuts');
   updateAppShortcuts(storedShortcuts);
@@ -226,6 +236,10 @@ export function cleanupAppShortcuts() {
 
   window.electron.ipcRenderer.removeListener('global-shortcut', onGlobalShortcut);
   window.electron.ipcRenderer.removeListener('update-app-shortcuts', onUpdateAppShortcuts);
+  window.electron.ipcRenderer.removeListener('mpris-seek', onMprisSeekOrSetPosition);
+  window.electron.ipcRenderer.removeListener('mpris-set-position', onMprisSeekOrSetPosition);
+  window.electron.ipcRenderer.removeListener('mpris-play', onMprisPlay);
+  window.electron.ipcRenderer.removeListener('mpris-pause', onMprisPause);
 
   document.removeEventListener('keydown', handleKeyDown);
 }

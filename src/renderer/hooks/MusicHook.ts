@@ -54,6 +54,9 @@ export let artistList: ComputedRef<Artist[]>;
 
 let lastIndex = -1;
 
+// 缓存平台信息，避免每次歌词变化时同步 IPC 调用
+const cachedPlatform = isElectron ? window.electron.ipcRenderer.sendSync('get-platform') : 'web';
+
 export const musicDB = await useIndexedDB(
   'musicDB',
   [
@@ -831,14 +834,7 @@ export const sendLyricToWin = () => {
 
 // 发送歌词到系统托盘歌词（TrayLyric）
 const sendTrayLyric = (index: number) => {
-  const platformValue = window.electron.ipcRenderer.sendSync('get-platform');
-  console.log(
-    '[TrayLyric] sendTrayLyric called, isElectron:',
-    isElectron,
-    'platform:',
-    platformValue
-  );
-  if (!isElectron || platformValue !== 'linux') return;
+  if (!isElectron || cachedPlatform !== 'linux') return;
 
   try {
     const lyric = lrcArray.value[index];

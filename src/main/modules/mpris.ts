@@ -1,6 +1,12 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import Player from 'mpris-service';
-const dbus = require('@httptoolkit/dbus-native');
+
+let dbusModule: any;
+try {
+  dbusModule = require('@httptoolkit/dbus-native');
+} catch {
+  // dbus-native 不可用（非 Linux 环境）
+}
 
 interface SongInfo {
   id?: number | string;
@@ -27,11 +33,14 @@ let currentPosition = 0;
 let trayLyricIface: any = null;
 let trayLyricBus: any = null;
 
+// 保存 IPC 处理函数引用，用于清理
+let onPositionUpdate: ((event: any, position: number) => void) | null = null;
+let onTrayLyricUpdate: ((event: any, lrcObj: string) => void) | null = null;
+
 export function initializeMpris(mainWindowRef: BrowserWindow) {
   if (process.platform !== 'linux') return;
 
   if (mprisPlayer) {
-    console.log('[MPRIS] Already initialized, skipping');
     return;
   }
 
@@ -79,13 +88,13 @@ export function initializeMpris(mainWindowRef: BrowserWindow) {
 
     mprisPlayer.on('pause', () => {
       if (mainWindow) {
-        mainWindow.webContents.send('global-shortcut', 'togglePlay');
+        mainWindow.webContents.send('mpris-pause');
       }
     });
 
     mprisPlayer.on('play', () => {
       if (mainWindow) {
-        mainWindow.webContents.send('global-shortcut', 'togglePlay');
+        mainWindow.webContents.send('mpris-play');
       }
     });
 
@@ -97,12 +106,11 @@ export function initializeMpris(mainWindowRef: BrowserWindow) {
 
     mprisPlayer.on('stop', () => {
       if (mainWindow) {
-        mainWindow.webContents.send('global-shortcut', 'togglePlay');
+        mainWindow.webContents.send('mpris-pause');
       }
     });
 
     mprisPlayer.getPosition = (): number => {
-      console.log('[MPRIS] getPosition called, returning:', currentPosition);
       return currentPosition;
     };
 
@@ -119,16 +127,20 @@ export function initializeMpris(mainWindowRef: BrowserWindow) {
       }
     });
 
-    ipcMain.on('mpris-position-update', (_, position: number) => {
+    onPositionUpdate = (_, position: number) => {
       currentPosition = position * 1000 * 1000;
-      mprisPlayer.seeked(position * 1000 * 1000);
-      mprisPlayer.getPosition = () => position * 1000 * 1000;
-      mprisPlayer.position = position * 1000 * 1000;
-    });
+      if (mprisPlayer) {
+        mprisPlayer.seeked(position * 1000 * 1000);
+        mprisPlayer.getPosition = () => position * 1000 * 1000;
+        mprisPlayer.position = position * 1000 * 1000;
+      }
+    };
+    ipcMain.on('mpris-position-update', onPositionUpdate);
 
-    ipcMain.on('tray-lyric-update', async (_, lrcObj: string) => {
+    onTrayLyricUpdate = (_, lrcObj: string) => {
       sendTrayLyric(lrcObj);
-    });
+    };
+    ipcMain.on('tray-lyric-update', onTrayLyricUpdate);
 
     initTrayLyric();
 
@@ -176,6 +188,14 @@ export function updateMprisPosition(position: number) {
 }
 
 export function destroyMpris() {
+  if (onPositionUpdate) {
+    ipcMain.removeListener('mpris-position-update', onPositionUpdate);
+    onPositionUpdate = null;
+  }
+  if (onTrayLyricUpdate) {
+    ipcMain.removeListener('tray-lyric-update', onTrayLyricUpdate);
+    onTrayLyricUpdate = null;
+  }
   if (mprisPlayer) {
     mprisPlayer.quit();
     mprisPlayer = null;
@@ -183,25 +203,17 @@ export function destroyMpris() {
 }
 
 function initTrayLyric() {
-  if (process.platform !== 'linux') {
-    console.log('[TrayLyric] Not Linux, skipping');
-    return;
-  }
-
-  console.log('[TrayLyric] Initializing...');
+  if (process.platform !== 'linux' || !dbusModule) return;
 
   const serviceName = 'org.gnome.Shell.TrayLyric';
 
   try {
-    const sessionBus = dbus.sessionBus({});
+    const sessionBus = dbusModule.sessionBus({});
     trayLyricBus = sessionBus;
-    console.log('[TrayLyric] Session bus created, type:');
 
-    // 使用 invoke 方法调用 D-Bus 方法
     const dbusPath = '/org/freedesktop/DBus';
     const dbusInterface = 'org.freedesktop.DBus';
 
-    // 先尝试直接获取接口并使用 signals
     sessionBus.invoke(
       {
         path: dbusPath,
@@ -212,26 +224,19 @@ function initTrayLyric() {
         body: [serviceName]
       },
       (err: any, result: any) => {
-        console.log('[TrayLyric] GetNameOwner result:', err, result);
         if (err || !result) {
-          console.log('[TrayLyric] Service not running yet');
+          console.log('[TrayLyric] Service not running');
         } else {
-          console.log('[TrayLyric] Service is running, owner:', result[0]);
           onServiceAvailable();
         }
       }
     );
   } catch (err) {
-    console.error('[TrayLyric] Exception during init:', err);
+    console.error('[TrayLyric] Failed to init:', err);
   }
 
   function onServiceAvailable() {
-    console.log('[TrayLyric] onServiceAvailable called');
-    if (!trayLyricBus) {
-      console.log('[TrayLyric] Bus not available');
-      return;
-    }
-    console.log('[TrayLyric] Getting service interface...');
+    if (!trayLyricBus) return;
     const path = '/' + serviceName.replace(/\./g, '/');
     trayLyricBus.getService(serviceName).getInterface(path, serviceName, (err: any, iface: any) => {
       if (err) {
@@ -245,12 +250,8 @@ function initTrayLyric() {
 }
 
 function sendTrayLyric(lrcObj: string) {
-  if (!trayLyricIface || !trayLyricBus) {
-    console.log('[TrayLyric] Interface or bus not ready, skipping');
-    return;
-  }
+  if (!trayLyricIface || !trayLyricBus) return;
 
-  // 使用 invoke 方法调用 D-Bus 方法
   trayLyricBus.invoke(
     {
       path: '/org/gnome/Shell/TrayLyric',
