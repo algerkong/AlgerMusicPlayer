@@ -18,6 +18,7 @@
     "dev:web": "vite dev",
     "build": "electron-vite build",
     "postinstall": "electron-builder install-app-deps",
+    "fix-sandbox": "node fix-sandbox.js",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win --publish never",
     "build:mac": "npm run build && electron-builder --mac --x64 --publish never && cp dist/latest-mac.yml dist/latest-mac-x64.yml && electron-builder --mac --arm64 --publish never && cp dist/latest-mac.yml dist/latest-mac-arm64.yml && node scripts/merge_latest_mac_yml.mjs dist/latest-mac-x64.yml dist/latest-mac-arm64.yml dist/latest-mac.yml",
@@ -36,6 +37,7 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
+    "@httptoolkit/dbus-native": "^0.1.5",
     "@unblockneteasemusic/server": "^0.27.10",
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
@@ -49,6 +51,7 @@
     "form-data": "^4.0.5",
     "husky": "^9.1.7",
     "jsencrypt": "^3.5.4",
+    "mpris-service": "^2.1.2",
     "music-metadata": "^11.10.3",
     "netease-cloud-music-api-alger": "^4.30.0",
     "node-fetch": "^2.7.0",
@@ -221,5 +224,9 @@
       "electron",
       "esbuild"
     ]
+  },
+  "optionalDependencies": {
+    "jsbi": "^4.3.2",
+    "x11": "^2.3.0"
   }
 }

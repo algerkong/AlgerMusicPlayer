@@ -13,6 +13,7 @@ import { initializeFonts } from './modules/fonts';
 import { initializeLocalMusicScanner } from './modules/localMusicScanner';
 import { initializeLoginWindow } from './modules/loginWindow';
 import { initLxMusicHttp } from './modules/lxMusicHttp';
+import { initializeMpris, updateMprisCurrentSong, updateMprisPlayState } from './modules/mpris';
 import { initializeOtherApi } from './modules/otherApi';
 import { initializeRemoteControl } from './modules/remoteControl';
 import { initializeShortcuts } from './modules/shortcuts';
@@ -82,6 +83,9 @@ function initialize(configStore: any) {
   // 初始化远程控制服务
   initializeRemoteControl(mainWindow);
 
+  // 初始化 MPRIS 服务 (Linux)
+  initializeMpris(mainWindow);
+
   // 初始化更新处理程序
   setupUpdateHandlers(mainWindow);
 }
@@ -92,6 +96,11 @@ const isSingleInstance = app.requestSingleInstanceLock();
 if (!isSingleInstance) {
   app.quit();
 } else {
+  // 禁用 Chromium 内置的 MediaSession MPRIS 服务，避免重复显示
+  if (process.platform === 'linux') {
+    app.commandLine.appendSwitch('disable-features', 'MediaSessionService');
+  }
+
   // 在应用准备就绪前初始化GPU加速设置
   // 必须在 app.ready 之前调用 disableHardwareAcceleration
   try {
@@ -171,11 +180,13 @@ if (!isSingleInstance) {
   // 监听播放状态变化
   ipcMain.on('update-play-state', (_, playing: boolean) => {
     updatePlayState(playing);
+    updateMprisPlayState(playing);
   });
 
   // 监听当前歌曲变化
   ipcMain.on('update-current-song', (_, song: any) => {
     updateCurrentSong(song);
+    updateMprisCurrentSong(song);
   });
 
   // 所有窗口关闭时的处理
