@@ -1,0 +1,71 @@
+name: PR Check
+
+on:
+  pull_request:
+    branches: [main, dev_electron]
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  # 检查 PR 标题是否符合 Conventional Commits 规范
+  pr-title:
+    name: PR Title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install commitlint
+        run: npm install --no-save @commitlint/cli @commitlint/config-conventional
+
+      - name: Validate PR title
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: echo "$PR_TITLE" | npx commitlint
+
+  # 检查所有提交信息是否符合 Conventional Commits 规范
+  commit-messages:
+    name: Commit Messages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install commitlint
+        run: npm install --no-save @commitlint/cli @commitlint/config-conventional
+
+      - name: Validate commit messages
+        run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+
+  # 运行 lint 和类型检查
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Lint
+        run: npx eslint --max-warnings 0 "src/**/*.{ts,tsx,vue,js}"
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: I18n check
+        run: npm run lint:i18n
