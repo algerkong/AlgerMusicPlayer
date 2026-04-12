@@ -10,6 +10,54 @@ let isDragging = false;
 
 // 添加窗口大小变化防护
 let originalSize = { width: 0, height: 0 };
+let mousePresenceTimer: ReturnType<typeof setInterval> | null = null;
+let lastMouseInside: boolean | null = null;
+
+const isPointInsideWindow = (
+  point: { x: number; y: number },
+  bounds: { x: number; y: number; width: number; height: number }
+) => {
+  return (
+    point.x >= bounds.x &&
+    point.x < bounds.x + bounds.width &&
+    point.y >= bounds.y &&
+    point.y < bounds.y + bounds.height
+  );
+};
+
+const stopMousePresenceTracking = () => {
+  if (mousePresenceTimer) {
+    clearInterval(mousePresenceTimer);
+    mousePresenceTimer = null;
+  }
+  lastMouseInside = null;
+};
+
+const emitMousePresence = () => {
+  if (!lyricWindow || lyricWindow.isDestroyed()) return;
+
+  const mousePoint = screen.getCursorScreenPoint();
+  const bounds = lyricWindow.getBounds();
+  const isInside = isPointInsideWindow(mousePoint, bounds);
+
+  if (isInside === lastMouseInside) return;
+
+  lastMouseInside = isInside;
+  lyricWindow.webContents.send('lyric-mouse-presence', isInside);
+};
+
+const startMousePresenceTracking = () => {
+  if (mousePresenceTimer) return;
+
+  emitMousePresence();
+  mousePresenceTimer = setInterval(() => {
+    if (!lyricWindow || lyricWindow.isDestroyed()) {
+      stopMousePresenceTracking();
+      return;
+    }
+    emitMousePresence();
+  }, 50);
+};
 
 const createWin = () => {
   console.log('Creating lyric window');
@@ -102,6 +150,7 @@ const createWin = () => {
 
   // 监听窗口关闭事件
   lyricWindow.on('closed', () => {
+    stopMousePresenceTracking();
     if (lyricWindow) {
       lyricWindow.destroy();
       lyricWindow = null;
@@ -135,6 +184,7 @@ export const loadLyricWindow = (ipcMain: IpcMain, mainWin: BrowserWindow): void 
       }
       lyricWindow.focus();
       lyricWindow.show();
+      startMousePresenceTracking();
       return true;
     }
     return false;
@@ -169,6 +219,7 @@ export const loadLyricWindow = (ipcMain: IpcMain, mainWin: BrowserWindow): void 
     win.once('ready-to-show', () => {
       console.log('Lyric window ready to show');
       win.show();
+      startMousePresenceTracking();
     });
   });
 
@@ -197,6 +248,7 @@ export const loadLyricWindow = (ipcMain: IpcMain, mainWin: BrowserWindow): void 
 
   ipcMain.on('close-lyric', () => {
     if (lyricWindow && !lyricWindow.isDestroyed()) {
+      stopMousePresenceTracking();
       lyricWindow.webContents.send('lyric-window-close');
       mainWin.webContents.send('lyric-control-back', 'close');
       mainWin.webContents.send('lyric-window-closed');
