@@ -202,19 +202,18 @@ import {
   useLyricProgress
 } from '@/hooks/MusicHook';
 import { useArtist } from '@/hooks/useArtist';
+import { useLyricBackground } from '@/hooks/useLyricBackground';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 import { DEFAULT_LYRIC_CONFIG, LyricConfig } from '@/types/lyric';
 import { getImgUrl, isMobile } from '@/utils';
-import { animateGradient, getHoverBackgroundColor, getTextColors } from '@/utils/linearColor';
+import { getTextColors } from '@/utils/linearColor';
 
 const { t } = useI18n();
 // 定义 refs
 const lrcSider = ref<any>(null);
 const isMouse = ref(false);
-const currentBackground = ref('');
-const animationFrame = ref<number | null>(null);
-const isDark = ref(false);
+const { currentBackground, applyBackground } = useLyricBackground();
 
 // 计算自定义背景样式
 const customBackgroundStyle = computed(() => {
@@ -381,42 +380,6 @@ watch(
   }
 );
 
-const setTextColors = (background: string) => {
-  if (!background) {
-    textColors.value = getTextColors();
-    document.documentElement.style.setProperty('--hover-bg-color', getHoverBackgroundColor(false));
-    document.documentElement.style.setProperty('--text-color-primary', textColors.value.primary);
-    document.documentElement.style.setProperty('--text-color-active', textColors.value.active);
-    return;
-  }
-
-  // 更新文字颜色
-  textColors.value = getTextColors(background);
-  isDark.value = textColors.value.active === '#000000';
-
-  document.documentElement.style.setProperty(
-    '--hover-bg-color',
-    getHoverBackgroundColor(isDark.value)
-  );
-  document.documentElement.style.setProperty('--text-color-primary', textColors.value.primary);
-  document.documentElement.style.setProperty('--text-color-active', textColors.value.active);
-
-  // 处理背景颜色动画
-  if (currentBackground.value) {
-    if (animationFrame.value) {
-      cancelAnimationFrame(animationFrame.value);
-    }
-    const result = animateGradient(currentBackground.value, background, (gradient) => {
-      currentBackground.value = gradient;
-    });
-    if (typeof result === 'number') {
-      animationFrame.value = result;
-    }
-  } else {
-    currentBackground.value = background;
-  }
-};
-
 const targetBackground = computed(() => {
   if (config.value.useCustomBackground && customBackgroundStyle.value) {
     if (typeof customBackgroundStyle.value === 'string') {
@@ -434,7 +397,7 @@ watch(
   targetBackground,
   (newBg) => {
     if (newBg) {
-      setTextColors(newBg);
+      applyBackground(newBg);
     }
   },
   { immediate: true }
@@ -522,13 +485,6 @@ const getWordStyle = (lineIndex: number, _wordIndex: number, word: any) => {
     };
   }
 };
-
-// 组件卸载时清理动画
-onBeforeUnmount(() => {
-  if (animationFrame.value) {
-    cancelAnimationFrame(animationFrame.value);
-  }
-});
 
 const settingsStore = useSettingsStore();
 
@@ -626,9 +582,6 @@ onMounted(() => {
 
 // 移除滚动监听和全屏状态监听
 onBeforeUnmount(() => {
-  if (animationFrame.value) {
-    cancelAnimationFrame(animationFrame.value);
-  }
   if (lrcSider.value?.$el) {
     lrcSider.value.$el.removeEventListener('scroll', handleScroll);
   }
