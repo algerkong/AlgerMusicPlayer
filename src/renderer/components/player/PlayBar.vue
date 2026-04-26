@@ -99,8 +99,16 @@
           <i class="iconfont" :class="getVolumeIcon"></i>
         </div>
         <div class="volume-slider">
-          <div class="volume-percentage">{{ Math.round(volumeSlider) }}%</div>
-          <n-slider v-model:value="volumeSlider" :step="0.01" :tooltip="false" vertical></n-slider>
+          <div class="volume-percentage" :class="{ 'volume-percentage-disabled': isMuted }">
+            {{ Math.round(volumeSlider) }}%
+          </div>
+          <n-slider
+            v-model:value="volumeSlider"
+            :step="0.01"
+            :tooltip="false"
+            :disabled="isMuted"
+            vertical
+          ></n-slider>
         </div>
       </div>
       <n-tooltip v-if="!isMobile" trigger="hover" :z-index="9999999">
@@ -198,7 +206,13 @@ const { t } = useI18n();
 const { isPlaying: play, playMusicEvent, handleNext, handlePrev } = usePlaybackControl();
 
 // 音量控制
-const { volumeSlider, volumeIcon: getVolumeIcon, mute, handleVolumeWheel } = useVolumeControl();
+const {
+  isMuted,
+  volumeSlider,
+  volumeIcon: getVolumeIcon,
+  mute,
+  handleVolumeWheel
+} = useVolumeControl();
 
 // 收藏
 const { isFavorite, toggleFavorite } = useFavorite();
@@ -382,6 +396,10 @@ const openPlayListDrawer = () => {
       @apply border border-gray-200 dark:border-gray-700;
       @apply text-gray-800 dark:text-white;
       white-space: nowrap;
+
+      &.volume-percentage-disabled {
+        @apply text-gray-400 dark:text-gray-500;
+      }
     }
   }
 }

@@ -41,6 +41,7 @@ export const usePlayerStore = defineStore('player', () => {
     musicFull,
     playbackRate,
     volume,
+    isMuted,
     userPlayIntent,
     isFmPlaying
   } = storeToRefs(playerCore);
@@ -97,6 +98,7 @@ export const usePlayerStore = defineStore('player', () => {
     musicFull,
     playbackRate,
     volume,
+    isMuted,
     userPlayIntent,
     isFmPlaying,
 
@@ -113,6 +115,8 @@ export const usePlayerStore = defineStore('player', () => {
     getVolume: playerCore.getVolume,
     increaseVolume: playerCore.increaseVolume,
     decreaseVolume: playerCore.decreaseVolume,
+    setMuted: playerCore.setMuted,
+    toggleMute: playerCore.toggleMute,
     handlePause: playerCore.handlePause,
 
     // ========== 播放列表管理 (Playlist) ==========
