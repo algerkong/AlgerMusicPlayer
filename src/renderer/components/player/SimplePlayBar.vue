@@ -68,6 +68,7 @@
               v-model:value="volumeSlider"
               :step="1"
               :tooltip="false"
+              :disabled="isMuted"
               @wheel.prevent="handleVolumeWheel"
             ></n-slider>
           </div>
@@ -107,7 +108,13 @@ const { isPlaying: play, playMusicEvent, handleNext, handlePrev } = usePlaybackC
 const { playMode, playModeIcon, togglePlayMode } = usePlayMode();
 
 // 音量控制（统一通过 playerStore 管理）
-const { volumeSlider, volumeIcon: getVolumeIcon, mute, handleVolumeWheel } = useVolumeControl();
+const {
+  isMuted,
+  volumeSlider,
+  volumeIcon: getVolumeIcon,
+  mute,
+  handleVolumeWheel
+} = useVolumeControl();
 
 // 进度条控制
 const isDragging = ref(false);

@@ -69,6 +69,7 @@
               v-model:value="volumeSlider"
               :step="0.01"
               :tooltip="false"
+              :disabled="isMuted"
               vertical
               @wheel.prevent="handleVolumeWheel"
             ></n-slider>
@@ -145,7 +146,13 @@ const { navigateToArtist } = useArtist();
 const { isPlaying: play, playMusicEvent, handleNext, handlePrev } = usePlaybackControl();
 
 // 音量控制（统一通过 playerStore 管理）
-const { volumeSlider, volumeIcon: getVolumeIcon, mute, handleVolumeWheel } = useVolumeControl();
+const {
+  isMuted,
+  volumeSlider,
+  volumeIcon: getVolumeIcon,
+  mute,
+  handleVolumeWheel
+} = useVolumeControl();
 
 // 收藏
 const { isFavorite, toggleFavorite } = useFavorite();

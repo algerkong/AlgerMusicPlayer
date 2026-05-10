@@ -9,7 +9,10 @@ import { usePlayerStore } from '@/store/modules/player';
 export function useVolumeControl() {
   const playerStore = usePlayerStore();
 
-  /** 音量滑块值 (0-100) */
+  /** 是否静音 */
+  const isMuted = computed(() => playerStore.isMuted);
+
+  /** 音量滑块值 (0-100)，静音时仍展示原始音量 */
   const volumeSlider = computed({
     get: () => playerStore.volume * 100,
     set: (value: number) => {
@@ -19,21 +22,17 @@ export function useVolumeControl() {
 
   /** 音量图标 class */
   const volumeIcon = computed(() => {
-    if (playerStore.volume === 0) return 'ri-volume-mute-line';
+    if (playerStore.isMuted || playerStore.volume === 0) return 'ri-volume-mute-line';
     if (playerStore.volume <= 0.5) return 'ri-volume-down-line';
     return 'ri-volume-up-line';
   });
 
-  /** 静音切换 (0 ↔ 30%) */
+  /** 切换静音（保留静音前的音量） */
   const mute = () => {
-    if (volumeSlider.value === 0) {
-      volumeSlider.value = 30;
-    } else {
-      volumeSlider.value = 0;
-    }
+    playerStore.toggleMute();
   };
 
-  /** 鼠标滚轮调整音量 ±5% */
+  /** 鼠标滚轮调整音量 ±5%；静音时向上滚轮会自动解除静音 */
   const handleVolumeWheel = (e: WheelEvent) => {
     const delta = e.deltaY < 0 ? 5 : -5;
     const newValue = Math.min(Math.max(volumeSlider.value + delta, 0), 100);
@@ -41,6 +40,7 @@ export function useVolumeControl() {
   };
 
   return {
+    isMuted,
     volumeSlider,
     volumeIcon,
     mute,

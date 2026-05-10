@@ -20,6 +20,7 @@ export const usePlayerCoreStore = defineStore(
     const musicFull = ref(false);
     const playbackRate = ref(1.0);
     const volume = ref(1);
+    const isMuted = ref(false);
     const userPlayIntent = ref(false); // 用户是否想要播放
     const isFmPlaying = ref(false); // 是否正在播放私人FM
 
@@ -65,7 +66,27 @@ export const usePlayerCoreStore = defineStore(
     const setVolume = (newVolume: number) => {
       const normalizedVolume = Math.max(0, Math.min(1, newVolume));
       volume.value = normalizedVolume;
-      audioService.setVolume(normalizedVolume);
+      // 用户调高音量时自动解除静音
+      if (isMuted.value && normalizedVolume > 0) {
+        isMuted.value = false;
+      }
+      audioService.setVolume(isMuted.value ? 0 : normalizedVolume);
+    };
+
+    /**
+     * 设置静音状态（不改变 volume，仅控制音频输出）
+     */
+    const setMuted = (value: boolean) => {
+      if (isMuted.value === value) return;
+      isMuted.value = value;
+      audioService.setVolume(isMuted.value ? 0 : volume.value);
+    };
+
+    /**
+     * 切换静音
+     */
+    const toggleMute = () => {
+      setMuted(!isMuted.value);
     };
 
     /**
@@ -169,6 +190,7 @@ export const usePlayerCoreStore = defineStore(
       musicFull,
       playbackRate,
       volume,
+      isMuted,
       userPlayIntent,
       isFmPlaying,
       audioOutputDeviceId,
@@ -187,6 +209,8 @@ export const usePlayerCoreStore = defineStore(
       getVolume,
       increaseVolume,
       decreaseVolume,
+      setMuted,
+      toggleMute,
       handlePause,
       refreshAudioDevices,
       setAudioOutputDevice,
@@ -197,7 +221,15 @@ export const usePlayerCoreStore = defineStore(
     persist: {
       key: 'player-core-store',
       storage: localStorage,
-      pick: ['playMusic', 'playMusicUrl', 'playbackRate', 'volume', 'isPlay', 'audioOutputDeviceId']
+      pick: [
+        'playMusic',
+        'playMusicUrl',
+        'playbackRate',
+        'volume',
+        'isMuted',
+        'isPlay',
+        'audioOutputDeviceId'
+      ]
     }
   }
 );
