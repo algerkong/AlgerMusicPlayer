@@ -915,16 +915,16 @@ const saveDownloadSettings = () => {
 };
 
 const initDownloadSettings = async () => {
-  const path = await window.electron.ipcRenderer.invoke('get-store-value', 'set.downloadPath');
-  const nameFormat = await window.electron.ipcRenderer.invoke(
+  const path = window.electron.ipcRenderer.sendSync('get-store-value', 'set.downloadPath');
+  const nameFormat = window.electron.ipcRenderer.sendSync(
     'get-store-value',
     'set.downloadNameFormat'
   );
-  const separator = await window.electron.ipcRenderer.invoke(
+  const separator = window.electron.ipcRenderer.sendSync(
     'get-store-value',
     'set.downloadSeparator'
   );
-  const saveLyric = await window.electron.ipcRenderer.invoke(
+  const saveLyric = window.electron.ipcRenderer.sendSync(
     'get-store-value',
     'set.downloadSaveLyric'
   );

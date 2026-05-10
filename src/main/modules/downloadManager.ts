@@ -523,7 +523,7 @@ class DownloadManager {
       } else {
         // Full response (200) - start from beginning
         task.loaded = 0;
-        const contentLength = response.headers['content-length'];
+        const contentLength = response.headers['content-length'] as string;
         task.total = contentLength ? parseInt(contentLength, 10) : 0;
       }
 
