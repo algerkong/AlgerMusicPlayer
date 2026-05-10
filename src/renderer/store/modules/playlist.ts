@@ -424,8 +424,55 @@ export const usePlaylistStore = defineStore(
       }
     };
 
+    /**
+     * 私人FM：拉取下一首并播放（FM 列表始终只保留当前一首）
+     */
+    const _nextFmPlay = async () => {
+      const playerCore = usePlayerCoreStore();
+      try {
+        const { getPersonalFM } = await import('@/api/home');
+        const res = await getPersonalFM();
+        const songs = res.data?.data;
+        if (!Array.isArray(songs) || songs.length === 0) {
+          playerCore.setIsPlay(false);
+          return;
+        }
+        const song = songs[0];
+        const fmSong = {
+          id: song.id,
+          name: song.name,
+          picUrl: song.al?.picUrl || song.album?.picUrl,
+          ar: song.artists || song.ar,
+          al: song.al || song.album,
+          source: 'netease' as const,
+          song,
+          ...song,
+          playLoading: false
+        } as any;
+        await setPlayList([fmSong], false, false);
+        playerCore.isFmPlaying = true;
+        const { playTrack } = await import('@/services/playbackController');
+        await playTrack(fmSong, true);
+      } catch (error) {
+        console.error('FM切换下一首失败:', error);
+        playerCore.setIsPlay(false);
+      }
+    };
+
     const _nextPlay = async (retryCount: number = 0, autoEnd: boolean = false) => {
       try {
+        const playerCore = usePlayerCoreStore();
+
+        // 私人FM模式：忽略 playMode 与列表长度，直接拉取新的 FM 歌曲
+        if (playerCore.isFmPlaying) {
+          if (retryCount === 0) {
+            cancelRetryTimer();
+            consecutiveFailCount.value = 0;
+          }
+          await _nextFmPlay();
+          return;
+        }
+
         if (playList.value.length === 0) return;
 
         // User-initiated (retryCount=0): reset state
@@ -434,7 +481,6 @@ export const usePlaylistStore = defineStore(
           consecutiveFailCount.value = 0;
         }
 
-        const playerCore = usePlayerCoreStore();
         const sleepTimerStore = useSleepTimerStore();
 
         if (consecutiveFailCount.value >= MAX_CONSECUTIVE_FAILS) {
