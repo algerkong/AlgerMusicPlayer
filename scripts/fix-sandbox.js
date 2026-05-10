@@ -3,14 +3,14 @@
  * chrome-sandbox 需要 root 拥有且权限为 4755
  *
  * 注意：此脚本需要 sudo 权限，仅在 CI 环境或手动执行时使用
- * 用法：sudo node fix-sandbox.js
+ * 用法：sudo npm run fix-sandbox
  */
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
 if (process.platform === 'linux') {
-  const sandboxPath = path.resolve('./node_modules/electron/dist/chrome-sandbox');
+  const sandboxPath = path.resolve(__dirname, '../node_modules/electron/dist/chrome-sandbox');
   if (fs.existsSync(sandboxPath)) {
     execSync(`sudo chown root:root ${sandboxPath}`);
     execSync(`sudo chmod 4755 ${sandboxPath}`);
