@@ -152,6 +152,7 @@ import { usePlayerStore } from '@/store/modules/player';
 import { usePlayHistoryStore } from '@/store/modules/playHistory';
 import type { SongResult } from '@/types/music';
 import { setAnimationClass } from '@/utils';
+import type { MusicHistoryItem } from '@/utils/persistedSong';
 
 const { t } = useI18n();
 const playHistoryStore = usePlayHistoryStore();
@@ -220,7 +221,7 @@ const processHistoryData = () => {
     const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
 
     // 遍历音乐历史记录
-    playHistoryStore.musicHistory.forEach((music: SongResult & { count?: number }) => {
+    playHistoryStore.musicHistory.forEach((music: MusicHistoryItem) => {
       // 假设每次播放都记录在当前时间，我们根据 count 分散到最近的日期
       const playCount = music.count || 1;
       const now = Date.now();
@@ -251,7 +252,7 @@ const processHistoryData = () => {
           dailyMap[dateKey].songs.set(songId, {
             id: music.id,
             name: music.name || 'Unknown',
-            artist: music.ar?.[0]?.name || music.artists?.[0]?.name || 'Unknown Artist',
+            artist: music.ar?.[0]?.name || 'Unknown Artist',
             playCount: 1
           });
         }
@@ -307,11 +308,11 @@ const mostPlayedSong = computed<{
     { id: string | number; name: string; artist: string; playCount: number }
   >();
 
-  playHistoryStore.musicHistory.forEach((music: SongResult & { count?: number }) => {
+  playHistoryStore.musicHistory.forEach((music: MusicHistoryItem) => {
     const id = music.id;
     const count = music.count || 1;
     const name = music.name || 'Unknown';
-    const artist = music.ar?.[0]?.name || music.artists?.[0]?.name || 'Unknown Artist';
+    const artist = music.ar?.[0]?.name || 'Unknown Artist';
 
     if (songPlayCounts.has(id)) {
       songPlayCounts.get(id)!.playCount += count;
@@ -382,7 +383,7 @@ const latestNightSong = computed<{
     return {
       id: randomSong.id,
       name: randomSong.name || 'Unknown',
-      artist: randomSong.ar?.[0]?.name || randomSong.artists?.[0]?.name || 'Unknown Artist',
+      artist: randomSong.ar?.[0]?.name || 'Unknown Artist',
       time: `凌晨 ${randomHour.toString().padStart(2, '0')}:${randomMinute.toString().padStart(2, '0')}`
     };
   }
@@ -395,7 +396,7 @@ const latestNightSong = computed<{
     return {
       id: song.id,
       name: song.name || 'Unknown',
-      artist: song.ar?.[0]?.name || song.artists?.[0]?.name || 'Unknown Artist',
+      artist: song.ar?.[0]?.name || 'Unknown Artist',
       time: `凌晨 ${randomHour.toString().padStart(2, '0')}:${randomMinute.toString().padStart(2, '0')}`
     };
   }
@@ -407,7 +408,8 @@ const latestNightSong = computed<{
 const handlePlaySong = async (songId: string | number) => {
   const song = playHistoryStore.musicHistory.find((music) => music.id === songId);
   if (song) {
-    await playerStore.setPlay(song);
+    // MusicHistoryItem 是 SongResult 的精简子集，setPlay 内部用 optional chain 访问字段
+    await playerStore.setPlay(song as SongResult);
     playerStore.setPlayMusic(true);
   }
 };
