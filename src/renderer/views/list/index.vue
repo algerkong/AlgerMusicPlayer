@@ -95,8 +95,8 @@ import { useRoute, useRouter } from 'vue-router';
 
 import { getPlaylistCategory } from '@/api/home';
 import { getListByCat } from '@/api/list';
-import StickyTabPage from '@/components/common/StickyTabPage.vue';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
+import StickyTabPage from '@/components/common/StickyTabPage.vue';
 import type { IPlayListSort } from '@/types/playlist';
 import { calculateAnimationDelay, formatNumber, getImgUrl } from '@/utils';
 

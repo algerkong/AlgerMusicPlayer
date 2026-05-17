@@ -55,7 +55,8 @@ export default [
         defineEmits: 'readonly',
         // TypeScript 全局类型
         NodeJS: 'readonly',
-        ScrollBehavior: 'readonly'
+        ScrollBehavior: 'readonly',
+        ScrollToOptions: 'readonly'
       }
     },
     plugins: {
@@ -148,7 +149,8 @@ export default [
         useMessage: 'readonly',
         // TypeScript 全局类型
         NodeJS: 'readonly',
-        ScrollBehavior: 'readonly'
+        ScrollBehavior: 'readonly',
+        ScrollToOptions: 'readonly'
       }
     },
     plugins: {
