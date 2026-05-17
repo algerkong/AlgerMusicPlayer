@@ -124,6 +124,7 @@ import { useI18n } from 'vue-i18n';
 
 import localData from '@/../main/set.json';
 import ClearCacheSettings from '@/components/settings/ClearCacheSettings.vue';
+import { usePlayHistoryStore } from '@/store/modules/playHistory';
 import { useUserStore } from '@/store/modules/user';
 import { isElectron } from '@/utils';
 import { openDirectory, selectDirectory } from '@/utils/fileOperation';
@@ -435,7 +436,10 @@ const clearCache = async (selectedCacheTypes: string[]) => {
   const clearTasks = selectedCacheTypes.map(async (type) => {
     switch (type) {
       case 'history':
-        localStorage.removeItem('musicHistory');
+        // 与旧版本行为对齐：只清音乐历史，不动 podcast/playlist/album/podcastRadio。
+        // 数据已迁到 pinia store（key=play-history-store），老 musicHistory key 由
+        // cleanupLegacyPlayHistoryStorage 在启动时清掉，这里不再需要 removeItem
+        usePlayHistoryStore().clearMusicHistory();
         break;
       case 'favorite':
         localStorage.removeItem('favoriteList');
@@ -451,7 +455,6 @@ const clearCache = async (selectedCacheTypes: string[]) => {
         localStorage.removeItem('theme');
         localStorage.removeItem('lyricData');
         localStorage.removeItem('lyricFontSize');
-        localStorage.removeItem('playMode');
         break;
       case 'downloads':
         if (window.electron) {
