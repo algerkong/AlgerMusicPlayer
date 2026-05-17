@@ -1,5 +1,4 @@
 import { useThrottleFn } from '@vueuse/core';
-import { debounce } from 'lodash';
 import { createDiscreteApi } from 'naive-ui';
 import { defineStore, storeToRefs } from 'pinia';
 import { computed, ref, shallowRef, triggerRef } from 'vue';
@@ -9,6 +8,8 @@ import { useSongDetail } from '@/hooks/usePlayerHooks';
 import { preloadService } from '@/services/preloadService';
 import type { SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
+import { debouncedLocalStorage } from '@/utils/debouncedStorage';
+import { minifySongList } from '@/utils/persistedSong';
 import { performShuffle, preloadCoverImage } from '@/utils/playerUtils';
 
 import { useIntelligenceModeStore } from './intelligenceMode';
@@ -21,74 +22,6 @@ const getMessage = () => {
   if (!_message) _message = createDiscreteApi(['message']).message;
   return _message;
 };
-
-/**
- * 精简 SongResult 对象，只保留持久化必要字段
- * 排除大体积字段：lyric, song, backgroundColor, primaryColor
- *
- * picUrl/al.picUrl 若为 base64 Data URL 一律剥离：localStorage 仅 5MB 配额，
- * 单张 base64 封面动辄几百 KB，几首就能撑爆导致整个 playList 写入失败。
- * 剥离后恢复时展示默认封面图，picUrl 仍是 http(s):// 或 local:// 短引用时原样保留。
- *
- * 仅 local:// 的 playMusicUrl（永不过期）会被持久化，让本地音乐恢复后免重新解析；
- * expiredAt 不持久化——本地音乐每次走 toSongResult 会重新生成，远程歌曲恢复后重新拉详情即可。
- */
-const stripDataUrl = (url: string | undefined): string =>
-  !url || url.startsWith('data:') ? '' : url;
-
-const minifySong = (s: SongResult) => ({
-  id: s.id,
-  name: s.name,
-  picUrl: stripDataUrl(s.picUrl),
-  ar: s.ar?.map((a) => ({ id: a.id, name: a.name })),
-  al: s.al && { id: s.al.id, name: s.al.name, picUrl: stripDataUrl(s.al.picUrl) },
-  source: s.source,
-  dt: s.dt,
-  // 仅 local:// 永不过期，保留给本地音乐恢复后免重新解析；其他 URL 会过期，丢掉让恢复时重新拉
-  // JSON.stringify 自动丢 undefined，无需条件 spread
-  playMusicUrl: s.playMusicUrl?.startsWith('local://') ? s.playMusicUrl : undefined
-});
-
-const minifySongList = (list: SongResult[] | undefined) => list?.map(minifySong) ?? [];
-
-/**
- * 防抖 localStorage 包装，降低写入频率
- * 通过 pendingWrites 跟踪未写入数据，beforeunload 时刷新
- */
-const pendingWrites = new Map<string, string>();
-
-const safeSetItem = (key: string, value: string) => {
-  try {
-    localStorage.setItem(key, value);
-  } catch (error) {
-    console.error('[playlist] localStorage 写入失败（可能超出配额）:', error);
-  }
-};
-
-const flushPendingWrites = () => {
-  pendingWrites.forEach((value, key) => {
-    safeSetItem(key, value);
-  });
-  pendingWrites.clear();
-};
-
-const debouncedSetItem = debounce((key: string, value: string) => {
-  safeSetItem(key, value);
-  pendingWrites.delete(key);
-}, 2000);
-
-const debouncedLocalStorage = {
-  getItem: (key: string) => localStorage.getItem(key),
-  setItem: (key: string, value: string) => {
-    pendingWrites.set(key, value);
-    debouncedSetItem(key, value);
-  }
-};
-
-// 正常关闭时刷新未写入的数据
-if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', flushPendingWrites);
-}
 
 /**
  * 播放列表管理 Store
