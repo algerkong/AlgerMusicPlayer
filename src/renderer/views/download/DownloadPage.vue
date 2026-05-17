@@ -557,6 +557,7 @@ import type { SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
 
 import type { DownloadTask } from '../../../shared/download';
+import { filePathToLocalUrl } from '../../../shared/localUrl';
 
 const { t } = useI18n();
 const playerStore = usePlayerStore();
@@ -656,7 +657,7 @@ const shortenPath = (path: string) => {
 
 const getLocalFilePath = (path: string) => {
   if (!path) return '';
-  return `local:///${encodeURIComponent(path)}`;
+  return filePathToLocalUrl(path);
 };
 
 const openDirectory = (path: string) => {

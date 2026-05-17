@@ -24,8 +24,8 @@ export type LocalMusicMeta = {
   album: string;
   /** 时长（毫秒） */
   duration: number;
-  /** base64 Data URL 格式的封面图片，无封面时为 null */
-  cover: string | null;
+  /** 封面图片缓存文件绝对路径（userData/AudioCovers/<hash>.<ext>），无封面时为 null */
+  coverPath: string | null;
   /** LRC 格式歌词文本，无歌词时为 null */
   lyrics: string | null;
   /** 文件大小（字节） */

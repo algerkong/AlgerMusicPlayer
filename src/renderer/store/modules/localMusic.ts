@@ -150,10 +150,15 @@ export const useLocalMusicStore = defineStore(
             }
 
             // 2. 增量扫描：基于修改时间筛选需重新解析的文件
+            // 老条目（无 coverPath 字段）也视为需要重新解析，让数据自愈到统一格式
             const parseTargets: string[] = [];
             for (const file of files) {
               const cached = cachedMap.get(file.path);
-              if (!cached || cached.modifiedTime !== file.modifiedTime) {
+              if (
+                !cached ||
+                cached.modifiedTime !== file.modifiedTime ||
+                !('coverPath' in cached)
+              ) {
                 parseTargets.push(file.path);
               }
             }

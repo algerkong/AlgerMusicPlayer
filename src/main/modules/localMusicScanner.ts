@@ -1,7 +1,8 @@
 // 本地音乐扫描模块
 // 负责文件系统递归扫描和音乐文件元数据提取，通过 IPC 暴露给渲染进程
 
-import { ipcMain } from 'electron';
+import * as crypto from 'crypto';
+import { app, ipcMain } from 'electron';
 import * as fs from 'fs';
 import * as mm from 'music-metadata';
 import * as os from 'os';
@@ -10,7 +11,30 @@ import * as path from 'path';
 /** 支持的音频文件格式 */
 const SUPPORTED_AUDIO_FORMATS = ['.mp3', '.flac', '.wav', '.ogg', '.m4a', '.aac'] as const;
 const METADATA_PARSE_CONCURRENCY = Math.min(8, Math.max(2, os.cpus().length));
-const MAX_COVER_BYTES = 1024 * 1024;
+const MAX_COVER_BYTES = 8 * 1024 * 1024;
+
+/** 封面缓存目录：userData/AudioCovers/<hash>.<ext> */
+const COVER_DIR_NAME = 'AudioCovers';
+let cachedCoverDir: string | null = null;
+
+function getCoverDir(): string {
+  if (cachedCoverDir) return cachedCoverDir;
+  const dir = path.join(app.getPath('userData'), COVER_DIR_NAME);
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+  } catch (error) {
+    console.error('创建封面目录失败:', error);
+  }
+  cachedCoverDir = dir;
+  return dir;
+}
+
+/** 从 mime 类型推断文件扩展名 */
+function extFromMime(mime: string | undefined): string {
+  const sub = mime?.split('/')[1]?.split(';')[0]?.trim().toLowerCase();
+  if (!sub) return 'bin';
+  return sub === 'jpeg' ? 'jpg' : sub;
+}
 
 /**
  * 主进程返回的原始音乐元数据
@@ -27,8 +51,8 @@ type LocalMusicMeta = {
   album: string;
   /** 时长（毫秒） */
   duration: number;
-  /** base64 Data URL 格式的封面图片，无封面时为 null */
-  cover: string | null;
+  /** 封面图片缓存文件绝对路径，无封面时为 null */
+  coverPath: string | null;
   /** LRC 格式歌词文本，无歌词时为 null */
   lyrics: string | null;
   /** 文件大小（字节） */
@@ -66,23 +90,37 @@ function extractTitleFromFilename(filePath: string): string {
 }
 
 /**
- * 将封面图片数据转换为 base64 Data URL
+ * 将封面图片落盘到 userData/AudioCovers/，返回绝对路径
+ * 文件名按 sourceFilePath 的 sha256 + 推断扩展名拼成，幂等可覆盖
  * @param picture music-metadata 解析出的封面图片对象
- * @returns base64 Data URL 字符串，转换失败返回 null
+ * @param sourceFilePath 音乐源文件绝对路径，用于生成稳定的封面文件名
+ * @returns 封面文件绝对路径，无封面或写入失败返回 null
  */
-function extractCoverAsDataUrl(picture: mm.IPicture | undefined): string | null {
+async function extractCoverToFile(
+  picture: mm.IPicture | undefined,
+  sourceFilePath: string
+): Promise<string | null> {
   if (!picture) {
     return null;
   }
   try {
     if (picture.data.length > MAX_COVER_BYTES) {
+      console.warn(
+        `封面超过大小上限被跳过: ${sourceFilePath} (${picture.data.length} bytes > ${MAX_COVER_BYTES})`
+      );
       return null;
     }
-    const mime = picture.format ?? 'image/jpeg';
-    const base64 = Buffer.from(picture.data).toString('base64');
-    return `data:${mime};base64,${base64}`;
+    const ext = extFromMime(picture.format);
+    const hash = crypto.createHash('sha256').update(sourceFilePath).digest('hex');
+    const coverFile = path.join(getCoverDir(), `${hash}.${ext}`);
+
+    // 直接覆盖写：本函数只在文件 mtime 变更时被调用（见 scanFolders 的 parseTargets），
+    // 频率本就受守门；按 size 跳过会在"用户替换内嵌封面、新旧字节数恰好相等"时留旧图，
+    // 单张封面几十~几百 KB，覆盖代价可忽略。
+    await fs.promises.writeFile(coverFile, Buffer.from(picture.data));
+    return coverFile;
   } catch (error) {
-    console.error('封面提取失败:', error);
+    console.error('封面落盘失败:', error);
     return null;
   }
 }
@@ -234,7 +272,7 @@ async function parseMetadata(filePath: string): Promise<LocalMusicMeta> {
     artist: '未知艺术家',
     album: '未知专辑',
     duration: 0,
-    cover: null,
+    coverPath: null,
     lyrics: null,
     fileSize,
     modifiedTime
@@ -250,7 +288,7 @@ async function parseMetadata(filePath: string): Promise<LocalMusicMeta> {
       artist: common.artist || fallback.artist,
       album: common.album || fallback.album,
       duration: format.duration ? Math.round(format.duration * 1000) : 0,
-      cover: extractCoverAsDataUrl(common.picture?.[0]),
+      coverPath: await extractCoverToFile(common.picture?.[0], filePath),
       lyrics: extractLyrics(common.lyrics),
       fileSize,
       modifiedTime

@@ -6,6 +6,7 @@ import Store from 'electron-store';
 import * as fs from 'fs';
 import * as path from 'path';
 
+import { filePathToLocalUrl } from '../../shared/localUrl';
 import { getStore } from './config';
 
 type CacheCleanupPolicy = 'lru' | 'fifo';
@@ -535,8 +536,7 @@ class DiskCacheManager {
   }
 
   private toLocalUrl(filePath: string): string {
-    const normalized = path.normalize(filePath).replace(/\\/g, '/');
-    return `local:///${encodeURIComponent(normalized)}`;
+    return filePathToLocalUrl(path.normalize(filePath));
   }
 
   private isRemoteAudioUrl(url: string): boolean {
