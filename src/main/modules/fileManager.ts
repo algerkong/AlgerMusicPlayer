@@ -1,8 +1,8 @@
-import { app, dialog, ipcMain, net, protocol, shell } from 'electron';
+import { app, dialog, ipcMain, protocol, shell } from 'electron';
 import Store from 'electron-store';
 import * as fs from 'fs';
 import * as path from 'path';
-import { pathToFileURL } from 'url';
+import { Readable } from 'stream';
 
 import { getStore } from './config';
 
@@ -22,6 +22,45 @@ function sanitizeFilename(filename: string): string {
     .replace(/[<>:"/\\|?*]/g, '_')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+// Electron net.fetch(file://) 在当前版本不会回 206，audio seek 需要主进程自己处理 Range
+function buildLocalFileResponse(
+  filePath: string,
+  total: number,
+  rangeHeader: string | null
+): Response {
+  const range416 = () =>
+    new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${total}` } });
+
+  let start = 0;
+  let end = total - 1;
+  let partial = false;
+
+  if (rangeHeader) {
+    const m = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader.trim());
+    if (!m || (!m[1] && !m[2])) return range416();
+    if (m[1]) {
+      start = parseInt(m[1], 10);
+      if (m[2]) end = Math.min(parseInt(m[2], 10), end);
+    } else {
+      start = Math.max(0, total - parseInt(m[2], 10));
+    }
+    if (start > end || start >= total) return range416();
+    partial = true;
+  }
+
+  return new Response(
+    Readable.toWeb(fs.createReadStream(filePath, { start, end })) as ReadableStream,
+    {
+      status: partial ? 206 : 200,
+      headers: {
+        'Content-Length': String(end - start + 1),
+        'Accept-Ranges': 'bytes',
+        ...(partial && { 'Content-Range': `bytes ${start}-${end}/${total}` })
+      }
+    }
+  );
 }
 
 /**
@@ -48,13 +87,13 @@ export function initializeFileManager() {
 
       filePath = path.normalize(filePath);
 
-      if (!fs.existsSync(filePath)) {
+      const stat = await fs.promises.stat(filePath).catch(() => null);
+      if (!stat?.isFile()) {
         console.error('File not found:', filePath);
         return new Response(null, { status: 404 });
       }
 
-      // 用 net.fetch 走 file:// 加载，自动支持 Range / streaming，让媒体元素能正常 seek
-      return net.fetch(pathToFileURL(filePath).toString());
+      return buildLocalFileResponse(filePath, stat.size, request.headers.get('range'));
     } catch (error) {
       console.error('Error handling local protocol:', error);
       return new Response(null, { status: 500 });
