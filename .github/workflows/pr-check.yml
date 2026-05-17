@@ -64,6 +64,13 @@ jobs:
       - name: Lint
         run: npx eslint --max-warnings 0 "src/**/*.{ts,tsx,vue,js}"
 
+      # tsconfig.web.json 显式 require src/renderer/{auto-imports,components}.d.ts
+      # 这两个文件由 unplugin-auto-import / unplugin-vue-components 在 vite 启动时
+      # 生成，且被 .gitignore 排除（58922dc 维护者主动设置）。CI 直接跑 typecheck
+      # 拿不到 d.ts 会报 TS2688，先跑一次 build 触发 unplugin 生成
+      - name: Build (generates auto-import / components d.ts)
+        run: npm run build
+
       - name: Type check
         run: npm run typecheck
 
