@@ -94,7 +94,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "eslint-plugin-vue": "^10.6.2",
-    "eslint-plugin-vue-scoped-css": "^2.12.0",
+    "eslint-plugin-vue-scoped-css": "^3.1.1",
     "globals": "^16.5.0",
     "howler": "^2.2.4",
     "lint-staged": "^15.5.2",
