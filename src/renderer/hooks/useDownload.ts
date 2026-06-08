@@ -20,7 +20,8 @@ function toDownloadSongInfo(song: SongResult): DownloadSongInfo {
     id: song.id as number,
     name: song.name,
     picUrl: song.picUrl ?? song.al?.picUrl ?? '',
-    ar: (song.ar || song.song?.artists || []).map((a: { name: string }) => ({ name: a.name })),
+    // 统一使用顶层字段 ar，避免访问嵌套的 song.* 属性
+    ar: (song.ar || []).map((a: { name: string }) => ({ name: a.name })),
     al: {
       name: song.al?.name ?? '',
       picUrl: song.al?.picUrl ?? ''
@@ -147,8 +148,8 @@ export const useDownload = () => {
         lrcContent = mergeLrcWithTranslation(lyricData.lrc.lyric, lyricData.tlyric.lyric);
       }
 
-      const artistNames = (song.ar || song.song?.artists)
-        ?.map((a: { name: string }) => a.name)
+      const artistNames = (song.ar || [])
+        .map((a: { name: string }) => a.name)
         .join(',');
       const filename = `${song.name} - ${artistNames}`;
 

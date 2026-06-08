@@ -139,12 +139,11 @@ const triggerPreload = async (song: SongResult): Promise<void> => {
  * 更新文档标题
  */
 const updateDocumentTitle = (music: SongResult): void => {
+  // 统一使用顶层字段 ar，避免访问嵌套的 song.* 属性
+  const artistText = music.ar?.map((a) => a.name).join(' / ') || '';
   let title = music.name;
-  if (music.source === 'netease' && music?.song?.artists) {
-    title += ` - ${music.song.artists.reduce(
-      (prev: string, curr: any) => `${prev}${curr.name}/`,
-      ''
-    )}`;
+  if (artistText) {
+    title += ` - ${artistText}`;
   }
   document.title = 'AlgerMusic - ' + title;
 };

@@ -442,10 +442,9 @@ export const usePlaylistStore = defineStore(
           id: song.id,
           name: song.name,
           picUrl: song.al?.picUrl || song.album?.picUrl,
-          ar: song.artists || song.ar,
+          ar: song.ar || song.artists,
           al: song.al || song.album,
           source: 'netease' as const,
-          song,
           ...song,
           playLoading: false
         } as any;

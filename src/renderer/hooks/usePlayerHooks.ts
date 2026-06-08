@@ -19,12 +19,9 @@ type DiskCacheResolveResult = {
 };
 
 const getSongArtistText = (songData: SongResult): string => {
+  // 统一使用顶层字段 ar，避免访问嵌套的 song.* 属性
   if (songData?.ar?.length) {
     return songData.ar.map((artist) => artist.name).join(' / ');
-  }
-
-  if (songData?.song?.artists?.length) {
-    return songData.song.artists.map((artist) => artist.name).join(' / ');
   }
 
   return '';

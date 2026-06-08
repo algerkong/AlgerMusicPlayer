@@ -28,6 +28,19 @@ function sanitizeFilename(filename: string): string {
     .trim();
 }
 
+/**
+ * 从 filename 中提取歌名（格式为 "{歌名} - {歌手}"）
+ */
+function extractSongNameFromFilename(filename: string): string {
+  // 尝试匹配 "歌名 - 歌手" 格式
+  const match = filename.match(/^(.+) - (.+)$/);
+  if (match) {
+    return match[1].trim();
+  }
+  // 如果没有匹配到，返回原文件名（去除扩展名）
+  return path.basename(filename, path.extname(filename));
+}
+
 function parseLyrics(lyricsText: string): Map<string, string> {
   const lyricMap = new Map<string, string>();
   const lines = lyricsText.split('\n');
@@ -455,7 +468,8 @@ class DownloadManager {
       let formattedFilename = task.filename;
       if (task.songInfo) {
         const artistName = task.songInfo.ar?.map((a: any) => a.name).join('\u3001') || '未知艺术家';
-        const songName = task.songInfo.name || task.filename;
+        // 使用 songInfo.name，如果缺失则从 filename 提取（避免直接用整个 filename）
+        const songName = task.songInfo.name || extractSongNameFromFilename(task.filename);
         const albumName = task.songInfo.al?.name || '未知专辑';
 
         formattedFilename = nameFormat
@@ -754,7 +768,7 @@ class DownloadManager {
           artist: artistNames,
           TPE1: artistNames,
           TPE2: artistNames,
-          album: info?.al?.name || info?.song?.album?.name || info?.name || task.filename,
+          album: info?.al?.name || info?.name || extractSongNameFromFilename(task.filename),
           APIC: {
             imageBuffer: coverImageBuffer,
             type: { id: 3, name: 'front cover' },
@@ -782,7 +796,7 @@ class DownloadManager {
         const tagMap: FlacTagMap = {
           TITLE: info?.name,
           ARTIST: artistNames,
-          ALBUM: info?.al?.name || info?.song?.album?.name || info?.name || task.filename,
+          ALBUM: info?.al?.name || info?.name || extractSongNameFromFilename(task.filename),
           LYRICS: lyricsContent || '',
           TRACKNUMBER: info?.no ? String(info.no) : '',
           DATE: info?.publishTime ? new Date(info.publishTime).getFullYear().toString() : ''
@@ -812,23 +826,22 @@ class DownloadManager {
 
     // Save to downloadedSongs
     const songInfos = (configStore.get('downloadedSongs') || {}) as Record<string, any>;
+    const defaultSongName = extractSongNameFromFilename(task.filename);
     const defaultInfo = {
-      name: task.filename,
+      name: defaultSongName,
       ar: [{ name: '本地音乐' }],
-      picUrl: '/images/default_cover.png'
+      picUrl: '/images/default_cover.png',
+      al: { name: '', picUrl: '/images/default_cover.png' }
     };
 
     const totalSize = task.total;
     const newSongInfo = {
       id: task.songInfo?.id || 0,
-      name: task.songInfo?.name || task.filename,
+      name: task.songInfo?.name || defaultSongName,
       filename: task.filename,
       picUrl: task.songInfo?.picUrl || task.songInfo?.al?.picUrl || defaultInfo.picUrl,
       ar: task.songInfo?.ar || defaultInfo.ar,
-      al: task.songInfo?.al || {
-        picUrl: task.songInfo?.picUrl || defaultInfo.picUrl,
-        name: task.songInfo?.name || task.filename
-      },
+      al: task.songInfo?.al || defaultInfo.al,
       size: totalSize,
       path: finalFilePath,
       downloadTime: Date.now(),
@@ -878,9 +891,10 @@ class DownloadManager {
     } else {
       // Individual notification
       try {
+        const songName = task.songInfo?.name || extractSongNameFromFilename(task.filename);
         const notification = new Notification({
           title: '下载完成',
-          body: `${task.songInfo?.name || task.filename} - ${artistNames}`,
+          body: `${songName} - ${artistNames}`,
           silent: false
         });
         notification.on('click', () => {

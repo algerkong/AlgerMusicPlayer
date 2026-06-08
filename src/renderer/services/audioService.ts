@@ -141,10 +141,9 @@ class AudioService {
     try {
       if (!('mediaSession' in navigator)) return;
 
-      const artists = track.ar
-        ? track.ar.map((a) => a.name)
-        : track.song.artists?.map((a) => a.name);
-      const album = track.al ? track.al.name : track.song.album.name;
+      // 统一使用顶层字段 ar 和 al，避免访问嵌套的 song.* 属性
+      const artists = track.ar?.map((a) => a.name) || [];
+      const album = track.al?.name || '';
       const artwork = ['96', '128', '192', '256', '384', '512'].map((size) => ({
         src: `${track.picUrl}?param=${size}y${size}`,
         type: 'image/jpg',
@@ -153,8 +152,8 @@ class AudioService {
 
       navigator.mediaSession.metadata = new window.MediaMetadata({
         title: track.name || '',
-        artist: artists ? artists.join(',') : '',
-        album: album || '',
+        artist: artists.join(','),
+        album: album,
         artwork
       });
     } catch (error) {
