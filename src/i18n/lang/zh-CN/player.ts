@@ -58,6 +58,7 @@ export default {
     eq: '均衡器',
     playList: '播放列表',
     reparse: '重新解析',
+    download: '下载',
     playMode: {
       sequence: '顺序播放',
       loop: '循环播放',

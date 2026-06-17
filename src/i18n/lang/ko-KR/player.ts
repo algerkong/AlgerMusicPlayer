@@ -59,6 +59,7 @@ export default {
     eq: '이퀄라이저',
     playList: '재생 목록',
     reparse: '재분석',
+    download: '다운로드',
     playMode: {
       sequence: '순차 재생',
       loop: '반복 재생',
