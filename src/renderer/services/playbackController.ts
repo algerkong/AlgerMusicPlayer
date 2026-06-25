@@ -114,7 +114,7 @@ const loadAndPlayAudio = async (song: SongResult, shouldPlay: boolean): Promise<
 };
 
 /**
- * 触发预加载下一首/下下首歌曲
+ * 触发预加载下一首/下下首歌曲（立即触发）
  */
 const triggerPreload = async (song: SongResult): Promise<void> => {
   try {
@@ -125,9 +125,8 @@ const triggerPreload = async (song: SongResult): Promise<void> => {
         (item: SongResult) => item.id === song.id && item.source === song.source
       );
       if (idx !== -1) {
-        setTimeout(() => {
-          playlistStore.preloadNextSongs(idx);
-        }, 3000);
+        // 立即触发预加载，不等待
+        playlistStore.preloadNextSongs(idx);
       }
     }
   } catch (e) {
@@ -152,7 +151,7 @@ const updateDocumentTitle = (music: SongResult): void => {
 // ==================== 导出函数 ====================
 
 /**
- * 核心播放函数
+ * 核心播放函数（优化版）
  *
  * @param music 要播放的歌曲
  * @param shouldPlay 是否立即播放（默认 true）
@@ -193,30 +192,12 @@ export const playTrack = async (
   playerCore.isPlay = shouldPlay;
   playerCore.userPlayIntent = shouldPlay;
 
-  // 4. 加载元数据（歌词 + 背景色）
-  try {
-    const { lyrics, backgroundColor, primaryColor } = await loadMetadata(music);
-
-    // 检查 generation
-    if (gen !== generation) {
-      console.log(`[playbackController] gen=${gen} 已过期（加载元数据后），当前 gen=${generation}`);
-      return false;
-    }
-
-    music.lyric = lyrics;
-    music.backgroundColor = backgroundColor;
-    music.primaryColor = primaryColor;
-  } catch (error) {
-    if (gen !== generation) return false;
-    console.error('[playbackController] 加载元数据失败:', error);
-    // 元数据加载失败不阻塞播放，继续执行
-  }
-
-  // 5. 歌词已加载，现在设置 playMusic（触发 MusicHook 的歌词 watcher）
+  // 4. 先设置基本歌曲信息（立即显示UI）
   music.playLoading = true;
   playerCore.playMusic = music;
   updateDocumentTitle(music);
 
+  // 保存原始歌曲数据
   const originalMusic = { ...music };
 
   // 5. 添加到播放历史
@@ -233,7 +214,7 @@ export const playTrack = async (
     console.warn('[playbackController] 添加播放历史失败:', e);
   }
 
-  // 6. 获取歌曲详情（解析 URL）
+  // 6. 获取歌曲详情（解析 URL）- 这是必须的，不能跳过
   try {
     const { getSongDetail } = useSongDetail();
     const updatedPlayMusic = await getSongDetail(originalMusic, requestId);
@@ -244,7 +225,6 @@ export const playTrack = async (
       return false;
     }
 
-    updatedPlayMusic.lyric = music.lyric;
     playerCore.playMusic = updatedPlayMusic;
     playerCore.playMusicUrl = updatedPlayMusic.playMusicUrl as string;
     music.playMusicUrl = updatedPlayMusic.playMusicUrl as string;
@@ -259,10 +239,7 @@ export const playTrack = async (
     return false;
   }
 
-  // 7. 触发预加载下一首（异步，不阻塞）
-  triggerPreload(playerCore.playMusic);
-
-  // 8. 加载并播放音频
+  // 7. 加载并播放音频（优先播放）
   try {
     const success = await loadAndPlayAudio(playerCore.playMusic, shouldPlay);
 
@@ -274,18 +251,38 @@ export const playTrack = async (
     }
 
     if (success) {
+      // 8. 播放成功后，异步加载元数据（不阻塞）
+      loadMetadata(playerCore.playMusic).then(({ lyrics, backgroundColor, primaryColor }) => {
+        // 检查 generation（确保还是当前歌曲）
+        if (gen !== generation) {
+          console.log(`[playbackController] gen=${gen} 已过期，跳过元数据更新`);
+          return;
+        }
+        playerCore.playMusic.lyric = lyrics;
+        playerCore.playMusic.backgroundColor = backgroundColor;
+        playerCore.playMusic.primaryColor = primaryColor;
+        // 触发 watcher 更新
+        playerCore.playMusic = { ...playerCore.playMusic };
+      }).catch((error) => {
+        console.warn('[playbackController] 元数据加载失败:', error);
+      });
+
       // 9. 播放成功
       playerCore.playMusic.playLoading = false;
       playerCore.playMusic.isFirstPlay = false;
       playbackRequestManager.completeRequest(requestId);
       console.log(`[playbackController] gen=${gen} 播放成功: ${music.name}`);
+
+      // 10. 触发预加载下一首（立即触发，不等待）
+      triggerPreload(playerCore.playMusic);
+
       return true;
     } else {
       playbackRequestManager.failRequest(requestId);
       return false;
     }
   } catch (error) {
-    // 10. 播放失败
+    // 11. 播放失败
     if (gen !== generation) {
       console.log(`[playbackController] gen=${gen} 已过期（播放异常），静默返回`);
       return false;
