@@ -104,12 +104,12 @@ class PreloadService {
       testAudio.src = url;
       testAudio.load();
 
-      // 5秒超时
+      // 3秒超时（优化预加载速度）
       setTimeout(() => {
         cleanup();
         // 超时不算失败，URL 可能是可用的只是服务器慢
         resolve(url);
-      }, 5000);
+      }, 3000);
     });
   }
 

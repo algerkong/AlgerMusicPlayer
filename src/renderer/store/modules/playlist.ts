@@ -153,7 +153,7 @@ export const usePlaylistStore = defineStore(
     };
 
     /**
-     * 智能预加载下一首歌曲
+     * 智能预加载下一首歌曲（立即执行，不等待）
      */
     const preloadNextSongs = (currentIndex: number) => {
       if (playList.value.length <= 1) return;
@@ -171,9 +171,11 @@ export const usePlaylistStore = defineStore(
         nextIndex = (currentIndex + 1) % playList.value.length;
       }
 
+      // 预加载下一首和下下首（最多2首）
       const endIndex = Math.min(nextIndex + 2, playList.value.length);
 
       if (nextIndex < playList.value.length) {
+        // 立即执行预加载
         fetchSongs(nextIndex, endIndex);
 
         // 循环模式且接近列表末尾，预加载列表开头
@@ -182,9 +184,8 @@ export const usePlaylistStore = defineStore(
           nextIndex + 1 >= playList.value.length &&
           playList.value.length > 2
         ) {
-          setTimeout(() => {
-            fetchSongs(0, 1);
-          }, 1000);
+          // 立即预加载，不等待
+          fetchSongs(0, 1);
         }
       }
     };
@@ -682,7 +683,8 @@ export const usePlaylistStore = defineStore(
         if (success) {
           playerCore.isPlay = true;
           if (songIndex !== -1) {
-            setTimeout(() => preloadNextSongs(playListIndex.value), 3000);
+            // 立即预加载，不等待
+            preloadNextSongs(playListIndex.value);
           }
         }
         return success;
