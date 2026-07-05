@@ -59,6 +59,7 @@ export default {
     eq: 'Equalizer',
     playList: 'Play List',
     reparse: 'Reparse',
+    download: 'Download',
     miniPlayBar: 'Mini Play Bar',
     playMode: {
       sequence: 'Sequence',

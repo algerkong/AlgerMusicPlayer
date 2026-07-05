@@ -58,6 +58,7 @@ export default {
     eq: '等化器',
     playList: '播放清單',
     reparse: '重新解析',
+    download: '下載',
     playMode: {
       sequence: '順序播放',
       loop: '循環播放',
