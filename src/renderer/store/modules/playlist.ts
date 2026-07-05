@@ -543,10 +543,19 @@ export const usePlaylistStore = defineStore(
 
     const _prevPlay = async () => {
       try {
+        const playerCore = usePlayerCoreStore();
+
+        // 私人FM模式：FM 不支持回到上一首，与下一曲一致直接拉取新的 FM 歌曲（#682）
+        if (playerCore.isFmPlaying) {
+          cancelRetryTimer();
+          consecutiveFailCount.value = 0;
+          await _nextFmPlay();
+          return;
+        }
+
         if (playList.value.length === 0) return;
 
         cancelRetryTimer();
-        const playerCore = usePlayerCoreStore();
         const nowPlayListIndex =
           (playListIndex.value - 1 + playList.value.length) % playList.value.length;
         const prevSong = { ...playList.value[nowPlayListIndex] };
