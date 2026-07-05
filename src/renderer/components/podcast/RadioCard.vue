@@ -23,11 +23,7 @@ const goToDetail = () => {
 </script>
 
 <template>
-  <div
-    class="group cursor-pointer animate-item"
-    :style="{ animationDelay }"
-    @click="goToDetail"
-  >
+  <div class="group cursor-pointer animate-item" :style="{ animationDelay }" @click="goToDetail">
     <!-- Cover -->
     <div
       class="relative aspect-square overflow-hidden rounded-2xl shadow-md group-hover:shadow-xl transition-all duration-500"
