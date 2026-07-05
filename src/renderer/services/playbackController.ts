@@ -200,6 +200,32 @@ export const playTrack = async (
   // 保存原始歌曲数据
   const originalMusic = { ...music };
 
+  // 4.5 立即并行加载元数据（歌词 + 背景色），与取 URL/加载音频同时进行：
+  // 不阻塞出声，但让全屏页的封面/歌词/背景色尽量在音频起播前就绪，
+  // 避免"先响歌、后换脸"的割裂感。预加载过的歌曲两者都是缓存命中，立即应用
+  let loadedMetadata: {
+    lyrics: SongResult['lyric'];
+    backgroundColor: string;
+    primaryColor: string;
+  } | null = null;
+  const applyLoadedMetadata = () => {
+    if (!loadedMetadata || gen !== generation) return;
+    playerCore.playMusic.lyric = loadedMetadata.lyrics;
+    playerCore.playMusic.backgroundColor = loadedMetadata.backgroundColor;
+    playerCore.playMusic.primaryColor = loadedMetadata.primaryColor;
+    // 触发 watcher 更新
+    playerCore.playMusic = { ...playerCore.playMusic };
+  };
+  loadMetadata(originalMusic)
+    .then((result) => {
+      loadedMetadata = result;
+      applyLoadedMetadata();
+    })
+    .catch((error) => {
+      // 元数据加载失败不阻塞播放
+      console.warn('[playbackController] 元数据加载失败:', error);
+    });
+
   // 5. 添加到播放历史
   try {
     const playHistoryStore = await getPlayHistoryStore();
@@ -228,6 +254,8 @@ export const playTrack = async (
     playerCore.playMusic = updatedPlayMusic;
     playerCore.playMusicUrl = updatedPlayMusic.playMusicUrl as string;
     music.playMusicUrl = updatedPlayMusic.playMusicUrl as string;
+    // playMusic 被替换为新对象，若元数据已先行到达则重新应用，避免歌词/背景色丢失
+    applyLoadedMetadata();
   } catch (error) {
     if (gen !== generation) return false;
     console.error('[playbackController] 获取歌曲详情失败:', error);
@@ -251,21 +279,7 @@ export const playTrack = async (
     }
 
     if (success) {
-      // 8. 播放成功后，异步加载元数据（不阻塞）
-      loadMetadata(playerCore.playMusic).then(({ lyrics, backgroundColor, primaryColor }) => {
-        // 检查 generation（确保还是当前歌曲）
-        if (gen !== generation) {
-          console.log(`[playbackController] gen=${gen} 已过期，跳过元数据更新`);
-          return;
-        }
-        playerCore.playMusic.lyric = lyrics;
-        playerCore.playMusic.backgroundColor = backgroundColor;
-        playerCore.playMusic.primaryColor = primaryColor;
-        // 触发 watcher 更新
-        playerCore.playMusic = { ...playerCore.playMusic };
-      }).catch((error) => {
-        console.warn('[playbackController] 元数据加载失败:', error);
-      });
+      // 8. 元数据已在 4.5 步与播放并行加载，此处无需再处理
 
       // 9. 播放成功
       playerCore.playMusic.playLoading = false;

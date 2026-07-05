@@ -84,6 +84,21 @@ export const usePlaylistStore = defineStore(
           }
         }
 
+        // 预热下一首的背景色：切歌时 playTrack 的元数据加载可直接缓存命中，
+        // 全屏页封面/背景色与音频同步就绪，不再"先响歌、后换背景"
+        if (nextSong?.picUrl && !(nextSong.backgroundColor && nextSong.primaryColor)) {
+          try {
+            const { getImageLinearBackground } = await import('@/utils/linearColor');
+            const { backgroundColor, primaryColor } = await getImageLinearBackground(
+              getImgUrl(nextSong.picUrl, '30y30')
+            );
+            nextSong.backgroundColor = backgroundColor;
+            nextSong.primaryColor = primaryColor;
+          } catch (error) {
+            console.warn('预热背景色失败:', error);
+          }
+        }
+
         detailedSongs.forEach((song, index) => {
           if (song && startIndex + index < playList.value.length) {
             playList.value[startIndex + index] = song;
