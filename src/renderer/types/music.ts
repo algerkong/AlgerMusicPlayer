@@ -57,6 +57,10 @@ export interface SongResult {
   artists?: Artist[];
   al: Album;
   album?: Album;
+  /** 翻译名（外语歌曲的中文译名等，来自网易 API） */
+  tns?: string[];
+  /** 别名 */
+  alia?: string[];
   count: number;
   playMusicUrl?: string;
   playLoading?: boolean;
