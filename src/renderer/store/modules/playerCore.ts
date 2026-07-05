@@ -4,6 +4,8 @@ import { computed, ref } from 'vue';
 import { audioService } from '@/services/audioService';
 import type { AudioOutputDevice } from '@/types/audio';
 import type { SongResult } from '@/types/music';
+import { debouncedLocalStorage } from '@/utils/debouncedStorage';
+import { minifySong } from '@/utils/persistedSong';
 
 /**
  * 核心播放控制 Store
@@ -220,7 +222,12 @@ export const usePlayerCoreStore = defineStore(
   {
     persist: {
       key: 'player-core-store',
-      storage: localStorage,
+      // 使用 debouncedLocalStorage：volume 拖动 / 静音切换会高频触发 mutation，
+      // 直接写 localStorage 会导致每次都 stringify + minify 整个 state，浪费 I/O。
+      // 防抖 2s 写一次足够，beforeunload 钩子兜底刷盘。
+      // Trade-off：极端非正常退出（kill -9 / 断电 / 主进程崩溃）下 beforeunload 不触发，
+      // 最近 2s 的 volume / isPlay / playMusic 变更会丢——这些状态丢一次无大碍，可接受
+      storage: debouncedLocalStorage,
       pick: [
         'playMusic',
         'playMusicUrl',
@@ -229,7 +236,22 @@ export const usePlayerCoreStore = defineStore(
         'isMuted',
         'isPlay',
         'audioOutputDeviceId'
-      ]
+      ],
+      // playMusic 持久化前过 minifySong：剥离 base64 封面、lyric、song 等大字段。
+      // 单首歌的 lyric 持久化后没有用（重启后会重新加载），但 picUrl 若是 base64 会
+      // 拖累整个 player-core-store 写入失败（5MB 配额）。playMusicUrl 在 store 层级单独
+      // 持久化，不受 playMusic 内部精简影响——本地音乐 local:// URL 仍保持可恢复。
+      // id 守卫：空 playMusic 走 minifySong 会得到 {picUrl:'', ar:[]}（stripDataUrl
+      // 把 undefined 转成空串、ar 缺省返回空数组），下次启动 playbackController 的
+      // Object.keys().length === 0 判空就会失效，误恢复一首无 id 的空歌
+      serializer: {
+        serialize: (state: any) =>
+          JSON.stringify({
+            ...state,
+            playMusic: state.playMusic?.id ? minifySong(state.playMusic as SongResult) : {}
+          }),
+        deserialize: JSON.parse
+      }
     }
   }
 );

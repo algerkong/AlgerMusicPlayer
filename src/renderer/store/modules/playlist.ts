@@ -1,5 +1,4 @@
 import { useThrottleFn } from '@vueuse/core';
-import { debounce } from 'lodash';
 import { createDiscreteApi } from 'naive-ui';
 import { defineStore, storeToRefs } from 'pinia';
 import { computed, ref, shallowRef, triggerRef } from 'vue';
@@ -9,6 +8,8 @@ import { useSongDetail } from '@/hooks/usePlayerHooks';
 import { preloadService } from '@/services/preloadService';
 import type { SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
+import { debouncedLocalStorage } from '@/utils/debouncedStorage';
+import { minifySongList } from '@/utils/persistedSong';
 import { performShuffle, preloadCoverImage } from '@/utils/playerUtils';
 
 import { useIntelligenceModeStore } from './intelligenceMode';
@@ -21,53 +22,6 @@ const getMessage = () => {
   if (!_message) _message = createDiscreteApi(['message']).message;
   return _message;
 };
-
-/**
- * 精简 SongResult 对象，只保留持久化必要字段
- * 排除大体积字段：lyric, song, playMusicUrl, backgroundColor, primaryColor
- */
-const minifySong = (s: SongResult) => ({
-  id: s.id,
-  name: s.name,
-  picUrl: s.picUrl,
-  ar: s.ar?.map((a) => ({ id: a.id, name: a.name })),
-  al: s.al,
-  source: s.source,
-  dt: s.dt
-});
-
-const minifySongList = (list: SongResult[] | undefined) => list?.map(minifySong) ?? [];
-
-/**
- * 防抖 localStorage 包装，降低写入频率
- * 通过 pendingWrites 跟踪未写入数据，beforeunload 时刷新
- */
-const pendingWrites = new Map<string, string>();
-
-const flushPendingWrites = () => {
-  pendingWrites.forEach((value, key) => {
-    localStorage.setItem(key, value);
-  });
-  pendingWrites.clear();
-};
-
-const debouncedSetItem = debounce((key: string, value: string) => {
-  localStorage.setItem(key, value);
-  pendingWrites.delete(key);
-}, 2000);
-
-const debouncedLocalStorage = {
-  getItem: (key: string) => localStorage.getItem(key),
-  setItem: (key: string, value: string) => {
-    pendingWrites.set(key, value);
-    debouncedSetItem(key, value);
-  }
-};
-
-// 正常关闭时刷新未写入的数据
-if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', flushPendingWrites);
-}
 
 /**
  * 播放列表管理 Store

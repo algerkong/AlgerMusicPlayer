@@ -13,7 +13,7 @@ import { computed } from 'vue';
 import { useFavoriteStore } from './favorite';
 import { useIntelligenceModeStore } from './intelligenceMode';
 import { usePlayerCoreStore } from './playerCore';
-import { usePlayHistoryStore } from './playHistory';
+import { cleanupLegacyPlayHistoryStorage } from './playHistory';
 import { usePlaylistStore } from './playlist';
 import { type SleepTimerInfo, SleepTimerType, useSleepTimerStore } from './sleepTimer';
 
@@ -72,9 +72,8 @@ export const usePlayerStore = defineStore('player', () => {
    * 初始化播放状态（从 localStorage 恢复）
    */
   const initializePlayState = async () => {
-    // 从旧的 localStorage 迁移播放记录到 Pinia store
-    const playHistoryStore = usePlayHistoryStore();
-    playHistoryStore.migrateFromLocalStorage();
+    // 一次性清理 v1 时代的旧 localStorage key，不做数据迁移（详见 playHistory.ts 注释）
+    cleanupLegacyPlayHistoryStorage();
 
     const { initializePlayState: initPlayState } = await import('@/services/playbackController');
     await initPlayState();
