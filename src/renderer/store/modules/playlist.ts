@@ -439,13 +439,19 @@ export const usePlaylistStore = defineStore(
       }
     };
 
-    const _nextPlay = async (retryCount: number = 0, autoEnd: boolean = false) => {
+    /**
+     * @param autoEnd 是否由歌曲自然播放结束触发
+     * @param fromFailover 是否由"播放失败跳歌"链触发。
+     *   失败链不能重置 consecutiveFailCount，否则连续失败上限永远不会触发，
+     *   全列表都无法播放时会无限跳歌
+     */
+    const _nextPlay = async (autoEnd: boolean = false, fromFailover: boolean = false) => {
       try {
         const playerCore = usePlayerCoreStore();
 
         // 私人FM模式：忽略 playMode 与列表长度，直接拉取新的 FM 歌曲
         if (playerCore.isFmPlaying) {
-          if (retryCount === 0) {
+          if (!fromFailover) {
             cancelRetryTimer();
             consecutiveFailCount.value = 0;
           }
@@ -455,8 +461,8 @@ export const usePlaylistStore = defineStore(
 
         if (playList.value.length === 0) return;
 
-        // User-initiated (retryCount=0): reset state
-        if (retryCount === 0) {
+        // 用户主动切歌：重置失败状态
+        if (!fromFailover) {
           cancelRetryTimer();
           consecutiveFailCount.value = 0;
         }
@@ -494,14 +500,8 @@ export const usePlaylistStore = defineStore(
         const nowPlayListIndex = (playListIndex.value + 1) % playList.value.length;
         const nextSong = { ...playList.value[nowPlayListIndex] };
 
-        // Force refresh URL on retry
-        if (retryCount > 0 && !nextSong.playMusicUrl?.startsWith('local://')) {
-          nextSong.playMusicUrl = undefined;
-          nextSong.expiredAt = undefined;
-        }
-
         console.log(
-          `[nextPlay] ${nextSong.name}, 索引: ${playListIndex.value} -> ${nowPlayListIndex}, 重试: ${retryCount}/1`
+          `[nextPlay] ${nextSong.name}, 索引: ${playListIndex.value} -> ${nowPlayListIndex}`
         );
 
         const { playTrack } = await import('@/services/playbackController');
@@ -519,29 +519,21 @@ export const usePlaylistStore = defineStore(
           console.log(`[nextPlay] 播放成功，索引: ${nowPlayListIndex}`);
           sleepTimerStore.handleSongChange();
         } else {
-          // Retry once, then skip to next
-          if (retryCount < 1) {
-            console.log(`[nextPlay] 播放失败，1秒后重试`);
+          // 播放失败直接静默跳过到下一首（不原地重试——同曲的一次静默重试
+          // 由 url_expired 恢复处理器负责：清坏缓存后换新 URL）
+          consecutiveFailCount.value++;
+          console.log(
+            `[nextPlay] 播放失败，直接跳过，连续失败: ${consecutiveFailCount.value}/${MAX_CONSECUTIVE_FAILS}`
+          );
+          if (playList.value.length > 1) {
+            playListIndex.value = nowPlayListIndex;
             nextPlayRetryTimer = setTimeout(() => {
               nextPlayRetryTimer = null;
-              _nextPlay(retryCount + 1);
-            }, 1000);
+              _nextPlay(false, true);
+            }, 500);
           } else {
-            consecutiveFailCount.value++;
-            console.log(
-              `[nextPlay] 重试用尽，连续失败: ${consecutiveFailCount.value}/${MAX_CONSECUTIVE_FAILS}`
-            );
-            if (playList.value.length > 1) {
-              playListIndex.value = nowPlayListIndex;
-              getMessage().warning(i18n.global.t('player.parseFailedPlayNext'));
-              nextPlayRetryTimer = setTimeout(() => {
-                nextPlayRetryTimer = null;
-                _nextPlay(0);
-              }, 500);
-            } else {
-              getMessage().error(i18n.global.t('player.playFailed'));
-              playerCore.setIsPlay(false);
-            }
+            getMessage().error(i18n.global.t('player.playFailed'));
+            playerCore.setIsPlay(false);
           }
         }
       } catch (error) {
@@ -553,7 +545,7 @@ export const usePlaylistStore = defineStore(
 
     /** 歌曲自然播放结束时调用，顺序模式最后一首会停止 */
     const nextPlayOnEnd = () => {
-      _nextPlay(0, true);
+      _nextPlay(true);
     };
 
     const _prevPlay = async () => {

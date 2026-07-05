@@ -484,7 +484,11 @@ class AudioService {
           console.error('Audio load error:', error?.code, error?.message);
           this.emit('loaderror', { track, error });
 
-          if (retryCount < maxRetries) {
+          // MEDIA_ERR_SRC_NOT_SUPPORTED(4)：源本身无效（URL 已失效/返回了
+          // 非音频内容），用同一 URL 重试毫无意义，直接走 url_expired 换新 URL
+          const isSrcNotSupported = error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED;
+
+          if (!isSrcNotSupported && retryCount < maxRetries) {
             retryCount++;
             console.log(`Retrying playback (${retryCount}/${maxRetries})...`);
             setTimeout(tryPlay, 1000 * retryCount);
