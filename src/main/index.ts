@@ -1,6 +1,23 @@
 import { electronApp, optimizer } from '@electron-toolkit/utils';
-import { app, ipcMain, nativeImage, session } from 'electron';
+import { app, ipcMain, nativeImage, protocol, session } from 'electron';
 import { join } from 'path';
+
+// 必须在 app.whenReady() 之前注册自定义协议为特权协议，
+// 否则 http(s) 页面（dev server、生产环境的 file://）无法把 local:// 当成
+// 安全/可 fetch/可流式的资源加载，会触发 CORS 拦截或 net::ERR_UNKNOWN_URL_SCHEME
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'local',
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      stream: true,
+      bypassCSP: true,
+      corsEnabled: true
+    }
+  }
+]);
 
 import type { Language } from '../i18n/main';
 import i18n from '../i18n/main';

@@ -46,5 +46,8 @@ AGENTS.md
 .auto-imports.d.ts
 .components.d.ts
 
+# TypeScript 增量编译缓存
+*.tsbuildinfo
+
 src/renderer/auto-imports.d.ts
 src/renderer/components.d.ts
