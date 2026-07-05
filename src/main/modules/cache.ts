@@ -413,7 +413,9 @@ class DiskCacheManager {
       cleanupPolicy
     };
 
-    this.saveConfig(normalizedConfig);
+    // 注意：getCacheConfig 是纯读取，处于播放/下载/歌词等多个热路径。
+    // 此处不再落盘（electron-store.set 每次整文件写 config.json，会造成写放大与文件争用），
+    // 持久化交由 updateCacheConfig / setCacheDirectory 等真正的写操作完成。
     return normalizedConfig;
   }
 

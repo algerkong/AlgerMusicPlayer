@@ -42,6 +42,8 @@ export const initLxMusicHttp = () => {
       // 保存取消控制器
       abortControllers.set(requestId, controller);
 
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
       try {
         console.log(`[LxMusicHttp] 请求: ${options.method || 'GET'} ${url}`);
 
@@ -77,13 +79,14 @@ export const initLxMusicHttp = () => {
 
         // 设置超时
         const timeout = options.timeout || 30000;
-        const timeoutId = setTimeout(() => {
+        timeoutId = setTimeout(() => {
           console.warn(`[LxMusicHttp] 请求超时: ${url}`);
           controller.abort();
         }, timeout);
 
         const response = await fetch(url, fetchOptions);
         clearTimeout(timeoutId);
+        timeoutId = null;
 
         console.log(`[LxMusicHttp] 响应: ${response.status} ${url}`);
 
@@ -122,7 +125,10 @@ export const initLxMusicHttp = () => {
         console.error(`[LxMusicHttp] 请求失败: ${url}`, error.message);
         throw error;
       } finally {
-        // 清理取消控制器
+        // 清理超时定时器（fetch 出错时前面来不及 clear）与取消控制器
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
         abortControllers.delete(requestId);
       }
     }

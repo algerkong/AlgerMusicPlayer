@@ -484,13 +484,17 @@ class DownloadManager {
       }
 
       // Start download
+      // 注意：axios 默认只接受 2xx，403/410 会直接抛错进入 catch，导致下方"直链过期重新解析"
+      // 分支永远走不到。这里放行 403/410，让过期直链能触发重新解析（尤其是重启后恢复队列时）。
       const response = await axios({
         url: task.url,
         method: 'GET',
         responseType: 'stream',
         timeout: 30000,
         signal: controller.signal,
-        headers
+        headers,
+        validateStatus: (status) =>
+          (status >= 200 && status < 300) || status === 403 || status === 410
       });
 
       // Handle response status
@@ -498,6 +502,8 @@ class DownloadManager {
 
       if (status === 403 || status === 410) {
         // URL expired, request re-resolution from renderer
+        // 排空未消费的错误响应流，避免连接悬挂
+        response.data?.destroy?.();
         this.sendToRenderer('download:request-url', {
           taskId: task.taskId,
           songInfo: task.songInfo

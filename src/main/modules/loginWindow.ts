@@ -6,7 +6,6 @@ import i18n from '../../i18n/main';
 let loginWindow: BrowserWindow | null = null;
 
 const loginUrl = 'https://music.163.com/#/login/';
-const loginTitle = i18n.global.t('login.qrTitle');
 
 /**
  * 打开登录窗口获取Cookie
@@ -29,7 +28,8 @@ const openLoginWindow = async (mainWin: BrowserWindow) => {
 
   loginWindow = new BrowserWindow({
     parent: mainWin,
-    title: loginTitle,
+    // 在打开窗口时求值，确保跟随当前语言（模块加载时 i18n locale 可能尚未设置）
+    title: i18n.global.t('login.qrTitle'),
     width: 1280,
     height: 800,
     center: true,
