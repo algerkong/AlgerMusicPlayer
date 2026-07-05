@@ -140,7 +140,10 @@ const parseLyricsString = async (
         duration: line.duration
       });
 
-      lrcTimeArray.push(line.startTime);
+      // yrcParser 的 startTime 是毫秒；lrcTimeArray 全链路（nowTime 对比、
+      // setAudioTime seek）以秒为单位，必须换算，否则点击歌词会 seek 到
+      // 远超时长的位置被钳到末尾、直接触发切歌
+      lrcTimeArray.push(line.startTime / 1000);
     }
     return { lrcArray, lrcTimeArray, hasWordByWord };
   } catch (error) {
@@ -259,12 +262,17 @@ const setupMusicWatchers = () => {
     { immediate: true }
   );
 
-  // 同一首歌但 lyric 字段后到 (重启 + autoPlay 关闭场景)
+  // 同一首歌但 lyric 字段后到 (播放后异步加载元数据 / 重启 + autoPlay 关闭场景)
   watch(
     () => playMusic.value?.lyric,
-    () => {
-      if (lrcArray.value.length === 0 && playMusic.value?.id) {
-        ensureLyricsLoaded();
+    (newLyric) => {
+      if (!playMusic.value?.id) return;
+      // 完整歌词对象（含 yrc 逐字/翻译，时间单位为秒）后到时强制重新解析，
+      // 替换掉先行的 API 兜底纯 lrc 歌词
+      const isRichLyric =
+        !!newLyric && typeof newLyric === 'object' && (newLyric.lrcArray?.length ?? 0) > 0;
+      if (lrcArray.value.length === 0 || isRichLyric) {
+        ensureLyricsLoaded(isRichLyric);
       }
     }
   );
