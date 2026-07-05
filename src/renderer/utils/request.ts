@@ -89,13 +89,13 @@ request.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // 处理 301 状态码
-    if (error.response?.status === 301 && config.params.noLogin !== true) {
+    // 处理 301 状态码：登录态失效，重试同一请求无意义，清除登录信息后直接拒绝
+    if (error.response?.status === 301 && config.params?.noLogin !== true) {
       // 使用 store mutation 清除用户信息
       const userStore = useUserStore();
       userStore.handleLogout();
-      console.log(`301 状态码，清除登录信息后重试第 ${config.retryCount} 次`);
-      config.retryCount = 3;
+      console.log('301 状态码：登录态已失效，已清除登录信息，不再重试');
+      return Promise.reject(error);
     }
 
     // 检查是否还可以重试

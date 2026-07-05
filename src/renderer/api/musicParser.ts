@@ -160,21 +160,11 @@ export class CacheManager {
       // 清除URL缓存
       await deleteData('music_url_cache', id);
       console.log(`清除歌曲 ${id} 的URL缓存`);
-
-      // 清除失败缓存 - 需要遍历所有策略
-      const strategies = ['custom', 'gdmusic', 'unblockMusic'];
-      for (const strategy of strategies) {
-        const cacheKey = `${id}_${strategy}`;
-        try {
-          await deleteData('music_failed_cache', cacheKey);
-        } catch {
-          // 忽略删除不存在缓存的错误
-        }
-      }
-      console.log(`清除歌曲 ${id} 的失败缓存`);
     } catch (error) {
-      console.error('清除缓存失败:', error);
+      console.error('清除URL缓存失败:', error);
     }
+    // 清除内存失败缓存（覆盖所有策略，含 lxMusic）
+    CacheManager.clearFailedCache(id);
   }
 }
 
@@ -237,7 +227,19 @@ const getGDMusicAudio = async (id: number, data: SongResult): Promise<ParsedMusi
 const getUnblockMusicAudio = (id: number, data: SongResult, sources: any[]) => {
   const filteredSources = sources.filter((source) => source !== 'gdmusic');
   console.log(`使用unblockMusic解析，音源:`, filteredSources);
-  return window.api.unblockMusic(id, cloneDeep(data), cloneDeep(filteredSources));
+  // 整体超时兜底：unblock 全链路（IPC → match()）本身无超时，底层请求挂起时会
+  // 导致渲染进程无限等待、起播/切歌长时间无响应。超时解析为 null 以走降级，
+  // 且不抛异常（避免触发 RetryHelper 的多次重试放大等待时间）。
+  const UNBLOCK_TIMEOUT = 15000;
+  return Promise.race([
+    window.api.unblockMusic(id, cloneDeep(data), cloneDeep(filteredSources)),
+    new Promise((resolve) => {
+      setTimeout(() => {
+        console.warn(`unblockMusic 解析超时(${UNBLOCK_TIMEOUT}ms)，放弃等待`);
+        resolve(null);
+      }, UNBLOCK_TIMEOUT);
+    })
+  ]);
 };
 
 /**
