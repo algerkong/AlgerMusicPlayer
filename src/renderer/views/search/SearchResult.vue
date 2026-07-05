@@ -381,6 +381,11 @@ const loadSearch = async (isLoadMore = false) => {
       offset: page.value * ITEMS_PER_PAGE
     });
 
+    // 竞态守卫：请求返回时若关键词/类型已切换，丢弃这次过期结果
+    if (keywords !== currentKeyword.value || type !== searchType.value) {
+      return;
+    }
+
     const songs = data.result.songs || [];
     const albums = data.result.albums || [];
     const mvs = (data.result.mvs || []).map((item: any) => ({

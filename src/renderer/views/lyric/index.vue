@@ -343,6 +343,7 @@ const showTranslation = computed(() => lyricSetting.value.showTranslation);
 
 let hideControlsTimer: number | null = null;
 let removeMousePresenceListener: (() => void) | null = null;
+let removeReceiveLyricListener: (() => void) | null = null;
 
 const isHovering = ref(false);
 
@@ -806,8 +807,8 @@ onMounted(() => {
   updateContainerHeight();
   window.addEventListener('resize', updateContainerHeight);
 
-  // 监听歌词数据
-  windowData.electron.ipcRenderer.on('receive-lyric', (_, data) => {
+  // 监听歌词数据（保存移除函数，卸载时解绑，避免窗口复用/HMR 时监听器叠加）
+  const disposeReceiveLyric = windowData.electron.ipcRenderer.on('receive-lyric', (_, data) => {
     try {
       const parsedData = JSON.parse(data);
       handleDataUpdate(parsedData);
@@ -815,6 +816,9 @@ onMounted(() => {
       console.error('Error parsing lyric data:', error);
     }
   });
+  if (typeof disposeReceiveLyric === 'function') {
+    removeReceiveLyricListener = disposeReceiveLyric;
+  }
 
   // 通知主窗口歌词窗口已就绪，请求发送完整歌词数据
   windowData.electron.ipcRenderer.send('lyric-ready');
@@ -846,6 +850,10 @@ onUnmounted(() => {
   if (removeMousePresenceListener) {
     removeMousePresenceListener();
     removeMousePresenceListener = null;
+  }
+  if (removeReceiveLyricListener) {
+    removeReceiveLyricListener();
+    removeReceiveLyricListener = null;
   }
 });
 
