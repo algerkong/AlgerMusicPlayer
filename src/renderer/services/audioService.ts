@@ -19,6 +19,11 @@ class AudioService {
   private operationLock = false;
   private operationLockTimer: ReturnType<typeof setTimeout> | null = null;
 
+  // 当前一次加载（play）挂载在共享 audio 元素上的 canplay/error 监听器的清理函数。
+  // 快速切歌时，上一首尚未结算的监听器必须在新一轮加载或 stop() 时移除，
+  // 否则新歌 canplay 会同时触发旧歌的回调，导致"过期回调 stop 掉正在播放的新歌"卡死。
+  private pendingLoadCleanup: (() => void) | null = null;
+
   private readonly frequencies = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
 
   private defaultEQSettings: { [key: string]: number } = {
@@ -434,6 +439,12 @@ class AudioService {
       return Promise.resolve(this.audio);
     }
 
+    // 开始新一轮加载前，先移除上一轮尚未结算的加载监听器，避免污染新歌
+    if (this.pendingLoadCleanup) {
+      this.pendingLoadCleanup();
+      this.pendingLoadCleanup = null;
+    }
+
     return new Promise<HTMLAudioElement>((resolve, reject) => {
       let retryCount = 0;
       const maxRetries = 1;
@@ -502,7 +513,13 @@ class AudioService {
         const cleanup = () => {
           this.audio.removeEventListener('canplay', onCanPlay);
           this.audio.removeEventListener('error', onError);
+          if (this.pendingLoadCleanup === cleanup) {
+            this.pendingLoadCleanup = null;
+          }
         };
+
+        // 记录本轮清理函数，供下一次 play()/stop() 在结算前主动移除
+        this.pendingLoadCleanup = cleanup;
 
         this.audio.addEventListener('canplay', onCanPlay, { once: true });
         this.audio.addEventListener('error', onError, { once: true });
@@ -529,6 +546,11 @@ class AudioService {
 
   public stop() {
     this.forceResetOperationLock();
+    // 移除尚未结算的加载监听器，避免 stop 后旧的 canplay/error 仍触发过期回调
+    if (this.pendingLoadCleanup) {
+      this.pendingLoadCleanup();
+      this.pendingLoadCleanup = null;
+    }
     try {
       this.audio.pause();
       this.audio.removeAttribute('src');

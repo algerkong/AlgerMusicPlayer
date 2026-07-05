@@ -110,7 +110,10 @@ export const usePlaylistStore = defineStore(
         // 预加载下一首歌曲的音频和封面
         if (nextSong) {
           if (nextSong.playMusicUrl) {
-            preloadService.load(nextSong);
+            // 预加载失败（URL 验证不过）不应影响主流程，捕获避免未处理的 Promise rejection
+            preloadService.load(nextSong).catch((err) => {
+              console.warn('预加载下一首失败:', err);
+            });
           }
           if (nextSong.picUrl) {
             preloadCoverImage(nextSong.picUrl, getImgUrl);
@@ -224,7 +227,10 @@ export const usePlaylistStore = defineStore(
     const setPlayList = (
       list: SongResult[],
       keepIndex: boolean = false,
-      fromIntelligenceMode: boolean = false
+      fromIntelligenceMode: boolean = false,
+      // preserveOrder=true 表示"就地编辑当前队列"（下一首播放/移除单曲），
+      // 此时即使处于随机模式也不应重新洗牌，保持调用方给定的顺序。
+      preserveOrder: boolean = false
     ) => {
       // 如果不是从心动模式调用，清除心动模式状态并切换播放模式
       if (!fromIntelligenceMode) {
@@ -260,9 +266,37 @@ export const usePlaylistStore = defineStore(
       const playerCore = usePlayerCoreStore();
       const { playMusic } = storeToRefs(playerCore);
 
-      // 根据当前播放模式处理新的播放列表
-      if (playMode.value === 2) {
-        // 随机模式
+      if (preserveOrder) {
+        // 就地编辑当前队列（下一首播放 / 移除单曲）：保留调用方给定的顺序，不重新洗牌。
+        console.log('就地编辑播放列表，保持给定顺序');
+
+        if (playMode.value === 2) {
+          // 随机模式下同步原始顺序列表：删除已移除项、追加新加入项，保留既有原始顺序
+          const idSet = new Set(list.map((song) => song.id));
+          const reconciled = originalPlayList.value.filter((song) => idSet.has(song.id));
+          const existingIds = new Set(reconciled.map((song) => song.id));
+          for (const song of list) {
+            if (!existingIds.has(song.id)) {
+              reconciled.push(song);
+            }
+          }
+          originalPlayList.value = reconciled;
+        } else if (originalPlayList.value.length > 0) {
+          originalPlayList.value = [];
+        }
+
+        // 修正当前索引，指向当前正在播放的歌曲
+        const currentSong = playMusic.value;
+        const currentIndex =
+          currentSong && currentSong.id ? list.findIndex((song) => song.id === currentSong.id) : -1;
+        playListIndex.value =
+          currentIndex !== -1
+            ? currentIndex
+            : Math.min(Math.max(0, playListIndex.value), list.length - 1);
+
+        playList.value = list;
+      } else if (playMode.value === 2) {
+        // 随机模式：全新列表，保存原始顺序并洗牌
         console.log('随机模式下设置新播放列表，保存原始顺序并洗牌');
 
         originalPlayList.value = [...list];
@@ -315,7 +349,8 @@ export const usePlaylistStore = defineStore(
       const insertIndex = playListIndex.value + 1;
       list.splice(insertIndex, 0, song);
 
-      setPlayList(list, true);
+      // preserveOrder=true：随机模式下也不重新洗牌，确保"下一首播放"位置生效
+      setPlayList(list, true, false, true);
     };
 
     /**
@@ -335,7 +370,8 @@ export const usePlaylistStore = defineStore(
 
       const newPlayList = [...playList.value];
       newPlayList.splice(index, 1);
-      setPlayList(newPlayList);
+      // preserveOrder=true：随机模式下移除单曲不重新洗牌，仅从队列中删除
+      setPlayList(newPlayList, false, false, true);
     };
 
     /**

@@ -240,6 +240,30 @@ export const useSleepTimerStore = defineStore('sleepTimer', () => {
     showSleepTimer.value = value;
   };
 
+  /**
+   * 应用重启/刷新后恢复定时器：
+   * sleepTimer 状态会被持久化并在 ref 初始化时恢复，但 setInterval 不会，
+   * 导致 TIME 类型定时器到点后不再触发停止。这里在 store 创建时重建 interval。
+   */
+  const restoreTimerInterval = () => {
+    if (sleepTimer.value.type !== SleepTimerType.TIME || !sleepTimer.value.endTime) {
+      return;
+    }
+    if (Date.now() >= sleepTimer.value.endTime) {
+      // 重启时已过设定时间，直接停止播放
+      stopPlayback();
+      return;
+    }
+    if (!timerInterval.value) {
+      timerInterval.value = window.setInterval(() => {
+        checkSleepTimer();
+      }, 1000) as unknown as number;
+    }
+  };
+
+  // store 首次实例化时立即尝试恢复（player store 在启动阶段即会实例化本 store）
+  restoreTimerInterval();
+
   return {
     // 状态
     sleepTimer,
