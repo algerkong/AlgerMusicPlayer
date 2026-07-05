@@ -381,8 +381,12 @@ class WindowSizeManager {
     }
 
     // 检查是否是mini模式窗口（根据窗口大小判断）
+    // 注意展开播放列表后的 mini 窗口是 340x400，也不能当普通窗口持久化，
+    // 否则污染 windowState 导致下次启动主窗口尺寸异常（#242）
     const [currentWidth, currentHeight] = win.getSize();
-    const isMiniMode = currentWidth === DEFAULT_MINI_WIDTH && currentHeight === DEFAULT_MINI_HEIGHT;
+    const isMiniMode =
+      currentWidth === DEFAULT_MINI_WIDTH &&
+      (currentHeight === DEFAULT_MINI_HEIGHT || currentHeight === DEFAULT_MINI_EXPANDED_HEIGHT);
 
     const isMaximized = win.isMaximized();
     let state: WindowState;
