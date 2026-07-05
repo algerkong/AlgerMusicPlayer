@@ -5,7 +5,6 @@ import { SongSourceConfigManager } from '@/services/SongSourceConfigManager';
 import { useSettingsStore } from '@/store';
 import type { SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
-import requestMusic from '@/utils/request_music';
 
 import type { ParsedMusicResult } from './gdmusic';
 import { parseFromGDMusic } from './gdmusic';
@@ -487,6 +486,18 @@ const getMusicConfig = (id: number, settingsStore?: any) => {
 };
 
 /**
+ * 构造解析失败结果
+ * （原远端后备接口 music_proxy 已停止服务，解析失败时不再回退到远端请求）
+ */
+const buildFailedResult = (message: string, code = 404): MusicParseResult => ({
+  data: {
+    code,
+    message,
+    data: undefined
+  }
+});
+
+/**
  * 音乐解析器主类
  */
 export class MusicParser {
@@ -500,10 +511,10 @@ export class MusicParser {
     const startTime = performance.now();
 
     try {
-      // 非Electron环境直接使用API请求
+      // 非Electron环境不支持本地解析
       if (!isElectron) {
-        console.log('非Electron环境，使用API请求');
-        return await requestMusic.get<any>('/music', { params: { id } });
+        console.log('非Electron环境，不支持音乐解析');
+        return buildFailedResult('当前环境不支持音乐解析');
       }
 
       // 获取设置存储
@@ -511,8 +522,8 @@ export class MusicParser {
       try {
         settingsStore = useSettingsStore();
       } catch (error) {
-        console.error('无法获取设置存储，使用后备方案:', error);
-        return await requestMusic.get<any>('/music', { params: { id } });
+        console.error('无法获取设置存储:', error);
+        return buildFailedResult('无法读取设置，音乐解析不可用');
       }
 
       // 获取音源配置
@@ -541,8 +552,8 @@ export class MusicParser {
       }
 
       if (musicSources.length === 0) {
-        console.warn('没有配置可用的音源，使用后备方案');
-        return await requestMusic.get<any>('/music', { params: { id } });
+        console.warn('没有配置可用的音源');
+        return buildFailedResult('没有配置可用的音源');
       }
 
       // 获取可用的解析策略
@@ -552,8 +563,8 @@ export class MusicParser {
       );
 
       if (availableStrategies.length === 0) {
-        console.warn('没有可用的解析策略，使用后备方案');
-        return await requestMusic.get<any>('/music', { params: { id } });
+        console.warn('没有可用的解析策略');
+        return buildFailedResult('没有可用的解析策略');
       }
 
       console.log(
@@ -583,34 +594,13 @@ export class MusicParser {
         }
       }
 
-      console.warn('所有解析策略都失败了，使用后备方案');
+      console.warn('所有解析策略都失败了');
     } catch (error) {
-      console.error('MusicParser.parseMusic 执行异常，使用后备方案:', error);
+      console.error('MusicParser.parseMusic 执行异常:', error);
     }
 
-    // 后备方案：使用API请求
-    try {
-      console.log('使用后备方案：API请求');
-      const result = await requestMusic.get<any>('/music', { params: { id } });
-
-      // 如果后备方案成功，也进行缓存
-      if (result?.data?.data?.url) {
-        console.log('后备方案成功，缓存结果');
-        await CacheManager.setCachedMusicUrl(id, result, []);
-      }
-
-      return result;
-    } catch (apiError) {
-      console.error('API请求也失败了:', apiError);
-      const endTime = performance.now();
-      console.log(`总耗时: ${(endTime - startTime).toFixed(2)}ms`);
-      return {
-        data: {
-          code: 500,
-          message: '所有解析方式都失败了',
-          data: undefined
-        }
-      };
-    }
+    const endTime = performance.now();
+    console.log(`总耗时: ${(endTime - startTime).toFixed(2)}ms`);
+    return buildFailedResult('所有解析方式都失败了', 500);
   }
 }
