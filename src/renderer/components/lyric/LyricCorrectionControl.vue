@@ -48,7 +48,8 @@ const { t } = useI18n();
 
 <style scoped lang="scss">
 .lyric-correction {
-  @apply absolute right-0 bottom-4 flex flex-col items-center space-y-1 z-50 select-none transition-opacity duration-200 opacity-0 pointer-events-none;
+  /* bottom 需越过全屏态下钉底的 PlayBar（h-20=80px, z-index:9999），否则被遮挡无法点击（#592） */
+  @apply absolute right-0 bottom-24 flex flex-col items-center space-y-1 z-50 select-none transition-opacity duration-200 opacity-0 pointer-events-none;
 }
 
 .lyric-correction-btn {

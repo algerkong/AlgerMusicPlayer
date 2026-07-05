@@ -387,6 +387,7 @@ export default {
   themeColor: {
     title: '歌詞主題色',
     presetColors: '預設顏色',
+    reset: '恢復預設',
     customColor: '自訂顏色',
     preview: '預覽效果',
     previewText: '歌詞效果',

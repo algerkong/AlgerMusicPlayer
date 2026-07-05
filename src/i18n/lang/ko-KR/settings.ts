@@ -400,6 +400,7 @@ export default {
   themeColor: {
     title: '가사 테마 색상',
     presetColors: '미리 설정된 색상',
+    reset: '기본값으로 복원',
     customColor: '사용자 정의 색상',
     preview: '미리보기 효과',
     previewText: '가사 효과',

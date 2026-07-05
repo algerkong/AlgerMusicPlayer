@@ -7,8 +7,14 @@
   >
     <div class="panel-header">
       <span class="panel-title">{{ t('settings.themeColor.title') }}</span>
-      <div class="close-button" @click="handleClose">
-        <i class="ri-close-line"></i>
+      <div class="header-actions">
+        <div class="reset-button" :title="t('settings.themeColor.reset')" @click="handleReset">
+          <i class="ri-arrow-go-back-line"></i>
+          <span>{{ t('settings.themeColor.reset') }}</span>
+        </div>
+        <div class="close-button" @click="handleClose">
+          <i class="ri-close-line"></i>
+        </div>
       </div>
     </div>
 
@@ -111,6 +117,7 @@ interface Props {
 interface Emits {
   (e: 'colorChange', _color: string): void;
   (e: 'close'): void;
+  (e: 'reset'): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -158,6 +165,12 @@ const getPreviewStyle = () => {
 const handleClose = () => {
   showColorPicker.value = false;
   emit('close');
+};
+
+// 恢复默认：关闭自定义主题色（#591 此前设置后无任何入口可关闭）
+const handleReset = () => {
+  showColorPicker.value = false;
+  emit('reset');
 };
 
 const handlePresetColorSelect = (color: LyricThemeColor) => {
@@ -299,6 +312,35 @@ watch(
     font-weight: 600;
     color: var(--text-color);
     opacity: 0.9;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .reset-button {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 24px;
+    padding: 0 8px;
+    cursor: pointer;
+    border-radius: 6px;
+    color: var(--text-color);
+    font-size: 11px;
+    opacity: 0.8;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.15);
+      opacity: 1;
+    }
+
+    i {
+      font-size: 12px;
+    }
   }
 
   .close-button {

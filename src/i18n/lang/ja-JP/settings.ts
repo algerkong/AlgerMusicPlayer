@@ -399,6 +399,7 @@ export default {
   themeColor: {
     title: '歌詞テーマカラー',
     presetColors: 'プリセットカラー',
+    reset: 'デフォルトに戻す',
     customColor: 'カスタムカラー',
     preview: 'プレビュー効果',
     previewText: '歌詞効果',

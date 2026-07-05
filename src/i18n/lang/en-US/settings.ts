@@ -400,6 +400,7 @@ export default {
   themeColor: {
     title: 'Lyric Theme Color',
     presetColors: 'Preset Colors',
+    reset: 'Reset to Default',
     customColor: 'Custom Color',
     preview: 'Preview',
     previewText: 'Lyric Effect',

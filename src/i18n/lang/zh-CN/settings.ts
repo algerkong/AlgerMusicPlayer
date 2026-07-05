@@ -396,6 +396,7 @@ export default {
   themeColor: {
     title: '歌词主题色',
     presetColors: '预设颜色',
+    reset: '恢复默认',
     customColor: '自定义颜色',
     preview: '预览效果',
     previewText: '歌词效果',
