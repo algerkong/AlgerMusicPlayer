@@ -67,7 +67,6 @@ type HostWorkerMessage =
   | HostLogMessage;
 
 let requestHandler: ((data: any) => Promise<any>) | null = null;
-let initialized = false;
 let requestCounter = 0;
 
 const pendingHttpCallbacks = new Map<
@@ -85,6 +84,90 @@ const postLog = (level: HostLogMessage['level'], ...args: any[]) => {
     level,
     args
   });
+};
+
+/**
+ * Node Buffer 语义的最小实现。
+ * 落雪脚本按 lx-music-desktop 的 Node 环境编写：
+ * buffer.from/bufToString 依赖 encoding 参数（base64/hex 等），
+ * 且会对返回的 Buffer 调用 .toString(encoding)
+ */
+class LxBuffer extends Uint8Array {
+  toString(encoding = 'utf-8'): string {
+    return bytesToString(this, encoding);
+  }
+}
+
+const toLxBuffer = (bytes: Uint8Array): LxBuffer =>
+  new LxBuffer(bytes.buffer as ArrayBuffer, bytes.byteOffset, bytes.byteLength);
+
+const hexToBytes = (hex: string): Uint8Array => {
+  const clean = hex.length % 2 ? `0${hex}` : hex;
+  const out = new Uint8Array(clean.length / 2);
+  for (let i = 0; i < out.length; i++) {
+    out[i] = parseInt(clean.slice(i * 2, i * 2 + 2), 16) || 0;
+  }
+  return out;
+};
+
+const toBytes = (data: any, encoding = 'utf-8'): Uint8Array => {
+  if (typeof data === 'string') {
+    switch (encoding.toLowerCase()) {
+      case 'base64':
+        return lxCrypto.base64Decode(data);
+      case 'hex':
+        return hexToBytes(data);
+      case 'binary':
+      case 'latin1': {
+        const out = new Uint8Array(data.length);
+        for (let i = 0; i < data.length; i++) {
+          out[i] = data.charCodeAt(i) & 0xff;
+        }
+        return out;
+      }
+      default:
+        return new TextEncoder().encode(data);
+    }
+  }
+  if (data instanceof ArrayBuffer) return new Uint8Array(data);
+  if (ArrayBuffer.isView(data)) {
+    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+  }
+  if (Array.isArray(data)) return Uint8Array.from(data);
+  return new Uint8Array(0);
+};
+
+const bytesToString = (data: any, encoding = 'utf-8'): string => {
+  const bytes = toBytes(data);
+  switch (encoding.toLowerCase()) {
+    case 'base64':
+      return lxCrypto.base64Encode(bytes);
+    case 'hex': {
+      let out = '';
+      for (const byte of bytes) out += byte.toString(16).padStart(2, '0');
+      return out;
+    }
+    case 'binary':
+    case 'latin1': {
+      let out = '';
+      for (const byte of bytes) out += String.fromCharCode(byte);
+      return out;
+    }
+    default:
+      return new TextDecoder(encoding).decode(bytes);
+  }
+};
+
+/**
+ * 落雪脚本参照 lx-music-desktop 环境编写（隐藏 BrowserWindow，window 存在）。
+ * 混淆脚本常用 `window -> (process/require ? global : this)` 探测全局对象，
+ * 而 module worker 中三者全为 undefined，随后访问 `.console` 即抛
+ * "Cannot read properties of undefined (reading 'console')"，这里补齐别名。
+ */
+const exposeNodeLikeGlobals = () => {
+  const g = globalThis as any;
+  if (!g.window) g.window = g;
+  if (!g.global) g.global = g;
 };
 
 const hardenGlobalScope = () => {
@@ -130,7 +213,6 @@ const createLxApi = (scriptInfo: LxScriptInfo) => {
     },
     send: (eventName: string, data: any) => {
       if (eventName === 'inited') {
-        initialized = true;
         postToHost({
           type: 'initialized',
           data: data as LxInitedData
@@ -158,27 +240,37 @@ const createLxApi = (scriptInfo: LxScriptInfo) => {
     },
     utils: {
       buffer: {
-        from: (data: any, _encoding?: string) => {
-          if (typeof data === 'string') {
-            return new TextEncoder().encode(data);
-          }
-          return new Uint8Array(data);
-        },
-        bufToString: (buffer: Uint8Array, encoding?: string) => {
-          return new TextDecoder(encoding || 'utf-8').decode(buffer);
-        }
+        from: (data: any, encoding?: string) => toLxBuffer(toBytes(data, encoding)),
+        bufToString: (buffer: any, encoding?: string) => bytesToString(buffer, encoding)
       },
       crypto: {
         md5: lxCrypto.md5,
         sha1: lxCrypto.sha1,
         sha256: lxCrypto.sha256,
-        randomBytes: lxCrypto.randomBytes,
-        aesEncrypt: lxCrypto.aesEncrypt,
-        aesDecrypt: lxCrypto.aesDecrypt,
-        rsaEncrypt: lxCrypto.rsaEncrypt,
-        rsaDecrypt: lxCrypto.rsaDecrypt,
+        // lx-music 中 randomBytes 返回 Node Buffer，脚本会对其调用 .toString(encoding)
+        randomBytes: (size: number) => {
+          const bytes = new Uint8Array(size);
+          crypto.getRandomValues(bytes);
+          return toLxBuffer(bytes);
+        },
+        aesEncrypt: (
+          buffer: string | Uint8Array,
+          mode: string,
+          key: string | Uint8Array,
+          iv: string | Uint8Array
+        ) => toLxBuffer(lxCrypto.aesEncrypt(buffer, mode, key as any, iv as any)),
+        aesDecrypt: (
+          buffer: Uint8Array,
+          mode: string,
+          key: string | Uint8Array,
+          iv: string | Uint8Array
+        ) => toLxBuffer(lxCrypto.aesDecrypt(buffer, mode, key as any, iv as any)),
+        rsaEncrypt: (buffer: string | Uint8Array, key: string) =>
+          toLxBuffer(lxCrypto.rsaEncrypt(buffer, key)),
+        rsaDecrypt: (buffer: Uint8Array, key: string) =>
+          toLxBuffer(lxCrypto.rsaDecrypt(buffer, key)),
         base64Encode: lxCrypto.base64Encode,
-        base64Decode: lxCrypto.base64Decode
+        base64Decode: (str: string) => toLxBuffer(lxCrypto.base64Decode(str))
       },
       zlib: {
         inflate: async (buffer: ArrayBuffer) => {
@@ -240,7 +332,6 @@ const createLxApi = (scriptInfo: LxScriptInfo) => {
 
 const resetWorkerState = () => {
   requestHandler = null;
-  initialized = false;
   pendingHttpCallbacks.clear();
   requestCounter = 0;
 };
@@ -248,6 +339,7 @@ const resetWorkerState = () => {
 const initializeScript = async (script: string, scriptInfo: LxScriptInfo) => {
   resetWorkerState();
   hardenGlobalScope();
+  exposeNodeLikeGlobals();
 
   (globalThis as any).lx = createLxApi(scriptInfo);
 
@@ -265,9 +357,8 @@ const initializeScript = async (script: string, scriptInfo: LxScriptInfo) => {
 
   try {
     await import(/* @vite-ignore */ scriptUrl);
-    if (!initialized) {
-      throw new Error('脚本未调用 lx.send(EVENT_NAMES.inited, data)');
-    }
+    // 不在此处判定 initialized：脚本可能异步初始化（如先请求远端配置，
+    // 回调里才调用 lx.send(inited)），由 Runner 侧的初始化超时兜底
   } finally {
     URL.revokeObjectURL(scriptUrl);
   }
