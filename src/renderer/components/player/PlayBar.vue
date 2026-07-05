@@ -151,7 +151,7 @@
         </template>
         {{ t('player.playBar.reparse') }}
       </n-tooltip>
-      <n-tooltip v-if="playMusic?.id" trigger="hover" :z-index="9999999">
+      <n-tooltip v-if="playMusic?.id && isElectron" trigger="hover" :z-index="9999999">
         <template #trigger>
           <i
             class="iconfont ri-download-line"

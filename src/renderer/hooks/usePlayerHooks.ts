@@ -6,8 +6,7 @@ import { getMusicLrc, getMusicUrl, getParsingMusicUrl } from '@/api/music';
 import { playbackRequestManager } from '@/services/playbackRequestManager';
 import { SongSourceConfigManager } from '@/services/SongSourceConfigManager';
 import type { ILyric, ILyricText, IWordData, SongResult } from '@/types/music';
-import { getImgUrl, isElectron } from '@/utils';
-import { getImageLinearBackground } from '@/utils/linearColor';
+import { isElectron } from '@/utils';
 import { parseLyrics as parseYrcLyrics } from '@/utils/yrcParser';
 
 const { message } = createDiscreteApi(['message']);

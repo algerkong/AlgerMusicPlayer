@@ -107,9 +107,19 @@ export const usePlaylistStore = defineStore(
     };
 
     /**
-     * 智能预加载下一首歌曲（立即执行，不等待）
+     * 智能预加载下一首歌曲
+     * 短去抖：快速连续切歌时只保留最后一次，避免对音源 API 的请求风暴
      */
+    let preloadDebounceTimer: ReturnType<typeof setTimeout> | null = null;
     const preloadNextSongs = (currentIndex: number) => {
+      if (preloadDebounceTimer) clearTimeout(preloadDebounceTimer);
+      preloadDebounceTimer = setTimeout(() => {
+        preloadDebounceTimer = null;
+        doPreloadNextSongs(currentIndex);
+      }, 800);
+    };
+
+    const doPreloadNextSongs = (currentIndex: number) => {
       if (playList.value.length <= 1) return;
 
       let nextIndex: number;
