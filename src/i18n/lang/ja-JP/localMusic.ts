@@ -9,5 +9,7 @@ export default {
   emptyState: 'ローカル音楽がありません。フォルダを選択してスキャンしてください。',
   fileNotFound: 'ファイルが見つからないか、移動されました',
   rescan: '再スキャン',
-  songCount: '{count} 曲'
+  songCount: '{count} 曲',
+  removeFromLibrary: 'ライブラリから削除',
+  removedFromLibrary: 'ライブラリから削除しました（ファイルは削除されません）'
 };
