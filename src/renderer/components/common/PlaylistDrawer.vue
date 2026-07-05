@@ -235,6 +235,8 @@ const handleAddToPlaylist = async (playlist: any) => {
     if (res.status === 200) {
       message.success(t('comp.playlistDrawer.addSuccess'));
       emit('update:modelValue', false);
+      // 刷新用户歌单列表，让用户页/详情页的歌曲总数(trackCount)及时更新（#508）
+      store.initializePlaylist().catch(() => {});
     } else {
       throw new Error(res.data?.msg || t('comp.playlistDrawer.addFailed'));
     }

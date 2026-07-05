@@ -631,6 +631,8 @@ const handleRemoveSong = async (songId: number) => {
       displayedSongs.value = displayedSongs.value.filter((s) => s.id !== songId);
       completePlaylist.value = completePlaylist.value.filter((s) => s.id !== songId);
       musicStore.removeSongFromList(songId);
+      // 刷新用户歌单列表，让用户页的歌曲总数(trackCount)及时更新（#508）
+      userStore.initializePlaylist().catch(() => {});
     }
   } catch (error) {
     console.error('删除歌曲失败:', error);
