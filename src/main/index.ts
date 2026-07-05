@@ -1,6 +1,25 @@
 import { electronApp, optimizer } from '@electron-toolkit/utils';
-import { app, ipcMain, nativeImage, protocol, session } from 'electron';
+import { app, dialog, ipcMain, nativeImage, protocol, session } from 'electron';
 import { join } from 'path';
+
+// 全局兜底（#714）：Windows 上 config.json 等文件可能被杀毒/云同步软件短暂锁定，
+// electron-store 读写撞锁会抛 EBUSY 等未捕获异常，Electron 默认弹出致命错误框。
+// 对带 path 的文件系统锁类错误仅记录日志；其余异常保留报错弹窗以免掩盖真 bug。
+const FILE_LOCK_ERROR_CODES = new Set(['EBUSY', 'EPERM', 'EACCES', 'EAGAIN', 'EMFILE', 'ENFILE']);
+process.on('uncaughtException', (error: NodeJS.ErrnoException) => {
+  if (error?.code && FILE_LOCK_ERROR_CODES.has(error.code) && typeof error.path === 'string') {
+    console.error('[main] 文件被占用/锁定，已忽略本次读写:', error.message);
+    return;
+  }
+  console.error('[main] 未捕获异常:', error);
+  dialog.showErrorBox(
+    'A JavaScript error occurred in the main process',
+    error?.stack || String(error)
+  );
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[main] 未处理的 Promise 拒绝:', reason);
+});
 
 // 必须在 app.whenReady() 之前注册自定义协议为特权协议，
 // 否则 http(s) 页面（dev server、生产环境的 file://）无法把 local:// 当成

@@ -1,9 +1,10 @@
 import { app } from 'electron';
-import Store from 'electron-store';
 import { machineIdSync } from 'node-machine-id';
 import os from 'os';
 
-const store = new Store();
+import { getSharedStore } from './config';
+
+const store = getSharedStore();
 
 /**
  * 获取设备唯一标识符

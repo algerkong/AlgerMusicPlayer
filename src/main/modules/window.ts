@@ -9,9 +9,9 @@ import {
   session,
   shell
 } from 'electron';
-import Store from 'electron-store';
 import { join } from 'path';
 
+import { getSharedStore } from './config';
 import {
   applyContentZoom,
   applyInitialState,
@@ -27,7 +27,7 @@ import {
   WindowState
 } from './window-size';
 
-const store = new Store();
+const store = getSharedStore();
 
 // 保存主窗口引用，以便在 activate 事件中使用
 let mainWindowInstance: BrowserWindow | null = null;
