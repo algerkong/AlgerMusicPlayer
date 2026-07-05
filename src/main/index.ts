@@ -178,15 +178,18 @@ if (!isSingleInstance) {
     // 初始化窗口大小管理器
     initWindowSizeManager();
 
-    // 设置媒体设备权限 - 允许枚举音频输出设备
+    // 媒体设备权限：应用没有任何录音功能，麦克风/摄像头采集一律拒绝，
+    // 防止依赖库静默调用 getUserMedia 触发系统麦克风授权弹窗（#147/#246/#440/#639 防御性加固）。
+    // 输出设备切换走 speaker-selection / enumerateDevices，不受影响
     session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
       if (permission === ('media' as any) || permission === ('audioCapture' as any)) {
-        callback(true);
+        callback(false);
         return;
       }
       callback(true);
     });
 
+    // 保持放行：enumerateDevices 依赖它返回真实设备名（不访问麦克风硬件、不触发系统授权）
     session.defaultSession.setPermissionCheckHandler(() => {
       return true;
     });
