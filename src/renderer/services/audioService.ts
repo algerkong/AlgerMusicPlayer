@@ -1,6 +1,6 @@
 import type { AudioOutputDevice } from '@/types/audio';
 import type { SongResult } from '@/types/music';
-import { isElectron } from '@/utils';
+import { getImgUrl, isElectron } from '@/utils';
 
 class AudioService {
   private audio: HTMLAudioElement;
@@ -145,8 +145,10 @@ class AudioService {
         ? track.ar.map((a) => a.name)
         : track.song.artists?.map((a) => a.name);
       const album = track.al ? track.al.name : track.song.album.name;
-      const artwork = ['96', '128', '192', '256', '384', '512'].map((size) => ({
-        src: `${track.picUrl}?param=${size}y${size}`,
+      // 上限提到 1024 提升 SMTC/AMLL 等系统媒体控件的封面清晰度（#595）；
+      // 走 getImgUrl 以正确处理 data:/local:// 封面与已带参数的 URL
+      const artwork = ['96', '128', '192', '256', '384', '512', '1024'].map((size) => ({
+        src: getImgUrl(track.picUrl, `${size}y${size}`),
         type: 'image/jpg',
         sizes: `${size}x${size}`
       }));
