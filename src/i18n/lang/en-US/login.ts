@@ -17,6 +17,7 @@ export default {
   },
   button: {
     login: 'Login',
+    continueGuest: 'Continue without login',
     switchToQr: 'QR Code Login',
     switchToPhone: 'Phone Login',
     switchToToken: 'Use Cookie Login',
@@ -27,6 +28,36 @@ export default {
     refresh: 'Click to Refresh',
     refreshing: 'Refreshing...',
     refreshQr: 'Refresh QR Code'
+  },
+  onboarding: {
+    title: 'Start with the easiest path',
+    subtitle: 'You can begin listening first, then unlock more features when needed.',
+    recommendation: 'Recommended',
+    capabilityTitle: 'What each login unlocks',
+    guestHint: 'Guest mode lets you explore and play available content first.'
+  },
+  methods: {
+    qr: {
+      badge: 'Recommended',
+      summary: 'Fastest for most users',
+      detail: 'Full account features with quick confirmation on your phone.'
+    },
+    phone: {
+      badge: 'Full features',
+      summary: 'Use your NetEase Cloud account',
+      detail: 'Best if you prefer a direct account login on this device.'
+    },
+    cookie: {
+      badge: 'Advanced',
+      summary: 'For users who already have a valid Cookie',
+      detail: 'Useful for advanced setups and full feature recovery.'
+    },
+    uid: {
+      badge: 'Limited',
+      summary: 'View public profile information only',
+      detail:
+        'Good for quick profile lookup, but recommendations and some account features stay unavailable.'
+    }
   },
   message: {
     loginSuccess: 'Login successful',
@@ -47,6 +78,12 @@ export default {
     autoGetCookieFailed: 'Auto get Cookie failed',
     autoGetCookieTip:
       'Will open NetEase Cloud Music login page, please complete login and close the window',
+    autoGetCookiePreparing: 'Preparing the login window, please wait...',
+    autoGetCookieWindowOpened: 'Login window opened. Complete the sign-in in the new window.',
+    autoGetCookieWindowFocused: 'Focused the existing login window for you.',
+    autoGetCookieDetected: 'Cookie detected. Verifying your account...',
+    autoGetCookieClosedWithoutCookie: 'Login window closed before a Cookie was detected.',
+    autoGetCookieOpenFailed: 'Failed to open the login window. Please try again.',
     qrCheckFailed: 'Failed to check QR code status, please refresh and try again',
     qrLoading: 'Loading QR code...',
     qrExpired: 'QR code has expired, please click to refresh',
