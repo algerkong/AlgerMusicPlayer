@@ -249,22 +249,41 @@ const sliderStyle = computed(() => {
   };
 });
 
-// ── Search expand / collapse ──────────────────────────
+// ── Search expand / collapse（悬停立即展开，无延迟）────
 const isSearchExpanded = ref(false);
 const inputFocused = ref(false);
+const searchHovered = ref(false);
 const inputRef = ref<HTMLInputElement | null>(null);
+
+const syncSearchExpand = () => {
+  // 悬停或聚焦任一为真即展开
+  isSearchExpanded.value = searchHovered.value || inputFocused.value;
+};
+
+const onSearchEnter = () => {
+  searchHovered.value = true;
+  syncSearchExpand();
+};
+
+const onSearchLeave = () => {
+  searchHovered.value = false;
+  syncSearchExpand();
+  if (!inputFocused.value) {
+    showSuggestions.value = false;
+  }
+};
 
 const handleFocus = () => {
   inputFocused.value = true;
-  isSearchExpanded.value = true;
+  syncSearchExpand();
   if (searchValue.value && suggestions.value.length) showSuggestions.value = true;
 };
+
 const handleBlur = () => {
   inputFocused.value = false;
-  setTimeout(() => {
-    showSuggestions.value = false;
-    isSearchExpanded.value = false;
-  }, 150);
+  // 失焦收起建议；展开状态由悬停决定，立即同步，不 setTimeout
+  showSuggestions.value = false;
+  syncSearchExpand();
 };
 
 // ── Search logic ──────────────────────────────────────
@@ -479,10 +498,12 @@ const selectItem = (key: string) => {
   width: 240px;
   max-width: 240px;
   min-width: 240px;
+  /* 悬停立即开启动画：无 delay，短时长 ease-out */
   transition:
-    width 0.2s ease,
-    max-width 0.2s ease,
-    min-width 0.2s ease;
+    width 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+    max-width 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+    min-width 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: 0s;
   position: relative;
   z-index: 40;
 }
