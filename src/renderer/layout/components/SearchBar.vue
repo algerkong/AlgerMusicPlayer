@@ -1,43 +1,33 @@
 <template>
   <div class="flex items-center gap-2 pb-4 pr-4 pl-1">
-    <!-- ── LEFT: Tabs（搜索展开时隐藏）─────────────── -->
-    <transition name="tab-slide">
-      <div
-        v-if="!isSearchExpanded && !showBackButton"
-        class="tabs-track flex-shrink-0"
-        ref="tabsTrackRef"
+    <!-- ── LEFT: Tabs / 返回 ─────────────────────────── -->
+    <div v-if="!showBackButton" class="tabs-track flex-shrink-0" ref="tabsTrackRef">
+      <div class="tab-slider-bg" :style="sliderStyle" />
+      <button
+        v-for="(tab, i) in tabs"
+        :key="tab.key"
+        :ref="(el) => setTabRef(el as HTMLElement, i)"
+        class="tab-btn"
+        :class="isTabActive(tab.path) ? 'tab-btn--on' : 'tab-btn--off'"
+        @click="router.push(tab.path)"
       >
-        <div class="tab-slider-bg" :style="sliderStyle" />
-        <button
-          v-for="(tab, i) in tabs"
-          :key="tab.key"
-          :ref="(el) => setTabRef(el as HTMLElement, i)"
-          class="tab-btn"
-          :class="isTabActive(tab.path) ? 'tab-btn--on' : 'tab-btn--off'"
-          @click="router.push(tab.path)"
-        >
-          <i :class="tab.icon" />
-          <span>{{ tab.label }}</span>
-        </button>
-      </div>
+        <i :class="tab.icon" />
+        <span>{{ tab.label }}</span>
+      </button>
+    </div>
 
-      <!-- 返回按钮 + 页面标题（meta.back 页面）-->
-      <div v-else-if="showBackButton" class="flex items-center gap-2 flex-shrink-0">
-        <button class="back-btn" @click="goBack">
-          <i class="ri-arrow-left-line" />
-        </button>
-        <transition name="nav-title">
-          <span v-if="navTitleStore.isVisible && !isSearchExpanded" class="nav-page-title">
-            {{ navTitleStore.title }}
-          </span>
-        </transition>
-      </div>
-    </transition>
+    <div v-else class="flex items-center gap-2 flex-shrink-0">
+      <button class="back-btn" @click="goBack">
+        <i class="ri-arrow-left-line" />
+      </button>
+      <span v-if="navTitleStore.isVisible" class="nav-page-title">
+        {{ navTitleStore.title }}
+      </span>
+    </div>
 
-    <!-- ── SPACER（搜索收起时撑开间距）─────────────── -->
-    <div v-if="!isSearchExpanded" class="flex-1" />
+    <div class="flex-1" />
 
-    <!-- 搜索输入框（收起时固定宽，展开时 flex-1 撑满）-->
+    <!-- 搜索：长条、轻微圆角，聚焦时仅略微变宽 -->
     <div class="search-wrap" :class="isSearchExpanded ? 'search-wrap--open' : 'search-wrap--idle'">
       <n-popover
         trigger="manual"
@@ -45,7 +35,7 @@
         :show="showSuggestions"
         :show-arrow="false"
         style="margin-top: 6px"
-        content-style="padding:0;border-radius:12px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,0.12);"
+        content-style="padding:0;border-radius:8px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.1);"
         raw
       >
         <template #trigger>
@@ -123,7 +113,17 @@
       }}
     </n-tooltip>
 
-    <!-- 用户 -->
+    <!-- 主题（从面板拆出） -->
+    <n-tooltip trigger="hover">
+      <template #trigger>
+        <button class="action-btn" @click="isDark = !isDark">
+          <i :class="isDark ? 'ri-moon-line' : 'ri-sun-line'" />
+        </button>
+      </template>
+      {{ t('comp.searchBar.theme') }}
+    </n-tooltip>
+
+    <!-- 用户 / 登录（面板内不再重复「去登录」） -->
     <n-popover trigger="hover" placement="bottom-end" :show-arrow="false" raw>
       <template #trigger>
         <div class="user-btn">
@@ -145,75 +145,25 @@
         </div>
         <div v-if="userStore.user" class="menu-sep" />
         <div class="menu-list">
-          <div v-if="!userStore.user" class="menu-row" @click="toLogin">
-            <i class="ri-login-box-line" /><span>{{ t('comp.searchBar.toLogin') }}</span>
-          </div>
           <div v-if="userStore.user" class="menu-row" @click="selectItem('logout')">
             <i class="ri-logout-box-r-line" /><span>{{ t('comp.searchBar.logout') }}</span>
           </div>
           <div class="menu-row" @click="selectItem('set')">
             <i class="ri-settings-3-line" /><span>{{ t('comp.searchBar.set') }}</span>
           </div>
-          <div v-if="isElectron" class="menu-row">
-            <i class="ri-zoom-in-line" /><span>{{ t('comp.searchBar.zoom') }}</span>
-            <div class="zoom-ctrl ml-auto">
-              <button class="zoom-btn" @click.stop="decreaseZoom">
-                <i class="ri-subtract-line" />
-              </button>
-              <n-tooltip trigger="hover">
-                <template #trigger>
-                  <span
-                    class="zoom-val"
-                    :class="{ 'zoom-val--100': isZoom100() }"
-                    @click.stop="resetZoom"
-                  >
-                    {{ Math.round(zoomFactor * 100) }}%
-                  </span>
-                </template>
-                {{ isZoom100() ? t('comp.searchBar.zoom100') : t('comp.searchBar.resetZoom') }}
-              </n-tooltip>
-              <button class="zoom-btn" @click.stop="increaseZoom"><i class="ri-add-line" /></button>
-            </div>
-          </div>
-          <div class="menu-row">
-            <i :class="isDark ? 'ri-moon-line' : 'ri-sun-line'" />
-            <span>{{ t('comp.searchBar.theme') }}</span>
-            <n-switch v-model:value="isDark" class="ml-auto" size="small">
-              <template #checked><i class="ri-moon-line text-[10px]" /></template>
-              <template #unchecked><i class="ri-sun-line text-[10px]" /></template>
-            </n-switch>
-          </div>
-          <div class="menu-row" @click="restartApp">
-            <i class="ri-restart-line" /><span>{{ t('comp.searchBar.restart') }}</span>
-          </div>
-          <div class="menu-row" @click="selectItem('refresh')">
-            <i class="ri-refresh-line" /><span>{{ t('comp.searchBar.refresh') }}</span>
-          </div>
-          <div class="menu-sep" />
-          <div class="menu-row" @click="toGithubRelease">
-            <i class="ri-github-fill" /><span>{{ t('comp.searchBar.currentVersion') }}</span>
-            <span class="ver-chip ml-auto">{{ updateInfo.currentVersion }}</span>
-            <n-tag v-if="updateInfo.hasUpdate" type="success" size="small" class="ml-1">New</n-tag>
-          </div>
         </div>
       </div>
     </n-popover>
-
-    <!-- GitHub -->
-    <button class="action-btn" @click="toGithub">
-      <i class="ri-github-fill" />
-    </button>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { useDebounceFn } from '@vueuse/core';
-import { computed, onMounted, ref, watch, watchEffect } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
-import { SEARCH_TYPES, USER_SET_OPTIONS } from '@/const/bar-const';
-import { useZoom } from '@/hooks/useZoom';
+import { SEARCH_TYPES } from '@/const/bar-const';
 import { useDownloadStore } from '@/store/modules/download';
 import { useIntelligenceModeStore } from '@/store/modules/intelligenceMode';
 import { useNavTitleStore } from '@/store/modules/navTitle';
@@ -221,9 +171,6 @@ import { useSearchStore } from '@/store/modules/search';
 import { useSettingsStore } from '@/store/modules/settings';
 import { useUserStore } from '@/store/modules/user';
 import { getImgUrl, isElectron } from '@/utils';
-import { checkUpdate, UpdateResult } from '@/utils/update';
-
-import config from '../../../../package.json';
 
 const router = useRouter();
 const route = useRoute();
@@ -231,7 +178,6 @@ const navTitleStore = useNavTitleStore();
 const searchStore = useSearchStore();
 const settingsStore = useSettingsStore();
 const userStore = useUserStore();
-const userSetOptions = ref(USER_SET_OPTIONS);
 const { t, locale } = useI18n();
 
 const intelligenceModeStore = useIntelligenceModeStore();
@@ -244,7 +190,6 @@ const showDownloadButton = computed(
   () =>
     isElectron && (settingsStore.setData?.alwaysShowDownloadButton || downloadingCount.value > 0)
 );
-const { zoomFactor, initZoomFactor, increaseZoom, decreaseZoom, resetZoom, isZoom100 } = useZoom();
 
 // ── 心动模式 ─────────────────────────────────────────
 const isIntelligenceMode = computed(() => intelligenceModeStore.isIntelligenceMode);
@@ -413,24 +358,7 @@ const handleKeydown = (e: KeyboardEvent) => {
 };
 
 // ── User / misc ───────────────────────────────────────
-const loadHotSearch = async () => {
-  // 在线热搜已移除
-};
-const loadPage = async () => {
-  // 在线用户详情已移除；保留本地 user 状态
-};
-watchEffect(() => {
-  userSetOptions.value = userStore.user
-    ? USER_SET_OPTIONS
-    : USER_SET_OPTIONS.filter((i) => i.key !== 'logout');
-});
-
-const restartApp = () => window.electron.ipcRenderer.send('restart');
 const toLogin = () => router.push('/user');
-const toGithub = () => window.open('https://github.com/LuoYe17/AlgerMusicPlayer', '_blank');
-const toGithubRelease = () => {
-  window.open('https://github.com/LuoYe17/AlgerMusicPlayer/releases', '_blank');
-};
 
 const isDark = computed({
   get: () => settingsStore.theme === 'dark',
@@ -448,33 +376,8 @@ const selectItem = (key: string) => {
     case 'user':
       router.push('/user');
       break;
-    case 'refresh':
-      window.location.reload();
-      break;
   }
 };
-
-const updateInfo = ref<UpdateResult>({
-  hasUpdate: false,
-  latestVersion: '',
-  currentVersion: config.version,
-  releaseInfo: null
-});
-const checkForUpdates = async () => {
-  try {
-    const r = await checkUpdate(config.version);
-    if (r) updateInfo.value = r;
-  } catch (e) {
-    void e; // 更新检查失败时静默处理
-  }
-};
-
-onMounted(() => {
-  void loadHotSearch();
-  void loadPage();
-  checkForUpdates();
-  isElectron && initZoomFactor();
-});
 </script>
 
 <style scoped>
@@ -565,19 +468,17 @@ onMounted(() => {
   border-color: #22c55e;
 }
 
-/* ── Search wrap ─────────────────────────────────────── */
+/* ── Search wrap：长条 + 轻微加宽，不抢布局 ───────────── */
 .search-wrap {
-  transition:
-    flex 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex: 0 0 auto;
+  width: 240px;
+  transition: width 0.18s ease;
 }
 .search-wrap--idle {
-  flex: 0 0 240px;
-  max-width: 240px;
+  width: 240px;
 }
 .search-wrap--open {
-  flex: 1 1 0%;
-  max-width: 9999px;
+  width: 300px;
 }
 
 .search-inner {
@@ -585,27 +486,26 @@ onMounted(() => {
   align-items: center;
   gap: 6px;
   height: 34px;
-  padding: 0 10px;
-  border-radius: 9999px;
-  border: 1.5px solid #e5e7eb;
-  background: #f9fafb;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
   transition:
-    border-color 0.2s,
-    background 0.2s,
-    box-shadow 0.2s;
+    border-color 0.15s,
+    width 0.18s ease;
 }
 .dark .search-inner {
   border-color: #374151;
-  background: #111827;
+  background: #171717;
 }
 .search-inner--focus {
   border-color: #22c55e;
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+  box-shadow: none;
 }
 .dark .search-inner--focus {
-  background: #0a0a0a;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+  background: #171717;
+  box-shadow: none;
 }
 
 .search-icon-glyph {
@@ -822,56 +722,6 @@ onMounted(() => {
   text-align: center;
 }
 
-.zoom-ctrl {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
-.zoom-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
-  border: none;
-  background: #f3f4f6;
-  color: #6b7280;
-  font-size: 10px;
-  cursor: pointer;
-  transition: all 0.12s;
-}
-.zoom-btn:hover {
-  background: #dcfce7;
-  color: #16a34a;
-}
-.zoom-val {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: #f3f4f6;
-  color: #6b7280;
-  cursor: pointer;
-  transition: all 0.12s;
-}
-.zoom-val--100 {
-  background: #dcfce7;
-  color: #16a34a;
-}
-.ver-chip {
-  font-size: 11px;
-  font-weight: 500;
-  padding: 1px 6px;
-  border-radius: 5px;
-  background: #f3f4f6;
-  color: #6b7280;
-}
-.dark .ver-chip {
-  background: #1f2937;
-  color: #9ca3af;
-}
-
 /* ── Suggestions ─────────────────────────────────────── */
 .suggestions-box {
   background: #fff;
@@ -927,37 +777,5 @@ onMounted(() => {
 }
 .dark .nav-page-title {
   color: #f9fafb;
-}
-
-/* ── Transitions ─────────────────────────────────────── */
-.tab-slide-enter-active,
-.tab-slide-leave-active {
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
-}
-.tab-slide-enter-from,
-.tab-slide-leave-to {
-  opacity: 0;
-  transform: translateX(-8px);
-}
-
-.nav-title-enter-active {
-  transition:
-    opacity 0.22s ease,
-    transform 0.22s ease;
-}
-.nav-title-leave-active {
-  transition:
-    opacity 0.18s ease,
-    transform 0.18s ease;
-}
-.nav-title-enter-from {
-  opacity: 0;
-  transform: translateY(8px);
-}
-.nav-title-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
 }
 </style>

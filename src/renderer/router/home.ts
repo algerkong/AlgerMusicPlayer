@@ -64,7 +64,9 @@ const layoutRouter = [
       icon: 'icon-Profile',
       keepAlive: true,
       noScroll: true,
-      isMobile: true
+      isMobile: true,
+      // 右上角用户入口即可，侧栏不再展示
+      hideInSidebar: true
     },
     component: () => import('@/views/user/index.vue')
   },
@@ -76,7 +78,9 @@ const layoutRouter = [
       icon: 'ri-settings-3-fill',
       keepAlive: true,
       noScroll: true,
-      back: true
+      back: true,
+      // 右上角菜单入口即可，侧栏不再展示
+      hideInSidebar: true
     },
     component: () => import('@/views/set/index.vue')
   }

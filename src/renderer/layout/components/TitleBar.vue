@@ -1,11 +1,15 @@
 <template>
   <div
     id="title-bar"
-    class="flex justify-between px-6 py-2 select-none relative text-dark dark:text-white"
+    class="flex justify-between items-center px-4 py-2 select-none relative text-dark dark:text-white"
     @mousedown="drag"
   >
-    <div id="title">LYMusic</div>
-    <div id="buttons" class="flex gap-4">
+    <div class="brand no-drag-children">
+      <img :src="appIcon" class="brand-icon" alt="LYMusic" />
+      <span class="brand-name">LYMusic</span>
+      <span class="brand-ver">v{{ appVersion }}</span>
+    </div>
+    <div id="buttons" class="flex gap-4 items-center">
       <n-button
         v-if="!isElectron"
         type="primary"
@@ -45,7 +49,6 @@
         <div
           class="relative w-[360px] transform overflow-hidden rounded-2xl bg-white p-6 shadow-2xl transition-all dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800"
         >
-          <!-- Close Icon -->
           <button
             class="absolute top-4 right-4 p-1 rounded-full text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-800 dark:hover:text-neutral-200 transition-colors focus:outline-none"
             @click="showCloseModal = false"
@@ -119,14 +122,18 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import appIcon from '@/assets/icon.png';
 import { useSettingsStore } from '@/store/modules/settings';
 import { isElectron } from '@/utils';
+
+import config from '../../../../package.json';
 
 const { t } = useI18n();
 
 const settingsStore = useSettingsStore();
 const showCloseModal = ref(false);
 const rememberChoice = ref(false);
+const appVersion = config.version;
 
 const openDownloadPage = () => {
   if (!isElectron) {
@@ -155,7 +162,6 @@ const handleAction = (action: 'minimize' | 'close') => {
       window.api.miniTray();
     }, 200);
   } else {
-    // Fix: Use quitApp instead of close to ensure app exits on macOS
     window.api.quitApp();
     showCloseModal.value = false;
   }
@@ -189,5 +195,47 @@ const drag = (event: MouseEvent) => {
 
 #buttons {
   -webkit-app-region: no-drag;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.brand-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.brand-name {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #111827;
+  line-height: 1;
+}
+
+.dark .brand-name {
+  color: #f9fafb;
+}
+
+.brand-ver {
+  font-size: 11px;
+  font-weight: 500;
+  color: #9ca3af;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  background: #f3f4f6;
+}
+
+.dark .brand-ver {
+  color: #9ca3af;
+  background: #1f2937;
 }
 </style>
