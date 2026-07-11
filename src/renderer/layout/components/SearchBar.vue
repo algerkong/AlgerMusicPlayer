@@ -468,17 +468,28 @@ const selectItem = (key: string) => {
   border-color: #22c55e;
 }
 
-/* ── Search wrap：长条 + 轻微加宽，不抢布局 ───────────── */
+/* ── Search wrap：聚焦略变宽（避免被 flex 压死）──────── */
 .search-wrap {
-  flex: 0 0 auto;
+  flex: 0 0 auto !important;
   width: 240px;
-  transition: width 0.18s ease;
+  max-width: 240px;
+  min-width: 240px;
+  transition:
+    width 0.2s ease,
+    max-width 0.2s ease,
+    min-width 0.2s ease;
+  position: relative;
+  z-index: 40;
 }
 .search-wrap--idle {
   width: 240px;
+  max-width: 240px;
+  min-width: 240px;
 }
 .search-wrap--open {
-  width: 300px;
+  width: 340px;
+  max-width: 340px;
+  min-width: 340px;
 }
 
 .search-inner {

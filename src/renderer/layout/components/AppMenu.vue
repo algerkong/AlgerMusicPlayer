@@ -1,12 +1,12 @@
 <template>
-  <div>
-    <!-- 侧栏固定窄条，不再支持展开/缩放 -->
-    <div class="app-menu">
+  <div class="app-menu-shell">
+    <!-- 侧栏固定窄条 + 附着背景，防封面色冲掉图标 -->
+    <div class="app-menu chrome-surface-strong">
       <div class="app-menu-list">
         <div v-for="(item, index) in menus" :key="item.path" class="app-menu-item">
           <n-tooltip :delay="200" :disabled="isMobile" placement="right">
             <template #trigger>
-              <router-link class="app-menu-item-link" :to="item.path">
+              <router-link class="app-menu-item-link" :to="item.path" @click.stop>
                 <i
                   class="iconfont app-menu-item-icon"
                   :style="iconStyle(index)"
@@ -72,9 +72,17 @@ const iconStyle = (index: number) => {
 </script>
 
 <style lang="scss" scoped>
+.app-menu-shell {
+  @apply h-full flex items-stretch;
+  padding: 8px 6px 12px;
+  box-sizing: border-box;
+}
+
 .app-menu {
-  @apply flex-col items-center justify-start transition-all duration-300 w-[72px] px-1 pt-2;
-  background: transparent;
+  @apply flex-col items-center justify-start w-[56px] py-2;
+  border-radius: 16px;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .app-menu-list {

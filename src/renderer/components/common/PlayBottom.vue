@@ -9,7 +9,10 @@ import { usePlayerStore } from '@/store/modules/player';
 import { isMobile } from '@/utils';
 
 const playerStore = usePlayerStore();
-const isPlay = computed(() => playerStore.playMusicUrl);
+const isPlay = computed(() => {
+  const m = playerStore.playMusic as any;
+  return !!(m && (m.id || m.playMusicUrl || playerStore.playMusicUrl));
+});
 
 defineProps({
   height: {

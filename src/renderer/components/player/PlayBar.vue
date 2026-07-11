@@ -297,7 +297,13 @@ const openPlayListDrawer = () => {
 
 .music-play-bar {
   @apply h-20 w-full absolute bottom-0 left-0 flex items-center box-border px-6 py-2 pt-3;
-  @apply bg-light dark:bg-dark shadow-2xl shadow-gray-300;
+  /* 保证在封面底上可见、可点 */
+  background: var(--chrome-surface-strong, rgba(24, 24, 27, 0.88));
+  border-top: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.1));
+  backdrop-filter: blur(var(--chrome-blur, 16px));
+  -webkit-backdrop-filter: blur(var(--chrome-blur, 16px));
+  pointer-events: auto;
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.18);
   z-index: 9999;
   animation-duration: 0.5s !important;
 

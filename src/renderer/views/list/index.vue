@@ -1,84 +1,87 @@
 <template>
   <div class="list-page h-full w-full">
     <n-scrollbar class="h-full">
-      <div class="page-padding pb-32 pt-6 space-y-6">
-        <div class="flex items-center justify-between gap-4">
-          <div>
-            <h1 class="page-title text-2xl font-bold">
-              {{ t('comp.list') }}
-            </h1>
-            <p class="page-hint text-sm mt-1">
-              {{ pageHint }}
-            </p>
+      <div class="page-padding pb-32 pt-6">
+        <!-- 整块框架：标题 + 列表同一附着底 -->
+        <div class="list-frame chrome-surface-strong">
+          <div class="list-frame-head">
+            <div>
+              <h1 class="page-title text-2xl font-bold">
+                {{ t('comp.list') }}
+              </h1>
+              <p class="page-hint text-sm mt-1">
+                {{ pageHint }}
+              </p>
+            </div>
+            <n-button v-if="isElectron && authenticated" quaternary circle @click="reload">
+              <template #icon><i class="ri-refresh-line" /></template>
+            </n-button>
           </div>
-          <n-button v-if="isElectron && authenticated" quaternary circle @click="reload">
-            <template #icon><i class="ri-refresh-line" /></template>
-          </n-button>
-        </div>
 
-        <!-- 已登录：在线歌单列表（最上方） -->
-        <section v-if="authenticated">
-          <n-spin :show="loading">
-            <n-empty
-              v-if="!loading && !playlists.length"
-              description="暂无在线歌单"
-              class="pt-10"
-            />
-            <div v-else class="playlist-rows">
-              <div
-                v-for="item in playlists"
-                :key="item.id"
-                class="playlist-row"
-                @click="openPlaylist(item)"
-              >
-                <div class="cover">
-                  <n-image
-                    v-if="item.picUrl"
-                    :src="item.picUrl"
-                    object-fit="cover"
-                    class="w-full h-full"
-                    preview-disabled
-                  />
-                  <div v-else class="cover-fallback">
-                    <i class="ri-play-list-2-fill" />
+          <!-- 已登录：在线歌单 -->
+          <section v-if="authenticated">
+            <n-spin :show="loading">
+              <n-empty
+                v-if="!loading && !playlists.length"
+                description="暂无在线歌单"
+                class="pt-10"
+              />
+              <div v-else class="playlist-rows">
+                <div
+                  v-for="item in playlists"
+                  :key="item.id"
+                  class="playlist-row"
+                  @click="openPlaylist(item)"
+                >
+                  <div class="cover">
+                    <n-image
+                      v-if="item.picUrl"
+                      :src="item.picUrl"
+                      object-fit="cover"
+                      class="w-full h-full"
+                      preview-disabled
+                    />
+                    <div v-else class="cover-fallback">
+                      <i class="ri-play-list-2-fill" />
+                    </div>
                   </div>
+                  <div class="meta min-w-0">
+                    <div class="name truncate">{{ item.name }}</div>
+                    <div class="desc truncate">
+                      {{
+                        item.trackCount != null
+                          ? `${item.trackCount} 首`
+                          : item.desc || item.creator || ''
+                      }}
+                    </div>
+                  </div>
+                  <i class="ri-arrow-right-s-line chevron" />
+                </div>
+              </div>
+            </n-spin>
+          </section>
+
+          <!-- 未登录：本地入口 -->
+          <section v-else>
+            <div class="playlist-rows">
+              <div
+                v-for="item in localEntries"
+                :key="item.key"
+                class="playlist-row"
+                @click="router.push(item.path)"
+              >
+                <div class="cover cover-local">
+                  <i :class="item.icon" />
                 </div>
                 <div class="meta min-w-0">
                   <div class="name truncate">{{ item.name }}</div>
-                  <div class="desc truncate">
-                    {{
-                      item.trackCount != null
-                        ? `${item.trackCount} 首`
-                        : item.desc || item.creator || ''
-                    }}
-                  </div>
+                  <div class="desc truncate">{{ item.desc }}</div>
                 </div>
                 <i class="ri-arrow-right-s-line chevron" />
               </div>
             </div>
-          </n-spin>
-        </section>
-
-        <!-- 未登录：不展示在线区，仅本地入口（列表） -->
-        <section v-else>
-          <div class="playlist-rows">
-            <div
-              v-for="item in localEntries"
-              :key="item.key"
-              class="playlist-row"
-              @click="router.push(item.path)"
-            >
-              <div class="cover cover-local">
-                <i :class="item.icon" />
-              </div>
-              <div class="meta min-w-0">
-                <div class="name truncate">{{ item.name }}</div>
-                <div class="desc truncate">{{ item.desc }}</div>
-              </div>
-              <i class="ri-arrow-right-s-line chevron" />
-            </div>
-          </div>
-        </section>
+          </section>
+        </div>
       </div>
     </n-scrollbar>
   </div>
@@ -201,6 +204,20 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.list-frame {
+  border-radius: 16px;
+  padding: 16px 16px 12px;
+  max-width: 720px;
+}
+
+.list-frame-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
 .page-title {
   color: var(--chrome-text, #111827);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
@@ -214,23 +231,26 @@ onMounted(() => {
 .playlist-rows {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .playlist-row {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 10px 10px;
   border-radius: 12px;
   cursor: pointer;
-  background: var(--chrome-surface-strong);
+  background: rgba(0, 0, 0, 0.04);
   border: 1px solid var(--chrome-border);
-  backdrop-filter: blur(var(--chrome-blur));
-  -webkit-backdrop-filter: blur(var(--chrome-blur));
   transition:
     transform 0.15s,
-    filter 0.15s;
+    filter 0.15s,
+    background 0.15s;
+}
+
+.dark .playlist-row {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .playlist-row:hover {

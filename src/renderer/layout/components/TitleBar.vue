@@ -4,7 +4,7 @@
     class="flex justify-between items-center px-4 py-2 select-none relative text-dark dark:text-white"
     @mousedown="drag"
   >
-    <div class="brand no-drag-children">
+    <div class="brand chrome-surface-strong no-drag-children">
       <img :src="appIcon" class="brand-icon" alt="LYMusic" />
       <span class="brand-name">LYMusic</span>
       <span class="brand-ver">v{{ appVersion }}</span>
@@ -202,6 +202,10 @@ const drag = (event: MouseEvent) => {
   align-items: center;
   gap: 8px;
   min-width: 0;
+  padding: 4px 10px 4px 4px;
+  border-radius: 9999px;
+  /* 防止封面色导致品牌字消失 */
+  -webkit-app-region: no-drag;
 }
 
 .brand-icon {
@@ -216,24 +220,17 @@ const drag = (event: MouseEvent) => {
   font-size: 13px;
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: #111827;
+  color: var(--chrome-text, #111827);
   line-height: 1;
-}
-
-.dark .brand-name {
-  color: #f9fafb;
 }
 
 .brand-ver {
   font-size: 11px;
   font-weight: 500;
-  color: var(--chrome-text-muted);
+  color: var(--chrome-text-muted, #6b7280);
   line-height: 1;
   padding: 2px 6px;
   border-radius: 9999px;
-  background: var(--chrome-surface);
-  border: 1px solid var(--chrome-border);
-  backdrop-filter: blur(var(--chrome-blur));
-  -webkit-backdrop-filter: blur(var(--chrome-blur));
+  background: rgba(0, 0, 0, 0.06);
 }
 </style>

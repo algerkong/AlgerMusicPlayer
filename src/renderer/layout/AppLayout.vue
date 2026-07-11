@@ -60,11 +60,14 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, defineAsyncComponent, onMounted, provide, ref } from 'vue';
+import { computed, defineAsyncComponent, nextTick, onMounted, provide, ref } from 'vue';
 import { useRoute } from 'vue-router';
 
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import UpdateModal from '@/components/common/UpdateModal.vue';
+import MobilePlayBar from '@/components/player/MobilePlayBar.vue';
+// 关键布局组件同步导入（始终可见，避免加载闪烁 / 播放条消失）
+import PlayBar from '@/components/player/PlayBar.vue';
 import homeRouter from '@/router/home';
 import otherRouter from '@/router/other';
 import { useMenuStore } from '@/store/modules/menu';
@@ -72,7 +75,6 @@ import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 import { isElectron } from '@/utils';
 
-// 关键布局组件同步导入（始终可见，避免加载闪烁）
 import AppMenu from './components/AppMenu.vue';
 import SearchBar from './components/SearchBar.vue';
 import TitleBar from './components/TitleBar.vue';
@@ -94,9 +96,6 @@ const keepAliveInclude = computed(() => {
     .filter(Boolean);
 });
 
-// 非关键组件保持异步加载
-const PlayBar = defineAsyncComponent(() => import('@/components/player/PlayBar.vue'));
-const MobilePlayBar = defineAsyncComponent(() => import('@/components/player/MobilePlayBar.vue'));
 const PlayingListDrawer = defineAsyncComponent(
   () => import('@/components/player/PlayingListDrawer.vue')
 );
@@ -106,7 +105,11 @@ const playerStore = usePlayerStore();
 const settingsStore = useSettingsStore();
 const menuStore = useMenuStore();
 
-const isPlay = computed(() => playerStore.playMusic && playerStore.playMusic.id);
+// 兼容 string id / 仅有 playMusicUrl 的本地曲
+const isPlay = computed(() => {
+  const m = playerStore.playMusic as any;
+  return !!(m && (m.id || m.playMusicUrl || playerStore.playMusicUrl));
+});
 const route = useRoute();
 
 /** 封面取色：展开全屏时有，未展开时壳层同样使用 */
@@ -227,31 +230,50 @@ provide('openPlaylistDrawer', openPlaylistDrawer);
 
 .layout-main {
   @apply w-full h-full relative text-gray-900 dark:text-white;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .layout-main-page {
-  @apply flex h-full;
+  @apply flex;
+  flex: 1 1 0;
+  min-height: 0;
+  /* 给底部播放条留空，避免内容盖住 absolute 播放条 */
+  padding-bottom: 5.5rem;
+  box-sizing: border-box;
 }
 
 .menu {
-  @apply h-full;
-  /* 默认轻微附着，无封面时仍透一点；有封面时由 has-cover-bg 清掉 */
+  @apply h-full flex-shrink-0;
   background: transparent;
+  z-index: 20;
 }
 
 .main {
   @apply overflow-hidden flex-1 flex flex-col;
+  min-width: 0;
+  min-height: 0;
   background: transparent;
+  position: relative;
+  z-index: 1;
 }
 
 .main-content {
   @apply flex-1 overflow-hidden;
+  min-height: 0;
   background: transparent;
 }
 
 .main-page {
   @apply h-full;
   background: transparent;
+}
+
+.search-bar {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 30;
 }
 
 .mobile {
