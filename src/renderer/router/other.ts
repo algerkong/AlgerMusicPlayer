@@ -1,27 +1,5 @@
 const otherRouter = [
   {
-    path: '/user/follows',
-    name: 'userFollows',
-    meta: {
-      title: '关注列表',
-      keepAlive: false,
-      showInMenu: false,
-      back: true
-    },
-    component: () => import('@/views/user/follows.vue')
-  },
-  {
-    path: '/user/followers',
-    name: 'userFollowers',
-    meta: {
-      title: '粉丝列表',
-      keepAlive: false,
-      showInMenu: false,
-      back: true
-    },
-    component: () => import('@/views/user/followers.vue')
-  },
-  {
     path: '/downloads',
     name: 'downloads',
     meta: {
@@ -32,17 +10,6 @@ const otherRouter = [
       icon: 'ri-download-cloud-2-line'
     },
     component: () => import('@/views/download/DownloadPage.vue')
-  },
-  {
-    path: '/user/detail/:uid',
-    name: 'userDetail',
-    meta: {
-      title: '用户详情',
-      keepAlive: false,
-      showInMenu: false,
-      back: true
-    },
-    component: () => import('@/views/user/detail.vue')
   },
   {
     path: '/artist/detail/:id',
@@ -68,16 +35,6 @@ const otherRouter = [
     component: () => import('@/views/music/MusicListPage.vue')
   },
   {
-    path: '/playlist/import',
-    name: 'playlistImport',
-    meta: {
-      title: '歌单导入',
-      keepAlive: true,
-      back: true
-    },
-    component: () => import('@/views/playlist/ImportPlaylist.vue')
-  },
-  {
     path: '/heatmap',
     name: 'heatmap',
     meta: {
@@ -87,17 +44,6 @@ const otherRouter = [
       back: true
     },
     component: () => import('@/views/heatmap/index.vue')
-  },
-  {
-    path: '/history-recommend',
-    name: 'historyRecommend',
-    meta: {
-      title: '历史日推',
-      keepAlive: true,
-      showInMenu: false,
-      back: true
-    },
-    component: () => import('@/views/music/HistoryRecommend.vue')
   },
   {
     path: '/mobile-search',

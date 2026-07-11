@@ -1,8 +1,8 @@
-// 音乐内容来源标记（非第三方解析音源）
-export type Platform = 'netease' | 'bilibili' | 'local' | string;
+// 音乐内容来源标记
+export type Platform = 'local' | string;
 
-// 兼容旧引用
-export const DEFAULT_PLATFORMS: Platform[] = ['netease'];
+// 默认平台（本地优先；在线音源将接入独立库）
+export const DEFAULT_PLATFORMS: Platform[] = ['local'];
 
 export interface IRecommendMusic {
   code: number;
@@ -58,7 +58,7 @@ export interface SongResult {
   lyric?: ILyric;
   backgroundColor?: string;
   primaryColor?: string;
-  source?: 'netease';
+  source?: string;
   // 过期时间
   expiredAt?: number;
   // 获取时间
@@ -213,46 +213,6 @@ export interface Artist {
   topicPerson: number;
 }
 
-export interface IPlayMusicUrl {
-  data: Datum[];
-  code: number;
-}
-
-interface Datum {
-  id: number;
-  url: string;
-  br: number;
-  size: number;
-  md5: string;
-  code: number;
-  expi: number;
-  type: string;
-  gain: number;
-  fee: number;
-  uf?: any;
-  payed: number;
-  flag: number;
-  canExtend: boolean;
-  freeTrialInfo?: any;
-  level: string;
-  encodeType: string;
-  freeTrialPrivilege: FreeTrialPrivilege;
-  freeTimeTrialPrivilege: FreeTimeTrialPrivilege;
-  urlSource: number;
-}
-
-interface FreeTimeTrialPrivilege {
-  resConsumable: boolean;
-  userConsumable: boolean;
-  type: number;
-  remainTime: number;
-}
-
-interface FreeTrialPrivilege {
-  resConsumable: boolean;
-  userConsumable: boolean;
-}
-
 export interface IArtists {
   id: number;
   name: string;
@@ -265,9 +225,3 @@ export interface IArtists {
   img1v1: number;
   trans: null;
 }
-
-// 音乐源类型定义
-export type MusicSourceType =
-  'tencent' | 'kugou' | 'netease' | 'joox' | 'ytmusic' | 'spotify' | 'qobuz' | 'deezer' | 'gdmusic';
-
-// 更多音乐相关的类型可以在这里定义

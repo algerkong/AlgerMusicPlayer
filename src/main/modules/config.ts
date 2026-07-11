@@ -13,13 +13,10 @@ type SetConfig = {
     host: string;
     port: number;
   };
-  enableRealIP: boolean;
-  realIP: string;
   noAnimate: boolean;
   animationSpeed: number;
   author: string;
   authorUrl: string;
-  musicApiPort: number;
   closeAction: 'ask' | 'minimize' | 'close';
   musicQuality: string;
   fontFamily: string;

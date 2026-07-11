@@ -101,21 +101,15 @@ export default {
     remoteControlDesc: '设置远程控制功能'
   },
   network: {
-    apiPort: '音乐API端口',
-    apiPortDesc: '修改后需要重启应用',
     proxy: '代理设置',
     proxyDesc: '无法访问音乐时可以开启代理',
     proxyHost: '代理地址',
     proxyHostPlaceholder: '请输入代理地址',
     proxyPort: '代理端口',
     proxyPortPlaceholder: '请输入代理端口',
-    realIP: 'realIP设置',
-    realIPDesc: '由于限制,此项目在国外使用会受到限制可使用realIP参数,传进国内IP解决',
     messages: {
       proxySuccess: '代理设置已保存，重启应用后生效',
-      proxyError: '请检查输入是否正确',
-      realIPSuccess: '真实IP设置已保存',
-      realIPError: '请输入有效的IP地址'
+      proxyError: '请检查输入是否正确'
     }
   },
   system: {
@@ -414,33 +408,5 @@ export default {
     emptyListHint: '空列表表示允许所有IP访问',
     saveSuccess: '远程控制设置已保存',
     accessInfo: '远程控制访问地址:'
-  },
-  cookie: {
-    title: 'Cookie设置',
-    description: '请输入音乐的Cookie：',
-    placeholder: '请粘贴完整的Cookie...',
-    help: {
-      format: 'Cookie通常以 "MUSIC_U=" 开头',
-      source: '可以从浏览器开发者工具的网络请求中获取',
-      storage: 'Cookie设置后将自动保存到本地存储'
-    },
-    action: {
-      save: '保存Cookie',
-      paste: '粘贴',
-      clear: '清空'
-    },
-    validation: {
-      required: '请输入Cookie',
-      format: 'Cookie格式可能不正确，请检查是否包含MUSIC_U'
-    },
-    message: {
-      saveSuccess: 'Cookie保存成功',
-      saveError: 'Cookie保存失败',
-      pasteSuccess: '粘贴成功',
-      pasteError: '粘贴失败，请手动复制'
-    },
-    info: {
-      length: '当前长度：{length} 字符'
-    }
   }
 };

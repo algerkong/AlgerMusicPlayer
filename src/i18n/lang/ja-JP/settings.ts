@@ -106,22 +106,15 @@ export default {
     remoteControlDesc: 'リモートコントロール機能を設定'
   },
   network: {
-    apiPort: '音楽APIポート',
-    apiPortDesc: '変更後はアプリの再起動が必要です',
     proxy: 'プロキシ設定',
     proxyDesc: '音楽にアクセスできない場合はプロキシを有効にできます',
     proxyHost: 'プロキシアドレス',
     proxyHostPlaceholder: 'プロキシアドレスを入力してください',
     proxyPort: 'プロキシポート',
     proxyPortPlaceholder: 'プロキシポートを入力してください',
-    realIP: 'realIP設定',
-    realIPDesc:
-      '制限により、このプロジェクトは海外での使用が制限されます。realIPパラメータを使用して国内IPを渡すことで解決できます',
     messages: {
       proxySuccess: 'プロキシ設定を保存しました。アプリ再起動後に有効になります',
-      proxyError: '入力が正しいかどうか確認してください',
-      realIPSuccess: '実IPアドレス設定を保存しました',
-      realIPError: '有効なIPアドレスを入力してください'
+      proxyError: '入力が正しいかどうか確認してください'
     }
   },
   system: {
@@ -421,33 +414,5 @@ export default {
     emptyListHint: '空のリストはすべてのIPアクセスを許可することを意味します',
     saveSuccess: 'リモートコントロール設定を保存しました',
     accessInfo: 'リモートコントロールアクセスアドレス:'
-  },
-  cookie: {
-    title: 'Cookie設定',
-    description: 'NetEase Cloud MusicのCookieを入力してください：',
-    placeholder: '完全なCookieを貼り付けてください...',
-    help: {
-      format: 'Cookieは通常「MUSIC_U=」で始まります',
-      source: 'ブラウザの開発者ツールのネットワークリクエストから取得できます',
-      storage: 'Cookie設定後、自動的にローカルストレージに保存されます'
-    },
-    action: {
-      save: 'Cookieを保存',
-      paste: '貼り付け',
-      clear: 'クリア'
-    },
-    validation: {
-      required: 'Cookieを入力してください',
-      format: 'Cookie形式が正しくない可能性があります。MUSIC_Uが含まれているか確認してください'
-    },
-    message: {
-      saveSuccess: 'Cookieの保存に成功しました',
-      saveError: 'Cookieの保存に失敗しました',
-      pasteSuccess: '貼り付けに成功しました',
-      pasteError: '貼り付けに失敗しました。手動でコピーしてください'
-    },
-    info: {
-      length: '現在の長さ：{length} 文字'
-    }
   }
 };

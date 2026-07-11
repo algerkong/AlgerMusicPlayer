@@ -208,38 +208,9 @@ const ensureLyricsLoaded = async (force = false) => {
         if (playMusic.value.lyric && typeof playMusic.value.lyric === 'object') {
           (playMusic.value.lyric as any).hasWordByWord = hasWordByWord;
         }
-      } else if (typeof songId === 'number') {
-        try {
-          const { getMusicLrc } = await import('@/api/music');
-          const res = await getMusicLrc(songId);
-          if (res?.data?.lrc?.lyric) {
-            const { lrcArray: apiLrcArray, lrcTimeArray: apiTimeArray } = await parseLyricsString(
-              res.data.lrc.lyric
-            );
-            lrcArray.value = apiLrcArray;
-            lrcTimeArray.value = apiTimeArray;
-          }
-        } catch (apiErr) {
-          console.error('API lyrics fallback failed:', apiErr);
-        }
       }
     } catch (err) {
       console.error('Failed to extract embedded lyrics:', err);
-    }
-  } else if (typeof songId === 'number') {
-    // 在线歌曲但 lyric 字段尚未加载, 主动调 API 兜底
-    try {
-      const { getMusicLrc } = await import('@/api/music');
-      const res = await getMusicLrc(songId);
-      if (res?.data?.lrc?.lyric) {
-        const { lrcArray: apiLrcArray, lrcTimeArray: apiTimeArray } = await parseLyricsString(
-          res.data.lrc.lyric
-        );
-        lrcArray.value = apiLrcArray;
-        lrcTimeArray.value = apiTimeArray;
-      }
-    } catch (apiErr) {
-      console.error('API lyrics fallback failed:', apiErr);
     }
   }
 

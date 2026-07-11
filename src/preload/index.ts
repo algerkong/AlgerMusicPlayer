@@ -64,9 +64,6 @@ const api = {
     }
     return Promise.reject(new Error(`未授权的 IPC 通道: ${channel}`));
   },
-  // 搜索建议
-  getSearchSuggestions: (keyword: string) => ipcRenderer.invoke('get-search-suggestions', keyword),
-
   // 本地音乐扫描相关
   scanLocalMusic: (folderPath: string) => ipcRenderer.invoke('scan-local-music', folderPath),
   scanLocalMusicWithStats: (folderPath: string) =>

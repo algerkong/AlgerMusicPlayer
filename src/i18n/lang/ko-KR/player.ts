@@ -38,18 +38,6 @@ export default {
     noLrc: '가사가 없습니다. 음악을 감상해주세요',
     noAutoScroll: '본 가사는 자동 스크롤을 지원하지 않습니다'
   },
-  reparse: {
-    title: '음원 선택',
-    desc: '음원을 클릭하여 직접 분석하세요. 다음에 이 곡을 재생할 때 선택한 음원을 사용합니다',
-    success: '재분석 성공',
-    failed: '재분석 실패',
-    warning: '음원을 선택해주세요',
-    bilibiliNotSupported: 'B站 비디오는 재분석을 지원하지 않습니다',
-    processing: '분석 중...',
-    clear: '사용자 정의 음원 지우기',
-    customApiFailed: '사용자 정의 API 분석 실패, 기본 음원을 시도합니다...',
-    customApiError: '사용자 정의 API 요청 오류, 기본 음원을 시도합니다...'
-  },
   playBar: {
     expand: '가사 펼치기',
     collapse: '가사 접기',
@@ -58,7 +46,6 @@ export default {
     noSongPlaying: '재생 중인 곡이 없습니다',
     eq: '이퀄라이저',
     playList: '재생 목록',
-    reparse: '재분석',
     download: '다운로드',
     playMode: {
       sequence: '순차 재생',

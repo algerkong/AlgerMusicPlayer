@@ -47,15 +47,12 @@ import { initializeDownloadManager, setDownloadManagerWindow } from './modules/d
 import { initializeFileManager } from './modules/fileManager';
 import { initializeFonts } from './modules/fonts';
 import { initializeLocalMusicScanner } from './modules/localMusicScanner';
-import { initializeLoginWindow } from './modules/loginWindow';
 import { initializeMpris, updateMprisCurrentSong, updateMprisPlayState } from './modules/mpris';
-import { initializeOtherApi } from './modules/otherApi';
 import { initializeShortcuts } from './modules/shortcuts';
 import { initializeTray, updateCurrentSong, updatePlayState, updateTrayMenu } from './modules/tray';
 import { setupUpdateHandlers } from './modules/update';
 import { createMainWindow, initializeWindowManager, setAppQuitting } from './modules/window';
 import { initWindowSizeManager } from './modules/window-size';
-import { startMusicApi } from './server';
 
 // 导入所有图标
 const iconPath = join(__dirname, '../../resources');
@@ -82,14 +79,10 @@ function initialize(configStore: any) {
   initializeDownloadManager();
   // 初始化歌词缓存管理
   initializeCacheManager();
-  // 初始化其他 API （搜索建议等）
-  initializeOtherApi();
   // 初始化窗口管理
   initializeWindowManager();
   // 初始化字体管理
   initializeFonts();
-  // 初始化登录窗口
-  initializeLoginWindow();
   // 初始化本地音乐扫描模块
   initializeLocalMusicScanner();
 
@@ -101,9 +94,6 @@ function initialize(configStore: any) {
 
   // 初始化托盘
   initializeTray(iconPath, mainWindow);
-
-  // 启动音乐API
-  startMusicApi();
 
   // 加载歌词窗口
   loadLyricWindow(ipcMain, mainWindow);

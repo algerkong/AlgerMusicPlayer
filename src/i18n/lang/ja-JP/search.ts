@@ -23,8 +23,7 @@ export default {
     album: 'アルバム',
     playlist: 'プレイリスト',
     mv: 'MV',
-    djradio: 'ラジオ',
-    bilibili: 'Bilibili'
+    djradio: 'ラジオ'
   },
 
   history: '検索履歴',

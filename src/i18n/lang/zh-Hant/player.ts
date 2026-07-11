@@ -37,18 +37,6 @@ export default {
     noLrc: '暫無歌詞, 請欣賞',
     noAutoScroll: '本歌詞不支持自動滾動'
   },
-  reparse: {
-    title: '選擇解析音源',
-    desc: '點擊音源直接進行解析，下次播放此歌曲時將使用所選音源',
-    success: '重新解析成功',
-    failed: '重新解析失敗',
-    warning: '請選擇一個音源',
-    bilibiliNotSupported: 'B站影片不支援重新解析',
-    processing: '解析中...',
-    clear: '清除自訂音源',
-    customApiFailed: '自定義API解析失敗，正在嘗試使用內置音源...',
-    customApiError: '自定義API請求出錯，正在嘗試使用內置音源...'
-  },
   playBar: {
     expand: '展開歌詞',
     collapse: '收合歌詞',
@@ -57,7 +45,6 @@ export default {
     noSongPlaying: '沒有正在播放的歌曲',
     eq: '等化器',
     playList: '播放清單',
-    reparse: '重新解析',
     download: '下載',
     playMode: {
       sequence: '順序播放',

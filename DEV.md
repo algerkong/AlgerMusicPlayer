@@ -15,76 +15,48 @@
 - **构建工具**：Vite, electron-vite
 - **打包工具**：electron-builder
 - **国际化**：vue-i18n
-- **HTTP 客户端**：axios
+- **HTTP 客户端**：axios（下载封面等）
 - **本地存储**：electron-store localstorage
-- **音乐 API**：netease-cloud-music-api
-- **音乐解锁**：@unblockneteasemusic/server
+- **音乐**：当前仅本地音乐播放；在线音源将接入独立库 ly-music-source
 
 ### 项目结构
 
 ```
 LYMusicPlayer/
-├── build/                  # 构建相关文件
-├── docs/                   # 项目文档
-├── node_modules/           # 依赖包
-├── out/                    # 构建输出目录
-├── resources/              # 资源文件
-├── src/                    # 源代码
-│   ├── i18n/               # 国际化配置
-│   │   ├── lang/           # 语言包
-│   │   ├── main.ts         # 主进程国际化入口
-│   │   └── renderer.ts     # 渲染进程国际化入口
-│   ├── main/               # Electron 主进程
-│   │   ├── modules/        # 主进程模块
-│   │   ├── index.ts        # 主进程入口
-│   │   ├── lyric.ts        # 歌词处理
-│   │   ├── server.ts       # 服务器
-│   │   ├── set.json        # 设置
-│   │   └── unblockMusic.ts # 音乐解锁
-│   ├── preload/            # 预加载脚本
-│   │   ├── index.ts        # 预加载脚本入口
-│   │   └── index.d.ts      # 预加载脚本类型声明
-│   └── renderer/           # Vue 渲染进程
-│       ├── api/            # API 请求
-│       ├── assets/         # 静态资源
-│       ├── components/     # 组件
-│       │   ├── common/     # 通用组件
-│       │   ├── home/       # 首页组件
-│       │   ├── lyric/      # 歌词组件
-│       │   ├── settings/   # 设置组件
-│       │   └── ...         # 其他组件
-│       ├── const/          # 常量定义
-│       ├── directive/      # 自定义指令
-│       ├── hooks/          # 自定义 Hooks
-│       ├── layout/         # 布局组件
-│       ├── router/         # 路由配置
-│       ├── services/       # 服务
-│       ├── store/          # Pinia 状态管理
-│       │   ├── modules/    # Pinia 模块
-│       │   └── index.ts    # Pinia 入口
-│       ├── type/           # 类型定义
-│       ├── types/          # 更多类型定义
-│       ├── utils/          # 工具函数
-│       ├── views/          # 页面视图
-│       ├── App.vue         # 根组件
-│       ├── index.css       # 全局样式
-│       ├── index.html      # HTML 模板
-│       ├── main.ts         # 渲染进程入口
-│       └── ...             # 其他文件
-├── .env.development        # 开发环境变量
-├── .env.development.local  # 本地开发环境变量
-├── .env.production.local   # 本地生产环境变量
-├── .eslintrc.cjs           # ESLint 配置
-├── .gitignore              # Git 忽略文件
-├── .prettierrc.yaml        # Prettier 配置
-├── electron-builder.yml    # electron-builder 配置
-├── electron.vite.config.ts # electron-vite 配置
-├── package.json            # 项目配置
-├── postcss.config.js       # PostCSS 配置
-├── tailwind.config.js      # Tailwind 配置
-├── tsconfig.json           # TypeScript 配置
-├── tsconfig.node.json      # 节点 TypeScript 配置
-└── tsconfig.web.json       # Web TypeScript 配置
+├── build/                  # 构建相关文件
+├── docs/                   # 项目文档
+├── node_modules/           # 依赖包
+├── out/                    # 构建输出目录
+├── resources/              # 资源文件
+├── src/                    # 源代码
+│   ├── i18n/               # 国际化配置
+│   │   ├── lang/           # 语言包
+│   │   ├── main.ts         # 主进程国际化入口
+│   │   └── renderer.ts     # 渲染进程国际化入口
+│   ├── main/               # Electron 主进程
+│   │   ├── modules/        # 主进程模块
+│   │   ├── index.ts        # 主进程入口
+│   │   ├── lyric.ts        # 歌词处理
+│   │   └── set.json        # 设置
+│   ├── preload/            # 预加载脚本
+│   │   ├── index.ts        # 预加载脚本入口
+│   │   └── index.d.ts      # 预加载脚本类型声明
+│   └── renderer/           # Vue 渲染进程
+│       ├── assets/         # 静态资源
+│       ├── components/     # 组件
+│       ├── hooks/          # 自定义 Hooks
+│       ├── layout/         # 布局组件
+│       ├── router/         # 路由配置
+│       ├── services/       # 服务
+│       ├── store/          # Pinia 状态管理
+│       ├── types/          # 类型定义
+│       ├── utils/          # 工具函数
+│       ├── views/          # 页面视图
+│       ├── App.vue         # 根组件
+│       └── main.ts         # 渲染进程入口
+├── package.json
+├── electron.vite.config.ts
+└── tsconfig*.json
 ```
 
 ### 主要组件说明
@@ -94,9 +66,8 @@ LYMusicPlayer/
 主进程负责创建窗口、处理系统层面的交互以及与渲染进程的通信。
 
 - **index.ts**: 应用主入口，负责创建窗口和应用生命周期管理
-- **lyric.ts**: 歌词解析和处理
-- **unblockMusic.ts**: 音乐解锁功能
-- **server.ts**: 本地服务器
+- **lyric.ts**: 歌词窗口处理
+- **modules/**: 配置、下载、本地扫描、托盘、快捷键等
 
 #### 预加载脚本 (src/preload)
 
@@ -162,20 +133,7 @@ npm run dev
 
 #### 网页端开发
 
-如果只启动网页端开发，需要自己部署服务 netease-cloud-music-api
-
-需要复制一份 `.env.development.local` 到 `src/renderer` 下
-
-```
-# .env.development.local
-
-# 你的接口地址 (必填)
-VITE_API = ***
-# 音乐破解接口地址
-VITE_API_MUSIC = ***
-```
-
-启动web端开发：
+当前版本以本地音乐为主，在线音源将接入独立库。
 
 ```
 npm run dev:web

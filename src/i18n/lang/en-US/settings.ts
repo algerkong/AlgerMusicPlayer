@@ -107,21 +107,15 @@ export default {
     remoteControlDesc: 'Set remote control function'
   },
   network: {
-    apiPort: 'Music API Port',
-    apiPortDesc: 'Restart required after modification',
     proxy: 'Proxy Settings',
     proxyDesc: 'Enable proxy when unable to access music',
     proxyHost: 'Proxy Host',
     proxyHostPlaceholder: 'Enter proxy host',
     proxyPort: 'Proxy Port',
     proxyPortPlaceholder: 'Enter proxy port',
-    realIP: 'RealIP Settings',
-    realIPDesc: 'Use realIP parameter with mainland China IP to resolve access restrictions abroad',
     messages: {
       proxySuccess: 'Proxy settings saved, restart required to take effect',
-      proxyError: 'Please check your input',
-      realIPSuccess: 'RealIP settings saved',
-      realIPError: 'Please enter a valid IP address'
+      proxyError: 'Please check your input'
     }
   },
   system: {
@@ -421,33 +415,5 @@ export default {
     emptyListHint: 'Empty list means allow all IPs',
     saveSuccess: 'Remote control settings saved',
     accessInfo: 'Remote control access address:'
-  },
-  cookie: {
-    title: 'Cookie Settings',
-    description: 'Please enter NetEase Cloud Music Cookie:',
-    placeholder: 'Please paste the complete Cookie...',
-    help: {
-      format: 'Cookie usually starts with "MUSIC_U="',
-      source: 'Can be obtained from browser developer tools network requests',
-      storage: 'Cookie will be automatically saved to local storage after setting'
-    },
-    action: {
-      save: 'Save Cookie',
-      paste: 'Paste',
-      clear: 'Clear'
-    },
-    validation: {
-      required: 'Please enter Cookie',
-      format: 'Cookie format may be incorrect, please check if it contains MUSIC_U'
-    },
-    message: {
-      saveSuccess: 'Cookie saved successfully',
-      saveError: 'Failed to save Cookie',
-      pasteSuccess: 'Pasted successfully',
-      pasteError: 'Paste failed, please copy manually'
-    },
-    info: {
-      length: 'Current length: {length} characters'
-    }
   }
 };

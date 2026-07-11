@@ -1,4 +1,3 @@
-import { getMusicLrc } from '@/api/music';
 import { playbackRequestManager } from '@/services/playbackRequestManager';
 import type { ILyric, ILyricText, IWordData, SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
@@ -141,15 +140,13 @@ export const loadLrc = async (id: string | number): Promise<ILyric> => {
       }
     }
 
+    // 在线歌词 API 已移除；仅使用磁盘缓存 / 本地内嵌歌词
     if (!lyricData) {
-      const { data } = await getMusicLrc(numericId);
-      lyricData = data;
-
-      if (isElectron && lyricData) {
-        void window.electron.ipcRenderer
-          .invoke('cache-lyric', numericId, lyricData)
-          .catch((error) => console.warn('写入磁盘歌词缓存失败:', error));
-      }
+      return {
+        lrcTimeArray: [],
+        lrcArray: [],
+        hasWordByWord: false
+      };
     }
 
     const data = lyricData ?? {};

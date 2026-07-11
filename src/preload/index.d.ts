@@ -28,7 +28,6 @@ interface API {
   removeAppUpdateListeners: () => void;
   onLanguageChanged: (callback: (locale: string) => void) => void;
   invoke: (channel: string, ...args: any[]) => Promise<any>;
-  getSearchSuggestions: (keyword: string) => Promise<any>;
   /** 扫描指定文件夹中的本地音乐文件 */
   scanLocalMusic: (folderPath: string) => Promise<{ files: string[]; count: number }>;
   /** 扫描指定文件夹中的本地音乐文件（包含修改时间） */

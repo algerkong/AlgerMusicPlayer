@@ -38,18 +38,6 @@ export default {
     noLrc: '歌詞がありません。お楽しみください',
     noAutoScroll: '本歌詞は自動スクロールをサポートしていません'
   },
-  reparse: {
-    title: '解析音源を選択',
-    desc: '音源をクリックして直接解析します。次回この楽曲を再生する際は選択した音源を使用します',
-    success: '再解析成功',
-    failed: '再解析失敗',
-    warning: '音源を選択してください',
-    bilibiliNotSupported: 'Bilibili動画は再解析をサポートしていません',
-    processing: '解析中...',
-    clear: 'カスタム音源をクリア',
-    customApiFailed: 'カスタムAPIの解析に失敗しました。内蔵音源を試しています...',
-    customApiError: 'カスタムAPIのリクエストでエラーが発生しました。内蔵音源を試しています...'
-  },
   playBar: {
     expand: '歌詞を展開',
     collapse: '歌詞を折りたたみ',
@@ -58,7 +46,6 @@ export default {
     noSongPlaying: '再生中の楽曲がありません',
     eq: 'イコライザー',
     playList: 'プレイリスト',
-    reparse: '再解析',
     download: 'ダウンロード',
     playMode: {
       sequence: '順次再生',

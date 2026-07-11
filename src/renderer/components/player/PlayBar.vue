@@ -138,7 +138,7 @@
       <n-tooltip v-if="isElectron" class="music-lyric" trigger="hover" :z-index="9999999">
         <template #trigger>
           <i
-            class="iconfont ri-netease-cloud-music-line"
+            class="iconfont ri-music-2-line"
             :class="{ 'text-green-500': isLyricWindowOpen, 'disabled-icon': !playMusic?.id }"
             @click="playMusic?.id && openLyricWindow()"
           ></i>
@@ -447,7 +447,7 @@ const openPlayListDrawer = () => {
   .music-time {
     display: none;
   }
-  .ri-netease-cloud-music-line {
+  .ri-music-2-line {
     display: none;
   }
   .audio-volume {

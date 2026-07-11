@@ -4,7 +4,7 @@
  * 核心播放流程管理，使用 generation-based 取消模式替代原 playerCore.ts 中的控制流。
  * 每次 playTrack() 调用递增 generation，所有异步操作在 await 后检查 generation 是否过期。
  *
- * 导出：playTrack, reparseCurrentSong, initializePlayState, setupUrlExpiredHandler, getCurrentGeneration
+ * 导出：playTrack, initializePlayState, setupUrlExpiredHandler, getCurrentGeneration
  */
 
 import { createDiscreteApi } from 'naive-ui';
@@ -135,11 +135,9 @@ const triggerPreload = async (song: SongResult): Promise<void> => {
  */
 const updateDocumentTitle = (music: SongResult): void => {
   let title = music.name;
-  if (music.source === 'netease' && music?.song?.artists) {
-    title += ` - ${music.song.artists.reduce(
-      (prev: string, curr: any) => `${prev}${curr.name}/`,
-      ''
-    )}`;
+  const artists = music.ar || music.song?.artists;
+  if (artists?.length) {
+    title += ` - ${artists.map((a: any) => a.name).join('/')}`;
   }
   document.title = 'LYMusic - ' + title;
 };
@@ -315,44 +313,6 @@ export const playTrack = async (
     }
     playerCore.setIsPlay(false);
     playbackRequestManager.failRequest(requestId);
-    return false;
-  }
-};
-
-/**
- * 重新拉取当前歌曲官方播放地址并续播（无第三方音源）
- */
-export const reparseCurrentSong = async (): Promise<boolean> => {
-  try {
-    const playerCore = await getPlayerCoreStore();
-    const currentSong = playerCore.playMusic;
-
-    if (!currentSong || !currentSong.id) {
-      console.warn('[playbackController] 没有有效的播放对象');
-      return false;
-    }
-
-    const currentSound = audioService.getCurrentSound();
-    if (currentSound) {
-      currentSound.pause();
-    }
-
-    const {
-      playMusicUrl: _drop,
-      expiredAt: _e,
-      ...rest
-    } = currentSong as SongResult & {
-      playMusicUrl?: string;
-      expiredAt?: number;
-    };
-    const refreshed = { ...rest } as SongResult;
-    delete (refreshed as any).playMusicUrl;
-    delete (refreshed as any).expiredAt;
-
-    console.log('[playbackController] 重新获取官方URL:', currentSong.id);
-    return await playTrack(refreshed, true);
-  } catch (error) {
-    console.error('[playbackController] 重新获取官方URL失败:', error);
     return false;
   }
 };

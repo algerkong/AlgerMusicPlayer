@@ -159,9 +159,6 @@ onMounted(() => {
   if (setData.value.proxyConfig) {
     // proxy form init moved to NetworkTab
   }
-  if (setData.value.enableRealIP === undefined) {
-    setData.value = { ...setData.value, enableRealIP: false };
-  }
   if (setData.value.enableDiskCache === undefined) {
     setData.value = { ...setData.value, enableDiskCache: true };
   }

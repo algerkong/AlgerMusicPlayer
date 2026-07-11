@@ -38,18 +38,6 @@ export default {
     noLrc: 'No lyrics, please enjoy',
     noAutoScroll: 'This lyrics does not support auto-scroll'
   },
-  reparse: {
-    title: 'Select Music Source',
-    desc: 'Click a source to directly reparse the current song. This source will be used next time this song plays.',
-    success: 'Reparse successful',
-    failed: 'Reparse failed',
-    warning: 'Please select a music source',
-    bilibiliNotSupported: 'Bilibili videos do not support reparsing',
-    processing: 'Processing...',
-    clear: 'Clear Custom Source',
-    customApiFailed: 'Custom API parsing failed, trying built-in sources...',
-    customApiError: 'Custom API request error, trying built-in sources...'
-  },
   playBar: {
     expand: 'Expand Lyrics',
     collapse: 'Collapse Lyrics',
@@ -58,7 +46,6 @@ export default {
     noSongPlaying: 'No song playing',
     eq: 'Equalizer',
     playList: 'Play List',
-    reparse: 'Reparse',
     download: 'Download',
     miniPlayBar: 'Mini Play Bar',
     playMode: {
