@@ -27,8 +27,13 @@
 
     <div class="flex-1" />
 
-    <!-- 搜索：长条、轻微圆角，聚焦时仅略微变宽 -->
-    <div class="search-wrap" :class="isSearchExpanded ? 'search-wrap--open' : 'search-wrap--idle'">
+    <!-- 搜索：悬停立即展开，无延迟；聚焦时保持展开 -->
+    <div
+      class="search-wrap"
+      :class="isSearchExpanded ? 'search-wrap--open' : 'search-wrap--idle'"
+      @mouseenter="onSearchEnter"
+      @mouseleave="onSearchLeave"
+    >
       <n-popover
         trigger="manual"
         placement="bottom-end"
