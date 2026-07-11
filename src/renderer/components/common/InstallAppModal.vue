@@ -90,7 +90,7 @@ const handleInstall = async (): Promise<void> => {
     .modal-header {
       @apply flex items-center mb-6;
       .app-icon {
-        @apply w-20 h-20 mr-4 rounded-2xl overflow-hidden;
+        @apply w-20 h-20 mr-4 rounded-full overflow-hidden shadow-md;
         img {
           @apply w-full h-full object-cover;
         }
