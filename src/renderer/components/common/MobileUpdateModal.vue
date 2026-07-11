@@ -22,7 +22,7 @@
             <div class="flex items-center gap-4">
               <!-- 应用图标 -->
               <div
-                class="w-20 h-20 rounded-2xl overflow-hidden shadow-lg flex-shrink-0 ring-2 ring-green-500/20"
+                class="w-20 h-20 rounded-full overflow-hidden shadow-lg flex-shrink-0 ring-2 ring-green-500/20"
               >
                 <img src="@/assets/logo.png" alt="App Icon" class="w-full h-full object-cover" />
               </div>

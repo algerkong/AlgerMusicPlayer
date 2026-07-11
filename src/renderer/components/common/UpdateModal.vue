@@ -11,7 +11,7 @@
     <div class="p-6 pb-4">
       <div class="mb-6 flex items-center">
         <div
-          class="mr-5 h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl shadow-lg ring-2 ring-neutral-100 dark:ring-neutral-800"
+          class="mr-5 h-20 w-20 flex-shrink-0 overflow-hidden rounded-full shadow-lg ring-2 ring-neutral-100 dark:ring-neutral-800"
         >
           <img src="@/assets/logo.png" alt="App Icon" class="h-full w-full object-cover" />
         </div>

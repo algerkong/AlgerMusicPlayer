@@ -331,6 +331,40 @@ export function updateTrayMenu(mainWindow: BrowserWindow) {
   }
 }
 
+/**
+ * 系统托盘主图标（圆形透明底）。
+ * 不要用 16x16 线稿直接缩：耳机猫细节会糊成一团，看起来像「没换图标」。
+ */
+function createTrayNativeImage(iconPath: string): Electron.NativeImage {
+  const candidates =
+    process.platform === 'darwin'
+      ? ['icon-tray-22.png', 'icon-tray.png', 'icon_16x16.png', 'icon.png']
+      : ['icon-tray.png', 'icon-tray-48.png', 'icon-tray-22.png', 'icon.png'];
+
+  let image: Electron.NativeImage | null = null;
+  for (const file of candidates) {
+    const full = join(iconPath, file);
+    const img = nativeImage.createFromPath(full);
+    if (!img.isEmpty()) {
+      image = img;
+      break;
+    }
+  }
+
+  if (!image || image.isEmpty()) {
+    // 最后兜底：空图会导致托盘创建失败
+    image = nativeImage.createEmpty();
+  }
+
+  const size = process.platform === 'darwin' ? 22 : 32;
+  const resized = image.resize({ width: size, height: size, quality: 'best' });
+  // macOS 模板图会把彩色压成单色；圆形猫头像保留原色更可辨
+  if (process.platform === 'darwin') {
+    resized.setTemplateImage(false);
+  }
+  return resized;
+}
+
 // 初始化状态栏Tray
 function initializeStatusBarTray(mainWindow: BrowserWindow) {
   const store = getStore();
@@ -404,13 +438,8 @@ function initializeStatusBarTray(mainWindow: BrowserWindow) {
  * 初始化系统托盘
  */
 export function initializeTray(iconPath: string, mainWindow: BrowserWindow) {
-  // 根据平台选择合适的图标
-  const iconSize = process.platform === 'darwin' ? 18 : 16;
-  const iconFile = process.platform === 'darwin' ? 'icon_16x16.png' : 'icon_16x16.png';
-
-  const trayIcon = nativeImage
-    .createFromPath(join(iconPath, iconFile))
-    .resize({ width: iconSize, height: iconSize });
+  // 托盘用圆形专用图：细线头像在 16px 几乎看不见，Linux 用 32、macOS 用 22
+  const trayIcon = createTrayNativeImage(iconPath);
 
   tray = new Tray(trayIcon);
 
