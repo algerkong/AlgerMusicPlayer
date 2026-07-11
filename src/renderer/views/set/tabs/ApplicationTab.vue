@@ -55,15 +55,7 @@
       </template>
     </setting-item>
 
-    <setting-item
-      :title="t('settings.application.remoteControl')"
-      :description="t('settings.application.remoteControlDesc')"
-    >
-      <s-btn @click="showRemoteControlModal = true">{{ t('common.configure') }}</s-btn>
-    </setting-item>
-
     <shortcut-settings v-model:show="showShortcutModal" @change="handleShortcutsChange" />
-    <remote-control-setting v-model:visible="showRemoteControlModal" />
   </setting-section>
 </template>
 
@@ -72,7 +64,6 @@ import { computed, inject, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
-import RemoteControlSetting from '@/components/settings/ServerSetting.vue';
 import ShortcutSettings from '@/components/settings/ShortcutSettings.vue';
 import { isElectron } from '@/utils';
 import { openDirectory, selectDirectory } from '@/utils/fileOperation';
@@ -89,7 +80,6 @@ const setData = inject(SETTINGS_DATA_KEY)!;
 const message = inject(SETTINGS_MESSAGE_KEY)!;
 
 const showShortcutModal = ref(false);
-const showRemoteControlModal = ref(false);
 
 const closeActionOptions = computed(() => [
   { label: t('settings.application.closeOptions.ask'), value: 'ask' },

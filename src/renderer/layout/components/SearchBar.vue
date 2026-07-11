@@ -273,14 +273,12 @@ const tabs = computed(() => {
   const items = [
     { key: 'home', label: t('comp.home'), path: '/', icon: 'ri-home-4-fill' },
     { key: 'playlist', label: t('comp.list'), path: '/list', icon: 'ri-play-list-2-fill' },
-    { key: 'album', label: t('comp.newAlbum.title'), path: '/album', icon: 'ri-album-fill' },
     {
       key: 'charts',
       label: t('comp.toplist'),
       path: '/toplist',
       icon: 'ri-bar-chart-grouped-fill'
     },
-    { key: 'mv', label: t('comp.mv'), path: '/mv', icon: 'ri-movie-2-fill' },
     {
       key: 'localMusic',
       label: t('comp.localMusic'),

@@ -51,7 +51,6 @@ import { initializeLoginWindow } from './modules/loginWindow';
 import { initLxMusicHttp } from './modules/lxMusicHttp';
 import { initializeMpris, updateMprisCurrentSong, updateMprisPlayState } from './modules/mpris';
 import { initializeOtherApi } from './modules/otherApi';
-import { initializeRemoteControl } from './modules/remoteControl';
 import { initializeShortcuts } from './modules/shortcuts';
 import { initializeTray, updateCurrentSong, updatePlayState, updateTrayMenu } from './modules/tray';
 import { setupUpdateHandlers } from './modules/update';
@@ -115,9 +114,6 @@ function initialize(configStore: any) {
 
   // 初始化快捷键
   initializeShortcuts(mainWindow);
-
-  // 初始化远程控制服务
-  initializeRemoteControl(mainWindow);
 
   // 初始化 MPRIS 服务 (Linux)
   initializeMpris(mainWindow);

@@ -502,35 +502,11 @@ const quickNavItems = computed(() => {
       show: true
     },
     {
-      key: 'podcast',
-      label: t('podcast.podcast'),
-      icon: 'ri-radio-2-line',
-      active: false,
-      action: () => router.push('/podcast'),
-      show: true
-    },
-    {
-      key: 'mv',
-      label: t('comp.mv'),
-      icon: 'ri-movie-2-line',
-      active: false,
-      action: () => router.push('/mv'),
-      show: true
-    },
-    {
       key: 'playlist',
       label: t('comp.list'),
       icon: 'ri-play-list-2-line',
       active: false,
       action: () => router.push('/list'),
-      show: true
-    },
-    {
-      key: 'album',
-      label: t('comp.newAlbum.title'),
-      icon: 'ri-album-line',
-      active: false,
-      action: () => router.push('/album'),
       show: true
     },
     {
