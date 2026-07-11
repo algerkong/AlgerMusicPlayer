@@ -102,7 +102,6 @@ export default {
 
     // Source labels
     sourceLabels: {
-      migu: 'Migu',
       kugou: 'Kugou',
       kuwo: 'Kuwo',
       pyncmd: 'NetEase (Built-in)',

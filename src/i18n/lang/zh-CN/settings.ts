@@ -98,7 +98,6 @@ export default {
 
     // 音源标签
     sourceLabels: {
-      migu: 'migu',
       kugou: 'kugou',
       kuwo: 'kuwo',
       pyncmd: 'pyncmd',

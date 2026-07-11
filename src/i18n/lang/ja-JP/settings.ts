@@ -99,7 +99,6 @@ export default {
     parserGD: 'GD 音楽台 (内蔵)',
     parserCustom: 'カスタム API',
     sourceLabels: {
-      migu: 'Migu',
       kugou: 'Kugou',
       kuwo: 'Kuwo',
       pyncmd: 'NetEase (内蔵)',

@@ -23,9 +23,8 @@ export type MusicSourceInfo = MusicSourceMeta & {
 
 export const MUSIC_SOURCE_REGISTRY: MusicSourceMeta[] = [
   // 内置解锁音源 (UnblockMusicStrategy)
-  { key: 'migu', icon: 'ri-music-2-fill', color: '#ff6600', group: 'unblock' },
-  { key: 'kugou', icon: 'ri-music-fill', color: '#2979ff', group: 'unblock' },
   { key: 'kuwo', icon: 'ri-music-fill', color: '#ff8c00', group: 'unblock' },
+  { key: 'kugou', icon: 'ri-music-fill', color: '#2979ff', group: 'unblock' },
   { key: 'pyncmd', icon: 'ri-netease-cloud-music-fill', color: '#ec4141', group: 'unblock' },
   // 扩展音源 (GDMusicStrategy)
   { key: 'gdmusic', icon: 'ri-google-fill', color: '#4285f4', group: 'extended' },
