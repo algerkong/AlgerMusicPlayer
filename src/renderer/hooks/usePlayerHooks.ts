@@ -1,4 +1,4 @@
-import { getMusicLrc, getMusicUrl } from '@/api/music';
+import { getMusicLrc } from '@/api/music';
 import { playbackRequestManager } from '@/services/playbackRequestManager';
 import type { ILyric, ILyricText, IWordData, SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
@@ -50,7 +50,9 @@ const resolveCachedPlaybackUrl = async (
 };
 
 /**
- * 获取歌曲播放URL：仅官方网易云接口（无第三方/自定义音源）
+ * 获取歌曲播放URL。
+ * 已移除网易云官方取链；在线播放待接入独立音源库。
+ * 仅支持：已有 playMusicUrl（缓存/本地等）。
  */
 export const getSongUrl = async (
   id: string | number,
@@ -58,50 +60,18 @@ export const getSongUrl = async (
   isDownloaded: boolean = false,
   requestId?: string
 ) => {
-  const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
-
-  try {
-    if (requestId && !playbackRequestManager.isRequestValid(requestId)) {
-      console.log(`[getSongUrl] 请求已失效: ${requestId}`);
-      throw new Error('Request cancelled');
-    }
-
-    if (songData.playMusicUrl) {
-      if (isDownloaded) return songData.playMusicUrl;
-      return await resolveCachedPlaybackUrl(songData.playMusicUrl, songData);
-    }
-
-    const { data } = await getMusicUrl(numericId, isDownloaded);
-
-    if (requestId && !playbackRequestManager.isRequestValid(requestId)) {
-      console.log(`[getSongUrl] 获取官方URL后请求已失效: ${requestId}`);
-      throw new Error('Request cancelled');
-    }
-
-    if (data && data.data && data.data[0]) {
-      const songDetail = data.data[0];
-      const hasNoUrl = !songDetail.url;
-      const isTrial = !!songDetail.freeTrialInfo;
-
-      if (hasNoUrl || isTrial) {
-        console.warn(`官方URL不可用 (无URL: ${hasNoUrl}, 试听: ${isTrial})，已移除备用音源`);
-        return null;
-      }
-
-      console.log('官方API解析成功！');
-      if (isDownloaded) return songDetail as any;
-      return await resolveCachedPlaybackUrl(songDetail.url, songData);
-    }
-
-    console.warn('官方API返回数据结构异常');
-    return null;
-  } catch (error) {
-    if ((error as Error).message === 'Request cancelled') {
-      throw error;
-    }
-    console.error('官方API请求失败:', error);
-    return null;
+  if (requestId && !playbackRequestManager.isRequestValid(requestId)) {
+    console.log(`[getSongUrl] 请求已失效: ${requestId}`);
+    throw new Error('Request cancelled');
   }
+
+  if (songData.playMusicUrl) {
+    if (isDownloaded) return songData.playMusicUrl;
+    return await resolveCachedPlaybackUrl(songData.playMusicUrl, songData);
+  }
+
+  console.warn(`[getSongUrl] 无播放地址 (id=${id})：官方取链已移除，音源库尚未接入`);
+  return null;
 };
 
 /**
