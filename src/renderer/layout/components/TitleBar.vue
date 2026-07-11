@@ -133,7 +133,7 @@ const rememberChoice = ref(false);
 
 const openDownloadPage = () => {
   if (!isElectron) {
-    window.open('http://donate.alger.fun/download', '_blank');
+    window.open('https://github.com/LuoYe17/AlgerMusicPlayer/releases', '_blank');
   }
 };
 

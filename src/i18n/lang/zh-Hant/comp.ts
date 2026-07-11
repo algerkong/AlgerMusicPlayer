@@ -68,32 +68,6 @@ export default {
     agree: '我已了解並同意',
     disagree: '不同意並退出'
   },
-  donate: {
-    title: '支援開發者',
-    subtitle: '您的支援是我持續更新的動力',
-    tip: '捐贈完全採自願原則。即使不捐贈，您依然可以正常使用所有功能。感謝您的理解與支援！',
-    wechat: '微信支付',
-    alipay: '支付寶',
-    wechatQR: '微信收款碼',
-    alipayQR: '支付寶收款碼',
-    scanTip: '請使用手機 App 掃描 QR Code 進行捐贈',
-    enterApp: '進入程式',
-    noForce: '捐贈並非強制，您可以點擊按鈕直接進入'
-  },
-  coffee: {
-    title: '請我喝杯咖啡',
-    alipay: '支付寶',
-    wechat: '微信支付',
-    alipayQR: '支付寶收款碼',
-    wechatQR: '微信收款碼',
-    coffeeDesc: '一杯咖啡，一份支持',
-    coffeeDescLinkText: '查看更多',
-    groupText: '微信公众号：AlgerMusic',
-    messages: {
-      copySuccess: '已複製到剪貼簿'
-    },
-    donateList: '請我喝杯咖啡'
-  },
   playlistType: {
     title: '播放清單分類',
     showAll: '顯示全部',

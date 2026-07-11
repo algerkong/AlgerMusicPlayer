@@ -200,11 +200,9 @@
     </n-popover>
 
     <!-- GitHub -->
-    <coffee :alipay-q-r="alipay" :wechat-q-r="wechat">
-      <button class="action-btn" @click="toGithub">
-        <i class="ri-github-fill" />
-      </button>
-    </coffee>
+    <button class="action-btn" @click="toGithub">
+      <i class="ri-github-fill" />
+    </button>
   </div>
 </template>
 
@@ -217,9 +215,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { getSearchKeyword } from '@/api/home';
 import { getUserDetail } from '@/api/login';
 import { getSearchSuggestions } from '@/api/search';
-import alipay from '@/assets/alipay.png';
-import wechat from '@/assets/wechat.png';
-import Coffee from '@/components/Coffee.vue';
 import { SEARCH_TYPES, USER_SET_OPTIONS } from '@/const/bar-const';
 import { useZoom } from '@/hooks/useZoom';
 import { useDownloadStore } from '@/store/modules/download';
@@ -458,9 +453,9 @@ watchEffect(() => {
 
 const restartApp = () => window.electron.ipcRenderer.send('restart');
 const toLogin = () => router.push('/user');
-const toGithub = () => window.open('http://donate.alger.fun/download', '_blank');
+const toGithub = () => window.open('https://github.com/LuoYe17/AlgerMusicPlayer', '_blank');
 const toGithubRelease = () => {
-  window.location.href = 'https://donate.alger.fun/download';
+  window.open('https://github.com/LuoYe17/AlgerMusicPlayer/releases', '_blank');
 };
 
 const isDark = computed({

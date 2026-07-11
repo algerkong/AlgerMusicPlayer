@@ -54,10 +54,6 @@
           <about-tab />
         </div>
 
-        <div v-show="currentSection === 'donation'" class="animate-fade-in">
-          <donation-tab />
-        </div>
-
         <div class="h-20"></div>
         <play-bottom />
       </div>
@@ -81,7 +77,6 @@ import { SETTINGS_DATA_KEY, SETTINGS_DIALOG_KEY, SETTINGS_MESSAGE_KEY } from './
 import AboutTab from './tabs/AboutTab.vue';
 import ApplicationTab from './tabs/ApplicationTab.vue';
 import BasicTab from './tabs/BasicTab.vue';
-import DonationTab from './tabs/DonationTab.vue';
 import NetworkTab from './tabs/NetworkTab.vue';
 import PlaybackTab from './tabs/PlaybackTab.vue';
 import SystemTab from './tabs/SystemTab.vue';
@@ -142,8 +137,7 @@ const settingSections: SettingSectionConfig[] = [
   { id: 'application', electron: true },
   { id: 'network', electron: true },
   { id: 'system', electron: true },
-  { id: 'about' },
-  { id: 'donation' }
+  { id: 'about' }
 ];
 
 const navSections = computed(() => {
