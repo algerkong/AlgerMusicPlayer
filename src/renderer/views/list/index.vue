@@ -4,10 +4,10 @@
       <div class="page-padding pb-32 pt-6 space-y-6">
         <div class="flex items-center justify-between gap-4">
           <div>
-            <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">
+            <h1 class="page-title text-2xl font-bold">
               {{ t('comp.list') }}
             </h1>
-            <p class="text-sm text-neutral-500 mt-1">
+            <p class="page-hint text-sm mt-1">
               {{ pageHint }}
             </p>
           </div>
@@ -28,7 +28,7 @@
               <div
                 v-for="item in playlists"
                 :key="item.id"
-                class="playlist-row chrome-surface"
+                class="playlist-row"
                 @click="openPlaylist(item)"
               >
                 <div class="cover">
@@ -65,7 +65,7 @@
             <div
               v-for="item in localEntries"
               :key="item.key"
-              class="playlist-row chrome-surface"
+              class="playlist-row"
               @click="router.push(item.path)"
             >
               <div class="cover cover-local">
@@ -201,6 +201,16 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.page-title {
+  color: var(--chrome-text, #111827);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+
+.page-hint {
+  color: var(--chrome-text-muted, #6b7280);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.14);
+}
+
 .playlist-rows {
   display: flex;
   flex-direction: column;
@@ -214,14 +224,18 @@ onMounted(() => {
   padding: 10px 12px;
   border-radius: 12px;
   cursor: pointer;
+  background: var(--chrome-surface-strong);
+  border: 1px solid var(--chrome-border);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
   transition:
-    background 0.15s,
-    transform 0.15s;
+    transform 0.15s,
+    filter 0.15s;
 }
 
 .playlist-row:hover {
   transform: translateY(-1px);
-  filter: brightness(1.03);
+  filter: brightness(1.04);
 }
 
 .cover {
@@ -230,7 +244,7 @@ onMounted(() => {
   border-radius: 10px;
   overflow: hidden;
   flex-shrink: 0;
-  background: rgba(0, 0, 0, 0.06);
+  background: rgba(0, 0, 0, 0.12);
 }
 
 .cover-local {
@@ -247,7 +261,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
+  color: var(--chrome-text-muted, #9ca3af);
   font-size: 22px;
 }
 
@@ -260,12 +274,14 @@ onMounted(() => {
   font-size: 14px;
   font-weight: 600;
   color: var(--chrome-text, #111827);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
 }
 
 .desc {
   margin-top: 2px;
   font-size: 12px;
   color: var(--chrome-text-muted, #6b7280);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.14);
 }
 
 .chevron {

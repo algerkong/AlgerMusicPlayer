@@ -129,9 +129,30 @@ const layoutBgStyle = computed(() => {
     const m = p.match(/\d+/g);
     if (m && m.length >= 3) tint = `${m[0]}, ${m[1]}, ${m[2]}`;
   }
+  // 根据主色亮度决定字色，避免封面底上灰字看不清
+  let text = '#f8fafc';
+  let textMuted = 'rgba(248, 250, 252, 0.78)';
+  if (p) {
+    const m = p.match(/\d+/g);
+    if (m && m.length >= 3) {
+      const r = Number(m[0]);
+      const g = Number(m[1]);
+      const b = Number(m[2]);
+      // 相对亮度
+      const L = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+      if (L > 0.62) {
+        text = '#0f172a';
+        textMuted = 'rgba(15, 23, 42, 0.72)';
+        tint = '255, 255, 255';
+      }
+    }
+  }
   return {
     background: coverBackground.value,
-    '--chrome-tint': tint
+    '--chrome-tint': tint,
+    '--chrome-text': text,
+    '--chrome-text-muted': textMuted,
+    '--chrome-border': text === '#f8fafc' ? 'rgba(255,255,255,0.14)' : 'rgba(15,23,42,0.1)'
   } as Record<string, string>;
 });
 
@@ -184,13 +205,23 @@ provide('openPlaylistDrawer', openPlaylistDrawer);
 }
 
 .layout-page.has-cover-bg {
-  /* 封面渐变作整页底，子层尽量透出 */
+  /* 封面渐变作整页底，子层全部透出 */
   background-attachment: fixed;
+  color: var(--chrome-text);
 }
 
 .layout-page.has-cover-bg .menu,
 .layout-page.has-cover-bg .main,
-.layout-page.has-cover-bg .layout-main {
+.layout-page.has-cover-bg .layout-main,
+.layout-page.has-cover-bg .main-content,
+.layout-page.has-cover-bg .main-page,
+.layout-page.has-cover-bg .search-bar,
+.layout-page.has-cover-bg :deep(#title-bar) {
+  background: transparent !important;
+}
+
+.layout-page.has-cover-bg :deep(.app-menu),
+.layout-page.has-cover-bg :deep(.app-menu-list) {
   background: transparent !important;
 }
 
@@ -203,19 +234,24 @@ provide('openPlaylistDrawer', openPlaylistDrawer);
 }
 
 .menu {
-  @apply h-full bg-light dark:bg-black;
+  @apply h-full;
+  /* 默认轻微附着，无封面时仍透一点；有封面时由 has-cover-bg 清掉 */
+  background: transparent;
 }
 
 .main {
   @apply overflow-hidden flex-1 flex flex-col;
+  background: transparent;
 }
 
 .main-content {
   @apply flex-1 overflow-hidden;
+  background: transparent;
 }
 
 .main-page {
   @apply h-full;
+  background: transparent;
 }
 
 .mobile {

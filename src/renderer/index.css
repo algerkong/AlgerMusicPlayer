@@ -11,21 +11,21 @@
  */
 :root {
   --chrome-tint: 255, 255, 255;
-  --chrome-surface: rgba(var(--chrome-tint), 0.55);
-  --chrome-surface-strong: rgba(var(--chrome-tint), 0.72);
+  --chrome-surface: rgba(var(--chrome-tint), 0.62);
+  --chrome-surface-strong: rgba(var(--chrome-tint), 0.82);
   --chrome-border: rgba(0, 0, 0, 0.08);
   --chrome-text: #111827;
-  --chrome-text-muted: #6b7280;
-  --chrome-blur: 16px;
+  --chrome-text-muted: #4b5563;
+  --chrome-blur: 18px;
 }
 
 .dark {
   --chrome-tint: 24, 24, 27;
-  --chrome-surface: rgba(var(--chrome-tint), 0.5);
-  --chrome-surface-strong: rgba(var(--chrome-tint), 0.68);
-  --chrome-border: rgba(255, 255, 255, 0.1);
+  --chrome-surface: rgba(var(--chrome-tint), 0.55);
+  --chrome-surface-strong: rgba(var(--chrome-tint), 0.78);
+  --chrome-border: rgba(255, 255, 255, 0.12);
   --chrome-text: #f3f4f6;
-  --chrome-text-muted: #a1a1aa;
+  --chrome-text-muted: #d1d5db;
 }
 
 .chrome-surface {

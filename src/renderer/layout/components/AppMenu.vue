@@ -74,6 +74,7 @@ const iconStyle = (index: number) => {
 <style lang="scss" scoped>
 .app-menu {
   @apply flex-col items-center justify-start transition-all duration-300 w-[72px] px-1 pt-2;
+  background: transparent;
 }
 
 .app-menu-list {
@@ -106,7 +107,9 @@ const iconStyle = (index: number) => {
 }
 
 .app-menu-item-icon {
-  @apply transition-all duration-200 text-gray-500 dark:text-gray-400;
+  @apply transition-all duration-200;
+  color: var(--chrome-text-muted, #9ca3af);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.28));
 
   &:hover {
     @apply text-green-500 scale-105 !important;
