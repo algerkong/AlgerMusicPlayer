@@ -1,5 +1,5 @@
 <template>
-  <div class="flex items-center gap-2 pb-4 pr-4 pl-1">
+  <div class="search-bar-row flex items-center gap-2 pb-4 pr-4 pl-1">
     <!-- ── LEFT: Tabs / 返回 ─────────────────────────── -->
     <div v-if="!showBackButton" class="tabs-track flex-shrink-0" ref="tabsTrackRef">
       <div class="tab-slider-bg" :style="sliderStyle" />
@@ -135,7 +135,7 @@
           <n-avatar
             v-if="userStore.user"
             circle
-            :size="26"
+            :size="30"
             :src="getImgUrl(userStore.user.avatarUrl)"
             class="cursor-pointer"
             @click="selectItem('user')"
@@ -405,27 +405,32 @@ const selectItem = (key: string) => {
 </script>
 
 <style scoped>
+/* 整条顶栏控件统一高度 */
+.search-bar-row {
+  --bar-h: 42px;
+}
+
 /* ── Tab track ───────────────────────────────────────── */
 .tabs-track {
   position: relative;
   display: inline-flex;
   align-items: center;
-  height: 34px;
+  height: var(--bar-h);
   background: var(--chrome-surface);
   border: 1px solid var(--chrome-border);
   backdrop-filter: blur(var(--chrome-blur));
   -webkit-backdrop-filter: blur(var(--chrome-blur));
   border-radius: 9999px;
-  padding: 3px;
+  padding: 4px;
   gap: 0;
   box-sizing: border-box;
 }
 
 .tab-slider-bg {
   position: absolute;
-  top: 3px;
+  top: 4px;
   left: 0;
-  height: calc(100% - 6px);
+  height: calc(100% - 8px);
   border-radius: 9999px;
   background: #22c55e;
   box-shadow: 0 1px 6px rgba(34, 197, 94, 0.35);
@@ -441,10 +446,10 @@ const selectItem = (key: string) => {
   z-index: 1;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 5px 13px;
+  gap: 6px;
+  padding: 7px 14px;
   border-radius: 9999px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 600;
   border: none;
   background: transparent;
@@ -473,13 +478,13 @@ const selectItem = (key: string) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: var(--bar-h);
+  height: var(--bar-h);
   border-radius: 9999px;
   border: 1px solid #e5e7eb;
   background: transparent;
   color: #6b7280;
-  font-size: 16px;
+  font-size: 18px;
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -521,24 +526,26 @@ const selectItem = (key: string) => {
 .search-inner {
   display: flex;
   align-items: center;
-  gap: 6px;
-  height: 34px;
-  padding: 0 12px;
-  border-radius: 8px;
+  gap: 8px;
+  height: var(--bar-h);
+  padding: 0 14px;
+  border-radius: 10px;
   border: 1px solid var(--chrome-border);
   background: var(--chrome-surface);
   backdrop-filter: blur(var(--chrome-blur));
   -webkit-backdrop-filter: blur(var(--chrome-blur));
   transition: border-color 0.15s;
+  box-sizing: border-box;
 }
+/* 点击/聚焦：只高亮边框，背景保持不变 */
 .search-inner--focus {
   border-color: #22c55e;
-  background: var(--chrome-surface-strong);
+  background: var(--chrome-surface);
   box-shadow: none;
 }
 
 .search-icon-glyph {
-  font-size: 14px;
+  font-size: 16px;
   color: #9ca3af;
   flex-shrink: 0;
   transition: color 0.2s;
@@ -553,7 +560,8 @@ const selectItem = (key: string) => {
   border: none;
   outline: none;
   background: transparent;
-  font-size: 13px;
+  font-size: 14px;
+  line-height: 1.2;
   color: #111827;
 }
 .dark .search-input {
@@ -567,10 +575,10 @@ const selectItem = (key: string) => {
   display: flex;
   align-items: center;
   gap: 3px;
-  padding: 2px 7px;
+  padding: 4px 8px;
   border-radius: 6px;
   background: #f3f4f6;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: #6b7280;
   cursor: pointer;
@@ -598,17 +606,18 @@ const selectItem = (key: string) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: var(--bar-h);
+  height: var(--bar-h);
   border-radius: 9999px;
   border: 1px solid var(--chrome-border);
   background: var(--chrome-surface);
   backdrop-filter: blur(var(--chrome-blur));
   -webkit-backdrop-filter: blur(var(--chrome-blur));
   color: var(--chrome-text-muted);
-  font-size: 15px;
+  font-size: 17px;
   cursor: pointer;
   transition: all 0.15s;
+  box-sizing: border-box;
 }
 .action-btn:hover {
   color: #22c55e;
