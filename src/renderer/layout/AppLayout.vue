@@ -248,8 +248,6 @@ provide('openPlaylistDrawer', openPlaylistDrawer);
   @apply h-full flex-shrink-0;
   background: transparent;
   z-index: 20;
-  /* 侧栏与主内容之间留缝，避免内容贴栏 */
-  margin-right: 4px;
 }
 
 .main {
@@ -259,8 +257,6 @@ provide('openPlaylistDrawer', openPlaylistDrawer);
   background: transparent;
   position: relative;
   z-index: 1;
-  /* 主区起点再留一点气口 */
-  padding-left: 4px;
 }
 
 .main-content {
