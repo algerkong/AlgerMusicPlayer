@@ -92,10 +92,21 @@ async function invokeMs<T>(channel: string, ...args: unknown[]): Promise<T> {
   if (!isElectron) {
     throw new Error('Online music source requires Electron');
   }
-  const res = (await window.electron.ipcRenderer.invoke(
-    channel,
-    ...args
-  )) as MusicSourceIpcResult<T>;
+  let res: MusicSourceIpcResult<T>;
+  try {
+    res = (await window.electron.ipcRenderer.invoke(channel, ...args)) as MusicSourceIpcResult<T>;
+  } catch (error: any) {
+    const msg = String(error?.message || error || '');
+    // 主进程未注册 handler（旧构建 / 库加载失败）
+    if (msg.includes('No handler registered') || msg.includes('Invalid channel')) {
+      const err = new Error(
+        '音源服务未就绪：请重启应用（主进程需加载 ly-music-source）'
+      ) as Error & { code?: string };
+      err.code = 'NO_HANDLER';
+      throw err;
+    }
+    throw error;
+  }
   if (!res || typeof res !== 'object' || !('ok' in res)) {
     throw new Error(`Invalid music-source response on ${channel}`);
   }

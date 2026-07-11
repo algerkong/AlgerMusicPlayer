@@ -17,7 +17,9 @@ const layoutRouter = [
       title: 'comp.search',
       noScroll: true,
       icon: 'icon-Search',
-      keepAlive: true
+      keepAlive: true,
+      // 顶栏已有搜索，侧栏不再展示
+      hideInSidebar: true
     },
     component: () => import('@/views/search/index.vue')
   },
@@ -40,7 +42,9 @@ const layoutRouter = [
       title: 'comp.history',
       icon: 'icon-a-TicketStar',
       keepAlive: true,
-      isMobile: true
+      isMobile: true,
+      // 收入「歌单」页本地入口，侧栏不再单独展示
+      hideInSidebar: true
     }
   },
   {

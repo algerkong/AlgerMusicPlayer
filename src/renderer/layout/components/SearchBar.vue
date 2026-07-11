@@ -387,14 +387,14 @@ const selectItem = (key: string) => {
   display: inline-flex;
   align-items: center;
   height: 34px;
-  background: #f3f4f6;
+  background: var(--chrome-surface);
+  border: 1px solid var(--chrome-border);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
   border-radius: 9999px;
   padding: 3px;
   gap: 0;
   box-sizing: border-box;
-}
-.dark .tabs-track {
-  background: #1f2937;
 }
 
 .tab-slider-bg {
@@ -488,23 +488,15 @@ const selectItem = (key: string) => {
   height: 34px;
   padding: 0 12px;
   border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  transition:
-    border-color 0.15s,
-    width 0.18s ease;
-}
-.dark .search-inner {
-  border-color: #374151;
-  background: #171717;
+  border: 1px solid var(--chrome-border);
+  background: var(--chrome-surface);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
+  transition: border-color 0.15s;
 }
 .search-inner--focus {
   border-color: #22c55e;
-  background: #fff;
-  box-shadow: none;
-}
-.dark .search-inner--focus {
-  background: #171717;
+  background: var(--chrome-surface-strong);
   box-shadow: none;
 }
 
@@ -572,16 +564,14 @@ const selectItem = (key: string) => {
   width: 32px;
   height: 32px;
   border-radius: 9999px;
-  border: 1px solid #e5e7eb;
-  background: transparent;
-  color: #6b7280;
+  border: 1px solid var(--chrome-border);
+  background: var(--chrome-surface);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
+  color: var(--chrome-text-muted);
   font-size: 15px;
   cursor: pointer;
   transition: all 0.15s;
-}
-.dark .action-btn {
-  border-color: #374151;
-  color: #9ca3af;
 }
 .action-btn:hover {
   color: #22c55e;
@@ -613,15 +603,14 @@ const selectItem = (key: string) => {
   height: 32px;
   padding: 2px;
   border-radius: 9999px;
-  border: 1px solid #e5e7eb;
-  background: transparent;
+  border: 1px solid var(--chrome-border);
+  background: var(--chrome-surface);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
   cursor: pointer;
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
-}
-.dark .user-btn {
-  border-color: #374151;
 }
 .user-btn:hover {
   border-color: #22c55e;
@@ -638,20 +627,17 @@ const selectItem = (key: string) => {
   color: #9ca3af;
 }
 
-/* ── User menu ───────────────────────────────────────── */
+/* ── User menu：附着半透明，不锁死黑/白 ───────────────── */
 .user-menu {
-  min-width: 220px;
+  min-width: 200px;
   border-radius: 12px;
   overflow: hidden;
-  background: #fff;
-  border: 1px solid #f3f4f6;
-  box-shadow:
-    0 4px 20px rgba(0, 0, 0, 0.1),
-    0 1px 4px rgba(0, 0, 0, 0.05);
-}
-.dark .user-menu {
-  background: #111827;
-  border-color: #1f2937;
+  background: var(--chrome-surface-strong);
+  border: 1px solid var(--chrome-border);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+  color: var(--chrome-text);
 }
 
 .user-menu-top {

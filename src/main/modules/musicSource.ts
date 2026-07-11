@@ -88,10 +88,15 @@ function wrapOk<T>(data: T): { ok: true; data: T } {
  */
 export function initializeMusicSource(): void {
   if (initialized) return;
-  initialized = true;
 
-  // Warm client + restore session
-  getClient();
+  try {
+    // Warm client + restore session（失败也不能阻断 IPC 注册）
+    getClient();
+  } catch (error) {
+    console.error('[musicSource] client init failed (handlers still registered):', error);
+  }
+
+  initialized = true;
 
   ipcMain.handle('music-source:get-auth-state', () => {
     try {

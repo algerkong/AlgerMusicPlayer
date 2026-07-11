@@ -227,15 +227,13 @@ const drag = (event: MouseEvent) => {
 .brand-ver {
   font-size: 11px;
   font-weight: 500;
-  color: #9ca3af;
+  color: var(--chrome-text-muted);
   line-height: 1;
   padding: 2px 6px;
   border-radius: 9999px;
-  background: #f3f4f6;
-}
-
-.dark .brand-ver {
-  color: #9ca3af;
-  background: #1f2937;
+  background: var(--chrome-surface);
+  border: 1px solid var(--chrome-border);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
 }
 </style>

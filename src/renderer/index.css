@@ -5,6 +5,43 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * 壳层「附着」表面：半透明 + 模糊，不锁死黑/白。
+ * 封面取色进 --chrome-tint 后，面板会跟着环境色变。
+ */
+:root {
+  --chrome-tint: 255, 255, 255;
+  --chrome-surface: rgba(var(--chrome-tint), 0.55);
+  --chrome-surface-strong: rgba(var(--chrome-tint), 0.72);
+  --chrome-border: rgba(0, 0, 0, 0.08);
+  --chrome-text: #111827;
+  --chrome-text-muted: #6b7280;
+  --chrome-blur: 16px;
+}
+
+.dark {
+  --chrome-tint: 24, 24, 27;
+  --chrome-surface: rgba(var(--chrome-tint), 0.5);
+  --chrome-surface-strong: rgba(var(--chrome-tint), 0.68);
+  --chrome-border: rgba(255, 255, 255, 0.1);
+  --chrome-text: #f3f4f6;
+  --chrome-text-muted: #a1a1aa;
+}
+
+.chrome-surface {
+  background: var(--chrome-surface);
+  border: 1px solid var(--chrome-border);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
+}
+
+.chrome-surface-strong {
+  background: var(--chrome-surface-strong);
+  border: 1px solid var(--chrome-border);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
+}
+
 /* 页面内容区域统一边距工具类 */
 .page-padding {
   padding-left: var(--page-pl);

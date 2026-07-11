@@ -135,16 +135,6 @@
         </template>
         {{ t('player.playBar.like') }}
       </n-tooltip>
-      <n-tooltip v-if="isElectron" class="music-lyric" trigger="hover" :z-index="9999999">
-        <template #trigger>
-          <i
-            class="iconfont ri-music-2-line"
-            :class="{ 'text-green-500': isLyricWindowOpen, 'disabled-icon': !playMusic?.id }"
-            @click="playMusic?.id && openLyricWindow()"
-          ></i>
-        </template>
-        {{ playMusic?.id ? t('player.playBar.lyric') : t('player.playBar.noSongPlaying') }}
-      </n-tooltip>
       <n-tooltip v-if="playMusic?.id && isElectron" trigger="hover" :z-index="9999999">
         <template #trigger>
           <i
@@ -182,15 +172,7 @@ import { useI18n } from 'vue-i18n';
 
 import MusicFullWrapper from '@/components/lyric/MusicFullWrapper.vue';
 import AdvancedControlsPopover from '@/components/player/AdvancedControlsPopover.vue';
-import {
-  allTime,
-  artistList,
-  isLyricWindowOpen,
-  nowTime,
-  openLyric,
-  playMusic,
-  textColors
-} from '@/hooks/MusicHook';
+import { allTime, artistList, nowTime, playMusic, textColors } from '@/hooks/MusicHook';
 import { useArtist } from '@/hooks/useArtist';
 import { useDownload } from '@/hooks/useDownload';
 import { useFavorite } from '@/hooks/useFavorite';
@@ -299,10 +281,6 @@ const setMusicFull = () => {
   if (musicFullVisible.value) {
     settingsStore.showArtistDrawer = false;
   }
-};
-
-const openLyricWindow = () => {
-  openLyric();
 };
 
 const { navigateToArtist } = useArtist();

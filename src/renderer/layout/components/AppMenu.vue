@@ -2,10 +2,19 @@
   <div>
     <!-- menu -->
     <div class="app-menu" :class="{ 'app-menu-expanded': settingsStore.setData.isMenuExpanded }">
+      <!-- 品牌已在 TitleBar，侧栏仅保留展开/收起，避免双图标 -->
       <div class="app-menu-header">
-        <div class="app-menu-logo" @click="toggleMenu">
-          <img :src="icon" class="w-9 h-9 rounded-full object-cover shadow-sm" alt="logo" />
-        </div>
+        <button
+          type="button"
+          class="app-menu-toggle chrome-surface"
+          :title="settingsStore.setData.isMenuExpanded ? '收起' : '展开'"
+          @click="toggleMenu"
+        >
+          <i
+            class="ri-side-bar-line"
+            :class="settingsStore.setData.isMenuExpanded ? 'text-primary' : ''"
+          />
+        </button>
       </div>
       <div class="app-menu-list">
         <div v-for="(item, index) in menus" :key="item.path" class="app-menu-item">
@@ -42,7 +51,6 @@ import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute } from 'vue-router';
 
-import icon from '@/assets/icon.png';
 import { useSettingsStore } from '@/store';
 import { isMobile } from '@/utils';
 
@@ -153,7 +161,20 @@ const toggleMenu = () => {
 }
 
 .app-menu-header {
-  @apply ml-1;
+  @apply ml-1 py-2 justify-center;
+}
+
+.app-menu-toggle {
+  @apply flex items-center justify-center w-9 h-9 rounded-xl text-gray-500 dark:text-gray-400;
+  @apply hover:text-green-500 transition-colors cursor-pointer;
+  border: 1px solid var(--chrome-border);
+  background: var(--chrome-surface);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
+}
+
+.app-menu-expanded .app-menu-header {
+  @apply justify-start ml-2;
 }
 
 .app-menu-item-link {

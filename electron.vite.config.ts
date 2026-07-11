@@ -8,7 +8,15 @@ import viteCompression from 'vite-plugin-compression';
 import VueDevTools from 'vite-plugin-vue-devtools';
 
 export default defineConfig({
-  main: {},
+  // ly-music-source 是纯 ESM；默认 external + require 会在主进程挂掉，导致 IPC 未注册
+  main: {
+    build: {
+      // electron-vite: 把该包打进 main bundle，避免 require ESM 失败
+      externalizeDeps: {
+        exclude: ['ly-music-source']
+      }
+    }
+  },
   preload: {},
   renderer: {
     resolve: {
