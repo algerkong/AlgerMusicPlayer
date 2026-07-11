@@ -100,7 +100,6 @@ export default {
 
     // 음원 라벨
     sourceLabels: {
-      migu: 'Migu',
       kugou: 'Kugou',
       kuwo: 'Kuwo',
       pyncmd: 'NetEase (내장)',

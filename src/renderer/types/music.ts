@@ -1,17 +1,9 @@
 // 音乐平台类型
 export type Platform =
-  | 'qq'
-  | 'migu'
-  | 'kugou'
-  | 'kuwo'
-  | 'pyncmd'
-  | 'joox'
-  | 'gdmusic'
-  | 'lxMusic'
-  | 'custom';
+  'qq' | 'kugou' | 'kuwo' | 'pyncmd' | 'joox' | 'gdmusic' | 'lxMusic' | 'custom';
 
 // 默认平台列表
-export const DEFAULT_PLATFORMS: Platform[] = ['lxMusic', 'migu', 'kugou', 'kuwo', 'pyncmd'];
+export const DEFAULT_PLATFORMS: Platform[] = ['lxMusic', 'kuwo', 'kugou', 'pyncmd'];
 
 export interface IRecommendMusic {
   code: number;
@@ -277,15 +269,6 @@ export interface IArtists {
 
 // 音乐源类型定义
 export type MusicSourceType =
-  | 'tencent'
-  | 'kugou'
-  | 'migu'
-  | 'netease'
-  | 'joox'
-  | 'ytmusic'
-  | 'spotify'
-  | 'qobuz'
-  | 'deezer'
-  | 'gdmusic';
+  'tencent' | 'kugou' | 'netease' | 'joox' | 'ytmusic' | 'spotify' | 'qobuz' | 'deezer' | 'gdmusic';
 
 // 更多音乐相关的类型可以在这里定义
