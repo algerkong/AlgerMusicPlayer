@@ -14,7 +14,7 @@ import {
   watchSystemTheme
 } from '@/utils/theme';
 
-import { type AppUpdateState,createDefaultAppUpdateState } from '../../../shared/appUpdate';
+import { type AppUpdateState, createDefaultAppUpdateState } from '../../../shared/appUpdate';
 
 export const useSettingsStore = defineStore('settings', () => {
   const theme = ref<ThemeType>(getCurrentTheme());
@@ -76,17 +76,6 @@ export const useSettingsStore = defineStore('settings', () => {
 
   // 初始化 setData
   setData.value = getInitialSettings();
-
-  /**
-   * 保存导入的自定义API插件
-   * @param plugin 包含name和content的对象
-   */
-  const setCustomApiPlugin = (plugin: { name: string; content: string }) => {
-    setSetData({
-      customApiPlugin: plugin.content,
-      customApiPluginName: plugin.name
-    });
-  };
 
   const toggleTheme = () => {
     if (setData.value.autoTheme) {
@@ -288,7 +277,6 @@ export const useSettingsStore = defineStore('settings', () => {
     setLanguage,
     initializeSettings,
     initializeTheme,
-    initializeSystemFonts,
-    setCustomApiPlugin
+    initializeSystemFonts
   };
 });

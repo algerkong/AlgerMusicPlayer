@@ -72,15 +72,6 @@ export default {
       dolby: '杜比全景声',
       jymaster: '超清母带'
     },
-    musicSources: '音源设置',
-    musicSourcesDesc: '选择音乐解析使用的音源平台',
-    musicSourcesWarning: '至少需要选择一个音源平台',
-    musicUnblockEnable: '启用音乐解析',
-    musicUnblockEnableDesc: '开启后将尝试解析无法播放的音乐',
-    configureMusicSources: '配置音源',
-    selectedMusicSources: '已选音源：',
-    noMusicSources: '未选择音源',
-    gdmusicInfo: 'GD音乐台可自动解析多个平台音源，自动选择最佳结果',
     autoPlay: '自动播放',
     autoPlayDesc: '重新打开应用时是否自动继续播放',
     audioDevice: '音频输出设备',
@@ -88,68 +79,7 @@ export default {
     testAudio: '测试',
     selectAudioDevice: '选择输出设备',
     showStatusBar: '是否显示状态栏控制功能',
-    showStatusBarContent: '可以在您的mac状态栏显示音乐控制功能(重启后生效)',
-
-    fallbackParser: 'GD音乐台(music.gdstudio.xyz)设置',
-    fallbackParserDesc:
-      'GD音乐台将自动尝试多个音乐平台进行解析，无需额外配置。优先级高于其他解析方式，但是请求可能较慢。感谢（music.gdstudio.xyz）\n',
-    parserGD: 'GD 音乐台 (内置)',
-    parserCustom: '自定义 API',
-
-    // 音源标签
-    sourceLabels: {
-      kugou: 'kugou',
-      kuwo: 'kuwo',
-      pyncmd: 'pyncmd',
-      qq: 'qq',
-      joox: 'JOOX',
-      bilibili: 'Bilibili',
-      gdmusic: 'gdmusic',
-      lxMusic: 'lxMusic',
-      custom: '自定义 API'
-    },
-
-    // 自定义API相关的提示
-    customApi: {
-      sectionTitle: '自定义 API 设置',
-      importConfig: '导入 JSON 配置',
-      currentSource: '当前音源',
-      notImported: '尚未导入自定义音源。',
-      importSuccess: '成功导入音源: {name}',
-      importFailed: '导入失败: {message}',
-      enableHint: '请先导入 JSON 配置文件才能启用',
-      status: {
-        imported: '已导入自定义音源',
-        notImported: '未导入'
-      }
-    },
-    lxMusic: {
-      tabs: {
-        sources: '音源选择',
-        lxMusic: '洛雪音源',
-        customApi: '自定义API'
-      },
-      scripts: {
-        title: '已导入的音源脚本',
-        importLocal: '本地导入',
-        importOnline: '在线导入',
-        urlPlaceholder: '输入洛雪音源脚本 URL',
-        importBtn: '导入',
-        empty: '暂无已导入的洛雪音源',
-        notConfigured: '未配置 (请去洛雪音源Tab配置)',
-        importHint: '导入兼容的自定义 API 插件以扩展音源',
-        noScriptWarning: '请先导入洛雪音源脚本',
-        noSelectionWarning: '请先选择一个洛雪音源',
-        notFound: '音源不存在',
-        switched: '已切换到音源: {name}',
-        deleted: '已删除音源: {name}',
-        enterUrl: '请输入脚本 URL',
-        invalidUrl: '无效的 URL 格式',
-        invalidScript: '无效的洛雪音源脚本，未找到 globalThis.lx 相关代码',
-        nameRequired: '名称不能为空',
-        renameSuccess: '重命名成功'
-      }
-    }
+    showStatusBarContent: '可以在您的mac状态栏显示音乐控制功能(重启后生效)'
   },
   application: {
     closeAction: '关闭行为',

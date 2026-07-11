@@ -1,10 +1,7 @@
 import { musicDB } from '@/hooks/MusicHook';
 import { useSettingsStore, useUserStore } from '@/store';
 import type { ILyric } from '@/types/lyric';
-import type { SongResult } from '@/types/music';
 import request from '@/utils/request';
-
-import { MusicParser, type MusicParseResult } from './musicParser';
 
 const { addData, getData, deleteData } = musicDB;
 
@@ -86,19 +83,6 @@ export const getMusicLrc = async (id: number) => {
     console.error('获取歌词失败:', error);
     throw error; // 向上抛出错误，让调用者处理
   }
-};
-
-/**
- * 获取解析后的音乐URL
- * @param id 歌曲ID
- * @param data 歌曲数据
- * @returns 解析结果
- */
-export const getParsingMusicUrl = async (
-  id: number,
-  data: SongResult
-): Promise<MusicParseResult> => {
-  return await MusicParser.parseMusic(id, data);
 };
 
 // 收藏歌曲

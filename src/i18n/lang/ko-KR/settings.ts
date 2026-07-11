@@ -75,15 +75,6 @@ export default {
       dolby: '돌비 애트모스',
       jymaster: '초고화질 마스터'
     },
-    musicSources: '음원 설정',
-    musicSourcesDesc: '음악 해석에 사용할 음원 플랫폼 선택',
-    musicSourcesWarning: '최소 하나의 음원 플랫폼을 선택해야 합니다',
-    musicUnblockEnable: '음악 해석 활성화',
-    musicUnblockEnableDesc: '활성화하면 재생할 수 없는 음악을 해석하려고 시도합니다',
-    configureMusicSources: '음원 구성',
-    selectedMusicSources: '선택된 음원：',
-    noMusicSources: '음원이 선택되지 않음',
-    gdmusicInfo: 'GD 뮤직은 여러 플랫폼 음원을 자동으로 해석하고 최적의 결과를 자동 선택합니다',
     autoPlay: '자동 재생',
     autoPlayDesc: '앱을 다시 열 때 자동으로 재생을 계속할지 여부',
     audioDevice: '오디오 출력 장치',
@@ -91,66 +82,9 @@ export default {
     testAudio: '테스트',
     selectAudioDevice: '출력 장치 선택',
     showStatusBar: '상태바 제어 기능 표시 여부',
-    showStatusBarContent: 'Mac 상태바에 음악 제어 기능을 표시할 수 있습니다 (재시작 후 적용)',
-    fallbackParser: '대체 분석 서비스 (GD Music)',
-    fallbackParserDesc:
-      '"GD Music"을 선택하고 일반 음원을 사용할 수 없을 때 이 서비스를 사용합니다.',
-    parserGD: 'GD Music (내장)',
-    parserCustom: '사용자 지정 API',
+    showStatusBarContent: 'Mac 상태바에 음악 제어 기능을 표시할 수 있습니다 (재시작 후 적용)'
 
     // 음원 라벨
-    sourceLabels: {
-      kugou: 'Kugou',
-      kuwo: 'Kuwo',
-      pyncmd: 'NetEase (내장)',
-      qq: 'QQ Music',
-      joox: 'JOOX',
-      bilibili: 'Bilibili',
-      gdmusic: 'GD Music',
-      lxMusic: 'LX Music',
-      custom: '사용자 지정 API'
-    },
-
-    customApi: {
-      sectionTitle: '사용자 지정 API 설정',
-      importConfig: 'JSON 설정 가져오기',
-      currentSource: '현재 음원',
-      notImported: '아직 사용자 지정 음원을 가져오지 않았습니다.',
-      importSuccess: '음원 가져오기 성공: {name}',
-      importFailed: '가져오기 실패: {message}',
-      enableHint: '사용하려면 먼저 JSON 구성 파일을 가져오세요',
-      status: {
-        imported: '사용자 지정 음원 가져옴',
-        notImported: '가져오지 않음'
-      }
-    },
-    lxMusic: {
-      tabs: {
-        sources: '음원 선택',
-        lxMusic: '낙설 음원',
-        customApi: '사용자 정의 API'
-      },
-      scripts: {
-        title: '가져온 스크립트',
-        importLocal: '로컬 가져오기',
-        importOnline: '온라인 가져오기',
-        urlPlaceholder: '낙설 음원 스크립트 URL 입력',
-        importBtn: '가져오기',
-        empty: '가져온 낙설 음원이 없습니다',
-        notConfigured: '설정되지 않음 (낙설 음원 탭에서 설정하세요)',
-        importHint: '소스 확장을 위해 호환되는 사용자 정의 API 플러그인을 가져옵니다',
-        noScriptWarning: '먼저 낙설 음원 스크립트를 가져오세요',
-        noSelectionWarning: '먼저 낙설 음원 소스를 선택하세요',
-        notFound: '음원이 존재하지 않습니다',
-        switched: '음원으로 전환되었습니다: {name}',
-        deleted: '음원이 삭제되었습니다: {name}',
-        enterUrl: '스크립트 URL을 입력하세요',
-        invalidUrl: '유효하지 않은 URL 형식',
-        invalidScript: '유효하지 않은 낙설 음원 스크립트입니다 (globalThis.lx 코드를 찾을 수 없음)',
-        nameRequired: '이름은 비워둘 수 없습니다',
-        renameSuccess: '이름이 변경되었습니다'
-      }
-    }
   },
   application: {
     closeAction: '닫기 동작',
