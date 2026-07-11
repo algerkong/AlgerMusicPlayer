@@ -7,17 +7,13 @@
  * 导出：playTrack, reparseCurrentSong, initializePlayState, setupUrlExpiredHandler, getCurrentGeneration
  */
 
-import { cloneDeep } from 'lodash';
 import { createDiscreteApi } from 'naive-ui';
 
 import i18n from '@/../i18n/renderer';
-import { getParsingMusicUrl } from '@/api/music';
 import { loadLrc, useSongDetail } from '@/hooks/usePlayerHooks';
 import { audioService } from '@/services/audioService';
 import { playbackRequestManager } from '@/services/playbackRequestManager';
-// preloadService 用于预加载下一首的 URL 验证（triggerPreload 中使用）
-import { SongSourceConfigManager } from '@/services/SongSourceConfigManager';
-import type { Platform, SongResult } from '@/types/music';
+import type { SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
 import { getImageLinearBackground } from '@/utils/linearColor';
 
@@ -168,11 +164,7 @@ export const playTrack = async (
     `[playbackController] playTrack gen=${gen}, 歌曲: ${music.name}, requestId: ${requestId}`
   );
 
-  // 如果是新歌曲，重置已尝试的音源
   const playerCore = await getPlayerCoreStore();
-  if (music.id !== playerCore.playMusic.id) {
-    SongSourceConfigManager.clearTriedSources(music.id);
-  }
 
   // 2. 停止当前音频
   audioService.stop();
@@ -328,16 +320,9 @@ export const playTrack = async (
 };
 
 /**
- * 使用指定音源重新解析当前歌曲
- *
- * @param sourcePlatform 目标音源平台
- * @param isAuto 是否为自动切换
- * @returns 是否成功
+ * 重新拉取当前歌曲官方播放地址并续播（无第三方音源）
  */
-export const reparseCurrentSong = async (
-  sourcePlatform: Platform,
-  isAuto: boolean = false
-): Promise<boolean> => {
+export const reparseCurrentSong = async (): Promise<boolean> => {
   try {
     const playerCore = await getPlayerCoreStore();
     const currentSong = playerCore.playMusic;
@@ -347,45 +332,27 @@ export const reparseCurrentSong = async (
       return false;
     }
 
-    // 使用 SongSourceConfigManager 保存配置
-    SongSourceConfigManager.setConfig(currentSong.id, [sourcePlatform], isAuto ? 'auto' : 'manual');
-
     const currentSound = audioService.getCurrentSound();
     if (currentSound) {
       currentSound.pause();
     }
 
-    const numericId =
-      typeof currentSong.id === 'string' ? parseInt(currentSong.id, 10) : currentSong.id;
+    const {
+      playMusicUrl: _drop,
+      expiredAt: _e,
+      ...rest
+    } = currentSong as SongResult & {
+      playMusicUrl?: string;
+      expiredAt?: number;
+    };
+    const refreshed = { ...rest } as SongResult;
+    delete (refreshed as any).playMusicUrl;
+    delete (refreshed as any).expiredAt;
 
-    console.log(`[playbackController] 使用音源 ${sourcePlatform} 重新解析歌曲 ${numericId}`);
-
-    const songData = cloneDeep(currentSong);
-    const res = await getParsingMusicUrl(numericId, songData);
-
-    if (res && res.data && res.data.data && res.data.data.url) {
-      const newUrl = res.data.data.url;
-      console.log(`[playbackController] 解析成功，获取新URL: ${newUrl.substring(0, 50)}...`);
-
-      const updatedMusic: SongResult = {
-        ...currentSong,
-        playMusicUrl: newUrl,
-        expiredAt: Date.now() + 1800000
-      };
-
-      await playTrack(updatedMusic, true);
-
-      // 更新播放列表中的歌曲信息
-      const playlistStore = await getPlaylistStore();
-      playlistStore.updateSong(updatedMusic);
-
-      return true;
-    } else {
-      console.warn(`[playbackController] 使用音源 ${sourcePlatform} 解析失败`);
-      return false;
-    }
+    console.log('[playbackController] 重新获取官方URL:', currentSong.id);
+    return await playTrack(refreshed, true);
   } catch (error) {
-    console.error('[playbackController] 重新解析失败:', error);
+    console.error('[playbackController] 重新获取官方URL失败:', error);
     return false;
   }
 };
@@ -411,11 +378,11 @@ const resetUrlExpiredRetry = (): void => {
  * Format error），不清缓存的话重新解析会再次命中同一个坏 URL 形成死循环
  */
 const clearParsedUrlCache = async (songId: string | number): Promise<void> => {
-  // 本地歌曲 id 为 hex 字符串，无解析缓存可清
+  // 本地歌曲 id 为 hex 字符串；官方链路无独立解析缓存表可清
   if (!/^\d+$/.test(String(songId))) return;
   try {
-    const { CacheManager } = await import('@/api/musicParser');
-    await CacheManager.clearMusicCache(Number(songId));
+    const { musicDB } = await import('@/hooks/MusicHook');
+    await musicDB.deleteData('music_url_cache', Number(songId));
   } catch (error) {
     console.warn('[playbackController] 清除URL缓存失败:', error);
   }

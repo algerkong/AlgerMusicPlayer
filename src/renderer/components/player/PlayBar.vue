@@ -147,12 +147,6 @@
       </n-tooltip>
       <n-tooltip v-if="playMusic?.id && isElectron" trigger="hover" :z-index="9999999">
         <template #trigger>
-          <reparse-popover v-if="playMusic?.id" />
-        </template>
-        {{ t('player.playBar.reparse') }}
-      </n-tooltip>
-      <n-tooltip v-if="playMusic?.id && isElectron" trigger="hover" :z-index="9999999">
-        <template #trigger>
           <i
             class="iconfont ri-download-line"
             :class="{ 'disabled-icon': isDownloading }"
@@ -188,7 +182,6 @@ import { useI18n } from 'vue-i18n';
 
 import MusicFullWrapper from '@/components/lyric/MusicFullWrapper.vue';
 import AdvancedControlsPopover from '@/components/player/AdvancedControlsPopover.vue';
-import ReparsePopover from '@/components/player/ReparsePopover.vue';
 import {
   allTime,
   artistList,

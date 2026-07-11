@@ -9,9 +9,6 @@ export interface IElectronAPI {
   restart: () => void;
   openLyric: () => void;
   sendLyric: (_data: string) => void;
-  unblockMusic: (_id: number) => Promise<string>;
-  importCustomApiPlugin: () => Promise<{ name: string; content: string } | null>;
-  importLxMusicScript: () => Promise<{ name: string; content: string } | null>;
   onLyricWindowClosed: (_callback: () => void) => void;
   onLyricWindowReady: (_callback: () => void) => void;
   onLanguageChanged: (_callback: (_locale: string) => void) => void;

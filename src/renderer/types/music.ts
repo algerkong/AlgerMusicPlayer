@@ -1,9 +1,8 @@
-// 音乐平台类型
-export type Platform =
-  'qq' | 'kugou' | 'kuwo' | 'pyncmd' | 'joox' | 'gdmusic' | 'lxMusic' | 'custom';
+// 音乐内容来源标记（非第三方解析音源）
+export type Platform = 'netease' | 'bilibili' | 'local' | string;
 
-// 默认平台列表
-export const DEFAULT_PLATFORMS: Platform[] = ['lxMusic', 'kuwo', 'kugou', 'pyncmd'];
+// 兼容旧引用
+export const DEFAULT_PLATFORMS: Platform[] = ['netease'];
 
 export interface IRecommendMusic {
   code: number;

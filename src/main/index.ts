@@ -48,7 +48,6 @@ import { initializeFileManager } from './modules/fileManager';
 import { initializeFonts } from './modules/fonts';
 import { initializeLocalMusicScanner } from './modules/localMusicScanner';
 import { initializeLoginWindow } from './modules/loginWindow';
-import { initLxMusicHttp } from './modules/lxMusicHttp';
 import { initializeMpris, updateMprisCurrentSong, updateMprisPlayState } from './modules/mpris';
 import { initializeOtherApi } from './modules/otherApi';
 import { initializeShortcuts } from './modules/shortcuts';
@@ -105,9 +104,6 @@ function initialize(configStore: any) {
 
   // 启动音乐API
   startMusicApi();
-
-  // 初始化落雪音乐 HTTP 请求处理
-  initLxMusicHttp();
 
   // 加载歌词窗口
   loadLyricWindow(ipcMain, mainWindow);

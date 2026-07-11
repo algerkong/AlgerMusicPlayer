@@ -75,16 +75,6 @@ export default {
       dolby: 'Dolby Atmos',
       jymaster: 'Master'
     },
-    musicSources: 'Music Sources',
-    musicSourcesDesc: 'Select music sources for song resolution',
-    musicSourcesWarning: 'At least one music source must be selected',
-    musicUnblockEnable: 'Enable Music Unblocking',
-    musicUnblockEnableDesc: 'When enabled, attempts to resolve unplayable songs',
-    configureMusicSources: 'Configure Sources',
-    selectedMusicSources: 'Selected sources:',
-    noMusicSources: 'No sources selected',
-    gdmusicInfo:
-      'GD Music Station intelligently resolves music from multiple platforms automatically',
     autoPlay: 'Auto Play',
     autoPlayDesc: 'Auto resume playback when reopening the app',
     audioDevice: 'Audio Output Device',
@@ -93,66 +83,9 @@ export default {
     selectAudioDevice: 'Select output device',
     showStatusBar: 'Show Status Bar',
     showStatusBarContent:
-      'You can display the music control function in your mac status bar (effective after a restart)',
-    fallbackParser: 'Fallback Parser (GD Music)',
-    fallbackParserDesc:
-      'When "GD Music" is checked and regular sources fail, this service will be used.',
-    parserGD: 'GD Music (Built-in)',
-    parserCustom: 'Custom API',
+      'You can display the music control function in your mac status bar (effective after a restart)'
 
     // Source labels
-    sourceLabels: {
-      kugou: 'Kugou',
-      kuwo: 'Kuwo',
-      pyncmd: 'NetEase (Built-in)',
-      qq: 'QQ Music',
-      joox: 'JOOX',
-      bilibili: 'Bilibili',
-      gdmusic: 'GD Music',
-      lxMusic: 'LX Music',
-      custom: 'Custom API'
-    },
-
-    customApi: {
-      sectionTitle: 'Custom API Settings',
-      importConfig: 'Import JSON Config',
-      currentSource: 'Current Source',
-      notImported: 'No custom source imported yet.',
-      importSuccess: 'Successfully imported source: {name}',
-      importFailed: 'Import failed: {message}',
-      enableHint: 'Import a JSON config file to enable',
-      status: {
-        imported: 'Custom Source Imported',
-        notImported: 'Not Imported'
-      }
-    },
-    lxMusic: {
-      tabs: {
-        sources: 'Source Selection',
-        lxMusic: 'LX Music',
-        customApi: 'Custom API'
-      },
-      scripts: {
-        title: 'Imported Scripts',
-        importLocal: 'Import Local',
-        importOnline: 'Import Online',
-        urlPlaceholder: 'Enter LX Music Script URL',
-        importBtn: 'Import',
-        empty: 'No imported LX Music scripts',
-        notConfigured: 'Not configured (Configure in LX Music Tab)',
-        importHint: 'Import compatible custom API plugins to extend sources',
-        noScriptWarning: 'Please import LX Music script first',
-        noSelectionWarning: 'Please select an LX Music source first',
-        notFound: 'Source not found',
-        switched: 'Switched to source: {name}',
-        deleted: 'Deleted source: {name}',
-        enterUrl: 'Please enter script URL',
-        invalidUrl: 'Invalid URL format',
-        invalidScript: 'Invalid LX Music script, globalThis.lx code not found',
-        nameRequired: 'Name cannot be empty',
-        renameSuccess: 'Rename successful'
-      }
-    }
   },
   application: {
     closeAction: 'Close Action',

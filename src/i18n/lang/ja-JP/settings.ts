@@ -75,15 +75,6 @@ export default {
       dolby: 'Dolby Atmos',
       jymaster: '超高解像度マスター'
     },
-    musicSources: '音源設定',
-    musicSourcesDesc: '音楽解析に使用する音源プラットフォームを選択',
-    musicSourcesWarning: '少なくとも1つの音源プラットフォームを選択する必要があります',
-    musicUnblockEnable: '音楽解析を有効にする',
-    musicUnblockEnableDesc: '有効にすると、再生できない音楽の解析を試みます',
-    configureMusicSources: '音源を設定',
-    selectedMusicSources: '選択された音源：',
-    noMusicSources: '音源が選択されていません',
-    gdmusicInfo: 'GD音楽台は複数のプラットフォーム音源を自動解析し、最適な結果を自動選択できます',
     autoPlay: '自動再生',
     autoPlayDesc: 'アプリを再起動した際に自動的に再生を継続するかどうか',
     audioDevice: 'オーディオ出力デバイス',
@@ -92,64 +83,7 @@ export default {
     selectAudioDevice: '出力デバイスを選択',
     showStatusBar: 'ステータスバーコントロール機能を表示するかどうか',
     showStatusBarContent:
-      'Macのステータスバーに音楽コントロール機能を表示できます（再起動後に有効）',
-    fallbackParser: '代替解析サービス (GD音楽台)',
-    fallbackParserDesc:
-      '「GD音楽台」にチェックが入っていて、通常の音源で再生できない場合、このサービスが使用されます。',
-    parserGD: 'GD 音楽台 (内蔵)',
-    parserCustom: 'カスタム API',
-    sourceLabels: {
-      kugou: 'Kugou',
-      kuwo: 'Kuwo',
-      pyncmd: 'NetEase (内蔵)',
-      qq: 'QQ Music',
-      joox: 'JOOX',
-      bilibili: 'Bilibili',
-      gdmusic: 'GD 音楽台',
-      lxMusic: 'LX Music',
-      custom: 'カスタム API'
-    },
-    customApi: {
-      sectionTitle: 'カスタム API 設定',
-      enableHint:
-        'カスタム API を有効にするには、まずカスタム API をインポートする必要があります。',
-      importConfig: 'JSON設定をインポート',
-      currentSource: '現在の音源',
-      notImported: 'カスタム音源はまだインポートされていません。',
-      importSuccess: '音源のインポートに成功しました: {name}',
-      importFailed: 'インポートに失敗しました: {message}',
-      status: {
-        imported: 'カスタム音源インポート済み',
-        notImported: '未インポート'
-      }
-    },
-    lxMusic: {
-      tabs: {
-        sources: '音源選択',
-        lxMusic: '洛雪音源',
-        customApi: 'カスタムAPI'
-      },
-      scripts: {
-        title: 'インポート済みのスクリプト',
-        importLocal: 'ローカルインポート',
-        importOnline: 'オンラインインポート',
-        urlPlaceholder: '洛雪音源スクリプトのURLを入力',
-        importBtn: 'インポート',
-        empty: 'インポート済みの洛雪音源はありません',
-        notConfigured: '未設定（洛雪音源タブで設定してください）',
-        importHint: '互換性のあるカスタムAPIプラグインをインポートして音源を拡張します',
-        noScriptWarning: '先に洛雪音源スクリプトをインポートしてください',
-        noSelectionWarning: '先に洛雪音源を選択してください',
-        notFound: '音源が存在しません',
-        switched: '音源を切り替えました: {name}',
-        deleted: '音源を削除しました: {name}',
-        enterUrl: 'スクリプトURLを入力してください',
-        invalidUrl: '無効なURL形式',
-        invalidScript: '無効な洛雪音源スクリプトです（globalThis.lxが見つかりません）',
-        nameRequired: '名前を空にすることはできません',
-        renameSuccess: '名前を変更しました'
-      }
-    }
+      'Macのステータスバーに音楽コントロール機能を表示できます（再起動後に有効）'
   },
   application: {
     closeAction: '閉じる動作',

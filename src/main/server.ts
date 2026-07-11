@@ -1,10 +1,8 @@
-import { ipcMain } from 'electron';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
 
 import { getSharedStore } from './modules/config';
-import { type Platform, unblockMusic } from './unblockMusic';
 
 // 必须在 import netease-cloud-music-api-alger 之前创建 anonymous_token 文件
 // 否则模块加载时 readFileSync 会因文件不存在而崩溃
@@ -13,17 +11,6 @@ if (!fs.existsSync(path.resolve(os.tmpdir(), 'anonymous_token'))) {
 }
 
 const store = getSharedStore();
-
-// 设置音乐解析的处理程序
-ipcMain.handle('unblock-music', async (_event, id, songData, enabledSources) => {
-  try {
-    const result = await unblockMusic(id, songData, 1, enabledSources as Platform[]);
-    return result;
-  } catch (error) {
-    console.error('音乐解析失败:', error);
-    return { error: (error as Error).message || '未知错误' };
-  }
-});
 
 /**
  * 检查端口是否可用

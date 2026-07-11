@@ -72,15 +72,6 @@ export default {
       dolby: '杜比全景聲',
       jymaster: '超清母帶'
     },
-    musicSources: '音源設定',
-    musicSourcesDesc: '選擇音樂解析使用的音源平台',
-    musicSourcesWarning: '至少需要選擇一個音源平台',
-    musicUnblockEnable: '啟用音樂解析',
-    musicUnblockEnableDesc: '開啟後將嘗試解析無法播放的音樂',
-    configureMusicSources: '設定音源',
-    selectedMusicSources: '已選音源：',
-    noMusicSources: '未選擇音源',
-    gdmusicInfo: 'GD音樂台可自動解析多個平台音源，自動選擇最佳結果',
     autoPlay: '自動播放',
     autoPlayDesc: '重新開啟應用程式時是否自動繼續播放',
     audioDevice: '音訊輸出裝置',
@@ -88,64 +79,9 @@ export default {
     testAudio: '測試',
     selectAudioDevice: '選擇輸出裝置',
     showStatusBar: '是否顯示狀態列控制功能',
-    showStatusBarContent: '可以在您的mac狀態列顯示音樂控制功能(重啟後生效)',
-    fallbackParser: '備用解析服務 (GD音樂台)',
-    fallbackParserDesc: '當勾選「GD音樂台」且常規音源無法播放時，將使用此服務嘗試解析。',
-    parserGD: 'GD 音樂台 (內建)',
-    parserCustom: '自訂 API',
+    showStatusBarContent: '可以在您的mac狀態列顯示音樂控制功能(重啟後生效)'
 
     // 音源標籤
-    sourceLabels: {
-      kugou: 'kugou',
-      kuwo: 'kuwo',
-      pyncmd: 'pyncmd',
-      qq: 'qq',
-      joox: 'JOOX',
-      bilibili: 'Bilibili',
-      gdmusic: 'gdmusic',
-      lxMusic: 'lxMusic',
-      custom: '自訂 API'
-    },
-    customApi: {
-      sectionTitle: '自訂 API 設定',
-      importConfig: '匯入 JSON 設定',
-      currentSource: '目前音源',
-      notImported: '尚未匯入自訂音源。',
-      importSuccess: '成功匯入音源：{name}',
-      importFailed: '匯入失敗：{message}',
-      enableHint: '請先匯入 JSON 設定檔才能啟用',
-      status: {
-        imported: '已匯入自訂音源',
-        notImported: '未匯入'
-      }
-    },
-    lxMusic: {
-      tabs: {
-        sources: '音源選擇',
-        lxMusic: '洛雪音源',
-        customApi: '自訂API'
-      },
-      scripts: {
-        title: '已匯入的音源腳本',
-        importLocal: '本機匯入',
-        importOnline: '線上匯入',
-        urlPlaceholder: '輸入洛雪音源腳本 URL',
-        importBtn: '匯入',
-        empty: '暫無已匯入的洛雪音源',
-        notConfigured: '未設定 (請至洛雪音源分頁設定)',
-        importHint: '匯入相容的自訂 API 外掛以擴充音源',
-        noScriptWarning: '請先匯入洛雪音源腳本',
-        noSelectionWarning: '請先選擇一個洛雪音源',
-        notFound: '音源不存在',
-        switched: '已切換到音源: {name}',
-        deleted: '已刪除音源: {name}',
-        enterUrl: '請輸入腳本 URL',
-        invalidUrl: '無效的 URL 格式',
-        invalidScript: '無效的洛雪音源腳本，未找到 globalThis.lx 相關程式碼',
-        nameRequired: '名稱不能為空',
-        renameSuccess: '重新命名成功'
-      }
-    }
   },
   application: {
     closeAction: '關閉行為',
