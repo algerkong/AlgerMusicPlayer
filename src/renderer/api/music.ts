@@ -1,5 +1,4 @@
 import { musicDB } from '@/hooks/MusicHook';
-import { useSettingsStore, useUserStore } from '@/store';
 import type { ILyric } from '@/types/lyric';
 import request from '@/utils/request';
 
@@ -15,40 +14,6 @@ export const fmTrash = (id: number) => {
 // 获取音乐音质详情
 export const getMusicQualityDetail = (id: number) => {
   return request.get('/song/music/detail', { params: { id } });
-};
-
-// 根据音乐Id获取音乐播放URl
-export const getMusicUrl = async (id: number, isDownloaded: boolean = false) => {
-  const userStore = useUserStore();
-  const settingStore = useSettingsStore();
-  // 判断是否登录
-  try {
-    if (userStore.user && isDownloaded && userStore.user.vipType !== 0) {
-      const url = '/song/download/url/v1';
-      const res = await request.get(url, {
-        params: {
-          id,
-          level: settingStore.setData.musicQuality || 'higher',
-          encodeType: settingStore.setData.musicQuality == 'lossless' ? 'aac' : 'flac',
-          cookie: `${localStorage.getItem('token')} os=pc;`
-        }
-      });
-
-      if (res.data.data.url) {
-        return { data: { data: [{ ...res.data.data }] } };
-      }
-    }
-  } catch (error) {
-    console.error('error', error);
-  }
-
-  return await request.get('/song/url/v1', {
-    params: {
-      id,
-      level: settingStore.setData.musicQuality || 'higher',
-      encodeType: settingStore.setData.musicQuality == 'lossless' ? 'aac' : 'flac'
-    }
-  });
 };
 
 // 获取歌曲详情
