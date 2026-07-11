@@ -9,7 +9,6 @@ export default {
     application: '애플리케이션 설정',
     network: '네트워크 설정',
     system: '시스템 관리',
-    donation: '후원 지원',
     about: '정보'
   },
   basic: {

@@ -68,32 +68,6 @@ export default {
     agree: '我已阅读并同意',
     disagree: '不同意并退出'
   },
-  donate: {
-    title: '支持开发者',
-    subtitle: '您的支持是我前进的动力',
-    tip: '捐赠完全自愿，不捐赠也可以正常使用所有功能，感谢您的理解与支持！',
-    wechat: '微信',
-    alipay: '支付宝',
-    wechatQR: '微信收款码',
-    alipayQR: '支付宝收款码',
-    scanTip: '请使用手机扫描上方二维码进行捐赠',
-    enterApp: '进入应用',
-    noForce: '不强制捐赠，点击即可进入'
-  },
-  coffee: {
-    title: '请我喝咖啡',
-    alipay: '支付宝',
-    wechat: '微信支付',
-    alipayQR: '支付宝收款码',
-    wechatQR: '微信收款码',
-    coffeeDesc: '一杯咖啡，一份支持',
-    coffeeDescLinkText: '查看更多',
-    groupText: '微信公众号：AlgerMusic',
-    messages: {
-      copySuccess: '已复制到剪贴板'
-    },
-    donateList: '请我喝咖啡'
-  },
   playlistType: {
     title: '歌单分类',
     showAll: '显示全部',

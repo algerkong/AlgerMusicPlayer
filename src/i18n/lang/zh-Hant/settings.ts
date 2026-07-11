@@ -9,7 +9,6 @@ export default {
     application: '應用程式設定',
     network: '網路設定',
     system: '系統管理',
-    donation: '捐贈支持',
     about: '關於'
   },
   basic: {
