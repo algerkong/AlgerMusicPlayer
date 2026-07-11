@@ -4,7 +4,7 @@
     class="flex justify-between px-6 py-2 select-none relative text-dark dark:text-white"
     @mousedown="drag"
   >
-    <div id="title">Alger Music</div>
+    <div id="title">LYMusic</div>
     <div id="buttons" class="flex gap-4">
       <n-button
         v-if="!isElectron"

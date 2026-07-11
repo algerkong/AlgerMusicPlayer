@@ -1,7 +1,7 @@
 {
-  "name": "Alger Music Player",
-  "short_name": "AlgerMusic",
-  "description": "AlgerMusicPlayer 音乐播放器，支持在线播放、歌词显示、音乐下载等功能。",
+  "name": "LYMusic",
+  "short_name": "LYMusic",
+  "description": "LYMusic 音乐播放器，支持在线播放、歌词显示、音乐下载等功能。",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

@@ -278,7 +278,7 @@ export default {
     manualUpdate: '手動更新',
     gotoGithub: 'Githubへ',
     author: '作者',
-    authorDesc: 'algerkong スターを付けてください🌟',
+    authorDesc: 'LuoYe17 にスターを付けてください🌟',
     messages: {
       checkError: '更新確認に失敗しました。後でもう一度お試しください'
     }

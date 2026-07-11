@@ -145,7 +145,7 @@ const updateDocumentTitle = (music: SongResult): void => {
       ''
     )}`;
   }
-  document.title = 'AlgerMusic - ' + title;
+  document.title = 'LYMusic - ' + title;
 };
 
 // ==================== 导出函数 ====================

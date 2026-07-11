@@ -1,10 +1,10 @@
 {
-  "name": "AlgerMusicPlayer",
+  "name": "LYMusicPlayer",
   "version": "5.1.0",
-  "description": "Alger Music Player",
-  "author": "Alger <algerkc@qq.com>",
+  "description": "LYMusic Player",
+  "author": "落叶🍂 (@LuoYe17)",
   "main": "./out/main/index.js",
-  "homepage": "https://github.com/algerkong/AlgerMusicPlayer",
+  "homepage": "https://github.com/LuoYe17/AlgerMusicPlayer",
   "scripts": {
     "prepare": "husky",
     "format": "prettier --write ./src",
@@ -122,12 +122,12 @@
     "vue-tsc": "^2.2.12"
   },
   "build": {
-    "appId": "com.alger.music",
-    "productName": "AlgerMusicPlayer",
+    "appId": "com.luoye.music",
+    "productName": "LYMusicPlayer",
     "publish": [
       {
         "provider": "github",
-        "owner": "algerkong",
+        "owner": "LuoYe17",
         "repo": "AlgerMusicPlayer"
       }
     ],
@@ -161,7 +161,7 @@
       "identity": null,
       "type": "distribution",
       "binaries": [
-        "Contents/MacOS/AlgerMusicPlayer"
+        "Contents/MacOS/LYMusicPlayer"
       ]
     },
     "win": {
@@ -206,7 +206,7 @@
       ],
       "artifactName": "${productName}-${version}-linux-${arch}.${ext}",
       "category": "Audio",
-      "maintainer": "Alger <algerkc@qq.com>"
+      "maintainer": "落叶🍂 (@LuoYe17)"
     },
     "nsis": {
       "oneClick": false,
@@ -215,10 +215,10 @@
       "uninstallerIcon": "resources/icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "AlgerMusicPlayer",
+      "shortcutName": "LYMusic",
       "include": "build/installer.nsh",
       "deleteAppDataOnUninstall": true,
-      "uninstallDisplayName": "AlgerMusicPlayer"
+      "uninstallDisplayName": "LYMusic"
     }
   },
   "pnpm": {

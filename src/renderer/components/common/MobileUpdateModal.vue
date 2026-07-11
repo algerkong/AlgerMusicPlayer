@@ -169,7 +169,7 @@ const handleUpdate = async () => {
   const version = updateInfo.value.latestVersion;
 
   // Android APK 下载地址
-  const downloadUrl = `https://github.com/algerkong/AlgerMusicPlayer/releases/download/v${version}/AlgerMusicPlayer-${version}.apk`;
+  const downloadUrl = `https://github.com/LuoYe17/AlgerMusicPlayer/releases/download/v${version}/LYMusicPlayer-${version}.apk`;
 
   try {
     // 获取代理节点
@@ -189,7 +189,7 @@ const handleUpdate = async () => {
     // 回退到直接打开 GitHub Releases
     const releaseUrl =
       updateInfo.value.releaseInfo?.html_url ||
-      'https://github.com/algerkong/AlgerMusicPlayer/releases/latest';
+      'https://github.com/LuoYe17/AlgerMusicPlayer/releases/latest';
     window.open(releaseUrl, '_blank');
     closeModal();
   }
