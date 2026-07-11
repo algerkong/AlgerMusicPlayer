@@ -130,7 +130,7 @@ export const useSettingsStore = defineStore('settings', () => {
       });
     } else {
       // 切换到手动模式
-      const manualTheme = setData.value.manualTheme || 'light';
+      const manualTheme = setData.value.manualTheme || 'dark';
       theme.value = manualTheme;
       applyTheme(manualTheme);
 
