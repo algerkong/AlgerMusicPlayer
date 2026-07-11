@@ -1,59 +1,37 @@
 <template>
   <div class="list-page h-full w-full">
     <n-scrollbar class="h-full">
-      <div class="page-padding pb-32 pt-6 space-y-8">
+      <div class="page-padding pb-32 pt-6 space-y-6">
         <div class="flex items-center justify-between gap-4">
           <div>
             <h1 class="text-2xl font-bold text-neutral-900 dark:text-white">
               {{ t('comp.list') }}
             </h1>
             <p class="text-sm text-neutral-500 mt-1">
-              {{ authHint }}
+              {{ pageHint }}
             </p>
           </div>
-          <n-button v-if="isElectron" quaternary circle @click="reload">
+          <n-button v-if="isElectron && authenticated" quaternary circle @click="reload">
             <template #icon><i class="ri-refresh-line" /></template>
           </n-button>
         </div>
 
-        <!-- 本地入口：收藏 / 历史（原侧栏项，做成歌单卡片） -->
-        <section>
-          <h2 class="text-sm font-semibold text-neutral-500 mb-3">本地</h2>
-          <div class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            <div
-              v-for="item in localEntries"
-              :key="item.key"
-              class="cursor-pointer group"
-              @click="router.push(item.path)"
-            >
-              <div
-                class="aspect-square rounded-2xl overflow-hidden chrome-surface flex items-center justify-center"
-              >
-                <i :class="item.icon" class="text-4xl text-primary opacity-90" />
-              </div>
-              <div class="mt-2 text-sm font-medium truncate text-neutral-900 dark:text-white">
-                {{ item.name }}
-              </div>
-              <div class="text-xs text-neutral-500 truncate">{{ item.desc }}</div>
-            </div>
-          </div>
-        </section>
-
-        <!-- 在线：我的歌单 -->
-        <section>
-          <h2 class="text-sm font-semibold text-neutral-500 mb-3">在线歌单</h2>
+        <!-- 已登录：在线歌单列表（最上方） -->
+        <section v-if="authenticated">
           <n-spin :show="loading">
-            <n-empty v-if="!loading && !playlists.length" :description="emptyText" class="pt-10" />
-            <div v-else class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            <n-empty
+              v-if="!loading && !playlists.length"
+              description="暂无在线歌单"
+              class="pt-10"
+            />
+            <div v-else class="playlist-rows">
               <div
                 v-for="item in playlists"
                 :key="item.id"
-                class="cursor-pointer group"
+                class="playlist-row chrome-surface"
                 @click="openPlaylist(item)"
               >
-                <div
-                  class="aspect-square rounded-2xl overflow-hidden bg-neutral-100/50 dark:bg-neutral-900/50"
-                >
+                <div class="cover">
                   <n-image
                     v-if="item.picUrl"
                     :src="item.picUrl"
@@ -61,16 +39,45 @@
                     class="w-full h-full"
                     preview-disabled
                   />
+                  <div v-else class="cover-fallback">
+                    <i class="ri-play-list-2-fill" />
+                  </div>
                 </div>
-                <div class="mt-2 text-sm font-medium truncate text-neutral-900 dark:text-white">
-                  {{ item.name }}
+                <div class="meta min-w-0">
+                  <div class="name truncate">{{ item.name }}</div>
+                  <div class="desc truncate">
+                    {{
+                      item.trackCount != null
+                        ? `${item.trackCount} 首`
+                        : item.desc || item.creator || ''
+                    }}
+                  </div>
                 </div>
-                <div class="text-xs text-neutral-500 truncate">
-                  {{ item.trackCount != null ? `${item.trackCount} 首` : item.desc }}
-                </div>
+                <i class="ri-arrow-right-s-line chevron" />
               </div>
             </div>
           </n-spin>
+        </section>
+
+        <!-- 未登录：不展示在线区，仅本地入口（列表） -->
+        <section v-else>
+          <div class="playlist-rows">
+            <div
+              v-for="item in localEntries"
+              :key="item.key"
+              class="playlist-row chrome-surface"
+              @click="router.push(item.path)"
+            >
+              <div class="cover cover-local">
+                <i :class="item.icon" />
+              </div>
+              <div class="meta min-w-0">
+                <div class="name truncate">{{ item.name }}</div>
+                <div class="desc truncate">{{ item.desc }}</div>
+              </div>
+              <i class="ri-arrow-right-s-line chevron" />
+            </div>
+          </div>
         </section>
       </div>
     </n-scrollbar>
@@ -87,7 +94,9 @@ import {
   isMusicSourceAvailable,
   mapMsPlaylistToItem,
   msGetAuthState,
-  msListUserPlaylists
+  msGetPlaylist,
+  msListUserPlaylists,
+  type MsPlaylist
 } from '@/api/musicSource';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import { isElectron } from '@/utils';
@@ -102,6 +111,7 @@ const loading = ref(false);
 const playlists = ref<any[]>([]);
 const authenticated = ref(false);
 
+/** 未登录时展示；登录后用在线「我喜欢」等，不再显示本地我喜欢 */
 const localEntries = [
   {
     key: 'favorite',
@@ -119,18 +129,34 @@ const localEntries = [
   }
 ];
 
-const authHint = computed(() =>
-  authenticated.value ? '汽水 · 我的歌单' : '导入会话后可查看在线歌单'
+const pageHint = computed(() =>
+  authenticated.value ? '在线歌单' : '登录后显示在线歌单 · 当前为本地入口'
 );
 
-const emptyText = computed(() => {
-  if (!isMusicSourceAvailable()) return '在线歌单仅支持桌面端';
-  if (!authenticated.value) return '请先在设置中导入汽水 Cookie / 会话';
-  return '暂无在线歌单';
-});
+/**
+ * 封面：优先用曲目列表最后一首的 cover，否则 playlist.coverUrl
+ */
+async function resolveCover(p: MsPlaylist): Promise<string> {
+  if (!p.id) return p.coverUrl || '';
+  try {
+    const detail = await msGetPlaylist(p.id);
+    const songs = detail.songs || [];
+    if (songs.length) {
+      const last = songs[songs.length - 1];
+      if (last?.coverUrl) return last.coverUrl;
+    }
+    return detail.playlist.coverUrl || p.coverUrl || '';
+  } catch {
+    return p.coverUrl || '';
+  }
+}
 
 const reload = async () => {
-  if (!isMusicSourceAvailable()) return;
+  if (!isMusicSourceAvailable()) {
+    authenticated.value = false;
+    playlists.value = [];
+    return;
+  }
   loading.value = true;
   try {
     const auth = await msGetAuthState();
@@ -140,11 +166,20 @@ const reload = async () => {
       return;
     }
     const list = await msListUserPlaylists({ limit: 100 });
-    playlists.value = list.map(mapMsPlaylistToItem);
+    // 列表行需要封面：并发取详情最后一首封面（限制并发感：map + Promise.all）
+    const rows = await Promise.all(
+      list.map(async (p) => {
+        const item = mapMsPlaylistToItem(p);
+        item.picUrl = (await resolveCover(p)) || item.picUrl;
+        return item;
+      })
+    );
+    playlists.value = rows;
   } catch (error: any) {
     console.error('[list]', error);
     message.error(error?.message || '加载歌单失败');
     playlists.value = [];
+    authenticated.value = false;
   } finally {
     loading.value = false;
   }
@@ -164,3 +199,78 @@ onMounted(() => {
   void reload();
 });
 </script>
+
+<style scoped>
+.playlist-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.playlist-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    transform 0.15s;
+}
+
+.playlist-row:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.03);
+}
+
+.cover {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.cover-local {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: #22c55e;
+}
+
+.cover-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 22px;
+}
+
+.meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--chrome-text, #111827);
+}
+
+.desc {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--chrome-text-muted, #6b7280);
+}
+
+.chevron {
+  font-size: 20px;
+  color: var(--chrome-text-muted, #9ca3af);
+  flex-shrink: 0;
+}
+</style>

@@ -60,7 +60,6 @@
         <n-ellipsis class="text-ellipsis" line-clamp="1">
           <p v-html="playMusic?.name || ''"></p>
         </n-ellipsis>
-        <span v-if="playbackRate !== 1.0" class="playback-rate-badge"> {{ playbackRate }}x </span>
       </div>
       <div class="music-content-name">
         <n-ellipsis
@@ -146,8 +145,8 @@
         {{ isDownloading ? t('songItem.message.downloading') : t('player.playBar.download') }}
       </n-tooltip>
 
-      <!-- 高级控制菜单按钮（整合了 EQ、定时关闭、播放速度） -->
-      <advanced-controls-popover />
+      <!-- 音效（控件占位） -->
+      <sound-effect-popover />
 
       <n-tooltip trigger="hover" :z-index="9999999">
         <template #trigger>
@@ -166,12 +165,11 @@
 
 <script lang="ts" setup>
 import { useThrottleFn } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import MusicFullWrapper from '@/components/lyric/MusicFullWrapper.vue';
-import AdvancedControlsPopover from '@/components/player/AdvancedControlsPopover.vue';
+import SoundEffectPopover from '@/components/player/SoundEffectPopover.vue';
 import { allTime, artistList, nowTime, playMusic, textColors } from '@/hooks/MusicHook';
 import { useArtist } from '@/hooks/useArtist';
 import { useDownload } from '@/hooks/useDownload';
@@ -212,9 +210,6 @@ const handleDownload = () => {
 
 // 播放模式
 const { playMode, playModeIcon, playModeText, togglePlayMode } = usePlayMode();
-
-// 播放速度控制
-const { playbackRate } = storeToRefs(playerStore);
 
 // 背景颜色
 const background = ref('#000');

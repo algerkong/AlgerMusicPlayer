@@ -3,7 +3,12 @@
   <mobile-layout v-if="isPhone && !settingsStore.setData?.tabletMode" :is-phone="isPhone" />
 
   <!-- PC 端 / 浏览器移动端 / 平板模式 保持原有布局 -->
-  <div v-else class="layout-page" :class="{ mobile: settingsStore.isMobile }">
+  <div
+    v-else
+    class="layout-page"
+    :class="{ mobile: settingsStore.isMobile, 'has-cover-bg': !!coverBackground }"
+    :style="layoutBgStyle"
+  >
     <div id="layout-main" class="layout-main">
       <title-bar />
       <div class="layout-main-page">
@@ -104,6 +109,32 @@ const menuStore = useMenuStore();
 const isPlay = computed(() => playerStore.playMusic && playerStore.playMusic.id);
 const route = useRoute();
 
+/** 封面取色：展开全屏时有，未展开时壳层同样使用 */
+const coverBackground = computed(() => {
+  const m = playerStore.playMusic as any;
+  return (m?.backgroundColor as string) || '';
+});
+
+const coverPrimary = computed(() => {
+  const m = playerStore.playMusic as any;
+  return (m?.primaryColor as string) || '';
+});
+
+const layoutBgStyle = computed(() => {
+  if (!coverBackground.value) return undefined;
+  // primary → RGB 供 --chrome-tint（半透明控件跟环境色）
+  let tint = '24, 24, 27';
+  const p = coverPrimary.value;
+  if (p) {
+    const m = p.match(/\d+/g);
+    if (m && m.length >= 3) tint = `${m[0]}, ${m[1]}, ${m[2]}`;
+  }
+  return {
+    background: coverBackground.value,
+    '--chrome-tint': tint
+  } as Record<string, string>;
+});
+
 // 判断当前路由是否应该在移动端显示AppMenu
 const shouldShowMobileMenu = computed(() => {
   // 过滤出在menus中定义的路径
@@ -149,6 +180,18 @@ provide('openPlaylistDrawer', openPlaylistDrawer);
 <style lang="scss" scoped>
 .layout-page {
   @apply w-screen h-screen overflow-hidden bg-light dark:bg-black;
+  transition: background 0.45s ease;
+}
+
+.layout-page.has-cover-bg {
+  /* 封面渐变作整页底，子层尽量透出 */
+  background-attachment: fixed;
+}
+
+.layout-page.has-cover-bg .menu,
+.layout-page.has-cover-bg .main,
+.layout-page.has-cover-bg .layout-main {
+  background: transparent !important;
 }
 
 .layout-main {
