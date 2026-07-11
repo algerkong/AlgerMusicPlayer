@@ -6,13 +6,10 @@
     "host": "127.0.0.1",
     "port": 7890
   },
-  "enableRealIP": false,
-  "realIP": "",
   "noAnimate": false,
   "animationSpeed": 1,
   "author": "落叶🍂 (@LuoYe17)",
   "authorUrl": "https://github.com/LuoYe17",
-  "musicApiPort": 30488,
   "closeAction": "ask",
   "musicQuality": "higher",
   "lyricTranslationEngine": "none",

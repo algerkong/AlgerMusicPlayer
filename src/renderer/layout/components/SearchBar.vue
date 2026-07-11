@@ -212,9 +212,6 @@ import { computed, onMounted, ref, watch, watchEffect } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
-import { getSearchKeyword } from '@/api/home';
-import { getUserDetail } from '@/api/login';
-import { getSearchSuggestions } from '@/api/search';
 import { SEARCH_TYPES, USER_SET_OPTIONS } from '@/const/bar-const';
 import { useZoom } from '@/hooks/useZoom';
 import { useDownloadStore } from '@/store/modules/download';
@@ -273,12 +270,6 @@ const tabs = computed(() => {
   const items = [
     { key: 'home', label: t('comp.home'), path: '/', icon: 'ri-home-4-fill' },
     { key: 'playlist', label: t('comp.list'), path: '/list', icon: 'ri-play-list-2-fill' },
-    {
-      key: 'charts',
-      label: t('comp.toplist'),
-      path: '/toplist',
-      icon: 'ri-bar-chart-grouped-fill'
-    },
     {
       key: 'localMusic',
       label: t('comp.localMusic'),
@@ -375,24 +366,16 @@ const showSuggestions = ref(false);
 const suggestionsLoading = ref(false);
 const highlightedIndex = ref(-1);
 
-// 竞态守卫：记录最后一次请求的关键词，响应乱序返回时丢弃过期结果
-let lastSuggestKeyword = '';
+// 在线搜索建议已移除
 const debouncedSuggest = useDebounceFn(async (kw: string) => {
   if (!kw.trim()) {
     suggestions.value = [];
     showSuggestions.value = false;
     return;
   }
-  lastSuggestKeyword = kw;
-  suggestionsLoading.value = true;
-  const result = await getSearchSuggestions(kw);
-  // 若期间输入已变化，丢弃这次结果，避免旧关键词建议覆盖新关键词
-  if (kw !== lastSuggestKeyword) {
-    return;
-  }
-  suggestions.value = result;
   suggestionsLoading.value = false;
-  showSuggestions.value = suggestions.value.length > 0;
+  suggestions.value = [];
+  showSuggestions.value = false;
   highlightedIndex.value = -1;
 }, 300);
 
@@ -431,18 +414,11 @@ const handleKeydown = (e: KeyboardEvent) => {
 
 // ── User / misc ───────────────────────────────────────
 const loadHotSearch = async () => {
-  const { data } = await getSearchKeyword();
-  hotSearchKeyword.value = data.data.showKeyword;
-  hotSearchValue.value = data.data.realkeyword;
+  // 在线热搜已移除
 };
 const loadPage = async () => {
-  if (!localStorage.getItem('token')) return;
-  const { data } = await getUserDetail();
-  userStore.user =
-    data.profile || userStore.user || JSON.parse(localStorage.getItem('user') || '{}');
-  localStorage.setItem('user', JSON.stringify(userStore.user));
+  // 在线用户详情已移除；保留本地 user 状态
 };
-loadPage();
 watchEffect(() => {
   userSetOptions.value = userStore.user
     ? USER_SET_OPTIONS
@@ -494,8 +470,8 @@ const checkForUpdates = async () => {
 };
 
 onMounted(() => {
-  loadHotSearch();
-  loadPage();
+  void loadHotSearch();
+  void loadPage();
   checkForUpdates();
   isElectron && initZoomFactor();
 });

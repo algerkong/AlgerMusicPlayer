@@ -107,21 +107,15 @@ export default {
     remoteControlDesc: 'Set remote control function'
   },
   network: {
-    apiPort: 'Music API Port',
-    apiPortDesc: 'Restart required after modification',
     proxy: 'Proxy Settings',
     proxyDesc: 'Enable proxy when unable to access music',
     proxyHost: 'Proxy Host',
     proxyHostPlaceholder: 'Enter proxy host',
     proxyPort: 'Proxy Port',
     proxyPortPlaceholder: 'Enter proxy port',
-    realIP: 'RealIP Settings',
-    realIPDesc: 'Use realIP parameter with mainland China IP to resolve access restrictions abroad',
     messages: {
       proxySuccess: 'Proxy settings saved, restart required to take effect',
-      proxyError: 'Please check your input',
-      realIPSuccess: 'RealIP settings saved',
-      realIPError: 'Please enter a valid IP address'
+      proxyError: 'Please check your input'
     }
   },
   system: {

@@ -23,8 +23,7 @@ export default {
     album: '專輯',
     playlist: '歌單',
     mv: 'MV',
-    djradio: '電台',
-    bilibili: 'B站'
+    djradio: '電台'
   },
   history: '搜尋歷史',
   hot: '熱門搜尋',

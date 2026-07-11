@@ -106,22 +106,15 @@ export default {
     remoteControlDesc: 'リモートコントロール機能を設定'
   },
   network: {
-    apiPort: '音楽APIポート',
-    apiPortDesc: '変更後はアプリの再起動が必要です',
     proxy: 'プロキシ設定',
     proxyDesc: '音楽にアクセスできない場合はプロキシを有効にできます',
     proxyHost: 'プロキシアドレス',
     proxyHostPlaceholder: 'プロキシアドレスを入力してください',
     proxyPort: 'プロキシポート',
     proxyPortPlaceholder: 'プロキシポートを入力してください',
-    realIP: 'realIP設定',
-    realIPDesc:
-      '制限により、このプロジェクトは海外での使用が制限されます。realIPパラメータを使用して国内IPを渡すことで解決できます',
     messages: {
       proxySuccess: 'プロキシ設定を保存しました。アプリ再起動後に有効になります',
-      proxyError: '入力が正しいかどうか確認してください',
-      realIPSuccess: '実IPアドレス設定を保存しました',
-      realIPError: '有効なIPアドレスを入力してください'
+      proxyError: '入力が正しいかどうか確認してください'
     }
   },
   system: {

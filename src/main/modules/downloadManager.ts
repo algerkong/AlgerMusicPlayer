@@ -28,48 +28,6 @@ function sanitizeFilename(filename: string): string {
     .trim();
 }
 
-function parseLyrics(lyricsText: string): Map<string, string> {
-  const lyricMap = new Map<string, string>();
-  const lines = lyricsText.split('\n');
-
-  for (const line of lines) {
-    const timeTagMatches = line.match(/\[\d{2}:\d{2}(\.\d{1,3})?\]/g);
-    if (!timeTagMatches) continue;
-
-    const content = line.replace(/\[\d{2}:\d{2}(\.\d{1,3})?\]/g, '').trim();
-    if (!content) continue;
-
-    for (const timeTag of timeTagMatches) {
-      lyricMap.set(timeTag, content);
-    }
-  }
-
-  return lyricMap;
-}
-
-function mergeLyrics(
-  originalLyrics: Map<string, string>,
-  translatedLyrics: Map<string, string>
-): string {
-  const mergedLines: string[] = [];
-
-  for (const [timeTag, originalContent] of originalLyrics.entries()) {
-    const translatedContent = translatedLyrics.get(timeTag);
-    mergedLines.push(`${timeTag}${originalContent}`);
-    if (translatedContent) {
-      mergedLines.push(`${timeTag}${translatedContent}`);
-    }
-  }
-
-  mergedLines.sort((a, b) => {
-    const timeA = a.match(/\[\d{2}:\d{2}(\.\d{1,3})?\]/)?.[0] || '';
-    const timeB = b.match(/\[\d{2}:\d{2}(\.\d{1,3})?\]/)?.[0] || '';
-    return timeA.localeCompare(timeB);
-  });
-
-  return mergedLines.join('\n');
-}
-
 // ─── Batch tracker entry ─────────────────────────────────────────────
 
 type BatchEntry = { total: number; finished: number; success: number };
@@ -614,7 +572,6 @@ class DownloadManager {
     downloadPath: string
   ): Promise<void> {
     const configStore = getStore();
-    const apiPort = configStore.get('set.musicApiPort') || 30488;
 
     // Detect file type
     let fileExtension = '';
@@ -665,31 +622,9 @@ class DownloadManager {
     fs.unlinkSync(task.tempFilePath);
     task.finalFilePath = finalFilePath;
 
-    // Download lyrics
-    let lyricsContent = '';
-    let lyricData = null;
-    try {
-      if (task.songInfo?.id) {
-        const lyricsResponse = await axios.get(
-          `http://localhost:${apiPort}/lyric?id=${task.songInfo.id}`
-        );
-        if (lyricsResponse.data && (lyricsResponse.data.lrc || lyricsResponse.data.tlyric)) {
-          lyricData = lyricsResponse.data;
-
-          if (lyricsResponse.data.lrc && lyricsResponse.data.lrc.lyric) {
-            lyricsContent = lyricsResponse.data.lrc.lyric;
-
-            if (lyricsResponse.data.tlyric && lyricsResponse.data.tlyric.lyric) {
-              const originalLyrics = parseLyrics(lyricsResponse.data.lrc.lyric);
-              const translatedLyrics = parseLyrics(lyricsResponse.data.tlyric.lyric);
-              lyricsContent = mergeLyrics(originalLyrics, translatedLyrics);
-            }
-          }
-        }
-      }
-    } catch (lyricError) {
-      console.error('Failed to download lyrics:', lyricError);
-    }
+    // Online lyric API removed; keep empty lyrics for tag write (cover still fetched if URL known)
+    const lyricsContent = '';
+    const lyricData = null;
 
     // Download cover
     let coverImageBuffer: Buffer | null = null;

@@ -101,21 +101,15 @@ export default {
     remoteControlDesc: '设置远程控制功能'
   },
   network: {
-    apiPort: '音乐API端口',
-    apiPortDesc: '修改后需要重启应用',
     proxy: '代理设置',
     proxyDesc: '无法访问音乐时可以开启代理',
     proxyHost: '代理地址',
     proxyHostPlaceholder: '请输入代理地址',
     proxyPort: '代理端口',
     proxyPortPlaceholder: '请输入代理端口',
-    realIP: 'realIP设置',
-    realIPDesc: '由于限制,此项目在国外使用会受到限制可使用realIP参数,传进国内IP解决',
     messages: {
       proxySuccess: '代理设置已保存，重启应用后生效',
-      proxyError: '请检查输入是否正确',
-      realIPSuccess: '真实IP设置已保存',
-      realIPError: '请输入有效的IP地址'
+      proxyError: '请检查输入是否正确'
     }
   },
   system: {

@@ -37,18 +37,6 @@ export default {
     noLrc: '暂无歌词, 请欣赏',
     noAutoScroll: '本歌词不支持自动滚动'
   },
-  reparse: {
-    title: '选择解析音源',
-    desc: '点击音源直接进行解析，下次播放此歌曲时将使用所选音源',
-    success: '重新解析成功',
-    failed: '重新解析失败',
-    warning: '请选择一个音源',
-    bilibiliNotSupported: 'B站视频不支持重新解析',
-    processing: '解析中...',
-    clear: '清除自定义音源',
-    customApiFailed: '自定义API解析失败，正在尝试使用内置音源...',
-    customApiError: '自定义API请求出错，正在尝试使用内置音源...'
-  },
   playBar: {
     expand: '展开歌词',
     collapse: '收起歌词',
@@ -57,7 +45,6 @@ export default {
     noSongPlaying: '没有正在播放的歌曲',
     eq: '均衡器',
     playList: '播放列表',
-    reparse: '重新解析',
     download: '下载',
     playMode: {
       sequence: '顺序播放',

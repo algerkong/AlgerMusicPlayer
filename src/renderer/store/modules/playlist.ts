@@ -441,38 +441,13 @@ export const usePlaylistStore = defineStore(
     };
 
     /**
-     * 私人FM：拉取下一首并播放（FM 列表始终只保留当前一首）
+     * 私人FM：在线音源已移除，退出 FM 模式
      */
     const _nextFmPlay = async () => {
       const playerCore = usePlayerCoreStore();
-      try {
-        const { getPersonalFM } = await import('@/api/home');
-        const res = await getPersonalFM();
-        const songs = res.data?.data;
-        if (!Array.isArray(songs) || songs.length === 0) {
-          playerCore.setIsPlay(false);
-          return;
-        }
-        const song = songs[0];
-        const fmSong = {
-          id: song.id,
-          name: song.name,
-          picUrl: song.al?.picUrl || song.album?.picUrl,
-          ar: song.artists || song.ar,
-          al: song.al || song.album,
-          source: 'netease' as const,
-          song,
-          ...song,
-          playLoading: false
-        } as any;
-        await setPlayList([fmSong], false, false);
-        playerCore.isFmPlaying = true;
-        const { playTrack } = await import('@/services/playbackController');
-        await playTrack(fmSong, true);
-      } catch (error) {
-        console.error('FM切换下一首失败:', error);
-        playerCore.setIsPlay(false);
-      }
+      playerCore.isFmPlaying = false;
+      playerCore.setIsPlay(false);
+      getMessage().info(i18n.global.t('player.playFailed'));
     };
 
     /**

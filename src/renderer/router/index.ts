@@ -40,10 +40,8 @@ const router = createRouter({
   history: createWebHashHistory()
 });
 
-// 添加全局后置钩子，记录页面访问
 router.afterEach((to) => {
   const pageName = to.name?.toString() || to.path;
-  // 使用setTimeout避免阻塞路由导航
   setTimeout(() => {
     const userId = getUserId();
     console.log('pageName', pageName, userId);

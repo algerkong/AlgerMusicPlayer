@@ -105,28 +105,6 @@
       </div>
     </div>
 
-    <setting-item :title="t('settings.basic.tokenManagement')">
-      <template #description>
-        <div class="text-sm text-gray-500 mb-2">
-          {{ t('settings.basic.tokenStatus') }}:
-          {{ currentToken ? t('settings.basic.tokenSet') : t('settings.basic.tokenNotSet') }}
-        </div>
-        <div v-if="currentToken" class="text-xs text-gray-400 mb-2 font-mono break-all">
-          {{ currentToken.substring(0, 50) }}...
-        </div>
-      </template>
-      <template #action>
-        <div class="flex gap-2">
-          <s-btn @click="showTokenModal = true">
-            {{ currentToken ? t('settings.basic.modifyToken') : t('settings.basic.setToken') }}
-          </s-btn>
-          <s-btn v-if="currentToken" variant="danger" @click="clearToken">
-            {{ t('settings.basic.clearToken') }}
-          </s-btn>
-        </div>
-      </template>
-    </setting-item>
-
     <setting-item :title="t('settings.basic.animation')">
       <template #description>
         <div class="flex items-center gap-2">
@@ -183,12 +161,6 @@
         <template #unchecked><i class="ri-cpu-line"></i></template>
       </n-switch>
     </setting-item>
-
-    <cookie-settings-modal
-      v-model:show="showTokenModal"
-      :initial-value="currentToken"
-      @save="handleTokenSave"
-    />
   </setting-section>
 </template>
 
@@ -196,15 +168,11 @@
 import { computed, h, inject, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import { getUserDetail } from '@/api/login';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
-import CookieSettingsModal from '@/components/settings/CookieSettingsModal.vue';
 import { useSettingsStore } from '@/store/modules/settings';
-import { useUserStore } from '@/store/modules/user';
 import { isElectron, isMobile } from '@/utils';
 
 import { SETTINGS_DATA_KEY, SETTINGS_MESSAGE_KEY } from '../keys';
-import SBtn from '../SBtn.vue';
 import SettingItem from '../SettingItem.vue';
 import SettingSection from '../SettingSection.vue';
 import SInput from '../SInput.vue';
@@ -219,7 +187,6 @@ const fontPreviews = [
 
 const { t } = useI18n();
 const settingsStore = useSettingsStore();
-const userStore = useUserStore();
 const setData = inject(SETTINGS_DATA_KEY)!;
 const message = inject(SETTINGS_MESSAGE_KEY)!;
 
@@ -282,50 +249,6 @@ watch(
     if (newFont) {
       selectedFonts.value = newFont === 'system-ui' ? [] : newFont.split(',');
     }
-  },
-  { immediate: true }
-);
-
-const showTokenModal = ref(false);
-const currentToken = ref(localStorage.getItem('token') || '');
-
-const handleTokenSave = async (token: string) => {
-  try {
-    const originalToken = localStorage.getItem('token');
-    localStorage.setItem('token', token);
-
-    const user = await getUserDetail();
-    if (user.data && user.data.profile) {
-      userStore.setUser(user.data.profile);
-      currentToken.value = token;
-      message.success(t('settings.cookie.message.saveSuccess'));
-      setTimeout(() => window.location.reload(), 1000);
-    } else {
-      if (originalToken) localStorage.setItem('token', originalToken);
-      else localStorage.removeItem('token');
-      message.error(t('settings.cookie.message.saveError'));
-    }
-  } catch {
-    const originalToken = localStorage.getItem('token');
-    if (originalToken) localStorage.setItem('token', originalToken);
-    else localStorage.removeItem('token');
-    message.error(t('settings.cookie.message.saveError'));
-  }
-};
-
-const clearToken = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  currentToken.value = '';
-  userStore.user = null;
-  message.success(t('settings.basic.clearToken') + '成功');
-  setTimeout(() => window.location.reload(), 1000);
-};
-
-watch(
-  () => localStorage.getItem('token'),
-  (newToken) => {
-    currentToken.value = newToken || '';
   },
   { immediate: true }
 );

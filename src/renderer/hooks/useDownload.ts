@@ -2,7 +2,6 @@ import { useMessage } from 'naive-ui';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import { getMusicLrc } from '@/api/music';
 import { useDownloadStore } from '@/store/modules/download';
 import { getSongUrl } from '@/store/modules/player';
 import type { SongResult } from '@/types/music';
@@ -129,25 +128,35 @@ export const useDownload = () => {
 
   /**
    * Download the lyric (.lrc) for a single song.
-   * This is independent of the download system and uses a direct IPC call.
+   * 在线歌词 API 已移除；仅支持已有本地/缓存歌词。
    */
   const downloadLyric = async (song: SongResult) => {
     try {
-      const res = await getMusicLrc(song.id as number);
-      const lyricData = res?.data;
+      // Prefer already-loaded lyric on the song object
+      let lrcContent = '';
+      if (song.lyric?.lrcArray?.length) {
+        lrcContent = song.lyric.lrcArray
+          .map((line, i) => {
+            const t = song.lyric?.lrcTimeArray?.[i] ?? 0;
+            const m = Math.floor(t / 60);
+            const s = (t % 60).toFixed(2).padStart(5, '0');
+            return `[${String(m).padStart(2, '0')}:${s}]${line.text}`;
+          })
+          .join('\n');
+      }
 
-      if (!lyricData?.lrc?.lyric) {
+      if (!lrcContent && isElectron && song.playMusicUrl?.startsWith('local:///')) {
+        let filePath = decodeURIComponent(song.playMusicUrl.replace('local:///', ''));
+        if (/^\/[a-zA-Z]:\//.test(filePath)) filePath = filePath.slice(1);
+        const embedded = await window.api.getEmbeddedLyrics(filePath);
+        if (embedded) lrcContent = embedded;
+      }
+
+      if (!lrcContent) {
         message.warning(t('songItem.message.noLyric'));
         return;
       }
 
-      // Build LRC content: keep original lyrics, merge translation if available
-      let lrcContent = lyricData.lrc.lyric;
-      if (lyricData.tlyric?.lyric) {
-        lrcContent = mergeLrcWithTranslation(lyricData.lrc.lyric, lyricData.tlyric.lyric);
-      }
-
-      // 与歌曲下载一致：使用设置中的文件名格式模板拼接歌词文件名（#655）
       const nameFormat =
         (ipcRenderer?.sendSync('get-store-value', 'set.downloadNameFormat') as string) ||
         '{songName} - {artistName}';
@@ -180,47 +189,3 @@ export const useDownload = () => {
     batchDownloadMusic
   };
 };
-
-/**
- * Merge original LRC lyrics and translated LRC lyrics into a single LRC string.
- */
-function mergeLrcWithTranslation(originalText: string, translationText: string): string {
-  const originalMap = parseLrcText(originalText);
-  const translationMap = parseLrcText(translationText);
-
-  const mergedLines: string[] = [];
-
-  for (const [timeTag, content] of originalMap.entries()) {
-    mergedLines.push(`${timeTag}${content}`);
-    const translated = translationMap.get(timeTag);
-    if (translated) {
-      mergedLines.push(`${timeTag}${translated}`);
-    }
-  }
-
-  // Sort by time tag
-  mergedLines.sort((a, b) => {
-    const ta = a.match(/\[\d{2}:\d{2}(\.\d{1,3})?\]/)?.[0] || '';
-    const tb = b.match(/\[\d{2}:\d{2}(\.\d{1,3})?\]/)?.[0] || '';
-    return ta.localeCompare(tb);
-  });
-
-  return mergedLines.join('\n');
-}
-
-/**
- * Parse LRC text into a Map<timeTag, content>.
- */
-function parseLrcText(text: string): Map<string, string> {
-  const map = new Map<string, string>();
-  for (const line of text.split('\n')) {
-    const tags = line.match(/\[\d{2}:\d{2}(\.\d{1,3})?\]/g);
-    if (!tags) continue;
-    const content = line.replace(/\[\d{2}:\d{2}(\.\d{1,3})?\]/g, '').trim();
-    if (!content) continue;
-    for (const tag of tags) {
-      map.set(tag, content);
-    }
-  }
-  return map;
-}
