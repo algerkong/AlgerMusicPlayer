@@ -88,7 +88,6 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
 
 import { getPrivateContent } from '@/api/home';
 import { calculateAnimationDelay, getImgUrl } from '@/utils';
@@ -97,7 +96,6 @@ defineProps<{
   title: string;
 }>();
 
-const router = useRouter();
 const contentList = ref<any[]>([]);
 const loading = ref(true);
 
@@ -114,11 +112,8 @@ const fetchPrivateContent = async () => {
   }
 };
 
-const handleContentClick = (content: any) => {
-  // 根据内容类型跳转
-  if (content.type === 'video' && content.id) {
-    router.push(`/mv?id=${content.id}`);
-  }
+const handleContentClick = (_content: any) => {
+  // MV 功能已精简下线，视频类内容不再跳转
 };
 
 onMounted(() => {

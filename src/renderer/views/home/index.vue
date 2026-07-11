@@ -13,15 +13,6 @@
           <!-- Hot Artists (Horizontal Scroll Section) -->
           <home-artists :title="t('comp.recommendSinger.title')" :limit="15" />
 
-          <!-- New Albums (NEW - 新碟上架) -->
-          <home-album-section
-            :title="t('comp.newAlbum.title')"
-            :limit="6"
-            :columns="5"
-            :rows="1"
-            @more="router.push('/album')"
-          />
-
           <!-- New Songs (Compact Grid Section) -->
           <home-new-songs :title="t('comp.recommendNewMusic.title')" :limit="20" />
         </div>
@@ -33,9 +24,7 @@
 <script lang="ts" setup>
 import { NScrollbar } from 'naive-ui';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
 
-import HomeAlbumSection from './components/HomeAlbumSection.vue';
 import HomeArtists from './components/HomeArtists.vue';
 import HomeHero from './components/HomeHero.vue';
 import HomeNewSongs from './components/HomeNewSongs.vue';
@@ -46,7 +35,6 @@ defineOptions({
 });
 
 const { t } = useI18n();
-const router = useRouter();
 </script>
 
 <style lang="scss" scoped>

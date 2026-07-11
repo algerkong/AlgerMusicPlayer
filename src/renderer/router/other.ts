@@ -122,18 +122,6 @@ const otherRouter = [
     component: () => import('@/views/mobile-search-result/index.vue')
   },
   {
-    path: '/podcast/radio/:id',
-    name: 'podcastRadio',
-    meta: {
-      title: 'podcast.radioDetail',
-      keepAlive: false,
-      showInMenu: false,
-      back: true,
-      isMobile: true
-    },
-    component: () => import('@/views/podcast/radio.vue')
-  },
-  {
     path: '/favorite',
     name: 'favorite',
     meta: {

@@ -33,14 +33,6 @@ export const SEARCH_TYPES = [
   {
     label: 'search.search.playlist', // 歌单
     key: 1000
-  },
-  {
-    label: 'search.search.mv', // MV
-    key: 1004
-  },
-  {
-    label: 'search.search.djradio', // 电台
-    key: 1009
   }
 ];
 
