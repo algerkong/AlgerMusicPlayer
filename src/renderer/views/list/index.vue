@@ -1,8 +1,8 @@
 <template>
   <div class="list-page h-full w-full">
     <n-scrollbar class="h-full">
-      <div class="page-padding pb-32 pt-6">
-        <!-- 整块框架：标题 + 列表同一附着底 -->
+      <div class="list-page-inner pb-32 pt-6">
+        <!-- 整块框架：标题 + 列表同一附着底；与侧栏拉开间距 -->
         <div class="list-frame chrome-surface-strong">
           <div class="list-frame-head">
             <div>
@@ -204,6 +204,20 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* PC 全局 --page-pl 为 0（有侧栏），这里单独给左边距，避免贴栏 */
+.list-page-inner {
+  padding-left: 1.25rem;
+  padding-right: 1.5rem;
+  box-sizing: border-box;
+}
+
+@media (min-width: 1024px) {
+  .list-page-inner {
+    padding-left: 1.5rem;
+    padding-right: 2rem;
+  }
+}
+
 .list-frame {
   border-radius: 16px;
   padding: 16px 16px 12px;
