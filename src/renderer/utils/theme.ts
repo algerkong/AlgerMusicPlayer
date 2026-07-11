@@ -23,7 +23,7 @@ export const applyTheme = (theme: ThemeType) => {
 
 // 获取当前主题
 export const getCurrentTheme = (): ThemeType => {
-  return (localStorage.getItem('theme') as ThemeType) || 'light';
+  return (localStorage.getItem('theme') as ThemeType) || 'dark';
 };
 
 // 监听系统主题变化
