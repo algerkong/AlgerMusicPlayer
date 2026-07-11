@@ -188,7 +188,7 @@ export function toSongResult(entry: LocalMusicEntry): SongResult {
     playMusicUrl: filePathToLocalUrl(entry.filePath),
     duration: entry.duration,
     dt: entry.duration,
-    source: 'netease' as const,
+    source: 'local' as const,
     count: 0,
     // 内嵌歌词（如果有）
     lyric: lyric ?? undefined,

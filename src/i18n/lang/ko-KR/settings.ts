@@ -415,33 +415,5 @@ export default {
     emptyListHint: '빈 목록은 모든 IP 액세스를 허용함을 의미합니다',
     saveSuccess: '원격 제어 설정이 저장되었습니다',
     accessInfo: '원격 제어 액세스 주소:'
-  },
-  cookie: {
-    title: 'Cookie 설정',
-    description: '넷이즈 클라우드 뮤직의 Cookie를 입력하세요:',
-    placeholder: '완전한 Cookie를 붙여넣으세요...',
-    help: {
-      format: 'Cookie는 일반적으로 "MUSIC_U="로 시작합니다',
-      source: '브라우저 개발자 도구의 네트워크 요청에서 얻을 수 있습니다',
-      storage: 'Cookie 설정 후 자동으로 로컬 저장소에 저장됩니다'
-    },
-    action: {
-      save: 'Cookie 저장',
-      paste: '붙여넣기',
-      clear: '지우기'
-    },
-    validation: {
-      required: 'Cookie를 입력하세요',
-      format: 'Cookie 형식이 올바르지 않을 수 있습니다. MUSIC_U가 포함되어 있는지 확인하세요'
-    },
-    message: {
-      saveSuccess: 'Cookie 저장 성공',
-      saveError: 'Cookie 저장 실패',
-      pasteSuccess: '붙여넣기 성공',
-      pasteError: '붙여넣기 실패, 수동으로 복사하세요'
-    },
-    info: {
-      length: '현재 길이: {length} 문자'
-    }
   }
 };

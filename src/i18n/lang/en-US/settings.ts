@@ -415,33 +415,5 @@ export default {
     emptyListHint: 'Empty list means allow all IPs',
     saveSuccess: 'Remote control settings saved',
     accessInfo: 'Remote control access address:'
-  },
-  cookie: {
-    title: 'Cookie Settings',
-    description: 'Please enter NetEase Cloud Music Cookie:',
-    placeholder: 'Please paste the complete Cookie...',
-    help: {
-      format: 'Cookie usually starts with "MUSIC_U="',
-      source: 'Can be obtained from browser developer tools network requests',
-      storage: 'Cookie will be automatically saved to local storage after setting'
-    },
-    action: {
-      save: 'Save Cookie',
-      paste: 'Paste',
-      clear: 'Clear'
-    },
-    validation: {
-      required: 'Please enter Cookie',
-      format: 'Cookie format may be incorrect, please check if it contains MUSIC_U'
-    },
-    message: {
-      saveSuccess: 'Cookie saved successfully',
-      saveError: 'Failed to save Cookie',
-      pasteSuccess: 'Pasted successfully',
-      pasteError: 'Paste failed, please copy manually'
-    },
-    info: {
-      length: 'Current length: {length} characters'
-    }
   }
 };

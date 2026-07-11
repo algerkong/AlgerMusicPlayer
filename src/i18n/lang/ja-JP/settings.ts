@@ -414,33 +414,5 @@ export default {
     emptyListHint: '空のリストはすべてのIPアクセスを許可することを意味します',
     saveSuccess: 'リモートコントロール設定を保存しました',
     accessInfo: 'リモートコントロールアクセスアドレス:'
-  },
-  cookie: {
-    title: 'Cookie設定',
-    description: 'NetEase Cloud MusicのCookieを入力してください：',
-    placeholder: '完全なCookieを貼り付けてください...',
-    help: {
-      format: 'Cookieは通常「MUSIC_U=」で始まります',
-      source: 'ブラウザの開発者ツールのネットワークリクエストから取得できます',
-      storage: 'Cookie設定後、自動的にローカルストレージに保存されます'
-    },
-    action: {
-      save: 'Cookieを保存',
-      paste: '貼り付け',
-      clear: 'クリア'
-    },
-    validation: {
-      required: 'Cookieを入力してください',
-      format: 'Cookie形式が正しくない可能性があります。MUSIC_Uが含まれているか確認してください'
-    },
-    message: {
-      saveSuccess: 'Cookieの保存に成功しました',
-      saveError: 'Cookieの保存に失敗しました',
-      pasteSuccess: '貼り付けに成功しました',
-      pasteError: '貼り付けに失敗しました。手動でコピーしてください'
-    },
-    info: {
-      length: '現在の長さ：{length} 文字'
-    }
   }
 };

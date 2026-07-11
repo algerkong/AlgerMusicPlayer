@@ -410,33 +410,5 @@ export default {
     emptyListHint: '空白清單表示允許所有 IP 存取',
     saveSuccess: '遠端控制設定已儲存',
     accessInfo: '遠端控制存取位址：'
-  },
-  cookie: {
-    title: 'Cookie設定',
-    description: '請輸入網易雲音樂的Cookie：',
-    placeholder: '請貼上完整的Cookie...',
-    help: {
-      format: 'Cookie通常以 "MUSIC_U=" 開頭',
-      source: '可以從瀏覽器開發者工具的網路請求中取得',
-      storage: 'Cookie設定後將自動儲存到本機儲存'
-    },
-    action: {
-      save: '儲存Cookie',
-      paste: '貼上',
-      clear: '清空'
-    },
-    validation: {
-      required: '請輸入Cookie',
-      format: 'Cookie格式可能不正確，請檢查是否包含MUSIC_U'
-    },
-    message: {
-      saveSuccess: 'Cookie儲存成功',
-      saveError: 'Cookie儲存失敗',
-      pasteSuccess: '貼上成功',
-      pasteError: '貼上失敗，請手動複製'
-    },
-    info: {
-      length: '目前長度：{length} 字元'
-    }
   }
 };
