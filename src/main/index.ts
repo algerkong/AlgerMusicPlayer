@@ -48,6 +48,7 @@ import { initializeFileManager } from './modules/fileManager';
 import { initializeFonts } from './modules/fonts';
 import { initializeLocalMusicScanner } from './modules/localMusicScanner';
 import { initializeMpris, updateMprisCurrentSong, updateMprisPlayState } from './modules/mpris';
+import { initializeMusicSource } from './modules/musicSource';
 import { initializeShortcuts } from './modules/shortcuts';
 import { initializeTray, updateCurrentSong, updatePlayState, updateTrayMenu } from './modules/tray';
 import { setupUpdateHandlers } from './modules/update';
@@ -85,6 +86,8 @@ function initialize(configStore: any) {
   initializeFonts();
   // 初始化本地音乐扫描模块
   initializeLocalMusicScanner();
+  // 在线音源（ly-music-source，主进程）
+  initializeMusicSource();
 
   // 创建主窗口
   mainWindow = createMainWindow(icon);

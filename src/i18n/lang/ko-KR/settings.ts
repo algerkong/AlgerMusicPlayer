@@ -415,5 +415,22 @@ export default {
     emptyListHint: '빈 목록은 모든 IP 액세스를 허용함을 의미합니다',
     saveSuccess: '원격 제어 설정이 저장되었습니다',
     accessInfo: '원격 제어 액세스 주소:'
+  },
+  musicSource: {
+    title: '온라인 음원 세션',
+    desc: 'ly-music-source 로 기수 등 플랫폼 세션 관리 (Cookie 는 디버그/이전용)',
+    loggedIn: '로그인됨: {name}',
+    loggedOut: '로그인되지 않음',
+    importSession: 'Cookie 가져오기',
+    logout: '로그아웃',
+    logoutSuccess: '음원 세션에서 로그아웃했습니다',
+    logoutFailed: '로그아웃 실패',
+    sessionTitle: '기수 Cookie 가져오기',
+    sessionDesc: '브라우저 Cookie 문자열을 붙여넣으세요 (최소 sessionid). 공유하지 마세요.',
+    sessionPlaceholder: 'sessionid=...; ...',
+    sessionRequired: 'Cookie 를 입력하세요',
+    sessionSaved: '세션이 저장되었습니다',
+    sessionSaveFailed: '세션 저장 실패',
+    saveSession: '저장'
   }
 };

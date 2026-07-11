@@ -11,7 +11,7 @@
       >
         <template #prefix><i class="ri-search-line" /></template>
       </n-input>
-      <n-empty description="在线音源将接入独立库" class="pt-16" />
+      <n-empty description="输入关键词后回车搜索（汽水）" class="pt-16" />
     </div>
   </div>
 </template>

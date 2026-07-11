@@ -16,10 +16,12 @@ export function navigateToMusicList(
     songList?: any[];
     listInfo?: any;
     canRemove?: boolean;
+    /** e.g. qishui — used by MusicListPage to load remote playlists */
+    source?: string;
   }
 ) {
   const musicStore = useMusicStore();
-  const { id, type, name, songList, listInfo, canRemove = false } = options;
+  const { id, type, name, songList, listInfo, canRemove = false, source } = options;
 
   // 如果是每日推荐，不需要设置 musicStore，直接从 recommendStore 获取
   if (type !== 'dailyRecommend') {
@@ -37,8 +39,11 @@ export function navigateToMusicList(
   if (id) {
     router.push({
       name: 'musicList',
-      params: { id },
-      query: { type }
+      params: { id: String(id) },
+      query: {
+        type,
+        ...(source ? { source } : {})
+      }
     });
   } else {
     router.push({

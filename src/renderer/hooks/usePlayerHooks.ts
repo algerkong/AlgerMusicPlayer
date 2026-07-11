@@ -1,6 +1,7 @@
+import { msGetLyric, msLyricToLrc, msResolve } from '@/api/musicSource';
 import { playbackRequestManager } from '@/services/playbackRequestManager';
 import type { ILyric, ILyricText, IWordData, SongResult } from '@/types/music';
-import { isElectron } from '@/utils';
+import { getSetData, isElectron } from '@/utils';
 import { parseLyrics as parseYrcLyrics } from '@/utils/yrcParser';
 
 type DiskCacheResolveResult = {
@@ -49,9 +50,8 @@ const resolveCachedPlaybackUrl = async (
 };
 
 /**
- * 获取歌曲播放URL。
- * 已移除网易云官方取链；在线播放待接入独立音源库。
- * 仅支持：已有 playMusicUrl（缓存/本地等）。
+ * 获取歌曲播放 URL。
+ * 本地 / 已有 playMusicUrl 优先；在线曲经 ly-music-source（主进程）resolve。
  */
 export const getSongUrl = async (
   id: string | number,
@@ -66,11 +66,66 @@ export const getSongUrl = async (
 
   if (songData.playMusicUrl) {
     if (isDownloaded) return songData.playMusicUrl;
+    // local:// 已是可播路径
+    if (songData.playMusicUrl.startsWith('local://')) {
+      return songData.playMusicUrl;
+    }
     return await resolveCachedPlaybackUrl(songData.playMusicUrl, songData);
   }
 
-  console.warn(`[getSongUrl] 无播放地址 (id=${id})：官方取链已移除，音源库尚未接入`);
-  return null;
+  if (!isElectron) {
+    console.warn(`[getSongUrl] 非 Electron 环境无法在线取链 (id=${id})`);
+    return null;
+  }
+
+  try {
+    const setData = getSetData();
+    const quality = setData?.musicQuality || 'higher';
+    const artists =
+      songData.ar?.map((a) => a.name).filter(Boolean) ||
+      songData.artists?.map((a) => a.name).filter(Boolean) ||
+      [];
+
+    const ids: Record<string, string> = {};
+    const source = songData.source || 'qishui';
+    if (source === 'qishui' || source === 'local') {
+      // 搜索结果默认 qishui id
+      ids.qishui = String(id);
+    } else {
+      ids[source] = String(id);
+      ids.qishui = String(id);
+    }
+
+    const result = await msResolve({
+      ids,
+      title: songData.name,
+      artists,
+      durationMs: songData.dt || songData.duration,
+      quality
+    });
+
+    if (requestId && !playbackRequestManager.isRequestValid(requestId)) {
+      throw new Error('Request cancelled');
+    }
+
+    if (!result.playMusicUrl) {
+      console.warn(`[getSongUrl] resolve 无 URL (id=${id})`);
+      return null;
+    }
+
+    if (result.isPreview) {
+      console.warn(`[getSongUrl] 预览流 (id=${id})`);
+    }
+
+    if (result.playMusicUrl.startsWith('local://') || isDownloaded) {
+      return result.playMusicUrl;
+    }
+    return await resolveCachedPlaybackUrl(result.playMusicUrl, songData);
+  } catch (error) {
+    if ((error as Error).message === 'Request cancelled') throw error;
+    console.error(`[getSongUrl] ly-music-source resolve 失败 (id=${id}):`, error);
+    return null;
+  }
 };
 
 /**
@@ -129,18 +184,38 @@ const parseLyrics = (lyricsString: string): { lyrics: ILyricText[]; times: numbe
  */
 export const loadLrc = async (id: string | number): Promise<ILyric> => {
   try {
-    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+    const cacheKey =
+      typeof id === 'string' && /^\d+$/.test(id)
+        ? parseInt(id, 10)
+        : typeof id === 'number'
+          ? id
+          : 0;
     let lyricData: any;
 
-    if (isElectron) {
+    if (isElectron && cacheKey) {
       try {
-        lyricData = await window.electron.ipcRenderer.invoke('get-cached-lyric', numericId);
+        lyricData = await window.electron.ipcRenderer.invoke('get-cached-lyric', cacheKey);
       } catch (error) {
         console.warn('读取磁盘歌词缓存失败:', error);
       }
     }
 
-    // 在线歌词 API 已移除；仅使用磁盘缓存 / 本地内嵌歌词
+    // 在线：ly-music-source
+    if (!lyricData && isElectron) {
+      try {
+        const msLyric = await msGetLyric(String(id));
+        const lrcText = msLyric.raw || msLyricToLrc(msLyric.lines || []);
+        lyricData = { lrc: { lyric: lrcText } };
+        if (cacheKey && lyricData) {
+          void window.electron.ipcRenderer
+            .invoke('cache-lyric', cacheKey, lyricData)
+            .catch((error) => console.warn('写入磁盘歌词缓存失败:', error));
+        }
+      } catch (error) {
+        console.warn('ly-music-source 歌词获取失败:', error);
+      }
+    }
+
     if (!lyricData) {
       return {
         lrcTimeArray: [],

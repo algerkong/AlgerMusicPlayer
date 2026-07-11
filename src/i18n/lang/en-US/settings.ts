@@ -415,5 +415,22 @@ export default {
     emptyListHint: 'Empty list means allow all IPs',
     saveSuccess: 'Remote control settings saved',
     accessInfo: 'Remote control access address:'
+  },
+  musicSource: {
+    title: 'Online source session',
+    desc: 'Manage Qishui sessions via ly-music-source (cookie is for debug/migration only)',
+    loggedIn: 'Signed in: {name}',
+    loggedOut: 'Not signed in',
+    importSession: 'Import cookie',
+    logout: 'Sign out',
+    logoutSuccess: 'Signed out of music source',
+    logoutFailed: 'Failed to sign out',
+    sessionTitle: 'Import Qishui cookie',
+    sessionDesc: 'Paste the browser cookie string (at least sessionid). Do not share it.',
+    sessionPlaceholder: 'sessionid=...; ...',
+    sessionRequired: 'Please enter a cookie',
+    sessionSaved: 'Session saved',
+    sessionSaveFailed: 'Failed to save session',
+    saveSession: 'Save'
   }
 };

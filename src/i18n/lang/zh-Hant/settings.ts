@@ -410,5 +410,22 @@ export default {
     emptyListHint: '空白清單表示允許所有 IP 存取',
     saveSuccess: '遠端控制設定已儲存',
     accessInfo: '遠端控制存取位址：'
+  },
+  musicSource: {
+    title: '線上音源工作階段',
+    desc: '透過 ly-music-source 管理汽水等平台工作階段（Cookie 僅作除錯/遷移）',
+    loggedIn: '已登入：{name}',
+    loggedOut: '未登入',
+    importSession: '匯入 Cookie',
+    logout: '退出工作階段',
+    logoutSuccess: '已退出音源工作階段',
+    logoutFailed: '退出工作階段失敗',
+    sessionTitle: '匯入汽水 Cookie',
+    sessionDesc: '貼上瀏覽器中的 Cookie 字串（至少含 sessionid）。請勿分享給他人。',
+    sessionPlaceholder: 'sessionid=...; ...',
+    sessionRequired: '請輸入 Cookie',
+    sessionSaved: '工作階段已儲存',
+    sessionSaveFailed: '儲存工作階段失敗',
+    saveSession: '儲存'
   }
 };

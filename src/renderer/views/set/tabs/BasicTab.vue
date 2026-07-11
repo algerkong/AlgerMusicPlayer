@@ -161,6 +161,34 @@
         <template #unchecked><i class="ri-cpu-line"></i></template>
       </n-switch>
     </setting-item>
+
+    <setting-item
+      v-if="isElectron"
+      :title="t('settings.musicSource.title')"
+      :description="t('settings.musicSource.desc')"
+    >
+      <template #action>
+        <div class="flex flex-col items-end gap-2 max-md:items-start">
+          <div class="text-sm text-gray-500">
+            {{
+              sessionAuthenticated
+                ? t('settings.musicSource.loggedIn', { name: sessionName || '—' })
+                : t('settings.musicSource.loggedOut')
+            }}
+          </div>
+          <div class="flex gap-2">
+            <n-button size="small" @click="showSessionModal = true">
+              {{ t('settings.musicSource.importSession') }}
+            </n-button>
+            <n-button size="small" :disabled="!sessionAuthenticated" @click="handleLogoutSession">
+              {{ t('settings.musicSource.logout') }}
+            </n-button>
+          </div>
+        </div>
+      </template>
+    </setting-item>
+
+    <music-source-session-modal v-model:show="showSessionModal" @saved="handleSessionSaved" />
   </setting-section>
 </template>
 
@@ -168,7 +196,9 @@
 import { computed, h, inject, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import { msGetAuthState, msGetProfile, msLogout } from '@/api/musicSource';
 import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
+import MusicSourceSessionModal from '@/components/settings/MusicSourceSessionModal.vue';
 import { useSettingsStore } from '@/store/modules/settings';
 import { isElectron, isMobile } from '@/utils';
 
@@ -200,6 +230,47 @@ const handleAutoThemeChange = (value: boolean) => {
 };
 
 const gpuAccelerationChanged = ref(false);
+const showSessionModal = ref(false);
+const sessionAuthenticated = ref(false);
+const sessionName = ref('');
+
+const refreshSessionState = async () => {
+  if (!isElectron) return;
+  try {
+    const auth = await msGetAuthState();
+    sessionAuthenticated.value = !!auth.authenticated;
+    if (auth.authenticated) {
+      try {
+        const profile = await msGetProfile();
+        sessionName.value = profile.nickname || '';
+      } catch {
+        sessionName.value = '';
+      }
+    } else {
+      sessionName.value = '';
+    }
+  } catch {
+    sessionAuthenticated.value = false;
+    sessionName.value = '';
+  }
+};
+
+const handleSessionSaved = (profile?: { nickname: string }) => {
+  sessionAuthenticated.value = true;
+  if (profile?.nickname) sessionName.value = profile.nickname;
+  else void refreshSessionState();
+};
+
+const handleLogoutSession = async () => {
+  try {
+    await msLogout();
+    sessionAuthenticated.value = false;
+    sessionName.value = '';
+    message.success(t('settings.musicSource.logoutSuccess'));
+  } catch (error: any) {
+    message.error(error?.message || t('settings.musicSource.logoutFailed'));
+  }
+};
 
 const handleGpuAccelerationChange = (enabled: boolean) => {
   try {
@@ -254,6 +325,7 @@ watch(
 );
 
 onMounted(() => {
+  void refreshSessionState();
   if (window.electron) {
     window.electron.ipcRenderer.on('gpu-acceleration-updated', (_, enabled: boolean) => {
       console.log('GPU加速设置已更新:', enabled);

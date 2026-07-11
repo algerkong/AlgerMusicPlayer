@@ -414,5 +414,23 @@ export default {
     emptyListHint: '空のリストはすべてのIPアクセスを許可することを意味します',
     saveSuccess: 'リモートコントロール設定を保存しました',
     accessInfo: 'リモートコントロールアクセスアドレス:'
+  },
+  musicSource: {
+    title: 'オンライン音源セッション',
+    desc: 'ly-music-source で汽水などのセッションを管理（Cookie はデバッグ/移行用）',
+    loggedIn: 'ログイン中：{name}',
+    loggedOut: '未ログイン',
+    importSession: 'Cookie を取り込む',
+    logout: 'ログアウト',
+    logoutSuccess: '音源セッションを終了しました',
+    logoutFailed: 'ログアウトに失敗しました',
+    sessionTitle: '汽水 Cookie を取り込む',
+    sessionDesc:
+      'ブラウザの Cookie 文字列を貼り付けてください（少なくとも sessionid）。共有しないでください。',
+    sessionPlaceholder: 'sessionid=...; ...',
+    sessionRequired: 'Cookie を入力してください',
+    sessionSaved: 'セッションを保存しました',
+    sessionSaveFailed: 'セッションの保存に失敗しました',
+    saveSession: '保存'
   }
 };

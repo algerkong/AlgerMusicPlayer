@@ -48,6 +48,7 @@
     "font-list": "^1.6.0",
     "form-data": "^4.0.5",
     "husky": "^9.1.7",
+    "ly-music-source": "^0.1.0",
     "mpris-service": "^2.1.2",
     "music-metadata": "^11.10.3",
     "node-fetch": "^2.7.0",

@@ -408,5 +408,22 @@ export default {
     emptyListHint: '空列表表示允许所有IP访问',
     saveSuccess: '远程控制设置已保存',
     accessInfo: '远程控制访问地址:'
+  },
+  musicSource: {
+    title: '在线音源会话',
+    desc: '通过 ly-music-source 管理汽水等平台会话（Cookie 仅作调试/迁移）',
+    loggedIn: '已登录：{name}',
+    loggedOut: '未登录',
+    importSession: '导入 Cookie',
+    logout: '退出会话',
+    logoutSuccess: '已退出音源会话',
+    logoutFailed: '退出会话失败',
+    sessionTitle: '导入汽水 Cookie',
+    sessionDesc: '粘贴浏览器中的 Cookie 字符串（至少含 sessionid）。请勿分享给他人。',
+    sessionPlaceholder: 'sessionid=...; ...',
+    sessionRequired: '请输入 Cookie',
+    sessionSaved: '会话已保存',
+    sessionSaveFailed: '保存会话失败',
+    saveSession: '保存'
   }
 };
