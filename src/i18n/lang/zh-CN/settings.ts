@@ -275,7 +275,7 @@ export default {
     manualUpdate: '官网更新',
     gotoGithub: '前往 Github',
     author: '作者',
-    authorDesc: 'algerkong 点个star🌟呗',
+    authorDesc: 'LuoYe17 点个 star🌟 呗',
     messages: {
       checkError: '检查更新失败，请稍后重试'
     }

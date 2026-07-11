@@ -9,7 +9,7 @@
     :mask-closable="false"
   >
     <n-drawer-content
-      title="欢迎使用 AlgerMusicPlayer"
+      title="欢迎使用 LYMusic"
       closable
       :native-scrollbar="false"
       class="mac-style-drawer"

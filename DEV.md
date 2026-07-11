@@ -1,4 +1,6 @@
-# Alger Music Player 开发文档
+# LYMusic 开发文档
+
+> 基于 AlgerMusicPlayer 的魔改版（产品名 LYMusic / LYMusicPlayer）
 
 ## 项目结构
 
@@ -21,7 +23,7 @@
 ### 项目结构
 
 ```
-AlgerMusicPlayer/
+LYMusicPlayer/
 ├── build/                  # 构建相关文件
 ├── docs/                   # 项目文档
 ├── node_modules/           # 依赖包
