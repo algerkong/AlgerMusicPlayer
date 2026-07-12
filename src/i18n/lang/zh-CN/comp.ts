@@ -268,7 +268,6 @@ export default {
   home: '首页',
   search: '搜索',
   album: '专辑',
-  localMusic: '本地音乐',
   pages: {
     toplist: {
       desc: '最具权威的音乐榜单，发现当下最热门的音乐'

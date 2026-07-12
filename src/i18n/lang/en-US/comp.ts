@@ -276,7 +276,6 @@ export default {
   home: 'Home',
   search: 'Search',
   album: 'Album',
-  localMusic: 'Local Music',
   pages: {
     toplist: {
       desc: 'The most authoritative music charts, discover the hottest music'

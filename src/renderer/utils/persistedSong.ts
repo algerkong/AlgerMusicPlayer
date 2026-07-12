@@ -6,12 +6,11 @@
 // 字段也是只在运行时有意义的派生数据。一旦撑爆配额，整个 store 写入失败 → 历史记录、
 // 当前播放、播放列表全部丢失。
 //
-// 现在源头（src/main/modules/localMusicScanner.ts + filePathToLocalUrl）已经把
-// 本地音乐封面落盘，picUrl 是 local:// 短引用；这个工具兜底两件事：
+// 封面落盘后 picUrl 多为 local:// 短引用；这个工具兜底两件事：
 //   1. 老用户从 base64 版本升级上来时，剥离已写入 localStorage 的脏数据
 //   2. 远程音乐的 lyric/expiredAt 等大字段从持久化路径切走（重启后 API 重拉即可）
 //
-// 仅 local:// 的 playMusicUrl 会保留——本地音乐 URL 永不过期，恢复后免重新解析。
+// 仅 local:// 的 playMusicUrl 会保留——本地文件 URL 永不过期，恢复后免重新解析。
 // 其他 URL（云端、缓存代理）会过期，丢掉让恢复时重新拉。
 
 import type { Artist, SongResult } from '@/types/music';

@@ -268,7 +268,7 @@ export default {
   home: '首頁',
   search: '搜尋',
   album: '專輯',
-  localMusic: '本地音樂',
+
   pages: {
     toplist: {
       desc: '最具權威的音樂榜單，發現當下最熱門的音樂'

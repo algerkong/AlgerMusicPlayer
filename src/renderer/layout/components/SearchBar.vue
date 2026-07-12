@@ -1,7 +1,7 @@
 <template>
   <div class="search-bar-row flex items-center gap-2 pb-4 pr-4 pl-1">
     <!-- ── LEFT: Tabs / 返回 ─────────────────────────── -->
-    <div v-if="!showBackButton" class="tabs-track flex-shrink-0" ref="tabsTrackRef">
+    <div v-if="!showBackButton" class="tabs-track flex-shrink-0">
       <div class="tab-slider-bg" :style="sliderStyle" />
       <button
         v-for="(tab, i) in tabs"
@@ -216,24 +216,13 @@ const showBackButton = computed(() => {
 const goBack = () => router.back();
 
 // ── Tabs ──────────────────────────────────────────────
-const tabs = computed(() => {
-  const items = [
-    { key: 'home', label: t('comp.home'), path: '/', icon: 'ri-home-4-fill' },
-    { key: 'playlist', label: t('comp.list'), path: '/list', icon: 'ri-play-list-2-fill' },
-    {
-      key: 'localMusic',
-      label: t('comp.localMusic'),
-      path: '/local-music',
-      icon: 'ri-folder-music-fill',
-      electronOnly: true
-    }
-  ];
-  return items.filter((tab) => !tab.electronOnly || isElectron);
-});
+const tabs = computed(() => [
+  { key: 'home', label: t('comp.home'), path: '/', icon: 'ri-home-4-fill' },
+  { key: 'playlist', label: t('comp.list'), path: '/list', icon: 'ri-play-list-2-fill' }
+]);
 const isTabActive = (path: string) => route.path === path;
 
 // Sliding pill
-const tabsTrackRef = ref<HTMLElement | null>(null);
 const tabElsRef = ref<HTMLElement[]>([]);
 const setTabRef = (el: HTMLElement, i: number) => {
   if (el) tabElsRef.value[i] = el;
@@ -645,8 +634,8 @@ const selectItem = (key: string) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 32px;
-  height: 32px;
+  min-width: var(--bar-h);
+  height: var(--bar-h);
   padding: 2px;
   border-radius: 9999px;
   border: 1px solid var(--chrome-border);
@@ -657,6 +646,7 @@ const selectItem = (key: string) => {
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
+  box-sizing: border-box;
 }
 .user-btn:hover {
   border-color: #22c55e;
@@ -664,10 +654,10 @@ const selectItem = (key: string) => {
 }
 
 .login-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: #6b7280;
-  padding: 0 8px;
+  padding: 0 10px;
 }
 .dark .login-label {
   color: #9ca3af;

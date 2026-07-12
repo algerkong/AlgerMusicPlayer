@@ -48,19 +48,6 @@ const layoutRouter = [
     }
   },
   {
-    path: '/local-music',
-    name: 'localMusic',
-    meta: {
-      title: 'comp.localMusic',
-      icon: 'ri-folder-music-fill',
-      keepAlive: true,
-      isMobile: false,
-      electronOnly: true,
-      hideInSidebar: true
-    },
-    component: () => import('@/views/local-music/index.vue')
-  },
-  {
     path: '/user',
     name: 'user',
     meta: {

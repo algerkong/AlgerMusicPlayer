@@ -17,7 +17,6 @@ import { cloneDeep } from 'lodash';
 import { darkTheme, lightTheme } from 'naive-ui';
 import { computed, nextTick, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
 
 import DisclaimerModal from '@/components/common/DisclaimerModal.vue';
 import TrafficWarningDrawer from '@/components/TrafficWarningDrawer.vue';
@@ -38,7 +37,6 @@ const settingsStore = useSettingsStore();
 const playerStore = usePlayerStore();
 const playerCoreStore = usePlayerCoreStore();
 const userStore = useUserStore();
-const router = useRouter();
 
 // 监听语言变化
 watch(
@@ -106,20 +104,6 @@ onMounted(async () => {
   if (isLyricWindow.value) {
     return;
   }
-
-  // 检查网络状态，离线时自动跳转到本地音乐页面
-  if (!navigator.onLine) {
-    router.push('/local-music');
-  }
-
-  // 监听网络状态变化，断网时跳转到本地音乐页面
-  const handleOffline = () => {
-    router.push('/local-music');
-  };
-  window.addEventListener('offline', handleOffline);
-  onUnmounted(() => {
-    window.removeEventListener('offline', handleOffline);
-  });
 
   // 初始化 MusicHook，注入 playerStore
   initMusicHook(playerStore);

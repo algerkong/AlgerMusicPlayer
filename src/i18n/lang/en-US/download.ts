@@ -1,6 +1,5 @@
 export default {
   title: 'Download Manager',
-  localMusic: 'Local Music',
   count: '{count} songs in total',
   clearAll: 'Clear All',
   settings: 'Settings',

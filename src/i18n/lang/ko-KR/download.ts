@@ -1,6 +1,5 @@
 export default {
   title: '다운로드 관리',
-  localMusic: '로컬 음악',
   count: '총 {count}곡',
   clearAll: '기록 지우기',
   settings: '설정',

@@ -18,7 +18,6 @@ pinia.use(({ store }) => {
 export * from './modules/download';
 export * from './modules/favorite';
 export * from './modules/intelligenceMode';
-export * from './modules/localMusic';
 export * from './modules/lyric';
 export * from './modules/menu';
 export * from './modules/music';

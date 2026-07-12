@@ -4,13 +4,9 @@
       <div class="home-content w-full pb-32 page-padding max-w-3xl mx-auto pt-12">
         <div class="space-y-6">
           <h1 class="home-title text-3xl font-bold">LYMusic</h1>
-          <p class="home-desc text-base leading-relaxed">本地音乐播放器。在线音源将接入独立库。</p>
+          <p class="home-desc text-base leading-relaxed">音乐播放器。在线音源由独立库提供。</p>
           <div class="flex flex-wrap gap-3 pt-2">
-            <n-button type="primary" @click="router.push('/local-music')">
-              <template #icon><i class="ri-folder-music-fill" /></template>
-              本地音乐
-            </n-button>
-            <n-button @click="router.push('/search')">
+            <n-button type="primary" @click="router.push('/search')">
               <template #icon><i class="ri-search-line" /></template>
               搜索
             </n-button>

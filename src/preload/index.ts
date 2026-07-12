@@ -54,22 +54,13 @@ const api = {
       'get-system-fonts',
       'get-cached-lyric',
       'cache-lyric',
-      'clear-lyric-cache',
-      'scan-local-music',
-      'scan-local-music-with-stats',
-      'parse-local-music-metadata'
+      'clear-lyric-cache'
     ];
     if (validChannels.includes(channel)) {
       return ipcRenderer.invoke(channel, ...args);
     }
     return Promise.reject(new Error(`未授权的 IPC 通道: ${channel}`));
   },
-  // 本地音乐扫描相关
-  scanLocalMusic: (folderPath: string) => ipcRenderer.invoke('scan-local-music', folderPath),
-  scanLocalMusicWithStats: (folderPath: string) =>
-    ipcRenderer.invoke('scan-local-music-with-stats', folderPath),
-  parseLocalMusicMetadata: (filePaths: string[]) =>
-    ipcRenderer.invoke('parse-local-music-metadata', filePaths),
 
   // Download manager
   downloadAdd: (task: any) => ipcRenderer.invoke('download:add', task),

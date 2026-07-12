@@ -1,6 +1,5 @@
 export default {
   title: '下載管理',
-  localMusic: '本機音樂',
   count: '共 {count} 首歌曲',
   clearAll: '清空記錄',
   settings: '設定',
