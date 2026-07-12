@@ -1,6 +1,6 @@
 <template>
   <div class="app-container h-full w-full" :class="{ mobile: isMobile, noElectron: !isElectron }">
-    <n-config-provider :theme="theme === 'dark' ? darkTheme : lightTheme">
+    <n-config-provider :theme="darkTheme">
       <n-dialog-provider>
         <n-message-provider>
           <router-view></router-view>
@@ -14,8 +14,8 @@
 
 <script setup lang="ts">
 import { cloneDeep } from 'lodash';
-import { darkTheme, lightTheme } from 'naive-ui';
-import { computed, nextTick, onMounted, watch } from 'vue';
+import { darkTheme } from 'naive-ui';
+import { nextTick, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import DisclaimerModal from '@/components/common/DisclaimerModal.vue';
@@ -48,10 +48,6 @@ watch(
   },
   { immediate: true }
 );
-
-const theme = computed(() => {
-  return settingsStore.theme;
-});
 
 // 监听字体变化并应用
 watch(

@@ -1,35 +1,6 @@
 <template>
   <setting-section :title="t('settings.sections.basic')">
     <setting-item
-      :title="t('settings.basic.themeMode')"
-      :description="t('settings.basic.themeModeDesc')"
-    >
-      <template #action>
-        <div class="flex items-center gap-3 max-md:flex-wrap">
-          <div class="flex items-center gap-2">
-            <n-switch v-model:value="setData.autoTheme" @update:value="handleAutoThemeChange">
-              <template #checked><i class="ri-smartphone-line"></i></template>
-              <template #unchecked><i class="ri-settings-line"></i></template>
-            </n-switch>
-            <span class="text-sm text-gray-500 max-md:hidden">
-              {{
-                setData.autoTheme ? t('settings.basic.autoTheme') : t('settings.basic.manualTheme')
-              }}
-            </span>
-          </div>
-          <n-switch
-            v-model:value="isDarkTheme"
-            :disabled="setData.autoTheme"
-            :class="{ 'opacity-50': setData.autoTheme }"
-          >
-            <template #checked><i class="ri-moon-line"></i></template>
-            <template #unchecked><i class="ri-sun-line"></i></template>
-          </n-switch>
-        </div>
-      </template>
-    </setting-item>
-
-    <setting-item
       :title="t('settings.basic.language')"
       :description="t('settings.basic.languageDesc')"
     >
@@ -219,15 +190,6 @@ const { t } = useI18n();
 const settingsStore = useSettingsStore();
 const setData = inject(SETTINGS_DATA_KEY)!;
 const message = inject(SETTINGS_MESSAGE_KEY)!;
-
-const isDarkTheme = computed({
-  get: () => settingsStore.theme === 'dark',
-  set: () => settingsStore.toggleTheme()
-});
-
-const handleAutoThemeChange = (value: boolean) => {
-  settingsStore.setAutoTheme(value);
-};
 
 const gpuAccelerationChanged = ref(false);
 const showSessionModal = ref(false);

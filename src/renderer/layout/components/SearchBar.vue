@@ -94,16 +94,6 @@
       }}
     </n-tooltip>
 
-    <!-- 主题（从面板拆出） -->
-    <n-tooltip trigger="hover">
-      <template #trigger>
-        <button class="action-btn" @click="isDark = !isDark">
-          <i :class="isDark ? 'ri-moon-line' : 'ri-sun-line'" />
-        </button>
-      </template>
-      {{ t('comp.searchBar.theme') }}
-    </n-tooltip>
-
     <!-- 用户 / 登录（面板内不再重复「去登录」） -->
     <n-popover trigger="hover" placement="bottom-end" :show-arrow="false" raw>
       <template #trigger>
@@ -312,11 +302,6 @@ const handleKeydown = (e: KeyboardEvent) => {
 
 // ── User / misc ───────────────────────────────────────
 const toLogin = () => router.push('/user');
-
-const isDark = computed({
-  get: () => settingsStore.theme === 'dark',
-  set: () => settingsStore.toggleTheme()
-});
 
 const selectItem = (key: string) => {
   switch (key) {
