@@ -14,7 +14,7 @@ git checkout -b feat/my-feature
 
 # 2. 开发 + 小步提交
 git add -A
-git commit -m "feat(scope): describe the change"
+git commit -m "feat(scope): 用中文说清楚改了啥"
 
 # 3. 推送并开 PR（越早越好，可用 Draft）
 git push -u origin HEAD
@@ -67,4 +67,4 @@ npm run build          # 生成 auto-import d.ts 后再 typecheck 更稳
 npm run typecheck
 ```
 
-PR 标题示例：`feat(search): default songs on empty query`
+PR 标题示例：`feat(search): 空搜索也给点默认歌听听`（中文说明、不要 emoji）
