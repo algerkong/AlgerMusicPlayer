@@ -1,22 +1,7 @@
 <template>
   <div class="search-bar-row flex items-center gap-2 pb-4 pr-4 pl-1">
-    <!-- ── LEFT: Tabs / 返回 ─────────────────────────── -->
-    <div v-if="!showBackButton" class="tabs-track flex-shrink-0">
-      <div class="tab-slider-bg" :style="sliderStyle" />
-      <button
-        v-for="(tab, i) in tabs"
-        :key="tab.key"
-        :ref="(el) => setTabRef(el as HTMLElement, i)"
-        class="tab-btn"
-        :class="isTabActive(tab.path) ? 'tab-btn--on' : 'tab-btn--off'"
-        @click="router.push(tab.path)"
-      >
-        <i :class="tab.icon" />
-        <span>{{ tab.label }}</span>
-      </button>
-    </div>
-
-    <div v-else class="flex items-center gap-2 flex-shrink-0">
+    <!-- 首页 / 歌单切换已搬到侧栏滑块，顶栏只留返回 -->
+    <div v-if="showBackButton" class="flex items-center gap-2 flex-shrink-0">
       <button class="back-btn" @click="goBack">
         <i class="ri-arrow-left-line" />
       </button>
@@ -152,7 +137,7 @@
 import { useDebounceFn } from '@vueuse/core';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 
 import { SEARCH_TYPE } from '@/const/bar-const';
 import { useDownloadStore } from '@/store/modules/download';
@@ -164,7 +149,6 @@ import { useUserStore } from '@/store/modules/user';
 import { getImgUrl, isElectron } from '@/utils';
 
 const router = useRouter();
-const route = useRoute();
 const navTitleStore = useNavTitleStore();
 const searchStore = useSearchStore();
 const settingsStore = useSettingsStore();
@@ -200,29 +184,6 @@ const showBackButton = computed(() => {
   return meta.back === true;
 });
 const goBack = () => router.back();
-
-// ── Tabs ──────────────────────────────────────────────
-const tabs = computed(() => [
-  { key: 'home', label: t('comp.home'), path: '/', icon: 'ri-home-4-fill' },
-  { key: 'playlist', label: t('comp.list'), path: '/list', icon: 'ri-play-list-2-fill' }
-]);
-const isTabActive = (path: string) => route.path === path;
-
-// Sliding pill
-const tabElsRef = ref<HTMLElement[]>([]);
-const setTabRef = (el: HTMLElement, i: number) => {
-  if (el) tabElsRef.value[i] = el;
-};
-const activeTabIndex = computed(() => tabs.value.findIndex((t) => isTabActive(t.path)));
-const sliderStyle = computed(() => {
-  const el = tabElsRef.value[activeTabIndex.value];
-  if (!el) return { opacity: '0' };
-  return {
-    transform: `translateX(${el.offsetLeft}px)`,
-    width: `${el.offsetWidth}px`,
-    opacity: '1'
-  };
-});
 
 // ── Search expand / collapse（悬停立即展开，无延迟）────
 const isSearchExpanded = ref(false);
@@ -369,69 +330,6 @@ const selectItem = (key: string) => {
 /* 整条顶栏控件统一高度 */
 .search-bar-row {
   --bar-h: 42px;
-}
-
-/* ── Tab track ───────────────────────────────────────── */
-.tabs-track {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  height: var(--bar-h);
-  background: var(--chrome-surface);
-  border: 1px solid var(--chrome-border);
-  backdrop-filter: blur(var(--chrome-blur));
-  -webkit-backdrop-filter: blur(var(--chrome-blur));
-  border-radius: 9999px;
-  padding: 4px;
-  gap: 0;
-  box-sizing: border-box;
-}
-
-.tab-slider-bg {
-  position: absolute;
-  top: 4px;
-  left: 0;
-  height: calc(100% - 8px);
-  border-radius: 9999px;
-  background: #22c55e;
-  box-shadow: 0 1px 6px rgba(34, 197, 94, 0.35);
-  transition:
-    transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1),
-    width 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.tab-btn {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  border-radius: 9999px;
-  font-size: 13.5px;
-  font-weight: 600;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: color 0.2s;
-}
-.tab-btn--on {
-  color: #fff;
-}
-.tab-btn--off {
-  color: #6b7280;
-}
-.dark .tab-btn--off {
-  color: #9ca3af;
-}
-.tab-btn--off:hover {
-  color: #111827;
-}
-.dark .tab-btn--off:hover {
-  color: #f9fafb;
 }
 
 /* ── Back button ─────────────────────────────────────── */
