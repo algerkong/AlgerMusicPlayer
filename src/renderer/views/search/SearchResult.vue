@@ -9,6 +9,7 @@
           <p class="text-sm text-neutral-500 mt-1">{{ t('search.title.searchList') }}</p>
         </div>
 
+        <!-- 结果分类导航：单曲 / 专辑 / 歌单 -->
         <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
           <button
             v-for="type in typeOptions"
@@ -19,7 +20,7 @@
                 ? 'bg-primary text-white'
                 : 'bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400'
             "
-            @click="searchType = type.key"
+            @click="setSearchType(type.key)"
           >
             {{ type.label }}
           </button>
@@ -108,7 +109,8 @@ const message = useMessage();
 const playerStore = usePlayerStore();
 
 const keyword = computed(() => String(route.query.keyword || '').trim());
-const searchType = ref(Number(route.query.type) || SEARCH_TYPE.MUSIC);
+/** 与 URL ?type= 同步；默认单曲 */
+const searchType = computed(() => Number(route.query.type) || SEARCH_TYPE.MUSIC);
 const loading = ref(false);
 const songs = ref<SongResult[]>([]);
 const playlists = ref<any[]>([]);
@@ -116,9 +118,17 @@ const albums = ref<any[]>([]);
 
 const typeOptions = computed(() => [
   { key: SEARCH_TYPE.MUSIC, label: t('search.search.single') },
-  { key: SEARCH_TYPE.PLAYLIST, label: t('search.search.playlist') },
-  { key: SEARCH_TYPE.ALBUM, label: t('search.search.album') }
+  { key: SEARCH_TYPE.ALBUM, label: t('search.search.album') },
+  { key: SEARCH_TYPE.PLAYLIST, label: t('search.search.playlist') }
 ]);
+
+const setSearchType = (type: number) => {
+  if (type === searchType.value) return;
+  router.replace({
+    path: '/search-result',
+    query: { keyword: keyword.value, type: String(type) }
+  });
+};
 
 const gridItems = computed(() =>
   searchType.value === SEARCH_TYPE.PLAYLIST ? playlists.value : albums.value

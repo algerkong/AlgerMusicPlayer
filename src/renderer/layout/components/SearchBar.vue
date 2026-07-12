@@ -56,20 +56,6 @@
               @focus="handleFocus"
               @blur="handleBlur"
             />
-            <n-dropdown
-              v-if="searchTypeOptions.length && isSearchExpanded"
-              trigger="hover"
-              :options="searchTypeOptions"
-              @select="selectSearchType"
-              @mousedown.prevent
-            >
-              <div class="type-chip" @mousedown.prevent>
-                <span>{{
-                  searchTypeOptions.find((i) => i.key === searchStore.searchType)?.label
-                }}</span>
-                <i class="iconfont icon-xiasanjiaoxing text-[10px]" />
-              </div>
-            </n-dropdown>
           </div>
         </template>
         <div class="suggestions-box">
@@ -164,11 +150,11 @@
 
 <script lang="ts" setup>
 import { useDebounceFn } from '@vueuse/core';
-import { computed, nextTick, ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
-import { SEARCH_TYPES } from '@/const/bar-const';
+import { SEARCH_TYPE } from '@/const/bar-const';
 import { useDownloadStore } from '@/store/modules/download';
 import { useIntelligenceModeStore } from '@/store/modules/intelligenceMode';
 import { useNavTitleStore } from '@/store/modules/navTitle';
@@ -183,7 +169,7 @@ const navTitleStore = useNavTitleStore();
 const searchStore = useSearchStore();
 const settingsStore = useSettingsStore();
 const userStore = useUserStore();
-const { t, locale } = useI18n();
+const { t } = useI18n();
 
 const intelligenceModeStore = useIntelligenceModeStore();
 const downloadStore = useDownloadStore();
@@ -294,7 +280,8 @@ const search = () => {
     searchValue.value = hotSearchValue.value;
     return;
   }
-  const q = { keyword: val, type: searchStore.searchType };
+  // 搜索框默认搜单曲；专辑 / 歌单在结果页导航切换
+  const q = { keyword: val, type: String(SEARCH_TYPE.MUSIC) };
   if (router.currentRoute.value.path === '/search-result') {
     searchStore.searchValue = val;
     router.replace({ path: '/search-result', query: q });
@@ -303,21 +290,6 @@ const search = () => {
   }
   showSuggestions.value = false;
 };
-
-const selectSearchType = (key: number) => {
-  searchStore.searchType = key;
-  if (searchValue.value)
-    router.push({ path: '/search-result', query: { keyword: searchValue.value, type: key } });
-  nextTick(() => inputRef.value?.focus());
-};
-
-const rawSearchTypes = ref(SEARCH_TYPES);
-const searchTypeOptions = computed(() => {
-  locale.value;
-  return rawSearchTypes.value
-    .filter(() => isElectron)
-    .map((type) => ({ label: t(type.label), key: type.key }));
-});
 
 const suggestions = ref<string[]>([]);
 const showSuggestions = ref(false);
@@ -558,36 +530,6 @@ const selectItem = (key: string) => {
 }
 .search-input::placeholder {
   color: #9ca3af;
-}
-
-.type-chip {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: #f3f4f6;
-  font-size: 12px;
-  font-weight: 500;
-  color: #6b7280;
-  cursor: pointer;
-  white-space: nowrap;
-  transition:
-    background 0.15s,
-    color 0.15s;
-  flex-shrink: 0;
-}
-.dark .type-chip {
-  background: #1f2937;
-  color: #9ca3af;
-}
-.type-chip:hover {
-  background: #dcfce7;
-  color: #16a34a;
-}
-.dark .type-chip:hover {
-  background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
 }
 
 /* ── Action buttons ──────────────────────────────────── */
