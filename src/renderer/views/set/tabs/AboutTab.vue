@@ -71,7 +71,6 @@ import { useI18n } from 'vue-i18n';
 
 import appIcon from '@/assets/icon.png';
 import qishuiIcon from '@/assets/qishui-icon.png';
-import { Button } from '@/components/ui/button';
 import { useSettingsStore } from '@/store/modules/settings';
 import { isElectron } from '@/utils';
 import { checkUpdate, UpdateResult } from '@/utils/update';
@@ -79,6 +78,7 @@ import { checkUpdate, UpdateResult } from '@/utils/update';
 import config from '../../../../../package.json';
 import { APP_UPDATE_STATUS, hasAvailableAppUpdate } from '../../../../shared/appUpdate';
 import { SETTINGS_DATA_KEY, SETTINGS_MESSAGE_KEY } from '../keys';
+import SBtn from '../SBtn.vue';
 
 const { t } = useI18n();
 const settingsStore = useSettingsStore();
