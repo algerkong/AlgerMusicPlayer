@@ -68,8 +68,25 @@ export interface SongResult {
   dt?: number;
   isFirstPlay?: boolean;
   isPodcast?: boolean;
-  /** 平台侧 VIP/会员曲（汽水 label_info 等） */
+  /** 平台侧 VIP/会员曲（汽水 label_info.only_vip_playable） */
   isVip?: boolean;
+  /** 原唱：label_info.is_original === true；undefined 未知 */
+  isOriginal?: boolean;
+  /** 限免 */
+  isLimitedFree?: boolean;
+  limitedFreeExpireAt?: number;
+  hasPreview?: boolean;
+  preview?: { startMs: number; durationMs: number; vid?: string };
+  isDigital?: boolean;
+  digital?: {
+    paymentItemId?: string;
+    amount?: number;
+    paymentItemType?: number;
+    onlineDate?: number;
+  };
+  genreTags?: string[];
+  lyricists?: string[];
+  composers?: string[];
 }
 
 export interface Song {

@@ -45,7 +45,16 @@
               >（{{ item.tns?.[0] || item.alia?.[0] }}）</span
             ></n-ellipsis
           >
-          <span v-if="item.isVip" class="vip-badge" title="VIP">VIP</span>
+          <span v-if="item.isVip" class="song-badge song-badge--vip" title="VIP">VIP</span>
+          <span v-if="item.isOriginal" class="song-badge song-badge--original" title="原唱"
+            >原唱</span
+          >
+          <span v-if="item.isLimitedFree" class="song-badge song-badge--free" title="限免"
+            >限免</span
+          >
+          <span v-if="item.isDigital" class="song-badge song-badge--digital" title="数字专辑"
+            >数字</span
+          >
         </div>
         <div class="song-item-content-name">
           <n-ellipsis class="text-ellipsis" line-clamp="1">
@@ -181,7 +190,7 @@ const onPlayNext = () => {
     }
   }
 
-  .vip-badge {
+  .song-badge {
     flex-shrink: 0;
     font-size: 0.65rem;
     font-weight: 700;
@@ -189,9 +198,30 @@ const onPlayNext = () => {
     letter-spacing: 0.02em;
     padding: 0.2rem 0.35rem;
     border-radius: 0.25rem;
+  }
+
+  .song-badge--vip {
     color: #92400e;
     background: linear-gradient(135deg, #fde68a 0%, #fbbf24 100%);
     border: 1px solid rgba(217, 119, 6, 0.35);
+  }
+
+  .song-badge--original {
+    color: #166534;
+    background: rgba(34, 197, 94, 0.14);
+    border: 1px solid rgba(34, 197, 94, 0.35);
+  }
+
+  .song-badge--free {
+    color: #1d4ed8;
+    background: rgba(59, 130, 246, 0.14);
+    border: 1px solid rgba(59, 130, 246, 0.35);
+  }
+
+  .song-badge--digital {
+    color: #6b21a8;
+    background: rgba(168, 85, 247, 0.14);
+    border: 1px solid rgba(168, 85, 247, 0.35);
   }
 
   .song-item-operating {

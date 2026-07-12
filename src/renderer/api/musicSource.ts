@@ -11,6 +11,19 @@ export interface MsArtist {
   avatarUrl?: string;
 }
 
+export interface MsSongPreview {
+  startMs: number;
+  durationMs: number;
+  vid?: string;
+}
+
+export interface MsSongDigital {
+  paymentItemId?: string;
+  amount?: number;
+  paymentItemType?: number;
+  onlineDate?: number;
+}
+
 export interface MsSong {
   platform: string;
   id: string;
@@ -20,6 +33,16 @@ export interface MsSong {
   coverUrl?: string;
   durationMs?: number;
   isVip?: boolean;
+  isOriginal?: boolean;
+  isLimitedFree?: boolean;
+  limitedFreeExpireAt?: number;
+  hasPreview?: boolean;
+  preview?: MsSongPreview;
+  isDigital?: boolean;
+  digital?: MsSongDigital;
+  genreTags?: string[];
+  lyricists?: string[];
+  composers?: string[];
 }
 
 export interface MsPlaylist {
@@ -155,7 +178,17 @@ export function mapMsSongToSongResult(song: MsSong): SongResult {
     dt: song.durationMs,
     source: song.platform || 'qishui',
     count: 0,
-    isVip: Boolean(song.isVip)
+    isVip: Boolean(song.isVip),
+    isOriginal: song.isOriginal,
+    isLimitedFree: Boolean(song.isLimitedFree),
+    limitedFreeExpireAt: song.limitedFreeExpireAt,
+    hasPreview: Boolean(song.hasPreview),
+    preview: song.preview,
+    isDigital: Boolean(song.isDigital),
+    digital: song.digital,
+    genreTags: song.genreTags,
+    lyricists: song.lyricists,
+    composers: song.composers
   };
 }
 
