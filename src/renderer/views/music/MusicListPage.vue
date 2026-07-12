@@ -1,24 +1,29 @@
 <template>
-  <div class="music-list-page h-full w-full bg-white dark:bg-black page-padding">
-    <n-spin :show="loading && !songList.length" class="h-full">
-      <div v-if="!songList.length && !loading" class="h-full flex items-center justify-center">
-        <n-empty :description="emptyDesc" />
-      </div>
-      <template v-else-if="songList.length || loadingMore">
-        <div class="flex items-center justify-between py-4 gap-4">
-          <div class="min-w-0">
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white truncate">{{ name }}</h1>
-            <p class="text-sm text-gray-500 mt-1">
-              {{ displayCount }}
-              <span v-if="hasMore" class="opacity-70"> · 滚动加载更多</span>
-            </p>
-          </div>
-          <n-button type="primary" :disabled="!songList.length" @click="handlePlayAll">
-            <template #icon><i class="ri-play-fill" /></template>
-            播放全部
-          </n-button>
+  <div
+    class="music-list-page h-full w-full min-h-0 flex flex-col bg-white dark:bg-black page-padding"
+  >
+    <div v-if="loading && !songList.length" class="flex-1 flex items-center justify-center">
+      <n-spin size="large" />
+    </div>
+    <div v-else-if="!songList.length" class="flex-1 flex items-center justify-center">
+      <n-empty :description="emptyDesc" />
+    </div>
+    <template v-else>
+      <div class="flex items-center justify-between py-4 gap-4 flex-shrink-0">
+        <div class="min-w-0">
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white truncate">{{ name }}</h1>
+          <p class="text-sm text-gray-500 mt-1">
+            {{ displayCount }}
+            <span v-if="hasMore" class="opacity-70"> · 滚动加载更多</span>
+          </p>
         </div>
-        <n-scrollbar class="h-[calc(100%-88px)]" @scroll="onScroll">
+        <n-button type="primary" :disabled="!songList.length" @click="handlePlayAll">
+          <template #icon><i class="ri-play-fill" /></template>
+          播放全部
+        </n-button>
+      </div>
+      <div class="flex-1 min-h-0">
+        <n-scrollbar class="h-full" @scroll="onScroll">
           <div class="space-y-1 pb-32">
             <song-item
               v-for="(song, index) in songList"
@@ -35,8 +40,8 @@
             </div>
           </div>
         </n-scrollbar>
-      </template>
-    </n-spin>
+      </div>
+    </template>
   </div>
 </template>
 
