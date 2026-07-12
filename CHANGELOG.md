@@ -1,5 +1,15 @@
 # 更新日志
 
+> 协作流程（GitHub Flow、分支与 PR 约定）见 [AGENTS.md](./AGENTS.md)。
+
+## Unreleased
+
+### 📚 文档
+
+- 新增 `AGENTS.md`：贡献与 AI 代理指南，强调优秀 GitHub Flow（多分支并行、小 PR、`main` 可发布）
+- 刷新 `README.md`、`DEV.md`：对齐当前架构（`ly-music-source`、本地库移除等）
+- 新增 `docs/README.md`、`docs/github-flow.md`；PR 模板补充 Flow 自查项
+
 ## v5.1.0
 
 ### ✨ 新功能
