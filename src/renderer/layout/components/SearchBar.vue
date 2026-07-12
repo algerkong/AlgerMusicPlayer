@@ -36,6 +36,16 @@
               @focus="handleFocus"
               @blur="handleBlur"
             />
+            <button
+              v-if="searchValue"
+              type="button"
+              class="search-clear-btn"
+              :aria-label="t('common.clear')"
+              @mousedown.prevent
+              @click="clearSearch"
+            >
+              <i class="ri-close-line" />
+            </button>
           </div>
         </template>
         <div class="suggestions-box">
@@ -130,7 +140,7 @@
 
 <script lang="ts" setup>
 import { useDebounceFn } from '@vueuse/core';
-import { computed, ref, watch } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
@@ -207,6 +217,16 @@ const handleBlur = () => {
   // 失焦收起建议；展开状态由悬停决定，立即同步，不 setTimeout
   showSuggestions.value = false;
   syncSearchExpand();
+};
+
+const clearSearch = () => {
+  searchValue.value = '';
+  searchStore.searchValue = '';
+  suggestions.value = [];
+  showSuggestions.value = false;
+  highlightedIndex.value = -1;
+  // 清完继续打字，别让焦点跑了
+  nextTick(() => inputRef.value?.focus());
 };
 
 // ── Search logic ──────────────────────────────────────
@@ -391,6 +411,33 @@ const selectItem = (key: string) => {
 }
 .search-input::placeholder {
   color: #9ca3af;
+}
+
+.search-clear-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 2px;
+  border: none;
+  border-radius: 9999px;
+  background: rgba(156, 163, 175, 0.28);
+  color: #6b7280;
+  font-size: 14px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.dark .search-clear-btn {
+  background: rgba(156, 163, 175, 0.22);
+  color: #d1d5db;
+}
+.search-clear-btn:hover {
+  background: rgba(34, 197, 94, 0.2);
+  color: #16a34a;
 }
 
 /* ── Action buttons ──────────────────────────────────── */

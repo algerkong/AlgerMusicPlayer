@@ -102,12 +102,13 @@ onMounted(() => {
 
 const { t } = useI18n();
 
-/** 桌面侧栏显示返回；移动端走 MobileHeader，底栏不塞返回 */
+/**
+ * 桌面侧栏显示返回；移动端走 MobileHeader，底栏不塞返回。
+ * 注意：utils 的 isMobile 是 computed，必须 .value，否则对象恒为真会把返回键永久藏起来。
+ */
 const showBack = computed(() => {
-  if (isMobile) return false;
-  const meta = route.meta;
-  if (meta.isMobile === false) return false;
-  return meta.back === true;
+  if (isMobile.value) return false;
+  return route.meta.back === true;
 });
 
 const goBack = () => {
