@@ -250,6 +250,9 @@ export function initializeMusicSource(): void {
         bitrate: result.bitrate,
         size: result.size,
         isPreview: result.isPreview,
+        previewStartMs: result.previewStartMs,
+        previewDurationMs: result.previewDurationMs,
+        lyricTranslations: result.lyricTranslations,
         expireAt: result.expireAt
       });
     } catch (error) {
@@ -260,13 +263,14 @@ export function initializeMusicSource(): void {
   ipcMain.handle('music-source:get-lyric', async (_e, songId: string) => {
     try {
       const lyric = await getClient().getLyric(String(songId));
-      // Serialize lines only (no Buffer)
+      // 序列化可 JSON 字段（无 Buffer）；translations 必须带回，否则译文永远空
       return wrapOk({
         platform: lyric.platform,
         songId: lyric.songId,
         type: lyric.type,
         lines: lyric.lines,
-        raw: lyric.raw
+        raw: lyric.raw,
+        translations: lyric.translations
       });
     } catch (error) {
       return toIpcError(error);

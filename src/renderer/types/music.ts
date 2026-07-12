@@ -77,6 +77,11 @@ export interface SongResult {
   limitedFreeExpireAt?: number;
   hasPreview?: boolean;
   preview?: { startMs: number; durationMs: number; vid?: string };
+  /**
+   * 当前解析到的流是否为试听片段（非全曲）。
+   * true 时歌词时钟 = 音频进度 + preview.startMs。
+   */
+  isPreviewStream?: boolean;
   isDigital?: boolean;
   digital?: {
     paymentItemId?: string;

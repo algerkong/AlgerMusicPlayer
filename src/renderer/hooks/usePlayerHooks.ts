@@ -1,7 +1,17 @@
-import { msGetLyric, msLyricToILyric, msLyricToLrc, msResolve } from '@/api/musicSource';
+import {
+  attachTranslationLrc,
+  cacheLyricTranslations,
+  msGetLyric,
+  msLyricToILyric,
+  msLyricToLrc,
+  msResolve,
+  pickMsTranslationLrc,
+  takeCachedLyricTranslations
+} from '@/api/musicSource';
 import { playbackRequestManager } from '@/services/playbackRequestManager';
 import type { ILyric, ILyricText, IWordData, SongResult } from '@/types/music';
 import { getSetData, isElectron } from '@/utils';
+import { isPreviewStreamUrl, restorePreviewStreamFlags } from '@/utils/previewStream';
 import { parseLyrics as parseYrcLyrics } from '@/utils/yrcParser';
 
 type DiskCacheResolveResult = {
@@ -65,12 +75,21 @@ export const getSongUrl = async (
   }
 
   if (songData.playMusicUrl) {
-    if (isDownloaded) return songData.playMusicUrl;
-    // local:// 已是可播路径
-    if (songData.playMusicUrl.startsWith('local://')) {
-      return songData.playMusicUrl;
+    // 复用缓存 URL 时也要恢复试听标记（否则切回第一首 isPreviewStream 丢失 → 歌词错位）
+    restorePreviewStreamFlags(songData);
+    // 有试听文件路径却丢了 startMs：必须重 resolve，否则歌词 base=0
+    const needPreviewMeta =
+      (songData.isPreviewStream || isPreviewStreamUrl(songData.playMusicUrl)) &&
+      !(Number(songData.preview?.startMs) > 0);
+    if (!needPreviewMeta) {
+      if (isDownloaded) return songData.playMusicUrl;
+      if (songData.playMusicUrl.startsWith('local://')) {
+        return songData.playMusicUrl;
+      }
+      return await resolveCachedPlaybackUrl(songData.playMusicUrl, songData);
     }
-    return await resolveCachedPlaybackUrl(songData.playMusicUrl, songData);
+    console.warn(`[getSongUrl] 试听 URL 缺少 startMs，重新 resolve id=${id}`);
+    songData.playMusicUrl = undefined;
   }
 
   if (!isElectron) {
@@ -113,8 +132,27 @@ export const getSongUrl = async (
       return null;
     }
 
+    // 试听片段：写入 song，供歌词时钟加 preview.start 偏移
     if (result.isPreview) {
-      console.warn(`[getSongUrl] 预览流 (id=${id})`);
+      console.warn(
+        `[getSongUrl] 试听流 id=${id} startMs=${result.previewStartMs ?? 0} durMs=${result.previewDurationMs ?? '?'}`
+      );
+      songData.isPreviewStream = true;
+      songData.preview = {
+        startMs: Number(result.previewStartMs) || songData.preview?.startMs || 0,
+        durationMs: Number(result.previewDurationMs) || songData.preview?.durationMs || 0,
+        vid: songData.preview?.vid
+      };
+    } else {
+      songData.isPreviewStream = false;
+    }
+
+    // resolve 顺带的译文，给后续 loadLrc 合并
+    if (result.lyricTranslations && Object.keys(result.lyricTranslations).length) {
+      cacheLyricTranslations(id, result.lyricTranslations);
+      console.log(
+        `[getSongUrl] cached lyricTranslations id=${id} keys=${Object.keys(result.lyricTranslations).join(',')}`
+      );
     }
 
     if (result.playMusicUrl.startsWith('local://') || isDownloaded) {
@@ -133,40 +171,6 @@ export const getSongUrl = async (
  */
 export const useSongUrl = () => {
   return { getSongUrl };
-};
-
-/** 把翻译行贴到主歌词（按索引或时间近似） */
-const attachTranslations = (lyrics: ILyricText[], times: number[], tLyrics: ILyricText[]): void => {
-  if (!tLyrics.length) return;
-  if (tLyrics.length === lyrics.length) {
-    lyrics.forEach((item, index) => {
-      item.trText = item.text && tLyrics[index] ? tLyrics[index].text : '';
-    });
-    return;
-  }
-  const tLyricMap = new Map<number, string>();
-  tLyrics.forEach((lyric) => {
-    if (lyric.text && lyric.startTime !== undefined) {
-      tLyricMap.set(lyric.startTime / 1000, lyric.text);
-    }
-  });
-  lyrics.forEach((item, index) => {
-    if (!item.text) {
-      item.trText = '';
-      return;
-    }
-    const currentTime = times[index];
-    let closestTime = -1;
-    let minDiff = 2.0;
-    for (const [tTime] of tLyricMap.entries()) {
-      const diff = Math.abs(tTime - currentTime);
-      if (diff < minDiff) {
-        minDiff = diff;
-        closestTime = tTime;
-      }
-    }
-    item.trText = closestTime !== -1 ? tLyricMap.get(closestTime) || '' : '';
-  });
 };
 
 /**
@@ -222,12 +226,9 @@ const parseLyrics = (lyricsString: string): { lyrics: ILyricText[]; times: numbe
  */
 export const loadLrc = async (id: string | number): Promise<ILyric> => {
   try {
-    const cacheKey =
-      typeof id === 'string' && /^\d+$/.test(id)
-        ? parseInt(id, 10)
-        : typeof id === 'number'
-          ? id
-          : 0;
+    // 汽水 track id 常为 19 位雪花，超过 Number.MAX_SAFE_INTEGER。
+    // 绝不能 parseInt 当缓存 key，否则多首歌撞同一错误 key、歌词/译文串台。
+    const cacheKey = id != null && String(id).trim() !== '' ? String(id) : '';
     let lyricData: any;
 
     if (isElectron && cacheKey) {
@@ -238,16 +239,25 @@ export const loadLrc = async (id: string | number): Promise<ILyric> => {
       }
     }
 
-    // 在线：ly-music-source（保留 lines 字级时间；旧缓存只有 LRC 时也重拉升级）
-    if (isElectron && !lyricData?._playerLyric?.lrcArray?.length) {
+    // 在线：ly-music-source（字级时间 + 译文）
+    // ver5：译文对齐放宽；强制刷掉旧缓存（IPC 曾丢 translations）
+    const needMsLyric = !lyricData?._playerLyric?.lrcArray?.length || lyricData?._msLyricVer !== 5;
+    if (isElectron && needMsLyric) {
       try {
         const msLyric = await msGetLyric(String(id));
         if (msLyric?.lines?.length) {
           const converted = msLyricToILyric(msLyric);
           const lrcText = msLyric.raw || msLyricToLrc(msLyric.lines);
+          const tLrc = pickMsTranslationLrc(msLyric.translations);
+          const trCount = converted.lrcArray.filter((l) => l.trText).length;
+          console.log(
+            `[loadLrc] id=${id} lines=${converted.lrcArray.length} trLines=${trCount} tlyricLen=${tLrc.length} keys=${Object.keys(msLyric.translations || {}).join(',') || '-'}`
+          );
           const payload = {
             lrc: { lyric: typeof lrcText === 'string' ? lrcText : msLyricToLrc(msLyric.lines) },
-            _playerLyric: converted
+            tlyric: tLrc ? { lyric: tLrc } : undefined,
+            _playerLyric: converted,
+            _msLyricVer: 5
           };
           if (cacheKey) {
             void window.electron.ipcRenderer
@@ -271,12 +281,30 @@ export const loadLrc = async (id: string | number): Promise<ILyric> => {
 
     const data = lyricData ?? {};
 
-    // 已转换好的播放器歌词（含真实逐字；作词/作曲已降级为行级）
+    // 已转换好的播放器歌词（含真实逐字 + 可能已贴 trText）
     if (data._playerLyric?.lrcArray?.length) {
       const converted = data._playerLyric as ILyric;
-      if (data.tlyric?.lyric) {
-        const { lyrics: tLyrics } = parseLyrics(data.tlyric.lyric);
-        attachTranslations(converted.lrcArray, converted.lrcTimeArray, tLyrics);
+      let alreadyHasTr = converted.lrcArray.some((l) => l.trText);
+      // resolve 后到的译文缓存（与 get-lyric 竞态时用）
+      if (!alreadyHasTr) {
+        const cachedTr = takeCachedLyricTranslations(id);
+        const tFromCache = pickMsTranslationLrc(cachedTr);
+        const tFromFile = data.tlyric?.lyric ? String(data.tlyric.lyric) : '';
+        const tLrc = tFromCache || tFromFile;
+        if (tLrc) {
+          attachTranslationLrc(converted.lrcArray, converted.lrcTimeArray, tLrc);
+          alreadyHasTr = converted.lrcArray.some((l) => l.trText);
+          if (alreadyHasTr && cacheKey && isElectron) {
+            void window.electron.ipcRenderer
+              .invoke('cache-lyric', cacheKey, {
+                ...data,
+                tlyric: { lyric: tLrc },
+                _playerLyric: converted,
+                _msLyricVer: 5
+              })
+              .catch(() => undefined);
+          }
+        }
       }
       return {
         lrcTimeArray: converted.lrcTimeArray,
@@ -387,8 +415,10 @@ export const useSongDetail = () => {
     }
 
     try {
+      // 始终走 getSongUrl：内部会处理「有 URL 复用 / 试听缺 startMs 重拉」
       const playMusicUrl =
-        playMusic.playMusicUrl || (await getSongUrl(playMusic.id, playMusic, false, requestId));
+        (await getSongUrl(playMusic.id, playMusic, false, requestId)) || playMusic.playMusicUrl;
+      restorePreviewStreamFlags(playMusic);
 
       // 验证请求
       if (requestId && !playbackRequestManager.isRequestValid(requestId)) {

@@ -82,13 +82,35 @@ export interface MsResolveResult {
   bitrate?: number;
   size?: number;
   isPreview: boolean;
+  /** 试听流：音频 t=0 对应全曲该毫秒；歌词需加偏移 */
+  previewStartMs?: number;
+  previewDurationMs?: number;
+  /** resolve 顺带带回的译文 LRC */
+  lyricTranslations?: Record<string, string>;
   expireAt?: number;
+}
+
+/** resolve 时缓存的译文，供 loadLrc 合并（避免 get-lyric 丢 translations） */
+const lyricTranslationCache = new Map<string, Record<string, string>>();
+
+export function cacheLyricTranslations(
+  songId: string | number,
+  translations?: Record<string, string> | null
+): void {
+  if (!songId || !translations || !Object.keys(translations).length) return;
+  lyricTranslationCache.set(String(songId), translations);
+}
+
+export function takeCachedLyricTranslations(
+  songId: string | number
+): Record<string, string> | undefined {
+  return lyricTranslationCache.get(String(songId));
 }
 
 export interface MsLyricLine {
   timeMs: number;
   text: string;
-  words?: { timeMs: number; text: string }[];
+  words?: { timeMs: number; text: string; durationMs?: number }[];
 }
 
 export interface MsLyricResult {
@@ -97,6 +119,8 @@ export interface MsLyricResult {
   type: 'lrc' | 'word';
   lines: MsLyricLine[];
   raw?: string;
+  /** 抓包 lyric.translations，如 cn → LRC 文本 */
+  translations?: Record<string, string>;
 }
 
 export interface MsAuthState {
@@ -309,21 +333,21 @@ export function msLyricToLrc(lines: MsLyricLine[]): string {
     .join('\n');
 }
 
-/**
- * 作词/作曲/编曲等元信息行：只当普通文案，绝不当逐字卡拉 OK。
- * 抓包与汽水分享页里常见「作词 : xxx」「作曲：xxx」带时间戳。
- */
-export function isLyricCreditLine(text: string): boolean {
-  const t = (text || '').trim();
-  if (!t) return true;
-  return /^(作词|作曲|编曲|制作人|制作|混音|录音|母带|出品人|出品|原唱|翻唱|演唱|监制|和声|吉他|贝斯|鼓手?|键盘|弦乐|配唱|OP|SP|by|composer|lyricist|arranged|producer|written|lyrics)[:：\s]/i.test(
-    t
-  );
+/** 优先 cn，否则取 translations 里第一段非空 LRC */
+export function pickMsTranslationLrc(translations?: Record<string, string>): string {
+  if (!translations) return '';
+  if (typeof translations.cn === 'string' && translations.cn.trim()) return translations.cn;
+  for (const v of Object.values(translations)) {
+    if (typeof v === 'string' && v.trim()) return v;
+  }
+  return '';
 }
 
 /**
  * 把 ly-music-source 的 lines（含真实 word 时间）转成播放器 ILyric。
+ * 元信息行过滤只在库里做；这里只做格式映射，不二次发明业务规则。
  * 不要再 msLyricToLrc → 解析，否则字级时间全丢，只能整行假高亮。
+ * 译文：result.translations（LRC）按时间贴到 trText。
  */
 export function msLyricToILyric(result: MsLyricResult): ILyric {
   const lines = result.lines || [];
@@ -342,13 +366,11 @@ export function msLyricToILyric(result: MsLyricResult): ILyric {
         ? Math.max(startMs, Number(lines[i + 1].timeMs) || startMs)
         : startMs + 3000;
     const lineDuration = Math.max(0, nextMs - startMs);
-    const credit = isLyricCreditLine(text);
 
     let words: IWordData[] | undefined;
-    // 仅非元信息行 + 库明确给了 words 才做逐字
-    if (!credit && line.words && line.words.length > 0) {
+    if (line.words && line.words.length > 0) {
       words = mapMsWordsToPlayer(line.words, startMs, nextMs);
-      // 假逐字：整句一个词 / 时长异常，降级成行级
+      // 假逐字：整句一个词 → 降级行级
       if (!words.length || (words.length === 1 && words[0].text === text)) {
         words = undefined;
       } else {
@@ -368,38 +390,133 @@ export function msLyricToILyric(result: MsLyricResult): ILyric {
     lrcTimeArray.push(startMs / 1000);
   }
 
+  // get-lyric 的 translations + resolve 缓存 二选一
+  const mergedTr = {
+    ...(takeCachedLyricTranslations(result.songId) || {}),
+    ...(result.translations || {})
+  };
+  const tLrc = pickMsTranslationLrc(Object.keys(mergedTr).length ? mergedTr : result.translations);
+  attachTranslationLrc(lrcArray, lrcTimeArray, tLrc);
+
   return { lrcArray, lrcTimeArray, hasWordByWord };
 }
 
-function shouldInsertWordSpace(cur: string, nxt: string): boolean {
-  if (!cur || !nxt) return false;
-  if (/\s$/.test(cur) || /^\s/.test(nxt)) return false;
-  // 标点前不插空格
-  if (/^[,.;:!?…，。！？、；：'")\]}»」』】]/.test(nxt)) return false;
-  if (/['"({[«「『【]$/.test(cur)) return false;
-  // 拉丁/数字单词之间
-  if (/[A-Za-z0-9]$/.test(cur) && /^[A-Za-z0-9]/.test(nxt)) return true;
-  // 中英交界
-  if (/[\u4e00-\u9fff]$/.test(cur) && /^[A-Za-z0-9]/.test(nxt)) return true;
-  if (/[A-Za-z0-9]$/.test(cur) && /^[\u4e00-\u9fff]/.test(nxt)) return true;
-  return false;
+/**
+ * 解析 LRC 译文并贴到 trText。
+ * 汽水常：原文 KRC 从间奏后起跳，译文 LRC 从 0 起，±2s 对不齐 → 优先按行序，再放宽时间窗。
+ */
+export function attachTranslationLrc(
+  lyrics: ILyricText[],
+  timesSec: number[],
+  tlyric: string
+): void {
+  if (!tlyric.trim() || !lyrics.length) return;
+
+  const tLines: { sec: number; text: string }[] = [];
+  for (const raw of tlyric.split(/\r?\n/)) {
+    // 兼容 [00:00.00] / [0:00.00] / [00:00.000]
+    const m = /\[(\d{1,2}):(\d{1,2})(?:\.(\d{1,3}))?\](.*)/.exec(raw);
+    if (!m) continue;
+    const min = Number(m[1]);
+    const sec = Number(m[2]);
+    const msRaw = m[3] ?? '0';
+    const ms = Number(msRaw.padEnd(3, '0').slice(0, 3));
+    const text = (m[4] ?? '').trim();
+    if (!text) continue;
+    tLines.push({ sec: min * 60 + sec + ms / 1000, text });
+  }
+  if (!tLines.length) return;
+
+  // 1) 行数相同或接近：按索引对齐（抓包里最稳）
+  if (Math.abs(tLines.length - lyrics.length) <= 3) {
+    const n = Math.min(tLines.length, lyrics.length);
+    for (let i = 0; i < n; i++) {
+      if (lyrics[i].text) lyrics[i].trText = tLines[i].text;
+    }
+    return;
+  }
+
+  // 2) 估计全局时间偏移（首句最近邻），再逐行匹配
+  let globalOffset = 0;
+  {
+    const firstLyric = timesSec.find((_, i) => lyrics[i]?.text) ?? timesSec[0] ?? 0;
+    let bestDiff = Infinity;
+    for (const t of tLines) {
+      const d = Math.abs(t.sec - firstLyric);
+      if (d < bestDiff) {
+        bestDiff = d;
+        globalOffset = firstLyric - t.sec;
+      }
+    }
+    // 首句差太大时用中位句再估一次
+    if (bestDiff > 30 && tLines.length > 2 && timesSec.length > 2) {
+      const mid = Math.floor(timesSec.length / 3);
+      const midT = timesSec[mid] ?? firstLyric;
+      let bd = Infinity;
+      for (const t of tLines) {
+        const d = Math.abs(t.sec + globalOffset - midT);
+        if (d < bd) {
+          bd = d;
+          globalOffset = midT - t.sec;
+        }
+      }
+    }
+  }
+
+  const used = new Set<number>();
+  for (let i = 0; i < lyrics.length; i++) {
+    const item = lyrics[i];
+    if (!item.text) {
+      item.trText = '';
+      continue;
+    }
+    const current = (timesSec[i] ?? (item.startTime || 0) / 1000) - globalOffset;
+    let bestIdx = -1;
+    let minDiff = 20; // 放宽到 20s
+    for (let j = 0; j < tLines.length; j++) {
+      if (used.has(j)) continue;
+      const diff = Math.abs(tLines[j].sec - current);
+      if (diff < minDiff) {
+        minDiff = diff;
+        bestIdx = j;
+      }
+    }
+    if (bestIdx >= 0) {
+      used.add(bestIdx);
+      item.trText = tLines[bestIdx].text;
+    }
+  }
+
+  // 3) 仍大量空：按顺序填剩余
+  const emptyIdx = lyrics.map((l, i) => (!l.trText && l.text ? i : -1)).filter((i) => i >= 0);
+  if (emptyIdx.length > lyrics.length * 0.5) {
+    const n = Math.min(emptyIdx.length, tLines.length);
+    for (let k = 0; k < n; k++) {
+      lyrics[emptyIdx[k]].trText = tLines[k].text;
+    }
+  }
 }
 
+/**
+ * 汽水 KRC 英文词自带尾空格（抓包：`Walk ` / `in ` / `the `）。
+ * 时长优先用源 durationMs（气口不并进高亮）；否则才撑到下一词起点。
+ */
 function mapMsWordsToPlayer(
-  words: { timeMs: number; text: string }[],
+  words: { timeMs: number; text: string; durationMs?: number }[],
   lineStartMs: number,
   lineEndMs: number
 ): IWordData[] {
   const cleaned = words
     .map((w) => {
       const raw = String(w.text ?? '');
-      // 源数据里词尾空格 → space 标记，正文 trim
       const trailingSpace = /\s$/.test(raw);
       const text = raw.replace(/\s+/g, ' ').trim();
+      const durationMs = Number(w.durationMs);
       return {
         timeMs: Number(w.timeMs),
         text,
-        trailingSpace
+        trailingSpace,
+        durationMs: Number.isFinite(durationMs) && durationMs > 0 ? durationMs : undefined
       };
     })
     .filter((w) => w.text.length > 0 && Number.isFinite(w.timeMs));
@@ -416,19 +533,23 @@ function mapMsWordsToPlayer(
     text: w.text,
     startTime: looksRelative ? lineStartMs + Math.max(0, w.timeMs) : w.timeMs,
     duration: 0,
-    space: w.trailingSpace as boolean | undefined
+    sourceDuration: w.durationMs as number | undefined,
+    space: w.trailingSpace || undefined
   }));
 
-  // 按时间排序，算 duration + 英文词间空格
   absolute.sort((a, b) => a.startTime - b.startTime);
   for (let i = 0; i < absolute.length; i++) {
     const nextStart = i < absolute.length - 1 ? absolute[i + 1].startTime : lineEndMs;
-    absolute[i].duration = Math.max(40, nextStart - absolute[i].startTime);
-    if (i < absolute.length - 1) {
-      absolute[i].space =
-        absolute[i].space || shouldInsertWordSpace(absolute[i].text, absolute[i + 1].text);
-    }
+    const gap = Math.max(40, nextStart - absolute[i].startTime);
+    const src = absolute[i].sourceDuration;
+    // 有源时长：不超过到下一词的间隔（避免重叠），气口不再被硬撑满
+    absolute[i].duration = src != null ? Math.max(40, Math.min(src, gap)) : gap;
   }
 
-  return absolute;
+  return absolute.map(({ text, startTime, duration, space }) => ({
+    text,
+    startTime,
+    duration,
+    space
+  }));
 }

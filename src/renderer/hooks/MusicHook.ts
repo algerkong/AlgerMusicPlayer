@@ -7,6 +7,11 @@ import type { usePlayerStore } from '@/store';
 import type { Artist, ILyricText, SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
 import { getTextColors } from '@/utils/linearColor';
+import {
+  detectPreviewLyricBaseSec,
+  isPreviewStreamUrl,
+  restorePreviewStreamFlags
+} from '@/utils/previewStream';
 import { parseLyrics } from '@/utils/yrcParser';
 
 const windowData = window as any;
@@ -216,6 +221,25 @@ const ensureLyricsLoaded = async (force = false) => {
     } catch (err) {
       console.error('Failed to extract embedded lyrics:', err);
     }
+  } else if (isElectron && songId) {
+    // 元数据未到：主动 loadLrc（含译文），避免只显示旧歌或空
+    try {
+      const { loadLrc } = await import('@/hooks/usePlayerHooks');
+      const loaded = await loadLrc(songId);
+      if (loaded.lrcArray?.length) {
+        const { translateLyrics } = await import('@/services/lyricTranslation');
+        lrcArray.value = await translateLyrics(loaded.lrcArray as any);
+        lrcTimeArray.value = loaded.lrcTimeArray || [];
+        if (playMusic.value) {
+          playMusic.value.lyric = loaded;
+        }
+        console.log(
+          `[ensureLyricsLoaded] loadLrc ok tr=${loaded.lrcArray.filter((l) => l.trText).length}/${loaded.lrcArray.length}`
+        );
+      }
+    } catch (e) {
+      console.warn('[ensureLyricsLoaded] loadLrc failed:', e);
+    }
   }
 
   if (isElectron && isLyricWindowOpen.value) {
@@ -309,6 +333,18 @@ const setupAudioListeners = () => {
         nowTime.value = currentTime;
         allTime.value = currentSound.duration;
 
+        // 每首歌 duration 就绪后校准一次试听偏移（切回已缓存曲目时 flag 可能丢）
+        const sid = String(playMusic.value?.id || '');
+        if (
+          sid &&
+          sid !== lastLyricBaseRefineSongId &&
+          currentSound.duration > 1 &&
+          Number.isFinite(currentSound.duration)
+        ) {
+          lastLyricBaseRefineSongId = sid;
+          refineLyricTimeBaseFromAudio(currentSound.duration);
+        }
+
         // === 歌词索引更新 ===
         const newIndex = getLrcIndex(nowTime.value);
         if (newIndex !== nowIndex.value) {
@@ -325,10 +361,11 @@ const setupAudioListeners = () => {
           }
         }
 
-        // === 逐字歌词行内进度 ===
+        // === 逐字歌词行内进度（全曲时间轴）===
         const { start, end } = currentLrcTiming.value;
         if (typeof start === 'number' && typeof end === 'number' && start !== end) {
-          const elapsed = currentTime - start;
+          const lyricNow = getLyricClockSec(currentTime);
+          const elapsed = lyricNow - start;
           const duration = end - start;
           const progress = (elapsed / duration) * 100;
           currentLrcProgress.value = Math.min(Math.max(progress, 0), 100);
@@ -342,7 +379,8 @@ const setupAudioListeners = () => {
               JSON.stringify({
                 type: 'update',
                 nowIndex: nowIndex.value,
-                nowTime: nowTime.value,
+                // 独立歌词窗按全曲轴对齐
+                nowTime: getLyricClockSec(nowTime.value),
                 isPlay: getPlayerStore().play
               })
             );
@@ -592,16 +630,77 @@ loadCorrectionMap();
 // 歌词矫正时间，当前歌曲
 export const correctionTime = ref(0);
 
+/**
+ * 试听流时间基准（秒）：音频 t=0 对应全曲该时刻。
+ * 全曲播放时为 0；VIP 试听为 preview.startMs/1000。
+ */
+export const lyricTimeBaseSec = ref(0);
+/** 避免 progress interval 每帧 refine */
+let lastLyricBaseRefineSongId = '';
+
+/** 歌词用时间 = 音频进度 + 人工矫正 + 试听偏移 */
+export const getLyricClockSec = (audioTimeSec?: number): number => {
+  const t = audioTimeSec ?? nowTime.value;
+  return t + (correctionTime.value || 0) + (lyricTimeBaseSec.value || 0);
+};
+
+const syncLyricTimeBaseFromSong = (song?: SongResult | null) => {
+  if (!song) {
+    lyricTimeBaseSec.value = 0;
+    lastLyricBaseRefineSongId = '';
+    return;
+  }
+  // 复用缓存 URL 时补回 isPreviewStream（切回第一首的主因）
+  restorePreviewStreamFlags(song);
+  const isPrev = Boolean(song.isPreviewStream || isPreviewStreamUrl(song.playMusicUrl));
+  if (isPrev && Number(song.preview?.startMs) > 0) {
+    lyricTimeBaseSec.value = Math.max(0, Number(song.preview?.startMs) || 0) / 1000;
+    return;
+  }
+  // 非试听 / 缺 startMs：先清零，等 duration refine 或 re-resolve
+  if (!isPrev) {
+    lyricTimeBaseSec.value = 0;
+  }
+};
+
+/** 音频 duration 就绪后兜底校准（切回第一首时常靠这个） */
+export const refineLyricTimeBaseFromAudio = (audioDurationSec: number) => {
+  const song = playMusic.value;
+  if (!song?.id) return;
+  const base = detectPreviewLyricBaseSec(song, audioDurationSec);
+  if (Math.abs(base - lyricTimeBaseSec.value) > 0.05) {
+    lyricTimeBaseSec.value = base;
+    console.log(
+      `[lyric] refine base=${base.toFixed(2)}s from audioDur=${audioDurationSec.toFixed(1)}s song=${song.name}`
+    );
+  }
+};
+
 // 设置歌词矫正时间的监听器
 const setupCorrectionTimeWatcher = () => {
-  // 切歌时自动读取矫正时间
+  // 切歌时自动读取矫正时间 + 试听偏移
   watch(
     () => playMusic.value?.id,
     (id) => {
       if (!id) return;
-      correctionTime.value = correctionTimeMap.value[id] ?? 0;
+      correctionTime.value =
+        correctionTimeMap.value[String(id)] ?? correctionTimeMap.value[id as any] ?? 0;
+      syncLyricTimeBaseFromSong(playMusic.value);
     },
     { immediate: true }
+  );
+  // resolve / 复用 URL 后 isPreviewStream、playMusicUrl 才齐，必须跟
+  watch(
+    () =>
+      [
+        playMusic.value?.id,
+        playMusic.value?.isPreviewStream,
+        playMusic.value?.preview?.startMs,
+        playMusic.value?.playMusicUrl
+      ] as const,
+    () => {
+      syncLyricTimeBaseFromSong(playMusic.value);
+    }
   );
 };
 
@@ -621,22 +720,21 @@ export const adjustCorrectionTime = (delta: number) => {
 // 获取当前播放歌词
 export const isCurrentLrc = (index: number, time: number): boolean => {
   const currentTime = lrcTimeArray.value[index];
+  const correctedTime = getLyricClockSec(time);
 
   // 如果是最后一句歌词，只需要判断时间是否大于等于当前句的开始时间
   if (index === lrcTimeArray.value.length - 1) {
-    const correctedTime = time + correctionTime.value;
     return correctedTime >= currentTime;
   }
 
   // 非最后一句歌词，需要判断时间在当前句和下一句之间
   const nextTime = lrcTimeArray.value[index + 1];
-  const correctedTime = time + correctionTime.value;
   return correctedTime >= currentTime && correctedTime < nextTime;
 };
 
 // 获取当前播放歌词INDEX
 export const getLrcIndex = (time: number): number => {
-  const correctedTime = time + correctionTime.value;
+  const correctedTime = getLyricClockSec(time);
 
   // 如果歌词数组为空，返回当前索引
   if (lrcTimeArray.value.length === 0) {
@@ -673,7 +771,7 @@ const currentLrcTiming = computed(() => {
 
 // 获取歌词样式
 export const getLrcStyle = (index: number) => {
-  const currentTime = nowTime.value + correctionTime.value;
+  const currentTime = getLyricClockSec();
   const start = lrcTimeArray.value[index];
   const end = lrcTimeArray.value[index + 1] ?? start + 1;
 
@@ -700,12 +798,14 @@ export const useLyricProgress = () => {
   };
 };
 
-// 设置当前播放时间
+// 设置当前播放时间（歌词时间为全曲轴；试听需减 base 才是音频 seek）
 export const setAudioTime = (index: number) => {
   const currentSound = sound.value;
   if (!currentSound) return;
 
-  audioService.seek(lrcTimeArray.value[index]);
+  const lineSec = lrcTimeArray.value[index] ?? 0;
+  const audioSec = Math.max(0, lineSec - (lyricTimeBaseSec.value || 0));
+  audioService.seek(audioSec);
   currentSound.play();
 };
 
@@ -753,7 +853,7 @@ export const sendLyricToWin = () => {
       const updateData = {
         type: 'full',
         nowIndex,
-        nowTime: nowTime.value,
+        nowTime: getLyricClockSec(nowTime.value),
         startCurrentTime: lrcTimeArray.value[nowIndex] || 0,
         nextTime: lrcTimeArray.value[nowIndex + 1] || 0,
         isPlay: getPlayerStore().play,
@@ -830,7 +930,7 @@ const startLyricSync = () => {
         const updateData = {
           type: 'update',
           nowIndex: getLrcIndex(nowTime.value),
-          nowTime: nowTime.value,
+          nowTime: getLyricClockSec(nowTime.value),
           isPlay: getPlayerStore().play
         };
         window.api.sendLyric(JSON.stringify(updateData));

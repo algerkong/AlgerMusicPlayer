@@ -37,7 +37,8 @@ type MusicCacheEntry = {
 
 type LyricCacheEntry = {
   key: string;
-  songId: number;
+  /** 汽水雪花 id 必须用 string，number 会丢精度 */
+  songId: string | number;
   filePath: string;
   size: number;
   createdAt: number;
@@ -529,7 +530,8 @@ class DiskCacheManager {
     return `${songId}_${safeSource}`;
   }
 
-  private buildLyricKey(songId: number): string {
+  private buildLyricKey(songId: string | number): string {
+    // 保持原样字符串，避免 parseInt 大整数丢精度后多歌撞 key
     return String(songId);
   }
 
@@ -925,7 +927,7 @@ class DiskCacheManager {
     };
   }
 
-  public async cacheLyric(songId: number, lyricData: unknown): Promise<boolean> {
+  public async cacheLyric(songId: string | number, lyricData: unknown): Promise<boolean> {
     try {
       const config = this.getCacheConfig();
       if (!config.enabled) {
@@ -960,7 +962,7 @@ class DiskCacheManager {
     }
   }
 
-  public async getCachedLyric(songId: number): Promise<unknown | undefined> {
+  public async getCachedLyric(songId: string | number): Promise<unknown | undefined> {
     try {
       const config = this.getCacheConfig();
       if (!config.enabled) {
@@ -1058,11 +1060,11 @@ export function initializeCacheManager(): void {
   const CLEAR_LYRIC_CHANNELS = ['clear-lyric-cache', 'clear-lyrics-cache'] as const;
   cacheManager.initialize();
 
-  ipcMain.handle('cache-lyric', async (_, id: number, lyricData: unknown) => {
+  ipcMain.handle('cache-lyric', async (_, id: string | number, lyricData: unknown) => {
     return await cacheManager.cacheLyric(id, lyricData);
   });
 
-  ipcMain.handle('get-cached-lyric', async (_, id: number) => {
+  ipcMain.handle('get-cached-lyric', async (_, id: string | number) => {
     return await cacheManager.getCachedLyric(id);
   });
 

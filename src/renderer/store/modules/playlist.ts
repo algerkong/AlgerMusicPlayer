@@ -510,9 +510,13 @@ export const usePlaylistStore = defineStore(
 
         const nowPlayListIndex = (playListIndex.value + 1) % playList.value.length;
         const nextSong = { ...playList.value[nowPlayListIndex] };
+        // 列表里可能有缓存 URL 但丢了试听标记，进 playTrack 前先恢复
+        const { restorePreviewStreamFlags } = await import('@/utils/previewStream');
+        restorePreviewStreamFlags(nextSong);
 
         console.log(
-          `[nextPlay] ${nextSong.name}, 索引: ${playListIndex.value} -> ${nowPlayListIndex}`
+          `[nextPlay] ${nextSong.name}, 索引: ${playListIndex.value} -> ${nowPlayListIndex}`,
+          nextSong.isPreviewStream ? `preview@${nextSong.preview?.startMs}ms` : 'full'
         );
 
         const { playTrack } = await import('@/services/playbackController');
@@ -605,6 +609,17 @@ export const usePlaylistStore = defineStore(
      */
     const setPlayListDrawerVisible = (value: boolean) => {
       playListDrawerVisible.value = value;
+    };
+
+    /** 播放成功后写回 URL / 试听标记，循环切歌不丢 lyric base */
+    const patchSongMeta = (
+      id: string | number,
+      patch: Partial<Pick<SongResult, 'playMusicUrl' | 'isPreviewStream' | 'preview' | 'expiredAt'>>
+    ) => {
+      const idx = playList.value.findIndex((s) => String(s.id) === String(id));
+      if (idx < 0) return;
+      playList.value[idx] = { ...playList.value[idx], ...patch };
+      triggerRef(playList);
     };
 
     const setPlay = async (song: SongResult) => {
@@ -716,6 +731,7 @@ export const usePlaylistStore = defineStore(
 
       // Actions
       setPlayList,
+      patchSongMeta,
       addToNextPlay,
       removeFromPlayList,
       clearPlayAll,

@@ -241,11 +241,26 @@ export const playTrack = async (
       return false;
     }
 
+    // 复用 playMusicUrl 时恢复试听标记，避免切回第一首歌词 base 丢失
+    const { restorePreviewStreamFlags } = await import('@/utils/previewStream');
+    restorePreviewStreamFlags(updatedPlayMusic);
     playerCore.playMusic = updatedPlayMusic;
     playerCore.playMusicUrl = updatedPlayMusic.playMusicUrl as string;
     music.playMusicUrl = updatedPlayMusic.playMusicUrl as string;
+    music.isPreviewStream = updatedPlayMusic.isPreviewStream;
+    if (updatedPlayMusic.preview) music.preview = updatedPlayMusic.preview;
     // playMusic 被替换为新对象，若元数据已先行到达则重新应用，避免歌词/背景色丢失
     applyLoadedMetadata();
+
+    // resolve 可能后于 loadLrc 带回译文：再刷一次歌词贴 trText
+    void loadLrc(updatedPlayMusic.id)
+      .then((lyrics) => {
+        if (gen !== generation) return;
+        if (!lyrics?.lrcArray?.some((l) => l.trText)) return;
+        playerCore.playMusic.lyric = lyrics;
+        playerCore.playMusic = { ...playerCore.playMusic };
+      })
+      .catch(() => undefined);
   } catch (error) {
     if (gen !== generation) return false;
     console.error('[playbackController] 获取歌曲详情失败:', error);
@@ -275,6 +290,20 @@ export const playTrack = async (
       resetUrlExpiredRetry();
       playerCore.playMusic.playLoading = false;
       playerCore.playMusic.isFirstPlay = false;
+      // 把试听标记 / URL 写回列表，循环切回时不丢 base
+      try {
+        const { usePlaylistStore } = await import('@/store/modules/playlist');
+        const pl = usePlaylistStore();
+        const cur = playerCore.playMusic;
+        pl.patchSongMeta?.(cur.id, {
+          playMusicUrl: cur.playMusicUrl,
+          isPreviewStream: cur.isPreviewStream,
+          preview: cur.preview,
+          expiredAt: cur.expiredAt
+        });
+      } catch {
+        /* ignore */
+      }
       playbackRequestManager.completeRequest(requestId);
       console.log(`[playbackController] gen=${gen} 播放成功: ${music.name}`);
 
