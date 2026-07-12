@@ -6,7 +6,9 @@
       :description="t('settings.application.shortcutDesc')"
     >
       <template #action>
-        <s-btn @click="showShortcutModal = true">{{ t('common.configure') }}</s-btn>
+        <ui-button variant="outline" size="sm" @click="showShortcutModal = true">
+          {{ t('common.configure') }}
+        </ui-button>
       </template>
     </setting-item>
 
@@ -19,9 +21,9 @@ import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import ShortcutSettings from '@/components/settings/ShortcutSettings.vue';
+import { Button as UiButton } from '@/components/ui/button';
 import { isElectron } from '@/utils';
 
-import SBtn from '../SBtn.vue';
 import SettingItem from '../SettingItem.vue';
 import SettingSection from '../SettingSection.vue';
 

@@ -9,8 +9,12 @@
       </template>
       <template #action>
         <div class="flex items-center gap-2">
-          <s-btn @click="openDownloadPath">{{ t('common.open') }}</s-btn>
-          <s-btn @click="selectDownloadPath">{{ t('common.modify') }}</s-btn>
+          <ui-button variant="outline" size="sm" @click="openDownloadPath">
+            {{ t('common.open') }}
+          </ui-button>
+          <ui-button variant="outline" size="sm" @click="selectDownloadPath">
+            {{ t('common.modify') }}
+          </ui-button>
         </div>
       </template>
     </setting-item>
@@ -23,12 +27,12 @@
     >
       <template #action>
         <div class="flex items-center gap-2 max-md:flex-wrap">
-          <s-btn @click="selectCacheDirectory">
+          <ui-button variant="outline" size="sm" @click="selectCacheDirectory">
             {{ t('settings.system.selectDirectory') }}
-          </s-btn>
-          <s-btn @click="openCacheDirectory">
+          </ui-button>
+          <ui-button variant="outline" size="sm" @click="openCacheDirectory">
             {{ t('settings.system.openDirectory') }}
-          </s-btn>
+          </ui-button>
         </div>
       </template>
     </setting-item>
@@ -55,7 +59,9 @@
               })
             }}
           </span>
-          <s-btn @click="refreshDiskCacheStats()">{{ t('common.refresh') }}</s-btn>
+          <ui-button variant="outline" size="sm" @click="refreshDiskCacheStats()">
+            {{ t('common.refresh') }}
+          </ui-button>
         </div>
       </template>
     </setting-item>
@@ -67,11 +73,11 @@ import { useDebounceFn } from '@vueuse/core';
 import { computed, inject, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import { Button as UiButton } from '@/components/ui/button';
 import { isElectron } from '@/utils';
 import { openDirectory, selectDirectory } from '@/utils/fileOperation';
 
 import { SETTINGS_DATA_KEY, SETTINGS_MESSAGE_KEY } from '../keys';
-import SBtn from '../SBtn.vue';
 import SettingItem from '../SettingItem.vue';
 import SettingSection from '../SettingSection.vue';
 

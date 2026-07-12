@@ -21,20 +21,16 @@
     </a>
 
     <div class="flex flex-wrap items-center justify-center gap-3 mb-10">
-      <s-btn
-        variant="primary"
-        :loading="checking"
-        :disabled="checking"
-        @click="checkForUpdates(true)"
-      >
+      <ui-button :disabled="checking" @click="checkForUpdates(true)">
+        <i v-if="checking" class="ri-loader-4-line animate-spin" />
         {{ checking ? t('settings.about.checking') : t('settings.about.checkUpdate') }}
-      </s-btn>
-      <s-btn v-if="updateInfo.hasUpdate" variant="primary" @click="openReleasePage">
+      </ui-button>
+      <ui-button v-if="updateInfo.hasUpdate" @click="openReleasePage">
         {{ t('settings.about.gotoUpdate') }} {{ updateInfo.latestVersion }}
-      </s-btn>
-      <s-btn v-if="hasManualUpdateFallback" @click="openManualUpdatePage">
+      </ui-button>
+      <ui-button v-if="hasManualUpdateFallback" variant="outline" @click="openManualUpdatePage">
         {{ t('settings.about.manualUpdate') }}
-      </s-btn>
+      </ui-button>
     </div>
 
     <div class="about-meta space-y-3">
@@ -71,6 +67,7 @@ import { useI18n } from 'vue-i18n';
 
 import appIcon from '@/assets/icon.png';
 import qishuiIcon from '@/assets/qishui-icon.png';
+import { Button as UiButton } from '@/components/ui/button';
 import { useSettingsStore } from '@/store/modules/settings';
 import { isElectron } from '@/utils';
 import { checkUpdate, UpdateResult } from '@/utils/update';
@@ -78,7 +75,6 @@ import { checkUpdate, UpdateResult } from '@/utils/update';
 import config from '../../../../../package.json';
 import { APP_UPDATE_STATUS, hasAvailableAppUpdate } from '../../../../shared/appUpdate';
 import { SETTINGS_DATA_KEY, SETTINGS_MESSAGE_KEY } from '../keys';
-import SBtn from '../SBtn.vue';
 
 const { t } = useI18n();
 const settingsStore = useSettingsStore();
