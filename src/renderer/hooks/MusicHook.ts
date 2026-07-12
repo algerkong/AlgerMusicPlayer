@@ -121,8 +121,12 @@ const parseLyricsString = async (
     let hasWordByWord = false;
 
     for (const line of lyrics) {
-      // 检查是否有逐字歌词
-      const hasWords = line.words && line.words.length > 0;
+      // 作词/作曲等元信息不走逐字
+      const credit =
+        /^(作词|作曲|编曲|制作人|制作|混音|录音|出品|原唱|翻唱|演唱|监制|和声|by|composer|lyricist)[:：\s]/i.test(
+          (line.fullText || '').trim()
+        );
+      const hasWords = !credit && !!(line.words && line.words.length > 0);
       if (hasWords) {
         hasWordByWord = true;
       }

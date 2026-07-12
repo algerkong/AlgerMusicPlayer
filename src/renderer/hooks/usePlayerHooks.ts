@@ -1,4 +1,4 @@
-import { msGetLyric, msLyricToLrc, msResolve } from '@/api/musicSource';
+import { msGetLyric, msLyricToILyric, msLyricToLrc, msResolve } from '@/api/musicSource';
 import { playbackRequestManager } from '@/services/playbackRequestManager';
 import type { ILyric, ILyricText, IWordData, SongResult } from '@/types/music';
 import { getSetData, isElectron } from '@/utils';
@@ -135,6 +135,40 @@ export const useSongUrl = () => {
   return { getSongUrl };
 };
 
+/** 把翻译行贴到主歌词（按索引或时间近似） */
+const attachTranslations = (lyrics: ILyricText[], times: number[], tLyrics: ILyricText[]): void => {
+  if (!tLyrics.length) return;
+  if (tLyrics.length === lyrics.length) {
+    lyrics.forEach((item, index) => {
+      item.trText = item.text && tLyrics[index] ? tLyrics[index].text : '';
+    });
+    return;
+  }
+  const tLyricMap = new Map<number, string>();
+  tLyrics.forEach((lyric) => {
+    if (lyric.text && lyric.startTime !== undefined) {
+      tLyricMap.set(lyric.startTime / 1000, lyric.text);
+    }
+  });
+  lyrics.forEach((item, index) => {
+    if (!item.text) {
+      item.trText = '';
+      return;
+    }
+    const currentTime = times[index];
+    let closestTime = -1;
+    let minDiff = 2.0;
+    for (const [tTime] of tLyricMap.entries()) {
+      const diff = Math.abs(tTime - currentTime);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closestTime = tTime;
+      }
+    }
+    item.trText = closestTime !== -1 ? tLyricMap.get(closestTime) || '' : '';
+  });
+};
+
 /**
  * 使用新的yrcParser解析歌词（独立函数）
  */
@@ -156,8 +190,12 @@ const parseLyrics = (lyricsString: string): { lyrics: ILyricText[]; times: numbe
     const times: number[] = [];
 
     for (const line of parsedLyrics) {
-      // 检查是否有逐字歌词
-      const hasWords = line.words && line.words.length > 0;
+      // 作词/作曲等元信息不走逐字
+      const credit =
+        /^(作词|作曲|编曲|制作人|制作|混音|录音|出品|原唱|翻唱|演唱|监制|和声|by|composer|lyricist)[:：\s]/i.test(
+          (line.fullText || '').trim()
+        );
+      const hasWords = !credit && !!(line.words && line.words.length > 0);
 
       lyrics.push({
         text: line.fullText,
@@ -200,16 +238,23 @@ export const loadLrc = async (id: string | number): Promise<ILyric> => {
       }
     }
 
-    // 在线：ly-music-source
-    if (!lyricData && isElectron) {
+    // 在线：ly-music-source（保留 lines 字级时间；旧缓存只有 LRC 时也重拉升级）
+    if (isElectron && !lyricData?._playerLyric?.lrcArray?.length) {
       try {
         const msLyric = await msGetLyric(String(id));
-        const lrcText = msLyric.raw || msLyricToLrc(msLyric.lines || []);
-        lyricData = { lrc: { lyric: lrcText } };
-        if (cacheKey && lyricData) {
-          void window.electron.ipcRenderer
-            .invoke('cache-lyric', cacheKey, lyricData)
-            .catch((error) => console.warn('写入磁盘歌词缓存失败:', error));
+        if (msLyric?.lines?.length) {
+          const converted = msLyricToILyric(msLyric);
+          const lrcText = msLyric.raw || msLyricToLrc(msLyric.lines);
+          const payload = {
+            lrc: { lyric: typeof lrcText === 'string' ? lrcText : msLyricToLrc(msLyric.lines) },
+            _playerLyric: converted
+          };
+          if (cacheKey) {
+            void window.electron.ipcRenderer
+              .invoke('cache-lyric', cacheKey, payload)
+              .catch((error) => console.warn('写入磁盘歌词缓存失败:', error));
+          }
+          lyricData = payload;
         }
       } catch (error) {
         console.warn('ly-music-source 歌词获取失败:', error);
@@ -225,6 +270,21 @@ export const loadLrc = async (id: string | number): Promise<ILyric> => {
     }
 
     const data = lyricData ?? {};
+
+    // 已转换好的播放器歌词（含真实逐字；作词/作曲已降级为行级）
+    if (data._playerLyric?.lrcArray?.length) {
+      const converted = data._playerLyric as ILyric;
+      if (data.tlyric?.lyric) {
+        const { lyrics: tLyrics } = parseLyrics(data.tlyric.lyric);
+        attachTranslations(converted.lrcArray, converted.lrcTimeArray, tLyrics);
+      }
+      return {
+        lrcTimeArray: converted.lrcTimeArray,
+        lrcArray: converted.lrcArray,
+        hasWordByWord: !!converted.hasWordByWord
+      };
+    }
+
     const { lyrics, times } = parseLyrics(data?.yrc?.lyric || data?.lrc?.lyric);
 
     // 检查是否有逐字歌词

@@ -1,4 +1,4 @@
-import type { SongResult } from '@/types/music';
+import type { ILyric, ILyricText, IWordData, SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
 
 export type MusicSourceIpcResult<T> =
@@ -290,7 +290,7 @@ export async function msGetLyric(songId: string): Promise<MsLyricResult> {
   return invokeMs('music-source:get-lyric', songId);
 }
 
-/** Convert timed lyric lines to LRC text for existing parseLyrics */
+/** Convert timed lyric lines to LRC text (line-level only, no word timing) */
 export function msLyricToLrc(lines: MsLyricLine[]): string {
   return lines
     .map((line) => {
@@ -302,4 +302,111 @@ export function msLyricToLrc(lines: MsLyricLine[]): string {
       return `${tag}${line.text || ''}`;
     })
     .join('\n');
+}
+
+/**
+ * 作词/作曲/编曲等元信息行：只当普通文案，绝不当逐字卡拉 OK。
+ * 抓包与汽水分享页里常见「作词 : xxx」「作曲：xxx」带时间戳。
+ */
+export function isLyricCreditLine(text: string): boolean {
+  const t = (text || '').trim();
+  if (!t) return true;
+  return /^(作词|作曲|编曲|制作人|制作|混音|录音|母带|出品人|出品|原唱|翻唱|演唱|监制|和声|吉他|贝斯|鼓手?|键盘|弦乐|配唱|OP|SP|by|composer|lyricist|arranged|producer|written|lyrics)[:：\s]/i.test(
+    t
+  );
+}
+
+/**
+ * 把 ly-music-source 的 lines（含真实 word 时间）转成播放器 ILyric。
+ * 不要再 msLyricToLrc → 解析，否则字级时间全丢，只能整行假高亮。
+ */
+export function msLyricToILyric(result: MsLyricResult): ILyric {
+  const lines = result.lines || [];
+  const lrcArray: ILyricText[] = [];
+  const lrcTimeArray: number[] = [];
+  let hasWordByWord = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const text = (line.text || '').trim();
+    if (!text) continue;
+
+    const startMs = Math.max(0, Number(line.timeMs) || 0);
+    const nextMs =
+      i < lines.length - 1
+        ? Math.max(startMs, Number(lines[i + 1].timeMs) || startMs)
+        : startMs + 3000;
+    const lineDuration = Math.max(0, nextMs - startMs);
+    const credit = isLyricCreditLine(text);
+
+    let words: IWordData[] | undefined;
+    // 仅非元信息行 + 库明确给了 words 才做逐字
+    if (!credit && line.words && line.words.length > 0) {
+      words = mapMsWordsToPlayer(line.words, startMs, nextMs);
+      // 假逐字：整句一个词 / 时长异常，降级成行级
+      if (!words.length || (words.length === 1 && words[0].text === text)) {
+        words = undefined;
+      } else {
+        hasWordByWord = true;
+      }
+    }
+
+    lrcArray.push({
+      text,
+      trText: '',
+      words,
+      hasWordByWord: Boolean(words?.length),
+      startTime: startMs,
+      duration: lineDuration
+    });
+    // 与全链路一致：秒
+    lrcTimeArray.push(startMs / 1000);
+  }
+
+  return { lrcArray, lrcTimeArray, hasWordByWord };
+}
+
+function mapMsWordsToPlayer(
+  words: { timeMs: number; text: string }[],
+  lineStartMs: number,
+  lineEndMs: number
+): IWordData[] {
+  const cleaned = words
+    .map((w) => ({
+      timeMs: Number(w.timeMs),
+      text: String(w.text ?? '')
+    }))
+    .filter((w) => w.text.length > 0 && Number.isFinite(w.timeMs));
+
+  if (!cleaned.length) return [];
+
+  // 相对时间：字时间都远小于行起点（常见 0~行长），需加上行 start
+  const maxWordT = Math.max(...cleaned.map((w) => w.timeMs));
+  const looksRelative =
+    cleaned.every((w) => w.timeMs <= lineStartMs + 5) ||
+    (lineStartMs > 1000 && maxWordT < lineStartMs * 0.5 && maxWordT < 120_000);
+
+  const absolute = cleaned.map((w) => ({
+    text: w.text,
+    startTime: looksRelative ? lineStartMs + Math.max(0, w.timeMs) : w.timeMs,
+    duration: 0,
+    space: false as boolean | undefined
+  }));
+
+  // 按时间排序，算 duration
+  absolute.sort((a, b) => a.startTime - b.startTime);
+  for (let i = 0; i < absolute.length; i++) {
+    const nextStart = i < absolute.length - 1 ? absolute[i + 1].startTime : lineEndMs;
+    absolute[i].duration = Math.max(40, nextStart - absolute[i].startTime);
+    // 词间空格：下一个字不是标点且当前不以空格结束时，英文/数字可补 space
+    if (i < absolute.length - 1) {
+      const cur = absolute[i].text;
+      const nxt = absolute[i + 1].text;
+      const curEndsSpace = /\s$/.test(cur);
+      const needSpace = !curEndsSpace && /[A-Za-z0-9]$/.test(cur) && /^[A-Za-z0-9]/.test(nxt);
+      absolute[i].space = needSpace;
+    }
+  }
+
+  return absolute;
 }

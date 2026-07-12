@@ -703,7 +703,8 @@ defineExpose({
   .content-wrapper {
     @apply grid items-center mx-auto h-full;
     grid-template-columns: minmax(300px, 40%) 1fr;
-    gap: 4rem;
+    /* 左右栏再隔开一点 */
+    gap: 6.5rem;
     max-width: 1600px;
     padding: 2rem;
     transition: width 0.3s ease;
@@ -752,10 +753,23 @@ defineExpose({
   }
 
   .right-side {
-    @apply flex flex-col justify-center h-full relative overflow-hidden;
+    /* 整块歌词区域高度：别 h-full 撑满；略偏上 + 与左侧栏留缝 */
+    --lyric-panel-height: 58vh;
+    @apply flex flex-col justify-center relative overflow-hidden;
+    height: var(--lyric-panel-height);
+    max-height: 100%;
+    /* 相对垂直居中再往上挪一点 */
+    align-self: center;
+    margin-top: -8vh;
+    /* 再跟左边封面拉开一点（叠在 gap 上） */
+    margin-left: 1.75rem;
+    padding-left: 0.75rem;
 
     &.full-width {
       @apply col-span-2;
+      --lyric-panel-height: 70vh;
+      margin-left: 0;
+      padding-left: 0;
     }
 
     &.center {
@@ -782,15 +796,15 @@ defineExpose({
       mask-image: linear-gradient(
         to bottom,
         transparent 0%,
-        black 15%,
-        black 85%,
+        black 12%,
+        black 88%,
         transparent 100%
       );
       -webkit-mask-image: linear-gradient(
         to bottom,
         transparent 0%,
-        black 15%,
-        black 85%,
+        black 12%,
+        black 88%,
         transparent 100%
       );
 
@@ -810,7 +824,8 @@ defineExpose({
     }
 
     .music-lrc-container {
-      padding: 50vh 0;
+      /* 滚动居中用的上下垫高：跟面板高度挂钩，约半高 */
+      padding: calc(var(--lyric-panel-height) * 0.42) 0;
       min-height: 100%;
     }
 
