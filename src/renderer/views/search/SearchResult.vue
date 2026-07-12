@@ -1,29 +1,31 @@
 <template>
   <div class="search-result-page h-full w-full bg-white dark:bg-black">
     <n-scrollbar class="h-full">
-      <div class="page-padding pb-32 pt-6 space-y-6">
-        <div>
-          <h1 class="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-white">
-            {{ keyword }}
-          </h1>
-          <p class="text-sm text-neutral-500 mt-1">{{ t('search.title.searchList') }}</p>
-        </div>
-
-        <!-- 结果分类导航：单曲 / 专辑 / 歌单 -->
-        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
-          <button
-            v-for="type in typeOptions"
-            :key="type.key"
-            class="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all"
-            :class="
-              searchType === type.key
-                ? 'bg-primary text-white'
-                : 'bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400'
-            "
-            @click="setSearchType(type.key)"
-          >
-            {{ type.label }}
-          </button>
+      <!-- 顶栏已有搜索，这里别再垫一大坨空白 -->
+      <div class="page-padding pb-32 pt-1 space-y-3">
+        <div class="flex flex-wrap items-end justify-between gap-2">
+          <div class="min-w-0">
+            <h1 class="text-lg md:text-xl font-bold text-neutral-900 dark:text-white truncate">
+              {{ keyword }}
+            </h1>
+            <p class="text-xs text-neutral-500 mt-0.5">{{ t('search.title.searchList') }}</p>
+          </div>
+          <!-- 结果分类：单曲 / 专辑 / 歌单 -->
+          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <button
+              v-for="type in typeOptions"
+              :key="type.key"
+              class="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all"
+              :class="
+                searchType === type.key
+                  ? 'bg-primary text-white'
+                  : 'bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400'
+              "
+              @click="setSearchType(type.key)"
+            >
+              {{ type.label }}
+            </button>
+          </div>
         </div>
 
         <n-spin :show="loading">

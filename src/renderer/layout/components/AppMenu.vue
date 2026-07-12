@@ -2,8 +2,18 @@
   <div class="app-menu-shell">
     <!-- 侧栏固定窄条 + 附着背景，防封面色冲掉图标 -->
     <div class="app-menu chrome-surface-strong">
+      <!-- 需要返回的页面：返回键住侧栏顶，别占搜索栏 -->
+      <n-tooltip v-if="showBack" :delay="200" :disabled="isMobile" placement="right">
+        <template #trigger>
+          <button type="button" class="menu-back-btn" @click="goBack">
+            <i class="ri-arrow-left-line" />
+          </button>
+        </template>
+        <div>{{ t('common.back') }}</div>
+      </n-tooltip>
+
       <div class="app-menu-list">
-        <!-- 滑动高亮：同 SearchBar 顶栏 tabs 的弹一下手感，竖/横都能跟 -->
+        <!-- 滑动高亮：竖/横都能跟 -->
         <div class="menu-slider-bg" :style="sliderStyle" />
         <div
           v-for="(item, index) in menus"
@@ -37,7 +47,7 @@
 <script lang="ts" setup>
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 
 import { isMobile } from '@/utils';
 
@@ -61,6 +71,7 @@ const props = defineProps({
 });
 
 const route = useRoute();
+const router = useRouter();
 const path = ref(route.path);
 /** 强制在 DOM 量完后再算滑块，避免首屏/路由切完 offset 还是 0 */
 const sliderTick = ref(0);
@@ -90,6 +101,18 @@ onMounted(() => {
 });
 
 const { t } = useI18n();
+
+/** 桌面侧栏显示返回；移动端走 MobileHeader，底栏不塞返回 */
+const showBack = computed(() => {
+  if (isMobile) return false;
+  const meta = route.meta;
+  if (meta.isMobile === false) return false;
+  return meta.back === true;
+});
+
+const goBack = () => {
+  router.back();
+};
 
 const isChecked = (index: number) => {
   return path.value === props.menus[index]?.path;
@@ -131,6 +154,29 @@ const sliderStyle = computed(() => {
   border-radius: 16px;
   height: 100%;
   box-sizing: border-box;
+}
+
+.menu-back-btn {
+  @apply flex items-center justify-center flex-shrink-0 mx-auto mb-1;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--chrome-text-muted, #9ca3af);
+  font-size: 20px;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s,
+    transform 0.15s;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.28));
+
+  &:hover {
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.12);
+    transform: scale(1.05);
+  }
 }
 
 .app-menu-list {

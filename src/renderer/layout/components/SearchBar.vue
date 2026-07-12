@@ -1,14 +1,9 @@
 <template>
-  <div class="search-bar-row flex items-center gap-2 pb-4 pr-4 pl-1">
-    <!-- 首页 / 歌单切换已搬到侧栏滑块，顶栏只留返回 -->
-    <div v-if="showBackButton" class="flex items-center gap-2 flex-shrink-0">
-      <button class="back-btn" @click="goBack">
-        <i class="ri-arrow-left-line" />
-      </button>
-      <span v-if="navTitleStore.isVisible" class="nav-page-title">
-        {{ navTitleStore.title }}
-      </span>
-    </div>
+  <div class="search-bar-row flex items-center gap-2 pb-3 pr-4 pl-1">
+    <!-- 返回键已搬家去侧栏；这里只剩滚动标题（有则显示） -->
+    <span v-if="navTitleStore.isVisible" class="nav-page-title flex-shrink-0">
+      {{ navTitleStore.title }}
+    </span>
 
     <div class="flex-1" />
 
@@ -177,14 +172,6 @@ const toggleIntelligenceMode = async () => {
   }
 };
 
-// ── Back button ───────────────────────────────────────
-const showBackButton = computed(() => {
-  const meta = router.currentRoute.value.meta;
-  if (!settingsStore.isMobile && meta.isMobile === false) return false;
-  return meta.back === true;
-});
-const goBack = () => router.back();
-
 // ── Search expand / collapse（悬停立即展开，无延迟）────
 const isSearchExpanded = ref(false);
 const inputFocused = ref(false);
@@ -330,30 +317,6 @@ const selectItem = (key: string) => {
 /* 整条顶栏控件统一高度 */
 .search-bar-row {
   --bar-h: 42px;
-}
-
-/* ── Back button ─────────────────────────────────────── */
-.back-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--bar-h);
-  height: var(--bar-h);
-  border-radius: 9999px;
-  border: 1px solid #e5e7eb;
-  background: transparent;
-  color: #6b7280;
-  font-size: 18px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.dark .back-btn {
-  border-color: #374151;
-  color: #9ca3af;
-}
-.back-btn:hover {
-  color: #22c55e;
-  border-color: #22c55e;
 }
 
 /* ── Search wrap：聚焦略变宽（避免被 flex 压死）──────── */
