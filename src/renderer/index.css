@@ -127,15 +127,21 @@
   --safe-area-inset-bottom: 10px;
   --safe-area-inset-left: 0px;
 
-  /* 页面内容区域统一边距 */
-  --page-px: 1rem; /* 默认 16px，对应 px-4 */
-  --page-pl: 1rem; /* 左边距，PC 端有菜单时为 0 */
-  --page-pr: 1rem; /* 右边距 */
+  /* 页面内容区域统一边距（用 rem / token，不靠零散魔法像素） */
+  --page-px: 1rem;
+  --page-pl: 1rem;
+  --page-pr: 1rem;
+  /* 侧栏与主内容列间距：默认无侧栏 */
+  --layout-col-gap: 0;
 }
 
-/* PC 端：有左侧菜单，左边距为 0 */
+/*
+ * PC：侧栏已是独立一列，内容左内边距归零，
+ * 列间距交给 --layout-col-gap（与 --page-pr 同节奏），避免贴栏又别各页硬塞 pl。
+ */
 .pc {
-  --page-pl: 0px;
+  --page-pl: 0;
+  --layout-col-gap: var(--page-pr);
 }
 
 /* 响应式边距 */

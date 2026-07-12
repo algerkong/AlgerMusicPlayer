@@ -1,5 +1,5 @@
 <template>
-  <div class="search-bar-row flex items-center gap-2 pb-3 pr-4 pl-1">
+  <div class="search-bar-row flex items-center gap-2">
     <!-- 返回键已搬家去侧栏；这里只剩滚动标题（有则显示） -->
     <span v-if="navTitleStore.isVisible" class="nav-page-title flex-shrink-0">
       {{ navTitleStore.title }}
@@ -334,9 +334,12 @@ const selectItem = (key: string) => {
 </script>
 
 <style scoped>
-/* 整条顶栏控件统一高度 */
+/* 整条顶栏控件统一高度；左右跟页面 token，不跟侧栏赛像素 */
 .search-bar-row {
   --bar-h: 42px;
+  padding-right: var(--page-pr);
+  padding-bottom: 0.5rem;
+  box-sizing: border-box;
 }
 
 /* ── Search wrap：聚焦略变宽（避免被 flex 压死）──────── */

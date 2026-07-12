@@ -2,15 +2,25 @@
   <div class="app-menu-shell">
     <!-- 侧栏固定窄条 + 附着背景，防封面色冲掉图标 -->
     <div class="app-menu chrome-surface-strong">
-      <!-- 需要返回的页面：返回键住侧栏顶，别占搜索栏 -->
-      <n-tooltip v-if="showBack" :delay="200" :disabled="isMobile" placement="right">
-        <template #trigger>
-          <button type="button" class="menu-back-btn" @click="goBack">
-            <i class="ri-arrow-left-line" />
-          </button>
-        </template>
-        <div>{{ t('common.back') }}</div>
-      </n-tooltip>
+      <!-- 需要返回的页面：返回键住侧栏顶；显隐带过渡，别硬切 -->
+      <Transition
+        name="menu-back"
+        @after-enter="bumpSlider"
+        @after-leave="bumpSlider"
+        @enter="onBackTransitionFrame"
+        @leave="onBackTransitionFrame"
+      >
+        <div v-if="showBack" key="menu-back" class="menu-back-slot">
+          <n-tooltip :delay="200" :disabled="isMobile" placement="right">
+            <template #trigger>
+              <button type="button" class="menu-back-btn" @click="goBack">
+                <i class="ri-arrow-left-line" />
+              </button>
+            </template>
+            <div>{{ t('common.back') }}</div>
+          </n-tooltip>
+        </div>
+      </Transition>
 
       <div class="app-menu-list">
         <!-- 滑动高亮：竖/横都能跟 -->
@@ -115,6 +125,14 @@ const goBack = () => {
   router.back();
 };
 
+/** 过渡中间多刷几次滑块，避免菜单高亮突然跳位 */
+const onBackTransitionFrame = () => {
+  bumpSlider();
+  window.setTimeout(() => bumpSlider(), 80);
+  window.setTimeout(() => bumpSlider(), 160);
+  window.setTimeout(() => bumpSlider(), 280);
+};
+
 const isChecked = (index: number) => {
   return path.value === props.menus[index]?.path;
 };
@@ -157,8 +175,17 @@ const sliderStyle = computed(() => {
   box-sizing: border-box;
 }
 
+.menu-back-slot {
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 100%;
+  margin-bottom: 4px;
+  overflow: hidden;
+}
+
 .menu-back-btn {
-  @apply flex items-center justify-center flex-shrink-0 mx-auto mb-1;
+  @apply flex items-center justify-center flex-shrink-0;
   width: 40px;
   height: 40px;
   border: none;
@@ -178,6 +205,33 @@ const sliderStyle = computed(() => {
     background: rgba(34, 197, 94, 0.12);
     transform: scale(1.05);
   }
+}
+
+/* 出现：从上轻弹入；消失：缩回淡出，高度一起收 */
+.menu-back-enter-active,
+.menu-back-leave-active {
+  transition:
+    opacity 0.22s ease,
+    max-height 0.3s cubic-bezier(0.34, 1.4, 0.64, 1),
+    margin 0.28s ease,
+    transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1);
+  max-height: 48px;
+}
+
+.menu-back-enter-from,
+.menu-back-leave-to {
+  opacity: 0;
+  max-height: 0;
+  margin-bottom: 0;
+  transform: translateY(-10px) scale(0.82);
+}
+
+.menu-back-enter-to,
+.menu-back-leave-from {
+  opacity: 1;
+  max-height: 48px;
+  margin-bottom: 4px;
+  transform: translateY(0) scale(1);
 }
 
 .app-menu-list {

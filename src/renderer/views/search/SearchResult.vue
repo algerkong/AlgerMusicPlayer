@@ -1,88 +1,69 @@
 <template>
   <div class="search-result-page h-full w-full bg-white dark:bg-black">
     <n-scrollbar class="h-full">
-      <!-- 顶栏已有搜索，这里别再垫一大坨空白 -->
-      <div class="page-padding pb-32 pt-1 space-y-3">
-        <div class="flex flex-wrap items-end justify-between gap-2">
-          <div class="min-w-0">
-            <h1 class="text-lg md:text-xl font-bold text-neutral-900 dark:text-white truncate">
-              {{ keyword }}
-            </h1>
-            <p class="text-xs text-neutral-500 mt-0.5">{{ t('search.title.searchList') }}</p>
-          </div>
-          <!-- 结果分类：单曲 / 专辑 / 歌单 -->
-          <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-            <button
-              v-for="type in typeOptions"
-              :key="type.key"
-              class="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all"
-              :class="
-                searchType === type.key
-                  ? 'bg-primary text-white'
-                  : 'bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400'
-              "
-              @click="setSearchType(type.key)"
-            >
-              {{ type.label }}
-            </button>
-          </div>
-        </div>
+      <div class="pb-32">
+        <!-- 复用分类选择器：line 变体 = 底线高亮，不要手搓圆角胶囊 -->
+        <category-selector
+          variant="line"
+          :model-value="searchType"
+          :categories="typeOptions"
+          label-key="label"
+          value-key="key"
+          animation-class=""
+          @change="setSearchType"
+        />
 
-        <n-spin :show="loading">
-          <template v-if="!loading && isEmpty">
-            <n-empty :description="emptyText" class="pt-16" />
-          </template>
+        <div class="page-padding result-list">
+          <n-spin :show="loading">
+            <template v-if="!loading && isEmpty">
+              <n-empty :description="emptyText" class="pt-16" />
+            </template>
 
-          <!-- Songs -->
-          <div v-else-if="searchType === SEARCH_TYPE.MUSIC" class="space-y-1">
-            <div v-if="songs.length" class="mb-4">
-              <n-button type="primary" round @click="playAll">
-                <template #icon><i class="ri-play-fill" /></template>
-                {{ t('search.button.playAll') }}
-              </n-button>
+            <!-- Songs -->
+            <div v-else-if="searchType === SEARCH_TYPE.MUSIC" class="space-y-1">
+              <song-item
+                v-for="(song, index) in songs"
+                :key="song.id"
+                :item="song"
+                :index="index"
+                :is-next="true"
+              />
             </div>
-            <song-item
-              v-for="(song, index) in songs"
-              :key="song.id"
-              :item="song"
-              :index="index"
-              :is-next="true"
-            />
-          </div>
 
-          <!-- Playlists / Albums grid -->
-          <div v-else class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            <div
-              v-for="item in gridItems"
-              :key="item.id"
-              class="cursor-pointer group"
-              @click="openItem(item)"
-            >
+            <!-- Playlists / Albums grid -->
+            <div v-else class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
               <div
-                class="aspect-square rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-900"
+                v-for="item in gridItems"
+                :key="item.id"
+                class="cursor-pointer group"
+                @click="openItem(item)"
               >
-                <n-image
-                  v-if="item.picUrl"
-                  :src="item.picUrl"
-                  object-fit="cover"
-                  class="w-full h-full"
-                  preview-disabled
-                />
+                <div
+                  class="aspect-square rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-900"
+                >
+                  <n-image
+                    v-if="item.picUrl"
+                    :src="item.picUrl"
+                    object-fit="cover"
+                    class="w-full h-full"
+                    preview-disabled
+                  />
+                </div>
+                <div class="mt-2 text-sm font-medium truncate text-neutral-900 dark:text-white">
+                  {{ item.name }}
+                </div>
+                <div class="text-xs text-neutral-500 truncate">{{ item.desc }}</div>
               </div>
-              <div class="mt-2 text-sm font-medium truncate text-neutral-900 dark:text-white">
-                {{ item.name }}
-              </div>
-              <div class="text-xs text-neutral-500 truncate">{{ item.desc }}</div>
             </div>
-          </div>
-        </n-spin>
+          </n-spin>
+        </div>
       </div>
     </n-scrollbar>
   </div>
 </template>
 
 <script setup lang="ts">
-import { NButton, NEmpty, NImage, NScrollbar, NSpin, useMessage } from 'naive-ui';
+import { NEmpty, NImage, NScrollbar, NSpin, useMessage } from 'naive-ui';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
@@ -96,10 +77,10 @@ import {
   msSearchPlaylists,
   msSearchSongs
 } from '@/api/musicSource';
+import CategorySelector from '@/components/common/CategorySelector.vue';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import SongItem from '@/components/common/SongItem.vue';
 import { SEARCH_TYPE } from '@/const/bar-const';
-import { usePlayerStore } from '@/store/modules/player';
 import type { SongResult } from '@/types/music';
 
 defineOptions({ name: 'SearchResult' });
@@ -108,7 +89,6 @@ const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const message = useMessage();
-const playerStore = usePlayerStore();
 
 const keyword = computed(() => String(route.query.keyword || '').trim());
 /** 与 URL ?type= 同步；默认单曲 */
@@ -188,12 +168,6 @@ const load = async () => {
   }
 };
 
-const playAll = () => {
-  if (!songs.value.length) return;
-  playerStore.setPlayList(songs.value);
-  playerStore.setPlay(songs.value[0]);
-};
-
 const openItem = async (item: any) => {
   if (item.type === 'playlist') {
     navigateToMusicList(router, {
@@ -216,3 +190,9 @@ watch(
   { immediate: true }
 );
 </script>
+
+<style scoped>
+.result-list {
+  padding-top: 0.75rem;
+}
+</style>

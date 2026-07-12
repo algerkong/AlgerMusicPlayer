@@ -239,6 +239,8 @@ provide('openPlaylistDrawer', openPlaylistDrawer);
   @apply flex;
   flex: 1 1 0;
   min-height: 0;
+  /* 侧栏 ↔ 主区：走全局 --layout-col-gap，不跟页面里赛 padding */
+  gap: var(--layout-col-gap, 0);
   /* 给底部播放条留空，避免内容盖住 absolute 播放条 */
   padding-bottom: 5.5rem;
   box-sizing: border-box;
