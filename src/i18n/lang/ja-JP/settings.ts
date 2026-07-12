@@ -4,11 +4,11 @@ export default {
   regard: 'について',
   logout: 'ログアウト',
   sections: {
-    basic: '基本設定',
-    playback: '再生設定',
-    application: 'アプリケーション設定',
-    network: 'ネットワーク設定',
-    system: 'システム管理',
+    basic: '一般',
+    playback: '再生',
+    application: 'アプリ',
+    network: 'ネットワーク',
+    system: 'ストレージ',
     about: 'について'
   },
   basic: {
@@ -81,6 +81,7 @@ export default {
     audioDeviceDesc: 'スピーカー、ヘッドホン、Bluetoothデバイスなどの出力先を選択',
     testAudio: 'テスト',
     selectAudioDevice: '出力デバイスを選択',
+    systemDefault: 'システム既定',
     showStatusBar: 'ステータスバーコントロール機能を表示するかどうか',
     showStatusBarContent:
       'Macのステータスバーに音楽コントロール機能を表示できます（再起動後に有効）'

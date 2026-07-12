@@ -1,6 +1,6 @@
 <template>
   <div
-    class="setting-item flex items-center justify-between p-4 transition-colors bg-transparent text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-800 last:border-b-0 hover:bg-gray-50 hover:dark:bg-white/5"
+    class="setting-item flex items-center justify-between p-4 transition-colors bg-transparent text-foreground border-b last:border-b-0 hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
     :class="[
       // 移动端垂直布局
       { 'max-md:flex-col max-md:items-start max-md:gap-3': !inline },
@@ -78,3 +78,9 @@ const handleClick = (event: MouseEvent) => {
   }
 };
 </script>
+
+<style scoped>
+.setting-item {
+  border-color: var(--chrome-border, rgba(0, 0, 0, 0.08));
+}
+</style>

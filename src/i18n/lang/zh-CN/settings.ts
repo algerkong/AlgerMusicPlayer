@@ -4,11 +4,11 @@ export default {
   regard: '关于',
   logout: '退出登录',
   sections: {
-    basic: '基础设置',
-    playback: '播放设置',
-    application: '应用设置',
-    network: '网络设置',
-    system: '系统管理',
+    basic: '通用',
+    playback: '播放',
+    application: '应用',
+    network: '网络',
+    system: '存储',
     about: '关于'
   },
   basic: {
@@ -78,6 +78,7 @@ export default {
     audioDeviceDesc: '选择音频输出设备，如扬声器、耳机或蓝牙设备',
     testAudio: '测试',
     selectAudioDevice: '选择输出设备',
+    systemDefault: '系统默认',
     showStatusBar: '是否显示状态栏控制功能',
     showStatusBarContent: '可以在您的mac状态栏显示音乐控制功能(重启后生效)'
   },

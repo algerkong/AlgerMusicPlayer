@@ -4,11 +4,11 @@ export default {
   regard: '關於',
   logout: '登出',
   sections: {
-    basic: '基礎設定',
-    playback: '播放設定',
-    application: '應用程式設定',
-    network: '網路設定',
-    system: '系統管理',
+    basic: '通用',
+    playback: '播放',
+    application: '應用',
+    network: '網路',
+    system: '儲存',
     about: '關於'
   },
   basic: {
@@ -78,6 +78,7 @@ export default {
     audioDeviceDesc: '選擇音訊輸出裝置，如揚聲器、耳機或藍牙裝置',
     testAudio: '測試',
     selectAudioDevice: '選擇輸出裝置',
+    systemDefault: '系統預設',
     showStatusBar: '是否顯示狀態列控制功能',
     showStatusBarContent: '可以在您的mac狀態列顯示音樂控制功能(重啟後生效)'
 

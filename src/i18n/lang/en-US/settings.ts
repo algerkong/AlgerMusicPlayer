@@ -4,11 +4,11 @@ export default {
   regard: 'About',
   logout: 'Logout',
   sections: {
-    basic: 'Basic Settings',
-    playback: 'Playback Settings',
-    application: 'Application Settings',
-    network: 'Network Settings',
-    system: 'System Management',
+    basic: 'General',
+    playback: 'Playback',
+    application: 'App',
+    network: 'Network',
+    system: 'Storage',
     about: 'About'
   },
   basic: {
@@ -81,6 +81,7 @@ export default {
     audioDeviceDesc: 'Select audio output device such as speakers, headphones or Bluetooth devices',
     testAudio: 'Test',
     selectAudioDevice: 'Select output device',
+    systemDefault: 'System default',
     showStatusBar: 'Show Status Bar',
     showStatusBarContent:
       'You can display the music control function in your mac status bar (effective after a restart)'

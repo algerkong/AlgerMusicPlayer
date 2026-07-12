@@ -4,11 +4,11 @@ export default {
   regard: '정보',
   logout: '로그아웃',
   sections: {
-    basic: '기본 설정',
-    playback: '재생 설정',
-    application: '애플리케이션 설정',
-    network: '네트워크 설정',
-    system: '시스템 관리',
+    basic: '일반',
+    playback: '재생',
+    application: '앱',
+    network: '네트워크',
+    system: '저장소',
     about: '정보'
   },
   basic: {
@@ -81,6 +81,7 @@ export default {
     audioDeviceDesc: '스피커, 헤드폰 또는 블루투스 장치와 같은 오디오 출력 장치 선택',
     testAudio: '테스트',
     selectAudioDevice: '출력 장치 선택',
+    systemDefault: '시스템 기본값',
     showStatusBar: '상태바 제어 기능 표시 여부',
     showStatusBarContent: 'Mac 상태바에 음악 제어 기능을 표시할 수 있습니다 (재시작 후 적용)'
 

@@ -5,13 +5,17 @@
   >
     <n-scrollbar ref="scrollbarRef" x-scrollable>
       <div
+        ref="rowRef"
         class="category-selector__row flex items-center page-padding"
         style="white-space: nowrap"
         @wheel.prevent="handleWheel"
       >
+        <!-- line：一条可滑动的底线 -->
+        <div v-if="variant === 'line'" class="category-selector__slider" :style="sliderStyle" />
         <span
           v-for="(category, index) in categories"
           :key="getItemKey(category, index)"
+          :ref="(el) => setItemRef(el as HTMLElement | null, index)"
           class="category-selector__item"
           :class="[
             animationClass,
@@ -31,7 +35,7 @@
 
 <script setup lang="ts">
 import { NScrollbar } from 'naive-ui';
-import { computed, ref } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 
 import { setAnimationDelay } from '@/utils';
 
@@ -43,7 +47,7 @@ type CategorySelectorProps = {
   labelKey?: string;
   valueKey?: string;
   animationClass?: string;
-  /** pill=圆角胶囊（默认）；line=文字高亮 + 底线 */
+  /** pill=圆角胶囊（默认）；line=文字高亮 + 滑动底线 */
   variant?: 'pill' | 'line';
 };
 
@@ -60,6 +64,13 @@ const emit = defineEmits<{
 }>();
 
 const scrollbarRef = ref();
+const rowRef = ref<HTMLElement | null>(null);
+const itemEls = ref<(HTMLElement | null)[]>([]);
+const sliderTick = ref(0);
+
+const setItemRef = (el: HTMLElement | null, index: number) => {
+  if (el) itemEls.value[index] = el;
+};
 
 const getItemKey = (item: Category, index: number): string | number => {
   if (typeof item === 'object' && item !== null) {
@@ -87,6 +98,32 @@ const isActive = (item: Category): boolean => {
   return itemValue === props.modelValue;
 };
 
+const activeIndex = computed(() =>
+  props.categories.findIndex((c) => getItemValue(c) === props.modelValue)
+);
+
+const bumpSlider = async () => {
+  await nextTick();
+  sliderTick.value += 1;
+};
+
+/** line 变体：底线略短于文字，transform 丝滑滑过去 */
+const sliderStyle = computed(() => {
+  void sliderTick.value;
+  if (props.variant !== 'line') return { opacity: '0' };
+  const idx = activeIndex.value;
+  const el = itemEls.value[idx];
+  if (!el || !rowRef.value) return { opacity: '0' };
+  // 比文字略短一点，别顶满整段 label
+  const inset = Math.min(6, Math.max(3, Math.round(el.offsetWidth * 0.12)));
+  const w = Math.max(12, el.offsetWidth - inset * 2);
+  return {
+    transform: `translateX(${el.offsetLeft + inset}px)`,
+    width: `${w}px`,
+    opacity: '1'
+  };
+});
+
 const getAnimationDelay = computed(() => {
   return (index: number) => setAnimationDelay(index, 30);
 });
@@ -106,6 +143,20 @@ const handleWheel = (e: WheelEvent) => {
   }
 };
 
+watch(
+  () => [props.modelValue, props.categories, props.variant] as const,
+  () => {
+    void bumpSlider();
+  }
+);
+
+onMounted(() => {
+  void bumpSlider();
+  // 字体/布局晚到时再量一次
+  window.setTimeout(() => bumpSlider(), 50);
+  window.setTimeout(() => bumpSlider(), 200);
+});
+
 defineExpose({
   scrollbarRef
 });
@@ -113,6 +164,7 @@ defineExpose({
 
 <style scoped>
 .category-selector__row {
+  position: relative;
   white-space: nowrap;
 }
 
@@ -167,7 +219,7 @@ defineExpose({
   transform: scale(1.05);
 }
 
-/* ── line：透底，别整一条死黑；悬停只轻微提亮 ───────── */
+/* ── line：文字高亮 + 滑动底线 ───────────────────────── */
 .category-selector--line {
   background: transparent;
   border-bottom: 1px solid var(--chrome-border, rgba(0, 0, 0, 0.06));
@@ -179,13 +231,28 @@ defineExpose({
   gap: 0;
 }
 
+.category-selector__slider {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 0.125rem;
+  border-radius: 9999px;
+  background: var(--primary-color, #22c55e);
+  pointer-events: none;
+  z-index: 2;
+  transition:
+    transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1),
+    width 0.28s cubic-bezier(0.34, 1.4, 0.64, 1),
+    opacity 0.18s ease;
+}
+
 .category-selector__item--line {
   position: relative;
   display: inline-block;
   margin-right: 1.25rem;
   padding: 0.5rem 0 0.55rem;
   cursor: pointer;
-  /* 字号/字重固定，选中只靠颜色+缩放，避免整条筛选栏被顶着跳 */
+  /* 字号固定，选中用 scale 略放大，避免整行被字号顶跳 */
   font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.25;
@@ -197,29 +264,15 @@ defineExpose({
     transform 0.18s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 
-/* 未选中悬停：往主色靠一点点，别黑白对撞 */
 .category-selector__item--line:hover:not(.is-active) {
   color: color-mix(in srgb, var(--primary-color, #22c55e) 40%, var(--chrome-text-muted, #6b7280));
 }
 
 .category-selector__item--line.is-active {
   color: var(--primary-color, #22c55e);
-  /* 视觉上大一点，但不改 layout box */
   transform: scale(1.12);
   z-index: 1;
 }
 
-.category-selector__item--line.is-active::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1px;
-  height: 0.125rem;
-  background: var(--primary-color, #22c55e);
-  border-radius: 9999px;
-  /* 抵消 scale，底线仍贴容器，不跟着字一起肥 */
-  transform: scaleX(calc(1 / 1.12));
-  transform-origin: center bottom;
-}
+/* 底线改由 slider 统一画，不再用 ::after，避免两根线 */
 </style>
