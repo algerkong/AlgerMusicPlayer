@@ -49,9 +49,12 @@
       <template #action>
         <div class="flex items-center gap-3 max-md:flex-wrap">
           <div class="w-40 max-md:w-32">
-            <n-progress type="line" :percentage="diskCacheUsagePercent" />
+            <ui-progress :value="diskCacheUsagePercent" />
           </div>
-          <span class="text-xs text-neutral-500">
+          <span class="text-xs text-muted-foreground tabular-nums">
+            {{ diskCacheUsagePercent }}%
+          </span>
+          <span class="text-xs text-muted-foreground">
             {{
               t('settings.system.cacheStatusDetail', {
                 musicCount: diskCacheStats.musicFiles,
@@ -74,6 +77,7 @@ import { computed, inject, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { Button as UiButton } from '@/components/ui/button';
+import { Progress as UiProgress } from '@/components/ui/progress';
 import { isElectron } from '@/utils';
 import { openDirectory, selectDirectory } from '@/utils/fileOperation';
 
