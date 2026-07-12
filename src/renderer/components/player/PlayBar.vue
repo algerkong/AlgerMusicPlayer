@@ -145,7 +145,39 @@
         {{ isDownloading ? t('songItem.message.downloading') : t('player.playBar.download') }}
       </n-tooltip>
 
-      <!-- 音效（控件占位） -->
+      <!-- 音质（从设置页挪到播放条） -->
+      <n-popover
+        v-if="isElectron"
+        trigger="click"
+        placement="top"
+        :show-arrow="false"
+        raw
+        :z-index="9999999"
+      >
+        <template #trigger>
+          <n-tooltip trigger="hover" :z-index="9999999">
+            <template #trigger>
+              <button type="button" class="quality-btn" :title="qualityLabel">
+                {{ qualityShort }}
+              </button>
+            </template>
+            {{ t('settings.playback.quality') }}：{{ qualityLabel }}
+          </n-tooltip>
+        </template>
+        <div class="quality-menu">
+          <div
+            v-for="opt in qualityOptions"
+            :key="opt.value"
+            class="quality-menu-item"
+            :class="{ active: settingsStore.setData.musicQuality === opt.value }"
+            @click="setQuality(opt.value)"
+          >
+            {{ opt.label }}
+          </div>
+        </div>
+      </n-popover>
+
+      <!-- 音效 + 输出设备 -->
       <sound-effect-popover />
 
       <n-tooltip trigger="hover" :z-index="9999999">
@@ -185,6 +217,30 @@ import { getImgUrl, isElectron, isMobile, secondToMinute, setAnimationClass } fr
 const playerStore = usePlayerStore();
 const settingsStore = useSettingsStore();
 const { t } = useI18n();
+
+/** 与 ly-music-source 对齐的常用音质 */
+const qualityOptions = [
+  { value: 'standard', label: '标准', short: '标' },
+  { value: 'higher', label: '较高', short: '高' },
+  { value: 'lossless', label: '无损', short: '损' }
+];
+
+const qualityLabel = computed(() => {
+  const q = settingsStore.setData.musicQuality || 'higher';
+  return qualityOptions.find((o) => o.value === q)?.label || q;
+});
+
+const qualityShort = computed(() => {
+  const q = settingsStore.setData.musicQuality || 'higher';
+  return qualityOptions.find((o) => o.value === q)?.short || '音';
+});
+
+const setQuality = (value: string) => {
+  settingsStore.setSetData({
+    ...settingsStore.setData,
+    musicQuality: value
+  });
+};
 
 // 播放控制
 const { isPlaying: play, playMusicEvent, handleNext, handlePrev } = usePlaybackControl();
@@ -631,5 +687,27 @@ const openPlayListDrawer = () => {
   @apply ml-2 px-1.5 h-4 flex items-center text-xs rounded bg-green-500 bg-opacity-15 text-green-600 dark:text-green-400;
   font-weight: 500;
   vertical-align: 1px;
+}
+
+.quality-btn {
+  @apply min-w-[1.75rem] h-7 px-1.5 rounded-md text-xs font-semibold;
+  @apply hover:text-green-500 hover:bg-black/5 dark:hover:bg-white/10 transition-colors;
+  border: 1px solid currentColor;
+  opacity: 0.85;
+}
+
+.quality-menu {
+  @apply min-w-[7rem] py-1 rounded-xl border border-neutral-200 dark:border-neutral-700;
+  @apply bg-white dark:bg-neutral-900 shadow-lg;
+}
+
+.quality-menu-item {
+  @apply px-3 py-2 text-sm cursor-pointer transition-colors;
+  @apply text-neutral-700 dark:text-neutral-300;
+  @apply hover:bg-neutral-100 dark:hover:bg-neutral-800;
+}
+
+.quality-menu-item.active {
+  @apply text-green-600 dark:text-green-400 font-medium bg-green-500/10;
 }
 </style>

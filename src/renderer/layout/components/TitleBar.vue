@@ -9,6 +9,23 @@
       <span class="brand-name">LYMusic</span>
       <span class="brand-ver">v{{ appVersion }}</span>
     </div>
+
+    <!-- 与左上角品牌同一行：顶中两行支持正版 -->
+    <div class="support-banner no-drag-children">
+      <p class="support-line1">好音乐值得被认真对待，请大家支持正版</p>
+      <a
+        class="support-line2"
+        href="https://music.douyin.com/"
+        target="_blank"
+        rel="noopener noreferrer"
+        @click.prevent="openQishui"
+      >
+        <img :src="qishuiIcon" alt="汽水音乐" class="support-icon" />
+        <span>汽水音乐 · 购买会员</span>
+        <i class="ri-external-link-line support-ext" />
+      </a>
+    </div>
+
     <div id="buttons" class="flex gap-4 items-center">
       <n-button
         v-if="!isElectron"
@@ -57,59 +74,26 @@
           </button>
 
           <h3 class="text-lg font-bold leading-6 text-neutral-900 dark:text-white mb-2">
-            {{ t('comp.titleBar.closeApp') }}
+            已最小化到系统托盘
           </h3>
           <div class="mt-2">
-            <p class="text-sm text-neutral-500 dark:text-neutral-400">
-              {{ t('comp.titleBar.closeTitle') }}
+            <p class="text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
+              关闭窗口后 LYMusic 会继续在托盘运行，方便随时唤起。需要彻底退出时点左侧按钮即可。
             </p>
-          </div>
-
-          <div
-            class="mt-4 flex w-fit cursor-pointer items-center gap-2 group"
-            @click="rememberChoice = !rememberChoice"
-          >
-            <div
-              class="relative flex h-5 w-5 items-center justify-center transition-colors duration-200"
-              :class="
-                rememberChoice
-                  ? 'text-green-500'
-                  : 'text-neutral-400 group-hover:text-neutral-500 dark:text-neutral-500 dark:group-hover:text-neutral-400'
-              "
-            >
-              <i
-                class="text-xl"
-                :class="
-                  rememberChoice ? 'ri-checkbox-circle-fill' : 'ri-checkbox-blank-circle-line'
-                "
-              ></i>
-            </div>
-            <span
-              class="select-none text-xs text-neutral-500 transition-colors duration-200 group-hover:text-neutral-700 dark:text-neutral-400 dark:group-hover:text-neutral-300"
-              :class="{ 'text-neutral-800 dark:text-neutral-200': rememberChoice }"
-            >
-              {{ t('comp.titleBar.rememberChoice') }}
-            </span>
           </div>
 
           <div class="mt-6 flex justify-end gap-3">
             <button
-              class="rounded-full px-4 py-2 text-sm font-medium text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:bg-neutral-800 transition-colors focus:outline-none"
-              @click="showCloseModal = false"
-            >
-              {{ t('common.cancel') }}
-            </button>
-            <button
               class="rounded-full px-4 py-2 text-sm font-medium text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800 transition-colors focus:outline-none"
               @click="handleAction('close')"
             >
-              {{ t('comp.titleBar.exitApp') }}
+              彻底退出
             </button>
             <button
               class="rounded-full bg-green-500 px-6 py-2 text-sm font-medium text-white hover:bg-green-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 transition-colors shadow-lg shadow-green-500/20"
               @click="handleAction('minimize')"
             >
-              {{ t('comp.titleBar.minimizeToTray') }}
+              好的
             </button>
           </div>
         </div>
@@ -120,20 +104,23 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useI18n } from 'vue-i18n';
 
 import appIcon from '@/assets/icon.png';
+import qishuiIcon from '@/assets/qishui-icon.png';
 import { useSettingsStore } from '@/store/modules/settings';
 import { isElectron } from '@/utils';
 
 import config from '../../../../package.json';
 
-const { t } = useI18n();
-
 const settingsStore = useSettingsStore();
 const showCloseModal = ref(false);
-const rememberChoice = ref(false);
 const appVersion = config.version;
+const TRAY_TIP_KEY = 'lymusic-tray-close-tip-seen';
+const QISHUI_VIP_URL = 'https://music.douyin.com/';
+
+const openQishui = () => {
+  window.open(QISHUI_VIP_URL, '_blank');
+};
 
 const openDownloadPage = () => {
   if (!isElectron) {
@@ -148,35 +135,44 @@ const minimize = () => {
   window.api.minimize();
 };
 
-const handleAction = (action: 'minimize' | 'close') => {
-  if (rememberChoice.value) {
-    settingsStore.setSetData({
-      ...settingsStore.setData,
-      closeAction: action
-    });
+const markTrayTipSeen = () => {
+  try {
+    localStorage.setItem(TRAY_TIP_KEY, '1');
+  } catch {
+    /* ignore */
   }
+  settingsStore.setSetData({
+    ...settingsStore.setData,
+    closeAction: 'minimize'
+  });
+};
 
+const handleAction = (action: 'minimize' | 'close') => {
+  markTrayTipSeen();
   if (action === 'minimize') {
     showCloseModal.value = false;
     setTimeout(() => {
       window.api.miniTray();
     }, 200);
   } else {
-    window.api.quitApp();
     showCloseModal.value = false;
+    window.api.quitApp();
   }
 };
 
 const handleClose = () => {
-  const { closeAction } = settingsStore.setData;
-
-  if (closeAction === 'minimize') {
-    window.api.miniTray();
-  } else if (closeAction === 'close') {
-    window.api.close();
-  } else {
-    showCloseModal.value = true;
+  // 首次关闭：提示进托盘；之后默认最小化到托盘
+  let seen = false;
+  try {
+    seen = localStorage.getItem(TRAY_TIP_KEY) === '1';
+  } catch {
+    seen = false;
   }
+  if (!seen && settingsStore.setData.closeAction === 'ask') {
+    showCloseModal.value = true;
+    return;
+  }
+  window.api.miniTray();
 };
 
 const drag = (event: MouseEvent) => {
@@ -191,10 +187,14 @@ const drag = (event: MouseEvent) => {
 #title-bar {
   -webkit-app-region: drag;
   z-index: 3000;
+  min-height: 48px;
 }
 
 #buttons {
   -webkit-app-region: no-drag;
+  flex-shrink: 0;
+  min-width: 72px;
+  justify-content: flex-end;
 }
 
 .brand {
@@ -206,6 +206,8 @@ const drag = (event: MouseEvent) => {
   border-radius: 9999px;
   /* 防止封面色导致品牌字消失 */
   -webkit-app-region: no-drag;
+  flex-shrink: 0;
+  z-index: 1;
 }
 
 .brand-icon {
@@ -232,5 +234,61 @@ const drag = (event: MouseEvent) => {
   padding: 2px 6px;
   border-radius: 9999px;
   background: rgba(0, 0, 0, 0.06);
+}
+
+.support-banner {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  max-width: min(420px, 46vw);
+  pointer-events: auto;
+  -webkit-app-region: no-drag;
+  text-align: center;
+  z-index: 0;
+}
+
+.support-line1 {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--chrome-text-muted, #6b7280);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.support-line2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--primary-color, #22c55e);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity 0.15s ease;
+}
+.support-line2:hover {
+  opacity: 0.85;
+}
+
+.support-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 9999px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.support-ext {
+  font-size: 11px;
+  opacity: 0.65;
 }
 </style>

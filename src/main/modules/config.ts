@@ -70,6 +70,8 @@ export function initializeConfig() {
     if (store.get('set.enableDiskCache') === undefined) {
       store.set('set.enableDiskCache', true);
     }
+    // GPU 始终开启，设置页不再暴露开关（纠正旧版关闭过的配置）
+    store.set('set.enableGpuAcceleration', true);
   } catch (error) {
     console.error('[config] 初始化默认配置失败:', error);
   }

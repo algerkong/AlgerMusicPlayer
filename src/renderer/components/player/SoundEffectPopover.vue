@@ -1,8 +1,7 @@
 <template>
-  <!-- 音效：先放控件占位，后续接汽水/本地音效引擎 -->
   <n-tooltip trigger="hover" :z-index="9999999">
     <template #trigger>
-      <div class="fx-btn" @click="show = true">
+      <div class="fx-btn" @click="open">
         <i class="ri-sound-module-line"></i>
       </div>
     </template>
@@ -17,6 +16,7 @@
           <i class="ri-close-line" />
         </button>
       </div>
+
       <p class="fx-hint">预设音效（控件占位，逻辑稍后接入）</p>
       <div class="fx-grid">
         <button
@@ -30,15 +30,46 @@
           {{ item.label }}
         </button>
       </div>
+
+      <!-- 输出设备：默认走系统，可选二级切换 -->
+      <div class="fx-device">
+        <div class="fx-device-head">
+          <span class="fx-device-title">{{ t('settings.playback.audioDevice') }}</span>
+          <button
+            type="button"
+            class="fx-icon-btn"
+            :disabled="isLoading"
+            :title="t('settings.playback.selectAudioDevice')"
+            @click="handleRefresh"
+          >
+            <i class="ri-refresh-line" :class="{ 'fx-spin': isLoading }" />
+          </button>
+        </div>
+        <n-select
+          size="small"
+          :value="playerStore.audioOutputDeviceId"
+          :options="deviceOptions"
+          :loading="isLoading"
+          :placeholder="t('settings.playback.selectAudioDevice')"
+          @update:value="handleDeviceChange"
+        />
+      </div>
     </div>
   </n-modal>
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import { useI18n } from 'vue-i18n';
+
+import { usePlayerCoreStore } from '@/store/modules/playerCore';
+
+const { t } = useI18n();
+const playerStore = usePlayerCoreStore();
 
 const show = ref(false);
 const active = ref('none');
+const isLoading = ref(false);
 
 const presets = [
   { key: 'none', label: '关闭' },
@@ -48,6 +79,43 @@ const presets = [
   { key: 'clear', label: '清澈人声' },
   { key: 'live', label: '现场' }
 ];
+
+const deviceOptions = computed(() => {
+  const systemLabel = t('settings.playback.systemDefault');
+  const list = playerStore.availableAudioDevices.map((d) => ({
+    label: d.isDefault || d.deviceId === 'default' || d.deviceId === '' ? systemLabel : d.label,
+    value: d.deviceId || 'default'
+  }));
+
+  // 始终保留「系统默认」入口
+  if (!list.some((d) => d.value === 'default' || d.value === '')) {
+    list.unshift({ label: systemLabel, value: 'default' });
+  }
+  return list;
+});
+
+const handleRefresh = async () => {
+  isLoading.value = true;
+  try {
+    await playerStore.refreshAudioDevices();
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const handleDeviceChange = async (deviceId: string) => {
+  isLoading.value = true;
+  try {
+    await playerStore.setAudioOutputDevice(deviceId || 'default');
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+const open = async () => {
+  show.value = true;
+  await handleRefresh();
+};
 </script>
 
 <style scoped>
@@ -125,5 +193,54 @@ const presets = [
   border-color: #22c55e;
   color: #16a34a;
   background: rgba(34, 197, 94, 0.12);
+}
+
+.fx-device {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--chrome-border, rgba(0, 0, 0, 0.08));
+}
+
+.fx-device-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.fx-device-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--chrome-text, inherit);
+}
+
+.fx-icon-btn {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 9999px;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+}
+.fx-icon-btn:hover:not(:disabled) {
+  color: #22c55e;
+  background: rgba(0, 0, 0, 0.05);
+}
+.fx-icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.fx-spin {
+  animation: fx-spin 0.8s linear infinite;
+}
+@keyframes fx-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

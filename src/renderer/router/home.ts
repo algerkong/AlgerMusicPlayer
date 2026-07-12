@@ -70,7 +70,7 @@ const layoutRouter = [
       keepAlive: true,
       noScroll: true,
       back: true,
-      // 右上角菜单入口即可，侧栏不再展示
+      // 设置钉在侧栏底部，不进主导航列表
       hideInSidebar: true
     },
     component: () => import('@/views/set/index.vue')

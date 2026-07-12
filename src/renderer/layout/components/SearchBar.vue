@@ -94,37 +94,33 @@
       }}
     </n-tooltip>
 
-    <!-- 用户 / 登录（面板内不再重复「去登录」） -->
-    <n-popover trigger="hover" placement="bottom-end" :show-arrow="false" raw>
+    <!-- 用户 / 登录（设置已挪到侧栏底部） -->
+    <n-popover v-if="userStore.user" trigger="hover" placement="bottom-end" :show-arrow="false" raw>
       <template #trigger>
         <div class="user-btn">
           <n-avatar
-            v-if="userStore.user"
             circle
             :size="30"
             :src="getImgUrl(userStore.user.avatarUrl)"
             class="cursor-pointer"
             @click="selectItem('user')"
           />
-          <span v-else class="login-label" @click="toLogin">{{ t('comp.searchBar.login') }}</span>
         </div>
       </template>
       <div class="user-menu">
-        <div v-if="userStore.user" class="user-menu-top" @click="selectItem('user')">
+        <div class="user-menu-top" @click="selectItem('user')">
           <n-avatar circle :size="30" :src="getImgUrl(userStore.user?.avatarUrl)" />
           <span class="user-name">{{ userStore.user?.nickname }}</span>
         </div>
-        <div v-if="userStore.user" class="menu-sep" />
+        <div class="menu-sep" />
         <div class="menu-list">
-          <div v-if="userStore.user" class="menu-row" @click="selectItem('logout')">
+          <div class="menu-row" @click="selectItem('logout')">
             <i class="ri-logout-box-r-line" /><span>{{ t('comp.searchBar.logout') }}</span>
-          </div>
-          <div class="menu-row" @click="selectItem('set')">
-            <i class="ri-settings-3-line" /><span>{{ t('comp.searchBar.set') }}</span>
           </div>
         </div>
       </div>
     </n-popover>
+    <span v-else class="login-label" @click="toLogin">{{ t('comp.searchBar.login') }}</span>
   </div>
 </template>
 
@@ -307,9 +303,6 @@ const selectItem = (key: string) => {
   switch (key) {
     case 'logout':
       userStore.handleLogout();
-      break;
-    case 'set':
-      router.push('/set');
       break;
     case 'user':
       router.push('/user');

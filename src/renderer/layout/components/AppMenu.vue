@@ -23,7 +23,7 @@
       </Transition>
 
       <div class="app-menu-list">
-        <!-- 滑动高亮：竖/横都能跟 -->
+        <!-- 滑动高亮绿底 -->
         <div class="menu-slider-bg" :style="sliderStyle" />
         <div
           v-for="(item, index) in menus"
@@ -35,7 +35,7 @@
             <template #trigger>
               <router-link
                 class="app-menu-item-link"
-                :class="isChecked(index) ? 'is-on' : 'is-off'"
+                :class="isMenuActive(item.path) ? 'is-on' : 'is-off'"
                 :to="item.path"
                 @click.stop
               >
@@ -49,6 +49,23 @@
             <div>{{ t(item.meta.title) }}</div>
           </n-tooltip>
         </div>
+      </div>
+
+      <!-- 设置钉在侧栏底部（桌面）；移动端仍用顶栏入口 -->
+      <div v-if="!isMobile" class="menu-footer">
+        <n-tooltip :delay="200" placement="right">
+          <template #trigger>
+            <router-link
+              class="menu-footer-btn"
+              :class="isSettingsActive ? 'is-on' : 'is-off'"
+              to="/set"
+              @click.stop
+            >
+              <i class="ri-settings-3-line" :style="{ fontSize: size }" />
+            </router-link>
+          </template>
+          <div>{{ t('comp.settings') }}</div>
+        </n-tooltip>
       </div>
     </div>
   </div>
@@ -66,14 +83,6 @@ const props = defineProps({
     type: String,
     default: '26px'
   },
-  color: {
-    type: String,
-    default: '#aaa'
-  },
-  selectColor: {
-    type: String,
-    default: '#22c55e'
-  },
   menus: {
     type: Array as any,
     default: () => []
@@ -82,19 +91,34 @@ const props = defineProps({
 
 const route = useRoute();
 const router = useRouter();
-const path = ref(route.path);
+const { t } = useI18n();
+
 /** 强制在 DOM 量完后再算滑块，避免首屏/路由切完 offset 还是 0 */
 const sliderTick = ref(0);
 
 const bumpSlider = async () => {
   await nextTick();
-  sliderTick.value += 1;
+  requestAnimationFrame(() => {
+    sliderTick.value += 1;
+  });
+};
+
+const currentPath = computed(() => route.path || '/');
+
+/** 设置在主导航之外：在 /set 时主列表不应再有选中 */
+const isSettingsActive = computed(
+  () => currentPath.value === '/set' || currentPath.value.startsWith('/set/')
+);
+
+const isMenuActive = (menuPath: string) => {
+  if (isSettingsActive.value) return false;
+  if (menuPath === '/') return currentPath.value === '/';
+  return currentPath.value === menuPath || currentPath.value.startsWith(`${menuPath}/`);
 };
 
 watch(
   () => route.path,
-  async (newParams) => {
-    path.value = newParams;
+  async () => {
     await bumpSlider();
   }
 );
@@ -109,8 +133,6 @@ watch(
 onMounted(() => {
   bumpSlider();
 });
-
-const { t } = useI18n();
 
 /**
  * 桌面侧栏显示返回；移动端走 MobileHeader，底栏不塞返回。
@@ -133,29 +155,29 @@ const onBackTransitionFrame = () => {
   window.setTimeout(() => bumpSlider(), 280);
 };
 
-const isChecked = (index: number) => {
-  return path.value === props.menus[index]?.path;
-};
-
-const activeIndex = computed(() =>
-  props.menus.findIndex((item: { path: string }) => item.path === path.value)
-);
+const activeIndex = computed(() => {
+  if (isSettingsActive.value) return -1;
+  return props.menus.findIndex((item: { path: string }) => isMenuActive(item.path));
+});
 
 const itemEls = ref<(HTMLElement | null)[]>([]);
 const setItemRef = (el: HTMLElement | null, index: number) => {
-  if (el) itemEls.value[index] = el;
+  itemEls.value[index] = el;
 };
 
 const sliderStyle = computed(() => {
-  // 依赖 tick，确保 remount / 路由后重新读几何
   void sliderTick.value;
-  const el = itemEls.value[activeIndex.value];
-  if (!el) return { opacity: '0' };
-  const inset = 6;
+  const idx = activeIndex.value;
+  if (idx < 0) return { opacity: '0', width: '0px', height: '0px' };
+  const wrap = itemEls.value[idx];
+  if (!wrap) return { opacity: '0', width: '0px', height: '0px' };
+  // 对准内部 40×40 的 link，而不是整行宽
+  const link = wrap.querySelector('.app-menu-item-link') as HTMLElement | null;
+  const target = link || wrap;
   return {
-    transform: `translate(${el.offsetLeft + inset}px, ${el.offsetTop + inset}px)`,
-    width: `${Math.max(0, el.offsetWidth - inset * 2)}px`,
-    height: `${Math.max(0, el.offsetHeight - inset * 2)}px`,
+    transform: `translate(${target.offsetLeft + wrap.offsetLeft}px, ${target.offsetTop + wrap.offsetTop}px)`,
+    width: `${target.offsetWidth}px`,
+    height: `${target.offsetHeight}px`,
     opacity: '1'
   };
 });
@@ -164,12 +186,13 @@ const sliderStyle = computed(() => {
 <style lang="scss" scoped>
 .app-menu-shell {
   @apply h-full flex items-stretch;
-  padding: 8px 6px 12px;
+  /* 底要抬过固定播放条，否则设置键被挡住 */
+  padding: 8px 6px calc(10px + var(--play-bar-height, 5rem));
   box-sizing: border-box;
 }
 
 .app-menu {
-  @apply flex-col items-center justify-start w-[56px] py-2;
+  @apply flex flex-col items-center justify-start w-[56px] py-2;
   border-radius: 16px;
   height: 100%;
   box-sizing: border-box;
@@ -198,7 +221,6 @@ const sliderStyle = computed(() => {
     color 0.15s,
     background 0.15s,
     transform 0.15s;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.28));
 
   &:hover {
     color: #22c55e;
@@ -236,12 +258,14 @@ const sliderStyle = computed(() => {
 
 .app-menu-list {
   position: relative;
-  max-height: calc(100vh - 80px);
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
-  padding-bottom: 20px;
+  padding-bottom: 8px;
 
   &::-webkit-scrollbar {
     width: 4px;
@@ -266,7 +290,7 @@ const sliderStyle = computed(() => {
   left: 0;
   border-radius: 14px;
   background: #22c55e;
-  box-shadow: 0 1px 6px rgba(34, 197, 94, 0.35);
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
   transition:
     transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1),
     width 0.28s cubic-bezier(0.34, 1.4, 0.64, 1),
@@ -279,26 +303,89 @@ const sliderStyle = computed(() => {
 .app-menu-item {
   position: relative;
   z-index: 1;
+  display: flex;
+  justify-content: center;
 }
 
 .app-menu-item-link {
-  @apply flex items-center justify-center w-full overflow-hidden py-4;
-  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin: 4px 0;
+  border-radius: 14px;
+  overflow: visible;
+  transition:
+    color 0.15s,
+    transform 0.15s;
 }
 
 .app-menu-item-icon {
-  @apply transition-all duration-200;
-  color: var(--chrome-text-muted, #9ca3af);
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.28));
+  position: relative;
+  z-index: 2;
+  transition: color 0.15s;
+  /* 未选中：偏亮，封面底上也能看清 */
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1;
+}
+
+:global(.theme-light) .app-menu-item-icon {
+  color: rgba(17, 24, 39, 0.55);
+}
+
+.app-menu-item-link.is-off:hover {
+  transform: scale(1.05);
 }
 
 .app-menu-item-link.is-off:hover .app-menu-item-icon {
-  @apply text-green-500 scale-105;
+  color: #22c55e !important;
 }
 
+/* 选中只改图标为白；绿底交给滑动块 */
 .app-menu-item-link.is-on .app-menu-item-icon {
-  color: #fff;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.18));
+  color: #ffffff !important;
+}
+
+.menu-footer {
+  flex-shrink: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+  margin-top: auto;
+  z-index: 2;
+}
+
+.menu-footer-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  color: rgba(255, 255, 255, 0.72);
+  transition:
+    color 0.15s,
+    background 0.15s,
+    transform 0.15s;
+
+  &:hover,
+  &.is-off:hover {
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.14);
+    transform: scale(1.05);
+  }
+
+  &.is-on {
+    color: #ffffff !important;
+    background: #22c55e;
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
+  }
+}
+
+:global(.theme-light) .menu-footer-btn {
+  color: rgba(17, 24, 39, 0.55);
 }
 
 .mobile {
