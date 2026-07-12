@@ -154,7 +154,8 @@ export function mapMsSongToSongResult(song: MsSong): SongResult {
     duration: song.durationMs,
     dt: song.durationMs,
     source: song.platform || 'qishui',
-    count: 0
+    count: 0,
+    isVip: Boolean(song.isVip)
   };
 }
 

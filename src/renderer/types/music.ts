@@ -68,6 +68,8 @@ export interface SongResult {
   dt?: number;
   isFirstPlay?: boolean;
   isPodcast?: boolean;
+  /** 平台侧 VIP/会员曲（汽水 label_info 等） */
+  isVip?: boolean;
 }
 
 export interface Song {

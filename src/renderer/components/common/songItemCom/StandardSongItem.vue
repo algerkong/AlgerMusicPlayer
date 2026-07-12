@@ -45,6 +45,7 @@
               >（{{ item.tns?.[0] || item.alia?.[0] }}）</span
             ></n-ellipsis
           >
+          <span v-if="item.isVip" class="vip-badge" title="VIP">VIP</span>
         </div>
         <div class="song-item-content-name">
           <n-ellipsis class="text-ellipsis" line-clamp="1">
@@ -165,15 +166,32 @@ const onPlayNext = () => {
   }
 
   .song-item-content {
-    @apply flex-1;
+    @apply flex-1 min-w-0;
 
     &-title {
-      @apply text-base text-gray-900 dark:text-white;
+      @apply text-base text-gray-900 dark:text-white flex items-center gap-1.5 min-w-0;
+
+      .text-ellipsis {
+        @apply min-w-0 flex-1;
+      }
     }
 
     &-name {
       @apply text-xs text-gray-500 dark:text-gray-400;
     }
+  }
+
+  .vip-badge {
+    flex-shrink: 0;
+    font-size: 0.65rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.02em;
+    padding: 0.2rem 0.35rem;
+    border-radius: 0.25rem;
+    color: #92400e;
+    background: linear-gradient(135deg, #fde68a 0%, #fbbf24 100%);
+    border: 1px solid rgba(217, 119, 6, 0.35);
   }
 
   .song-item-operating {
