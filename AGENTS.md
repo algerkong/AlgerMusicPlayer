@@ -122,24 +122,35 @@
 
 允许的 `type`：`feat` | `fix` | `perf` | `refactor` | `docs` | `style` | `test` | `build` | `ci` | `chore` | `revert`
 
-示例：
+示例（**subject 用中文**）：
 
-- `feat(search): show default songs when query empty`
-- `fix(ui): keep search bar background on focus`
-- `refactor(search): drop search-box type filter`
-- `docs: add AGENTS.md and refresh DEV.md`
+- `feat(search): 空搜索也给点默认歌听听`
+- `fix(ui): 搜索框聚焦时背景别突然消失`
+- `refactor(search): 搜索框类型筛选该退休了`
+- `docs: 教仓库学会正经开分支`
 
-**要求：**
+**文风（强制）：**
 
-- subject 简洁、说明意图；中英文均可，但同一 PR 内风格尽量统一。
-- **禁止** 空洞信息：`update`、`fix`、`wip`、`改了一下`。
+- **语言：中文。** 提交 subject、commit body、PR 标题与描述默认都用中文写。`type` / 可选 `scope` 仍按 Conventional Commits 英文枚举（如 `feat`、`fix(ui)`），后面说明用中文。
+- **一律不要 emoji。** 不靠符号撑场面，靠句子本身有趣。
+- **幽默一点，但别油腻：** 像同事在群里吐槽又顺手把事办了——可读、可搜、事后不尴尬。
+- subject 仍要说清「改了啥」；幽默写在措辞里，不能写成谜语。
+- **禁止** 空洞信息：`update`、`fix`、`wip`、`改了一下`、`优化代码`。
 - 一次提交尽量只做一类事；调试垃圾、无关格式化不要塞进功能提交。
-- PR 标题同样走 Conventional Commits（CI 会校验）。
+- PR 标题同样走 Conventional Commits（CI 会校验），标题可带一点人味，正文更讲人话。
+
+幽默写法参考：
+
+- 好：`fix(player): 暂停键别再自己去摸鱼了`
+- 好：`docs: 别再写「只有本地音乐」这种假话了`
+- 差：`fix: 修复bug`（空洞）
+- 差：`feat: 超强搜索上线`（像营销号，也没说清改动）
+- 差：英文整句 subject（本仓库偏好中文说明）
 
 ### 2.6 PR 与合并
 
 1. 基于最新 `main` 开 PR，目标分支为 **`main`**。
-2. 使用仓库 PR 模板；勾选自查清单。
+2. 使用仓库 PR 模板；勾选自查清单。正文用中文、活人语言写清背景与验证方式，**不要 emoji 装饰标题/清单**。
 3. 范围聚焦：**一个 PR ≈ 一个可讲清的故事**。大功能拆成可独立合并的串联 PR。
 4. 合并策略优先保证 `main` 历史可读：能 squash 的小 PR 可 squash；需要保留分步语义时用 merge commit。
 5. 合并后清理分支；相关 issue 用 `Fixes #123` 等关联。
