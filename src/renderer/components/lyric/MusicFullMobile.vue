@@ -102,7 +102,7 @@
               </div>
               <!-- 普通歌词显示 -->
               <span v-else :style="getLrcStyle(index)">{{ item.text }}</span>
-              <div v-if="config.showTranslation && item.trText" class="translation">
+              <div v-if="item.trText" class="translation">
                 {{ item.trText }}
               </div>
             </div>
@@ -304,7 +304,7 @@
               </div>
               <!-- 普通歌词显示 -->
               <span v-else :style="getLrcStyle(index)">{{ item.text }}</span>
-              <div v-if="config.showTranslation && item.trText" class="translation">
+              <div v-if="item.trText" class="translation">
                 {{ item.trText }}
               </div>
             </div>
@@ -397,7 +397,7 @@ import MobilePlayerSettings from '@/components/player/MobilePlayerSettings.vue';
 import {
   allTime,
   artistList,
-  correctionTime,
+  getLyricClockSec,
   lrcArray,
   nowIndex,
   nowTime,
@@ -415,6 +415,7 @@ import { usePlayerStore } from '@/store/modules/player';
 import { DEFAULT_LYRIC_CONFIG, LyricConfig } from '@/types/lyric';
 import { getImgUrl, secondToMinute } from '@/utils';
 import { getTextColors } from '@/utils/linearColor';
+import { getActiveLineWordStyle, getInactiveLineWordStyle } from '@/utils/lyricWordStyle';
 import { showBottomToast } from '@/utils/shortcutToast';
 
 const { t } = useI18n();
@@ -1120,55 +1121,12 @@ const getLrcStyle = (index: number) => {
   };
 };
 
-// 逐字歌词样式函数
 const getWordStyle = (lineIndex: number, _wordIndex: number, word: any) => {
   const colors = textColors.value || getTextColors();
-  // 如果不是当前行，返回普通样式
   if (lineIndex !== nowIndex.value) {
-    return {
-      color: colors.primary,
-      transition: 'color 0.3s ease',
-      // 重置背景相关属性
-      backgroundImage: 'none',
-      WebkitTextFillColor: 'initial'
-    };
+    return getInactiveLineWordStyle(colors);
   }
-
-  // 当前行的逐字效果，应用歌词矫正时间
-  const currentTime = (nowTime.value + correctionTime.value) * 1000; // 转换为毫秒，确保与word时间单位一致
-
-  // 直接使用绝对时间比较
-  const wordStartTime = word.startTime; // 单词开始的绝对时间（毫秒）
-  const wordEndTime = word.startTime + word.duration;
-
-  if (currentTime >= wordStartTime && currentTime < wordEndTime) {
-    // 当前正在播放的单词 - 使用渐变进度效果
-    const progress = Math.min((currentTime - wordStartTime) / word.duration, 1);
-    const progressPercent = Math.round(progress * 100);
-
-    return {
-      backgroundImage: `linear-gradient(to right, ${colors.active} 0%, ${colors.active} ${progressPercent}%, ${colors.primary} ${progressPercent}%, ${colors.primary} 100%)`,
-      backgroundClip: 'text',
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-      textShadow: `0 0 8px ${colors.active}40`,
-      transition: 'all 0.1s ease'
-    };
-  } else if (currentTime >= wordEndTime) {
-    // 已经播放过的单词 - 纯色显示
-    return {
-      color: colors.active,
-      WebkitTextFillColor: 'initial',
-      transition: 'none'
-    };
-  } else {
-    // 还未播放的单词 - 普通状态
-    return {
-      color: colors.primary,
-      WebkitTextFillColor: 'initial',
-      transition: 'none'
-    };
-  }
+  return getActiveLineWordStyle(getLyricClockSec() * 1000, word, colors);
 };
 </script>
 

@@ -47,16 +47,6 @@
         <!-- <div class="control-button" @click="handleTop">
           <i class="ri-pushpin-line" :class="{ active: lyricSetting.isTop }"></i>
         </div> -->
-        <!-- 翻译开关按钮（仅当歌词有翻译时显示） -->
-        <div
-          v-if="hasTranslation"
-          class="control-button"
-          :title="showTranslation ? '隐藏翻译' : '显示翻译'"
-          @click="lyricSetting.showTranslation = !lyricSetting.showTranslation"
-        >
-          <i class="ri-translate-2" :class="{ active: showTranslation }"></i>
-        </div>
-
         <!-- 显示模式切换按钮（scroll → single → double → scroll 循环） -->
         <div
           class="control-button"
@@ -108,7 +98,7 @@
               v-for="(line, index) in staticData.lrcArray"
               :key="index"
               class="lyric-line"
-              :style="getDynamicLineStyle(line, showTranslation)"
+              :style="getDynamicLineStyle(line)"
               :class="{
                 'lyric-line-current': index === currentIndex,
                 'lyric-line-passed': index < currentIndex,
@@ -130,9 +120,8 @@
                   {{ line.text || '' }}
                 </span>
               </div>
-              <!-- ★ 翻译行：加入 showTranslation 控制 -->
               <div
-                v-if="showTranslation && line.trText"
+                v-if="line.trText"
                 class="lyric-translation"
                 :style="{ fontSize: `${fontSize * 0.6}px` }"
               >
@@ -171,7 +160,7 @@
               </span>
             </div>
             <div
-              v-if="showTranslation && staticData.lrcArray[currentIndex]?.trText"
+              v-if="staticData.lrcArray[currentIndex]?.trText"
               class="lyric-translation"
               :style="{ fontSize: `${fontSize * 0.6}px` }"
             >
@@ -208,7 +197,7 @@
               </span>
             </div>
             <div
-              v-if="showTranslation && line.trText"
+              v-if="line.trText"
               class="lyric-translation"
               :style="{ fontSize: `${fontSize * 0.6}px` }"
             >
@@ -233,6 +222,7 @@ import {
   saveLyricThemeColor,
   validateColor
 } from '@/utils/linearColor';
+import { getActiveLineWordStyle, getInactiveLineWordStyle } from '@/utils/lyricWordStyle';
 
 defineOptions({
   name: 'Lyric'
@@ -296,7 +286,6 @@ const loadLyricSettings = () => {
         theme: parsed.theme === 'light' || parsed.theme === 'dark' ? parsed.theme : 'dark',
         isLock: parsed.isLock ?? false,
         highlightColor: validatedHighlightColor,
-        showTranslation: parsed.showTranslation ?? true,
         displayMode: (['scroll', 'single', 'double'].includes(parsed.displayMode)
           ? parsed.displayMode
           : 'scroll') as 'scroll' | 'single' | 'double'
@@ -312,15 +301,11 @@ const loadLyricSettings = () => {
     theme: 'dark' as 'light' | 'dark',
     isLock: false,
     highlightColor: undefined as string | undefined,
-    showTranslation: true,
     displayMode: 'scroll' as 'scroll' | 'single' | 'double'
   };
 };
 
 const lyricSetting = ref(loadLyricSettings());
-
-// 是否有翻译（控制翻译按钮是否显示）
-const hasTranslation = computed(() => staticData.value.lrcArray.some((line) => line.trText));
 
 // 双行模式：当前组索引（每 2 行为一组）
 const currentGroupIndex = computed(() => Math.floor(currentIndex.value / 2));
@@ -337,9 +322,7 @@ const currentGroupLines = computed(() => {
 // 双行模式过渡动画状态
 const isGroupTransitioning = ref(false);
 
-// displayMode 和 showTranslation 的快捷 computed，template 中更简洁
 const displayMode = computed(() => lyricSetting.value.displayMode);
-const showTranslation = computed(() => lyricSetting.value.showTranslation);
 
 let hideControlsTimer: number | null = null;
 let removeMousePresenceListener: (() => void) | null = null;
@@ -468,11 +451,10 @@ const wrapperStyle = computed(() => {
   // 计算容器中心点
   const containerCenter = containerHeight.value / 2;
 
-  // 计算每行的实际高度
+  // 计算每行的实际高度（有译文则加一行）
   const getLineHeight = (line: { text: string; trText: string }) => {
     const baseHeight = lineHeight.value;
-    if (showTranslation.value && line.trText) {
-      // 新增 showTranslation.value 判断
+    if (line.trText) {
       const extraHeight = Math.round(fontSize.value * 0.6 * 1.4);
       return baseHeight + extraHeight;
     }
@@ -519,9 +501,9 @@ const wrapperStyle = computed(() => {
 });
 
 // 新增：根据是否有翻译文本动态计算每行的样式
-const getDynamicLineStyle = (line: { text: string; trText: string }, withTranslation = true) => {
+const getDynamicLineStyle = (line: { text: string; trText: string }) => {
   const defaultHeight = lineHeight.value;
-  if (withTranslation && line.trText) {
+  if (line.trText) {
     const extraHeight = Math.round(fontSize.value * 0.6 * 1.4);
     return { height: `${defaultHeight + extraHeight}px` };
   }
@@ -630,56 +612,19 @@ const getLyricStyle = (index: number) => {
   };
 };
 
-// 逐字歌词样式函数
 const getWordStyle = (
   lineIndex: number,
   _wordIndex: number,
   word: { text: string; startTime: number; duration: number }
 ) => {
-  // 如果不是当前行，返回普通样式
+  const colors = {
+    primary: 'var(--text-color)',
+    active: 'var(--highlight-color)'
+  };
   if (lineIndex !== currentIndex.value) {
-    return {
-      color: 'var(--text-color)',
-      transition: 'color 0.3s ease',
-      backgroundImage: 'none',
-      WebkitTextFillColor: 'initial'
-    };
+    return getInactiveLineWordStyle(colors);
   }
-
-  // 当前行的逐字效果
-  const currentTime = actualTime.value * 1000; // 转换为毫秒
-
-  // 直接使用绝对时间比较
-  const wordStartTime = word.startTime; // 单词开始的绝对时间（毫秒）
-  const wordEndTime = word.startTime + word.duration;
-
-  if (currentTime >= wordStartTime && currentTime < wordEndTime) {
-    // 当前正在播放的单词 - 使用渐变进度效果
-    const progress = Math.min((currentTime - wordStartTime) / word.duration, 1);
-    const progressPercent = Math.round(progress * 100);
-
-    return {
-      backgroundImage: `linear-gradient(to right, var(--highlight-color) 0%, var(--highlight-color) ${progressPercent}%, var(--text-color) ${progressPercent}%, var(--text-color) 100%)`,
-      backgroundClip: 'text',
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-      transition: 'all 0.1s ease'
-    };
-  } else if (currentTime >= wordEndTime) {
-    // 已经播放过的单词 - 纯色显示
-    return {
-      color: 'var(--highlight-color)',
-      WebkitTextFillColor: 'initial',
-      transition: 'none'
-    };
-  } else {
-    // 还未播放的单词 - 普通状态
-    return {
-      color: 'var(--text-color)',
-      WebkitTextFillColor: 'initial',
-      transition: 'none'
-    };
-  }
+  return getActiveLineWordStyle(actualTime.value * 1000, word, colors);
 };
 
 // 时间偏移量（毫秒）

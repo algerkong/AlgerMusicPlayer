@@ -144,20 +144,19 @@
                 }"
                 @click="item.startTime !== -1 ? setAudioTime(index) : null"
               >
-                <!-- 逐字歌词显示 -->
+                <!-- 逐字：始终同一 clip 渐变路径，词间不闪 -->
                 <div
                   v-if="item.hasWordByWord && item.words && item.words.length > 0"
                   class="word-by-word-lyric"
                 >
                   <template v-for="(word, wordIndex) in item.words" :key="wordIndex">
-                    <span class="lyric-word" :style="getWordStyle(index, wordIndex, word)">
-                      {{ word.text }} </span
-                    ><span class="lyric-word" v-if="word.space">&nbsp;</span></template
-                  >
+                    <span class="lyric-word" :style="getWordStyle(index, wordIndex, word)"
+                      >{{ word.text }}<template v-if="word.space">&nbsp;</template></span
+                    >
+                  </template>
                 </div>
-                <!-- 普通歌词显示 -->
                 <span v-else :style="getLrcStyle(index)">{{ item.text }}</span>
-                <div v-show="config.showTranslation" class="music-lrc-text-tr">
+                <div v-if="item.trText" class="music-lrc-text-tr">
                   {{ item.trText }}
                 </div>
               </div>
@@ -193,9 +192,9 @@ import {
   adjustCorrectionTime,
   artistList,
   correctionTime,
+  getLyricClockSec,
   lrcArray,
   nowIndex,
-  nowTime,
   playMusic,
   setAudioTime,
   textColors,
@@ -208,6 +207,7 @@ import { useSettingsStore } from '@/store/modules/settings';
 import { DEFAULT_LYRIC_CONFIG, LyricConfig } from '@/types/lyric';
 import { getImgUrl, isMobile } from '@/utils';
 import { getTextColors } from '@/utils/linearColor';
+import { getActiveLineWordStyle, getInactiveLineWordStyle } from '@/utils/lyricWordStyle';
 
 const { t } = useI18n();
 // 定义 refs
@@ -317,15 +317,58 @@ const isVisible = computed({
   set: (value) => emit('update:modelValue', value)
 });
 
+/** n-layout 内部真正滚的是 scrollbar container */
+const getLrcScrollEl = (): HTMLElement | null => {
+  const root = lrcSider.value?.$el as HTMLElement | undefined;
+  if (!root) return null;
+  return (
+    (root.querySelector('.n-scrollbar-container') as HTMLElement | null) ||
+    (root.querySelector('.n-layout-scroll-container') as HTMLElement | null) ||
+    root
+  );
+};
+
+let lrcScrollAnimId = 0;
+
+/** 缓动滚到目标：逐字时盯着看，别用浏览器默认 snap 一下 */
+const softScrollTo = (el: HTMLElement, targetTop: number, durationMs = 1100) => {
+  if (lrcScrollAnimId) {
+    cancelAnimationFrame(lrcScrollAnimId);
+    lrcScrollAnimId = 0;
+  }
+  const startTop = el.scrollTop;
+  const delta = targetTop - startTop;
+  if (Math.abs(delta) < 1) return;
+
+  const startTs = performance.now();
+  // easeInOutCubic：起停都软
+  const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+
+  const tick = (now: number) => {
+    const p = Math.min(1, (now - startTs) / durationMs);
+    el.scrollTop = startTop + delta * ease(p);
+    if (p < 1) {
+      lrcScrollAnimId = requestAnimationFrame(tick);
+    } else {
+      lrcScrollAnimId = 0;
+    }
+  };
+  lrcScrollAnimId = requestAnimationFrame(tick);
+};
+
 // 歌词滚动方法
-const lrcScroll = (behavior: ScrollBehavior = 'smooth', forceTop: boolean = false) => {
+const lrcScroll = (behavior: ScrollBehavior | 'soft' = 'soft', forceTop: boolean = false) => {
   if (!isVisible.value || !lrcSider.value || !supportAutoScroll.value) return;
 
+  const scrollEl = getLrcScrollEl();
+  if (!scrollEl) return;
+
   if (forceTop) {
-    lrcSider.value.scrollTo({
-      top: 0,
-      behavior
-    });
+    if (behavior === 'instant' || behavior === 'auto') {
+      scrollEl.scrollTop = 0;
+    } else {
+      softScrollTo(scrollEl, 0, 700);
+    }
     return;
   }
 
@@ -333,18 +376,21 @@ const lrcScroll = (behavior: ScrollBehavior = 'smooth', forceTop: boolean = fals
 
   const nowEl = document.querySelector(`#music-lrc-text-${nowIndex.value}`) as HTMLElement;
   if (nowEl) {
-    const containerHeight = lrcSider.value.$el.clientHeight;
+    const containerHeight = scrollEl.clientHeight;
     const elementTop = nowEl.offsetTop;
-    const scrollTop = elementTop - containerHeight / 2 + nowEl.clientHeight / 2;
+    // 当前句略偏上一点（40%），更像盯着逐字在读
+    const scrollTop = elementTop - containerHeight * 0.4 + nowEl.clientHeight / 2;
 
-    lrcSider.value.scrollTo({
-      top: scrollTop,
-      behavior
-    });
+    if (behavior === 'instant' || behavior === 'auto') {
+      scrollEl.scrollTop = scrollTop;
+    } else {
+      // 换行滚动加长到 ~1.1s，避免生硬跳
+      softScrollTo(scrollEl, scrollTop, 1100);
+    }
   }
 };
 
-const debouncedLrcScroll = useDebounceFn(lrcScroll, 200);
+const debouncedLrcScroll = useDebounceFn(() => lrcScroll('soft'), 80);
 
 const mouseOverLayout = () => {
   if (isMobile.value) {
@@ -435,55 +481,13 @@ const getLrcStyle = (index: number) => {
   };
 };
 
-// 逐字歌词样式函数
+// 逐字：当前行全程同一绘制路径（clip 渐变 0→1），词切完不换 solid 色 → 不闪
 const getWordStyle = (lineIndex: number, _wordIndex: number, word: any) => {
   const colors = textColors.value || getTextColors();
-  // 如果不是当前行，返回普通样式
   if (lineIndex !== nowIndex.value) {
-    return {
-      color: colors.primary,
-      transition: 'color 0.3s ease',
-      // 重置背景相关属性
-      backgroundImage: 'none',
-      WebkitTextFillColor: 'initial'
-    };
+    return getInactiveLineWordStyle(colors);
   }
-
-  // 当前行的逐字效果，应用歌词矫正时间
-  const currentTime = (nowTime.value + correctionTime.value) * 1000; // 转换为毫秒，确保与word时间单位一致
-
-  // 直接使用绝对时间比较
-  const wordStartTime = word.startTime; // 单词开始的绝对时间（毫秒）
-  const wordEndTime = word.startTime + word.duration;
-
-  if (currentTime >= wordStartTime && currentTime < wordEndTime) {
-    // 当前正在播放的单词 - 使用渐变进度效果
-    const progress = Math.min((currentTime - wordStartTime) / word.duration, 1);
-    const progressPercent = Math.round(progress * 100);
-
-    return {
-      backgroundImage: `linear-gradient(to right, ${colors.active} 0%, ${colors.active} ${progressPercent}%, ${colors.primary} ${progressPercent}%, ${colors.primary} 100%)`,
-      backgroundClip: 'text',
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-      textShadow: `0 0 8px ${colors.active}40`,
-      transition: 'all 0.1s ease'
-    };
-  } else if (currentTime >= wordEndTime) {
-    // 已经播放过的单词 - 纯色显示
-    return {
-      color: colors.active,
-      WebkitTextFillColor: 'initial',
-      transition: 'none'
-    };
-  } else {
-    // 还未播放的单词 - 普通状态
-    return {
-      color: colors.primary,
-      WebkitTextFillColor: 'initial',
-      transition: 'none'
-    };
-  }
+  return getActiveLineWordStyle(getLyricClockSec() * 1000, word, colors);
 };
 
 const settingsStore = useSettingsStore();
@@ -582,6 +586,10 @@ onMounted(() => {
 
 // 移除滚动监听和全屏状态监听
 onBeforeUnmount(() => {
+  if (lrcScrollAnimId) {
+    cancelAnimationFrame(lrcScrollAnimId);
+    lrcScrollAnimId = 0;
+  }
   if (lrcSider.value?.$el) {
     lrcSider.value.$el.removeEventListener('scroll', handleScroll);
   }
@@ -860,7 +868,8 @@ defineExpose({
         }
       }
 
-      span {
+      // 整行歌词可点区域留白；逐字 .lyric-word 绝不能带这 30px（英文会词间巨大空隙）
+      > span {
         background-clip: text !important;
         -webkit-background-clip: text !important;
         padding-right: 30px;
@@ -872,23 +881,22 @@ defineExpose({
         color: var(--text-color-primary);
       }
 
-      // 逐字歌词样式
+      // 逐字：inline 流式；英文空格靠源数据 word.space → &nbsp;，一个就够
       .word-by-word-lyric {
-        @apply flex flex-wrap;
+        display: block;
+        white-space: pre-wrap;
+        word-break: break-word;
 
         .lyric-word {
-          @apply inline-block;
-          padding-right: 0;
+          display: inline;
+          padding-right: 0 !important;
           font-weight: inherit;
           font-size: inherit;
           letter-spacing: inherit;
           line-height: inherit;
           cursor: inherit;
           position: relative;
-
-          &:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-          }
+          // 不设 background-color hover：会冲掉 clip 渐变造成闪
         }
       }
     }
@@ -898,7 +906,8 @@ defineExpose({
         @apply font-bold opacity-100 rounded-xl;
         background-color: var(--hover-bg-color);
 
-        span {
+        // 仅直接子 span（整行歌词）；.lyric-word 在 div 里，别用 color 冲掉 clip
+        > span {
           color: var(--text-color-active) !important;
         }
       }
