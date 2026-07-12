@@ -142,7 +142,8 @@ const pageHint = computed(() =>
 async function resolveCover(p: MsPlaylist): Promise<string> {
   if (!p.id) return p.coverUrl || '';
   try {
-    const detail = await msGetPlaylist(p.id);
+    // 封面解析只取一页，别为封面把整单曲目拉完
+    const detail = await msGetPlaylist(p.id, { limit: 20, cursor: '0' });
     const songs = detail.songs || [];
     if (songs.length) {
       const last = songs[songs.length - 1];

@@ -48,7 +48,7 @@
     "font-list": "^1.6.0",
     "form-data": "^4.0.5",
     "husky": "^9.1.7",
-    "ly-music-source": "https://github.com/LuoYe17/ly-music-source/releases/download/v0.1.4/ly-music-source-0.1.4.tgz",
+    "ly-music-source": "https://github.com/LuoYe17/ly-music-source/releases/download/v0.1.5/ly-music-source-0.1.5.tgz",
     "mpris-service": "^2.1.2",
     "music-metadata": "^11.10.3",
     "node-fetch": "^2.7.0",

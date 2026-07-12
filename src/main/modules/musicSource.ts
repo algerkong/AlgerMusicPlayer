@@ -207,14 +207,21 @@ export function initializeMusicSource(): void {
     }
   );
 
-  ipcMain.handle('music-source:get-playlist', async (_e, playlistId: string) => {
-    try {
-      const detail = await getClient().getPlaylist(String(playlistId));
-      return wrapOk(detail);
-    } catch (error) {
-      return toIpcError(error);
+  ipcMain.handle(
+    'music-source:get-playlist',
+    async (
+      _e,
+      playlistId: string,
+      options?: { limit?: number; cursor?: number | string; fetchAll?: boolean }
+    ) => {
+      try {
+        const detail = await getClient().getPlaylist(String(playlistId), options);
+        return wrapOk(detail);
+      } catch (error) {
+        return toIpcError(error);
+      }
     }
-  });
+  );
 
   ipcMain.handle('music-source:resolve', async (_e, query: ResolveQuery & { quality?: string }) => {
     try {

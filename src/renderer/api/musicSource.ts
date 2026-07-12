@@ -68,6 +68,8 @@ export interface MsAlbum {
 export interface MsPlaylistDetail {
   playlist: MsPlaylist;
   songs: MsSong[];
+  nextCursor?: string;
+  hasMore?: boolean;
 }
 
 export interface MsResolveResult {
@@ -272,8 +274,11 @@ export async function msListUserPlaylists(options?: {
   return invokeMs('music-source:list-user-playlists', options);
 }
 
-export async function msGetPlaylist(playlistId: string): Promise<MsPlaylistDetail> {
-  return invokeMs('music-source:get-playlist', playlistId);
+export async function msGetPlaylist(
+  playlistId: string,
+  options?: { limit?: number; cursor?: number | string; fetchAll?: boolean }
+): Promise<MsPlaylistDetail> {
+  return invokeMs('music-source:get-playlist', playlistId, options);
 }
 
 export async function msResolve(query: {
@@ -366,16 +371,37 @@ export function msLyricToILyric(result: MsLyricResult): ILyric {
   return { lrcArray, lrcTimeArray, hasWordByWord };
 }
 
+function shouldInsertWordSpace(cur: string, nxt: string): boolean {
+  if (!cur || !nxt) return false;
+  if (/\s$/.test(cur) || /^\s/.test(nxt)) return false;
+  // 标点前不插空格
+  if (/^[,.;:!?…，。！？、；：'")\]}»」』】]/.test(nxt)) return false;
+  if (/['"({[«「『【]$/.test(cur)) return false;
+  // 拉丁/数字单词之间
+  if (/[A-Za-z0-9]$/.test(cur) && /^[A-Za-z0-9]/.test(nxt)) return true;
+  // 中英交界
+  if (/[\u4e00-\u9fff]$/.test(cur) && /^[A-Za-z0-9]/.test(nxt)) return true;
+  if (/[A-Za-z0-9]$/.test(cur) && /^[\u4e00-\u9fff]/.test(nxt)) return true;
+  return false;
+}
+
 function mapMsWordsToPlayer(
   words: { timeMs: number; text: string }[],
   lineStartMs: number,
   lineEndMs: number
 ): IWordData[] {
   const cleaned = words
-    .map((w) => ({
-      timeMs: Number(w.timeMs),
-      text: String(w.text ?? '')
-    }))
+    .map((w) => {
+      const raw = String(w.text ?? '');
+      // 源数据里词尾空格 → space 标记，正文 trim
+      const trailingSpace = /\s$/.test(raw);
+      const text = raw.replace(/\s+/g, ' ').trim();
+      return {
+        timeMs: Number(w.timeMs),
+        text,
+        trailingSpace
+      };
+    })
     .filter((w) => w.text.length > 0 && Number.isFinite(w.timeMs));
 
   if (!cleaned.length) return [];
@@ -390,21 +416,17 @@ function mapMsWordsToPlayer(
     text: w.text,
     startTime: looksRelative ? lineStartMs + Math.max(0, w.timeMs) : w.timeMs,
     duration: 0,
-    space: false as boolean | undefined
+    space: w.trailingSpace as boolean | undefined
   }));
 
-  // 按时间排序，算 duration
+  // 按时间排序，算 duration + 英文词间空格
   absolute.sort((a, b) => a.startTime - b.startTime);
   for (let i = 0; i < absolute.length; i++) {
     const nextStart = i < absolute.length - 1 ? absolute[i + 1].startTime : lineEndMs;
     absolute[i].duration = Math.max(40, nextStart - absolute[i].startTime);
-    // 词间空格：下一个字不是标点且当前不以空格结束时，英文/数字可补 space
     if (i < absolute.length - 1) {
-      const cur = absolute[i].text;
-      const nxt = absolute[i + 1].text;
-      const curEndsSpace = /\s$/.test(cur);
-      const needSpace = !curEndsSpace && /[A-Za-z0-9]$/.test(cur) && /^[A-Za-z0-9]/.test(nxt);
-      absolute[i].space = needSpace;
+      absolute[i].space =
+        absolute[i].space || shouldInsertWordSpace(absolute[i].text, absolute[i + 1].text);
     }
   }
 
