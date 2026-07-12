@@ -2,6 +2,7 @@ import { app, dialog, ipcMain, protocol, shell } from 'electron';
 import Store from 'electron-store';
 import * as fs from 'fs';
 import * as path from 'path';
+import { Readable } from 'stream';
 
 import { getStore } from './config';
 
@@ -23,36 +24,79 @@ function sanitizeFilename(filename: string): string {
     .trim();
 }
 
+// Electron net.fetch(file://) 在当前版本不会回 206，audio seek 需要主进程自己处理 Range
+function buildLocalFileResponse(
+  filePath: string,
+  total: number,
+  rangeHeader: string | null
+): Response {
+  const range416 = () =>
+    new Response(null, { status: 416, headers: { 'Content-Range': `bytes */${total}` } });
+
+  let start = 0;
+  let end = total - 1;
+  let partial = false;
+
+  if (rangeHeader) {
+    const m = /^bytes=(\d*)-(\d*)$/.exec(rangeHeader.trim());
+    if (!m || (!m[1] && !m[2])) return range416();
+    if (m[1]) {
+      start = parseInt(m[1], 10);
+      if (m[2]) end = Math.min(parseInt(m[2], 10), end);
+    } else {
+      start = Math.max(0, total - parseInt(m[2], 10));
+    }
+    if (start > end || start >= total) return range416();
+    partial = true;
+  }
+
+  return new Response(
+    Readable.toWeb(fs.createReadStream(filePath, { start, end })) as ReadableStream,
+    {
+      status: partial ? 206 : 200,
+      headers: {
+        'Content-Length': String(end - start + 1),
+        'Accept-Ranges': 'bytes',
+        ...(partial && { 'Content-Range': `bytes ${start}-${end}/${total}` })
+      }
+    }
+  );
+}
+
 /**
  * 初始化文件管理相关的IPC监听
  */
 export function initializeFileManager() {
   // 注册本地文件协议
-  protocol.registerFileProtocol('local', (request, callback) => {
+  // Electron 25+ 起 registerFileProtocol 已弃用，改用 protocol.handle，并配合 main/index.ts
+  // 中的 registerSchemesAsPrivileged，让 audio 元素能从 http(s) 页面跨协议加载本地文件
+  protocol.handle('local', async (request) => {
     try {
-      const url = request.url;
-      // local://C:/Users/xxx.mp3
-      let filePath = decodeURIComponent(url.replace('local:///', ''));
+      // local:///<absolute-path>
+      let filePath = decodeURIComponent(request.url.replace(/^local:\/\/\/?/, ''));
 
-      // 兼容 local:///C:/Users/xxx.mp3 这种情况
+      // Windows: 协议解析后可能是 /C:/...，去掉前导斜杠
       if (/^\/[a-zA-Z]:\//.test(filePath)) {
         filePath = filePath.slice(1);
       }
 
-      // 还原为系统路径格式
-      filePath = path.normalize(filePath);
-
-      // 检查文件是否存在
-      if (!fs.existsSync(filePath)) {
-        console.error('File not found:', filePath);
-        callback({ error: -6 }); // net::ERR_FILE_NOT_FOUND
-        return;
+      // macOS/Linux 上去掉前导斜杠后会丢失绝对路径标识，这里补回
+      if (process.platform !== 'win32' && !filePath.startsWith('/')) {
+        filePath = '/' + filePath;
       }
 
-      callback({ path: filePath });
+      filePath = path.normalize(filePath);
+
+      const stat = await fs.promises.stat(filePath).catch(() => null);
+      if (!stat?.isFile()) {
+        console.error('File not found:', filePath);
+        return new Response(null, { status: 404 });
+      }
+
+      return buildLocalFileResponse(filePath, stat.size, request.headers.get('range'));
     } catch (error) {
       console.error('Error handling local protocol:', error);
-      callback({ error: -2 }); // net::FAILED
+      return new Response(null, { status: 500 });
     }
   });
 

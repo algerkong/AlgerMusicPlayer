@@ -11,7 +11,7 @@ import globals from 'globals';
 export default [
   // 忽略文件配置
   {
-    ignores: ['node_modules/**', 'dist/**', 'out/**', '.gitignore']
+    ignores: ['node_modules/**', '**/dist/**', 'out/**', '.gitignore']
   },
 
   // 基础 JavaScript 配置
@@ -55,7 +55,8 @@ export default [
         defineEmits: 'readonly',
         // TypeScript 全局类型
         NodeJS: 'readonly',
-        ScrollBehavior: 'readonly'
+        ScrollBehavior: 'readonly',
+        ScrollToOptions: 'readonly'
       }
     },
     plugins: {
@@ -148,7 +149,8 @@ export default [
         useMessage: 'readonly',
         // TypeScript 全局类型
         NodeJS: 'readonly',
-        ScrollBehavior: 'readonly'
+        ScrollBehavior: 'readonly',
+        ScrollToOptions: 'readonly'
       }
     },
     plugins: {

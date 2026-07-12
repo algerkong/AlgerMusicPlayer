@@ -56,17 +56,18 @@ export const parseFromGDMusic = async (
         }
 
         const songName = data.name || '';
-        let artistNames = '';
+        let artistList: string[] = [];
 
         // 处理不同的艺术家字段结构
         if (data.artists && Array.isArray(data.artists)) {
-          artistNames = data.artists.map((artist) => artist.name).join(' ');
+          artistList = data.artists.map((artist) => artist?.name).filter(Boolean);
         } else if (data.ar && Array.isArray(data.ar)) {
-          artistNames = data.ar.map((artist) => artist.name).join(' ');
-        } else if (data.artist) {
-          artistNames = typeof data.artist === 'string' ? data.artist : '';
+          artistList = data.ar.map((artist) => artist?.name).filter(Boolean);
+        } else if (data.artist && typeof data.artist === 'string') {
+          artistList = [data.artist];
         }
 
+        const artistNames = artistList.join(' ');
         const searchQuery = `${songName} ${artistNames}`.trim();
 
         if (!searchQuery || searchQuery.length < 2) {
@@ -82,7 +83,12 @@ export const parseFromGDMusic = async (
         // 依次尝试所有音源
         for (const source of allSources) {
           try {
-            const result = await searchAndGetUrl(source, searchQuery, quality);
+            const result = await searchAndGetUrl(
+              source,
+              searchQuery,
+              { name: songName, artists: artistList },
+              quality
+            );
             if (result) {
               console.log(`GD音乐台成功通过 ${result.source} 解析音乐!`);
               // 返回符合原API格式的数据
@@ -132,35 +138,124 @@ interface GDMusicUrlResult {
   source: string;
 }
 
+type GDSearchItem = {
+  id: string | number;
+  name?: string;
+  artist?: unknown;
+  source?: string;
+};
+
+type ExpectedSong = {
+  name: string;
+  artists: string[];
+};
+
 const baseUrl = 'https://music-api.gdstudio.xyz/api.php';
+
+/**
+ * 归一化文本用于匹配：去掉括号备注（Live/翻唱/伴奏等）、空白与常见标点，转小写
+ */
+const normalizeText = (text: string): string => {
+  const stripped = text
+    .toLowerCase()
+    .replace(/[（(【[].*?[)）】\]]/g, '')
+    .replace(/[\s\-—_·・'"‘’“”!！?？.,，。&＆+]/g, '');
+  // 整个歌名都在括号里时退化为仅去标点，避免归一化成空串
+  return stripped || text.toLowerCase().replace(/[\s\-—_·・'"‘’“”!！?？.,，。&＆+]/g, '');
+};
+
+const getCandidateArtistText = (artist: unknown): string => {
+  if (Array.isArray(artist)) {
+    return artist
+      .map((item) => (typeof item === 'string' ? item : (item as any)?.name || ''))
+      .join(' ');
+  }
+  return typeof artist === 'string' ? artist : '';
+};
+
+const isNameMatched = (expectedName: string, candidateName: string): boolean => {
+  const expected = normalizeText(expectedName);
+  const candidate = normalizeText(candidateName);
+  if (!expected || !candidate) return false;
+  return expected === candidate || candidate.includes(expected) || expected.includes(candidate);
+};
+
+/**
+ * 从候选中挑选与原曲匹配的结果。
+ * 此前无条件取第一条搜索结果，版权下架歌曲（如周杰伦）会解析出翻唱/同名歌，
+ * 即"货不对版"（#704）。校验策略：歌名必须匹配；候选带歌手信息时歌手也必须匹配，
+ * 宁可解析失败也不返回错误的歌。
+ */
+const pickBestCandidate = (
+  candidates: GDSearchItem[],
+  expected: ExpectedSong
+): GDSearchItem | null => {
+  let best: GDSearchItem | null = null;
+  let bestScore = 0;
+
+  for (const item of candidates) {
+    if (!item || !item.id) continue;
+    if (!isNameMatched(expected.name, item.name || '')) continue;
+
+    const candidateArtist = normalizeText(getCandidateArtistText(item.artist));
+    let score: number;
+    if (expected.artists.length === 0) {
+      // 原曲无歌手信息，歌名匹配即可
+      score = 2;
+    } else if (!candidateArtist) {
+      // 候选缺少歌手信息：保留为低优先级候选
+      score = 1;
+    } else {
+      const artistMatched = expected.artists.some((name) => {
+        const normalized = normalizeText(name);
+        return (
+          !!normalized &&
+          (candidateArtist.includes(normalized) || normalized.includes(candidateArtist))
+        );
+      });
+      // 有歌手信息但对不上 → 拒绝，这正是"货不对版"的来源
+      if (!artistMatched) continue;
+      score = 3;
+    }
+
+    if (score > bestScore) {
+      best = item;
+      bestScore = score;
+    }
+  }
+
+  return best;
+};
 
 /**
  * 在指定音源搜索歌曲并获取URL
  * @param source 音源
  * @param searchQuery 搜索关键词
+ * @param expected 原曲信息（用于校验搜索结果，避免货不对版）
  * @param quality 音质
  * @returns 音乐URL结果
  */
 async function searchAndGetUrl(
   source: MusicSourceType,
   searchQuery: string,
+  expected: ExpectedSong,
   quality: string
 ): Promise<GDMusicUrlResult | null> {
-  // 1. 搜索歌曲
-  const searchUrl = `${baseUrl}?types=search&source=${source}&name=${encodeURIComponent(searchQuery)}&count=1&pages=1`;
+  // 1. 搜索歌曲（取前5条做校验，而不是盲取第一条）
+  const searchUrl = `${baseUrl}?types=search&source=${source}&name=${encodeURIComponent(searchQuery)}&count=5&pages=1`;
   console.log(`GD音乐台尝试音源 ${source} 搜索:`, searchUrl);
 
   const searchResponse = await axios.get(searchUrl, { timeout: 5000 });
 
   if (searchResponse.data && Array.isArray(searchResponse.data) && searchResponse.data.length > 0) {
-    const firstResult = searchResponse.data[0];
-    if (!firstResult || !firstResult.id) {
-      console.log(`GD音乐台 ${source} 搜索结果无效`);
+    const matchedResult = pickBestCandidate(searchResponse.data as GDSearchItem[], expected);
+    if (!matchedResult) {
+      console.log(`GD音乐台 ${source} 搜索结果与原曲不匹配，已拒绝（避免货不对版）`);
       return null;
     }
 
-    const trackId = firstResult.id;
-    const trackSource = firstResult.source || source;
+    const trackId = matchedResult.id;
+    const trackSource = matchedResult.source || source;
 
     // 2. 获取歌曲URL
     const songUrl = `${baseUrl}?types=url&source=${trackSource}&id=${trackId}&br=${quality}`;

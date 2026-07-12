@@ -6,8 +6,7 @@ import { getMusicLrc, getMusicUrl, getParsingMusicUrl } from '@/api/music';
 import { playbackRequestManager } from '@/services/playbackRequestManager';
 import { SongSourceConfigManager } from '@/services/SongSourceConfigManager';
 import type { ILyric, ILyricText, IWordData, SongResult } from '@/types/music';
-import { getImgUrl, isElectron } from '@/utils';
-import { getImageLinearBackground } from '@/utils/linearColor';
+import { isElectron } from '@/utils';
 import { parseLyrics as parseYrcLyrics } from '@/utils/yrcParser';
 
 const { message } = createDiscreteApi(['message']);
@@ -372,11 +371,9 @@ export const useLyrics = () => {
 };
 
 /**
- * 获取歌曲详情
+ * 获取歌曲详情（优化版 - 只获取URL，背景色在播放后异步获取）
  */
 export const useSongDetail = () => {
-  const { getSongUrl } = useSongUrl();
-
   const getSongDetail = async (playMusic: SongResult, requestId?: string) => {
     // 验证请求
     if (requestId && !playbackRequestManager.isRequestValid(requestId)) {
@@ -405,19 +402,10 @@ export const useSongDetail = () => {
       playMusic.createdAt = Date.now();
       // 半小时后过期
       playMusic.expiredAt = playMusic.createdAt + 1800000;
-      const { backgroundColor, primaryColor } =
-        playMusic.backgroundColor && playMusic.primaryColor
-          ? playMusic
-          : await getImageLinearBackground(getImgUrl(playMusic?.picUrl, '30y30'));
-
-      // 验证请求
-      if (requestId && !playbackRequestManager.isRequestValid(requestId)) {
-        console.log(`[getSongDetail] 背景色获取后请求已失效: ${requestId}`);
-        throw new Error('Request cancelled');
-      }
 
       playMusic.playLoading = false;
-      return { ...playMusic, playMusicUrl, backgroundColor, primaryColor } as SongResult;
+      // 返回歌曲信息，背景色和歌词将在播放后异步加载
+      return { ...playMusic, playMusicUrl } as SongResult;
     } catch (error) {
       if ((error as Error).message === 'Request cancelled') {
         throw error;

@@ -18,9 +18,13 @@ const mainI18n = {
     },
     t(key: string) {
       const keys = key.split('.');
-      let current: any = messages[this.currentLocale];
+      // 未知/非法 locale 时回退默认语言，避免 messages[locale] 为 undefined 导致崩溃
+      let current: any = messages[this.currentLocale] ?? messages[DEFAULT_LANGUAGE as Language];
+      if (current == null) {
+        return key;
+      }
       for (const k of keys) {
-        if (current[k] === undefined) {
+        if (current == null || current[k] === undefined) {
           // 如果找不到翻译，返回键名
           return key;
         }

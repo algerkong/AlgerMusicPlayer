@@ -128,26 +128,26 @@ export default {
     lxMusic: {
       tabs: {
         sources: '音源選択',
-        lxMusic: '落雪音源',
+        lxMusic: '洛雪音源',
         customApi: 'カスタムAPI'
       },
       scripts: {
         title: 'インポート済みのスクリプト',
         importLocal: 'ローカルインポート',
         importOnline: 'オンラインインポート',
-        urlPlaceholder: '落雪音源スクリプトのURLを入力',
+        urlPlaceholder: '洛雪音源スクリプトのURLを入力',
         importBtn: 'インポート',
-        empty: 'インポート済みの落雪音源はありません',
-        notConfigured: '未設定（落雪音源タブで設定してください）',
+        empty: 'インポート済みの洛雪音源はありません',
+        notConfigured: '未設定（洛雪音源タブで設定してください）',
         importHint: '互換性のあるカスタムAPIプラグインをインポートして音源を拡張します',
-        noScriptWarning: '先に落雪音源スクリプトをインポートしてください',
-        noSelectionWarning: '先に落雪音源を選択してください',
+        noScriptWarning: '先に洛雪音源スクリプトをインポートしてください',
+        noSelectionWarning: '先に洛雪音源を選択してください',
         notFound: '音源が存在しません',
         switched: '音源を切り替えました: {name}',
         deleted: '音源を削除しました: {name}',
         enterUrl: 'スクリプトURLを入力してください',
         invalidUrl: '無効なURL形式',
-        invalidScript: '無効な落雪音源スクリプトです（globalThis.lxが見つかりません）',
+        invalidScript: '無効な洛雪音源スクリプトです（globalThis.lxが見つかりません）',
         nameRequired: '名前を空にすることはできません',
         renameSuccess: '名前を変更しました'
       }
@@ -399,6 +399,7 @@ export default {
   themeColor: {
     title: '歌詞テーマカラー',
     presetColors: 'プリセットカラー',
+    reset: 'デフォルトに戻す',
     customColor: 'カスタムカラー',
     preview: 'プレビュー効果',
     previewText: '歌詞効果',

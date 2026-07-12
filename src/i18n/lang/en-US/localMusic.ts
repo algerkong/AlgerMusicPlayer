@@ -9,5 +9,7 @@ export default {
   emptyState: 'No local music found. Please select a folder to scan.',
   fileNotFound: 'File not found or has been moved',
   rescan: 'Rescan',
-  songCount: '{count} songs'
+  songCount: '{count} songs',
+  removeFromLibrary: 'Remove from Library',
+  removedFromLibrary: 'Removed from library (file not deleted)'
 };

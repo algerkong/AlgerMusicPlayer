@@ -1,9 +1,27 @@
 import { BrowserWindow, IpcMain, screen } from 'electron';
-import Store from 'electron-store';
 import path, { join } from 'path';
 
-const store = new Store();
+import { getSharedStore } from './modules/config';
+
+const store = getSharedStore();
 let lyricWindow: BrowserWindow | null = null;
+
+// 歌词窗口 bounds 防抖保存：拖动/缩放时高频触发，
+// 直接写盘会加剧 config.json 文件争用（#714 EBUSY）
+let lyricBoundsSaveTimer: ReturnType<typeof setTimeout> | null = null;
+const saveLyricWindowBounds = (bounds: Record<string, number>) => {
+  if (lyricBoundsSaveTimer) {
+    clearTimeout(lyricBoundsSaveTimer);
+  }
+  lyricBoundsSaveTimer = setTimeout(() => {
+    lyricBoundsSaveTimer = null;
+    try {
+      store.set('lyricWindowBounds', bounds);
+    } catch (error) {
+      console.error('保存歌词窗口位置失败:', error);
+    }
+  }, 500);
+};
 
 // 跟踪拖动状态
 let isDragging = false;
@@ -196,8 +214,8 @@ const createWin = () => {
       const [width, height] = lyricWindow.getSize();
       const [x, y] = lyricWindow.getPosition();
 
-      // 保存窗口位置和大小
-      store.set('lyricWindowBounds', { x, y, width, height });
+      // 保存窗口位置和大小（防抖）
+      saveLyricWindowBounds({ x, y, width, height });
     }
   });
 
@@ -357,7 +375,7 @@ export const loadLyricWindow = (ipcMain: IpcMain, mainWin: BrowserWindow): void 
         false
       );
 
-      // 更新存储的位置
+      // 更新存储的位置（防抖，拖动结束后统一落盘）
       const windowBounds = {
         x: newX,
         y: newY,
@@ -365,7 +383,7 @@ export const loadLyricWindow = (ipcMain: IpcMain, mainWin: BrowserWindow): void 
         height: windowHeight,
         displayId: currentDisplay.id // 记录当前显示器ID，有助于多屏幕处理
       };
-      store.set('lyricWindowBounds', windowBounds);
+      saveLyricWindowBounds(windowBounds);
     } catch (error) {
       console.error('Error during window drag:', error);
       // 出错时尝试使用更简单的方法

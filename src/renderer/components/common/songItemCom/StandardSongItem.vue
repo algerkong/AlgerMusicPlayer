@@ -37,11 +37,13 @@
     <template #content>
       <div class="song-item-content">
         <div class="song-item-content-title">
-          <n-ellipsis
-            class="text-ellipsis"
-            line-clamp="1"
-            :class="{ 'text-green-500': isPlaying }"
-            >{{ item.name }}</n-ellipsis
+          <n-ellipsis class="text-ellipsis" line-clamp="1" :class="{ 'text-green-500': isPlaying }"
+            >{{ item.name }}
+            <span
+              v-if="item.tns?.length || item.alia?.length"
+              class="text-neutral-400 dark:text-neutral-500"
+              >（{{ item.tns?.[0] || item.alia?.[0] }}）</span
+            ></n-ellipsis
           >
         </div>
         <div class="song-item-content-name">

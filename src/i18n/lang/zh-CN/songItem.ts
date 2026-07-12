@@ -13,6 +13,7 @@ export default {
   },
   message: {
     downloading: '正在下载中，请稍候...',
+    addToPlaylistNeedLogin: '请使用 Cookie 或扫码登录后再添加到歌单（UID 登录无法使用此功能）',
     downloadFailed: '下载失败',
     downloadQueued: '已加入下载队列',
     addedToNextPlay: '已添加到下一首播放',

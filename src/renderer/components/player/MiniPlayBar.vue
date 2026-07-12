@@ -182,9 +182,11 @@ const palyListRef = useTemplateRef('palyListRef') as any;
 const isPlaylistOpen = ref(false);
 
 // 提供 openPlaylistDrawer 给子组件
+// Mini 窗口（340px 宽）容不下 420px 的歌单抽屉：记录待添加歌曲并恢复主窗口，
+// AppLayout 重新挂载后接力打开抽屉（#504）
 provide('openPlaylistDrawer', (songId: number) => {
-  console.log('打开歌单抽屉', songId);
-  // 由于在迷你模式不处理这个功能，所以只记录日志
+  localStorage.setItem('pendingAddToPlaylistSongId', String(songId));
+  window.api.restore();
 });
 
 // 切换播放列表显示/隐藏

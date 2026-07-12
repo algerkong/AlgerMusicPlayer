@@ -122,6 +122,15 @@ const isPhone = computed(() => settingsStore.isMobile);
 onMounted(() => {
   settingsStore.initializeSettings();
   settingsStore.initializeTheme();
+
+  // Mini 模式下点了"添加到歌单"会记录歌曲并恢复主窗口，这里接力打开抽屉（#504）
+  const pendingSongId = localStorage.getItem('pendingAddToPlaylistSongId');
+  if (pendingSongId) {
+    localStorage.removeItem('pendingAddToPlaylistSongId');
+    nextTick(() => {
+      openPlaylistDrawer(Number(pendingSongId));
+    });
+  }
 });
 
 const showPlaylistDrawer = ref(false);

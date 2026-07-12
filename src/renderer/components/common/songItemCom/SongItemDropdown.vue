@@ -15,13 +15,15 @@
 
 <script lang="ts" setup>
 import type { MenuOption } from 'naive-ui';
-import { NDropdown, NEllipsis, NImage } from 'naive-ui';
+import { createDiscreteApi, NDropdown, NEllipsis, NImage } from 'naive-ui';
 import { computed, h, inject } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import { useUserStore } from '@/store';
 import type { SongResult } from '@/types/music';
 import { getImgUrl, isElectron } from '@/utils';
-import { hasPermission } from '@/utils/auth';
+
+const { message } = createDiscreteApi(['message']);
 
 const { t } = useI18n();
 
@@ -49,6 +51,19 @@ const emits = defineEmits([
 ]);
 
 const openPlaylistDrawer = inject<(songId: number | string) => void>('openPlaylistDrawer');
+
+const userStore = useUserStore();
+
+// 是否具有真实登录权限（Cookie/扫码登录）。
+// 用 userStore 的响应式状态而非直接读 localStorage：
+// 后者不具备响应性，登录/登出后菜单禁用状态不会刷新（#706）
+const hasRealAuth = computed(() => !!userStore.user && userStore.loginType !== 'uid');
+
+// 本地歌曲：移除菜单项显示"从本地列表移除"而非"从歌单中删除"（#713）
+const isLocalSong = computed(
+  () =>
+    typeof props.item.playMusicUrl === 'string' && props.item.playMusicUrl.startsWith('local://')
+);
 
 // 渲染歌曲预览
 const renderSongPreview = () => {
@@ -123,8 +138,6 @@ const renderSongPreview = () => {
 
 // 下拉菜单选项
 const dropdownOptions = computed<MenuOption[]>(() => {
-  const hasRealAuth = hasPermission(true);
-
   const options: MenuOption[] = [
     {
       key: 'header',
@@ -160,10 +173,10 @@ const dropdownOptions = computed<MenuOption[]>(() => {
       icon: () => h('i', { class: 'iconfont ri-file-text-line' })
     },
     {
+      // 不做灰色禁用：点击时提示不可用原因，避免用户不知道"为什么用不了"（#706）
       label: t('songItem.menu.addToPlaylist'),
       key: 'addToPlaylist',
-      icon: () => h('i', { class: 'iconfont ri-folder-add-line' }),
-      disabled: !hasRealAuth
+      icon: () => h('i', { class: 'iconfont ri-folder-add-line' })
     },
     {
       label: props.isFavorite ? t('songItem.menu.unfavorite') : t('songItem.menu.favorite'),
@@ -191,7 +204,9 @@ const dropdownOptions = computed<MenuOption[]>(() => {
         key: 'd2'
       },
       {
-        label: t('songItem.menu.removeFromPlaylist'),
+        label: isLocalSong.value
+          ? t('localMusic.removeFromLibrary')
+          : t('songItem.menu.removeFromPlaylist'),
         key: 'remove',
         icon: () => h('i', { class: 'iconfont ri-delete-bin-line' })
       }
@@ -216,6 +231,10 @@ const handleSelect = (key: string | number) => {
       emits('play-next');
       break;
     case 'addToPlaylist':
+      if (!hasRealAuth.value) {
+        message.warning(t('songItem.message.addToPlaylistNeedLogin'));
+        break;
+      }
       openPlaylistDrawer?.(props.item.id);
       break;
     case 'favorite':

@@ -43,6 +43,11 @@
             :class="{ 'text-green-500': isPlaying }"
           >
             {{ item.name }}
+            <span
+              v-if="item.tns?.length || item.alia?.length"
+              class="text-neutral-400 dark:text-neutral-500"
+              >（{{ item.tns?.[0] || item.alia?.[0] }}）</span
+            >
           </n-ellipsis>
           <div class="song-item-content-divider">-</div>
           <n-ellipsis class="song-item-content-name text-ellipsis" line-clamp="1">

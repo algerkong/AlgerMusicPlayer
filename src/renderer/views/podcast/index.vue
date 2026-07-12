@@ -2,7 +2,9 @@
   <sticky-tab-page
     ref="pageRef"
     :title="currentCategoryId === -1 ? t('podcast.podcast') : currentCategoryName"
-    :description="currentCategoryId === -1 ? t('podcast.discover') : t('podcast.exploreCategoryRadios')"
+    :description="
+      currentCategoryId === -1 ? t('podcast.discover') : t('podcast.exploreCategoryRadios')
+    "
     :model-value="currentCategoryId"
     :categories="categoryList"
     label-key="name"
@@ -34,7 +36,9 @@
       <section v-if="todayPerfered.length > 0">
         <div class="mb-6 flex items-center justify-between">
           <div class="flex items-center gap-3">
-            <h2 class="text-xl font-bold tracking-tight text-neutral-900 md:text-2xl dark:text-white">
+            <h2
+              class="text-xl font-bold tracking-tight text-neutral-900 md:text-2xl dark:text-white"
+            >
               {{ t('podcast.todayPerfered') }}
             </h2>
             <div class="h-1.5 w-1.5 rounded-full bg-primary" />
@@ -65,7 +69,9 @@
               </div>
             </div>
             <div class="flex-1 min-w-0">
-              <h4 class="text-sm md:text-base font-semibold text-neutral-900 dark:text-white truncate">
+              <h4
+                class="text-sm md:text-base font-semibold text-neutral-900 dark:text-white truncate"
+              >
                 {{ program.mainSong?.name || program.name }}
               </h4>
               <p class="text-xs md:text-sm text-neutral-500 dark:text-neutral-400 truncate mt-1">
@@ -125,7 +131,10 @@
         </template>
       </div>
 
-      <div v-if="!categoryLoading && categoryRadios.length === 0" class="flex flex-col items-center justify-center py-20 text-neutral-400">
+      <div
+        v-if="!categoryLoading && categoryRadios.length === 0"
+        class="flex flex-col items-center justify-center py-20 text-neutral-400"
+      >
         <i class="ri-radio-line mb-4 text-5xl opacity-20" />
         <p class="text-sm font-medium">{{ t('podcast.noCategoryRadios') }}</p>
       </div>
@@ -134,7 +143,10 @@
         <n-spin size="small" />
         <span class="ml-2 text-neutral-500">{{ t('common.loading') }}</span>
       </div>
-      <div v-if="!categoryHasMore && categoryRadios.length > 0" class="text-center py-8 text-neutral-500">
+      <div
+        v-if="!categoryHasMore && categoryRadios.length > 0"
+        class="text-center py-8 text-neutral-500"
+      >
         {{ t('common.noMore') }}
       </div>
     </div>

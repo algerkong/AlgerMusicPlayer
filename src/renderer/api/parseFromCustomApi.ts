@@ -72,7 +72,9 @@ export const parseFromCustomApi = async (
       response = await axios.post(plugin.apiUrl, finalParams, { timeout });
     } else {
       // 默认为 GET
-      const finalUrl = `${plugin.apiUrl}?${new URLSearchParams(finalParams).toString()}`;
+      // apiUrl 本身可能已带查询串（如 xxx/api.php?type=url），需按情况选择 ? 或 &
+      const separator = plugin.apiUrl.includes('?') ? '&' : '?';
+      const finalUrl = `${plugin.apiUrl}${separator}${new URLSearchParams(finalParams).toString()}`;
       console.log('自定义API：发送 GET 请求到:', finalUrl);
       response = await axios.get(finalUrl, { timeout });
     }
@@ -83,11 +85,20 @@ export const parseFromCustomApi = async (
     if (musicUrl && typeof musicUrl === 'string') {
       console.log('自定义API：成功获取URL！');
       // 5. 组装成应用所需的标准格式并返回
+      // quality 是 'standard'/'higher'/'exhigh'/'lossless'/'hires' 等字符串，
+      // 直接 parseInt 会得到 NaN，这里映射为对应码率(bps)
+      const QUALITY_BITRATE: Record<string, number> = {
+        standard: 128000,
+        higher: 192000,
+        exhigh: 320000,
+        lossless: 999000,
+        hires: 1900000
+      };
       return {
         data: {
           data: {
             url: musicUrl,
-            br: parseInt(quality) * 1000,
+            br: QUALITY_BITRATE[quality] ?? 320000,
             size: 0,
             md5: '',
             platform: plugin.name.toLowerCase().replace(/\s/g, ''),

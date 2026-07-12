@@ -124,26 +124,26 @@ export default {
     lxMusic: {
       tabs: {
         sources: '音源選擇',
-        lxMusic: '落雪音源',
+        lxMusic: '洛雪音源',
         customApi: '自訂API'
       },
       scripts: {
         title: '已匯入的音源腳本',
         importLocal: '本機匯入',
         importOnline: '線上匯入',
-        urlPlaceholder: '輸入落雪音源腳本 URL',
+        urlPlaceholder: '輸入洛雪音源腳本 URL',
         importBtn: '匯入',
-        empty: '暫無已匯入的落雪音源',
-        notConfigured: '未設定 (請至落雪音源分頁設定)',
+        empty: '暫無已匯入的洛雪音源',
+        notConfigured: '未設定 (請至洛雪音源分頁設定)',
         importHint: '匯入相容的自訂 API 外掛以擴充音源',
-        noScriptWarning: '請先匯入落雪音源腳本',
-        noSelectionWarning: '請先選擇一個落雪音源',
+        noScriptWarning: '請先匯入洛雪音源腳本',
+        noSelectionWarning: '請先選擇一個洛雪音源',
         notFound: '音源不存在',
         switched: '已切換到音源: {name}',
         deleted: '已刪除音源: {name}',
         enterUrl: '請輸入腳本 URL',
         invalidUrl: '無效的 URL 格式',
-        invalidScript: '無效的落雪音源腳本，未找到 globalThis.lx 相關程式碼',
+        invalidScript: '無效的洛雪音源腳本，未找到 globalThis.lx 相關程式碼',
         nameRequired: '名稱不能為空',
         renameSuccess: '重新命名成功'
       }
@@ -387,6 +387,7 @@ export default {
   themeColor: {
     title: '歌詞主題色',
     presetColors: '預設顏色',
+    reset: '恢復預設',
     customColor: '自訂顏色',
     preview: '預覽效果',
     previewText: '歌詞效果',

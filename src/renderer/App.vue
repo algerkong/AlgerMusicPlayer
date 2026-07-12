@@ -100,6 +100,10 @@ if (isElectron) {
   window.api.onLanguageChanged(handleSetLanguage);
   window.electron.ipcRenderer.on('mini-mode', (_, value) => {
     settingsStore.setMiniMode(value);
+    // 切换迷你/主界面时复位全屏播放页状态：
+    // musicFull 残留为 true 会让返回主界面后第一次点击歌曲信息被"取反"关闭，
+    // 表现为全屏页打不开（#242）
+    playerStore.setMusicFull(false);
     if (value) {
       // 存储当前路由
       localStorage.setItem('currentRoute', router.currentRoute.value.path);

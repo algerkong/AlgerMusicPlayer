@@ -1,4 +1,4 @@
-﻿import { BrowserWindow, ipcMain, session } from 'electron';
+import { BrowserWindow, ipcMain, session } from 'electron';
 import { join } from 'path';
 
 import i18n from '../../i18n/main';
@@ -8,7 +8,6 @@ let loginWindowOpening = false;
 let activeLoginAttemptBinding: { currentId: string } | null = null;
 
 const loginUrl = 'https://music.163.com/#/login/';
-const loginTitle = i18n.global.t('login.qrTitle');
 const loginWindowStatusChannel = 'login-window-status';
 const createLoginAttemptId = () => `login-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
@@ -128,7 +127,8 @@ const openLoginWindow = async (mainWin: BrowserWindow, requestAttemptId?: string
 
     loginWindow = new BrowserWindow({
       parent: mainWin,
-      title: loginTitle,
+      // ??????????????????????? i18n locale ???????
+      title: i18n.global.t('login.qrTitle'),
       width: 1280,
       height: 800,
       center: true,

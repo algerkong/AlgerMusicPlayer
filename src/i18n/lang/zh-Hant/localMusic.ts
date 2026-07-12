@@ -9,5 +9,7 @@ export default {
   emptyState: '暫無本地音樂，請先選擇資料夾進行掃描',
   fileNotFound: '檔案不存在或已被移動',
   rescan: '重新掃描',
-  songCount: '{count} 首歌曲'
+  songCount: '{count} 首歌曲',
+  removeFromLibrary: '從本機清單移除',
+  removedFromLibrary: '已從本機清單移除（不刪除檔案）'
 };

@@ -143,7 +143,9 @@
               :key="item.id"
               :index="index"
               :item="item"
+              :can-remove="true"
               @play="handlePlaySong"
+              @remove-song="handleRemoveSong"
             />
           </div>
         </section>
@@ -280,6 +282,20 @@ async function handlePlaySong(_song: SongResult): Promise<void> {
     playerStore.setPlayList(filteredSongResults.value);
   } catch (error) {
     console.error('播放本地音乐失败:', error);
+  }
+}
+
+/**
+ * 从本地列表移除单曲（仅软件层面移除，不删除磁盘文件）（#713）
+ * @param id SongResult.id，即 LocalMusicEntry.id（hex 字符串）
+ */
+async function handleRemoveSong(id: number | string): Promise<void> {
+  try {
+    await localMusicStore.removeEntry(String(id));
+    message.success(t('localMusic.removedFromLibrary'));
+  } catch (error) {
+    console.error('移除本地歌曲失败:', error);
+    message.error(String(error));
   }
 }
 

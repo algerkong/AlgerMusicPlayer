@@ -366,7 +366,7 @@ export class LxMusicSourceRunner {
       this.initResolver = resolve;
       this.initRejecter = reject;
       this.initTimeoutId = window.setTimeout(() => {
-        this.rejectInitialization(new Error('脚本初始化超时'));
+        this.rejectInitialization(new Error('脚本初始化超时（10 秒内未调用 lx.send(inited)）'));
       }, 10000);
     });
 

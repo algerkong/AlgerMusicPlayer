@@ -115,6 +115,10 @@ const getAverageColor = (data: Uint8ClampedArray): number[] => {
     b += data[i + 2];
     count++;
   }
+  // 0 尺寸图片（count 为 0）会得到 NaN，回退为中性灰避免生成 rgb(NaN,...)
+  if (count === 0) {
+    return [128, 128, 128];
+  }
   return [Math.round(r / count), Math.round(g / count), Math.round(b / count)];
 };
 
@@ -306,8 +310,13 @@ export const createGradientString = (
   colors: { r: number; g: number; b: number }[],
   percentages = [0, 50, 100]
 ) => {
+  const count = colors.length;
   return `linear-gradient(to bottom, ${colors
-    .map((color, i) => `rgb(${color.r}, ${color.g}, ${color.b}) ${percentages[i]}%`)
+    .map((color, i) => {
+      // 当颜色数量与传入的 percentages 不一致时，按索引均匀分布，避免出现 undefined%
+      const percent = percentages[i] ?? (count > 1 ? Math.round((i / (count - 1)) * 100) : 0);
+      return `rgb(${color.r}, ${color.g}, ${color.b}) ${percent}%`;
+    })
     .join(', ')})`;
 };
 

@@ -59,6 +59,7 @@ export default {
     eq: 'イコライザー',
     playList: 'プレイリスト',
     reparse: '再解析',
+    download: 'ダウンロード',
     playMode: {
       sequence: '順次再生',
       loop: 'ループ再生',

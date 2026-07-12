@@ -6,6 +6,10 @@ import { SUPPORTED_AUDIO_FORMATS } from '@/types/localMusic';
 import type { ILyric, ILyricText, IWordData, SongResult } from '@/types/music';
 import { parseLyrics as parseYrcLyrics } from '@/utils/yrcParser';
 
+import { filePathToLocalUrl } from '../../shared/localUrl';
+
+export { filePathToLocalUrl };
+
 /**
  * 判断文件路径是否为支持的音频格式
  * 通过提取文件扩展名（不区分大小写）与支持格式列表比对
@@ -47,7 +51,7 @@ export function buildFallbackMeta(filePath: string): LocalMusicMeta {
     artist: '未知艺术家',
     album: '未知专辑',
     duration: 0,
-    cover: null,
+    coverPath: null,
     lyrics: null,
     fileSize: 0,
     modifiedTime: 0
@@ -111,10 +115,15 @@ export function toSongResult(entry: LocalMusicEntry): SongResult {
   // 解析内嵌歌词为 ILyric 对象
   const lyric = parseLrcToILyric(entry.lyrics);
 
+  // 封面统一走落盘文件 + local:// 协议；缺 coverPath 时给空串，
+  // SongItem 模板用 v-if="item.picUrl" 自动跳过渲染。
+  // 用户重新扫描会让主进程落盘新封面（参见 scanFolders 的自愈条件）
+  const coverUrl = entry.coverPath ? filePathToLocalUrl(entry.coverPath) : '';
+
   return {
     id: entry.id,
     name: entry.title,
-    picUrl: entry.cover || '/images/default_cover.png',
+    picUrl: coverUrl,
     ar: [
       {
         name: entry.artist,
@@ -140,7 +149,7 @@ export function toSongResult(entry: LocalMusicEntry): SongResult {
       blurPicUrl: '',
       companyId: 0,
       pic: 0,
-      picUrl: entry.cover || '',
+      picUrl: coverUrl,
       publishTime: 0,
       description: '',
       tags: '',
@@ -176,7 +185,7 @@ export function toSongResult(entry: LocalMusicEntry): SongResult {
       artists: [{ name: entry.artist }],
       album: { name: entry.album }
     },
-    playMusicUrl: `local:///${entry.filePath}`,
+    playMusicUrl: filePathToLocalUrl(entry.filePath),
     duration: entry.duration,
     dt: entry.duration,
     source: 'netease' as const,
@@ -187,17 +196,6 @@ export function toSongResult(entry: LocalMusicEntry): SongResult {
     createdAt: Date.now(),
     expiredAt: Date.now() + 365 * 24 * 60 * 60 * 1000
   };
-}
-
-/**
- * 将封面图片 Buffer 转换为 base64 Data URL
- * @param buffer 图片二进制数据
- * @param mime MIME 类型（如 image/jpeg、image/png）
- * @returns base64 Data URL 字符串
- */
-export function coverToDataUrl(buffer: Buffer, mime: string): string {
-  const base64 = buffer.toString('base64');
-  return `data:${mime};base64,${base64}`;
 }
 
 /**

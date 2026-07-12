@@ -95,8 +95,8 @@ import { useRoute, useRouter } from 'vue-router';
 
 import { getPlaylistCategory } from '@/api/home';
 import { getListByCat } from '@/api/list';
-import StickyTabPage from '@/components/common/StickyTabPage.vue';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
+import StickyTabPage from '@/components/common/StickyTabPage.vue';
 import type { IPlayListSort } from '@/types/playlist';
 import { calculateAnimationDelay, formatNumber, getImgUrl } from '@/utils';
 
@@ -150,6 +150,10 @@ const loadList = async (type: string, isLoadMore = false) => {
       offset: page.value * TOTAL_ITEMS
     };
     const { data } = await getListByCat(params);
+    // 竞态守卫：返回时若分类已切换，丢弃过期结果，避免旧分类覆盖新分类
+    if (type !== currentType.value) {
+      return;
+    }
     if (isLoadMore) {
       recommendList.value.push(...data.playlists);
     } else {

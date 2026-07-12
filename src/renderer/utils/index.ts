@@ -45,16 +45,19 @@ export const calculateAnimationDelay = (index: any, baseDelay: number = 0.03): s
   return `${delay.toFixed(3)}s`;
 };
 
-// 将秒转换为分钟和秒
+// 将秒转换为时长字符串：<1 小时为 mm:ss，>=1 小时进位为 h:mm:ss
 export const secondToMinute = (s: number) => {
-  if (!s) {
+  if (!s || s < 0) {
     return '00:00';
   }
-  const minute: number = Math.floor(s / 60);
+  const hour: number = Math.floor(s / 3600);
+  const minute: number = Math.floor((s % 3600) / 60);
   const second: number = Math.floor(s % 60);
-  const minuteStr: string = minute > 9 ? minute.toString() : `0${minute.toString()}`;
-  const secondStr: string = second > 9 ? second.toString() : `0${second.toString()}`;
-  return `${minuteStr}:${secondStr}`;
+  const pad = (n: number): string => (n > 9 ? `${n}` : `0${n}`);
+  if (hour > 0) {
+    return `${hour}:${pad(minute)}:${pad(second)}`;
+  }
+  return `${pad(minute)}:${pad(second)}`;
 };
 
 // 格式化数字 千,万, 百万, 千万,亿

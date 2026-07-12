@@ -1,6 +1,42 @@
 import { electronApp, optimizer } from '@electron-toolkit/utils';
-import { app, ipcMain, nativeImage, session } from 'electron';
+import { app, dialog, ipcMain, nativeImage, protocol, session } from 'electron';
 import { join } from 'path';
+
+// 全局兜底（#714）：Windows 上 config.json 等文件可能被杀毒/云同步软件短暂锁定，
+// electron-store 读写撞锁会抛 EBUSY 等未捕获异常，Electron 默认弹出致命错误框。
+// 对带 path 的文件系统锁类错误仅记录日志；其余异常保留报错弹窗以免掩盖真 bug。
+const FILE_LOCK_ERROR_CODES = new Set(['EBUSY', 'EPERM', 'EACCES', 'EAGAIN', 'EMFILE', 'ENFILE']);
+process.on('uncaughtException', (error: NodeJS.ErrnoException) => {
+  if (error?.code && FILE_LOCK_ERROR_CODES.has(error.code) && typeof error.path === 'string') {
+    console.error('[main] 文件被占用/锁定，已忽略本次读写:', error.message);
+    return;
+  }
+  console.error('[main] 未捕获异常:', error);
+  dialog.showErrorBox(
+    'A JavaScript error occurred in the main process',
+    error?.stack || String(error)
+  );
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[main] 未处理的 Promise 拒绝:', reason);
+});
+
+// 必须在 app.whenReady() 之前注册自定义协议为特权协议，
+// 否则 http(s) 页面（dev server、生产环境的 file://）无法把 local:// 当成
+// 安全/可 fetch/可流式的资源加载，会触发 CORS 拦截或 net::ERR_UNKNOWN_URL_SCHEME
+protocol.registerSchemesAsPrivileged([
+  {
+    scheme: 'local',
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      stream: true,
+      bypassCSP: true,
+      corsEnabled: true
+    }
+  }
+]);
 
 import type { Language } from '../i18n/main';
 import i18n from '../i18n/main';
@@ -142,15 +178,18 @@ if (!isSingleInstance) {
     // 初始化窗口大小管理器
     initWindowSizeManager();
 
-    // 设置媒体设备权限 - 允许枚举音频输出设备
+    // 媒体设备权限：应用没有任何录音功能，麦克风/摄像头采集一律拒绝，
+    // 防止依赖库静默调用 getUserMedia 触发系统麦克风授权弹窗（#147/#246/#440/#639 防御性加固）。
+    // 输出设备切换走 speaker-selection / enumerateDevices，不受影响
     session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
       if (permission === ('media' as any) || permission === ('audioCapture' as any)) {
-        callback(true);
+        callback(false);
         return;
       }
       callback(true);
     });
 
+    // 保持放行：enumerateDevices 依赖它返回真实设备名（不访问麦克风硬件、不触发系统授权）
     session.defaultSession.setPermissionCheckHandler(() => {
       return true;
     });

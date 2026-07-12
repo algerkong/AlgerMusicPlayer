@@ -6,6 +6,7 @@ import Store from 'electron-store';
 import * as fs from 'fs';
 import * as path from 'path';
 
+import { filePathToLocalUrl } from '../../shared/localUrl';
 import { getStore } from './config';
 
 type CacheCleanupPolicy = 'lru' | 'fifo';
@@ -412,7 +413,9 @@ class DiskCacheManager {
       cleanupPolicy
     };
 
-    this.saveConfig(normalizedConfig);
+    // 注意：getCacheConfig 是纯读取，处于播放/下载/歌词等多个热路径。
+    // 此处不再落盘（electron-store.set 每次整文件写 config.json，会造成写放大与文件争用），
+    // 持久化交由 updateCacheConfig / setCacheDirectory 等真正的写操作完成。
     return normalizedConfig;
   }
 
@@ -535,8 +538,7 @@ class DiskCacheManager {
   }
 
   private toLocalUrl(filePath: string): string {
-    const normalized = path.normalize(filePath).replace(/\\/g, '/');
-    return `local:///${encodeURIComponent(normalized)}`;
+    return filePathToLocalUrl(path.normalize(filePath));
   }
 
   private isRemoteAudioUrl(url: string): boolean {

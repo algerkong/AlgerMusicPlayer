@@ -962,6 +962,12 @@ onBeforeUnmount(() => {
     clearTimeout(autoScrollTimer.value);
   }
 
+  // 清理睡眠定时器倒计时刷新 interval，避免组件卸载后残留、闭包持有 store 无法回收
+  if (sleepTimerInterval) {
+    clearInterval(sleepTimerInterval);
+    sleepTimerInterval = null;
+  }
+
   // 清理鼠标事件监听
   document.removeEventListener('mousemove', handleMouseMove);
   document.removeEventListener('mouseup', handleMouseUp);
@@ -1084,7 +1090,7 @@ const { getLrcStyle: originalLrcStyle } = useLyricProgress();
 
 // 修改 getLrcStyle 函数
 const getLrcStyle = (index: number) => {
-  const colors = textColors.value || getTextColors;
+  const colors = textColors.value || getTextColors();
   const originalStyle = originalLrcStyle(index);
 
   if (index === nowIndex.value) {

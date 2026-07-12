@@ -16,68 +16,72 @@ import { CacheManager } from './musicParser';
 /**
  * 解析可能是 API 端点的 URL，获取真实音频 URL
  * 一些音源脚本返回的是 API 端点，需要额外请求才能获取真实音频 URL
+ *
+ * 通过主进程请求验证（绕过渲染进程 CORS）。端点确认失效时返回 null，
+ * 让解析策略正确失败并进入失败缓存，而不是把不可播放的 URL 当成功缓存
+ * （否则会导致：坏 URL 进缓存 → audio 元素 Format error → 连续跳歌，
+ * 且后续策略如 unblockMusic 永远没有机会接手）
  */
-const resolveAudioUrl = async (url: string): Promise<string> => {
-  try {
-    // 检查是否看起来像 API 端点（包含 /api/ 且有查询参数）
-    const isApiEndpoint = url.includes('/api/') || (url.includes('?') && url.includes('type=url'));
+const resolveAudioUrl = async (url: string): Promise<string | null> => {
+  // 检查是否看起来像 API 端点（包含 /api/ 且有查询参数）
+  const isApiEndpoint = url.includes('/api/') || (url.includes('?') && url.includes('type=url'));
 
-    if (!isApiEndpoint) {
-      // 看起来像直接的音频 URL，直接返回
+  if (!isApiEndpoint) {
+    // 看起来像直接的音频 URL，直接返回
+    return url;
+  }
+
+  console.log('[LxMusicStrategy] 检测到 API 端点，尝试解析真实 URL:', url);
+
+  // 非 Electron 环境无法绕过 CORS 验证，保持乐观返回
+  if (typeof window.api?.lxMusicHttpRequest !== 'function') {
+    return url;
+  }
+
+  try {
+    const requestId = `lx_resolve_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+    const response = await window.api.lxMusicHttpRequest({
+      url,
+      options: {
+        method: 'GET',
+        // 端点若直接返回音频流，用 Range 避免整段下载；返回 JSON 时 8KB 也足够
+        headers: { Range: 'bytes=0-8191' },
+        timeout: 15000
+      },
+      requestId
+    });
+
+    const status = response?.statusCode ?? 0;
+    const contentType = String(response?.headers?.['content-type'] || '');
+
+    if (status < 200 || status >= 400) {
+      console.warn(`[LxMusicStrategy] API 端点返回 ${status}，判定解析失败`);
+      return null;
+    }
+
+    // 端点直接返回音频流（或重定向到音频，主进程已自动跟随），
+    // audio 元素可以直接播放原始 URL
+    if (contentType.includes('audio/') || contentType.includes('application/octet-stream')) {
+      console.log('[LxMusicStrategy] API 端点为音频流，直接使用原始 URL');
       return url;
     }
 
-    console.log('[LxMusicStrategy] 检测到 API 端点，尝试解析真实 URL:', url);
-
-    // 尝试获取真实 URL
-    const response = await fetch(url, {
-      method: 'HEAD',
-      redirect: 'manual' // 不自动跟随重定向
-    });
-
-    // 检查是否是重定向
-    if (response.status >= 300 && response.status < 400) {
-      const location = response.headers.get('Location');
-      if (location) {
-        console.log('[LxMusicStrategy] API 返回重定向 URL:', location);
-        return location;
-      }
-    }
-
-    // 如果 HEAD 请求没有重定向，尝试 GET 请求
-    const getResponse = await fetch(url, {
-      redirect: 'follow'
-    });
-
-    // 检查 Content-Type
-    const contentType = getResponse.headers.get('Content-Type') || '';
-
-    // 如果是音频类型，返回最终 URL
-    if (contentType.includes('audio/') || contentType.includes('application/octet-stream')) {
-      console.log('[LxMusicStrategy] 解析到音频 URL:', getResponse.url);
-      return getResponse.url;
-    }
-
-    // 如果是 JSON，尝试解析
-    if (contentType.includes('application/json') || contentType.includes('text/json')) {
-      const json = await getResponse.json();
-      console.log('[LxMusicStrategy] API 返回 JSON:', json);
-
-      // 尝试从 JSON 中提取 URL（常见字段）
-      const audioUrl = json.url || json.data?.url || json.audio_url || json.link || json.src;
+    // JSON 响应：尝试提取常见字段中的音频 URL
+    const body = response?.body;
+    if (body && typeof body === 'object') {
+      const audioUrl = body.url || body.data?.url || body.audio_url || body.link || body.src;
       if (audioUrl && typeof audioUrl === 'string') {
         console.log('[LxMusicStrategy] 从 JSON 中提取音频 URL:', audioUrl);
         return audioUrl;
       }
     }
 
-    // 如果都不是，返回原始 URL（可能直接可用）
-    console.warn('[LxMusicStrategy] 无法解析 API 端点，返回原始 URL');
-    return url;
+    // 2xx 但既不是音频也提取不到 URL（如 HTML 错误页），视为不可播放
+    console.warn('[LxMusicStrategy] API 端点响应无法解析为音频，判定解析失败');
+    return null;
   } catch (error) {
-    console.error('[LxMusicStrategy] URL 解析失败:', error);
-    // 解析失败时返回原始 URL
-    return url;
+    console.error('[LxMusicStrategy] URL 解析请求失败:', error);
+    return null;
   }
 };
 

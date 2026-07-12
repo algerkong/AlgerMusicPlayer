@@ -58,11 +58,23 @@ jobs:
         with:
           node-version: 24
 
+      # lint:i18n 脚本用 bun 跑（package.json: "bun scripts/check_i18n.ts"），
+      # CI 默认环境没有 bun 会报 sh: bun: not found
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
       - name: Install dependencies
         run: npm install
 
       - name: Lint
         run: npx eslint --max-warnings 0 "src/**/*.{ts,tsx,vue,js}"
+
+      # tsconfig.web.json 显式 require src/renderer/{auto-imports,components}.d.ts
+      # 这两个文件由 unplugin-auto-import / unplugin-vue-components 在 vite 启动时
+      # 生成，且被 .gitignore 排除（58922dc 维护者主动设置）。CI 直接跑 typecheck
+      # 拿不到 d.ts 会报 TS2688，先跑一次 build 触发 unplugin 生成
+      - name: Build (generates auto-import / components d.ts)
+        run: npm run build
 
       - name: Type check
         run: npm run typecheck

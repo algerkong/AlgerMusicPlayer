@@ -151,6 +151,16 @@
         </template>
         {{ t('player.playBar.reparse') }}
       </n-tooltip>
+      <n-tooltip v-if="playMusic?.id && isElectron" trigger="hover" :z-index="9999999">
+        <template #trigger>
+          <i
+            class="iconfont ri-download-line"
+            :class="{ 'disabled-icon': isDownloading }"
+            @click="playMusic?.id && handleDownload()"
+          />
+        </template>
+        {{ isDownloading ? t('songItem.message.downloading') : t('player.playBar.download') }}
+      </n-tooltip>
 
       <!-- 高级控制菜单按钮（整合了 EQ、定时关闭、播放速度） -->
       <advanced-controls-popover />
@@ -189,6 +199,7 @@ import {
   textColors
 } from '@/hooks/MusicHook';
 import { useArtist } from '@/hooks/useArtist';
+import { useDownload } from '@/hooks/useDownload';
 import { useFavorite } from '@/hooks/useFavorite';
 import { usePlaybackControl } from '@/hooks/usePlaybackControl';
 import { usePlayMode } from '@/hooks/usePlayMode';
@@ -216,6 +227,13 @@ const {
 
 // 收藏
 const { isFavorite, toggleFavorite } = useFavorite();
+
+// 下载
+const { downloadMusic, isDownloading } = useDownload();
+const handleDownload = () => {
+  if (!playMusic.value || isDownloading.value) return;
+  downloadMusic(playMusic.value);
+};
 
 // 播放模式
 const { playMode, playModeIcon, playModeText, togglePlayMode } = usePlayMode();

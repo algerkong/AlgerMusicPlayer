@@ -16,6 +16,32 @@ export const md5 = (str: string): string => {
 };
 
 /**
+ * Uint8Array 转 WordArray
+ */
+const u8ToWordArray = (u8: Uint8Array): CryptoJS.lib.WordArray => {
+  const words: number[] = [];
+  for (let i = 0; i < u8.length; i += 4) {
+    words.push(
+      ((u8[i] || 0) << 24) | ((u8[i + 1] || 0) << 16) | ((u8[i + 2] || 0) << 8) | (u8[i + 3] || 0)
+    );
+  }
+  return CryptoJS.lib.WordArray.create(words, u8.length);
+};
+
+/**
+ * key/iv 归一化：脚本可能传字符串、Buffer（Uint8Array）或 WordArray，
+ * ECB 模式下 iv 还可能是 null/undefined
+ */
+const toKeyWordArray = (
+  input: string | Uint8Array | CryptoJS.lib.WordArray | null | undefined
+): CryptoJS.lib.WordArray | undefined => {
+  if (input == null) return undefined;
+  if (typeof input === 'string') return CryptoJS.enc.Utf8.parse(input);
+  if (input instanceof Uint8Array) return u8ToWordArray(input);
+  return input;
+};
+
+/**
  * 生成随机字节（返回16进制字符串）
  */
 export const randomBytes = (size: number): string => {
@@ -38,8 +64,8 @@ export const randomBytes = (size: number): string => {
 export const aesEncrypt = (
   buffer: string | Uint8Array,
   mode: string,
-  key: string | CryptoJS.lib.WordArray,
-  iv: string | CryptoJS.lib.WordArray
+  key: string | Uint8Array | CryptoJS.lib.WordArray,
+  iv?: string | Uint8Array | CryptoJS.lib.WordArray | null
 ): Uint8Array => {
   try {
     // 将输入转换为 WordArray
@@ -61,8 +87,8 @@ export const aesEncrypt = (
     }
 
     // 处理密钥和 IV
-    const keyWordArray = typeof key === 'string' ? CryptoJS.enc.Utf8.parse(key) : key;
-    const ivWordArray = typeof iv === 'string' ? CryptoJS.enc.Utf8.parse(iv) : iv;
+    const keyWordArray = toKeyWordArray(key)!;
+    const ivWordArray = toKeyWordArray(iv);
 
     // 根据模式选择加密方式
     const modeObj = getModeFromString(mode);
@@ -98,8 +124,8 @@ export const aesEncrypt = (
 export const aesDecrypt = (
   buffer: Uint8Array,
   mode: string,
-  key: string | CryptoJS.lib.WordArray,
-  iv: string | CryptoJS.lib.WordArray
+  key: string | Uint8Array | CryptoJS.lib.WordArray,
+  iv?: string | Uint8Array | CryptoJS.lib.WordArray | null
 ): Uint8Array => {
   try {
     // Uint8Array 转 WordArray
@@ -115,8 +141,8 @@ export const aesDecrypt = (
     const ciphertext = CryptoJS.lib.WordArray.create(words, buffer.length);
 
     // 处理密钥和 IV
-    const keyWordArray = typeof key === 'string' ? CryptoJS.enc.Utf8.parse(key) : key;
-    const ivWordArray = typeof iv === 'string' ? CryptoJS.enc.Utf8.parse(iv) : iv;
+    const keyWordArray = toKeyWordArray(key)!;
+    const ivWordArray = toKeyWordArray(iv);
 
     // 根据模式选择解密方式
     const modeObj = getModeFromString(mode);
@@ -222,9 +248,11 @@ export const rsaDecrypt = (buffer: Uint8Array, privateKey: string): Uint8Array =
 
 /**
  * 从字符串获取加密模式
+ * 兼容 Node 风格的完整算法名（如 'aes-128-ecb'、'aes-128-cbc'），
+ * 落雪脚本传入的 mode 与 Node crypto.createCipheriv 一致
  */
 const getModeFromString = (mode: string): CryptoJS.lib.Mode => {
-  const modeStr = mode.toLowerCase();
+  const modeStr = mode.toLowerCase().split('-').pop() || mode.toLowerCase();
   switch (modeStr) {
     case 'cbc':
       return CryptoJS.mode.CBC;

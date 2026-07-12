@@ -10,6 +10,9 @@ class PreloadService {
   private validatedUrls: Map<string | number, string> = new Map();
   private loadingPromises: Map<string | number, Promise<string>> = new Map();
 
+  // 已验证 URL 缓存的最大条目数，超出后按插入顺序淘汰最旧项，避免长会话内无界增长
+  private static readonly MAX_VALIDATED_URLS = 100;
+
   /**
    * 验证歌曲 URL 可用性
    * 通过 HEAD 请求检查 URL 是否可访问，并缓存验证结果
@@ -44,6 +47,13 @@ class PreloadService {
     try {
       const validatedUrl = await loadPromise;
       this.validatedUrls.set(song.id, validatedUrl);
+      // 超出容量上限时淘汰最旧插入的条目
+      if (this.validatedUrls.size > PreloadService.MAX_VALIDATED_URLS) {
+        const oldestKey = this.validatedUrls.keys().next().value;
+        if (oldestKey !== undefined) {
+          this.validatedUrls.delete(oldestKey);
+        }
+      }
       return validatedUrl;
     } finally {
       this.loadingPromises.delete(song.id);
@@ -59,7 +69,13 @@ class PreloadService {
       testAudio.crossOrigin = 'anonymous';
       testAudio.preload = 'metadata';
 
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
       const cleanup = () => {
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+        }
         testAudio.removeEventListener('loadedmetadata', onLoaded);
         testAudio.removeEventListener('error', onError);
         testAudio.src = '';
@@ -104,12 +120,12 @@ class PreloadService {
       testAudio.src = url;
       testAudio.load();
 
-      // 5秒超时
-      setTimeout(() => {
+      // 3秒超时（优化预加载速度）
+      timeoutId = setTimeout(() => {
         cleanup();
         // 超时不算失败，URL 可能是可用的只是服务器慢
         resolve(url);
-      }, 5000);
+      }, 3000);
     });
   }
 

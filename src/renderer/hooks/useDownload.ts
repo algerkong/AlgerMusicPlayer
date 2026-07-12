@@ -147,10 +147,18 @@ export const useDownload = () => {
         lrcContent = mergeLrcWithTranslation(lyricData.lrc.lyric, lyricData.tlyric.lyric);
       }
 
-      const artistNames = (song.ar || song.song?.artists)
-        ?.map((a: { name: string }) => a.name)
-        .join(',');
-      const filename = `${song.name} - ${artistNames}`;
+      // 与歌曲下载一致：使用设置中的文件名格式模板拼接歌词文件名（#655）
+      const nameFormat =
+        (ipcRenderer?.sendSync('get-store-value', 'set.downloadNameFormat') as string) ||
+        '{songName} - {artistName}';
+      const artistNames =
+        (song.ar || song.song?.artists)?.map((a: { name: string }) => a.name).join('、') ||
+        '未知艺术家';
+      const albumName = song.al?.name || '未知专辑';
+      const filename = nameFormat
+        .replace(/\{songName\}/g, song.name || '')
+        .replace(/\{artistName\}/g, artistNames)
+        .replace(/\{albumName\}/g, albumName);
 
       const result = await ipcRenderer?.invoke('save-lyric-file', { filename, lrcContent });
 

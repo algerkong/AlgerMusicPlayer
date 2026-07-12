@@ -382,14 +382,22 @@ const showSuggestions = ref(false);
 const suggestionsLoading = ref(false);
 const highlightedIndex = ref(-1);
 
+// 竞态守卫：记录最后一次请求的关键词，响应乱序返回时丢弃过期结果
+let lastSuggestKeyword = '';
 const debouncedSuggest = useDebounceFn(async (kw: string) => {
   if (!kw.trim()) {
     suggestions.value = [];
     showSuggestions.value = false;
     return;
   }
+  lastSuggestKeyword = kw;
   suggestionsLoading.value = true;
-  suggestions.value = await getSearchSuggestions(kw);
+  const result = await getSearchSuggestions(kw);
+  // 若期间输入已变化，丢弃这次结果，避免旧关键词建议覆盖新关键词
+  if (kw !== lastSuggestKeyword) {
+    return;
+  }
+  suggestions.value = result;
   suggestionsLoading.value = false;
   showSuggestions.value = suggestions.value.length > 0;
   highlightedIndex.value = -1;

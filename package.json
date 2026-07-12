@@ -184,7 +184,7 @@
       "requestedExecutionLevel": "asInvoker"
     },
     "linux": {
-      "icon": "resources/icon.png",
+      "icon": "build/icons",
       "target": [
         {
           "target": "AppImage",

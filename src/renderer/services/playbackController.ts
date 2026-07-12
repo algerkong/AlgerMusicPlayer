@@ -114,7 +114,7 @@ const loadAndPlayAudio = async (song: SongResult, shouldPlay: boolean): Promise<
 };
 
 /**
- * 触发预加载下一首/下下首歌曲
+ * 触发预加载下一首/下下首歌曲（立即触发）
  */
 const triggerPreload = async (song: SongResult): Promise<void> => {
   try {
@@ -125,9 +125,8 @@ const triggerPreload = async (song: SongResult): Promise<void> => {
         (item: SongResult) => item.id === song.id && item.source === song.source
       );
       if (idx !== -1) {
-        setTimeout(() => {
-          playlistStore.preloadNextSongs(idx);
-        }, 3000);
+        // 立即触发预加载，不等待
+        playlistStore.preloadNextSongs(idx);
       }
     }
   } catch (e) {
@@ -152,7 +151,7 @@ const updateDocumentTitle = (music: SongResult): void => {
 // ==================== 导出函数 ====================
 
 /**
- * 核心播放函数
+ * 核心播放函数（优化版）
  *
  * @param music 要播放的歌曲
  * @param shouldPlay 是否立即播放（默认 true）
@@ -193,31 +192,39 @@ export const playTrack = async (
   playerCore.isPlay = shouldPlay;
   playerCore.userPlayIntent = shouldPlay;
 
-  // 4. 加载元数据（歌词 + 背景色）
-  try {
-    const { lyrics, backgroundColor, primaryColor } = await loadMetadata(music);
-
-    // 检查 generation
-    if (gen !== generation) {
-      console.log(`[playbackController] gen=${gen} 已过期（加载元数据后），当前 gen=${generation}`);
-      return false;
-    }
-
-    music.lyric = lyrics;
-    music.backgroundColor = backgroundColor;
-    music.primaryColor = primaryColor;
-  } catch (error) {
-    if (gen !== generation) return false;
-    console.error('[playbackController] 加载元数据失败:', error);
-    // 元数据加载失败不阻塞播放，继续执行
-  }
-
-  // 5. 歌词已加载，现在设置 playMusic（触发 MusicHook 的歌词 watcher）
+  // 4. 先设置基本歌曲信息（立即显示UI）
   music.playLoading = true;
   playerCore.playMusic = music;
   updateDocumentTitle(music);
 
+  // 保存原始歌曲数据
   const originalMusic = { ...music };
+
+  // 4.5 立即并行加载元数据（歌词 + 背景色），与取 URL/加载音频同时进行：
+  // 不阻塞出声，但让全屏页的封面/歌词/背景色尽量在音频起播前就绪，
+  // 避免"先响歌、后换脸"的割裂感。预加载过的歌曲两者都是缓存命中，立即应用
+  let loadedMetadata: {
+    lyrics: SongResult['lyric'];
+    backgroundColor: string;
+    primaryColor: string;
+  } | null = null;
+  const applyLoadedMetadata = () => {
+    if (!loadedMetadata || gen !== generation) return;
+    playerCore.playMusic.lyric = loadedMetadata.lyrics;
+    playerCore.playMusic.backgroundColor = loadedMetadata.backgroundColor;
+    playerCore.playMusic.primaryColor = loadedMetadata.primaryColor;
+    // 触发 watcher 更新
+    playerCore.playMusic = { ...playerCore.playMusic };
+  };
+  loadMetadata(originalMusic)
+    .then((result) => {
+      loadedMetadata = result;
+      applyLoadedMetadata();
+    })
+    .catch((error) => {
+      // 元数据加载失败不阻塞播放
+      console.warn('[playbackController] 元数据加载失败:', error);
+    });
 
   // 5. 添加到播放历史
   try {
@@ -233,7 +240,7 @@ export const playTrack = async (
     console.warn('[playbackController] 添加播放历史失败:', e);
   }
 
-  // 6. 获取歌曲详情（解析 URL）
+  // 6. 获取歌曲详情（解析 URL）- 这是必须的，不能跳过
   try {
     const { getSongDetail } = useSongDetail();
     const updatedPlayMusic = await getSongDetail(originalMusic, requestId);
@@ -244,10 +251,11 @@ export const playTrack = async (
       return false;
     }
 
-    updatedPlayMusic.lyric = music.lyric;
     playerCore.playMusic = updatedPlayMusic;
     playerCore.playMusicUrl = updatedPlayMusic.playMusicUrl as string;
     music.playMusicUrl = updatedPlayMusic.playMusicUrl as string;
+    // playMusic 被替换为新对象，若元数据已先行到达则重新应用，避免歌词/背景色丢失
+    applyLoadedMetadata();
   } catch (error) {
     if (gen !== generation) return false;
     console.error('[playbackController] 获取歌曲详情失败:', error);
@@ -259,10 +267,7 @@ export const playTrack = async (
     return false;
   }
 
-  // 7. 触发预加载下一首（异步，不阻塞）
-  triggerPreload(playerCore.playMusic);
-
-  // 8. 加载并播放音频
+  // 7. 加载并播放音频（优先播放）
   try {
     const success = await loadAndPlayAudio(playerCore.playMusic, shouldPlay);
 
@@ -274,18 +279,25 @@ export const playTrack = async (
     }
 
     if (success) {
-      // 9. 播放成功
+      // 8. 元数据已在 4.5 步与播放并行加载，此处无需再处理
+
+      // 9. 播放成功，重置 URL 过期恢复计数
+      resetUrlExpiredRetry();
       playerCore.playMusic.playLoading = false;
       playerCore.playMusic.isFirstPlay = false;
       playbackRequestManager.completeRequest(requestId);
       console.log(`[playbackController] gen=${gen} 播放成功: ${music.name}`);
+
+      // 10. 触发预加载下一首（立即触发，不等待）
+      triggerPreload(playerCore.playMusic);
+
       return true;
     } else {
       playbackRequestManager.failRequest(requestId);
       return false;
     }
   } catch (error) {
-    // 10. 播放失败
+    // 11. 播放失败
     if (gen !== generation) {
       console.log(`[playbackController] gen=${gen} 已过期（播放异常），静默返回`);
       return false;
@@ -379,8 +391,40 @@ export const reparseCurrentSong = async (
 };
 
 /**
+ * URL 过期恢复：同一首歌仅静默重试一次。
+ * 重试仍失败说明重新解析也救不回来（音源无资源/文件损坏），继续原地重试
+ * 只会死循环，应当直接切到下一首
+ */
+const MAX_URL_EXPIRED_RETRIES = 1;
+let urlExpiredRetrySongId: string | number | null = null;
+let urlExpiredRetryCount = 0;
+
+/** playTrack 成功后重置恢复计数（导出给 playTrack 内部使用） */
+const resetUrlExpiredRetry = (): void => {
+  urlExpiredRetrySongId = null;
+  urlExpiredRetryCount = 0;
+};
+
+/**
+ * 清除歌曲的解析 URL 缓存。
+ * 播放失败大概率是缓存的解析 URL 已失效或内容损坏（如返回 HTML 触发
+ * Format error），不清缓存的话重新解析会再次命中同一个坏 URL 形成死循环
+ */
+const clearParsedUrlCache = async (songId: string | number): Promise<void> => {
+  // 本地歌曲 id 为 hex 字符串，无解析缓存可清
+  if (!/^\d+$/.test(String(songId))) return;
+  try {
+    const { CacheManager } = await import('@/api/musicParser');
+    await CacheManager.clearMusicCache(Number(songId));
+  } catch (error) {
+    console.warn('[playbackController] 清除URL缓存失败:', error);
+  }
+};
+
+/**
  * 设置 URL 过期事件处理器
- * 监听 audioService 的 url_expired 事件，自动重新获取 URL 并恢复播放
+ * 监听 audioService 的 url_expired 事件，自动重新获取 URL 并恢复播放。
+ * 恢复策略：清坏缓存 → 有限次重试 → 仍失败则自动切下一首
  */
 export const setupUrlExpiredHandler = (): void => {
   audioService.on('url_expired', async (expiredTrack: SongResult) => {
@@ -393,6 +437,42 @@ export const setupUrlExpiredHandler = (): void => {
     // 只在用户有播放意图或正在播放时处理
     if (!playerCore.userPlayIntent && !playerCore.play) {
       console.log('[playbackController] 用户无播放意图，跳过URL过期处理');
+      return;
+    }
+
+    // 当前歌曲已变更（例如 nextPlay 的失败跳歌已接管），不再恢复旧歌，
+    // 避免两个恢复驱动并发争抢 generation
+    if (playerCore.playMusic?.id !== expiredTrack.id) {
+      console.log('[playbackController] 当前歌曲已变更，跳过URL过期处理');
+      return;
+    }
+
+    // 统计同一首歌的连续恢复次数
+    if (urlExpiredRetrySongId === expiredTrack.id) {
+      urlExpiredRetryCount++;
+    } else {
+      urlExpiredRetrySongId = expiredTrack.id;
+      urlExpiredRetryCount = 1;
+    }
+
+    // 先清掉可能已损坏的解析 URL 缓存，让重试真正拿到新 URL
+    await clearParsedUrlCache(expiredTrack.id);
+
+    // 超过重试上限：不再原地循环，静默切下一首
+    if (urlExpiredRetryCount > MAX_URL_EXPIRED_RETRIES) {
+      console.warn(`[playbackController] ${expiredTrack.name} 恢复重试失败，切换下一首`);
+      resetUrlExpiredRetry();
+      try {
+        const playlistStore = await getPlaylistStore();
+        if (playlistStore.playList.length > 1 || playerCore.isFmPlaying) {
+          playlistStore.nextPlay();
+        } else {
+          playerCore.setIsPlay(false);
+        }
+      } catch (error) {
+        console.error('[playbackController] 切换下一首失败:', error);
+        playerCore.setIsPlay(false);
+      }
       return;
     }
 
@@ -419,31 +499,21 @@ export const setupUrlExpiredHandler = (): void => {
         playMusicUrl: undefined
       };
 
+      // 静默重试：成功恢复位置，失败交由下一次 url_expired 事件按上限切歌
       const success = await playTrack(trackToPlay, true);
 
-      if (success) {
-        // 恢复播放位置
-        if (seekPosition > 0) {
-          // 延迟一小段时间确保音频已就绪
-          setTimeout(() => {
-            try {
-              audioService.seek(seekPosition);
-            } catch {
-              console.warn('[playbackController] 恢复播放位置失败');
-            }
-          }, 300);
-        }
-        message.success(i18n.global.t('player.autoResumed'));
-      } else {
-        // 检查歌曲是否仍然是当前歌曲
-        const currentPlayerCore = await getPlayerCoreStore();
-        if (currentPlayerCore.playMusic?.id === expiredTrack.id) {
-          message.error(i18n.global.t('player.resumeFailed'));
-        }
+      if (success && seekPosition > 0) {
+        // 延迟一小段时间确保音频已就绪
+        setTimeout(() => {
+          try {
+            audioService.seek(seekPosition);
+          } catch {
+            console.warn('[playbackController] 恢复播放位置失败');
+          }
+        }, 300);
       }
     } catch (error) {
       console.error('[playbackController] 处理URL过期事件失败:', error);
-      message.error(i18n.global.t('player.resumeFailed'));
     }
   });
 };

@@ -95,6 +95,7 @@
       :theme="lyricSetting.theme"
       @color-change="handleColorChange"
       @close="handleThemeColorPanelClose"
+      @reset="handleThemeColorReset"
     />
 
     <!-- 歌词显示区域 -->
@@ -342,6 +343,7 @@ const showTranslation = computed(() => lyricSetting.value.showTranslation);
 
 let hideControlsTimer: number | null = null;
 let removeMousePresenceListener: (() => void) | null = null;
+let removeReceiveLyricListener: (() => void) | null = null;
 
 const isHovering = ref(false);
 
@@ -363,6 +365,36 @@ const clearHideTimer = () => {
     clearTimeout(hideControlsTimer);
     hideControlsTimer = null;
   }
+};
+
+// 锁定态下锁图标空闲自动淡出（#606）：
+// 光标在窗口内且无活动 2.5s 后隐藏并恢复点击穿透；再次移动鼠标即重新唤出
+const LOCKED_CONTROLS_HIDE_DELAY = 2500;
+
+const scheduleLockedControlsHide = () => {
+  clearHideTimer();
+  hideControlsTimer = window.setTimeout(() => {
+    hideControlsTimer = null;
+    if (lyricSetting.value.isLock) {
+      isHovering.value = false;
+      windowData.electron.ipcRenderer.send('set-ignore-mouse', true);
+    }
+  }, LOCKED_CONTROLS_HIDE_DELAY);
+};
+
+const showLockedControls = () => {
+  if (!lyricSetting.value.isLock) return;
+  if (!isHovering.value) {
+    isHovering.value = true;
+    windowData.electron.ipcRenderer.send('set-ignore-mouse', false);
+  }
+  scheduleLockedControlsHide();
+};
+
+// 点击穿透开启时主进程以 forward:true 转发 mousemove，可用于重新唤出锁图标
+const handleLockedMouseMove = () => {
+  if (!lyricSetting.value.isLock) return;
+  showLockedControls();
 };
 
 // 处理鼠标进入窗口
@@ -396,6 +428,7 @@ const handleMouseLeave = () => {
 watch(
   () => lyricSetting.value.isLock,
   (newLock: boolean) => {
+    clearHideTimer();
     if (newLock) {
       isHovering.value = false;
       // 锁定时自动关闭主题色面板
@@ -410,10 +443,12 @@ onMounted(() => {
   if (lyricSetting.value.isLock) {
     isHovering.value = false;
   }
+  document.addEventListener('mousemove', handleLockedMouseMove);
 });
 
 onUnmounted(() => {
   clearHideTimer();
+  document.removeEventListener('mousemove', handleLockedMouseMove);
 });
 
 // 计算歌词滚动位置
@@ -772,8 +807,8 @@ onMounted(() => {
   updateContainerHeight();
   window.addEventListener('resize', updateContainerHeight);
 
-  // 监听歌词数据
-  windowData.electron.ipcRenderer.on('receive-lyric', (_, data) => {
+  // 监听歌词数据（保存移除函数，卸载时解绑，避免窗口复用/HMR 时监听器叠加）
+  const disposeReceiveLyric = windowData.electron.ipcRenderer.on('receive-lyric', (_, data) => {
     try {
       const parsedData = JSON.parse(data);
       handleDataUpdate(parsedData);
@@ -781,6 +816,9 @@ onMounted(() => {
       console.error('Error parsing lyric data:', error);
     }
   });
+  if (typeof disposeReceiveLyric === 'function') {
+    removeReceiveLyricListener = disposeReceiveLyric;
+  }
 
   // 通知主窗口歌词窗口已就绪，请求发送完整歌词数据
   windowData.electron.ipcRenderer.send('lyric-ready');
@@ -788,10 +826,18 @@ onMounted(() => {
   removeMousePresenceListener = window.ipcRenderer.on(
     'lyric-mouse-presence',
     (isInside: boolean) => {
-      isHovering.value = isInside;
-
       if (lyricSetting.value.isLock) {
-        windowData.electron.ipcRenderer.send('set-ignore-mouse', !isInside);
+        if (isInside) {
+          // 进入窗口：显示锁图标并启动空闲淡出定时器（#606）
+          showLockedControls();
+        } else {
+          // 离开窗口：立即隐藏并恢复点击穿透
+          clearHideTimer();
+          isHovering.value = false;
+          windowData.electron.ipcRenderer.send('set-ignore-mouse', true);
+        }
+      } else {
+        isHovering.value = isInside;
       }
     }
   );
@@ -804,6 +850,10 @@ onUnmounted(() => {
   if (removeMousePresenceListener) {
     removeMousePresenceListener();
     removeMousePresenceListener = null;
+  }
+  if (removeReceiveLyricListener) {
+    removeReceiveLyricListener();
+    removeReceiveLyricListener = null;
   }
 });
 
@@ -849,7 +899,13 @@ const handleThemeColorPanelClose = () => {
   showThemeColorPanel.value = false;
 };
 
-// 导出重置函数以供将来使用
+// 面板"恢复默认"：关闭自定义主题色并收起面板（#591）
+const handleThemeColorReset = () => {
+  resetThemeColor();
+  showThemeColorPanel.value = false;
+};
+
+// 重置主题色到默认（主题色面板"恢复默认"按钮调用）
 const resetThemeColor = () => {
   // 重置到默认颜色
   const defaultColor = getCurrentLyricThemeColor(lyricSetting.value.theme);

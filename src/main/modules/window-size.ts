@@ -1,7 +1,9 @@
 import { app, BrowserWindow, ipcMain, screen } from 'electron';
-import Store from 'electron-store';
+import type Store from 'electron-store';
 
-const store = new Store();
+import { getSharedStore } from './config';
+
+const store = getSharedStore();
 
 // 默认窗口尺寸
 export const DEFAULT_MAIN_WIDTH = 1200;
@@ -38,14 +40,38 @@ export interface WindowState {
  * 负责保存、恢复和维护窗口大小状态
  */
 class WindowSizeManager {
-  private store: Store;
+  private store: Store<Record<string, unknown>>;
   private mainWindow: BrowserWindow | null = null;
   private savedState: WindowState | null = null;
   private isInitialized: boolean = false;
+  private saveStateDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     this.store = store;
     // 初始化时不做与screen相关的操作，等app ready后再初始化
+  }
+
+  /**
+   * 防抖保存窗口状态：move/resize 在拖动时每秒触发几十次，
+   * 直接写 config.json 是 #714 EBUSY 争用的最大来源
+   */
+  private scheduleSaveWindowState(win: BrowserWindow): void {
+    if (this.saveStateDebounceTimer) {
+      clearTimeout(this.saveStateDebounceTimer);
+    }
+    this.saveStateDebounceTimer = setTimeout(() => {
+      this.saveStateDebounceTimer = null;
+      if (!win.isDestroyed() && !win.isMinimized()) {
+        this.saveWindowState(win);
+      }
+    }, 500);
+  }
+
+  private flushScheduledSave(): void {
+    if (this.saveStateDebounceTimer) {
+      clearTimeout(this.saveStateDebounceTimer);
+      this.saveStateDebounceTimer = null;
+    }
   }
 
   /**
@@ -117,17 +143,17 @@ class WindowSizeManager {
    * 设置事件监听器
    */
   private setupEventListeners(win: BrowserWindow): void {
-    // 监听窗口大小调整事件
+    // 监听窗口大小调整事件（防抖，拖动结束后统一落盘）
     win.on('resize', () => {
       if (!win.isDestroyed() && !win.isMinimized()) {
-        this.saveWindowState(win);
+        this.scheduleSaveWindowState(win);
       }
     });
 
-    // 监听窗口移动事件
+    // 监听窗口移动事件（防抖，拖动结束后统一落盘）
     win.on('move', () => {
       if (!win.isDestroyed() && !win.isMinimized()) {
-        this.saveWindowState(win);
+        this.scheduleSaveWindowState(win);
       }
     });
 
@@ -145,8 +171,9 @@ class WindowSizeManager {
       }
     });
 
-    // 监听窗口关闭事件，确保保存最终状态
+    // 监听窗口关闭事件，确保保存最终状态（取消挂起的防抖，立即落盘）
     win.on('close', () => {
+      this.flushScheduledSave();
       if (!win.isDestroyed()) {
         this.saveWindowState(win);
       }
@@ -354,8 +381,12 @@ class WindowSizeManager {
     }
 
     // 检查是否是mini模式窗口（根据窗口大小判断）
+    // 注意展开播放列表后的 mini 窗口是 340x400，也不能当普通窗口持久化，
+    // 否则污染 windowState 导致下次启动主窗口尺寸异常（#242）
     const [currentWidth, currentHeight] = win.getSize();
-    const isMiniMode = currentWidth === DEFAULT_MINI_WIDTH && currentHeight === DEFAULT_MINI_HEIGHT;
+    const isMiniMode =
+      currentWidth === DEFAULT_MINI_WIDTH &&
+      (currentHeight === DEFAULT_MINI_HEIGHT || currentHeight === DEFAULT_MINI_EXPANDED_HEIGHT);
 
     const isMaximized = win.isMaximized();
     let state: WindowState;
@@ -409,9 +440,13 @@ class WindowSizeManager {
       return state;
     }
 
-    // 保存状态到存储
-    this.store.set(WINDOW_STATE_KEY, state);
-    console.log(`已保存窗口状态: ${JSON.stringify(state)}`);
+    // 保存状态到存储（config.json 可能被外部程序短暂锁定，失败时丢弃本次写入即可）
+    try {
+      this.store.set(WINDOW_STATE_KEY, state);
+      console.log(`已保存窗口状态: ${JSON.stringify(state)}`);
+    } catch (error) {
+      console.error('保存窗口状态失败:', error);
+    }
 
     // 更新内部状态
     this.savedState = state;
@@ -424,7 +459,13 @@ class WindowSizeManager {
    * 获取保存的窗口状态
    */
   getWindowState(): WindowState | null {
-    const state = this.store.get(WINDOW_STATE_KEY) as WindowState | undefined;
+    let state: WindowState | undefined;
+    try {
+      state = this.store.get(WINDOW_STATE_KEY) as WindowState | undefined;
+    } catch (error) {
+      console.error('读取窗口状态失败:', error);
+      return this.savedState;
+    }
 
     if (!state) {
       console.log('未找到保存的窗口状态，将使用默认值');

@@ -13,6 +13,8 @@ export default {
   },
   message: {
     downloading: '다운로드 중입니다. 잠시 기다려주세요...',
+    addToPlaylistNeedLogin:
+      '플레이리스트에 추가하려면 Cookie 또는 QR 코드로 로그인하세요 (UID 로그인은 사용 불가)',
     downloadFailed: '다운로드 실패',
     downloadQueued: '다운로드 대기열에 추가됨',
     addedToNextPlay: '다음 재생에 추가됨',
