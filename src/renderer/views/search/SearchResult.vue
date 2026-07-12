@@ -1,7 +1,8 @@
 <template>
   <div class="search-result-page h-full w-full bg-white dark:bg-black">
     <n-scrollbar class="h-full">
-      <div class="pb-32">
+      <!-- 播放条占位由布局 PlayBottom 负责，这里只留一点滚到底的呼吸距 -->
+      <div class="result-scroll-body">
         <!-- 复用分类选择器：line 变体 = 底线高亮，不要手搓圆角胶囊 -->
         <category-selector
           variant="line"
@@ -236,6 +237,11 @@ watch(
 </script>
 
 <style scoped>
+.result-scroll-body {
+  /* 别再 pb-32 跟 PlayBottom 叠两层，否则底下一截像透明洞 */
+  padding-bottom: 1rem;
+}
+
 .result-list {
   padding-top: 0.75rem;
 }

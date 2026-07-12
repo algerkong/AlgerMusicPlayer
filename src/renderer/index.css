@@ -133,6 +133,8 @@
   --page-pr: 1rem;
   /* 侧栏与主内容列间距：默认无侧栏 */
   --layout-col-gap: 0;
+  /* 与 PlayBar h-20 对齐；底部占位只留这一份，别再叠 padding + spacer */
+  --play-bar-height: 5rem;
 }
 
 /*

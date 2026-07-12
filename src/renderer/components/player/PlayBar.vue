@@ -296,7 +296,8 @@ const openPlayListDrawer = () => {
 }
 
 .music-play-bar {
-  @apply h-20 w-full absolute bottom-0 left-0 flex items-center box-border px-6 py-2 pt-3;
+  @apply w-full absolute bottom-0 left-0 flex items-center box-border px-6 py-2 pt-3;
+  height: var(--play-bar-height, 5rem);
   /* 保证在封面底上可见、可点 */
   background: var(--chrome-surface-strong, rgba(24, 24, 27, 0.88));
   border-top: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.1));

@@ -241,8 +241,7 @@ provide('openPlaylistDrawer', openPlaylistDrawer);
   min-height: 0;
   /* 侧栏 ↔ 主区：走全局 --layout-col-gap，不跟页面里赛 padding */
   gap: var(--layout-col-gap, 0);
-  /* 给底部播放条留空，避免内容盖住 absolute 播放条 */
-  padding-bottom: 5.5rem;
+  /* 播放条占位交给 PlayBottom（--play-bar-height），这里再垫会透出一条空带 */
   box-sizing: border-box;
 }
 
