@@ -1,10 +1,7 @@
 <template>
   <div
     class="category-selector z-10"
-    :class="[
-      variant === 'line' ? 'category-selector--line' : 'category-selector--pill',
-      'border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-black'
-    ]"
+    :class="variant === 'line' ? 'category-selector--line' : 'category-selector--pill'"
   >
     <n-scrollbar ref="scrollbarRef" x-scrollable>
       <div
@@ -119,7 +116,17 @@ defineExpose({
   white-space: nowrap;
 }
 
-/* ── pill（历史默认） ───────────────────────────────── */
+/* ── pill（历史默认，保留实心底） ───────────────────── */
+.category-selector--pill {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: #fff;
+}
+
+:global(.dark) .category-selector--pill {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  background: #000;
+}
+
 .category-selector--pill .category-selector__row {
   padding-top: 1rem;
   padding-bottom: 1rem;
@@ -160,7 +167,12 @@ defineExpose({
   transform: scale(1.05);
 }
 
-/* ── line（搜索结果等：高亮字 + 底线） ───────────────── */
+/* ── line：透底，别整一条死黑；悬停只轻微提亮 ───────── */
+.category-selector--line {
+  background: transparent;
+  border-bottom: 1px solid var(--chrome-border, rgba(0, 0, 0, 0.06));
+}
+
 .category-selector--line .category-selector__row {
   padding-top: 0.25rem;
   padding-bottom: 0;
@@ -173,31 +185,28 @@ defineExpose({
   margin-right: 1.25rem;
   padding: 0.5rem 0 0.55rem;
   cursor: pointer;
+  /* 字号/字重固定，选中只靠颜色+缩放，避免整条筛选栏被顶着跳 */
   font-size: 0.875rem;
-  font-weight: 500;
-  color: #6b7280;
-  transition: color 0.15s ease;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--chrome-text-muted, #6b7280);
+  transform: scale(1);
+  transform-origin: center bottom;
+  transition:
+    color 0.15s ease,
+    transform 0.18s cubic-bezier(0.34, 1.4, 0.64, 1);
 }
 
-:global(.dark) .category-selector__item--line {
-  color: #9ca3af;
-}
-
-.category-selector__item--line:hover {
-  color: #111827;
-}
-
-:global(.dark) .category-selector__item--line:hover {
-  color: #f9fafb;
+/* 未选中悬停：往主色靠一点点，别黑白对撞 */
+.category-selector__item--line:hover:not(.is-active) {
+  color: color-mix(in srgb, var(--primary-color, #22c55e) 40%, var(--chrome-text-muted, #6b7280));
 }
 
 .category-selector__item--line.is-active {
-  color: #16a34a;
-  font-weight: 600;
-}
-
-:global(.dark) .category-selector__item--line.is-active {
-  color: #4ade80;
+  color: var(--primary-color, #22c55e);
+  /* 视觉上大一点，但不改 layout box */
+  transform: scale(1.12);
+  z-index: 1;
 }
 
 .category-selector__item--line.is-active::after {
@@ -209,5 +218,8 @@ defineExpose({
   height: 0.125rem;
   background: var(--primary-color, #22c55e);
   border-radius: 9999px;
+  /* 抵消 scale，底线仍贴容器，不跟着字一起肥 */
+  transform: scaleX(calc(1 / 1.12));
+  transform-origin: center bottom;
 }
 </style>

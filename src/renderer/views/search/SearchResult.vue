@@ -14,45 +14,51 @@
         />
 
         <div class="page-padding result-list">
-          <n-spin :show="loading">
-            <template v-if="!loading && isEmpty">
-              <n-empty :description="emptyText" class="pt-16" />
-            </template>
+          <!-- 有缓存时安静刷新，别每次切 tab 整页转圈把列表抽空 -->
+          <n-spin :show="blockingLoad">
+            <div class="result-list-inner">
+              <template v-if="!blockingLoad && isEmpty">
+                <n-empty :description="emptyText" class="pt-16" />
+              </template>
 
-            <!-- Songs -->
-            <div v-else-if="searchType === SEARCH_TYPE.MUSIC" class="space-y-1">
-              <song-item
-                v-for="(song, index) in songs"
-                :key="song.id"
-                :item="song"
-                :index="index"
-                :is-next="true"
-              />
-            </div>
+              <!-- Songs -->
+              <div v-else-if="searchType === SEARCH_TYPE.MUSIC" class="space-y-1">
+                <song-item
+                  v-for="(song, index) in songs"
+                  :key="song.id"
+                  :item="song"
+                  :index="index"
+                  :is-next="true"
+                />
+              </div>
 
-            <!-- Playlists / Albums grid -->
-            <div v-else class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              <!-- Playlists / Albums grid -->
               <div
-                v-for="item in gridItems"
-                :key="item.id"
-                class="cursor-pointer group"
-                @click="openItem(item)"
+                v-else
+                class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
               >
                 <div
-                  class="aspect-square rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-900"
+                  v-for="item in gridItems"
+                  :key="item.id"
+                  class="cursor-pointer group"
+                  @click="openItem(item)"
                 >
-                  <n-image
-                    v-if="item.picUrl"
-                    :src="item.picUrl"
-                    object-fit="cover"
-                    class="w-full h-full"
-                    preview-disabled
-                  />
+                  <div
+                    class="aspect-square rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-900"
+                  >
+                    <n-image
+                      v-if="item.picUrl"
+                      :src="item.picUrl"
+                      object-fit="cover"
+                      class="w-full h-full"
+                      preview-disabled
+                    />
+                  </div>
+                  <div class="mt-2 text-sm font-medium truncate text-neutral-900 dark:text-white">
+                    {{ item.name }}
+                  </div>
+                  <div class="text-xs text-neutral-500 truncate">{{ item.desc }}</div>
                 </div>
-                <div class="mt-2 text-sm font-medium truncate text-neutral-900 dark:text-white">
-                  {{ item.name }}
-                </div>
-                <div class="text-xs text-neutral-500 truncate">{{ item.desc }}</div>
               </div>
             </div>
           </n-spin>
@@ -93,10 +99,13 @@ const message = useMessage();
 const keyword = computed(() => String(route.query.keyword || '').trim());
 /** 与 URL ?type= 同步；默认单曲 */
 const searchType = computed(() => Number(route.query.type) || SEARCH_TYPE.MUSIC);
-const loading = ref(false);
+/** 仅「当前 tab 还没数据」时全页转圈，避免切筛选把列表抽空再灌回去 */
+const blockingLoad = ref(false);
 const songs = ref<SongResult[]>([]);
 const playlists = ref<any[]>([]);
 const albums = ref<any[]>([]);
+/** 各类型对应的关键词，用来判断缓存是否还属于这次搜索 */
+const loadedKeywordByType = ref<Record<number, string>>({});
 
 const typeOptions = computed(() => [
   { key: SEARCH_TYPE.MUSIC, label: t('search.search.single') },
@@ -116,6 +125,15 @@ const gridItems = computed(() =>
   searchType.value === SEARCH_TYPE.PLAYLIST ? playlists.value : albums.value
 );
 
+const listForType = (type: number) => {
+  if (type === SEARCH_TYPE.MUSIC) return songs.value;
+  if (type === SEARCH_TYPE.PLAYLIST) return playlists.value;
+  return albums.value;
+};
+
+const hasFreshCache = (type: number, kw: string) =>
+  loadedKeywordByType.value[type] === kw && listForType(type).length > 0;
+
 const isEmpty = computed(() => {
   if (searchType.value === SEARCH_TYPE.MUSIC) return songs.value.length === 0;
   if (searchType.value === SEARCH_TYPE.PLAYLIST) return playlists.value.length === 0;
@@ -133,6 +151,7 @@ const load = async () => {
     songs.value = [];
     playlists.value = [];
     albums.value = [];
+    loadedKeywordByType.value = {};
     return;
   }
   if (!isMusicSourceAvailable()) {
@@ -140,31 +159,56 @@ const load = async () => {
     return;
   }
 
-  loading.value = true;
   const kw = keyword.value;
   const type = searchType.value;
+  // 关键词变了：旧列表作废
+  if (
+    loadedKeywordByType.value[SEARCH_TYPE.MUSIC] &&
+    loadedKeywordByType.value[SEARCH_TYPE.MUSIC] !== kw
+  ) {
+    songs.value = [];
+  }
+  if (
+    loadedKeywordByType.value[SEARCH_TYPE.PLAYLIST] &&
+    loadedKeywordByType.value[SEARCH_TYPE.PLAYLIST] !== kw
+  ) {
+    playlists.value = [];
+  }
+  if (
+    loadedKeywordByType.value[SEARCH_TYPE.ALBUM] &&
+    loadedKeywordByType.value[SEARCH_TYPE.ALBUM] !== kw
+  ) {
+    albums.value = [];
+  }
+
+  const useBlocking = !hasFreshCache(type, kw);
+  if (useBlocking) blockingLoad.value = true;
+
   try {
     if (type === SEARCH_TYPE.MUSIC) {
       const list = await msSearchSongs(kw, { limit: 30 });
       if (kw !== keyword.value || type !== searchType.value) return;
       songs.value = list.map(mapMsSongToSongResult);
+      loadedKeywordByType.value = { ...loadedKeywordByType.value, [type]: kw };
     } else if (type === SEARCH_TYPE.PLAYLIST) {
       const list = await msSearchPlaylists(kw, { limit: 30 });
       if (kw !== keyword.value || type !== searchType.value) return;
       playlists.value = list.map(mapMsPlaylistToItem);
+      loadedKeywordByType.value = { ...loadedKeywordByType.value, [type]: kw };
     } else if (type === SEARCH_TYPE.ALBUM) {
       const list = await msSearchAlbums(kw, { limit: 30 });
       if (kw !== keyword.value || type !== searchType.value) return;
       albums.value = list.map(mapMsAlbumToItem);
+      loadedKeywordByType.value = { ...loadedKeywordByType.value, [type]: kw };
     }
   } catch (error: any) {
     console.error('[search]', error);
     message.error(error?.message || '搜索失败');
-    songs.value = [];
-    playlists.value = [];
-    albums.value = [];
+    if (type === SEARCH_TYPE.MUSIC) songs.value = [];
+    else if (type === SEARCH_TYPE.PLAYLIST) playlists.value = [];
+    else albums.value = [];
   } finally {
-    loading.value = false;
+    if (useBlocking) blockingLoad.value = false;
   }
 };
 
@@ -194,5 +238,10 @@ watch(
 <style scoped>
 .result-list {
   padding-top: 0.75rem;
+}
+
+.result-list-inner {
+  /* 切 tab 时空态/列表切换时少塌一截 */
+  min-height: 12rem;
 }
 </style>
