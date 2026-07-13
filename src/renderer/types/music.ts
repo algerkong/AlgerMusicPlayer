@@ -33,6 +33,11 @@ export interface ILyric {
   hasWordByWord?: boolean;
 }
 
+/**
+ * 播放器兼容 DTO（历史包袱）。
+ * 新代码优先：shared/domain Track + PlaybackRuntime；经 trackBridge 互转。
+ * 运行态字段（playMusicUrl / lyric / colors 等）不应视为曲目元数据。
+ */
 export interface SongResult {
   id: string | number;
   name: string;

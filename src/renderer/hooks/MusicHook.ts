@@ -394,12 +394,13 @@ const setupAudioListeners = () => {
         ) {
           lastSavedProgress = currentTime;
           if (getPlayerStore().playMusic?.id) {
-            localStorage.setItem(
-              'playProgress',
-              JSON.stringify({
-                songId: getPlayerStore().playMusic.id,
-                progress: currentTime
-              })
+            void import('@/services/persistenceService').then(
+              ({ persistenceService, playProgressSchema }) => {
+                persistenceService.save(playProgressSchema, {
+                  songId: getPlayerStore().playMusic.id,
+                  progress: currentTime
+                });
+              }
             );
           }
         }
@@ -590,12 +591,13 @@ export const pause = () => {
       // 保存当前播放进度
       const currentTime = currentSound.currentTime;
       if (getPlayerStore().playMusic && getPlayerStore().playMusic.id) {
-        localStorage.setItem(
-          'playProgress',
-          JSON.stringify({
-            songId: getPlayerStore().playMusic.id,
-            progress: currentTime
-          })
+        void import('@/services/persistenceService').then(
+          ({ persistenceService, playProgressSchema }) => {
+            persistenceService.save(playProgressSchema, {
+              songId: getPlayerStore().playMusic.id,
+              progress: currentTime
+            });
+          }
         );
       }
 

@@ -1,5 +1,8 @@
 import type { ILyric, ILyricText, IWordData, SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
+import { trackToSongResult } from '@/utils/trackBridge';
+
+import { msSongToTrack } from '../../shared/domain/trackAdapter';
 
 export type MusicSourceIpcResult<T> =
   { ok: true; data: T } | { ok: false; code: string; message: string };
@@ -171,52 +174,12 @@ export function isMusicSourceAvailable(): boolean {
   return isElectron;
 }
 
-/** Map library Song → player SongResult */
+/** Map library Song → Track（领域）→ 兼容 SongResult */
 export function mapMsSongToSongResult(song: MsSong): SongResult {
-  const artists = (song.artists || []).map((a, i) => ({
-    id: a.id ? Number(a.id) || i : i,
-    name: a.name,
-    picUrl: a.avatarUrl || ''
-  }));
-  const album = {
-    id: 0,
-    name: song.album || '',
-    picUrl: song.coverUrl || '',
-    pic: 0,
-    picId: 0
-  };
-
-  return {
-    id: song.id,
-    name: song.title,
-    picUrl: song.coverUrl || '',
-    ar: artists as any,
-    artists: artists as any,
-    al: album as any,
-    album: album as any,
-    song: {
-      id: song.id,
-      name: song.title,
-      artists: artists as any,
-      album: album as any
-    },
-    duration: song.durationMs,
-    dt: song.durationMs,
-    source: song.platform || 'qishui',
-    count: 0,
-    isVip: Boolean(song.isVip),
-    isOriginal: song.isOriginal,
-    isLimitedFree: Boolean(song.isLimitedFree),
-    limitedFreeExpireAt: song.limitedFreeExpireAt,
-    hasPreview: Boolean(song.hasPreview),
-    preview: song.preview,
-    isDigital: Boolean(song.isDigital),
-    digital: song.digital,
-    genreTags: song.genreTags,
-    lyricists: song.lyricists,
-    composers: song.composers
-  };
+  return trackToSongResult(msSongToTrack(song));
 }
+
+export { msSongToTrack };
 
 export function mapMsPlaylistToItem(p: MsPlaylist) {
   return {

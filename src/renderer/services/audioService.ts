@@ -249,9 +249,10 @@ class AudioService {
       // Wire up the graph
       this.applyBypassState();
 
-      // Apply saved volume
-      const savedVolume = localStorage.getItem('volume');
-      this.applyVolume(savedVolume ? parseFloat(savedVolume) : 1);
+      // Apply saved volume（同步读，setupEQ 非 async）
+       
+      const { persistenceService, volumeSchema } = require('@/services/persistenceService');
+      this.applyVolume(persistenceService.load(volumeSchema));
 
       // Monitor context state
       this.setupContextStateMonitoring();
@@ -477,8 +478,11 @@ class AudioService {
           }
 
           // Apply volume (use GainNode if available, else direct)
-          const savedVolume = localStorage.getItem('volume');
-          this.applyVolume(savedVolume ? parseFloat(savedVolume) : 1);
+          void import('@/services/persistenceService').then(
+            ({ persistenceService, volumeSchema }) => {
+              this.applyVolume(persistenceService.load(volumeSchema));
+            }
+          );
 
           this.audio.playbackRate = this.playbackRate;
           this.updateMediaSessionMetadata(track);
@@ -590,7 +594,9 @@ class AudioService {
       this.audio.volume = normalizedVolume;
     }
 
-    localStorage.setItem('volume', normalizedVolume.toString());
+    void import('@/services/persistenceService').then(({ persistenceService, volumeSchema }) => {
+      persistenceService.save(volumeSchema, normalizedVolume);
+    });
   }
 
   public setPlaybackRate(rate: number) {
