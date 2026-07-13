@@ -17,9 +17,11 @@ interface API {
   // 平台
   getPlatform: () => NodeJS.Platform;
 
-  // 应用设置（字段白名单）
+  // 应用设置（字段白名单；downloadPath/diskCacheDir 仅经对话框 API）
   getSettings: () => Record<string, any>;
   setSettings: (partial: Record<string, any>) => Record<string, any>;
+  selectDownloadPath: () => Promise<{ canceled: true } | { canceled: false; path: string }>;
+  selectDiskCacheDir: () => Promise<{ canceled: true } | { canceled: false; path: string }>;
 
   // 语言
   changeLanguage: (locale: string) => void;

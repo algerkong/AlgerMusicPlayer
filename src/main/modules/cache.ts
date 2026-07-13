@@ -1077,12 +1077,32 @@ export function initializeCacheManager(): void {
   });
 
   ipcMain.handle('set-disk-cache-config', async (_, partial: Partial<DiskCacheConfig>) => {
-    return await cacheManager.updateCacheConfig(partial);
+    // directory 是 path jail 信任根，禁止经普通 IPC 任意指定；仅 enabled/大小/策略可写
+    const safe: Partial<DiskCacheConfig> = {};
+    if (partial && typeof partial === 'object') {
+      if ('enabled' in partial) safe.enabled = Boolean(partial.enabled);
+      if ('maxSizeMB' in partial) safe.maxSizeMB = Number(partial.maxSizeMB);
+      if (partial.cleanupPolicy === 'fifo' || partial.cleanupPolicy === 'lru') {
+        safe.cleanupPolicy = partial.cleanupPolicy;
+      }
+    }
+    return await cacheManager.updateCacheConfig(safe);
   });
 
-  ipcMain.handle('switch-disk-cache-directory', async (_, payload: SwitchCacheDirectoryPayload) => {
-    return await cacheManager.switchCacheDirectory(payload);
-  });
+  // directory 必须已由 settings:select-disk-cache-dir 写入 store；此处只做迁移动作
+  ipcMain.handle(
+    'switch-disk-cache-directory',
+    async (_, payload: Omit<SwitchCacheDirectoryPayload, 'directory'> & { directory?: string }) => {
+      const configStore = getStore();
+      const directory =
+        (configStore?.get('set.diskCacheDir') as string | undefined) ||
+        cacheManager.getCacheConfig().directory;
+      return await cacheManager.switchCacheDirectory({
+        action: payload?.action,
+        directory
+      });
+    }
+  );
 
   ipcMain.handle('get-disk-cache-stats', async () => {
     return await cacheManager.getCacheStats();
