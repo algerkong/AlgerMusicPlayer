@@ -102,6 +102,7 @@
     "eslint-plugin-vue": "^10.6.2",
     "eslint-plugin-vue-scoped-css": "^2.12.0",
     "globals": "^16.5.0",
+    "happy-dom": "^20.10.6",
     "howler": "^2.2.4",
     "lint-staged": "^15.5.2",
     "lodash": "^4.17.21",
@@ -155,7 +156,7 @@
       ],
       "artifactName": "${productName}-${version}-mac-${arch}.${ext}",
       "darkModeSupport": true,
-      "hardenedRuntime": false,
+      "hardenedRuntime": true,
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
@@ -165,7 +166,6 @@
         "NSDownloadsFolderUsageDescription": "Application requests access to the user's Downloads folder."
       },
       "notarize": false,
-      "identity": null,
       "type": "distribution",
       "binaries": [
         "Contents/MacOS/LYMusicPlayer"

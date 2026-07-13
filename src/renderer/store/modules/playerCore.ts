@@ -138,8 +138,8 @@ export const usePlayerCoreStore = defineStore(
         setIsPlay(value);
         userPlayIntent.value = value;
       } else {
-        const { playTrack } = await import('@/services/playbackController');
-        await playTrack(value);
+        const { playbackCoordinator } = await import('@/services/playbackCoordinator');
+        await playbackCoordinator.playTrack(value);
         play.value = true;
         isPlay.value = true;
         userPlayIntent.value = true;

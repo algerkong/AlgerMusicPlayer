@@ -2,9 +2,9 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    environment: 'node',
-    include: ['src/**/*.test.ts'],
-    // 主进程单测不跑 electron 真机
+    // happy-dom：renderer 持久化 / DOMPurify；主进程 guard 也在此环境跑
+    environment: 'happy-dom',
+    include: ['src/**/*.test.ts', 'src/shared/**/*.test.ts'],
     pool: 'forks'
   }
 });

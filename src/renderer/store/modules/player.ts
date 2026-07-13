@@ -75,8 +75,8 @@ export const usePlayerStore = defineStore('player', () => {
     // 一次性清理 v1 时代的旧 localStorage key，不做数据迁移（详见 playHistory.ts 注释）
     cleanupLegacyPlayHistoryStorage();
 
-    const { initializePlayState: initPlayState } = await import('@/services/playbackController');
-    await initPlayState();
+    const { playbackCoordinator } = await import('@/services/playbackCoordinator');
+    await playbackCoordinator.initializePlayState();
     await playlist.initializePlaylist();
   };
 

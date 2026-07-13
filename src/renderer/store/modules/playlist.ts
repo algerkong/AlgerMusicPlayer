@@ -519,8 +519,8 @@ export const usePlaylistStore = defineStore(
           nextSong.isPreviewStream ? `preview@${nextSong.preview?.startMs}ms` : 'full'
         );
 
-        const { playTrack } = await import('@/services/playbackController');
-        const success = await playTrack(nextSong, true);
+        const { playbackCoordinator } = await import('@/services/playbackCoordinator');
+        const success = await playbackCoordinator.playTrack(nextSong, true);
 
         // Check if we were superseded by a newer operation
         if (playerCore.playMusic.id !== nextSong.id) {
@@ -586,8 +586,8 @@ export const usePlaylistStore = defineStore(
           `[prevPlay] ${prevSong.name}, 索引: ${playListIndex.value} -> ${nowPlayListIndex}`
         );
 
-        const { playTrack } = await import('@/services/playbackController');
-        const success = await playTrack(prevSong);
+        const { playbackCoordinator } = await import('@/services/playbackCoordinator');
+        const success = await playbackCoordinator.playTrack(prevSong);
 
         if (success) {
           playListIndex.value = nowPlayListIndex;
@@ -654,7 +654,7 @@ export const usePlaylistStore = defineStore(
               sound.play();
             } else {
               // No audio instance, rebuild via playTrack
-              const { playTrack } = await import('@/services/playbackController');
+              const { playbackCoordinator } = await import('@/services/playbackCoordinator');
               const recoverSong = {
                 ...playerCore.playMusic,
                 isFirstPlay: true,
@@ -662,7 +662,7 @@ export const usePlaylistStore = defineStore(
                   ? playerCore.playMusic.playMusicUrl
                   : undefined
               };
-              const recovered = await playTrack(recoverSong, true);
+              const recovered = await playbackCoordinator.playTrack(recoverSong, true);
               if (!recovered) {
                 playerCore.setIsPlay(false);
                 getMessage().error(i18n.global.t('player.playFailed'));
@@ -683,8 +683,8 @@ export const usePlaylistStore = defineStore(
           playListIndex.value = songIndex;
         }
 
-        const { playTrack } = await import('@/services/playbackController');
-        const success = await playTrack(song);
+        const { playbackCoordinator } = await import('@/services/playbackCoordinator');
+        const success = await playbackCoordinator.playTrack(song);
 
         if (success) {
           playerCore.isPlay = true;

@@ -89,8 +89,9 @@ const loadAndPlayAudio = async (song: SongResult, shouldPlay: boolean): Promise<
 
   // 检查保存的进度
   let initialPosition = 0;
-  const savedProgress = JSON.parse(localStorage.getItem('playProgress') || '{}');
-  if (savedProgress.songId === song.id) {
+  const { persistenceService, playProgressSchema } = await import('@/services/persistenceService');
+  const savedProgress = persistenceService.load(playProgressSchema);
+  if (savedProgress.songId === song.id && typeof savedProgress.progress === 'number') {
     initialPosition = savedProgress.progress;
     console.log('[playbackController] 恢复播放进度:', initialPosition);
   }
@@ -516,10 +517,12 @@ export const initializePlayState = async (): Promise<void> => {
 
       // 恢复上次保存的播放进度（仅UI显示）
       try {
-        const savedProgress = JSON.parse(localStorage.getItem('playProgress') || '{}');
-        if (savedProgress.songId === playerCore.playMusic.id && savedProgress.progress > 0) {
+        const { persistenceService, playProgressSchema } =
+          await import('@/services/persistenceService');
+        const savedProgress = persistenceService.load(playProgressSchema);
+        if (savedProgress.songId === playerCore.playMusic.id && (savedProgress.progress || 0) > 0) {
           const { nowTime, allTime } = await import('@/hooks/MusicHook');
-          nowTime.value = savedProgress.progress;
+          nowTime.value = Number(savedProgress.progress) || 0;
           // 用歌曲时长设置 allTime（dt 单位是毫秒）
           if (playerCore.playMusic.dt) {
             allTime.value = playerCore.playMusic.dt / 1000;
