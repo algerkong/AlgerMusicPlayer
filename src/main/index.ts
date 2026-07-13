@@ -165,11 +165,11 @@ if (!isSingleInstance) {
     // 权限白名单：默认拒绝；仅放行当前业务需要的能力，并校验请求来源。
     // 明确拒绝 media/audioCapture/display-capture，避免 getUserMedia 弹麦克风/录屏
     // （#147/#246/#440/#639）。输出设备枚举走 speaker-selection。
+    // 仅 writeText 需要 clipboard-sanitized-write；不放行 clipboard-read 防注入读剪贴板外传
     const ALLOWED_WEB_PERMISSIONS = new Set([
       'speaker-selection',
       'fullscreen',
-      'clipboard-sanitized-write',
-      'clipboard-read'
+      'clipboard-sanitized-write'
     ]);
 
     const isTrustedRendererOrigin = (raw?: string | null): boolean => {
