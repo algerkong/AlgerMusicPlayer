@@ -5,9 +5,9 @@ import { audioService } from '@/services/audioService';
 import { usePlayerStore, useSettingsStore } from '@/store';
 
 import {
+  createDefaultShortcuts,
   hasShortcutAction,
   normalizeShortcutAccelerator,
-  normalizeShortcutsConfig,
   type ShortcutAction,
   shortcutActionOrder,
   type ShortcutsConfig
@@ -22,8 +22,8 @@ const actionTimestamps = new Map<ShortcutAction, number>();
 
 const { t } = i18n.global;
 
-let appShortcuts: ShortcutsConfig = normalizeShortcutsConfig(null);
-let appShortcutsSuspended = false;
+/** 内置默认；无自定义 UI，不再从主进程同步历史配置 */
+let appShortcuts: ShortcutsConfig = createDefaultShortcuts();
 let appShortcutsInitialized = false;
 
 const onGlobalShortcut = (action: string) => {
@@ -32,10 +32,6 @@ const onGlobalShortcut = (action: string) => {
   }
 
   void handleShortcutAction(action);
-};
-
-const onUpdateAppShortcuts = (shortcuts: unknown) => {
-  updateAppShortcuts(shortcuts);
 };
 
 const onMprisSeekOrSetPosition = (position: number) => {
@@ -162,10 +158,6 @@ export async function handleShortcutAction(action: ShortcutAction) {
  * 全局键盘事件处理函数
  */
 function handleKeyDown(event: KeyboardEvent) {
-  if (appShortcutsSuspended) {
-    return;
-  }
-
   if (isEditableTarget(event.target)) {
     return;
   }
@@ -193,17 +185,6 @@ function handleKeyDown(event: KeyboardEvent) {
 }
 
 /**
- * 更新应用内快捷键
- */
-export function updateAppShortcuts(shortcuts: unknown) {
-  appShortcuts = normalizeShortcutsConfig(shortcuts);
-}
-
-export function setAppShortcutsSuspended(suspended: boolean) {
-  appShortcutsSuspended = suspended;
-}
-
-/**
  * 初始化应用内快捷键
  */
 export function initAppShortcuts() {
@@ -212,19 +193,15 @@ export function initAppShortcuts() {
   }
 
   appShortcutsInitialized = true;
+  appShortcuts = createDefaultShortcuts();
 
   shortcutUnsubscribers.push(
     window.api.onGlobalShortcut(onGlobalShortcut),
-    window.api.onUpdateAppShortcuts(onUpdateAppShortcuts),
     window.api.onMprisSeek(onMprisSeekOrSetPosition),
     window.api.onMprisSetPosition(onMprisSeekOrSetPosition),
     window.api.onMprisPlay(onMprisPlay),
     window.api.onMprisPause(onMprisPause)
   );
-
-  void window.api.getShortcutsConfig().then((storedShortcuts) => {
-    updateAppShortcuts(storedShortcuts);
-  });
 
   document.addEventListener('keydown', handleKeyDown);
 }

@@ -19,14 +19,6 @@ export type ShortcutConfig = {
 
 export type ShortcutsConfig = Record<ShortcutAction, ShortcutConfig>;
 
-export type ShortcutPlatform = 'darwin' | 'win32' | 'linux' | 'web';
-
-export type ShortcutConflict = {
-  key: string;
-  scope: ShortcutScope;
-  actions: ShortcutAction[];
-};
-
 type ShortcutModifier = 'CommandOrControl' | 'Alt' | 'Shift';
 
 const shortcutModifierOrder: ShortcutModifier[] = ['CommandOrControl', 'Alt', 'Shift'];
@@ -132,22 +124,6 @@ const allowedNamedKeys = new Set([
 
 const functionKeyRegExp = /^F([1-9]|1\d|2[0-4])$/i;
 
-const shortcutActionGroups: Record<'playback' | 'sound' | 'window', ShortcutAction[]> = {
-  playback: ['togglePlay', 'prevPlay', 'nextPlay'],
-  sound: ['volumeUp', 'volumeDown', 'toggleFavorite'],
-  window: ['toggleWindow']
-};
-
-export const shortcutGroups = shortcutActionGroups;
-
-const sharedReservedAccelerators = ['CommandOrControl+Shift+I', 'F5'];
-
-const platformReservedAccelerators: Record<Exclude<ShortcutPlatform, 'web'>, string[]> = {
-  darwin: ['CommandOrControl+Q', 'CommandOrControl+W', 'CommandOrControl+H'],
-  win32: ['Alt+F4'],
-  linux: ['Alt+F4']
-};
-
 function normalizeModifierToken(token: string): ShortcutModifier | null {
   return modifierAliases[token.trim().toLowerCase()] ?? null;
 }
@@ -233,123 +209,6 @@ export function normalizeShortcutAccelerator(raw: string): string | null {
 
   const orderedModifiers = shortcutModifierOrder.filter((modifier) => modifiers.has(modifier));
   return [...orderedModifiers, mainKey].join('+');
-}
-
-function normalizeShortcutScope(scope: unknown, action: ShortcutAction): ShortcutScope {
-  return scope === 'global' || scope === 'app' ? scope : shortcutScopeDefaults[action];
-}
-
-function normalizeShortcutConfig(action: ShortcutAction, value: unknown): ShortcutConfig {
-  if (typeof value === 'string') {
-    const normalizedKey = normalizeShortcutAccelerator(value);
-    return {
-      key: normalizedKey ?? shortcutKeyDefaults[action],
-      enabled: true,
-      scope: shortcutScopeDefaults[action]
-    };
-  }
-
-  if (!value || typeof value !== 'object') {
-    return createDefaultShortcutConfig(action);
-  }
-
-  const config = value as Partial<ShortcutConfig>;
-  const normalizedKey = normalizeShortcutAccelerator(config.key ?? '');
-
-  return {
-    key: normalizedKey ?? shortcutKeyDefaults[action],
-    enabled: config.enabled !== false,
-    scope: normalizeShortcutScope(config.scope, action)
-  };
-}
-
-export function normalizeShortcutsConfig(input: unknown): ShortcutsConfig {
-  const result = createDefaultShortcuts();
-
-  if (!input || typeof input !== 'object') {
-    return result;
-  }
-
-  const rawConfig = input as Record<string, unknown>;
-
-  shortcutActionOrder.forEach((action) => {
-    result[action] = normalizeShortcutConfig(action, rawConfig[action]);
-  });
-
-  return result;
-}
-
-export function getShortcutConflicts(shortcuts: ShortcutsConfig): ShortcutConflict[] {
-  const shortcutBuckets = new Map<string, ShortcutAction[]>();
-
-  shortcutActionOrder.forEach((action) => {
-    const config = shortcuts[action];
-    if (!config.enabled) {
-      return;
-    }
-
-    const normalizedKey = normalizeShortcutAccelerator(config.key);
-    if (!normalizedKey) {
-      return;
-    }
-
-    const bucketKey = `${config.scope}::${normalizedKey}`;
-    const actions = shortcutBuckets.get(bucketKey) ?? [];
-    actions.push(action);
-    shortcutBuckets.set(bucketKey, actions);
-  });
-
-  const conflicts: ShortcutConflict[] = [];
-
-  shortcutBuckets.forEach((actions, key) => {
-    if (actions.length < 2) {
-      return;
-    }
-
-    const [scope, accelerator] = key.split('::') as [ShortcutScope, string];
-    conflicts.push({
-      key: accelerator,
-      scope,
-      actions
-    });
-  });
-
-  return conflicts;
-}
-
-export function getReservedAccelerators(platform: ShortcutPlatform): string[] {
-  if (platform === 'web') {
-    return [...sharedReservedAccelerators];
-  }
-
-  return [...sharedReservedAccelerators, ...platformReservedAccelerators[platform]];
-}
-
-export function formatShortcutForDisplay(shortcut: string, platform: ShortcutPlatform): string {
-  const accelerator = normalizeShortcutAccelerator(shortcut) ?? shortcut;
-  const isMac = platform === 'darwin';
-
-  return accelerator
-    .split('+')
-    .map((segment) => {
-      if (segment === 'CommandOrControl') {
-        return isMac ? 'Cmd' : 'Ctrl';
-      }
-      if (segment === 'Alt') {
-        return isMac ? 'Option' : 'Alt';
-      }
-      if (segment === 'Shift') {
-        return 'Shift';
-      }
-      if (segment === 'Plus') {
-        return '+';
-      }
-      if (segment === 'Minus') {
-        return '-';
-      }
-      return segment;
-    })
-    .join(' + ');
 }
 
 export function hasShortcutAction(action: string): action is ShortcutAction {
