@@ -18,6 +18,7 @@ import type {
   DownloadTaskState
 } from '../../shared/download';
 import { getStore } from './config';
+import { resolveSafePath } from './pathGuard';
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 
@@ -297,21 +298,49 @@ class DownloadManager {
 
   private async deleteCompleted(filePath: string): Promise<boolean> {
     try {
-      if (fs.existsSync(filePath)) {
+      if (typeof filePath !== 'string' || !filePath) {
+        return false;
+      }
+
+      const configStore = getStore();
+      const songInfos = (configStore.get('downloadedSongs') || {}) as Record<string, any>;
+
+      // 必须已在下载注册表中，禁止对任意路径 unlink
+      const registeredKey = Object.prototype.hasOwnProperty.call(songInfos, filePath)
+        ? filePath
+        : Object.keys(songInfos).find((key) => {
+            const info = songInfos[key];
+            return info?.path === filePath || key === filePath;
+          });
+
+      if (!registeredKey) {
+        console.warn('[download] delete-completed rejected: not in downloadedSongs', filePath);
+        return false;
+      }
+
+      const safePath = resolveSafePath(registeredKey) || resolveSafePath(filePath);
+      if (!safePath) {
+        console.warn('[download] delete-completed rejected: outside allowed roots', filePath);
+        return false;
+      }
+
+      if (fs.existsSync(safePath)) {
         try {
-          await fs.promises.unlink(filePath);
+          await fs.promises.unlink(safePath);
         } catch (error) {
           console.error('Error deleting file:', error);
+          return false;
         }
-
-        const configStore = getStore();
-        const songInfos = (configStore.get('downloadedSongs') || {}) as Record<string, any>;
-        delete songInfos[filePath];
-        configStore.set('downloadedSongs', songInfos);
-
-        return true;
       }
-      return false;
+
+      delete songInfos[registeredKey];
+      // 若 path 字段指向同一文件也清理
+      if (registeredKey !== filePath && songInfos[filePath]) {
+        delete songInfos[filePath];
+      }
+      configStore.set('downloadedSongs', songInfos);
+
+      return true;
     } catch (error) {
       console.error('Error deleting file:', error);
       return false;
@@ -328,12 +357,13 @@ class DownloadManager {
 
   private async getEmbeddedLyrics(filePath: string): Promise<string | null> {
     try {
-      if (!fs.existsSync(filePath)) return null;
+      const safePath = resolveSafePath(filePath);
+      if (!safePath || !fs.existsSync(safePath)) return null;
 
-      const ext = path.extname(filePath).toLowerCase();
+      const ext = path.extname(safePath).toLowerCase();
 
       if (ext === '.mp3') {
-        const tags = NodeID3.read(filePath);
+        const tags = NodeID3.read(safePath);
         if (tags && tags.unsynchronisedLyrics) {
           const uslt = tags.unsynchronisedLyrics as any;
           return uslt.text || (typeof uslt === 'string' ? uslt : null);
@@ -342,7 +372,7 @@ class DownloadManager {
       }
 
       if (ext === '.flac') {
-        const metadata = await mm.parseFile(filePath);
+        const metadata = await mm.parseFile(safePath);
         const native = metadata.native;
         // Look for LYRICS in vorbis comments
         for (const format of Object.keys(native)) {
