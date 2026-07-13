@@ -22,6 +22,7 @@ export default {
     unknown: '알 수 없음',
     queued: '대기 중',
     paused: '일시 정지',
+    waitingForUrl: '링크 다시 가져오는 중...',
     cancelled: '취소됨'
   },
   action: {

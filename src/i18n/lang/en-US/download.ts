@@ -22,6 +22,7 @@ export default {
     unknown: 'Unknown',
     queued: 'Queued',
     paused: 'Paused',
+    waitingForUrl: 'Re-resolving URL...',
     cancelled: 'Cancelled'
   },
   action: {

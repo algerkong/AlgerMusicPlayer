@@ -34,7 +34,8 @@ export const useDownloadStore = defineStore(
       const active = [
         DOWNLOAD_TASK_STATE.queued,
         DOWNLOAD_TASK_STATE.downloading,
-        DOWNLOAD_TASK_STATE.paused
+        DOWNLOAD_TASK_STATE.paused,
+        DOWNLOAD_TASK_STATE.waitingForUrl
       ] as string[];
       return [...tasks.value.values()]
         .filter((t) => active.includes(t.state))

@@ -146,7 +146,7 @@ class DownloadManager {
       for (const [taskId, controller] of this.abortControllers.entries()) {
         controller.abort();
         const task = this.tasks.get(taskId);
-        if (task && task.state === 'downloading') {
+        if (task && (task.state === 'downloading' || task.state === 'waitingForUrl')) {
           task.state = 'paused';
         }
       }
@@ -335,7 +335,11 @@ class DownloadManager {
 
   private getQueue(): DownloadTask[] {
     return [...this.tasks.values()].filter(
-      (t) => t.state === 'queued' || t.state === 'paused' || t.state === 'downloading'
+      (t) =>
+        t.state === 'queued' ||
+        t.state === 'paused' ||
+        t.state === 'downloading' ||
+        t.state === 'waitingForUrl'
     );
   }
 
@@ -501,20 +505,28 @@ class DownloadManager {
     const task = this.tasks.get(taskId);
     if (!task) return false;
 
+    // 仅处理仍在等链的任务；用户已 pause/cancel 则忽略迟到的 provide-url
+    if (task.state !== 'waitingForUrl') {
+      if (url && isHttpsUrl(url) && (task.state === 'queued' || task.state === 'paused')) {
+        task.url = url;
+      }
+      return false;
+    }
+
     if (!url || !isHttpsUrl(url)) {
       console.warn('[download] provide-url rejected non-HTTPS:', url);
       task.state = 'error';
       task.error = '下载地址必须是 HTTPS';
+      this.persistQueue();
       this.sendStateChange(task);
       return false;
     }
 
     task.url = url;
-    if (task.state === 'queued' || task.state === 'paused') {
-      task.state = 'queued';
-      this.sendStateChange(task);
-      this.processQueue();
-    }
+    task.state = 'queued';
+    this.persistQueue();
+    this.sendStateChange(task);
+    this.processQueue();
     return true;
   }
 
@@ -539,6 +551,18 @@ class DownloadManager {
   private async downloadTask(task: DownloadTask): Promise<void> {
     const controller = new AbortController();
     this.abortControllers.set(task.taskId, controller);
+
+    // 每个执行实例只结算一次槽位；仅清理本实例持有的 controller
+    let settled = false;
+    const releaseSlot = () => {
+      if (settled) return;
+      settled = true;
+      if (this.abortControllers.get(task.taskId) === controller) {
+        this.abortControllers.delete(task.taskId);
+      }
+      this.progressThrottles.delete(task.taskId);
+      this.activeCount = Math.max(0, this.activeCount - 1);
+    };
 
     let writer: fs.WriteStream | null = null;
 
@@ -598,14 +622,16 @@ class DownloadManager {
 
       if (status === 403 || status === 410) {
         response.data?.destroy?.();
-        this.sendToRenderer('download:request-url', {
-          taskId: task.taskId,
-          songInfo: task.songInfo
-        });
-        task.state = 'queued';
-        this.sendStateChange(task);
-        this.activeCount--;
-        this.processQueue();
+        // 进入等待 URL 状态，不重入队；等 provideUrl 后再 queued
+        if (this.abortControllers.get(task.taskId) === controller && task.state === 'downloading') {
+          task.state = 'waitingForUrl';
+          this.sendStateChange(task);
+          this.sendToRenderer('download:request-url', {
+            taskId: task.taskId,
+            songInfo: task.songInfo
+          });
+          this.persistQueue();
+        }
         return;
       }
 
@@ -695,13 +721,7 @@ class DownloadManager {
 
       this.persistQueue();
     } finally {
-      this.abortControllers.delete(task.taskId);
-      this.progressThrottles.delete(task.taskId);
-
-      // Only decrement if we were actively downloading (not already decremented in 403/410 path)
-      if (task.state !== 'queued') {
-        this.activeCount--;
-      }
+      releaseSlot();
       this.processQueue();
     }
   }
@@ -1077,12 +1097,18 @@ class DownloadManager {
 
   private persistQueueSync(): void {
     const tasksToSave = [...this.tasks.values()].filter(
-      (t) => t.state === 'queued' || t.state === 'paused' || t.state === 'downloading'
+      (t) =>
+        t.state === 'queued' ||
+        t.state === 'paused' ||
+        t.state === 'downloading' ||
+        t.state === 'waitingForUrl'
     );
-    // Mark downloading as paused for persistence
+    // downloading / waitingForUrl 落盘为 paused，冷启动后由用户 resume
     const serialized = tasksToSave.map((t) => ({
       ...t,
-      state: (t.state === 'downloading' ? 'paused' : t.state) as DownloadTaskState
+      state: (t.state === 'downloading' || t.state === 'waitingForUrl'
+        ? 'paused'
+        : t.state) as DownloadTaskState
     }));
     this.persistStore.set('tasks', serialized);
   }
@@ -1091,8 +1117,8 @@ class DownloadManager {
     try {
       const saved = this.persistStore.get('tasks', []);
       for (const task of saved) {
-        // Treat any 'downloading' as 'paused' on load
-        if (task.state === 'downloading') {
+        // Treat in-flight states as paused on load
+        if (task.state === 'downloading' || task.state === 'waitingForUrl') {
           task.state = 'paused';
         }
         this.tasks.set(task.taskId, task);
