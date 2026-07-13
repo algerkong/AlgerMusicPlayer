@@ -25,10 +25,7 @@
       <div class="controls-section">
         <div class="left-controls">
           <button class="control-btn small-btn" @click="togglePlayMode">
-            <i
-              class="iconfont"
-              :class="[playModeIcon, { 'intelligence-active': playMode === 3 }]"
-            ></i>
+            <i class="iconfont" :class="playModeIcon"></i>
           </button>
         </div>
 
@@ -105,7 +102,7 @@ const playBarRef = ref<HTMLElement | null>(null);
 const { isPlaying: play, playMusicEvent, handleNext, handlePrev } = usePlaybackControl();
 
 // 播放模式
-const { playMode, playModeIcon, togglePlayMode } = usePlayMode();
+const { playModeIcon, togglePlayMode } = usePlayMode();
 
 // 音量控制（统一通过 playerStore 管理）
 const {

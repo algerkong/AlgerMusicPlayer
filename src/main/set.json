@@ -12,7 +12,6 @@
   "authorUrl": "https://github.com/LuoYe17",
   "closeAction": "ask",
   "musicQuality": "higher",
-  "lyricTranslationEngine": "none",
   "fontFamily": "system-ui",
   "fontScope": "global",
   "autoPlay": false,

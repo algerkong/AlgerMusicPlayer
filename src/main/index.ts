@@ -42,7 +42,6 @@ protocol.registerSchemesAsPrivileged([
 
 import type { Language } from '../i18n/main';
 import i18n from '../i18n/main';
-import { loadLyricWindow } from './lyric';
 import { initializeCacheManager } from './modules/cache';
 import { initializeConfig } from './modules/config';
 import { initializeDownloadManager, setDownloadManagerWindow } from './modules/downloadManager';
@@ -96,9 +95,6 @@ function initialize(configStore: any) {
 
   // 初始化托盘
   initializeTray(iconPath, mainWindow);
-
-  // 加载歌词窗口
-  loadLyricWindow(ipcMain, mainWindow);
 
   // 初始化快捷键
   initializeShortcuts(mainWindow);

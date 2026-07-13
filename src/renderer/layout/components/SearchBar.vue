@@ -76,24 +76,6 @@
       </n-badge>
     </button>
 
-    <!-- 心动模式按钮 -->
-    <n-tooltip v-if="showIntelligenceBtn" trigger="hover">
-      <template #trigger>
-        <button
-          class="action-btn"
-          :class="{ 'intelligence-active': isIntelligenceMode }"
-          @click="toggleIntelligenceMode"
-        >
-          <i class="ri-heart-pulse-line" />
-        </button>
-      </template>
-      {{
-        isIntelligenceMode
-          ? t('comp.searchBar.exitIntelligence')
-          : t('comp.searchBar.intelligenceMode')
-      }}
-    </n-tooltip>
-
     <!-- 用户 / 登录（设置已挪到侧栏底部） -->
     <n-popover v-if="userStore.user" trigger="hover" placement="bottom-end" :show-arrow="false" raw>
       <template #trigger>
@@ -132,7 +114,6 @@ import { useRouter } from 'vue-router';
 
 import { SEARCH_TYPE } from '@/const/bar-const';
 import { useDownloadStore } from '@/store/modules/download';
-import { useIntelligenceModeStore } from '@/store/modules/intelligenceMode';
 import { useNavTitleStore } from '@/store/modules/navTitle';
 import { useSearchStore } from '@/store/modules/search';
 import { useSettingsStore } from '@/store/modules/settings';
@@ -146,7 +127,6 @@ const settingsStore = useSettingsStore();
 const userStore = useUserStore();
 const { t } = useI18n();
 
-const intelligenceModeStore = useIntelligenceModeStore();
 const downloadStore = useDownloadStore();
 const downloadingCount = computed(() => downloadStore.downloadingCount);
 const navigateToDownloads = () => {
@@ -156,17 +136,6 @@ const showDownloadButton = computed(
   () =>
     isElectron && (settingsStore.setData?.alwaysShowDownloadButton || downloadingCount.value > 0)
 );
-
-// ── 心动模式 ─────────────────────────────────────────
-const isIntelligenceMode = computed(() => intelligenceModeStore.isIntelligenceMode);
-const showIntelligenceBtn = computed(() => userStore.user && userStore.loginType === 'cookie');
-const toggleIntelligenceMode = async () => {
-  if (isIntelligenceMode.value) {
-    intelligenceModeStore.clearIntelligenceMode();
-  } else {
-    await intelligenceModeStore.playIntelligenceMode();
-  }
-};
 
 // ── Search expand / collapse（悬停立即展开，无延迟）────
 const isSearchExpanded = ref(false);

@@ -28,10 +28,6 @@ const routes = [
     path: '/',
     component: AppLayout,
     children: [...homeRouter, loginRouter, ...otherRouter]
-  },
-  {
-    path: '/lyric',
-    component: () => import('@/views/lyric/index.vue')
   }
 ];
 

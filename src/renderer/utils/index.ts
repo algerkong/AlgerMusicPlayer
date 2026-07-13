@@ -98,10 +98,6 @@ export const isMobile = computed(() => {
 
 export const isElectron = typeof window !== 'undefined' && !!(window as any).api;
 
-export const isLyricWindow = computed(() => {
-  return window.location.hash.includes('lyric');
-});
-
 export const getSetData = (): any => {
   let setData: any = null;
   if (window.api) {

@@ -23,27 +23,12 @@ interface API {
   selectDownloadPath: () => Promise<{ canceled: true } | { canceled: false; path: string }>;
   selectDiskCacheDir: () => Promise<{ canceled: true } | { canceled: false; path: string }>;
 
-  // 语言
+  // 语言（保留 IPC；应用已固定 zh-CN）
   changeLanguage: (locale: string) => void;
   onLanguageChanged: (callback: (locale: string) => void) => () => void;
 
-  // 桌面歌词
-  openLyric: () => void;
-  closeLyric: () => void;
-  sendLyric: (data: any) => void;
+  // 托盘 / MPRIS 当前歌曲
   sendSong: (data: any) => void;
-  lyricReady: () => void;
-  setIgnoreMouse: (shouldIgnore: boolean) => void;
-  setLyricLockState: (isLocked: boolean) => void;
-  lyricDragStart: () => void;
-  lyricDragMove: (payload: { deltaX: number; deltaY: number }) => void;
-  lyricDragEnd: () => void;
-  controlBack: (command: string) => void;
-  onLyricWindowClosed: (callback: () => void) => () => void;
-  onLyricWindowReady: (callback: () => void) => () => void;
-  onReceiveLyric: (callback: (data: string) => void) => () => void;
-  onLyricMousePresence: (callback: (isInside: boolean) => void) => () => void;
-  onLyricControlBack: (callback: (command: string) => void) => () => void;
 
   // 应用更新
   getAppUpdateState: () => Promise<AppUpdateState>;
