@@ -439,7 +439,7 @@ class AudioService {
       return Promise.resolve(this.audio);
     }
 
-    // 开始新一轮前：移除监听器并以明确错误结算上一轮 Promise，避免永久 pending
+    // 开始新一轮前：卸监听/清 retry timer，并以 AbortError 结算上一轮 Promise
     if (this.pendingLoadCleanup) {
       this.pendingLoadCleanup();
       this.pendingLoadCleanup = null;
@@ -449,19 +449,50 @@ class AudioService {
       let retryCount = 0;
       const maxRetries = 1;
       let settled = false;
+      let retryTimer: ReturnType<typeof setTimeout> | null = null;
+      let detachLoadListeners: (() => void) | null = null;
 
       const settleResolve = (el: HTMLAudioElement) => {
         if (settled) return;
         settled = true;
+        if (this.pendingLoadCleanup === cancelPendingLoad) {
+          this.pendingLoadCleanup = null;
+        }
         resolve(el);
       };
       const settleReject = (err: Error) => {
         if (settled) return;
         settled = true;
+        if (this.pendingLoadCleanup === cancelPendingLoad) {
+          this.pendingLoadCleanup = null;
+        }
         reject(err);
       };
 
+      const clearRetryTimer = () => {
+        if (retryTimer !== null) {
+          clearTimeout(retryTimer);
+          retryTimer = null;
+        }
+      };
+
+      // 整轮 play 生命周期的取消：监听器 + 延迟重试 + Promise 结算
+      const cancelPendingLoad = () => {
+        clearRetryTimer();
+        detachLoadListeners?.();
+        detachLoadListeners = null;
+        this._isLoading = false;
+        this.releaseOperationLock();
+        const err = new Error('Playback cancelled');
+        err.name = 'AbortError';
+        settleReject(err);
+      };
+      this.pendingLoadCleanup = cancelPendingLoad;
+
       const tryPlay = () => {
+        // 延迟重试到期时若已 cancel/settled，禁止再写 audio.src
+        if (settled) return;
+
         this._isLoading = true;
         this.currentTrack = track;
 
@@ -473,16 +504,9 @@ class AudioService {
           this.context.resume().catch((e) => console.warn('Failed to resume AudioContext:', e));
         }
 
-        const removeLoadListeners = () => {
-          this.audio.removeEventListener('canplay', onCanPlay);
-          this.audio.removeEventListener('error', onError);
-          if (this.pendingLoadCleanup === cancelPendingLoad) {
-            this.pendingLoadCleanup = null;
-          }
-        };
-
         const onCanPlay = () => {
-          removeLoadListeners();
+          detachLoadListeners?.();
+          detachLoadListeners = null;
           this._isLoading = false;
 
           if (seekTime > 0) {
@@ -507,8 +531,11 @@ class AudioService {
         };
 
         const onError = () => {
-          removeLoadListeners();
+          detachLoadListeners?.();
+          detachLoadListeners = null;
           this._isLoading = false;
+          if (settled) return;
+
           const error = this.audio.error;
           console.error('Audio load error:', error?.code, error?.message);
           this.emit('loaderror', { track, error });
@@ -520,7 +547,14 @@ class AudioService {
           if (!isSrcNotSupported && retryCount < maxRetries) {
             retryCount++;
             console.log(`Retrying playback (${retryCount}/${maxRetries})...`);
-            setTimeout(tryPlay, 1000 * retryCount);
+            // 重试等待期间保持 cancelPendingLoad，可清 timer 并结算 Promise
+            this.pendingLoadCleanup = cancelPendingLoad;
+            clearRetryTimer();
+            retryTimer = setTimeout(() => {
+              retryTimer = null;
+              if (settled) return;
+              tryPlay();
+            }, 1000 * retryCount);
           } else {
             this.emit('url_expired', track);
             this.releaseOperationLock();
@@ -528,17 +562,10 @@ class AudioService {
           }
         };
 
-        // 被新 play()/stop() 抢占时：卸监听 + 以 AbortError 结算本轮 Promise
-        const cancelPendingLoad = () => {
-          removeLoadListeners();
-          this._isLoading = false;
-          this.releaseOperationLock();
-          const err = new Error('Playback cancelled');
-          err.name = 'AbortError';
-          settleReject(err);
+        detachLoadListeners = () => {
+          this.audio.removeEventListener('canplay', onCanPlay);
+          this.audio.removeEventListener('error', onError);
         };
-
-        this.pendingLoadCleanup = cancelPendingLoad;
 
         this.audio.addEventListener('canplay', onCanPlay, { once: true });
         this.audio.addEventListener('error', onError, { once: true });
