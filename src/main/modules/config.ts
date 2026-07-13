@@ -122,6 +122,15 @@ function mergePublicSettings(partial: unknown): Record<string, unknown> {
     // 只写回白名单字段 + 保留已有但未在白名单的内部字段？为安全起见：
     // 合并时保留 current 中非敏感的全部已有键，但仅用 allowed 覆盖白名单字段。
     store.set('set', merged as SetConfig);
+    // 下载/缓存目录变更后刷新 path jail 缓存（require 避免与 pathGuard 循环依赖）
+    if ('downloadPath' in allowed || 'diskCacheDir' in allowed || 'enableDiskCache' in allowed) {
+      try {
+         
+        require('./pathGuard').invalidatePathGuardCaches();
+      } catch {
+        // ignore
+      }
+    }
   } catch (error) {
     console.error('[config] 写入设置失败:', error);
   }
