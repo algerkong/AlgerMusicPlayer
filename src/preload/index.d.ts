@@ -83,11 +83,6 @@ interface API {
   onMprisPlay: (callback: () => void) => () => void;
   onMprisPause: (callback: () => void) => () => void;
 
-  // 远程控制
-  getLocalIpAddresses: () => Promise<string[]>;
-  getRemoteControlConfig: () => Promise<any>;
-  updateRemoteControlConfig: (config: unknown) => void;
-
   // 快捷键
   getShortcutsConfig: () => Promise<any>;
   saveShortcuts: (config: unknown) => Promise<any>;

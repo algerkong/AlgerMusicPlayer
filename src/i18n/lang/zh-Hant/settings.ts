@@ -99,9 +99,7 @@ export default {
     unlimitedDownload: '無限制下載',
     unlimitedDownloadDesc: '開啟後將無限制下載音樂（可能出現下載失敗的情況）, 預設限制 300 首',
     downloadPath: '下載目錄',
-    downloadPathDesc: '選擇音樂檔案的下載位置',
-    remoteControl: '遠端控制',
-    remoteControlDesc: '設定遠端控制功能'
+    downloadPathDesc: '選擇音樂檔案的下載位置'
   },
   network: {
     proxy: '代理設定',
@@ -401,16 +399,6 @@ export default {
       disableAll: '已停用所有快捷鍵，請記得儲存',
       enableAll: '已啟用所有快捷鍵，請記得儲存'
     }
-  },
-  remoteControl: {
-    title: '遠端控制',
-    enable: '啟用遠端控制',
-    port: '服務連接埠',
-    allowedIps: '允許的 IP 位址',
-    addIp: '新增 IP',
-    emptyListHint: '空白清單表示允許所有 IP 存取',
-    saveSuccess: '遠端控制設定已儲存',
-    accessInfo: '遠端控制存取位址：'
   },
   musicSource: {
     title: '線上音源工作階段',

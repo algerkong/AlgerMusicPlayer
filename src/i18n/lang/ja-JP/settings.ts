@@ -102,9 +102,7 @@ export default {
     unlimitedDownloadDesc:
       '有効にすると音楽を無制限でダウンロードします（ダウンロード失敗の可能性があります）。デフォルトは300曲制限',
     downloadPath: 'ダウンロードディレクトリ',
-    downloadPathDesc: '音楽ファイルのダウンロード場所を選択',
-    remoteControl: 'リモートコントロール',
-    remoteControlDesc: 'リモートコントロール機能を設定'
+    downloadPathDesc: '音楽ファイルのダウンロード場所を選択'
   },
   network: {
     proxy: 'プロキシ設定',
@@ -405,16 +403,6 @@ export default {
       disableAll: 'すべてのショートカットを無効にしました。保存を忘れずに',
       enableAll: 'すべてのショートカットを有効にしました。保存を忘れずに'
     }
-  },
-  remoteControl: {
-    title: 'リモートコントロール',
-    enable: 'リモートコントロールを有効にする',
-    port: 'サービスポート',
-    allowedIps: '許可されたIPアドレス',
-    addIp: 'IPを追加',
-    emptyListHint: '空のリストはすべてのIPアクセスを許可することを意味します',
-    saveSuccess: 'リモートコントロール設定を保存しました',
-    accessInfo: 'リモートコントロールアクセスアドレス:'
   },
   musicSource: {
     title: 'オンライン音源セッション',

@@ -129,12 +129,6 @@ const api = {
   onMprisPlay: (callback: () => void) => onChannel('mpris-play', callback),
   onMprisPause: (callback: () => void) => onChannel('mpris-pause', callback),
 
-  // —— 远程控制 ——
-  getLocalIpAddresses: () => ipcRenderer.invoke('get-local-ip-addresses') as Promise<string[]>,
-  getRemoteControlConfig: () => ipcRenderer.invoke('get-remote-control-config'),
-  updateRemoteControlConfig: (config: unknown) =>
-    ipcRenderer.send('update-remote-control-config', config),
-
   // —— 快捷键 ——
   getShortcutsConfig: () => ipcRenderer.invoke('shortcuts:get-config'),
   saveShortcuts: (config: unknown) => ipcRenderer.invoke('shortcuts:save', config),
