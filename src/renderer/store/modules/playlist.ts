@@ -13,6 +13,7 @@ import { minifySongList } from '@/utils/persistedSong';
 import { performShuffle, preloadCoverImage } from '@/utils/playerUtils';
 
 import { usePlayerCoreStore } from './playerCore';
+import { normalizePlayMode } from './playlistPlayMode';
 
 // 延迟初始化 message，避免 chunk 循环依赖导致 TDZ 错误
 let _message: ReturnType<typeof createDiscreteApi>['message'] | null = null;
@@ -664,9 +665,16 @@ export const usePlaylistStore = defineStore(
     /**
      * 初始化播放列表
      * 注意：状态已由 pinia-plugin-persistedstate 自动恢复
-     * 这里只需要处理特殊逻辑（如随机模式的恢复）
+     * 这里只需要处理特殊逻辑（如非法 playMode 迁移、随机模式的恢复）
      */
     const initializePlaylist = async () => {
+      // 迁移：旧版心动模式 playMode=3 及任何非法值 → 顺序播放
+      const normalized = normalizePlayMode(playMode.value);
+      if (normalized !== playMode.value) {
+        console.log(`[PlaylistStore] 非法/已移除 playMode=${playMode.value}，归一为 ${normalized}`);
+        playMode.value = normalized;
+      }
+
       // 重启后恢复随机播放状态
       if (playMode.value === 2 && playList.value.length > 0) {
         if (originalPlayList.value.length === 0) {
