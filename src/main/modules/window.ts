@@ -295,6 +295,8 @@ export function createMainWindow(icon: Electron.NativeImage): BrowserWindow {
 
   // 添加图标和预加载脚本
   options.icon = icon;
+  // sandbox / webSecurity 暂保持关闭：本地音频、自定义 local:// 协议、跨源封面依赖
+  // 现有加载路径。收紧 IPC 与 XSS 入口后已切断主升级链；此处再开需单独回归媒体播放。
   options.webPreferences = {
     preload: join(__dirname, '../preload/index.js'),
     sandbox: false,

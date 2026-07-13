@@ -10,22 +10,22 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '24'
+          cache: npm
 
       - name: 创建环境变量文件
         run: |
+          # 仅写入构建用 env，禁止 cat/echo 到日志以免泄露 secrets
           echo "VITE_API=${{ secrets.VITE_API }}" > .env.production.local
           echo "VITE_API_MUSIC=${{ secrets.VITE_API_MUSIC }}" >> .env.production.local
-          # 添加其他需要的环境变量
-          cat .env.production.local # 查看创建的文件内容，调试用
 
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build
         run: npm run build

@@ -18,7 +18,7 @@
 - 作者：落叶🍂 ([@LuoYe17](https://github.com/LuoYe17))
 - 仓库：https://github.com/LuoYe17/AlgerMusicPlayer
 
-主要能力继承自上游：第三方音乐播放、本地 API 服务、桌面歌词、下载、远程控制等。
+主要能力继承自上游：第三方音乐播放、桌面歌词、下载等。
 
 ## 与上游的差异（持续更新）
 

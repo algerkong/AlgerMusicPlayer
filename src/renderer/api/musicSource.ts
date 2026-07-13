@@ -143,7 +143,7 @@ async function invokeMs<T>(channel: string, ...args: unknown[]): Promise<T> {
   }
   let res: MusicSourceIpcResult<T>;
   try {
-    res = (await window.electron.ipcRenderer.invoke(channel, ...args)) as MusicSourceIpcResult<T>;
+    res = (await window.api.musicSourceInvoke(channel, ...args)) as MusicSourceIpcResult<T>;
   } catch (error: any) {
     const msg = String(error?.message || error || '');
     // 主进程未注册 handler（旧构建 / 库加载失败）

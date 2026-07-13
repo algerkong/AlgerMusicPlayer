@@ -7,10 +7,9 @@ dist-ssr
 dist_electron
 .idea
 
-# lock
+# lock（package-lock.json 入库以支持 npm ci 可复现构建）
 yarn.lock
 pnpm-lock.yaml
-package-lock.json
 dist.zip
 
 .vscode

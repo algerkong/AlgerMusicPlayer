@@ -41,7 +41,7 @@ const resolveCachedPlaybackUrl = async (
   }
 
   try {
-    const result = (await window.electron.ipcRenderer.invoke('resolve-cached-music-url', {
+    const result = (await window.api.resolveCachedMusicUrl({
       songId: Number(songData.id),
       source: songData.source,
       url,
@@ -233,7 +233,7 @@ export const loadLrc = async (id: string | number): Promise<ILyric> => {
 
     if (isElectron && cacheKey) {
       try {
-        lyricData = await window.electron.ipcRenderer.invoke('get-cached-lyric', cacheKey);
+        lyricData = await window.api.getCachedLyric(cacheKey);
       } catch (error) {
         console.warn('读取磁盘歌词缓存失败:', error);
       }
@@ -260,8 +260,8 @@ export const loadLrc = async (id: string | number): Promise<ILyric> => {
             _msLyricVer: 5
           };
           if (cacheKey) {
-            void window.electron.ipcRenderer
-              .invoke('cache-lyric', cacheKey, payload)
+            void window.api
+              .cacheLyric(cacheKey, payload)
               .catch((error) => console.warn('写入磁盘歌词缓存失败:', error));
           }
           lyricData = payload;
@@ -295,8 +295,8 @@ export const loadLrc = async (id: string | number): Promise<ILyric> => {
           attachTranslationLrc(converted.lrcArray, converted.lrcTimeArray, tLrc);
           alreadyHasTr = converted.lrcArray.some((l) => l.trText);
           if (alreadyHasTr && cacheKey && isElectron) {
-            void window.electron.ipcRenderer
-              .invoke('cache-lyric', cacheKey, {
+            void window.api
+              .cacheLyric(cacheKey, {
                 ...data,
                 tlyric: { lyric: tLrc },
                 _playerLyric: converted,

@@ -560,25 +560,22 @@ async function loadShortcutsFromMain() {
     return;
   }
 
-  const platformValue = window.electron.ipcRenderer.sendSync('get-platform');
+  const platformValue = window.api.getPlatform();
   if (platformValue === 'darwin' || platformValue === 'win32' || platformValue === 'linux') {
     platform.value = platformValue;
   }
 
   try {
-    const shortcuts = await window.electron.ipcRenderer.invoke('shortcuts:get-config');
+    const shortcuts = await window.api.getShortcutsConfig();
     const normalized = normalizeShortcutsConfig(shortcuts);
     storedShortcuts.value = cloneDeep(normalized);
     draftShortcuts.value = cloneDeep(normalized);
-    return;
   } catch (error) {
     console.error('[ShortcutSettings] 获取快捷键配置失败:', error);
+    const defaults = createDefaultShortcuts();
+    storedShortcuts.value = cloneDeep(defaults);
+    draftShortcuts.value = cloneDeep(defaults);
   }
-
-  const stored = window.electron.ipcRenderer.sendSync('get-store-value', 'shortcuts');
-  const normalized = normalizeShortcutsConfig(stored);
-  storedShortcuts.value = cloneDeep(normalized);
-  draftShortcuts.value = cloneDeep(normalized);
 }
 
 async function handleOpen() {
@@ -588,7 +585,7 @@ async function handleOpen() {
 
   if (isElectron) {
     setAppShortcutsSuspended(true);
-    window.electron.ipcRenderer.send('disable-shortcuts');
+    window.api.disableShortcuts();
   }
 
   await loadShortcutsFromMain();
@@ -598,7 +595,7 @@ function resumeShortcutRuntime() {
   setAppShortcutsSuspended(false);
 
   if (isElectron) {
-    window.electron.ipcRenderer.send('enable-shortcuts');
+    window.api.enableShortcuts();
   }
 }
 
@@ -629,10 +626,7 @@ async function handleSave() {
       return;
     }
 
-    const result = (await window.electron.ipcRenderer.invoke(
-      'shortcuts:save',
-      shortcutsPayload
-    )) as ShortcutSaveResult;
+    const result = (await window.api.saveShortcuts(shortcutsPayload)) as ShortcutSaveResult;
 
     if (!result?.ok) {
       serverIssues.value = result?.validation?.issues ?? [];

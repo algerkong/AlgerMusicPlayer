@@ -14,8 +14,6 @@ import {
 } from '@/utils/previewStream';
 import { parseLyrics } from '@/utils/yrcParser';
 
-const windowData = window as any;
-
 // 全局 playerStore 引用，通过 initMusicHook 函数注入
 let playerStore: ReturnType<typeof usePlayerStore> | null = null;
 
@@ -60,7 +58,7 @@ export let artistList: ComputedRef<Artist[]>;
 let lastIndex = -1;
 
 // 缓存平台信息，避免每次歌词变化时同步 IPC 调用
-const cachedPlatform = isElectron ? window.electron.ipcRenderer.sendSync('get-platform') : 'web';
+const cachedPlatform = isElectron ? window.api.getPlatform() : 'web';
 
 export const musicDB = await useIndexedDB(
   'musicDB',
@@ -409,7 +407,7 @@ const setupAudioListeners = () => {
         // === MPRIS 进度更新（每 ~1 秒）===
         if (isElectron && lyricThrottleCounter % 20 === 0) {
           try {
-            window.electron.ipcRenderer.send('mpris-position-update', currentTime);
+            window.api.mprisPositionUpdate(currentTime);
           } catch {
             // 忽略发送失败
           }
@@ -464,7 +462,7 @@ const setupAudioListeners = () => {
 
           // === MPRIS seek 时同步进度 ===
           if (isElectron) {
-            window.electron.ipcRenderer.send('mpris-position-update', currentTime);
+            window.api.mprisPositionUpdate(currentTime);
           }
 
           // 检查是否需要更新歌词
@@ -906,7 +904,7 @@ const sendTrayLyric = (index: number) => {
       sender: 'LYMusicPlayer'
     });
 
-    window.electron.ipcRenderer.send('tray-lyric-update', lrcObj);
+    window.api.trayLyricUpdate(lrcObj);
   } catch (error) {
     console.error('[TrayLyric] Failed to send:', error);
   }
@@ -1004,7 +1002,7 @@ export const openLyric = async () => {
 export const closeLyric = () => {
   if (!isElectron) return;
   isLyricWindowOpen.value = false; // 确保状态更新
-  windowData.electron.ipcRenderer.send('close-lyric');
+  window.api.closeLyric();
 
   // 停止歌词同步
   stopLyricSync();
@@ -1043,7 +1041,7 @@ export { parseLyricsString };
 
 // 添加播放控制命令监听
 if (isElectron) {
-  windowData.electron.ipcRenderer.on('lyric-control-back', (_, command: string) => {
+  window.api.onLyricControlBack((command: string) => {
     switch (command) {
       case 'playpause':
         if (getPlayerStore().playMusic?.id) {

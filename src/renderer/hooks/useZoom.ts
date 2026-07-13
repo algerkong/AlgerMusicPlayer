@@ -16,7 +16,7 @@ export function useZoom() {
   // 初始化获取当前缩放比例
   const initZoomFactor = async () => {
     try {
-      const currentZoom = await window.ipcRenderer.invoke('get-content-zoom');
+      const currentZoom = await window.api.getContentZoom();
       zoomFactor.value = currentZoom;
     } catch (error) {
       console.error('获取缩放比例失败:', error);
@@ -67,7 +67,7 @@ export function useZoom() {
 
   // 设置缩放比例
   const setZoomFactor = (zoom: number) => {
-    window.ipcRenderer.send('set-content-zoom', zoom);
+    window.api.setContentZoom(zoom);
     zoomFactor.value = zoom;
   };
 

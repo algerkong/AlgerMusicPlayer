@@ -5,6 +5,7 @@ import * as path from 'path';
 import { Readable } from 'stream';
 
 import { getStore } from './config';
+import { parseLocalProtocolUrl, resolveSafePath } from './pathGuard';
 
 // 创建一个store实例用于存储音频缓存
 const audioCacheStore = new Store({
@@ -72,20 +73,17 @@ export function initializeFileManager() {
   // 中的 registerSchemesAsPrivileged，让 audio 元素能从 http(s) 页面跨协议加载本地文件
   protocol.handle('local', async (request) => {
     try {
-      // local:///<absolute-path>
-      let filePath = decodeURIComponent(request.url.replace(/^local:\/\/\/?/, ''));
-
-      // Windows: 协议解析后可能是 /C:/...，去掉前导斜杠
-      if (/^\/[a-zA-Z]:\//.test(filePath)) {
-        filePath = filePath.slice(1);
+      // local:///<absolute-path> — 必须落在允许根内，禁止任意本机读
+      const rawPath = parseLocalProtocolUrl(request.url);
+      if (!rawPath) {
+        return new Response(null, { status: 400 });
       }
 
-      // macOS/Linux 上去掉前导斜杠后会丢失绝对路径标识，这里补回
-      if (process.platform !== 'win32' && !filePath.startsWith('/')) {
-        filePath = '/' + filePath;
+      const filePath = resolveSafePath(rawPath);
+      if (!filePath) {
+        console.warn('[local protocol] path outside allowed roots:', rawPath);
+        return new Response(null, { status: 403 });
       }
-
-      filePath = path.normalize(filePath);
 
       const stat = await fs.promises.stat(filePath).catch(() => null);
       if (!stat?.isFile()) {
@@ -100,10 +98,12 @@ export function initializeFileManager() {
     }
   });
 
-  // 检查文件是否存在
+  // 检查文件是否存在（仅允许根内）
   ipcMain.handle('check-file-exists', (_, filePath) => {
     try {
-      return fs.existsSync(filePath);
+      const safe = resolveSafePath(filePath);
+      if (!safe) return false;
+      return fs.existsSync(safe);
     } catch (error) {
       console.error('Error checking if file exists:', error);
       return false;
@@ -134,22 +134,24 @@ export function initializeFileManager() {
     return result;
   });
 
-  // 通用的打开目录处理
+  // 通用的打开目录处理（仅允许根内）
   ipcMain.on('open-directory', (_, filePath) => {
     try {
-      // 验证文件路径
       if (!filePath) {
         console.error('无效的文件路径: 路径为空');
         return;
       }
 
-      // 统一处理路径分隔符
-      const normalizedPath = path.normalize(filePath);
+      const safePath = resolveSafePath(filePath);
+      if (!safePath) {
+        console.warn('[open-directory] path outside allowed roots:', filePath);
+        return;
+      }
 
-      if (fs.statSync(normalizedPath).isDirectory()) {
-        shell.openPath(normalizedPath);
+      if (fs.statSync(safePath).isDirectory()) {
+        shell.openPath(safePath);
       } else {
-        shell.showItemInFolder(normalizedPath);
+        shell.showItemInFolder(safePath);
       }
     } catch (error) {
       console.error('打开路径失败:', error);
@@ -161,7 +163,7 @@ export function initializeFileManager() {
     return app.getPath('downloads');
   });
 
-  // 保存歌词文件
+  // 保存歌词文件（仅写入下载目录内）
   ipcMain.handle(
     'save-lyric-file',
     async (_, { filename, lrcContent }: { filename: string; lrcContent: string }) => {
@@ -179,8 +181,13 @@ export function initializeFileManager() {
           counter++;
         }
 
-        await fs.promises.writeFile(filePath, lrcContent, 'utf-8');
-        return { success: true, path: filePath };
+        const safePath = resolveSafePath(filePath);
+        if (!safePath) {
+          return { success: false, error: '路径不在允许的下载目录内' };
+        }
+
+        await fs.promises.writeFile(safePath, lrcContent, 'utf-8');
+        return { success: true, path: safePath };
       } catch (error: any) {
         console.error('保存歌词文件失败:', error);
         return { success: false, error: error.message };

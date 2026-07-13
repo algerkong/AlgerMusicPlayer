@@ -89,7 +89,7 @@ import SettingSection from '../SettingSection.vue';
 
 const { t } = useI18n();
 const setData = inject(SETTINGS_DATA_KEY)!;
-const platform = isElectron ? window.electron.ipcRenderer.sendSync('get-platform') : 'web';
+const platform = isElectron ? window.api.getPlatform() : 'web';
 
 const closeActionOptions = computed(() => [
   { label: t('settings.application.closeOptions.ask'), value: 'ask' },

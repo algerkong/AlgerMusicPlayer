@@ -9,8 +9,6 @@ import { isElectron } from '@/utils';
 
 import type { DownloadSongInfo } from '../../shared/download';
 
-const ipcRenderer = isElectron ? window.electron.ipcRenderer : null;
-
 /**
  * Map a SongResult to the minimal DownloadSongInfo shape required by the download store.
  */
@@ -158,7 +156,7 @@ export const useDownload = () => {
       }
 
       const nameFormat =
-        (ipcRenderer?.sendSync('get-store-value', 'set.downloadNameFormat') as string) ||
+        (isElectron ? (window.api.getSettings()?.downloadNameFormat as string) : null) ||
         '{songName} - {artistName}';
       const artistNames =
         (song.ar || song.song?.artists)?.map((a: { name: string }) => a.name).join('、') ||
@@ -169,7 +167,7 @@ export const useDownload = () => {
         .replace(/\{artistName\}/g, artistNames)
         .replace(/\{albumName\}/g, albumName);
 
-      const result = await ipcRenderer?.invoke('save-lyric-file', { filename, lrcContent });
+      const result = isElectron ? await window.api.saveLyricFile({ filename, lrcContent }) : null;
 
       if (result?.success) {
         message.success(t('songItem.message.lyricDownloaded'));

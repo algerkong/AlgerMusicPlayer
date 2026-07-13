@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { type AxiosResponse } from 'axios';
 import crypto from 'crypto';
 import { app, BrowserWindow, ipcMain, nativeImage, Notification, shell } from 'electron';
 import Store from 'electron-store';
@@ -9,6 +9,9 @@ import * as mm from 'music-metadata';
 import * as NodeID3 from 'node-id3';
 import * as os from 'os';
 import * as path from 'path';
+import { Transform } from 'stream';
+import { pipeline } from 'stream/promises';
+import { URL } from 'url';
 
 import type {
   DownloadBatchCompleteEvent,
@@ -18,6 +21,13 @@ import type {
   DownloadTaskState
 } from '../../shared/download';
 import { getStore } from './config';
+import { resolveSafePath } from './pathGuard';
+import {
+  assertSafeCoverUrl,
+  assertSafeHttpsUrl,
+  DOWNLOAD_URL_LIMITS,
+  UnsafeUrlError
+} from './urlGuard';
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 
@@ -26,6 +36,77 @@ function sanitizeFilename(filename: string): string {
     .replace(/[<>:"/\\|?*]/g, '_')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function isHttpsUrl(raw: string): boolean {
+  try {
+    return new URL(raw).protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+/** 限并发 map */
+async function mapPool<T, R>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T, index: number) => Promise<R>
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  const workers = Array.from({ length: Math.min(concurrency, items.length) || 0 }, async () => {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await fn(items[i], i);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
+/**
+ * 手动跟随重定向的 HTTPS GET（每跳校验 URL/DNS），用于音频流与封面。
+ */
+async function httpsGetWithGuard(
+  rawUrl: string,
+  options: {
+    responseType: 'stream' | 'arraybuffer';
+    timeout: number;
+    signal?: AbortSignal;
+    headers?: Record<string, string>;
+    maxBytes?: number;
+  }
+): Promise<AxiosResponse> {
+  let current = await assertSafeHttpsUrl(rawUrl);
+
+  for (let hop = 0; hop <= DOWNLOAD_URL_LIMITS.maxRedirects; hop++) {
+    const response = await axios({
+      url: current,
+      method: 'GET',
+      responseType: options.responseType,
+      timeout: options.timeout,
+      signal: options.signal,
+      headers: options.headers,
+      maxRedirects: 0,
+      maxContentLength: options.maxBytes ?? Infinity,
+      maxBodyLength: options.maxBytes ?? Infinity,
+      validateStatus: () => true
+    });
+
+    const status = response.status;
+    if (status >= 300 && status < 400 && response.headers.location) {
+      if (options.responseType === 'stream') {
+        response.data?.destroy?.();
+      }
+      const nextHref = new URL(String(response.headers.location), current).href;
+      current = await assertSafeHttpsUrl(nextHref);
+      continue;
+    }
+
+    return response;
+  }
+
+  throw new UnsafeUrlError('重定向次数过多');
 }
 
 // ─── Batch tracker entry ─────────────────────────────────────────────
@@ -109,6 +190,13 @@ class DownloadManager {
     songInfo: any;
     type?: string;
   }): string {
+    if (this.tasks.size >= DOWNLOAD_URL_LIMITS.maxQueueTasks) {
+      throw new Error(`下载队列已满（最多 ${DOWNLOAD_URL_LIMITS.maxQueueTasks} 个任务）`);
+    }
+    if (!payload?.url || !isHttpsUrl(payload.url)) {
+      throw new Error('下载地址必须是 HTTPS');
+    }
+
     const taskId = crypto.randomUUID();
     const task: DownloadTask = {
       taskId,
@@ -137,14 +225,22 @@ class DownloadManager {
   }): { batchId: string; taskIds: string[] } {
     const batchId = crypto.randomUUID();
     const taskIds: string[] = [];
+    const items = payload?.items || [];
+
+    const room = DOWNLOAD_URL_LIMITS.maxQueueTasks - this.tasks.size;
+    if (room <= 0) {
+      throw new Error(`下载队列已满（最多 ${DOWNLOAD_URL_LIMITS.maxQueueTasks} 个任务）`);
+    }
+
+    const accepted = items.slice(0, room).filter((item) => item?.url && isHttpsUrl(item.url));
 
     this.batchTracker.set(batchId, {
-      total: payload.items.length,
+      total: accepted.length,
       finished: 0,
       success: 0
     });
 
-    for (const item of payload.items) {
+    for (const item of accepted) {
       const taskId = crypto.randomUUID();
       const task: DownloadTask = {
         taskId,
@@ -258,25 +354,26 @@ class DownloadManager {
       const songInfos = (configStore.get('downloadedSongs') || {}) as Record<string, any>;
 
       const entriesArray = Object.entries(songInfos);
-      const validEntriesPromises = await Promise.all(
-        entriesArray.map(async ([filePath, info]) => {
+      // 限并发 stat，避免完成列表过大时打爆主进程
+      const checks = await mapPool(
+        entriesArray,
+        DOWNLOAD_URL_LIMITS.completedStatConcurrency,
+        async ([filePath, info]) => {
           try {
-            const exists = await fs.promises
-              .access(filePath)
-              .then(() => true)
-              .catch(() => false);
-            return exists ? info : null;
+            const safe = resolveSafePath(filePath);
+            if (!safe) return null;
+            await fs.promises.access(safe);
+            return info;
           } catch {
             return null;
           }
-        })
+        }
       );
 
-      const validSongs = validEntriesPromises
+      const validSongs = checks
         .filter((song) => song !== null)
         .sort((a: any, b: any) => (b.downloadTime || 0) - (a.downloadTime || 0));
 
-      // Update store to remove stale entries
       const newSongInfos = validSongs.reduce(
         (acc: Record<string, any>, song: any) => {
           if (song && song.path) {
@@ -286,7 +383,14 @@ class DownloadManager {
         },
         {} as Record<string, any>
       );
-      configStore.set('downloadedSongs', newSongInfos);
+
+      // 仅当有失效项时才写 store，避免无意义整表重写
+      const prevKeys = Object.keys(songInfos);
+      const nextKeys = Object.keys(newSongInfos);
+      const dirty = prevKeys.length !== nextKeys.length || prevKeys.some((k) => !newSongInfos[k]);
+      if (dirty) {
+        configStore.set('downloadedSongs', newSongInfos);
+      }
 
       return validSongs;
     } catch (error) {
@@ -297,21 +401,49 @@ class DownloadManager {
 
   private async deleteCompleted(filePath: string): Promise<boolean> {
     try {
-      if (fs.existsSync(filePath)) {
+      if (typeof filePath !== 'string' || !filePath) {
+        return false;
+      }
+
+      const configStore = getStore();
+      const songInfos = (configStore.get('downloadedSongs') || {}) as Record<string, any>;
+
+      // 必须已在下载注册表中，禁止对任意路径 unlink
+      const registeredKey = Object.prototype.hasOwnProperty.call(songInfos, filePath)
+        ? filePath
+        : Object.keys(songInfos).find((key) => {
+            const info = songInfos[key];
+            return info?.path === filePath || key === filePath;
+          });
+
+      if (!registeredKey) {
+        console.warn('[download] delete-completed rejected: not in downloadedSongs', filePath);
+        return false;
+      }
+
+      const safePath = resolveSafePath(registeredKey) || resolveSafePath(filePath);
+      if (!safePath) {
+        console.warn('[download] delete-completed rejected: outside allowed roots', filePath);
+        return false;
+      }
+
+      if (fs.existsSync(safePath)) {
         try {
-          await fs.promises.unlink(filePath);
+          await fs.promises.unlink(safePath);
         } catch (error) {
           console.error('Error deleting file:', error);
+          return false;
         }
-
-        const configStore = getStore();
-        const songInfos = (configStore.get('downloadedSongs') || {}) as Record<string, any>;
-        delete songInfos[filePath];
-        configStore.set('downloadedSongs', songInfos);
-
-        return true;
       }
-      return false;
+
+      delete songInfos[registeredKey];
+      // 若 path 字段指向同一文件也清理
+      if (registeredKey !== filePath && songInfos[filePath]) {
+        delete songInfos[filePath];
+      }
+      configStore.set('downloadedSongs', songInfos);
+
+      return true;
     } catch (error) {
       console.error('Error deleting file:', error);
       return false;
@@ -328,12 +460,13 @@ class DownloadManager {
 
   private async getEmbeddedLyrics(filePath: string): Promise<string | null> {
     try {
-      if (!fs.existsSync(filePath)) return null;
+      const safePath = resolveSafePath(filePath);
+      if (!safePath || !fs.existsSync(safePath)) return null;
 
-      const ext = path.extname(filePath).toLowerCase();
+      const ext = path.extname(safePath).toLowerCase();
 
       if (ext === '.mp3') {
-        const tags = NodeID3.read(filePath);
+        const tags = NodeID3.read(safePath);
         if (tags && tags.unsynchronisedLyrics) {
           const uslt = tags.unsynchronisedLyrics as any;
           return uslt.text || (typeof uslt === 'string' ? uslt : null);
@@ -342,7 +475,7 @@ class DownloadManager {
       }
 
       if (ext === '.flac') {
-        const metadata = await mm.parseFile(filePath);
+        const metadata = await mm.parseFile(safePath);
         const native = metadata.native;
         // Look for LYRICS in vorbis comments
         for (const format of Object.keys(native)) {
@@ -367,6 +500,14 @@ class DownloadManager {
   private provideUrl(taskId: string, url: string): boolean {
     const task = this.tasks.get(taskId);
     if (!task) return false;
+
+    if (!url || !isHttpsUrl(url)) {
+      console.warn('[download] provide-url rejected non-HTTPS:', url);
+      task.state = 'error';
+      task.error = '下载地址必须是 HTTPS';
+      this.sendStateChange(task);
+      return false;
+    }
 
     task.url = url;
     if (task.state === 'queued' || task.state === 'paused') {
@@ -402,6 +543,9 @@ class DownloadManager {
     let writer: fs.WriteStream | null = null;
 
     try {
+      // 出站 SSRF 校验（含 DNS）
+      task.url = await assertSafeHttpsUrl(task.url);
+
       const configStore = getStore();
       const downloadPath =
         (configStore.get('set.downloadPath') as string) || app.getPath('downloads');
@@ -441,26 +585,18 @@ class DownloadManager {
         headers['Range'] = `bytes=${task.loaded}-`;
       }
 
-      // Start download
-      // 注意：axios 默认只接受 2xx，403/410 会直接抛错进入 catch，导致下方"直链过期重新解析"
-      // 分支永远走不到。这里放行 403/410，让过期直链能触发重新解析（尤其是重启后恢复队列时）。
-      const response = await axios({
-        url: task.url,
-        method: 'GET',
+      // 手动跟随重定向 + 每跳 URL 校验；放行 403/410 以触发直链重解析
+      const response = await httpsGetWithGuard(task.url, {
         responseType: 'stream',
         timeout: 30000,
         signal: controller.signal,
         headers,
-        validateStatus: (status) =>
-          (status >= 200 && status < 300) || status === 403 || status === 410
+        maxBytes: DOWNLOAD_URL_LIMITS.maxAudioBytes
       });
 
-      // Handle response status
       const status = response.status;
 
       if (status === 403 || status === 410) {
-        // URL expired, request re-resolution from renderer
-        // 排空未消费的错误响应流，避免连接悬挂
         response.data?.destroy?.();
         this.sendToRenderer('download:request-url', {
           taskId: task.taskId,
@@ -473,9 +609,13 @@ class DownloadManager {
         return;
       }
 
+      if (status < 200 || status >= 300) {
+        response.data?.destroy?.();
+        throw new Error(`下载失败 HTTP ${status}`);
+      }
+
       let appendMode = false;
       if (status === 206) {
-        // Partial content - resume mode
         appendMode = true;
         const contentRange = response.headers['content-range'];
         if (contentRange) {
@@ -485,46 +625,47 @@ class DownloadManager {
           }
         }
       } else {
-        // Full response (200) - start from beginning
         task.loaded = 0;
         const contentLength = response.headers['content-length'] as string;
         task.total = contentLength ? parseInt(contentLength, 10) : 0;
       }
 
-      // Create write stream
+      if (task.total > DOWNLOAD_URL_LIMITS.maxAudioBytes) {
+        response.data?.destroy?.();
+        throw new Error('文件超过大小限制');
+      }
+
       writer = fs.createWriteStream(task.tempFilePath, {
         flags: appendMode ? 'a' : 'w'
       });
 
-      // Track progress with throttling
-      response.data.on('data', (chunk: Buffer) => {
-        task.loaded += chunk.length;
-        if (task.total > 0) {
-          task.progress = Math.round((task.loaded / task.total) * 100);
-        }
-
-        // Throttle progress events to max 4/sec (250ms interval)
-        const now = Date.now();
-        const lastSent = this.progressThrottles.get(task.taskId) || 0;
-        if (now - lastSent >= 250) {
-          this.progressThrottles.set(task.taskId, now);
-          this.sendProgress(task);
+      // 进度 + 硬上限（pipeline 保证正确关闭流）
+      const progressTransform = new Transform({
+        transform: (chunk: Buffer, _enc, cb) => {
+          task.loaded += chunk.length;
+          if (task.loaded > DOWNLOAD_URL_LIMITS.maxAudioBytes) {
+            cb(new Error('文件超过大小限制'));
+            return;
+          }
+          if (task.total > 0) {
+            task.progress = Math.min(100, Math.round((task.loaded / task.total) * 100));
+          }
+          const now = Date.now();
+          const lastSent = this.progressThrottles.get(task.taskId) || 0;
+          if (now - lastSent >= 250) {
+            this.progressThrottles.set(task.taskId, now);
+            this.sendProgress(task);
+          }
+          cb(null, chunk);
         }
       });
 
-      // Wait for download to complete
-      await new Promise<void>((resolve, reject) => {
-        writer!.on('finish', () => resolve());
-        writer!.on('error', (error) => reject(error));
-        response.data.on('error', (error: Error) => reject(error));
-        response.data.pipe(writer!);
-      });
+      await pipeline(response.data, progressTransform, writer);
+      writer = null;
 
-      // Send final progress
       task.progress = 100;
       this.sendProgress(task);
 
-      // Finalize
       await this.finalizeDownload(task, sanitizedFilename, downloadPath);
     } catch (error: any) {
       if (axios.isCancel(error) || error?.name === 'AbortError' || error?.code === 'ERR_CANCELED') {
@@ -534,7 +675,8 @@ class DownloadManager {
 
       console.error(`Download error for task ${task.taskId}:`, error);
       task.state = 'error';
-      task.error = error.message || 'Download failed';
+      task.error =
+        error instanceof UnsafeUrlError ? error.message : error.message || 'Download failed';
       this.sendStateChange(task);
 
       // Track batch error
@@ -607,7 +749,7 @@ class DownloadManager {
       fileExtension = `.${task.type || 'mp3'}`;
     }
 
-    // Build final file path with dedup
+    // Build final file path with dedup（必须落在允许根内）
     let finalFilePath = path.join(downloadPath, `${sanitizedFilename}${fileExtension}`);
     let counter = 1;
     while (fs.existsSync(finalFilePath)) {
@@ -616,6 +758,12 @@ class DownloadManager {
       finalFilePath = `${base} (${counter})${ext}`;
       counter++;
     }
+
+    const safeFinal = resolveSafePath(finalFilePath);
+    if (!safeFinal) {
+      throw new Error('下载路径不在允许目录内');
+    }
+    finalFilePath = safeFinal;
 
     // Move temp to final
     fs.copyFileSync(task.tempFilePath, finalFilePath);
@@ -626,25 +774,38 @@ class DownloadManager {
     const lyricsContent = '';
     const lyricData = null;
 
-    // Download cover
+    // Download cover（HTTPS + 私网拒绝 + 体积上限；data URL 限长）
     let coverImageBuffer: Buffer | null = null;
     try {
       const picUrl = task.songInfo?.picUrl || task.songInfo?.al?.picUrl;
       if (picUrl && picUrl !== '/images/default_cover.png') {
-        if (picUrl.startsWith('data:')) {
-          const base64Match = picUrl.match(/^data:[^;]+;base64,(.+)$/);
-          if (base64Match) {
-            coverImageBuffer = Buffer.from(base64Match[1], 'base64');
+        if (typeof picUrl === 'string' && picUrl.startsWith('data:')) {
+          if (picUrl.length <= DOWNLOAD_URL_LIMITS.maxDataUrlChars) {
+            const base64Match = picUrl.match(/^data:image\/[a-zA-Z0-9+.-]+;base64,(.+)$/);
+            if (base64Match && base64Match[1].length <= DOWNLOAD_URL_LIMITS.maxCoverBytes) {
+              const buf = Buffer.from(base64Match[1], 'base64');
+              if (buf.length <= DOWNLOAD_URL_LIMITS.maxCoverBytes) {
+                coverImageBuffer = buf;
+              }
+            }
           }
-        } else {
-          const coverResponse = await axios({
-            url: picUrl.replace('http://', 'https://'),
-            method: 'GET',
+        } else if (typeof picUrl === 'string') {
+          const safeCoverUrl = await assertSafeCoverUrl(picUrl);
+          const coverResponse = await httpsGetWithGuard(safeCoverUrl, {
             responseType: 'arraybuffer',
-            timeout: 10000
+            timeout: 10000,
+            maxBytes: DOWNLOAD_URL_LIMITS.maxCoverBytes
           });
 
+          if (coverResponse.status < 200 || coverResponse.status >= 300) {
+            throw new Error(`封面 HTTP ${coverResponse.status}`);
+          }
+
           const originalCoverBuffer = Buffer.from(coverResponse.data);
+          if (originalCoverBuffer.length > DOWNLOAD_URL_LIMITS.maxCoverBytes) {
+            throw new Error('封面超过大小限制');
+          }
+
           const TWO_MB = 2 * 1024 * 1024;
 
           if (originalCoverBuffer.length > TWO_MB) {

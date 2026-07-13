@@ -661,7 +661,7 @@ const getLocalFilePath = (path: string) => {
 };
 
 const openDirectory = (path: string) => {
-  window.electron.ipcRenderer.send('open-directory', path);
+  window.api.openDirectory(path);
 };
 
 // ── Play music ──────────────────────────────────────────────────────────────
@@ -669,7 +669,7 @@ const openDirectory = (path: string) => {
 const handlePlayMusic = async (item: any) => {
   try {
     const filePath = item.path || item.filePath;
-    const fileExists = await window.electron.ipcRenderer.invoke('check-file-exists', filePath);
+    const fileExists = await window.api.checkFileExists(filePath);
 
     if (!fileExists) {
       message.error(t('download.delete.fileNotFound', { name: item.displayName || item.filename }));
@@ -869,7 +869,7 @@ const formatNamePreview = computed(() => {
 });
 
 const selectDownloadPath = async () => {
-  const result = await window.electron.ipcRenderer.invoke('select-directory');
+  const result = await window.api.selectDirectory();
   if (result && !result.canceled && result.filePaths.length > 0) {
     downloadSettings.value.path = result.filePaths[0];
   }
@@ -877,33 +877,19 @@ const selectDownloadPath = async () => {
 
 const openDownloadPath = () => {
   if (downloadSettings.value.path) {
-    window.electron.ipcRenderer.send('open-directory', downloadSettings.value.path);
+    window.api.openDirectory(downloadSettings.value.path);
   } else {
     message.warning(t('download.settingsPanel.noPathSelected'));
   }
 };
 
 const saveDownloadSettings = () => {
-  window.electron.ipcRenderer.send(
-    'set-store-value',
-    'set.downloadPath',
-    downloadSettings.value.path
-  );
-  window.electron.ipcRenderer.send(
-    'set-store-value',
-    'set.downloadNameFormat',
-    downloadSettings.value.nameFormat
-  );
-  window.electron.ipcRenderer.send(
-    'set-store-value',
-    'set.downloadSeparator',
-    downloadSettings.value.separator
-  );
-  window.electron.ipcRenderer.send(
-    'set-store-value',
-    'set.downloadSaveLyric',
-    downloadSettings.value.saveLyric
-  );
+  window.api.setSettings({
+    downloadPath: downloadSettings.value.path,
+    downloadNameFormat: downloadSettings.value.nameFormat,
+    downloadSeparator: downloadSettings.value.separator,
+    downloadSaveLyric: downloadSettings.value.saveLyric
+  });
 
   if (tabName.value === 'downloaded') {
     downloadStore.refreshCompleted();
@@ -916,22 +902,14 @@ const saveDownloadSettings = () => {
 };
 
 const initDownloadSettings = async () => {
-  const path = window.electron.ipcRenderer.sendSync('get-store-value', 'set.downloadPath');
-  const nameFormat = window.electron.ipcRenderer.sendSync(
-    'get-store-value',
-    'set.downloadNameFormat'
-  );
-  const separator = window.electron.ipcRenderer.sendSync(
-    'get-store-value',
-    'set.downloadSeparator'
-  );
-  const saveLyric = window.electron.ipcRenderer.sendSync(
-    'get-store-value',
-    'set.downloadSaveLyric'
-  );
+  const settings = window.api.getSettings() || {};
+  const path = settings.downloadPath as string | undefined;
+  const nameFormat = settings.downloadNameFormat as string | undefined;
+  const separator = settings.downloadSeparator as string | undefined;
+  const saveLyric = settings.downloadSaveLyric as boolean | undefined;
 
   downloadSettings.value = {
-    path: path || (await window.electron.ipcRenderer.invoke('get-downloads-path')),
+    path: path || (await window.api.getDownloadsPath()),
     nameFormat: nameFormat || '{songName} - {artistName}',
     separator: separator || ' - ',
     saveLyric: saveLyric || false

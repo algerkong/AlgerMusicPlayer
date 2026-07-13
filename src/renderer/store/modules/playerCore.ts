@@ -44,7 +44,7 @@ export const usePlayerCoreStore = defineStore(
     const setIsPlay = (value: boolean) => {
       isPlay.value = value;
       play.value = value;
-      window.electron?.ipcRenderer.send('update-play-state', value);
+      window.api?.updatePlayState(value);
     };
 
     /**

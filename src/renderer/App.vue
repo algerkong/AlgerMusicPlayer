@@ -25,7 +25,7 @@ import { usePlayerCoreStore } from '@/store/modules/playerCore';
 import { useSettingsStore } from '@/store/modules/settings';
 import { useUserStore } from '@/store/modules/user';
 import { isElectron, isLyricWindow } from '@/utils';
-import { checkLoginStatus } from '@/utils/auth';
+import { checkLoginStatus, purgeCredentialStorage } from '@/utils/auth';
 
 import { initAudioListeners, initMusicHook } from './hooks/MusicHook';
 import { audioService } from './services/audioService';
@@ -70,11 +70,14 @@ const handleSetLanguage = (value: string) => {
 };
 
 if (!isLyricWindow.value) {
+  // 清除历史 localStorage token，凭据只在主进程
+  purgeCredentialStorage();
+
   settingsStore.initializeSettings();
   settingsStore.initializeTheme();
   settingsStore.initializeSystemFonts();
 
-  // 初始化登录状态 - 从 localStorage 恢复用户信息和登录类型
+  // 初始化登录状态 - 仅恢复非敏感的 user 展示缓存
   const loginInfo = checkLoginStatus();
   if (loginInfo.isLoggedIn) {
     if (loginInfo.user && !userStore.user) {

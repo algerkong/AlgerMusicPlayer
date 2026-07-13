@@ -103,9 +103,7 @@ export default {
     unlimitedDownloadDesc:
       '활성화하면 음악을 무제한으로 다운로드합니다 (다운로드 실패가 발생할 수 있음), 기본 제한 300곡',
     downloadPath: '다운로드 디렉토리',
-    downloadPathDesc: '음악 파일의 다운로드 위치 선택',
-    remoteControl: '원격 제어',
-    remoteControlDesc: '원격 제어 기능 설정'
+    downloadPathDesc: '음악 파일의 다운로드 위치 선택'
   },
   network: {
     proxy: '프록시 설정',
@@ -406,16 +404,6 @@ export default {
       disableAll: '모든 단축키가 비활성화되었습니다. 저장을 잊지 마세요',
       enableAll: '모든 단축키가 활성화되었습니다. 저장을 잊지 마세요'
     }
-  },
-  remoteControl: {
-    title: '원격 제어',
-    enable: '원격 제어 활성화',
-    port: '서비스 포트',
-    allowedIps: '허용된 IP 주소',
-    addIp: 'IP 추가',
-    emptyListHint: '빈 목록은 모든 IP 액세스를 허용함을 의미합니다',
-    saveSuccess: '원격 제어 설정이 저장되었습니다',
-    accessInfo: '원격 제어 액세스 주소:'
   },
   musicSource: {
     title: '온라인 음원 세션',

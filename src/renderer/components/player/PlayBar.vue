@@ -58,7 +58,7 @@
     <div class="music-content">
       <div class="music-content-title flex items-center">
         <n-ellipsis class="text-ellipsis" line-clamp="1">
-          <p v-html="playMusic?.name || ''"></p>
+          <p>{{ playMusic?.name || '' }}</p>
         </n-ellipsis>
       </div>
       <div class="music-content-name">
