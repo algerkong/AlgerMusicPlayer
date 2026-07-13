@@ -72,7 +72,6 @@ interface API {
 
   // 快捷键
   getShortcutsConfig: () => Promise<any>;
-  saveShortcuts: (config: unknown) => Promise<any>;
   disableShortcuts: () => void;
   enableShortcuts: () => void;
   onGlobalShortcut: (callback: (action: string) => void) => () => void;

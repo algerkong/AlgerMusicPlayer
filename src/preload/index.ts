@@ -119,9 +119,8 @@ const api = {
   onMprisPlay: (callback: () => void) => onChannel('mpris-play', callback),
   onMprisPause: (callback: () => void) => onChannel('mpris-pause', callback),
 
-  // —— 快捷键 ——
+  // —— 快捷键（仅默认配置；无自定义设置 UI）——
   getShortcutsConfig: () => ipcRenderer.invoke('shortcuts:get-config'),
-  saveShortcuts: (config: unknown) => ipcRenderer.invoke('shortcuts:save', config),
   disableShortcuts: () => ipcRenderer.send('disable-shortcuts'),
   enableShortcuts: () => ipcRenderer.send('enable-shortcuts'),
   onGlobalShortcut: (callback: (action: string) => void) => onChannel('global-shortcut', callback),

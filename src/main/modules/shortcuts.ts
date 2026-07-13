@@ -2,17 +2,13 @@ import { type BrowserWindow, globalShortcut, ipcMain } from 'electron';
 
 import {
   defaultShortcuts,
-  getReservedAccelerators,
-  getShortcutConflicts,
   hasShortcutAction,
   isModifierOnlyShortcut,
   normalizeShortcutAccelerator,
   normalizeShortcutsConfig,
   type ShortcutAction,
   shortcutActionOrder,
-  type ShortcutPlatform,
-  type ShortcutsConfig,
-  type ShortcutScope
+  type ShortcutsConfig
 } from '../../shared/shortcuts';
 import { getStore } from './config';
 
@@ -29,44 +25,11 @@ type ShortcutRegistrationResult = {
   failed: ShortcutRegistrationFailure[];
 };
 
-type ShortcutValidationReason = 'invalid' | 'conflict' | 'reserved';
-
-type ShortcutValidationIssue = {
-  action: ShortcutAction;
-  key: string;
-  scope: ShortcutScope;
-  reason: ShortcutValidationReason;
-  conflictWith?: ShortcutAction;
-};
-
-type ShortcutValidationResult = {
-  shortcuts: ShortcutsConfig;
-  hasBlockingIssue: boolean;
-  issues: ShortcutValidationIssue[];
-};
-
-type ShortcutSaveResult = {
-  ok: boolean;
-  validation: ShortcutValidationResult;
-  registration: ShortcutRegistrationResult;
-};
-
 let mainWindowRef: BrowserWindow | null = null;
 let shortcutsEnabled = true;
 let shortcutIpcReady = false;
 
 const managedGlobalShortcuts = new Map<ShortcutAction, string>();
-
-function currentPlatform(): ShortcutPlatform {
-  if (
-    process.platform === 'darwin' ||
-    process.platform === 'win32' ||
-    process.platform === 'linux'
-  ) {
-    return process.platform;
-  }
-  return 'linux';
-}
 
 function hasAvailableMainWindow(): boolean {
   return Boolean(mainWindowRef && !mainWindowRef.isDestroyed());
@@ -214,120 +177,10 @@ function registerManagedGlobalShortcuts(shortcuts: ShortcutsConfig): ShortcutReg
   };
 }
 
-function validateShortcuts(rawShortcuts: unknown): ShortcutValidationResult {
-  const shortcuts = normalizeShortcutsConfig(rawShortcuts);
-  const issues: ShortcutValidationIssue[] = [];
-  const issueKeys = new Set<string>();
-
-  const rawShortcutMap =
-    rawShortcuts && typeof rawShortcuts === 'object'
-      ? (rawShortcuts as Record<string, unknown>)
-      : {};
-
-  const pushIssue = (issue: ShortcutValidationIssue) => {
-    const issueKey = `${issue.reason}:${issue.action}:${issue.scope}:${issue.key}:${issue.conflictWith ?? ''}`;
-    if (issueKeys.has(issueKey)) {
-      return;
-    }
-    issueKeys.add(issueKey);
-    issues.push(issue);
-  };
-
-  shortcutActionOrder.forEach((action) => {
-    const rawActionConfig = rawShortcutMap[action];
-    if (!rawActionConfig) {
-      return;
-    }
-
-    const rawKey =
-      typeof rawActionConfig === 'string'
-        ? rawActionConfig
-        : typeof rawActionConfig === 'object' && rawActionConfig !== null
-          ? (rawActionConfig as { key?: unknown }).key
-          : null;
-
-    if (typeof rawKey !== 'string') {
-      return;
-    }
-
-    const normalizedKey = normalizeShortcutAccelerator(rawKey);
-    if (!normalizedKey || isModifierOnlyShortcut(rawKey)) {
-      pushIssue({
-        action,
-        key: rawKey,
-        scope: shortcuts[action].scope,
-        reason: 'invalid'
-      });
-    }
-  });
-
-  const conflicts = getShortcutConflicts(shortcuts);
-  conflicts.forEach((conflict) => {
-    conflict.actions.forEach((action, index) => {
-      const conflictWith = conflict.actions[(index + 1) % conflict.actions.length];
-      pushIssue({
-        action,
-        key: conflict.key,
-        scope: conflict.scope,
-        reason: 'conflict',
-        conflictWith
-      });
-    });
-  });
-
-  const reservedAccelerators = new Set(getReservedAccelerators(currentPlatform()));
-  shortcutActionOrder.forEach((action) => {
-    const config = shortcuts[action];
-    if (!config.enabled || config.scope !== 'global') {
-      return;
-    }
-
-    const accelerator = normalizeShortcutAccelerator(config.key);
-    if (accelerator && reservedAccelerators.has(accelerator)) {
-      pushIssue({
-        action,
-        key: accelerator,
-        scope: config.scope,
-        reason: 'reserved'
-      });
-    }
-  });
-
-  return {
-    shortcuts,
-    hasBlockingIssue: issues.length > 0,
-    issues
-  };
-}
-
 function applyShortcuts(shortcuts: ShortcutsConfig): ShortcutRegistrationResult {
   const registration = registerManagedGlobalShortcuts(shortcuts);
   emitShortcutsChanged(shortcuts, registration);
   return registration;
-}
-
-function saveShortcuts(rawShortcuts: unknown): ShortcutSaveResult {
-  const validation = validateShortcuts(rawShortcuts);
-
-  if (validation.hasBlockingIssue) {
-    return {
-      ok: false,
-      validation,
-      registration: {
-        success: false,
-        failed: []
-      }
-    };
-  }
-
-  persistShortcuts(validation.shortcuts);
-  const registration = applyShortcuts(validation.shortcuts);
-
-  return {
-    ok: true,
-    validation,
-    registration
-  };
 }
 
 function setupShortcutIpcHandlers() {
@@ -352,20 +205,9 @@ function setupShortcutIpcHandlers() {
     applyShortcuts(shortcuts);
   });
 
-  ipcMain.on('update-shortcuts', (_, shortcutsConfig: unknown) => {
-    saveShortcuts(shortcutsConfig);
-  });
-
+  // 无自定义设置 UI：仅读取配置供应用内快捷键使用
   ipcMain.handle('shortcuts:get-config', () => {
     return getStoredShortcuts();
-  });
-
-  ipcMain.handle('shortcuts:validate', (_, shortcutsConfig: unknown) => {
-    return validateShortcuts(shortcutsConfig);
-  });
-
-  ipcMain.handle('shortcuts:save', (_, shortcutsConfig: unknown) => {
-    return saveShortcuts(shortcutsConfig);
   });
 }
 

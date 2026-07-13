@@ -60,17 +60,7 @@ export default {
     unFavorite: '已取消收藏{name}',
     miniPlayBar: '迷你播放栏',
     playbackSpeed: '播放速度',
-    advancedControls: '更多设置',
-    intelligenceMode: {
-      title: '心动模式',
-      needCookieLogin: '请使用 Cookie 方式登录后使用心动模式',
-      noFavoritePlaylist: '未找到我喜欢的音乐歌单',
-      noLikedSongs: '您还没有喜欢的歌曲',
-      loading: '正在加载心动模式',
-      success: '已加载 {count} 首歌曲',
-      failed: '获取心动模式列表失败',
-      error: '心动模式播放出错'
-    }
+    advancedControls: '更多设置'
   },
   eq: {
     title: '均衡器',
@@ -100,28 +90,6 @@ export default {
   settings: {
     title: '播放设置',
     playbackSpeed: '播放速度'
-  },
-  // 定时关闭功能相关
-  sleepTimer: {
-    title: '定时关闭',
-    cancel: '取消定时',
-    timeMode: '按时间关闭',
-    songsMode: '按歌曲数关闭',
-    playlistEnd: '播放完列表后关闭',
-    afterPlaylist: '播放完列表后关闭',
-    activeUntilEnd: '播放至列表结束',
-    minutes: '分钟',
-    hours: '小时',
-    songs: '首歌',
-    set: '设置',
-    timerSetSuccess: '已设置{minutes}分钟后关闭',
-    songsSetSuccess: '已设置播放{songs}首歌后关闭',
-    playlistEndSetSuccess: '已设置播放完列表后关闭',
-    timerCancelled: '已取消定时关闭',
-    timerEnded: '定时关闭已触发',
-    playbackStopped: '音乐播放已停止',
-    minutesRemaining: '剩余{minutes}分钟',
-    songsRemaining: '剩余{count}首歌'
   },
   playList: {
     clearAll: '清空播放列表',

@@ -226,7 +226,6 @@ export const usePlaylistStore = defineStore(
     const setPlayList = (
       list: SongResult[],
       keepIndex: boolean = false,
-      _fromIntelligenceMode: boolean = false,
       // preserveOrder=true 表示"就地编辑当前队列"（下一首播放/移除单曲），
       // 此时即使处于随机模式也不应重新洗牌，保持调用方给定的顺序。
       preserveOrder: boolean = false
@@ -331,7 +330,7 @@ export const usePlaylistStore = defineStore(
       list.splice(insertIndex, 0, song);
 
       // preserveOrder=true：随机模式下也不重新洗牌，确保"下一首播放"位置生效
-      setPlayList(list, true, false, true);
+      setPlayList(list, true, true);
     };
 
     /**
@@ -352,7 +351,7 @@ export const usePlaylistStore = defineStore(
       const newPlayList = [...playList.value];
       newPlayList.splice(index, 1);
       // preserveOrder=true：随机模式下移除单曲不重新洗牌，仅从队列中删除
-      setPlayList(newPlayList, false, false, true);
+      setPlayList(newPlayList, false, true);
     };
 
     /**
