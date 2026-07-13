@@ -84,10 +84,10 @@
 </template>
 
 <script setup lang="ts">
-import { marked } from 'marked';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import { renderSafeMarkdown } from '@/utils/safeMarkdown';
 import { checkUpdate, getProxyNodes, UpdateResult } from '@/utils/update';
 
 import config from '../../../../package.json';
@@ -96,12 +96,6 @@ const { t } = useI18n();
 
 // 缓存键：记录用户点击"稍后提醒"的时间
 const REMIND_LATER_KEY = 'update_remind_later_timestamp';
-
-// 配置 marked
-marked.setOptions({
-  breaks: true,
-  gfm: true
-});
 
 const showModal = ref(false);
 
@@ -112,15 +106,10 @@ const updateInfo = ref<UpdateResult>({
   releaseInfo: null
 });
 
-// 解析 Markdown
+// 解析 Markdown（经 DOMPurify 消毒）
 const parsedReleaseNotes = computed(() => {
   if (!updateInfo.value.releaseInfo?.body) return '';
-  try {
-    return marked.parse(updateInfo.value.releaseInfo.body);
-  } catch (error) {
-    console.error('Error parsing markdown:', error);
-    return updateInfo.value.releaseInfo.body;
-  }
+  return renderSafeMarkdown(updateInfo.value.releaseInfo.body);
 });
 
 // 检查是否应该显示更新提醒

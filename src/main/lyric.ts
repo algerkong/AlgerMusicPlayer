@@ -169,6 +169,7 @@ const createWin = () => {
     titleBarStyle: 'hidden',
     titleBarOverlay: false,
     // 添加跨屏幕支持选项
+    // sandbox 暂关：与主窗一致，避免歌词窗 preload/拖拽穿透路径回归；见 window.ts 注释
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,

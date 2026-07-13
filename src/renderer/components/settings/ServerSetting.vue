@@ -128,8 +128,8 @@ const localIpAddresses = ref<string[]>([]);
 
 // 获取本地IP地址
 const getLocalIpAddresses = () => {
-  if (window.electron) {
-    window.electron.ipcRenderer.invoke('get-local-ip-addresses').then((ips: string[]) => {
+  if (window.api) {
+    window.api.getLocalIpAddresses().then((ips: string[]) => {
       localIpAddresses.value = ips;
     });
   }
@@ -152,19 +152,16 @@ const saveConfig = () => {
     (ip) => ip.trim() !== ''
   );
 
-  if (window.electron) {
-    window.electron.ipcRenderer.send(
-      'update-remote-control-config',
-      cloneDeep(remoteControlConfig.value)
-    );
+  if (window.api) {
+    window.api.updateRemoteControlConfig(cloneDeep(remoteControlConfig.value));
     message.success(t('settings.remoteControl.saveSuccess'));
   }
 };
 
 // 重置配置
 const resetConfig = () => {
-  if (window.electron) {
-    window.electron.ipcRenderer.invoke('get-remote-control-config').then((config) => {
+  if (window.api) {
+    window.api.getRemoteControlConfig().then((config) => {
       if (config) {
         remoteControlConfig.value = config;
       } else {
@@ -176,9 +173,9 @@ const resetConfig = () => {
 
 // 组件挂载时，获取当前配置
 onMounted(async () => {
-  if (window.electron) {
+  if (window.api) {
     try {
-      const config = await window.electron.ipcRenderer.invoke('get-remote-control-config');
+      const config = await window.api.getRemoteControlConfig();
       if (config) {
         remoteControlConfig.value = config;
       }

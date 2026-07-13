@@ -26,7 +26,7 @@ let appShortcuts: ShortcutsConfig = normalizeShortcutsConfig(null);
 let appShortcutsSuspended = false;
 let appShortcutsInitialized = false;
 
-const onGlobalShortcut = (_event: unknown, action: string) => {
+const onGlobalShortcut = (action: string) => {
   if (!hasShortcutAction(action)) {
     return;
   }
@@ -34,15 +34,17 @@ const onGlobalShortcut = (_event: unknown, action: string) => {
   void handleShortcutAction(action);
 };
 
-const onUpdateAppShortcuts = (_event: unknown, shortcuts: unknown) => {
+const onUpdateAppShortcuts = (shortcuts: unknown) => {
   updateAppShortcuts(shortcuts);
 };
 
-const onMprisSeekOrSetPosition = (_event: unknown, position: number) => {
+const onMprisSeekOrSetPosition = (position: number) => {
   if (audioService) {
     audioService.seek(position);
   }
 };
+
+const shortcutUnsubscribers: Array<() => void> = [];
 
 const onMprisPlay = async () => {
   const playerStore = usePlayerStore();
@@ -211,14 +213,16 @@ export function initAppShortcuts() {
 
   appShortcutsInitialized = true;
 
-  window.electron.ipcRenderer.on('global-shortcut', onGlobalShortcut);
-  window.electron.ipcRenderer.on('update-app-shortcuts', onUpdateAppShortcuts);
-  window.electron.ipcRenderer.on('mpris-seek', onMprisSeekOrSetPosition);
-  window.electron.ipcRenderer.on('mpris-set-position', onMprisSeekOrSetPosition);
-  window.electron.ipcRenderer.on('mpris-play', onMprisPlay);
-  window.electron.ipcRenderer.on('mpris-pause', onMprisPause);
+  shortcutUnsubscribers.push(
+    window.api.onGlobalShortcut(onGlobalShortcut),
+    window.api.onUpdateAppShortcuts(onUpdateAppShortcuts),
+    window.api.onMprisSeek(onMprisSeekOrSetPosition),
+    window.api.onMprisSetPosition(onMprisSeekOrSetPosition),
+    window.api.onMprisPlay(onMprisPlay),
+    window.api.onMprisPause(onMprisPause)
+  );
 
-  const storedShortcuts = window.electron.ipcRenderer.sendSync('get-store-value', 'shortcuts');
+  const storedShortcuts = window.api.getStoreValue('shortcuts');
   updateAppShortcuts(storedShortcuts);
 
   document.addEventListener('keydown', handleKeyDown);
@@ -234,12 +238,10 @@ export function cleanupAppShortcuts() {
 
   appShortcutsInitialized = false;
 
-  window.electron.ipcRenderer.removeListener('global-shortcut', onGlobalShortcut);
-  window.electron.ipcRenderer.removeListener('update-app-shortcuts', onUpdateAppShortcuts);
-  window.electron.ipcRenderer.removeListener('mpris-seek', onMprisSeekOrSetPosition);
-  window.electron.ipcRenderer.removeListener('mpris-set-position', onMprisSeekOrSetPosition);
-  window.electron.ipcRenderer.removeListener('mpris-play', onMprisPlay);
-  window.electron.ipcRenderer.removeListener('mpris-pause', onMprisPause);
+  while (shortcutUnsubscribers.length) {
+    const unsub = shortcutUnsubscribers.pop();
+    unsub?.();
+  }
 
   document.removeEventListener('keydown', handleKeyDown);
 }

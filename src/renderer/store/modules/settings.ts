@@ -36,7 +36,7 @@ export const useSettingsStore = defineStore('settings', () => {
     };
 
     if (isElectron) {
-      window.electron.ipcRenderer.send('set-store-value', 'set', cloneDeep(mergedData));
+      window.api.setStoreValue('set', cloneDeep(mergedData));
     } else {
       localStorage.setItem('appSettings', JSON.stringify(cloneDeep(mergedData)));
     }
@@ -47,7 +47,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const getInitialSettings = () => {
     // 从存储中获取保存的设置
     const savedSettings = isElectron
-      ? window.electron.ipcRenderer.sendSync('get-store-value', 'set')
+      ? window.api.getStoreValue('set')
       : JSON.parse(localStorage.getItem('appSettings') || '{}');
 
     // 自定义合并策略：如果是数组，直接使用源数组（覆盖默认值）
@@ -122,7 +122,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const setLanguage = (language: string) => {
     setSetData({ language });
     if (isElectron) {
-      window.electron.ipcRenderer.send('change-language', language);
+      window.api.changeLanguage(language);
     }
   };
 
@@ -145,7 +145,7 @@ export const useSettingsStore = defineStore('settings', () => {
     if (systemFonts.value.length > 1) return;
 
     try {
-      const fonts = await window.api.invoke('get-system-fonts');
+      const fonts = await window.api.getSystemFonts();
       setSystemFonts(fonts);
     } catch (error) {
       console.error('获取系统字体失败:', error);

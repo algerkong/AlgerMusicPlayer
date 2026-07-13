@@ -23,7 +23,9 @@ process.on('unhandledRejection', (reason) => {
 
 // 必须在 app.whenReady() 之前注册自定义协议为特权协议，
 // 否则 http(s) 页面（dev server、生产环境的 file://）无法把 local:// 当成
-// 安全/可 fetch/可流式的资源加载，会触发 CORS 拦截或 net::ERR_UNKNOWN_URL_SCHEME
+// 安全/可 fetch/可流式的资源加载，会触发 CORS 拦截或 net::ERR_UNKNOWN_URL_SCHEME。
+// bypassCSP：仅作用于 local:// 资源加载，便于音频流式播放；页面侧仍应避免不可信 v-html。
+// 后续若加严 CSP，需同步验证 local 媒体是否仍可播。
 protocol.registerSchemesAsPrivileged([
   {
     scheme: 'local',

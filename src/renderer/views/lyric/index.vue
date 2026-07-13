@@ -18,7 +18,7 @@
             <i class="ri-add-line"></i>
           </div>
         </n-button-group>
-        <div v-html="staticData.playMusic.name"></div>
+        <div>{{ staticData.playMusic.name }}</div>
       </div>
       <!-- 添加播放控制按钮 -->
       <div class="play-controls">
@@ -227,7 +227,6 @@ import { getActiveLineWordStyle, getInactiveLineWordStyle } from '@/utils/lyricW
 defineOptions({
   name: 'Lyric'
 });
-const windowData = window as any;
 const containerRef = ref<HTMLElement | null>(null);
 const containerHeight = ref(0);
 const lineHeight = ref(60);
@@ -360,7 +359,7 @@ const scheduleLockedControlsHide = () => {
     hideControlsTimer = null;
     if (lyricSetting.value.isLock) {
       isHovering.value = false;
-      windowData.electron.ipcRenderer.send('set-ignore-mouse', true);
+      window.api.setIgnoreMouse(true);
     }
   }, LOCKED_CONTROLS_HIDE_DELAY);
 };
@@ -369,7 +368,7 @@ const showLockedControls = () => {
   if (!lyricSetting.value.isLock) return;
   if (!isHovering.value) {
     isHovering.value = true;
-    windowData.electron.ipcRenderer.send('set-ignore-mouse', false);
+    window.api.setIgnoreMouse(false);
   }
   scheduleLockedControlsHide();
 };
@@ -384,9 +383,9 @@ const handleLockedMouseMove = () => {
 const handleMouseEnter = () => {
   if (lyricSetting.value.isLock) {
     isHovering.value = true;
-    windowData.electron.ipcRenderer.send('set-ignore-mouse', true);
+    window.api.setIgnoreMouse(true);
   } else {
-    windowData.electron.ipcRenderer.send('set-ignore-mouse', false);
+    window.api.setIgnoreMouse(false);
   }
 };
 
@@ -394,7 +393,7 @@ const handleMouseEnter = () => {
 const handleMouseLeave = () => {
   if (!lyricSetting.value.isLock) return;
   isHovering.value = false;
-  windowData.electron.ipcRenderer.send('set-ignore-mouse', false);
+  window.api.setIgnoreMouse(false);
 
   // 强制重置背景色
   const lyricWindow = document.querySelector('.lyric-window') as HTMLElement;
@@ -417,7 +416,7 @@ watch(
       // 锁定时自动关闭主题色面板
       showThemeColorPanel.value = false;
     }
-    windowData.electron.ipcRenderer.send('set-lyric-lock-state', newLock);
+    window.api.setLyricLockState(newLock);
   }
 );
 
@@ -753,7 +752,7 @@ onMounted(() => {
   window.addEventListener('resize', updateContainerHeight);
 
   // 监听歌词数据（保存移除函数，卸载时解绑，避免窗口复用/HMR 时监听器叠加）
-  const disposeReceiveLyric = windowData.electron.ipcRenderer.on('receive-lyric', (_, data) => {
+  removeReceiveLyricListener = window.api.onReceiveLyric((data) => {
     try {
       const parsedData = JSON.parse(data);
       handleDataUpdate(parsedData);
@@ -761,33 +760,27 @@ onMounted(() => {
       console.error('Error parsing lyric data:', error);
     }
   });
-  if (typeof disposeReceiveLyric === 'function') {
-    removeReceiveLyricListener = disposeReceiveLyric;
-  }
 
   // 通知主窗口歌词窗口已就绪，请求发送完整歌词数据
-  windowData.electron.ipcRenderer.send('lyric-ready');
+  window.api.lyricReady();
 
-  removeMousePresenceListener = window.ipcRenderer.on(
-    'lyric-mouse-presence',
-    (isInside: boolean) => {
-      if (lyricSetting.value.isLock) {
-        if (isInside) {
-          // 进入窗口：显示锁图标并启动空闲淡出定时器（#606）
-          showLockedControls();
-        } else {
-          // 离开窗口：立即隐藏并恢复点击穿透
-          clearHideTimer();
-          isHovering.value = false;
-          windowData.electron.ipcRenderer.send('set-ignore-mouse', true);
-        }
+  removeMousePresenceListener = window.api.onLyricMousePresence((isInside: boolean) => {
+    if (lyricSetting.value.isLock) {
+      if (isInside) {
+        // 进入窗口：显示锁图标并启动空闲淡出定时器（#606）
+        showLockedControls();
       } else {
-        isHovering.value = isInside;
+        // 离开窗口：立即隐藏并恢复点击穿透
+        clearHideTimer();
+        isHovering.value = false;
+        window.api.setIgnoreMouse(true);
       }
+    } else {
+      isHovering.value = isInside;
     }
-  );
+  });
 
-  windowData.electron.ipcRenderer.send('set-lyric-lock-state', lyricSetting.value.isLock);
+  window.api.setLyricLockState(lyricSetting.value.isLock);
 });
 
 onUnmounted(() => {
@@ -952,16 +945,16 @@ const initializeThemeColor = () => {
 
 // const handleTop = () => {
 //   lyricSetting.value.isTop = !lyricSetting.value.isTop;
-//   windowData.electron.ipcRenderer.send('top-lyric', lyricSetting.value.isTop);
+//   window.api... top-lyric
 // };
 
 const handleLock = () => {
   lyricSetting.value.isLock = !lyricSetting.value.isLock;
-  windowData.electron.ipcRenderer.send('set-ignore-mouse', lyricSetting.value.isLock);
+  window.api.setIgnoreMouse(lyricSetting.value.isLock);
 };
 
 const handleClose = () => {
-  windowData.electron.ipcRenderer.send('close-lyric');
+  window.api.closeLyric();
 };
 
 const cycleDisplayMode = () => {
@@ -1039,7 +1032,7 @@ const handleMouseDown = (e: MouseEvent) => {
   lastMoveTime.value = performance.now();
 
   // 发送拖动开始信号到主进程
-  windowData.electron.ipcRenderer.send('lyric-drag-start');
+  window.api.lyricDragStart();
 
   // 添加全局鼠标事件监听
   const handleMouseMove = (e: MouseEvent) => {
@@ -1056,7 +1049,7 @@ const handleMouseDown = (e: MouseEvent) => {
     // 只有在实际移动时才发送事件
     if (Math.abs(deltaX) > 0 || Math.abs(deltaY) > 0) {
       // 发送移动事件到主进程
-      windowData.electron.ipcRenderer.send('lyric-drag-move', { deltaX, deltaY });
+      window.api.lyricDragMove({ deltaX, deltaY });
       startPosition.value = { x: e.screenX, y: e.screenY };
     }
   };
@@ -1066,7 +1059,7 @@ const handleMouseDown = (e: MouseEvent) => {
     isDragging.value = false;
 
     // 发送拖动结束信号到主进程
-    windowData.electron.ipcRenderer.send('lyric-drag-end');
+    window.api.lyricDragEnd();
 
     // 移除事件监听
     document.removeEventListener('mousemove', handleMouseMove);
@@ -1092,12 +1085,12 @@ onMounted(() => {
   if (lyricLock) {
     lyricLock.onmouseenter = () => {
       if (lyricSetting.value.isLock) {
-        windowData.electron.ipcRenderer.send('set-ignore-mouse', false);
+        window.api.setIgnoreMouse(false);
       }
     };
     lyricLock.onmouseleave = () => {
       if (lyricSetting.value.isLock) {
-        windowData.electron.ipcRenderer.send('set-ignore-mouse', true);
+        window.api.setIgnoreMouse(true);
       }
     };
   }
@@ -1111,15 +1104,15 @@ onMounted(() => {
 
 // 添加播放控制相关的函数
 const handlePlayPause = () => {
-  windowData.electron.ipcRenderer.send('control-back', 'playpause');
+  window.api.controlBack('playpause');
 };
 
 const handlePrev = () => {
-  windowData.electron.ipcRenderer.send('control-back', 'prev');
+  window.api.controlBack('prev');
 };
 
 const handleNext = () => {
-  windowData.electron.ipcRenderer.send('control-back', 'next');
+  window.api.controlBack('next');
 };
 </script>
 

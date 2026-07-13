@@ -101,19 +101,17 @@
 </template>
 
 <script setup lang="ts">
-import { marked } from 'marked';
 import { computed, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { useSettingsStore } from '@/store/modules/settings';
+import { renderSafeMarkdown } from '@/utils/safeMarkdown';
 
 import {
   APP_UPDATE_STATUS,
   type AppUpdateState,
   createDefaultAppUpdateState
 } from '../../../shared/appUpdate';
-
-marked.setOptions({ breaks: true, gfm: true });
 
 const { t } = useI18n();
 const message = useMessage();
@@ -147,13 +145,7 @@ const errorText = computed(() => updateState.value.errorMessage || t('comp.updat
 const parsedReleaseNotes = computed(() => {
   const releaseNotes = updateState.value.releaseNotes;
   if (!releaseNotes) return '';
-
-  try {
-    return marked.parse(releaseNotes) as string;
-  } catch (error) {
-    console.error('Markdown 解析失败:', error);
-    return releaseNotes;
-  }
+  return renderSafeMarkdown(releaseNotes);
 });
 
 const progressText = computed(() => {

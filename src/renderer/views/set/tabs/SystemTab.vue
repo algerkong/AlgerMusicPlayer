@@ -138,9 +138,9 @@ const formatBytes = (bytes: number) => {
 };
 
 const refreshDiskCacheStats = async () => {
-  if (!isElectron || !window.electron?.ipcRenderer) return;
+  if (!isElectron || !window.api) return;
   try {
-    const stats = await window.electron.ipcRenderer.invoke('get-disk-cache-stats');
+    const stats = await window.api.getDiskCacheStats();
     if (stats) {
       diskCacheStats.value = { ...diskCacheStats.value, ...stats };
     }
@@ -164,7 +164,7 @@ const selectCacheDirectory = async () => {
   const path = await selectDirectory(message);
   if (!path) return;
   setData.value = { ...setData.value, diskCacheDir: path };
-  await window.electron?.ipcRenderer.invoke('set-disk-cache-config', {
+  await window.api?.setDiskCacheConfig({
     enabled: true,
     directory: path,
     maxSizeMB: DEFAULT_CACHE_MB,
@@ -186,7 +186,7 @@ const ensureCacheDefaults = useDebounceFn(() => {
     diskCacheMaxSizeMB: DEFAULT_CACHE_MB,
     diskCacheCleanupPolicy: DEFAULT_CLEANUP
   };
-  void window.electron?.ipcRenderer.invoke('set-disk-cache-config', {
+  void window.api?.setDiskCacheConfig({
     enabled: true,
     directory: setData.value.diskCacheDir || undefined,
     maxSizeMB: DEFAULT_CACHE_MB,

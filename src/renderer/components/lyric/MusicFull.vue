@@ -63,7 +63,7 @@
             />
           </div>
           <div class="music-info">
-            <div class="music-content-name" v-html="playMusic.name"></div>
+            <div class="music-content-name">{{ playMusic.name }}</div>
             <div class="music-content-singer">
               <n-ellipsis
                 class="text-ellipsis"
@@ -116,7 +116,7 @@
                 class="music-info-header"
                 :style="{ textAlign: config.centerLyrics ? 'center' : 'left' }"
               >
-                <div class="music-info-name" v-html="playMusic.name"></div>
+                <div class="music-info-name">{{ playMusic.name }}</div>
                 <div class="music-info-singer">
                   <span
                     v-for="(item, index) in artistList"

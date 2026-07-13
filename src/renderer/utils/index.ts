@@ -96,7 +96,7 @@ export const isMobile = computed(() => {
   return settingsStore.isMobile;
 });
 
-export const isElectron = (window as any).electron !== undefined;
+export const isElectron = typeof window !== 'undefined' && !!(window as any).api;
 
 export const isLyricWindow = computed(() => {
   return window.location.hash.includes('lyric');
@@ -104,8 +104,8 @@ export const isLyricWindow = computed(() => {
 
 export const getSetData = (): any => {
   let setData = null;
-  if (window.electron) {
-    setData = window.electron.ipcRenderer.sendSync('get-store-value', 'set');
+  if (window.api) {
+    setData = window.api.getStoreValue('set');
   } else {
     const settingsStore = useSettingsStore();
     setData = settingsStore.setData;
