@@ -11,7 +11,8 @@ type KeyReference = {
 };
 
 const SOURCE_LANG = 'zh-CN';
-const TARGET_LANGS = ['en-US', 'ja-JP', 'ko-KR', 'zh-Hant'] as const;
+/** 仅保留 zh-CN 后不再做跨语言键对比；空数组即跳过 diff */
+const TARGET_LANGS = [] as const;
 const CHECK_EXTENSIONS = new Set(['.ts', '.vue']);
 
 function isPlainObject(value: unknown): value is TranslationObject {

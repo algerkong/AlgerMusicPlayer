@@ -1,17 +1,6 @@
 <template>
-  <!-- 通用：语言 / 播放偏好 / 窗口行为 -->
+  <!-- 通用：播放偏好 / 窗口行为（语言固定简体中文） -->
   <setting-section>
-    <setting-item
-      :title="t('settings.basic.language')"
-      :description="t('settings.basic.languageDesc')"
-    >
-      <template #action>
-        <div class="min-w-[140px]">
-          <language-switcher />
-        </div>
-      </template>
-    </setting-item>
-
     <setting-item
       v-if="!isElectron"
       :title="t('settings.basic.tabletMode')"
@@ -72,7 +61,6 @@
 import { computed, inject } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import LanguageSwitcher from '@/components/LanguageSwitcher.vue';
 import {
   Select as UiSelect,
   SelectContent,

@@ -112,11 +112,7 @@
       </div>
       <n-tooltip v-if="!isMobile" trigger="hover" :z-index="9999999">
         <template #trigger>
-          <i
-            class="iconfont"
-            :class="[playModeIcon, { 'intelligence-active': playMode === 3 }]"
-            @click="togglePlayMode"
-          ></i>
+          <i class="iconfont" :class="playModeIcon" @click="togglePlayMode"></i>
         </template>
         {{ playModeText }}
       </n-tooltip>
@@ -265,7 +261,7 @@ const handleDownload = () => {
 };
 
 // 播放模式
-const { playMode, playModeIcon, playModeText, togglePlayMode } = usePlayMode();
+const { playModeIcon, playModeText, togglePlayMode } = usePlayMode();
 
 // 背景颜色
 const background = ref('#000');

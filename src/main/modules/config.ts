@@ -56,7 +56,6 @@ const SETTINGS_WRITABLE_KEYS = new Set([
   'authorUrl',
   'closeAction',
   'musicQuality',
-  'lyricTranslationEngine',
   'fontFamily',
   'fontScope',
   'autoPlay',

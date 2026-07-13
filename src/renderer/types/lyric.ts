@@ -8,7 +8,6 @@ export interface LyricConfig {
   showTranslation: boolean;
   theme: 'default' | 'light' | 'dark';
   hidePlayBar: boolean;
-  translationEngine?: 'none' | 'opencc';
   pureModeEnabled: boolean;
   hideMiniPlayBar: boolean;
   hideLyrics: boolean;
@@ -49,8 +48,6 @@ export const DEFAULT_LYRIC_CONFIG: LyricConfig = {
   mobileLayout: 'ios',
   mobileCoverStyle: 'full',
   mobileShowLyricLines: 3,
-  // 翻译引擎: 'none' or 'opencc'
-  translationEngine: 'none',
   // 背景自定义功能默认值
   useCustomBackground: false,
   backgroundMode: 'solid',

@@ -71,26 +71,8 @@ const api = {
   onLanguageChanged: (callback: (locale: string) => void) =>
     onChannel('language-changed', callback),
 
-  // —— 桌面歌词 ——
-  openLyric: () => ipcRenderer.send('open-lyric'),
-  closeLyric: () => ipcRenderer.send('close-lyric'),
-  sendLyric: (data: unknown) => ipcRenderer.send('send-lyric', data),
+  // —— 托盘 / MPRIS 当前歌曲 ——
   sendSong: (data: unknown) => ipcRenderer.send('update-current-song', data),
-  lyricReady: () => ipcRenderer.send('lyric-ready'),
-  setIgnoreMouse: (shouldIgnore: boolean) => ipcRenderer.send('set-ignore-mouse', shouldIgnore),
-  setLyricLockState: (isLocked: boolean) => ipcRenderer.send('set-lyric-lock-state', isLocked),
-  lyricDragStart: () => ipcRenderer.send('lyric-drag-start'),
-  lyricDragMove: (payload: { deltaX: number; deltaY: number }) =>
-    ipcRenderer.send('lyric-drag-move', payload),
-  lyricDragEnd: () => ipcRenderer.send('lyric-drag-end'),
-  controlBack: (command: string) => ipcRenderer.send('control-back', command),
-  onLyricWindowClosed: (callback: () => void) => onChannel('lyric-window-closed', callback),
-  onLyricWindowReady: (callback: () => void) => onChannel('lyric-window-ready', callback),
-  onReceiveLyric: (callback: (data: string) => void) => onChannel('receive-lyric', callback),
-  onLyricMousePresence: (callback: (isInside: boolean) => void) =>
-    onChannel('lyric-mouse-presence', callback),
-  onLyricControlBack: (callback: (command: string) => void) =>
-    onChannel('lyric-control-back', callback),
 
   // —— 应用更新 ——
   getAppUpdateState: () => ipcRenderer.invoke('app-update:get-state') as Promise<AppUpdateState>,

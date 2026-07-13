@@ -12,9 +12,7 @@ import { debouncedLocalStorage } from '@/utils/debouncedStorage';
 import { minifySongList } from '@/utils/persistedSong';
 import { performShuffle, preloadCoverImage } from '@/utils/playerUtils';
 
-import { useIntelligenceModeStore } from './intelligenceMode';
 import { usePlayerCoreStore } from './playerCore';
-import { useSleepTimerStore } from './sleepTimer';
 
 // 延迟初始化 message，避免 chunk 循环依赖导致 TDZ 错误
 let _message: ReturnType<typeof createDiscreteApi>['message'] | null = null;
@@ -227,29 +225,11 @@ export const usePlaylistStore = defineStore(
     const setPlayList = (
       list: SongResult[],
       keepIndex: boolean = false,
-      fromIntelligenceMode: boolean = false,
+      _fromIntelligenceMode: boolean = false,
       // preserveOrder=true 表示"就地编辑当前队列"（下一首播放/移除单曲），
       // 此时即使处于随机模式也不应重新洗牌，保持调用方给定的顺序。
       preserveOrder: boolean = false
     ) => {
-      // 如果不是从心动模式调用，清除心动模式状态并切换播放模式
-      if (!fromIntelligenceMode) {
-        const intelligenceStore = useIntelligenceModeStore();
-        console.log('[PlaylistStore.setPlayList] 检查心动模式状态:', {
-          isIntelligenceMode: intelligenceStore.isIntelligenceMode,
-          currentPlayMode: playMode.value,
-          fromIntelligenceMode
-        });
-
-        if (intelligenceStore.isIntelligenceMode) {
-          console.log('[PlaylistStore] 退出心动模式，切换播放模式为顺序播放');
-          playMode.value = 0;
-          // 清除心动模式状态
-          intelligenceStore.clearIntelligenceMode(true);
-          console.log('[PlaylistStore] 心动模式已退出，新的播放模式:', playMode.value);
-        }
-      }
-
       // 当新播放列表长度>1时，清除FM模式标志（FM播放列表只有1首）
       if (list.length > 1) {
         const playerCore = usePlayerCoreStore();
@@ -400,34 +380,21 @@ export const usePlaylistStore = defineStore(
      */
     const togglePlayMode = async () => {
       const wasRandom = playMode.value === 2;
-      const wasIntelligence = playMode.value === 3;
-
-      // 心动模式(3)不参与循环切换，仅通过 SearchBar 入口进入
-      // 如果当前是心动模式，切换回顺序播放
-      const newMode = wasIntelligence ? 0 : (playMode.value + 1) % 3;
-
+      // 0 顺序 / 1 循环 / 2 随机
+      const newMode = (playMode.value + 1) % 3;
       const isRandom = newMode === 2;
 
       console.log(`[PlaylistStore] togglePlayMode: ${playMode.value} -> ${newMode}`);
       playMode.value = newMode;
 
-      // 切换到随机模式时洗牌
       if (isRandom && !wasRandom && playList.value.length > 0) {
         shufflePlayList();
         console.log('切换到随机模式，洗牌播放列表');
       }
 
-      // 从随机模式切换出去时恢复原始顺序
       if (!isRandom && wasRandom) {
         restoreOriginalOrder();
         console.log('切换出随机模式，恢复原始顺序');
-      }
-
-      // 从心动模式切换出去
-      if (wasIntelligence) {
-        console.log('退出心动模式');
-        const intelligenceStore = useIntelligenceModeStore();
-        intelligenceStore.clearIntelligenceMode(true);
       }
     };
 
@@ -478,8 +445,6 @@ export const usePlaylistStore = defineStore(
           consecutiveFailCount.value = 0;
         }
 
-        const sleepTimerStore = useSleepTimerStore();
-
         if (consecutiveFailCount.value >= MAX_CONSECUTIVE_FAILS) {
           console.error(`[nextPlay] 连续${MAX_CONSECUTIVE_FAILS}首播放失败，停止`);
           getMessage().warning(i18n.global.t('player.consecutiveFailsError'));
@@ -493,9 +458,6 @@ export const usePlaylistStore = defineStore(
           if (autoEnd) {
             // 歌曲自然播放结束：停止播放
             console.log('[nextPlay] 顺序播放：最后一首播放完毕，停止');
-            if (sleepTimerStore.sleepTimer.type === 'end') {
-              sleepTimerStore.stopPlayback();
-            }
             getMessage().info(i18n.global.t('player.playListEnded'));
             playerCore.setIsPlay(false);
             const { audioService } = await import('@/services/audioService');
@@ -532,7 +494,6 @@ export const usePlaylistStore = defineStore(
           consecutiveFailCount.value = 0;
           playListIndex.value = nowPlayListIndex;
           console.log(`[nextPlay] 播放成功，索引: ${nowPlayListIndex}`);
-          sleepTimerStore.handleSongChange();
         } else {
           // 播放失败直接静默跳过到下一首（不原地重试——同曲的一次静默重试
           // 由 url_expired 恢复处理器负责：清坏缓存后换新 URL）

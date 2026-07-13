@@ -31,23 +31,10 @@
       <!-- 右上角设置按钮 -->
       <div
         class="control-btn absolute right-5 flex items-center gap-2"
-        :class="[
-          { 'pure-mode': config.pureModeEnabled },
-          hasSleepTimerActive ? '!w-auto !px-2' : ''
-        ]"
+        :class="[{ 'pure-mode': config.pureModeEnabled }]"
+        @click="showPlayerSettings = true"
       >
-        <!-- 定时器倒计时显示 -->
-        <div
-          v-if="hasSleepTimerActive"
-          class="flex items-center gap-1 px-2 py-1 rounded-full bg-black/30 backdrop-blur-sm text-xs text-white/90"
-          @click="showPlayerSettings = true"
-        >
-          <i class="ri-timer-line text-green-400"></i>
-          <span class="font-medium tabular-nums">{{ sleepTimerDisplayText }}</span>
-        </div>
-        <div @click="showPlayerSettings = true">
-          <i class="ri-more-2-fill"></i>
-        </div>
+        <i class="ri-more-2-fill"></i>
       </div>
 
       <!-- 播放设置弹窗 -->
@@ -368,7 +355,7 @@
             <i class="ri-arrow-down-s-line"></i>
           </div>
           <div class="side-button" @click="togglePlayMode">
-            <i :class="[playModeIcon, { 'intelligence-active': playMode === 3 }]"></i>
+            <i :class="[playModeIcon]"></i>
           </div>
           <div class="main-button prev" @click="prevSong">
             <i class="ri-skip-back-fill"></i>
@@ -428,54 +415,8 @@ const playIcon = computed(() => (play.value ? 'ri-pause-fill' : 'ri-play-fill'))
 // 播放设置弹窗
 const showPlayerSettings = ref(false);
 
-// 定时器相关
-const sleepTimerRefresh = ref(0);
-let sleepTimerInterval: ReturnType<typeof setInterval> | null = null;
-
-const hasSleepTimerActive = computed(() => playerStore.hasSleepTimerActive);
-
-const sleepTimerDisplayText = computed(() => {
-  void sleepTimerRefresh.value; // 触发响应式更新
-
-  const timer = playerStore.sleepTimer;
-  if (timer.type === 'time' && timer.endTime) {
-    const remaining = Math.max(0, timer.endTime - Date.now());
-    const totalSeconds = Math.floor(remaining / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-  }
-  if (timer.type === 'songs' && timer.remainingSongs) {
-    return `${timer.remainingSongs}首`;
-  }
-  if (timer.type === 'end') {
-    return '列表结束';
-  }
-  return '';
-});
-
-// 启动/停止定时器刷新
-watch(
-  hasSleepTimerActive,
-  (active) => {
-    if (active && playerStore.sleepTimer.type === 'time') {
-      if (!sleepTimerInterval) {
-        sleepTimerInterval = setInterval(() => {
-          sleepTimerRefresh.value = Date.now();
-        }, 1000);
-      }
-    } else {
-      if (sleepTimerInterval) {
-        clearInterval(sleepTimerInterval);
-        sleepTimerInterval = null;
-      }
-    }
-  },
-  { immediate: true }
-);
-
 // 播放模式
-const { playMode, playModeIcon, playModeText, togglePlayMode: togglePlayModeBase } = usePlayMode();
+const { playModeIcon, playModeText, togglePlayMode: togglePlayModeBase } = usePlayMode();
 // 打开播放列表
 const showPlaylist = () => {
   playerStore.setPlayListDrawerVisible(true);
@@ -961,12 +902,6 @@ watch(
 onBeforeUnmount(() => {
   if (autoScrollTimer.value) {
     clearTimeout(autoScrollTimer.value);
-  }
-
-  // 清理睡眠定时器倒计时刷新 interval，避免组件卸载后残留、闭包持有 store 无法回收
-  if (sleepTimerInterval) {
-    clearInterval(sleepTimerInterval);
-    sleepTimerInterval = null;
   }
 
   // 清理鼠标事件监听
@@ -1514,10 +1449,6 @@ const getWordStyle = (lineIndex: number, _wordIndex: number, word: any) => {
           i {
             @apply text-2xl;
             color: var(--text-color-primary);
-
-            &.intelligence-active {
-              @apply text-green-500;
-            }
           }
 
           &:hover {

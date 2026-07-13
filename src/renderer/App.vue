@@ -24,7 +24,7 @@ import { usePlayerStore } from '@/store/modules/player';
 import { usePlayerCoreStore } from '@/store/modules/playerCore';
 import { useSettingsStore } from '@/store/modules/settings';
 import { useUserStore } from '@/store/modules/user';
-import { isElectron, isLyricWindow } from '@/utils';
+import { isElectron } from '@/utils';
 import { checkLoginStatus, purgeCredentialStorage } from '@/utils/auth';
 
 import { initAudioListeners, initMusicHook } from './hooks/MusicHook';
@@ -38,16 +38,8 @@ const playerStore = usePlayerStore();
 const playerCoreStore = usePlayerCoreStore();
 const userStore = useUserStore();
 
-// 监听语言变化
-watch(
-  () => settingsStore.setData.language,
-  (newLanguage) => {
-    if (newLanguage && newLanguage !== locale.value) {
-      locale.value = newLanguage;
-    }
-  },
-  { immediate: true }
-);
+// 固定简体中文
+locale.value = 'zh-CN';
 
 // 监听字体变化并应用
 watch(
@@ -62,37 +54,22 @@ watch(
   }
 );
 
-const handleSetLanguage = (value: string) => {
-  console.log('应用语言变更:', value);
-  if (value) {
-    locale.value = value;
+// 清除历史 localStorage token，凭据只在主进程
+purgeCredentialStorage();
+
+settingsStore.initializeSettings();
+settingsStore.initializeTheme();
+settingsStore.initializeSystemFonts();
+
+// 初始化登录状态 - 仅恢复非敏感的 user 展示缓存
+const loginInfo = checkLoginStatus();
+if (loginInfo.isLoggedIn) {
+  if (loginInfo.user && !userStore.user) {
+    userStore.setUser(loginInfo.user);
   }
-};
-
-if (!isLyricWindow.value) {
-  // 清除历史 localStorage token，凭据只在主进程
-  purgeCredentialStorage();
-
-  settingsStore.initializeSettings();
-  settingsStore.initializeTheme();
-  settingsStore.initializeSystemFonts();
-
-  // 初始化登录状态 - 仅恢复非敏感的 user 展示缓存
-  const loginInfo = checkLoginStatus();
-  if (loginInfo.isLoggedIn) {
-    if (loginInfo.user && !userStore.user) {
-      userStore.setUser(loginInfo.user);
-    }
-    if (loginInfo.loginType && !userStore.loginType) {
-      userStore.setLoginType(loginInfo.loginType);
-    }
+  if (loginInfo.loginType && !userStore.loginType) {
+    userStore.setLoginType(loginInfo.loginType);
   }
-}
-
-handleSetLanguage(settingsStore.setData.language);
-
-if (isElectron) {
-  window.api.onLanguageChanged(handleSetLanguage);
 }
 
 // 使用应用内快捷键
@@ -100,9 +77,6 @@ useAppShortcuts();
 
 onMounted(async () => {
   playerStore.setIsPlay(false);
-  if (isLyricWindow.value) {
-    return;
-  }
 
   // 初始化 MusicHook，注入 playerStore
   initMusicHook(playerStore);
