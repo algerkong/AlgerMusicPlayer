@@ -177,7 +177,11 @@
                         </button>
                         <!-- Cancel button (shown for all active states) -->
                         <button
-                          v-if="['queued', 'downloading', 'paused'].includes(item.state)"
+                          v-if="
+                            ['queued', 'downloading', 'paused', 'waitingForUrl'].includes(
+                              item.state
+                            )
+                          "
                           class="w-6 h-6 rounded-full flex items-center justify-center text-neutral-400 hover:text-red-500 hover:bg-red-500/10 transition-all"
                           @click="handleCancel(item.taskId)"
                         >
@@ -588,6 +592,7 @@ const getStatusText = (item: DownloadTask) => {
     queued: t('download.status.queued'),
     downloading: t('download.status.downloading'),
     paused: t('download.status.paused'),
+    waitingForUrl: t('download.status.waitingForUrl'),
     completed: t('download.status.completed'),
     error: t('download.status.failed'),
     cancelled: t('download.status.cancelled')
@@ -600,6 +605,7 @@ const getStatusClass = (item: DownloadTask) => {
     queued: 'text-neutral-400',
     downloading: 'text-primary',
     paused: 'text-yellow-500',
+    waitingForUrl: 'text-yellow-500',
     error: 'text-red-500',
     cancelled: 'text-neutral-400'
   };

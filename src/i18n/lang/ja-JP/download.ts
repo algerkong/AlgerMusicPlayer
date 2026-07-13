@@ -22,6 +22,7 @@ export default {
     unknown: '不明',
     queued: 'キュー中',
     paused: '一時停止',
+    waitingForUrl: 'URLを再取得中...',
     cancelled: 'キャンセル済み'
   },
   action: {

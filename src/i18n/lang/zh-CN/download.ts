@@ -22,6 +22,7 @@ export default {
     unknown: '未知',
     queued: '排队中',
     paused: '已暂停',
+    waitingForUrl: '重新获取链接...',
     cancelled: '已取消'
   },
   action: {

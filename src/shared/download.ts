@@ -5,6 +5,8 @@ export const DOWNLOAD_TASK_STATE = {
   queued: 'queued',
   downloading: 'downloading',
   paused: 'paused',
+  /** 直链过期，等待 renderer 重新解析 URL 后再入队 */
+  waitingForUrl: 'waitingForUrl',
   completed: 'completed',
   error: 'error',
   cancelled: 'cancelled'
