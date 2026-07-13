@@ -1,3 +1,4 @@
+import { persistenceService, volumeSchema } from '@/services/persistenceService';
 import type { AudioOutputDevice } from '@/types/audio';
 import type { SongResult } from '@/types/music';
 import { getImgUrl, isElectron } from '@/utils';
@@ -249,9 +250,7 @@ class AudioService {
       // Wire up the graph
       this.applyBypassState();
 
-      // Apply saved volume（同步读，setupEQ 非 async）
-       
-      const { persistenceService, volumeSchema } = require('@/services/persistenceService');
+      // Apply saved volume（静态 import，renderer 无 Node require）
       this.applyVolume(persistenceService.load(volumeSchema));
 
       // Monitor context state
@@ -440,7 +439,7 @@ class AudioService {
       return Promise.resolve(this.audio);
     }
 
-    // 开始新一轮加载前，先移除上一轮尚未结算的加载监听器，避免污染新歌
+    // 开始新一轮前：移除监听器并以明确错误结算上一轮 Promise，避免永久 pending
     if (this.pendingLoadCleanup) {
       this.pendingLoadCleanup();
       this.pendingLoadCleanup = null;
@@ -449,6 +448,18 @@ class AudioService {
     return new Promise<HTMLAudioElement>((resolve, reject) => {
       let retryCount = 0;
       const maxRetries = 1;
+      let settled = false;
+
+      const settleResolve = (el: HTMLAudioElement) => {
+        if (settled) return;
+        settled = true;
+        resolve(el);
+      };
+      const settleReject = (err: Error) => {
+        if (settled) return;
+        settled = true;
+        reject(err);
+      };
 
       const tryPlay = () => {
         this._isLoading = true;
@@ -462,8 +473,16 @@ class AudioService {
           this.context.resume().catch((e) => console.warn('Failed to resume AudioContext:', e));
         }
 
+        const removeLoadListeners = () => {
+          this.audio.removeEventListener('canplay', onCanPlay);
+          this.audio.removeEventListener('error', onError);
+          if (this.pendingLoadCleanup === cancelPendingLoad) {
+            this.pendingLoadCleanup = null;
+          }
+        };
+
         const onCanPlay = () => {
-          cleanup();
+          removeLoadListeners();
           this._isLoading = false;
 
           if (seekTime > 0) {
@@ -477,23 +496,18 @@ class AudioService {
             });
           }
 
-          // Apply volume (use GainNode if available, else direct)
-          void import('@/services/persistenceService').then(
-            ({ persistenceService, volumeSchema }) => {
-              this.applyVolume(persistenceService.load(volumeSchema));
-            }
-          );
+          this.applyVolume(persistenceService.load(volumeSchema));
 
           this.audio.playbackRate = this.playbackRate;
           this.updateMediaSessionMetadata(track);
           this.updateMediaSessionPositionState();
           this.emit('load');
           this.releaseOperationLock();
-          resolve(this.audio);
+          settleResolve(this.audio);
         };
 
         const onError = () => {
-          cleanup();
+          removeLoadListeners();
           this._isLoading = false;
           const error = this.audio.error;
           console.error('Audio load error:', error?.code, error?.message);
@@ -510,20 +524,21 @@ class AudioService {
           } else {
             this.emit('url_expired', track);
             this.releaseOperationLock();
-            reject(new Error('音频加载失败，请尝试切换其他歌曲'));
+            settleReject(new Error('音频加载失败，请尝试切换其他歌曲'));
           }
         };
 
-        const cleanup = () => {
-          this.audio.removeEventListener('canplay', onCanPlay);
-          this.audio.removeEventListener('error', onError);
-          if (this.pendingLoadCleanup === cleanup) {
-            this.pendingLoadCleanup = null;
-          }
+        // 被新 play()/stop() 抢占时：卸监听 + 以 AbortError 结算本轮 Promise
+        const cancelPendingLoad = () => {
+          removeLoadListeners();
+          this._isLoading = false;
+          this.releaseOperationLock();
+          const err = new Error('Playback cancelled');
+          err.name = 'AbortError';
+          settleReject(err);
         };
 
-        // 记录本轮清理函数，供下一次 play()/stop() 在结算前主动移除
-        this.pendingLoadCleanup = cleanup;
+        this.pendingLoadCleanup = cancelPendingLoad;
 
         this.audio.addEventListener('canplay', onCanPlay, { once: true });
         this.audio.addEventListener('error', onError, { once: true });
@@ -550,7 +565,7 @@ class AudioService {
 
   public stop() {
     this.forceResetOperationLock();
-    // 移除尚未结算的加载监听器，避免 stop 后旧的 canplay/error 仍触发过期回调
+    // 卸监听并以 AbortError 结算尚未完成的 play() Promise
     if (this.pendingLoadCleanup) {
       this.pendingLoadCleanup();
       this.pendingLoadCleanup = null;
@@ -594,9 +609,7 @@ class AudioService {
       this.audio.volume = normalizedVolume;
     }
 
-    void import('@/services/persistenceService').then(({ persistenceService, volumeSchema }) => {
-      persistenceService.save(volumeSchema, normalizedVolume);
-    });
+    persistenceService.save(volumeSchema, normalizedVolume);
   }
 
   public setPlaybackRate(rate: number) {

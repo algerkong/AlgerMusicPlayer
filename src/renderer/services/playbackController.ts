@@ -322,6 +322,10 @@ export const playTrack = async (
       console.log(`[playbackController] gen=${gen} 已过期（播放异常），静默返回`);
       return false;
     }
+    // 快速切歌/stop 会以 AbortError 结算上一轮 play() Promise，属预期取消
+    if (error instanceof Error && error.name === 'AbortError') {
+      return false;
+    }
 
     console.error('[playbackController] 播放音频失败:', error);
 
