@@ -79,7 +79,7 @@ import { useI18n } from 'vue-i18n';
 import { Button as UiButton } from '@/components/ui/button';
 import { Progress as UiProgress } from '@/components/ui/progress';
 import { isElectron } from '@/utils';
-import { openDirectory, selectDirectory } from '@/utils/fileOperation';
+import { openDirectory } from '@/utils/fileOperation';
 
 import { SETTINGS_DATA_KEY, SETTINGS_MESSAGE_KEY } from '../keys';
 import SettingItem from '../SettingItem.vue';
@@ -150,9 +150,10 @@ const refreshDiskCacheStats = async () => {
 };
 
 const selectDownloadPath = async () => {
-  const path = await selectDirectory(message);
-  if (path) {
-    setData.value = { ...setData.value, downloadPath: path };
+  // 信任根仅由主进程对话框落盘，不可 setSettings 写入
+  const result = await window.api.selectDownloadPath();
+  if (!result.canceled) {
+    setData.value = { ...setData.value, downloadPath: result.path };
   }
 };
 
@@ -161,12 +162,12 @@ const openDownloadPath = () => {
 };
 
 const selectCacheDirectory = async () => {
-  const path = await selectDirectory(message);
-  if (!path) return;
-  setData.value = { ...setData.value, diskCacheDir: path };
+  const result = await window.api.selectDiskCacheDir();
+  if (result.canceled) return;
+  setData.value = { ...setData.value, diskCacheDir: result.path };
+  // directory 已由主进程写入；此处只同步 enabled/策略（directory 字段会被主进程忽略）
   await window.api?.setDiskCacheConfig({
     enabled: true,
-    directory: path,
     maxSizeMB: DEFAULT_CACHE_MB,
     cleanupPolicy: DEFAULT_CLEANUP
   });
@@ -188,7 +189,6 @@ const ensureCacheDefaults = useDebounceFn(() => {
   };
   void window.api?.setDiskCacheConfig({
     enabled: true,
-    directory: setData.value.diskCacheDir || undefined,
     maxSizeMB: DEFAULT_CACHE_MB,
     cleanupPolicy: DEFAULT_CLEANUP
   });

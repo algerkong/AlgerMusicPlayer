@@ -875,9 +875,10 @@ const formatNamePreview = computed(() => {
 });
 
 const selectDownloadPath = async () => {
-  const result = await window.api.selectDirectory();
-  if (result && !result.canceled && result.filePaths.length > 0) {
-    downloadSettings.value.path = result.filePaths[0];
+  // 主进程对话框落盘信任根，本地仅刷新展示
+  const result = await window.api.selectDownloadPath();
+  if (!result.canceled) {
+    downloadSettings.value.path = result.path;
   }
 };
 
@@ -890,8 +891,8 @@ const openDownloadPath = () => {
 };
 
 const saveDownloadSettings = () => {
+  // downloadPath 已在 selectDownloadPath 时由主进程写入，此处不再经 setSettings 传路径
   window.api.setSettings({
-    downloadPath: downloadSettings.value.path,
     downloadNameFormat: downloadSettings.value.nameFormat,
     downloadSeparator: downloadSettings.value.separator,
     downloadSaveLyric: downloadSettings.value.saveLyric
