@@ -162,21 +162,64 @@ if (!isSingleInstance) {
     // 初始化窗口大小管理器
     initWindowSizeManager();
 
-    // 媒体设备权限：应用没有任何录音功能，麦克风/摄像头采集一律拒绝，
-    // 防止依赖库静默调用 getUserMedia 触发系统麦克风授权弹窗（#147/#246/#440/#639 防御性加固）。
-    // 输出设备切换走 speaker-selection / enumerateDevices，不受影响
-    session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
-      if (permission === ('media' as any) || permission === ('audioCapture' as any)) {
-        callback(false);
-        return;
-      }
-      callback(true);
-    });
+    // 权限白名单：默认拒绝；仅放行当前业务需要的能力，并校验请求来源。
+    // 明确拒绝 media/audioCapture/display-capture，避免 getUserMedia 弹麦克风/录屏
+    // （#147/#246/#440/#639）。输出设备枚举走 speaker-selection。
+    // 仅 writeText 需要 clipboard-sanitized-write；不放行 clipboard-read 防注入读剪贴板外传
+    const ALLOWED_WEB_PERMISSIONS = new Set([
+      'speaker-selection',
+      'fullscreen',
+      'clipboard-sanitized-write'
+    ]);
 
-    // 保持放行：enumerateDevices 依赖它返回真实设备名（不访问麦克风硬件、不触发系统授权）
-    session.defaultSession.setPermissionCheckHandler(() => {
-      return true;
-    });
+    const isTrustedRendererOrigin = (raw?: string | null): boolean => {
+      if (!raw) return false;
+      try {
+        if (raw.startsWith('file:')) return true;
+        const origin = new URL(raw).origin;
+        if (process.env.ELECTRON_RENDERER_URL) {
+          return origin === new URL(process.env.ELECTRON_RENDERER_URL).origin;
+        }
+        return false;
+      } catch {
+        return false;
+      }
+    };
+
+    const isPermissionAllowed = (
+      permission: string,
+      webContents: Electron.WebContents | null,
+      requestingOrigin?: string
+    ): boolean => {
+      const fromContents = webContents && !webContents.isDestroyed() ? webContents.getURL() : '';
+      if (!isTrustedRendererOrigin(requestingOrigin) && !isTrustedRendererOrigin(fromContents)) {
+        return false;
+      }
+      if (
+        permission === 'media' ||
+        permission === 'audioCapture' ||
+        permission === 'display-capture' ||
+        permission === 'mediaKeySystem'
+      ) {
+        return false;
+      }
+      return ALLOWED_WEB_PERMISSIONS.has(permission);
+    };
+
+    session.defaultSession.setPermissionRequestHandler(
+      (webContents, permission, callback, details) => {
+        const requestingUrl =
+          (details as { requestingUrl?: string } | undefined)?.requestingUrl ||
+          webContents.getURL();
+        callback(isPermissionAllowed(permission, webContents, requestingUrl));
+      }
+    );
+
+    session.defaultSession.setPermissionCheckHandler(
+      (webContents, permission, requestingOrigin) => {
+        return isPermissionAllowed(permission, webContents ?? null, requestingOrigin);
+      }
+    );
 
     // 重新初始化配置管理以获取完整的配置存储
     const store = initializeConfig();
