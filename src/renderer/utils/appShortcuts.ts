@@ -222,8 +222,9 @@ export function initAppShortcuts() {
     window.api.onMprisPause(onMprisPause)
   );
 
-  const storedShortcuts = window.api.getStoreValue('shortcuts');
-  updateAppShortcuts(storedShortcuts);
+  void window.api.getShortcutsConfig().then((storedShortcuts) => {
+    updateAppShortcuts(storedShortcuts);
+  });
 
   document.addEventListener('keydown', handleKeyDown);
 }

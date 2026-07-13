@@ -36,7 +36,7 @@ export const useSettingsStore = defineStore('settings', () => {
     };
 
     if (isElectron) {
-      window.api.setStoreValue('set', cloneDeep(mergedData));
+      window.api.setSettings(cloneDeep(mergedData));
     } else {
       localStorage.setItem('appSettings', JSON.stringify(cloneDeep(mergedData)));
     }
@@ -47,7 +47,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const getInitialSettings = () => {
     // 从存储中获取保存的设置
     const savedSettings = isElectron
-      ? window.api.getStoreValue('set')
+      ? window.api.getSettings()
       : JSON.parse(localStorage.getItem('appSettings') || '{}');
 
     // 自定义合并策略：如果是数组，直接使用源数组（覆盖默认值）

@@ -103,9 +103,9 @@ export const isLyricWindow = computed(() => {
 });
 
 export const getSetData = (): any => {
-  let setData = null;
+  let setData: any = null;
   if (window.api) {
-    setData = window.api.getStoreValue('set');
+    setData = window.api.getSettings();
   } else {
     const settingsStore = useSettingsStore();
     setData = settingsStore.setData;

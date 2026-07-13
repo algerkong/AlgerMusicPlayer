@@ -29,11 +29,50 @@ type SetConfig = {
   diskCacheDir: string;
   diskCacheMaxSizeMB: number;
   diskCacheCleanupPolicy: 'lru' | 'fifo';
+  [key: string]: unknown;
 };
+
 interface StoreType {
   set: SetConfig;
   shortcuts: ShortcutsConfig;
 }
+
+/**
+ * renderer 可通过 settings:get / settings:set 触达的字段白名单。
+ * 不含 musicSourceSession 等敏感顶层键；敏感数据不得进入 set。
+ */
+const SETTINGS_ALLOWED_KEYS = new Set([
+  'isProxy',
+  'proxyConfig',
+  'noAnimate',
+  'animationSpeed',
+  'author',
+  'authorUrl',
+  'closeAction',
+  'musicQuality',
+  'lyricTranslationEngine',
+  'fontFamily',
+  'fontScope',
+  'autoPlay',
+  'downloadPath',
+  'downloadNameFormat',
+  'downloadSeparator',
+  'downloadSaveLyric',
+  'language',
+  'alwaysShowDownloadButton',
+  'unlimitedDownload',
+  'showTopAction',
+  'contentZoomFactor',
+  'autoTheme',
+  'manualTheme',
+  'isMenuExpanded',
+  'enableGpuAcceleration',
+  'enableDiskCache',
+  'diskCacheDir',
+  'diskCacheMaxSizeMB',
+  'diskCacheCleanupPolicy',
+  'tabletMode'
+]);
 
 // 模块级单例：主进程所有模块共享同一个 config.json Store 实例。
 // 多个独立 Store 实例并发读写同一文件，会在 Windows 上与杀毒/云同步的文件锁
@@ -47,6 +86,47 @@ const store = new Store<StoreType>({
 });
 
 let initialized = false;
+
+function pickAllowedSettings(input: unknown): Record<string, unknown> {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return {};
+  }
+  const src = input as Record<string, unknown>;
+  const out: Record<string, unknown> = {};
+  for (const key of Object.keys(src)) {
+    if (SETTINGS_ALLOWED_KEYS.has(key)) {
+      out[key] = src[key];
+    }
+  }
+  return out;
+}
+
+function getPublicSettings(): Record<string, unknown> {
+  try {
+    const current = (store.get('set') || {}) as Record<string, unknown>;
+    return pickAllowedSettings(current);
+  } catch (error) {
+    console.error('[config] 读取设置失败:', error);
+    return {};
+  }
+}
+
+function mergePublicSettings(partial: unknown): Record<string, unknown> {
+  const allowed = pickAllowedSettings(partial);
+  if (!Object.keys(allowed).length) {
+    return getPublicSettings();
+  }
+  try {
+    const current = (store.get('set') || {}) as Record<string, unknown>;
+    const merged = { ...current, ...allowed };
+    // 只写回白名单字段 + 保留已有但未在白名单的内部字段？为安全起见：
+    // 合并时保留 current 中非敏感的全部已有键，但仅用 allowed 覆盖白名单字段。
+    store.set('set', merged as SetConfig);
+  } catch (error) {
+    console.error('[config] 写入设置失败:', error);
+  }
+  return getPublicSettings();
+}
 
 /**
  * 初始化配置管理（幂等：重复调用不会重复注册 IPC 监听）
@@ -76,24 +156,13 @@ export function initializeConfig() {
     console.error('[config] 初始化默认配置失败:', error);
   }
 
-  // 定义ipcRenderer监听事件
-  ipcMain.on('set-store-value', (_, key, value) => {
-    try {
-      store.set(key, value);
-    } catch (error) {
-      // config.json 可能被杀毒/云同步短暂锁定，丢一次写入无害，避免主进程崩溃
-      console.error(`[config] 写入配置失败 key=${key}:`, error);
-    }
+  // 字段级设置 API（禁止任意 key 读写整个 store）
+  ipcMain.on('settings:get', (event) => {
+    event.returnValue = getPublicSettings();
   });
 
-  ipcMain.on('get-store-value', (event, key) => {
-    try {
-      const value = store.get(key);
-      event.returnValue = value || '';
-    } catch (error) {
-      console.error(`[config] 读取配置失败 key=${key}:`, error);
-      event.returnValue = '';
-    }
+  ipcMain.on('settings:set', (event, partial: unknown) => {
+    event.returnValue = mergePublicSettings(partial);
   });
 
   // GPU加速设置更新处理

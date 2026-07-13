@@ -1,4 +1,4 @@
-import { app, ipcMain } from 'electron';
+import { app, ipcMain, safeStorage } from 'electron';
 import {
   createMusicSource,
   isMusicSourceError,
@@ -12,7 +12,10 @@ import path from 'path';
 import { filePathToLocalUrl } from '../../shared/localUrl';
 import { getSharedStore } from './config';
 
-const SESSION_KEY = 'musicSourceSession';
+/** 旧明文 session（迁移后删除） */
+const SESSION_KEY_PLAIN = 'musicSourceSession';
+/** safeStorage 加密后的 base64 */
+const SESSION_KEY_ENC = 'musicSourceSessionEnc';
 
 let client: MusicSourceClient | null = null;
 let initialized = false;
@@ -21,6 +24,84 @@ function mapQuality(raw?: string): Quality {
   if (raw === 'standard' || raw === 'lossless') return raw;
   // higher / exhigh / anything else → higher
   return 'higher';
+}
+
+function isSessionBundle(value: unknown): value is SessionBundle {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    (value as SessionBundle).version === 1 &&
+    !!(value as SessionBundle).platforms
+  );
+}
+
+/** 读取并迁移 session；加密不可用时不落盘明文 */
+function loadPersistedSession(): SessionBundle | undefined {
+  const store = getSharedStore();
+
+  // 1) 密文
+  const encB64 = store.get(SESSION_KEY_ENC) as string | undefined;
+  if (encB64 && typeof encB64 === 'string' && safeStorage.isEncryptionAvailable()) {
+    try {
+      const plain = safeStorage.decryptString(Buffer.from(encB64, 'base64'));
+      const parsed = JSON.parse(plain) as unknown;
+      if (isSessionBundle(parsed)) {
+        return parsed;
+      }
+    } catch (error) {
+      console.warn('[musicSource] decrypt session failed:', error);
+    }
+  }
+
+  // 2) 旧明文 → 迁移到密文后删除
+  const legacy = store.get(SESSION_KEY_PLAIN) as unknown;
+  if (isSessionBundle(legacy)) {
+    try {
+      store.delete(SESSION_KEY_PLAIN);
+    } catch {
+      // ignore
+    }
+    writePersistedSession(legacy);
+    return legacy;
+  }
+
+  // 清理无效明文残留
+  if (legacy !== undefined) {
+    try {
+      store.delete(SESSION_KEY_PLAIN);
+    } catch {
+      // ignore
+    }
+  }
+
+  return undefined;
+}
+
+function writePersistedSession(bundle: SessionBundle): void {
+  const store = getSharedStore();
+  try {
+    store.delete(SESSION_KEY_PLAIN);
+  } catch {
+    // ignore
+  }
+
+  if (!safeStorage.isEncryptionAvailable()) {
+    // 不落盘明文：仅内存会话，重启需重新登录
+    try {
+      store.delete(SESSION_KEY_ENC);
+    } catch {
+      // ignore
+    }
+    console.warn('[musicSource] safeStorage unavailable; session not persisted to disk');
+    return;
+  }
+
+  try {
+    const encrypted = safeStorage.encryptString(JSON.stringify(bundle));
+    store.set(SESSION_KEY_ENC, encrypted.toString('base64'));
+  } catch (error) {
+    console.error('[musicSource] encrypt session failed:', error);
+  }
 }
 
 function getClient(): MusicSourceClient {
@@ -36,8 +117,8 @@ function getClient(): MusicSourceClient {
       timeoutMs: 45_000
     });
 
-    const saved = store.get(SESSION_KEY) as SessionBundle | undefined;
-    if (saved?.version === 1 && saved.platforms) {
+    const saved = loadPersistedSession();
+    if (saved) {
       try {
         client.importSession(saved);
         console.log('[musicSource] restored session');
@@ -53,7 +134,7 @@ function persistSession(): void {
   if (!client) return;
   try {
     const bundle = client.exportSession();
-    getSharedStore().set(SESSION_KEY, bundle);
+    writePersistedSession(bundle);
   } catch (error) {
     console.error('[musicSource] persist session failed:', error);
   }
@@ -61,7 +142,9 @@ function persistSession(): void {
 
 function clearPersistedSession(): void {
   try {
-    getSharedStore().delete(SESSION_KEY);
+    const store = getSharedStore();
+    store.delete(SESSION_KEY_PLAIN);
+    store.delete(SESSION_KEY_ENC);
   } catch (error) {
     console.error('[musicSource] clear session failed:', error);
   }
@@ -111,9 +194,10 @@ export function initializeMusicSource(): void {
       if (!cookie || typeof cookie !== 'string' || !cookie.trim()) {
         return { ok: false, code: 'INVALID', message: 'Cookie is empty' };
       }
-      const session = getClient().importCookie('qishui', cookie.trim());
+      // cookie 只进主进程；IPC 仅回传 auth 状态，绝不回传 PlatformSession
+      getClient().importCookie('qishui', cookie.trim());
       persistSession();
-      return wrapOk(session);
+      return wrapOk(getClient().getAuthState());
     } catch (error) {
       return toIpcError(error);
     }

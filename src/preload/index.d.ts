@@ -17,9 +17,9 @@ interface API {
   // 平台
   getPlatform: () => NodeJS.Platform;
 
-  // 配置 store
-  getStoreValue: (key: string) => any;
-  setStoreValue: (key: string, value: any) => void;
+  // 应用设置（字段白名单）
+  getSettings: () => Record<string, any>;
+  setSettings: (partial: Record<string, any>) => Record<string, any>;
 
   // 语言
   changeLanguage: (locale: string) => void;

@@ -570,15 +570,12 @@ async function loadShortcutsFromMain() {
     const normalized = normalizeShortcutsConfig(shortcuts);
     storedShortcuts.value = cloneDeep(normalized);
     draftShortcuts.value = cloneDeep(normalized);
-    return;
   } catch (error) {
     console.error('[ShortcutSettings] 获取快捷键配置失败:', error);
+    const defaults = createDefaultShortcuts();
+    storedShortcuts.value = cloneDeep(defaults);
+    draftShortcuts.value = cloneDeep(defaults);
   }
-
-  const stored = window.api.getStoreValue('shortcuts');
-  const normalized = normalizeShortcutsConfig(stored);
-  storedShortcuts.value = cloneDeep(normalized);
-  draftShortcuts.value = cloneDeep(normalized);
 }
 
 async function handleOpen() {

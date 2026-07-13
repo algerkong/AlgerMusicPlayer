@@ -53,9 +53,10 @@ const api = {
   // —— 平台（preload 直读，无 IPC）——
   getPlatform: (): NodeJS.Platform => process.platform,
 
-  // —— 配置 store ——
-  getStoreValue: (key: string) => ipcRenderer.sendSync('get-store-value', key),
-  setStoreValue: (key: string, value: unknown) => ipcRenderer.send('set-store-value', key, value),
+  // —— 应用设置（字段白名单，禁止任意 key 读写 store）——
+  getSettings: () => ipcRenderer.sendSync('settings:get') as Record<string, unknown>,
+  setSettings: (partial: Record<string, unknown>) =>
+    ipcRenderer.sendSync('settings:set', partial) as Record<string, unknown>,
 
   // —— 语言 ——
   changeLanguage: (locale: string) => ipcRenderer.send('change-language', locale),

@@ -884,10 +884,12 @@ const openDownloadPath = () => {
 };
 
 const saveDownloadSettings = () => {
-  window.api.setStoreValue('set.downloadPath', downloadSettings.value.path);
-  window.api.setStoreValue('set.downloadNameFormat', downloadSettings.value.nameFormat);
-  window.api.setStoreValue('set.downloadSeparator', downloadSettings.value.separator);
-  window.api.setStoreValue('set.downloadSaveLyric', downloadSettings.value.saveLyric);
+  window.api.setSettings({
+    downloadPath: downloadSettings.value.path,
+    downloadNameFormat: downloadSettings.value.nameFormat,
+    downloadSeparator: downloadSettings.value.separator,
+    downloadSaveLyric: downloadSettings.value.saveLyric
+  });
 
   if (tabName.value === 'downloaded') {
     downloadStore.refreshCompleted();
@@ -900,10 +902,11 @@ const saveDownloadSettings = () => {
 };
 
 const initDownloadSettings = async () => {
-  const path = window.api.getStoreValue('set.downloadPath');
-  const nameFormat = window.api.getStoreValue('set.downloadNameFormat');
-  const separator = window.api.getStoreValue('set.downloadSeparator');
-  const saveLyric = window.api.getStoreValue('set.downloadSaveLyric');
+  const settings = window.api.getSettings() || {};
+  const path = settings.downloadPath as string | undefined;
+  const nameFormat = settings.downloadNameFormat as string | undefined;
+  const separator = settings.downloadSeparator as string | undefined;
+  const saveLyric = settings.downloadSaveLyric as boolean | undefined;
 
   downloadSettings.value = {
     path: path || (await window.api.getDownloadsPath()),

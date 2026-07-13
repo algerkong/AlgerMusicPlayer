@@ -156,7 +156,7 @@ export const useDownload = () => {
       }
 
       const nameFormat =
-        (isElectron ? (window.api.getStoreValue('set.downloadNameFormat') as string) : null) ||
+        (isElectron ? (window.api.getSettings()?.downloadNameFormat as string) : null) ||
         '{songName} - {artistName}';
       const artistNames =
         (song.ar || song.song?.artists)?.map((a: { name: string }) => a.name).join('、') ||
