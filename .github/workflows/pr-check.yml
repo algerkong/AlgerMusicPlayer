@@ -57,6 +57,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
+          cache: npm
 
       # lint:i18n 脚本用 bun 跑（package.json: "bun scripts/check_i18n.ts"），
       # CI 默认环境没有 bun 会报 sh: bun: not found
@@ -64,7 +65,7 @@ jobs:
         uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Lint
         run: npx eslint --max-warnings 0 "src/**/*.{ts,tsx,vue,js}"

@@ -52,6 +52,14 @@
 - **原因暂缓：** 架构债，非当前安全主链；全量统一成本高，宜独立工程。
 - **状态：** 暂缓
 
+### 10. Medium：mac 签名 / 公证与 Actions 钉死 SHA
+
+- **暂缓内容：**
+  - 正式 mac 发布启用 `hardenedRuntime`、代码签名、`notarize`（需 Apple 开发者证书与 CI secrets）
+  - GitHub Actions / 第三方 action 固定 commit SHA；对 tarball 依赖做额外完整性校验
+- **原因暂缓：** 签名与公证依赖账号与密钥，无证书强开会挂发布；钉 SHA 可后续单独 PR。
+- **状态：** 暂缓
+
 ## 后续可选（未排期）
 
 - 问题 1 的 D：`sandbox` / `webSecurity` / 严格 CSP（需单独回归本地音频与 `local://`）
