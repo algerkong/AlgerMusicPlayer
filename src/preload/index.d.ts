@@ -71,12 +71,7 @@ interface API {
   onMprisPause: (callback: () => void) => () => void;
 
   // 快捷键
-  getShortcutsConfig: () => Promise<any>;
-  saveShortcuts: (config: unknown) => Promise<any>;
-  disableShortcuts: () => void;
-  enableShortcuts: () => void;
   onGlobalShortcut: (callback: (action: string) => void) => () => void;
-  onUpdateAppShortcuts: (callback: (shortcuts: unknown) => void) => () => void;
 
   // 通知
   showNotification: (payload: { title: string; body: string }) => void;

@@ -20,12 +20,9 @@
     <!-- 播放条占位交给布局 PlayBottom，这里只留一点呼吸距（同 SearchResult） -->
     <div class="flex-1 min-h-0 overflow-y-auto">
       <div class="settings-body page-padding">
-        <!-- 四类：通用 / 应用 / 存储 / 关于 -->
+        <!-- 通用 / 存储 / 关于（快捷键设置页已移除，使用内置默认快捷键） -->
         <div v-show="currentSection === 'basic'" class="animate-fade-in">
           <basic-tab />
-        </div>
-        <div v-show="currentSection === 'application'" class="animate-fade-in">
-          <application-tab />
         </div>
         <div v-show="currentSection === 'system'" class="animate-fade-in">
           <system-tab />
@@ -52,7 +49,6 @@ import config from '../../../../package.json';
 import { createDefaultAppUpdateState } from '../../../shared/appUpdate';
 import { SETTINGS_DATA_KEY, SETTINGS_DIALOG_KEY, SETTINGS_MESSAGE_KEY } from './keys';
 import AboutTab from './tabs/AboutTab.vue';
-import ApplicationTab from './tabs/ApplicationTab.vue';
 import BasicTab from './tabs/BasicTab.vue';
 import SystemTab from './tabs/SystemTab.vue';
 
@@ -103,10 +99,9 @@ type SettingSectionConfig = {
   electron?: boolean;
 };
 
-/** 桌面四类；Web 无应用/存储时只留通用 + 关于 */
+/** 通用 / 存储 / 关于；Web 无存储时只留通用 + 关于 */
 const settingSections: SettingSectionConfig[] = [
   { id: 'basic' },
-  { id: 'application', electron: true },
   { id: 'system', electron: true },
   { id: 'about' }
 ];

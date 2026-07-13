@@ -119,14 +119,8 @@ const api = {
   onMprisPlay: (callback: () => void) => onChannel('mpris-play', callback),
   onMprisPause: (callback: () => void) => onChannel('mpris-pause', callback),
 
-  // —— 快捷键 ——
-  getShortcutsConfig: () => ipcRenderer.invoke('shortcuts:get-config'),
-  saveShortcuts: (config: unknown) => ipcRenderer.invoke('shortcuts:save', config),
-  disableShortcuts: () => ipcRenderer.send('disable-shortcuts'),
-  enableShortcuts: () => ipcRenderer.send('enable-shortcuts'),
+  // —— 快捷键（内置默认，主进程注册全局；renderer 只收动作）——
   onGlobalShortcut: (callback: (action: string) => void) => onChannel('global-shortcut', callback),
-  onUpdateAppShortcuts: (callback: (shortcuts: unknown) => void) =>
-    onChannel('update-app-shortcuts', callback),
 
   // —— 通知（主进程若未注册则静默无效）——
   showNotification: (payload: { title: string; body: string }) =>
