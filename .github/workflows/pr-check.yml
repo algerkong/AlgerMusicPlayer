@@ -80,5 +80,8 @@ jobs:
       - name: Type check
         run: npm run typecheck
 
+      - name: Unit tests
+        run: npm test
+
       - name: I18n check
         run: npm run lint:i18n
