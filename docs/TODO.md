@@ -1,14 +1,15 @@
 # 待办 / 技术债
 
-> 审查问题与后续架构项。安全 Critical 已在 `fix/security-xss-ipc`（PR）处理；下列为**明确暂缓**项，勿与安全补丁混在同一 PR。
+> 审查问题与后续架构项。安全 Critical / 部分 High 已在 `fix/security-xss-ipc`（PR）处理；下列为**明确暂缓**项，勿与安全补丁混在同一 PR 硬做满。
 
 ## 已处理（安全，供对照）
 
-| #   | 级别     | 摘要                               | 状态                                                                  |
-| --- | -------- | ---------------------------------- | --------------------------------------------------------------------- |
-| 1   | Critical | 渲染进程 XSS → 任意 IPC 升级       | 已修：去歌名 v-html、release notes DOMPurify、preload 业务 API 白名单 |
-| 2   | Critical | `local://` / 文件 IPC 无路径根限制 | 已修：`pathGuard` + 删除须在 `downloadedSongs`                        |
-| 3   | Critical | 凭据明文 + 任意 key 读 store       | 已修：safeStorage session、settings 字段级 IPC、清 localStorage token |
+| #   | 级别     | 摘要                               | 状态                                                                                    |
+| --- | -------- | ---------------------------------- | --------------------------------------------------------------------------------------- |
+| 1   | Critical | 渲染进程 XSS → 任意 IPC 升级       | 已修：去歌名 v-html、release notes DOMPurify、preload 业务 API 白名单                   |
+| 2   | Critical | `local://` / 文件 IPC 无路径根限制 | 已修：`pathGuard` + 删除须在 `downloadedSongs`；热路径加允许根/路径结果缓存             |
+| 3   | Critical | 凭据明文 + 任意 key 读 store       | 已修：safeStorage session、settings 字段级 IPC、清 localStorage token                   |
+| 6   | High     | 下载 SSRF / 资源耗尽               | 已修：HTTPS-only + 私网拒绝、重定向校验、体积/队列上限、`pipeline`、完成列表限并发 stat |
 
 ## 暂缓
 
@@ -38,8 +39,20 @@
 - **原因暂缓：** 非安全漏洞；等于重写播放控制中枢，回归成本高；勿并入安全 PR。
 - **状态：** 暂缓
 
+### 7. High：核心代码几乎无自动化测试
+
+- **现状：** 大量 Vue/TS 源码，测试文件为 0；CI（`.github/workflows/pr-check.yml`）仅 lint / build / typecheck。
+- **风险：** 播放竞态、缓存迁移、Range、路径校验、下载恢复、恶意 IPC 等只能靠人工回归。
+- **建议方向（分阶段）：**
+  1. 接入 vitest（或 node:test），CI 增加 `npm test`
+  2. 先补领域单测：`pathGuard`、`urlGuard`、音源错误转换、恶意 IPC payload
+  3. 再补主进程集成：播放快速切歌、持久化迁移、下载暂停恢复
+- **原因暂缓：** 从 0 搭体系工作量大，不宜与安全补丁同 PR 一次做满；优先安全合入后再开测试工程。
+- **状态：** 暂缓
+
 ## 后续可选（未排期）
 
 - 问题 1 的 D：`sandbox` / `webSecurity` / 严格 CSP（需单独回归本地音频与 `local://`）
 - 问题 2 的加强：opaque file token 替代路径白名单
+- 问题 7 小步：仅 `pathGuard` / `urlGuard` 单测 + CI（可作为测试工程第一步）
 - 安全 PR 合入 `ui/polish-draft` / `main` 的发布策略
