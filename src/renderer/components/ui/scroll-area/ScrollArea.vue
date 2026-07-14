@@ -14,7 +14,7 @@ const props = withDefaults(
   defineProps<
     ScrollAreaRootProps & {
       class?: HTMLAttributes['class'];
-      /** Which scrollbars to show. Default vertical. */
+      /** 显示哪些滚动条，默认纵向 */
       orientation?: Orientation;
       viewportClass?: HTMLAttributes['class'];
     }
@@ -37,7 +37,7 @@ const setRootRef = (el: unknown) => {
     rootEl.value = null;
     return;
   }
-  // reka primitive may be component instance or DOM node
+  // reka 原语可能是组件实例或 DOM 节点
   const anyEl = el as { $el?: HTMLElement };
   rootEl.value = (anyEl.$el ?? el) as HTMLElement;
 };
@@ -69,7 +69,7 @@ const scrollBy = (options?: ScrollToOptions) => {
 };
 
 defineExpose({
-  /** Scrollable viewport element */
+  /** 可滚动视口元素 */
   get viewport() {
     return getViewport();
   },

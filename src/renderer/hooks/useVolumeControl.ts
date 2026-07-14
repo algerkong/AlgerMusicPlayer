@@ -4,7 +4,7 @@ import { usePlayerStore } from '@/store/modules/player';
 
 /**
  * 统一的音量控制 composable
- * 通过 playerStore 管理音量，确保所有播放栏组件的音量状态一致
+ * 音量统一走 playerStore，各播放栏共用同一状态
  */
 export function useVolumeControl() {
   const playerStore = usePlayerStore();

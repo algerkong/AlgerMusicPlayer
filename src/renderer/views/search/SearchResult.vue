@@ -22,7 +22,7 @@
                 <n-empty :description="emptyText" class="pt-16" />
               </template>
 
-              <!-- Songs -->
+              <!-- 歌曲 -->
               <div v-else-if="searchType === SEARCH_TYPE.MUSIC" class="space-y-1">
                 <song-item
                   v-for="(song, index) in songs"
@@ -33,7 +33,7 @@
                 />
               </div>
 
-              <!-- Playlists / Albums grid -->
+              <!-- 歌单 / 专辑网格 -->
               <div
                 v-else
                 class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"

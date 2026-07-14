@@ -21,7 +21,7 @@ export const useRecommendStore = defineStore('recommend', () => {
   };
 
   const replaceSongInDailyRecommend = (_oldSongId: number | string, _newSong: SongResult) => {
-    // no-op
+    // 空操作
   };
 
   return {

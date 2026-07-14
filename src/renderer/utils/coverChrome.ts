@@ -1,6 +1,6 @@
 import { getAmbientSolidFromBackground } from './linearColor';
 
-/** CSS custom properties written for cover-tinted chrome (layout + :root). */
+/** 封面取色壳层 CSS 变量（布局 + :root） */
 export type CoverChromeVars = Record<string, string>;
 
 const ROOT_KEYS = [
@@ -16,7 +16,7 @@ const ROOT_KEYS = [
   '--ring'
 ] as const;
 
-/** Extract `r, g, b` numbers from rgb()/rgba() or bare numbers. */
+/** 从 rgb()/rgba() 或裸数字提取 r,g,b */
 export const parseRgbParts = (
   color: string | undefined | null
 ): [number, number, number] | null => {
@@ -30,7 +30,7 @@ export const parseRgbParts = (
   return [r, g, b];
 };
 
-/** Extract `r, g, b` triple string. */
+/** 提取 r, g, b 三元组字符串 */
 export const parseRgbTriple = (color: string | undefined | null): string | null => {
   const parts = parseRgbParts(color);
   if (!parts) return null;
@@ -42,7 +42,7 @@ export const rgbToHex = (r: number, g: number, b: number): string => {
   return `#${[clamp(r), clamp(g), clamp(b)].map((n) => n.toString(16).padStart(2, '0')).join('')}`;
 };
 
-/** Tailwind/shadcn `--primary` format: `H S% L%` (no hsl()). */
+/** Tailwind/shadcn 的 --primary 格式：H S% L%（不含 hsl()） */
 export const rgbToHslComponents = (r: number, g: number, b: number): string => {
   const rn = r / 255;
   const gn = g / 255;
@@ -73,7 +73,7 @@ export const rgbToHslComponents = (r: number, g: number, b: number): string => {
 
 const shiftChannel = (n: number, delta: number) => Math.max(0, Math.min(255, n + delta));
 
-/** Naive-ui theme overrides from an accent rgb() string. */
+/** 由强调色 rgb() 生成 naive-ui 主题覆盖 */
 export const buildNaivePrimaryOverrides = (primaryColor: string | undefined | null) => {
   const parts = parseRgbParts(primaryColor);
   if (!parts) return {};
@@ -116,8 +116,8 @@ export const buildNaivePrimaryOverrides = (primaryColor: string | undefined | nu
 };
 
 /**
- * Build iOS-style chrome tokens from cover palette.
- * Requires a real background wash; primary alone is not enough (avoids light-on-white).
+ * 由封面色盘构建壳层 token
+ * 需要真实背景铺色；仅有 primary 时跳过（避免白底浅字）
  */
 export const buildCoverChromeVars = (
   backgroundColor: string | undefined | null,
@@ -144,7 +144,7 @@ export const buildCoverChromeVars = (
       '--chrome-text-muted': 'rgba(248, 250, 252, 0.78)',
       '--chrome-accent': accent,
       '--primary-color': `rgb(${accent})`,
-      // Tailwind `bg-primary` / `text-primary` / `ring-primary`
+      // 供 shadcn / Tailwind primary 使用
       '--primary': primaryHsl,
       '--ring': primaryHsl
     };
@@ -154,7 +154,7 @@ export const buildCoverChromeVars = (
   }
 };
 
-/** Apply cover chrome on documentElement so teleports/popovers inherit tint. */
+/** 写入 documentElement，供 teleport 弹层继承 */
 export const applyCoverChromeToRoot = (vars: CoverChromeVars | null): void => {
   try {
     if (typeof document === 'undefined') return;

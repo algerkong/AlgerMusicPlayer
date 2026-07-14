@@ -208,7 +208,6 @@ const dropdownOptions = computed<MenuOption[]>(() => {
   return options;
 });
 
-// 处理选择
 const handleSelect = (key: string | number) => {
   emits('update:show', false);
 

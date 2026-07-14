@@ -144,7 +144,7 @@ const markTrayTipSeen = () => {
   try {
     localStorage.setItem(TRAY_TIP_KEY, '1');
   } catch {
-    /* ignore */
+    /* 忽略 */
   }
   settingsStore.setSetData({
     ...settingsStore.setData,

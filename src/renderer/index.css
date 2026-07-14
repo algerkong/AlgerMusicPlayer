@@ -1,14 +1,13 @@
 /* ./src/index.css */
 
-/*! @import */
+/* ! @import */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /*
- * 壳层「附着」表面：半透明 + 模糊，不锁死黑/白。
- * 有封面取色时 AppLayout 会写 html.has-cover-chrome + 覆盖下列 token，
- * 品牌 / 搜索 / 登录 / 侧栏 / 播放条 / 弹层统一跟着环境色走（iOS 风）。
+ * 壳层附着表面 token（半透明 + 模糊）。
+ * 有封面色时 AppLayout 写 html.has-cover-chrome 并覆盖下列变量。
  */
 :root {
   --chrome-tint: 255, 255, 255;
@@ -31,7 +30,7 @@
   --chrome-accent: 34, 197, 94;
 }
 
-/* 封面色激活：强制暗色底，避免浅色字落在白底上像「白屏」 */
+/* 封面色激活：暗色底，保证浅色字可读 */
 html.has-cover-chrome {
   color-scheme: dark;
   background-color: #0a0a0b;
@@ -66,10 +65,7 @@ html.has-cover-chrome body {
   color: var(--chrome-text);
 }
 
-/*
- * 大屏抽屉（teleport 到 #layout-main）：
- * 从底栏进度条高度处用 clip-path 向上展开 / 收拢，底栏同时下滑。
- */
+/* 大屏抽屉：自底栏高度 clip-path 展开 / 收拢（与底栏下滑同步） */
 .n-drawer.music-full-drawer {
   will-change: clip-path;
 }

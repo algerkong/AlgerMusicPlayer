@@ -43,7 +43,6 @@ export const useSettingsStore = defineStore('settings', () => {
     setData.value = cloneDeep(mergedData);
   };
 
-  // 初始化时先从存储中读取设置
   const getInitialSettings = () => {
     // 从存储中获取保存的设置
     const savedSettings = isElectron
@@ -61,12 +60,10 @@ export const useSettingsStore = defineStore('settings', () => {
     // 合并默认设置和保存的设置
     const mergedSettings = mergeWith({}, setDataDefault, savedSettings, customizer);
 
-    // 更新设置并返回
     setSetData(mergedSettings);
     return mergedSettings;
   };
 
-  // 初始化 setData
   setData.value = getInitialSettings();
 
   /** 兼容旧调用：主题已锁深色，切换无效 */
@@ -152,7 +149,6 @@ export const useSettingsStore = defineStore('settings', () => {
     }
   };
 
-  // 计算移动端状态的函数
   const calculateMobileStatus = () => {
     const userAgentFlag = navigator.userAgent.match(
       /(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i
@@ -164,19 +160,16 @@ export const useSettingsStore = defineStore('settings', () => {
     return isMobileDevice && !tabletMode;
   };
 
-  // 更新移动端状态和DOM类
   const updateMobileStatus = () => {
     const menuStore = useMenuStore();
     const shouldUseMobileStyle = calculateMobileStatus();
 
-    // 更新store状态
     if (shouldUseMobileStyle) {
       menuStore.setMenus(homeRouter.filter((item) => item.meta.isMobile));
     } else {
       menuStore.setMenus(homeRouter);
     }
 
-    // 更新DOM类
     if (shouldUseMobileStyle) {
       document.documentElement.classList.add('mobile');
       document.documentElement.classList.remove('pc');
@@ -188,7 +181,6 @@ export const useSettingsStore = defineStore('settings', () => {
     isMobile.value = shouldUseMobileStyle;
   };
 
-  // 监听平板模式变化
   watch(
     () => setData.value?.tabletMode,
     () => {
@@ -197,7 +189,6 @@ export const useSettingsStore = defineStore('settings', () => {
     { immediate: true }
   );
 
-  // 监听窗口大小变化
   if (typeof window !== 'undefined') {
     window.addEventListener('resize', updateMobileStatus);
   }

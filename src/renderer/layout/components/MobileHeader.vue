@@ -49,12 +49,10 @@ const title = computed(() => {
   return (route.meta.title as string) || '';
 });
 
-// 返回上一页
 const goBack = () => {
   router.back();
 };
 
-// 打开搜索
 const openSearch = () => {
   router.push('/mobile-search');
 };

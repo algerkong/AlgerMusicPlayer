@@ -282,7 +282,7 @@ export async function msGetLyric(songId: string): Promise<MsLyricResult> {
   return invokeMs('music-source:get-lyric', songId);
 }
 
-/** Convert timed lyric lines to LRC text (line-level only, no word timing) */
+/** 带时间戳的歌词行转 LRC 文本（仅行级，无逐字） */
 export function msLyricToLrc(lines: MsLyricLine[]): string {
   return lines
     .map((line) => {

@@ -18,7 +18,7 @@ const layoutRouter = [
       noScroll: true,
       icon: 'icon-Search',
       keepAlive: true,
-      // 顶栏已有搜索，侧栏不再展示
+      // 搜索在顶栏，侧栏不重复展示
       hideInSidebar: true
     },
     component: () => import('@/views/search/index.vue')
@@ -43,7 +43,7 @@ const layoutRouter = [
       icon: 'icon-a-TicketStar',
       keepAlive: true,
       isMobile: true,
-      // 收入「歌单」页本地入口，侧栏不再单独展示
+      // 本地入口放在「歌单」页，侧栏不单独占一项
       hideInSidebar: true
     }
   },
@@ -56,7 +56,7 @@ const layoutRouter = [
       keepAlive: true,
       noScroll: true,
       isMobile: true,
-      // 右上角用户入口即可，侧栏不再展示
+      // 用户入口在右上角，侧栏不重复
       hideInSidebar: true
     },
     component: () => import('@/views/user/index.vue')
@@ -70,7 +70,6 @@ const layoutRouter = [
       keepAlive: true,
       noScroll: true,
       back: true,
-      // 设置钉在侧栏底部，不进主导航列表
       hideInSidebar: true
     },
     component: () => import('@/views/set/index.vue')

@@ -124,7 +124,6 @@ const shouldShowReminder = (): boolean => {
   return now - savedTime >= oneDayInMs;
 };
 
-// 处理"稍后提醒"
 const handleLater = () => {
   // 记录当前时间
   localStorage.setItem(REMIND_LATER_KEY, Date.now().toString());
@@ -160,7 +159,6 @@ const handleUpdate = async () => {
   const downloadUrl = `https://github.com/LuoYe17/AlgerMusicPlayer/releases/download/v${version}/LYMusicPlayer-${version}.apk`;
 
   try {
-    // 获取代理节点
     const proxyHosts = await getProxyNodes();
     const proxyDownloadUrl = `${proxyHosts[0]}/${downloadUrl}`;
 
@@ -170,7 +168,6 @@ const handleUpdate = async () => {
     // 使用系统浏览器打开下载链接
     window.open(proxyDownloadUrl, '_blank');
 
-    // 关闭弹窗
     closeModal();
   } catch (error) {
     console.error('打开下载链接失败:', error);

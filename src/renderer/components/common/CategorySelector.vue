@@ -274,5 +274,5 @@ defineExpose({
   z-index: 1;
 }
 
-/* 底线改由 slider 统一画，不再用 ::after，避免两根线 */
+/* 底线由 slider 绘制，去掉 ::after 以免双线 */
 </style>

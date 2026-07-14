@@ -12,7 +12,7 @@ export interface PersistEnvelope<T> {
 
 export interface PersistSchema<T> {
   owner: PersistOwner;
-  /** localStorage key */
+  /** localStorage 键 */
   key: string;
   version: number;
   defaultValue: T;
@@ -40,7 +40,7 @@ function removeRaw(key: string): void {
   try {
     localStorage.removeItem(key);
   } catch {
-    // ignore
+    // 忽略
   }
 }
 

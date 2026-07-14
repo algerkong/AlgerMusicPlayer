@@ -17,7 +17,6 @@ import { parseLyrics } from '@/utils/yrcParser';
 // 全局 playerStore 引用，通过 initMusicHook 函数注入
 let playerStore: ReturnType<typeof usePlayerStore> | null = null;
 
-// 初始化函数，接受 store 实例
 export const initMusicHook = (store: ReturnType<typeof usePlayerStore>) => {
   playerStore = store;
 
@@ -33,7 +32,6 @@ export const initMusicHook = (store: ReturnType<typeof usePlayerStore>) => {
   setupCorrectionTimeWatcher();
 };
 
-// 获取 playerStore 的辅助函数
 const getPlayerStore = () => {
   if (!playerStore) {
     throw new Error('MusicHook not initialized. Call initMusicHook first.');
@@ -313,7 +311,7 @@ const setupAudioListeners = () => {
           return;
         }
 
-        // 同步 sound.value 引用（确保外部也能拿到最新的）
+        // 同步 sound.value，供外部读取最新实例
         if (sound.value !== currentSound) {
           sound.value = currentSound;
         }
@@ -414,16 +412,13 @@ const setupAudioListeners = () => {
     }, 500);
   };
 
-  // 启动恢复监控
   startRecoveryMonitor();
 
-  // 监听seek开始事件，立即更新UI
   audioService.on('seek_start', (time) => {
     // 直接更新显示位置，不检查拖动状态
     nowTime.value = time;
   });
 
-  // 监听seek完成事件
   audioService.on('seek', () => {
     try {
       const currentSound = audioService.getCurrentSound();
@@ -450,12 +445,11 @@ const setupAudioListeners = () => {
     }
   });
 
-  // 立即更新一次时间和进度（解决初始化时进度条不显示问题）
+  // 立刻刷新时间/进度（避免首帧进度条空白）
   const updateCurrentTimeAndDuration = () => {
     const currentSound = audioService.getCurrentSound();
     if (currentSound) {
       try {
-        // 更新当前时间和总时长
         const currentTime = currentSound.currentTime;
         if (typeof currentTime === 'number' && !Number.isNaN(currentTime)) {
           nowTime.value = currentTime;
@@ -470,7 +464,6 @@ const setupAudioListeners = () => {
   // 立即执行一次更新
   updateCurrentTimeAndDuration();
 
-  // 监听播放
   audioService.on('play', () => {
     getPlayerStore().setPlayMusic(true);
     if (isElectron) {
@@ -483,7 +476,6 @@ const setupAudioListeners = () => {
     startProgressInterval();
   });
 
-  // 监听暂停
   audioService.on('pause', () => {
     console.log('音频暂停事件触发');
     getPlayerStore().setPlayMusic(false);
@@ -513,7 +505,6 @@ const setupAudioListeners = () => {
     }
   };
 
-  // 监听结束
   audioService.on('end', async () => {
     console.log('音频播放结束事件触发');
     clearInterval();
@@ -554,7 +545,6 @@ export const pause = () => {
   const currentSound = audioService.getCurrentSound();
   if (currentSound) {
     try {
-      // 保存当前播放进度
       const currentTime = currentSound.currentTime;
       if (getPlayerStore().playMusic && getPlayerStore().playMusic.id) {
         void import('@/services/persistenceService').then(
@@ -578,7 +568,6 @@ export const pause = () => {
 const CORRECTION_KEY = 'lyric-correction-map';
 const correctionTimeMap = ref<Record<string, number>>({});
 
-// 初始化 correctionTimeMap
 const loadCorrectionMap = () => {
   try {
     const raw = localStorage.getItem(CORRECTION_KEY);
@@ -642,7 +631,6 @@ export const refineLyricTimeBaseFromAudio = (audioDurationSec: number) => {
   }
 };
 
-// 设置歌词矫正时间的监听器
 const setupCorrectionTimeWatcher = () => {
   // 切歌时自动读取矫正时间 + 试听偏移
   watch(
@@ -683,7 +671,6 @@ export const adjustCorrectionTime = (delta: number) => {
   saveCorrectionMap();
 };
 
-// 获取当前播放歌词
 export const isCurrentLrc = (index: number, time: number): boolean => {
   const currentTime = lrcTimeArray.value[index];
   const correctedTime = getLyricClockSec(time);
@@ -698,7 +685,6 @@ export const isCurrentLrc = (index: number, time: number): boolean => {
   return correctedTime >= currentTime && correctedTime < nextTime;
 };
 
-// 获取当前播放歌词INDEX
 export const getLrcIndex = (time: number): number => {
   const correctedTime = getLyricClockSec(time);
 
@@ -707,7 +693,6 @@ export const getLrcIndex = (time: number): number => {
     return nowIndex.value;
   }
 
-  // 处理最后一句歌词的情况
   const lastIndex = lrcTimeArray.value.length - 1;
   if (correctedTime >= lrcTimeArray.value[lastIndex]) {
     nowIndex.value = lastIndex;
@@ -728,14 +713,12 @@ export const getLrcIndex = (time: number): number => {
   return nowIndex.value;
 };
 
-// 获取当前播放歌词进度
 const currentLrcTiming = computed(() => {
   const start = lrcTimeArray.value[nowIndex.value] || 0;
   const end = lrcTimeArray.value[nowIndex.value + 1] || start + 1;
   return { start, end };
 });
 
-// 获取歌词样式
 export const getLrcStyle = (index: number) => {
   const currentTime = getLyricClockSec();
   const start = lrcTimeArray.value[index];
@@ -758,7 +741,7 @@ export const getLrcStyle = (index: number) => {
 
 // 播放进度
 export const useLyricProgress = () => {
-  // 如果已经在全局更新进度，立即返回
+  // 已在全局更新进度则直接返回
   return {
     getLrcStyle
   };
@@ -775,7 +758,6 @@ export const setAudioTime = (index: number) => {
   currentSound.play();
 };
 
-// 获取当前播放的歌词
 export const getCurrentLrc = () => {
   const index = getLrcIndex(nowTime.value);
   return {
@@ -784,7 +766,6 @@ export const getCurrentLrc = () => {
   };
 };
 
-// 获取一句歌词播放时间几秒到几秒
 export const getLrcTimeRange = (index: number) => ({
   currentTime: lrcTimeArray.value[index],
   nextTime: lrcTimeArray.value[index + 1]
@@ -816,13 +797,13 @@ const sendTrayLyric = (index: number) => {
 
 export const initAudioListeners = async () => {
   try {
-    // 确保有正在播放的音乐
+    // 需已有正在播放的音乐
     if (!getPlayerStore().playMusic || !getPlayerStore().playMusic.id) {
       console.log('没有正在播放的音乐，跳过音频监听器初始化');
       return;
     }
 
-    // 确保有音频实例
+    // 需已有音频实例
     const initialSound = audioService.getCurrentSound();
     if (!initialSound) {
       console.log('没有音频实例，等待音频加载...');
@@ -836,7 +817,6 @@ export const initAudioListeners = async () => {
           }
         }, 100);
 
-        // 设置超时
         setTimeout(() => {
           clearInterval(checkInterval);
           console.log('等待音频加载超时');
@@ -845,13 +825,10 @@ export const initAudioListeners = async () => {
       });
     }
 
-    // 初始化音频监听器
     setupAudioListeners();
 
-    // 获取最新的音频实例
     const finalSound = audioService.getCurrentSound();
     if (finalSound) {
-      // 更新全局 sound 引用
       sound.value = finalSound;
     } else {
       console.warn('无法获取音频实例，跳过进度更新初始化');

@@ -29,7 +29,7 @@ import {
   UnsafeUrlError
 } from './urlGuard';
 
-// ─── Helpers ─────────────────────────────────────────────────────────
+// ─── 工具 ─────────────────────────────────────────────────────────
 
 function sanitizeFilename(filename: string): string {
   return filename
@@ -109,17 +109,17 @@ async function httpsGetWithGuard(
   throw new UnsafeUrlError('重定向次数过多');
 }
 
-// ─── Batch tracker entry ─────────────────────────────────────────────
+// ─── 批处理跟踪 ─────────────────────────────────────────────────────
 
 type BatchEntry = { total: number; finished: number; success: number };
 
-// ─── Persist store type ──────────────────────────────────────────────
+// ─── 持久化 store 类型 ──────────────────────────────────────────────
 
 type DownloadQueueStore = {
   tasks: DownloadTask[];
 };
 
-// ─── DownloadManager ─────────────────────────────────────────────────
+// ─── 下载管理器 ─────────────────────────────────────────────────
 
 class DownloadManager {
   private tasks: Map<string, DownloadTask> = new Map();
@@ -142,7 +142,7 @@ class DownloadManager {
     this.cleanOrphanedTempFiles();
 
     app.on('before-quit', () => {
-      // Abort all active downloads, set to paused, persist synchronously
+      // 中止全部进行中下载，标为暂停，同步落盘
       for (const [taskId, controller] of this.abortControllers.entries()) {
         controller.abort();
         const task = this.tasks.get(taskId);
@@ -158,7 +158,7 @@ class DownloadManager {
     this.mainWindow = win;
   }
 
-  // ─── IPC Registration ───────────────────────────────────────────
+  // ─── IPC 注册 ───────────────────────────────────────────────────
 
   registerIpcHandlers() {
     ipcMain.handle('download:add', (_, payload) => this.addTask(payload));
@@ -182,7 +182,7 @@ class DownloadManager {
     );
   }
 
-  // ─── Task creation ──────────────────────────────────────────────
+  // ─── 创建任务 ────────────────────────────────────────────────────
 
   private addTask(payload: {
     url: string;
@@ -268,7 +268,7 @@ class DownloadManager {
     return { batchId, taskIds };
   }
 
-  // ─── Pause / Resume / Cancel ────────────────────────────────────
+  // ─── 暂停 / 继续 / 取消 ────────────────────────────────────────
 
   private pauseTask(taskId: string): boolean {
     const task = this.tasks.get(taskId);
@@ -301,14 +301,13 @@ class DownloadManager {
     const task = this.tasks.get(taskId);
     if (!task) return false;
 
-    // Abort if downloading
+    // 下载中则中止
     const controller = this.abortControllers.get(taskId);
     if (controller) {
       controller.abort();
       this.abortControllers.delete(taskId);
     }
 
-    // Delete temp file
     if (task.tempFilePath && fs.existsSync(task.tempFilePath)) {
       try {
         fs.unlinkSync(task.tempFilePath);
@@ -331,7 +330,7 @@ class DownloadManager {
     }
   }
 
-  // ─── Queue queries ──────────────────────────────────────────────
+  // ─── 队列查询 ──────────────────────────────────────────────────
 
   private getQueue(): DownloadTask[] {
     return [...this.tasks.values()].filter(
@@ -343,14 +342,14 @@ class DownloadManager {
     );
   }
 
-  // ─── Concurrency ───────────────────────────────────────────────
+  // ─── 并发 ─────────────────────────────────────────────────────
 
   private setConcurrency(value: number): void {
     this.maxConcurrent = Math.max(1, Math.min(5, value));
     this.processQueue();
   }
 
-  // ─── Completed songs (same logic as old fileManager) ────────────
+  // ─── 已完成曲目（逻辑同旧 fileManager） ──────────────────────────
 
   private async getCompleted(): Promise<any[]> {
     try {
@@ -460,7 +459,7 @@ class DownloadManager {
     return true;
   }
 
-  // ─── Embedded lyrics reader ─────────────────────────────────────
+  // ─── 内嵌歌词读取 ───────────────────────────────────────────────
 
   private async getEmbeddedLyrics(filePath: string): Promise<string | null> {
     try {
@@ -481,7 +480,7 @@ class DownloadManager {
       if (ext === '.flac') {
         const metadata = await mm.parseFile(safePath);
         const native = metadata.native;
-        // Look for LYRICS in vorbis comments
+        // 在 vorbis 注释中查找 LYRICS
         for (const format of Object.keys(native)) {
           const tags = native[format];
           const lyricsTag = tags.find(
@@ -499,7 +498,7 @@ class DownloadManager {
     }
   }
 
-  // ─── Provide URL (re-resolved by renderer) ─────────────────────
+  // ─── 提供 URL（由渲染进程重新解析） ───────────────────────────
 
   private provideUrl(taskId: string, url: string): boolean {
     const task = this.tasks.get(taskId);
@@ -530,7 +529,7 @@ class DownloadManager {
     return true;
   }
 
-  // ─── Queue processing ──────────────────────────────────────────
+  // ─── 队列处理 ──────────────────────────────────────────────────
 
   private processQueue(): void {
     const queued = [...this.tasks.values()]
@@ -546,7 +545,7 @@ class DownloadManager {
     }
   }
 
-  // ─── Core download ─────────────────────────────────────────────
+  // ─── 核心下载 ──────────────────────────────────────────────────
 
   private async downloadTask(task: DownloadTask): Promise<void> {
     const controller = new AbortController();
@@ -574,7 +573,7 @@ class DownloadManager {
       const downloadPath =
         (configStore.get('set.downloadPath') as string) || app.getPath('downloads');
 
-      // Format filename
+      // 格式化文件名
       const nameFormat =
         (configStore.get('set.downloadNameFormat') as string) || '{songName} - {artistName}';
 
@@ -592,18 +591,17 @@ class DownloadManager {
 
       const sanitizedFilename = sanitizeFilename(formattedFilename);
 
-      // Temp directory
+      // 临时目录
       const tempDir = path.join(os.tmpdir(), 'LYMusicPlayerTemp');
       if (!fs.existsSync(tempDir)) {
         fs.mkdirSync(tempDir, { recursive: true });
       }
 
-      // Use existing temp file path if resuming, otherwise create new one
+      // 续传用已有临时路径，否则新建
       if (!task.tempFilePath) {
         task.tempFilePath = path.join(tempDir, `${task.taskId}_${sanitizedFilename}.tmp`);
       }
 
-      // Build request headers for resume
       const headers: Record<string, string> = {};
       if (task.loaded > 0 && fs.existsSync(task.tempFilePath)) {
         headers['Range'] = `bytes=${task.loaded}-`;
@@ -695,7 +693,7 @@ class DownloadManager {
       await this.finalizeDownload(task, sanitizedFilename, downloadPath);
     } catch (error: any) {
       if (axios.isCancel(error) || error?.name === 'AbortError' || error?.code === 'ERR_CANCELED') {
-        // Aborted by user (pause/cancel) - do not set error state
+        // 用户中止（暂停/取消）— 不标错误
         return;
       }
 
@@ -705,10 +703,10 @@ class DownloadManager {
         error instanceof UnsafeUrlError ? error.message : error.message || 'Download failed';
       this.sendStateChange(task);
 
-      // Track batch error
+      // 记录批次错误
       this.handleBatchError(task);
 
-      // Cleanup temp file on error
+      // 出错时清理临时文件
       if (task.tempFilePath && fs.existsSync(task.tempFilePath)) {
         try {
           fs.unlinkSync(task.tempFilePath);
@@ -726,7 +724,7 @@ class DownloadManager {
     }
   }
 
-  // ─── Finalize download ─────────────────────────────────────────
+  // ─── 完成下载收尾 ──────────────────────────────────────────────
 
   private async finalizeDownload(
     task: DownloadTask,
@@ -735,7 +733,6 @@ class DownloadManager {
   ): Promise<void> {
     const configStore = getStore();
 
-    // Detect file type
     let fileExtension = '';
     try {
       const fileType = await fileTypeFromFile(task.tempFilePath);
@@ -769,7 +766,7 @@ class DownloadManager {
       fileExtension = `.${task.type || 'mp3'}`;
     }
 
-    // Build final file path with dedup（必须落在允许根内）
+    // 生成最终路径并去重（必须在允许根目录内）
     let finalFilePath = path.join(downloadPath, `${sanitizedFilename}${fileExtension}`);
     let counter = 1;
     while (fs.existsSync(finalFilePath)) {
@@ -785,12 +782,12 @@ class DownloadManager {
     }
     finalFilePath = safeFinal;
 
-    // Move temp to final
+    // 临时文件移到最终路径
     fs.copyFileSync(task.tempFilePath, finalFilePath);
     fs.unlinkSync(task.tempFilePath);
     task.finalFilePath = finalFilePath;
 
-    // Online lyric API removed; keep empty lyrics for tag write (cover still fetched if URL known)
+    // 无在线歌词 API 时标签写空歌词；有封面 URL 仍拉封面
     const lyricsContent = '';
     const lyricData = null;
 
@@ -860,8 +857,8 @@ class DownloadManager {
       console.error('Failed to download cover:', coverError);
     }
 
-    // Write metadata
-    // songInfo may carry extra fields (song, no, publishTime) beyond DownloadSongInfo
+    // 写入元数据
+    // songInfo 可能带 DownloadSongInfo 以外字段（song、no、publishTime）
     const info: any = task.songInfo;
     const fileFormat = fileExtension.toLowerCase();
     const artistNames =
@@ -922,7 +919,7 @@ class DownloadManager {
       }
     }
 
-    // Save .lrc file if setting enabled
+    // 若开启设置则保存 .lrc
     if (lyricsContent && configStore.get('set.downloadSaveLyric')) {
       try {
         const lrcFilePath = finalFilePath.replace(/\.[^.]+$/, '.lrc');
@@ -932,7 +929,7 @@ class DownloadManager {
       }
     }
 
-    // Save to downloadedSongs
+    // 写入 downloadedSongs
     const songInfos = (configStore.get('downloadedSongs') || {}) as Record<string, any>;
     const defaultInfo = {
       name: task.filename,
@@ -961,11 +958,9 @@ class DownloadManager {
     songInfos[finalFilePath] = newSongInfo;
     configStore.set('downloadedSongs', songInfos);
 
-    // Update task state
     task.state = 'completed';
     this.sendStateChange(task);
 
-    // Handle notifications
     if (task.batchId) {
       const batch = this.batchTracker.get(task.batchId);
       if (batch) {
@@ -973,7 +968,7 @@ class DownloadManager {
         batch.success++;
 
         if (batch.finished >= batch.total) {
-          // All tasks in batch complete
+          // 本批次任务全部完成
           const failed = batch.total - batch.success;
 
           try {
@@ -998,7 +993,7 @@ class DownloadManager {
         }
       }
     } else {
-      // Individual notification
+      // 单条通知
       try {
         const notification = new Notification({
           title: '下载完成',
@@ -1014,12 +1009,12 @@ class DownloadManager {
       }
     }
 
-    // Remove completed task from active tasks and persist
+    // 从进行中移除已完成任务并落盘
     this.tasks.delete(task.taskId);
     this.persistQueue();
   }
 
-  // ─── Batch error tracking ──────────────────────────────────────
+  // ─── 批次错误跟踪 ──────────────────────────────────────────────
 
   private handleBatchError(task: DownloadTask): void {
     if (!task.batchId) return;
@@ -1027,7 +1022,7 @@ class DownloadManager {
     if (!batch) return;
 
     batch.finished++;
-    // success not incremented for errors
+    // 出错时不增加 success 计数
 
     if (batch.finished >= batch.total) {
       const failed = batch.total - batch.success;
@@ -1053,7 +1048,7 @@ class DownloadManager {
     }
   }
 
-  // ─── IPC send helpers ──────────────────────────────────────────
+  // ─── IPC 发送辅助 ──────────────────────────────────────────────
 
   private sendToRenderer(channel: string, data: any): void {
     try {
@@ -1061,7 +1056,7 @@ class DownloadManager {
         this.mainWindow.webContents.send(channel, data);
       }
     } catch {
-      // Window may have been closed
+      // 窗口可能已关闭
     }
   }
 
@@ -1084,7 +1079,7 @@ class DownloadManager {
     this.sendToRenderer('download:progress', event);
   }
 
-  // ─── Persistence ───────────────────────────────────────────────
+  // ─── 持久化 ───────────────────────────────────────────────────
 
   private persistQueue(): void {
     if (this.persistTimer) {
@@ -1117,7 +1112,6 @@ class DownloadManager {
     try {
       const saved = this.persistStore.get('tasks', []);
       for (const task of saved) {
-        // Treat in-flight states as paused on load
         if (task.state === 'downloading' || task.state === 'waitingForUrl') {
           task.state = 'paused';
         }
@@ -1145,17 +1139,17 @@ class DownloadManager {
           try {
             fs.unlinkSync(fullPath);
           } catch {
-            // ignore
+            // 忽略
           }
         }
       }
     } catch {
-      // Temp dir may not exist
+      // 临时目录可能不存在
     }
   }
 }
 
-// ─── Singleton & exports ───────────────────────────────────────────
+// ─── 单例与导出 ───────────────────────────────────────────────────
 
 let instance: DownloadManager | null = null;
 

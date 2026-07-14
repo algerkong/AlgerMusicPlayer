@@ -116,7 +116,7 @@ const isPlay = computed(() => {
 });
 const route = useRoute();
 
-/** 封面取色：壳层背景 + 全站 chrome token（含 teleport 到 body 的弹层） */
+/** 封面取色 → 布局背景与 chrome token */
 const coverBackground = computed(() => {
   const m = playerStore.playMusic as any;
   return (m?.backgroundColor as string) || '';
@@ -131,13 +131,12 @@ const coverChromeVars = computed(() =>
   buildCoverChromeVars(coverBackground.value, coverPrimary.value)
 );
 
-/** 布局页：铺封面渐变 + 同套 token（与 :root 同步） */
 const layoutBgStyle = computed(() => {
   if (!coverChromeVars.value) return undefined;
   return coverChromeVars.value as Record<string, string>;
 });
 
-// 写到 html，保证 TitleBar / 搜索 / 登录 / 播放条 / popover 都跟封面色
+// 同步到 html，teleport 弹层也能继承
 watch(
   coverChromeVars,
   (vars) => {
@@ -155,7 +154,7 @@ onUnmounted(() => {
   try {
     applyCoverChromeToRoot(null);
   } catch {
-    /* ignore */
+    /* 忽略 */
   }
 });
 

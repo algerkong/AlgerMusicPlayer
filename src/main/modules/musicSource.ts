@@ -22,7 +22,7 @@ let initialized = false;
 
 function mapQuality(raw?: string): Quality {
   if (raw === 'standard' || raw === 'lossless') return raw;
-  // higher / exhigh / anything else → higher
+  // higher / exhigh / 其它 → higher
   return 'higher';
 }
 
@@ -59,7 +59,7 @@ function loadPersistedSession(): SessionBundle | undefined {
     try {
       store.delete(SESSION_KEY_PLAIN);
     } catch {
-      // ignore
+      // 忽略
     }
     writePersistedSession(legacy);
     return legacy;
@@ -70,7 +70,7 @@ function loadPersistedSession(): SessionBundle | undefined {
     try {
       store.delete(SESSION_KEY_PLAIN);
     } catch {
-      // ignore
+      // 忽略
     }
   }
 
@@ -82,7 +82,7 @@ function writePersistedSession(bundle: SessionBundle): void {
   try {
     store.delete(SESSION_KEY_PLAIN);
   } catch {
-    // ignore
+    // 忽略
   }
 
   if (!safeStorage.isEncryptionAvailable()) {
@@ -90,7 +90,7 @@ function writePersistedSession(bundle: SessionBundle): void {
     try {
       store.delete(SESSION_KEY_ENC);
     } catch {
-      // ignore
+      // 忽略
     }
     console.warn('[musicSource] safeStorage unavailable; session not persisted to disk');
     return;
@@ -166,8 +166,8 @@ function wrapOk<T>(data: T): { ok: true; data: T } {
 }
 
 /**
- * Initialize ly-music-source bridge (idempotent).
- * Client runs only in the main process; renderer talks via IPC.
+ * 初始化 ly-music-source 桥接（幂等）
+ * 客户端仅跑在主进程；渲染进程走 IPC
  */
 export function initializeMusicSource(): void {
   if (initialized) return;
@@ -318,7 +318,7 @@ export function initializeMusicSource(): void {
         quality
       });
 
-      // Never ship Buffer over IPC — only file/local URL or remote URL
+      // IPC 不传 Buffer，仅 file/local 或远程 URL
       let playMusicUrl: string | undefined = result.url;
       if (result.filePath) {
         playMusicUrl = filePathToLocalUrl(result.filePath);

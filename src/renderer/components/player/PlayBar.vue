@@ -2,7 +2,6 @@
   <div
     class="music-play-bar"
     :class="[
-      // 首屏 bounce 一次；之后大屏开合只用滑动，避免 animation 盖住 transform
       !musicFullVisible && !playBarSettled ? setAnimationClass('animate__bounceInUp') : '',
       musicFullVisible ? 'play-bar-hidden' : ''
     ]"
@@ -312,7 +311,7 @@ const formatTooltip = (value: number) => {
 
 const MusicFullRef = ref<any>(null);
 const showSliderTooltip = ref(false);
-/** 首屏 bounce 只播一次，之后大屏开合只用滑动 */
+/* 进场动画结束后去掉 bounce class，避免盖住下滑 transform */
 const playBarSettled = ref(false);
 onMounted(() => {
   window.setTimeout(() => {
@@ -355,7 +354,6 @@ const openPlayListDrawer = () => {
 .music-play-bar {
   @apply w-full absolute bottom-0 left-0 flex items-center box-border px-6 py-2 pt-3;
   height: var(--play-bar-height, 5rem);
-  /* 跟封面取色：半透明环境色 + 模糊 */
   background: var(--chrome-surface-strong, rgba(24, 24, 27, 0.88));
   border-top: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.1));
   backdrop-filter: blur(var(--chrome-blur, 16px));
@@ -363,16 +361,12 @@ const openPlayListDrawer = () => {
   color: var(--chrome-text, #f8fafc);
   pointer-events: auto;
   box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.18);
-  /* 高于大屏抽屉(9998)：展开时底栏在上，像从进度条处被推下去 */
+  /* 高于 .music-full-drawer(9998)，展开时底栏压在抽屉上再下滑 */
   z-index: 9999;
   animation-duration: 0.5s !important;
-  /* 与 .music-full-drawer 同时长、同曲线：一上一下 */
   transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1);
 
-  /*
-   * 大屏展开：整条底栏往下滑收起（不淡出，纯位移）。
-   * 必须关掉 bounceInUp 的 animation-fill，否则 transform 被关键帧盖掉。
-   */
+  /* 大屏打开：下滑收起；关掉进场 animation 以免覆盖 transform */
   &.play-bar-hidden {
     animation: none !important;
     transform: translateY(100%) !important;

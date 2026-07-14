@@ -251,7 +251,7 @@ const onPlayMusic = () => {
   }
 }
 
-/* dark mode */
+/* 暗色模式 */
 .dark .list-song-item {
   border-color: rgb(31 41 55); /* dark:border-gray-800 */
 

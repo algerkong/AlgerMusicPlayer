@@ -9,7 +9,6 @@ const pinia = createPinia();
 
 pinia.use(piniaPluginPersistedstate);
 
-// 添加路由到 Pinia
 pinia.use(({ store }) => {
   store.router = markRaw(router);
 });

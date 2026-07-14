@@ -3,7 +3,7 @@
  *
  * 凭据不得进入 localStorage：
  * - 音源 cookie/session 仅主进程 + safeStorage
- * - 历史 localStorage.token 启动时清除，不再作为权限依据
+ * - 启动时清除历史 localStorage.token，不参与鉴权
  *
  * 在组件内部，建议直接使用 userStore / msGetAuthState。
  */
@@ -23,7 +23,7 @@ export function purgeCredentialStorage(): void {
   try {
     localStorage.removeItem('token');
   } catch {
-    // ignore
+    // 忽略
   }
 }
 
@@ -48,7 +48,7 @@ export function checkLoginStatus(): LoginInfo {
     }
   }
 
-  // 不再用 localStorage token 判定登录；仅根据非敏感的 user 缓存做 UI 恢复
+  // 登录态不看 localStorage token；仅用非敏感 user 缓存恢复 UI
   const isLoggedIn = hasUser && !!user;
 
   return {
@@ -112,9 +112,6 @@ export function setLoginStatus(loginType: LoginInfo['loginType'], _token?: strin
   }
 }
 
-/**
- * 获取登录错误信息
- */
 export function getLoginErrorMessage(requireAuth: boolean = false): string {
   const loginInfo = checkLoginStatus();
 

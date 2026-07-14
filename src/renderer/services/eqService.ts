@@ -41,7 +41,6 @@ export class EQService {
     this.initializeUserGestureHandler();
   }
 
-  // 初始化用户手势处理
   private initializeUserGestureHandler() {
     const handler = async () => {
       if (this.context?.state === 'suspended') {
@@ -52,7 +51,6 @@ export class EQService {
     document.addEventListener('click', handler);
   }
 
-  // 初始化音频上下文
   public async setupAudioContext(howl: Howl) {
     try {
       // 使用Howler的现有上下文
@@ -65,7 +63,7 @@ export class EQService {
         Howler.masterGain.connect(this.context.destination);
       }
 
-      // 确保上下文处于运行状态
+      // 上下文需处于 running
       if (this.context.state === 'suspended') {
         await this.context.resume();
       }
@@ -136,12 +134,10 @@ export class EQService {
     localStorage.removeItem('eqSettings');
   }
 
-  // 获取当前设置
   public getAllSettings(): EQSettings {
     return this.loadSavedSettings();
   }
 
-  // 保存/加载设置
   private saveSettings(frequency: string, gain: number) {
     const settings = this.loadSavedSettings();
     settings[frequency] = gain;

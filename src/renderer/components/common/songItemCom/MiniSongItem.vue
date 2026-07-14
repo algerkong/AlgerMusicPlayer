@@ -233,7 +233,7 @@ const onPlayMusic = () => {
   }
 }
 
-/* dark mode */
+/* 暗色模式 */
 .dark .mini-song-item {
   &:hover {
     background-color: rgb(31 41 55); /* dark:bg-gray-800 */

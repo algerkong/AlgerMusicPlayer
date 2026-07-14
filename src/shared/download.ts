@@ -1,5 +1,5 @@
-// Shared types for download system, importable by both main and renderer
-// Follows precedent: src/shared/appUpdate.ts
+// 下载系统共享类型，主进程与渲染进程均可引用
+// 写法对齐 src/shared/appUpdate.ts
 
 export const DOWNLOAD_TASK_STATE = {
   queued: 'queued',

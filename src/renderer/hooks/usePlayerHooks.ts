@@ -60,7 +60,7 @@ const resolveCachedPlaybackUrl = async (
 };
 
 /**
- * 获取歌曲播放 URL。
+ * 解析并返回可播放的歌曲 URL。
  * 本地 / 已有 playMusicUrl 优先；在线曲经 ly-music-source（主进程）resolve。
  */
 export const getSongUrl = async (

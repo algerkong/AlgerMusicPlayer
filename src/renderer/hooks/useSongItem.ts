@@ -23,7 +23,6 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
   const dropdownY = ref(0);
   const isHovering = ref(false);
 
-  // 计算属性
   const play = computed(() => playerStore.isPlay);
   const playMusic = computed(() => playerStore.playMusic);
   const playLoading = computed(
@@ -44,12 +43,10 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
     return playerStore.dislikeList.includes(numericId);
   });
 
-  // 获取艺术家列表
   const artists = computed(() => {
     return (props.item.ar || props.item.song?.artists)?.slice(0, 4) || [];
   });
 
-  // 处理图片加载
   const handleImageLoad = async (imageElement: HTMLImageElement) => {
     if (!imageElement) return;
 
@@ -72,7 +69,6 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
     }
   };
 
-  // 切换收藏状态
   const toggleFavorite = async (e: Event) => {
     e && e.stopPropagation();
     const numericId =
@@ -97,13 +93,11 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
     playerStore.addToDislikeList(props.item.id);
   };
 
-  // 添加到下一首播放
   const handlePlayNext = () => {
     playerStore.addToNextPlay(props.item);
     message.success(t('songItem.message.addedToNextPlay'));
   };
 
-  // 获取歌曲时长
   const getDuration = (item: SongResult): number => {
     if (item.duration) return item.duration;
     if (typeof item.dt === 'number') return item.dt;
@@ -119,7 +113,6 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
     return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // 处理右键菜单
   const handleContextMenu = (e: MouseEvent) => {
     e.preventDefault();
     showDropdown.value = true;
@@ -127,7 +120,6 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
     dropdownY.value = e.clientY;
   };
 
-  // 处理菜单点击
   const handleMenuClick = (e: MouseEvent) => {
     e.preventDefault();
     showDropdown.value = true;
@@ -135,7 +127,6 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
     dropdownY.value = e.clientY;
   };
 
-  // 处理艺术家点击
   const handleArtistClick = (id: number) => {
     navigateToArtist(id);
   };

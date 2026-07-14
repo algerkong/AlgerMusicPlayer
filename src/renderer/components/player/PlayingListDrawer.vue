@@ -84,12 +84,10 @@ const show = computed({
   }
 });
 
-// 监听外部可见性变化
 watch(
   show,
   (newValue) => {
     if (newValue) {
-      // 打开面板
       internalVisible.value = true;
       closing.value = false;
       // 在下一个渲染周期后滚动到当前歌曲
@@ -113,7 +111,6 @@ const playList = computed(() => playerStore.playList as SongResult[]);
 // 播放列表引用
 const playListRef = ref<any>(null);
 
-// 关闭面板
 const closePanel = () => {
   show.value = false;
 };
@@ -125,7 +122,6 @@ const onAnimationEnd = () => {
   }
 };
 
-// 清空播放列表
 const handleClearPlaylist = () => {
   if (playList.value.length === 0) {
     message.info(t('player.playList.alreadyEmpty'));
@@ -143,21 +139,18 @@ const handleClearPlaylist = () => {
     negativeText: t('common.cancel'),
     style: { zIndex: 999999999 }, // 确保对话框显示在遮罩之上
     onPositiveClick: () => {
-      // 清空播放列表
       playerStore.clearPlayAll();
       message.success(t('player.playList.cleared'));
     }
   });
 };
 
-// 处理键盘事件
 const handleKeyDown = (event: KeyboardEvent) => {
   if (event.key === 'Escape' && internalVisible.value) {
     closePanel();
   }
 };
 
-// 添加和移除键盘事件监听
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown);
 });
@@ -180,7 +173,6 @@ const scrollToCurrentSong = () => {
   }, 100);
 };
 
-// 删除歌曲
 const handleDeleteSong = (song: SongResult) => {
   playerStore.removeFromPlayList(song.id as number);
 };
@@ -197,9 +189,8 @@ const handleDeleteSong = (song: SongResult) => {
   @apply fixed right-0 z-[9999999] rounded-l-xl overflow-hidden shadow-2xl;
   width: 350px;
   height: 70vh;
-  top: 15vh; // 距离顶部15%
-  animation-duration: 0.4s !important; // 动画持续时间
-  /* 跟封面取色 */
+  top: 15vh;
+  animation-duration: 0.4s !important;
   background: var(--chrome-surface-strong, rgba(18, 18, 18, 0.88));
   border: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.12));
   color: var(--chrome-text, #f8fafc);

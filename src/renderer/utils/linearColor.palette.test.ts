@@ -28,7 +28,7 @@ describe('buildIosPaletteFromRgb', () => {
 
 describe('extractVibrantRgbFromImageData', () => {
   it('prefers saturated mid-tones over black/white borders', () => {
-    // 2 pixels: black, vivid red mid
+    // 2 像素：黑 + 中间鲜红
     const data = new Uint8ClampedArray([
       0,
       0,
@@ -48,7 +48,7 @@ describe('extractVibrantRgbFromImageData', () => {
       255
     ]);
     const rgb = extractVibrantRgbFromImageData(data);
-    // Should land near red, not gray
+    // 应落在红色附近，而非灰色
     expect(rgb.r).toBeGreaterThan(rgb.g);
     expect(rgb.r).toBeGreaterThan(rgb.b);
   });

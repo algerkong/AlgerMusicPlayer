@@ -64,9 +64,6 @@ function buildLocalFileResponse(
   );
 }
 
-/**
- * 初始化文件管理相关的IPC监听
- */
 export function initializeFileManager() {
   // 注册本地文件协议
   // Electron 25+ 起 registerFileProtocol 已弃用，改用 protocol.handle，并配合 main/index.ts
@@ -110,7 +107,6 @@ export function initializeFileManager() {
     }
   });
 
-  // 获取支持的音频格式列表
   ipcMain.handle('get-supported-audio-formats', () => {
     return {
       formats: [
@@ -158,7 +154,6 @@ export function initializeFileManager() {
     }
   });
 
-  // 获取默认下载路径
   ipcMain.handle('get-downloads-path', () => {
     return app.getPath('downloads');
   });
@@ -195,7 +190,6 @@ export function initializeFileManager() {
     }
   );
 
-  // 添加清除音频缓存的处理函数
   ipcMain.on('clear-audio-cache', () => {
     audioCacheStore.set('cache', {});
     // 清除临时音频文件目录

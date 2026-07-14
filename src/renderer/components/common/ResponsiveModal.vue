@@ -6,10 +6,10 @@
         class="fixed inset-0 z-[1000] flex items-center justify-center md:items-center items-end"
         @click="handleMaskClick"
       >
-        <!-- Overlay -->
+        <!-- 遮罩 -->
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"></div>
 
-        <!-- Content -->
+        <!-- 内容 -->
         <Transition :name="isMobile ? 'slide-up' : 'scale-fade'">
           <div
             v-if="show"
@@ -17,7 +17,7 @@
             :class="[isMobile ? 'rounded-t-[20px] pb-safe' : 'md:max-w-[720px] md:rounded-2xl']"
             @click.stop
           >
-            <!-- Header -->
+            <!-- 头部 -->
             <div
               class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-white/5 shrink-0"
             >
@@ -32,14 +32,14 @@
               </button>
             </div>
 
-            <!-- Body -->
+            <!-- 主体 -->
             <scroll-area class="flex-1 min-h-0 overscroll-contain">
               <div class="px-4 py-3">
                 <slot></slot>
               </div>
             </scroll-area>
 
-            <!-- Footer -->
+            <!-- 底部 -->
             <div
               v-if="$slots.footer"
               class="px-4 py-3 border-t border-gray-100 dark:border-white/5 shrink-0 bg-gray-50/50 dark:bg-white/5 backdrop-blur-xl"
@@ -97,7 +97,7 @@ onUnmounted(() => {
   window.removeEventListener('resize', checkMobile);
 });
 
-// Prevent body scroll when modal is open
+// 弹层打开时禁止 body 滚动
 watch(show, (val) => {
   if (val) {
     document.body.style.overflow = 'hidden';
@@ -118,7 +118,7 @@ watch(show, (val) => {
   opacity: 0;
 }
 
-/* PC Scale Fade Transition */
+/* PC 缩放淡入过渡 */
 .scale-fade-enter-active,
 .scale-fade-leave-active {
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -130,7 +130,7 @@ watch(show, (val) => {
   transform: scale(0.95);
 }
 
-/* Mobile Slide Up Transition */
+/* 移动端上滑过渡 */
 .slide-up-enter-active,
 .slide-up-leave-active {
   transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
