@@ -203,6 +203,86 @@ export function initializeMusicSource(): void {
     }
   });
 
+  /** 扫码登录：创建二维码（token 仅用于后续 poll，session 不回传渲染进程） */
+  ipcMain.handle('music-source:create-qr-login', async () => {
+    try {
+      const session = await getClient().createQrLogin('qishui');
+      return wrapOk({
+        platform: session.platform,
+        token: session.token,
+        qrcode: session.qrcode,
+        qrcodeIndexUrl: session.qrcodeIndexUrl,
+        expireTime: session.expireTime
+      });
+    } catch (error) {
+      return toIpcError(error);
+    }
+  });
+
+  /**
+   * 扫码登录：轮询状态。
+   * confirmed 时在主进程落盘 session；IPC 只回 status/message/auth，不回 cookie。
+   */
+  ipcMain.handle('music-source:poll-qr-login', async (_e, token: string) => {
+    try {
+      if (!token || typeof token !== 'string') {
+        return { ok: false, code: 'INVALID', message: 'QR token is empty' };
+      }
+      const result = await getClient().pollQrLogin('qishui', token.trim());
+      if (result.status === 'confirmed') {
+        persistSession();
+      }
+      return wrapOk({
+        status: result.status,
+        message: result.message,
+        mfa: result.mfa,
+        retryAfterSec: result.retryAfterSec,
+        throttled: result.throttled,
+        auth: result.status === 'confirmed' ? getClient().getAuthState() : undefined
+      });
+    } catch (error) {
+      return toIpcError(error);
+    }
+  });
+
+  /** 扫码 MFA：下发短信验证码（不回传 cookie） */
+  ipcMain.handle('music-source:qr-send-mfa-sms', async (_e, token: string) => {
+    try {
+      if (!token || typeof token !== 'string') {
+        return { ok: false, code: 'INVALID', message: 'QR token is empty' };
+      }
+      const result = await getClient().sendQrMfaSms('qishui', token.trim());
+      return wrapOk(result);
+    } catch (error) {
+      return toIpcError(error);
+    }
+  });
+
+  /** 扫码 MFA：校验短信验证码 */
+  ipcMain.handle('music-source:qr-validate-mfa-sms', async (_e, token: string, code: string) => {
+    try {
+      if (!token || typeof token !== 'string') {
+        return { ok: false, code: 'INVALID', message: 'QR token is empty' };
+      }
+      if (!code || typeof code !== 'string') {
+        return { ok: false, code: 'INVALID', message: 'SMS code is empty' };
+      }
+      const result = await getClient().validateQrMfaSms('qishui', token.trim(), code.trim());
+      if (result.ok && result.poll?.status === 'confirmed') {
+        persistSession();
+      }
+      return wrapOk({
+        ok: result.ok,
+        message: result.message,
+        status: result.poll?.status,
+        auth:
+          result.ok && result.poll?.status === 'confirmed' ? getClient().getAuthState() : undefined
+      });
+    } catch (error) {
+      return toIpcError(error);
+    }
+  });
+
   ipcMain.handle('music-source:logout', () => {
     try {
       getClient().logout();

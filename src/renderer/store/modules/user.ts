@@ -1,7 +1,9 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
+import { msLogout } from '@/api/musicSource';
 import type { IUserDetail } from '@/types/user';
+import { isElectron } from '@/utils';
 import { clearLoginStatus } from '@/utils/auth';
 
 interface UserData {
@@ -46,6 +48,13 @@ export const useUserStore = defineStore('user', () => {
   };
 
   const handleLogout = async () => {
+    if (isElectron) {
+      try {
+        await msLogout();
+      } catch (error) {
+        console.warn('[user] msLogout failed:', error);
+      }
+    }
     user.value = null;
     loginType.value = null;
     collectedAlbumIds.value.clear();
