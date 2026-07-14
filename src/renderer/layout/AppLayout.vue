@@ -125,37 +125,19 @@ const coverPrimary = computed(() => {
 
 const layoutBgStyle = computed(() => {
   if (!coverBackground.value) return undefined;
-  // primary → RGB 供 --chrome-tint（半透明控件跟环境色）
-  let tint = '24, 24, 27';
+  // iOS-style wash is always dark enough for light chrome; accent only tints frosted controls
+  let tint = '40, 40, 48';
   const p = coverPrimary.value;
   if (p) {
     const m = p.match(/\d+/g);
     if (m && m.length >= 3) tint = `${m[0]}, ${m[1]}, ${m[2]}`;
   }
-  // 根据主色亮度决定字色，避免封面底上灰字看不清
-  let text = '#f8fafc';
-  let textMuted = 'rgba(248, 250, 252, 0.78)';
-  if (p) {
-    const m = p.match(/\d+/g);
-    if (m && m.length >= 3) {
-      const r = Number(m[0]);
-      const g = Number(m[1]);
-      const b = Number(m[2]);
-      // 相对亮度
-      const L = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-      if (L > 0.62) {
-        text = '#0f172a';
-        textMuted = 'rgba(15, 23, 42, 0.72)';
-        tint = '255, 255, 255';
-      }
-    }
-  }
   return {
     background: coverBackground.value,
     '--chrome-tint': tint,
-    '--chrome-text': text,
-    '--chrome-text-muted': textMuted,
-    '--chrome-border': text === '#f8fafc' ? 'rgba(255,255,255,0.14)' : 'rgba(15,23,42,0.1)'
+    '--chrome-text': '#f8fafc',
+    '--chrome-text-muted': 'rgba(248, 250, 252, 0.78)',
+    '--chrome-border': 'rgba(255,255,255,0.14)'
   } as Record<string, string>;
 });
 

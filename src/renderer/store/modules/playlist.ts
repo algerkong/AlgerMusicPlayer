@@ -89,7 +89,7 @@ export const usePlaylistStore = defineStore(
           try {
             const { getImageLinearBackground } = await import('@/utils/linearColor');
             const { backgroundColor, primaryColor } = await getImageLinearBackground(
-              getImgUrl(nextSong.picUrl, '30y30')
+              getImgUrl(nextSong.picUrl, '200y200')
             );
             nextSong.backgroundColor = backgroundColor;
             nextSong.primaryColor = primaryColor;

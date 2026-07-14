@@ -26,116 +26,194 @@ interface LyricSettings {
   highlightColor?: string;
 }
 
+/** Downsample size for palette extraction (iOS-style sampling, not full-res average). */
+const SAMPLE_SIZE = 64;
+
+type Rgb = { r: number; g: number; b: number };
+
+/**
+ * iOS Music–inspired palette:
+ * - primaryColor: vivid accent for progress / chrome tint (readable on dark UI)
+ * - backgroundColor: always-dark vertical wash so white text/icons stay clear
+ */
+export const buildIosPaletteFromRgb = (rgb: Rgb): IColor => {
+  const base = tinycolor({ r: rgb.r, g: rgb.g, b: rgb.b });
+  const hsl = base.toHsl();
+
+  // Low-chroma art (B&W covers): gentle cool gray-blue wash, not washed-out mid gray
+  const isNearGray = hsl.s < 0.12;
+  const h = isNearGray ? 220 : hsl.h;
+  const s = isNearGray ? 0.18 : Math.min(Math.max(hsl.s * 1.05, 0.35), 0.78);
+
+  // Accent: lively but not neon; clamped so it works on dark chrome
+  const accent = tinycolor({
+    h,
+    s: Math.min(s * 1.08, 0.82),
+    l: Math.min(Math.max(isNearGray ? 0.55 : hsl.l, 0.42), 0.62)
+  });
+
+  // Background wash: top has color presence, bottom sinks to near-black (Apple Music style)
+  const top = tinycolor({ h, s: s * 0.75, l: 0.28 });
+  const mid = tinycolor({ h, s: s * 0.7, l: 0.14 });
+  const bottom = tinycolor({ h, s: s * 0.55, l: 0.05 });
+
+  return {
+    primaryColor: accent.toRgbString(),
+    backgroundColor: `linear-gradient(to bottom, ${top.toRgbString()} 0%, ${mid.toRgbString()} 48%, ${bottom.toRgbString()} 100%)`
+  };
+};
+
+/**
+ * Score pixels by “vibrancy” (prefer saturated mid-tones; skip near-black / near-white / pure gray).
+ * Returns dominant RGB or a neutral fallback.
+ */
+export const extractVibrantRgbFromImageData = (data: Uint8ClampedArray): Rgb => {
+  // 32 hue buckets × quantized saturation/value for stability
+  const buckets = new Map<string, { r: number; g: number; b: number; weight: number }>();
+
+  for (let i = 0; i < data.length; i += 4) {
+    const a = data[i + 3];
+    if (a < 200) continue;
+
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+
+    // Skip near-black / near-white (labels, borders, letterbox)
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    if (max < 28 || min > 245) continue;
+
+    const tc = tinycolor({ r, g, b });
+    const { h, s, l } = tc.toHsl();
+    // Skip muddy gray
+    if (s < 0.08 && l > 0.15 && l < 0.9) continue;
+    // Prefer mid brightness (artwork subject, not glare)
+    if (l < 0.08 || l > 0.92) continue;
+
+    const hBucket = Math.round(h / 12) * 12; // 30 buckets over 360
+    const sBucket = Math.round(s * 5) / 5;
+    const lBucket = Math.round(l * 5) / 5;
+    const key = `${hBucket}|${sBucket}|${lBucket}`;
+
+    // Weight: saturation * how “mid” the lightness is * slight boost for count
+    const midBoost = 1 - Math.abs(l - 0.45) * 1.4;
+    const weight = Math.max(0.05, s * 1.6 + 0.15) * Math.max(0.2, midBoost);
+
+    const prev = buckets.get(key);
+    if (prev) {
+      prev.r += r * weight;
+      prev.g += g * weight;
+      prev.b += b * weight;
+      prev.weight += weight;
+    } else {
+      buckets.set(key, { r: r * weight, g: g * weight, b: b * weight, weight });
+    }
+  }
+
+  if (buckets.size === 0) {
+    return { r: 48, g: 52, b: 72 }; // soft slate fallback
+  }
+
+  let best: { r: number; g: number; b: number; weight: number } | null = null;
+  for (const entry of buckets.values()) {
+    if (!best || entry.weight > best.weight) best = entry;
+  }
+
+  if (!best || best.weight <= 0) {
+    return { r: 48, g: 52, b: 72 };
+  }
+
+  return {
+    r: Math.round(best.r / best.weight),
+    g: Math.round(best.g / best.weight),
+    b: Math.round(best.b / best.weight)
+  };
+};
+
+const sampleImageToImageData = (
+  source: CanvasImageSource,
+  sourceWidth: number,
+  sourceHeight: number
+): ImageData => {
+  const canvas = document.createElement('canvas');
+  const size = SAMPLE_SIZE;
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) {
+    throw new Error('无法获取canvas上下文');
+  }
+  // Cover-fit into sample square
+  const scale = Math.max(size / Math.max(sourceWidth, 1), size / Math.max(sourceHeight, 1));
+  const dw = sourceWidth * scale;
+  const dh = sourceHeight * scale;
+  const dx = (size - dw) / 2;
+  const dy = (size - dh) / 2;
+  ctx.drawImage(source, dx, dy, dw, dh);
+  return ctx.getImageData(0, 0, size, size);
+};
+
+const paletteFromImageElement = (img: HTMLImageElement): IColor => {
+  const w = img.naturalWidth || img.width;
+  const h = img.naturalHeight || img.height;
+  if (!w || !h) {
+    return buildIosPaletteFromRgb({ r: 48, g: 52, b: 72 });
+  }
+  const imageData = sampleImageToImageData(img, w, h);
+  const rgb = extractVibrantRgbFromImageData(imageData.data);
+  return buildIosPaletteFromRgb(rgb);
+};
+
 export const getImageLinearBackground = async (imageSrc: string): Promise<IColor> => {
   try {
-    const primaryColor = await getImagePrimaryColor(imageSrc);
-    return {
-      backgroundColor: generateGradientBackground(primaryColor),
-      primaryColor
-    };
+    const img = await loadImage(imageSrc);
+    return paletteFromImageElement(img);
   } catch (error) {
-    console.error('error', error);
-    return {
-      backgroundColor: '',
-      primaryColor: ''
-    };
+    console.error('[cover-color] getImageLinearBackground failed', error);
+    return { backgroundColor: '', primaryColor: '' };
   }
 };
 
 export const getImageBackground = async (img: HTMLImageElement): Promise<IColor> => {
   try {
-    const primaryColor = await getImageColor(img);
-    return {
-      backgroundColor: generateGradientBackground(primaryColor),
-      primaryColor
-    };
+    // Ensure decode finished when possible
+    if (typeof img.decode === 'function' && !img.complete) {
+      try {
+        await img.decode();
+      } catch {
+        /* use whatever is painted */
+      }
+    }
+    return paletteFromImageElement(img);
   } catch (error) {
-    console.error('error', error);
-    return {
-      backgroundColor: '',
-      primaryColor: ''
-    };
+    console.error('[cover-color] getImageBackground failed', error);
+    return { backgroundColor: '', primaryColor: '' };
   }
 };
 
-const getImageColor = (img: HTMLImageElement): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      reject(new Error('无法获取canvas上下文'));
-      return;
-    }
-
-    canvas.width = img.width;
-    canvas.height = img.height;
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const color = getAverageColor(imageData.data);
-    resolve(`rgb(${color.join(',')})`);
-  });
-};
-
-const getImagePrimaryColor = (imageSrc: string): Promise<string> => {
-  return new Promise((resolve, reject) => {
+const loadImage = (src: string): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = 'Anonymous';
-    img.src = imageSrc;
-
-    img.onload = () => {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        reject(new Error('无法获取canvas上下文'));
-        return;
-      }
-
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const color = getAverageColor(imageData.data);
-      resolve(`rgb(${color.join(',')})`);
-    };
-
+    img.onload = () => resolve(img);
     img.onerror = () => reject(new Error('图片加载失败'));
-  });
-};
-
-const getAverageColor = (data: Uint8ClampedArray): number[] => {
-  let r = 0;
-  let g = 0;
-  let b = 0;
-  let count = 0;
-  for (let i = 0; i < data.length; i += 4) {
-    r += data[i];
-    g += data[i + 1];
-    b += data[i + 2];
-    count++;
-  }
-  // 0 尺寸图片（count 为 0）会得到 NaN，回退为中性灰避免生成 rgb(NaN,...)
-  if (count === 0) {
-    return [128, 128, 128];
-  }
-  return [Math.round(r / count), Math.round(g / count), Math.round(b / count)];
-};
-
-const generateGradientBackground = (color: string): string => {
-  const tc = tinycolor(color);
-  const hsl = tc.toHsl();
-
-  // 增加亮度和暗度的差异
-  const lightColor = tinycolor({ h: hsl.h, s: hsl.s * 0.8, l: Math.min(hsl.l + 0.2, 0.95) });
-  const midColor = tinycolor({ h: hsl.h, s: hsl.s, l: hsl.l });
-  const darkColor = tinycolor({
-    h: hsl.h,
-    s: Math.min(hsl.s * 1.2, 1),
-    l: Math.max(hsl.l - 0.3, 0.05)
+    img.src = src;
   });
 
-  return `linear-gradient(to bottom, ${lightColor.toRgbString()} 0%, ${midColor.toRgbString()} 50%, ${darkColor.toRgbString()} 100%)`;
+/** Solid ambient from a palette background (for CSS vars that cannot be gradients). */
+export const getAmbientSolidFromBackground = (background: string): string => {
+  if (!background) return 'rgb(25, 25, 28)';
+  if (!background.startsWith('linear-gradient')) {
+    const tc = tinycolor(background);
+    if (tc.isValid()) return tc.toRgbString();
+    return 'rgb(25, 25, 28)';
+  }
+  const colors = parseGradient(background);
+  if (!colors.length) return 'rgb(25, 25, 28)';
+  // Prefer mid stop (readable wash), fall back to last (deepest)
+  const c = colors[1] || colors[colors.length - 1] || colors[0];
+  return `rgb(${c.r}, ${c.g}, ${c.b})`;
 };
 
 export const parseGradient = (gradientStr: string) => {
@@ -161,26 +239,34 @@ export const parseGradient = (gradientStr: string) => {
 };
 
 export const getTextColors = (gradient: string = ''): ITextColors => {
-  const defaultColors = {
-    primary: 'rgba(255, 255, 255, 0.54)',
+  // theme: 'light' = light-colored text (for dark washes); 'dark' = dark text (legacy bright bg)
+  const lightOnDark: ITextColors = {
+    primary: 'rgba(255, 255, 255, 0.62)',
     active: '#ffffff',
     theme: 'light'
   };
 
-  if (!gradient) return defaultColors;
+  const darkOnLight: ITextColors = {
+    primary: 'rgba(0, 0, 0, 0.54)',
+    active: '#000000',
+    theme: 'dark'
+  };
+
+  if (!gradient) return lightOnDark;
 
   const colors = parseGradient(gradient);
-  if (!colors.length) return defaultColors;
+  if (!colors.length) return lightOnDark;
 
-  const mainColor = colors.length === 1 ? colors[0] : colors[1] || colors[0];
-  const tc = tinycolor(mainColor);
-  const isDark = tc.getBrightness() > 155; // tinycolor 的亮度范围是 0-255
+  // Sample the brightest stop — iOS washes stay dark; only rare legacy bright bgs flip text
+  let maxBrightness = 0;
+  for (const c of colors) {
+    maxBrightness = Math.max(maxBrightness, tinycolor(c).getBrightness());
+  }
 
-  return {
-    primary: isDark ? 'rgba(0, 0, 0, 0.54)' : 'rgba(255, 255, 255, 0.54)',
-    active: isDark ? '#000000' : '#ffffff',
-    theme: isDark ? 'dark' : 'light'
-  };
+  // Our iOS palette tops out ~L0.28 (~70 brightness); keep white text there.
+  // Only very bright backgrounds (legacy / mistakes) switch to dark text.
+  if (maxBrightness > 175) return darkOnLight;
+  return lightOnDark;
 };
 
 export const getHoverBackgroundColor = (isDark: boolean): string => {

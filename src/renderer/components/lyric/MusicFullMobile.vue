@@ -3,7 +3,7 @@
     v-model:show="isVisible"
     height="100%"
     placement="bottom"
-    :style="{ background: playerStore.playMusic.primaryColor || background }"
+    :style="{ background: playerStore.playMusic.backgroundColor || background }"
     :to="`#layout-main`"
     :z-index="9998"
   >
@@ -401,7 +401,7 @@ import { audioService } from '@/services/audioService';
 import { usePlayerStore } from '@/store/modules/player';
 import { DEFAULT_LYRIC_CONFIG, LyricConfig } from '@/types/lyric';
 import { getImgUrl, secondToMinute } from '@/utils';
-import { getTextColors } from '@/utils/linearColor';
+import { getAmbientSolidFromBackground, getTextColors } from '@/utils/linearColor';
 import { getActiveLineWordStyle, getInactiveLineWordStyle } from '@/utils/lyricWordStyle';
 import { showBottomToast } from '@/utils/shortcutToast';
 
@@ -821,7 +821,11 @@ const handleThumbTouchEnd = (e: TouchEvent) => {
 
 // 背景相关（由 composable 管理）
 const { isDark, applyBackground } = useLyricBackground({
-  writeBgColor: () => playerStore.playMusic.primaryColor || undefined
+  // solid ambient for CSS vars (gradients not valid here); page bg uses backgroundColor
+  writeBgColor: () => {
+    const bg = playerStore.playMusic.backgroundColor;
+    return bg ? getAmbientSolidFromBackground(bg) : undefined;
+  }
 });
 const config = ref<LyricConfig>({ ...DEFAULT_LYRIC_CONFIG });
 
