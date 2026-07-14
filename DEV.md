@@ -17,7 +17,27 @@
 - **国际化**：vue-i18n（当前固定 zh-CN）
 - **HTTP 客户端**：axios（下载封面等）
 - **本地存储**：electron-store、localStorage、IndexedDB
-- **音乐**：当前仅本地音乐播放；在线音源将接入独立库 ly-music-source
+- **音乐**：本地播放 + 在线音源（`ly-music-source`，主进程 IPC）
+- **滚动条**：新界面统一 shadcn `ScrollArea`（`components/ui/scroll-area`），不再新增 naive 滚动条
+
+### 壳层与封面取色
+
+播放中封面色会驱动整壳 UI（标题栏、搜索、侧栏、底栏、弹层）：
+
+| 能力                      | 位置                                                         |
+| ------------------------- | ------------------------------------------------------------ |
+| 色盘 / 铺色               | `utils/linearColor.ts`（`getImageLinearBackground` 等）      |
+| 壳层 token、naive primary | `utils/coverChrome.ts` → 写到 `html` / 布局 style            |
+| CSS 变量                  | `index.css`：`--chrome-*`、`--primary-color`、`--primary`    |
+| 应用点                    | `layout/AppLayout.vue`、`App.vue`（naive `theme-overrides`） |
+
+约定：没有可靠 `backgroundColor` 时不强行开 `has-cover-chrome`，避免浅字落在白底上。
+
+### 大屏播放器
+
+- 组件：`components/lyric/MusicFull.vue`（桌面）、`MusicFullMobile.vue`（移动）
+- 打开时底栏下滑收起；大屏从底栏进度条高度 `clip-path` 展开（样式见 `index.css` 中 `.music-full-drawer`）
+- 大屏内用 `SimplePlayBar`；设置面板已移除
 
 ### 项目结构
 
@@ -115,6 +135,16 @@ LYMusicPlayer/
 - 使用 Tailwind 实现响应式设计
 - **新界面 / 新控件用 shadcn-vue**，不要再引入新的 naive-ui（`n-*`）；改旧页时可顺手迁移
 - AI 编码约定见 `.trellis/spec/frontend/`（与本文不一致时以仓库代码 + Trellis spec 为准）
+
+#### 注释与文档（必读）
+
+- **语言**：注释、说明文档用**中文**；标识符、API 名、协议名保留英文
+- **只写有信息量的内容**：边界条件、平台差异、非显然约束、与调用方约定
+- **禁止**：
+  - 复述下一行代码（如「初始化应用」「获取音量」）
+  - changelog / 返工叙事（「已删除」「不再」「我们改成」）
+  - 英文碎碎念、emoji 式吐槽、临时 TODO 堆砌在业务路径上
+- **文档**：`DEV.md` + `.trellis/spec/frontend/` 中六份权威指南；过时脚手架（React 模板）勿跟
 
 #### 曲目数据模型（必读）
 

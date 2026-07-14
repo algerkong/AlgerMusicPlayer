@@ -1,6 +1,6 @@
-> **OBSOLETE (Trellis React scaffold).** This file does **not** describe LYMusicPlayer.
-> Use `directory-structure.md`, `component-guidelines.md`, `hook-guidelines.md`,
-> `state-management.md`, `type-safety.md`, and `quality-guidelines.md` instead.
+> **过时（Trellis React 脚手架残留）。** 不描述 LYMusicPlayer。  
+> 请改读：`directory-structure.md`、`component-guidelines.md`、`hook-guidelines.md`、  
+> `state-management.md`、`type-safety.md`、`quality-guidelines.md`。
 
 # React Pitfalls & Common Mistakes
 
