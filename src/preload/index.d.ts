@@ -73,6 +73,9 @@ interface API {
   // 快捷键
   onGlobalShortcut: (callback: (action: string) => void) => () => void;
 
+  // 系统休眠 / 锁屏唤醒
+  onSystemPowerResume: (callback: () => void) => () => void;
+
   // 通知
   showNotification: (payload: { title: string; body: string }) => void;
 

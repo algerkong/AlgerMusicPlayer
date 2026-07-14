@@ -5,6 +5,7 @@ import {
   globalShortcut,
   ipcMain,
   nativeImage,
+  powerMonitor,
   screen,
   session,
   shell
@@ -43,6 +44,89 @@ let preMiniModeState: WindowState = {
 
 export function setAppQuitting(quitting: boolean) {
   isAppQuitting = quitting;
+}
+
+/**
+ * 屏幕休眠 / 系统挂起唤醒后，Chromium 合成层偶发卡死成白屏。
+ * invalidate + 轻微尺寸抖动强制重绘；再通知渲染进程自愈。
+ */
+function forceWindowRepaint(win: BrowserWindow) {
+  if (win.isDestroyed()) return;
+  try {
+    win.webContents.invalidate();
+  } catch (error) {
+    console.warn('[window] invalidate failed', error);
+  }
+
+  try {
+    if (win.isVisible() && !win.isMinimized() && !win.isMaximized() && !win.isFullScreen()) {
+      const [w, h] = win.getSize();
+      if (w > 0 && h > 0) {
+        win.setSize(w, h + 1, false);
+        win.setSize(w, h, false);
+      }
+    } else if (win.isVisible() && !win.isMinimized()) {
+      // 最大化 / 全屏不能改 size，用透明度抖一下触发合成
+      const opacity = win.getOpacity();
+      win.setOpacity(opacity > 0.99 ? 0.99 : 1);
+      setTimeout(() => {
+        if (!win.isDestroyed()) win.setOpacity(1);
+      }, 32);
+    }
+  } catch (error) {
+    console.warn('[window] repaint nudge failed', error);
+  }
+
+  try {
+    if (!win.webContents.isDestroyed()) {
+      win.webContents.send('system-power-resume');
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+function scheduleWakeRepaint(win: BrowserWindow) {
+  // GPU 驱动恢复需要一点时间；双拍覆盖快/慢唤醒
+  setTimeout(() => forceWindowRepaint(win), 150);
+  setTimeout(() => forceWindowRepaint(win), 700);
+}
+
+function setupDisplayWakeRecovery(win: BrowserWindow) {
+  let lastWakeAt = 0;
+  const onWake = (source: string) => {
+    const now = Date.now();
+    // 合并短时间重复事件（resume + unlock + focus）
+    if (now - lastWakeAt < 1500) return;
+    lastWakeAt = now;
+    console.log('[window] power/display wake → repaint', source);
+    scheduleWakeRepaint(win);
+  };
+
+  powerMonitor.on('resume', () => onWake('resume'));
+  powerMonitor.on('unlock-screen', () => onWake('unlock-screen'));
+
+  // 仅黑屏未走 suspend 时：用户回来点窗口，且系统空闲过一段再救
+  win.on('focus', () => {
+    try {
+      const idleSec = powerMonitor.getSystemIdleTime();
+      if (idleSec >= 20) onWake(`focus-idle-${idleSec}s`);
+    } catch {
+      /* ignore */
+    }
+  });
+
+  win.webContents.on('render-process-gone', (_event, details) => {
+    console.error('[window] render-process-gone', details);
+    if (details.reason !== 'clean-exit' && !win.isDestroyed()) {
+      win.webContents.reload();
+    }
+  });
+
+  win.webContents.on('unresponsive', () => {
+    console.warn('[window] webContents unresponsive → repaint');
+    onWake('unresponsive');
+  });
 }
 
 function initializeProxy() {
@@ -277,13 +361,17 @@ export function createMainWindow(icon: Electron.NativeImage): BrowserWindow {
   const options = getWindowOptions();
 
   options.icon = icon;
+  // 休眠唤醒 GPU 挂掉时避免 Native 层先闪成默认白底
+  options.backgroundColor = '#0a0a0b';
   // sandbox / webSecurity 暂保持关闭：本地音频、自定义 local:// 协议、跨源封面依赖
   // 现有加载路径。收紧 IPC 与 XSS 入口后已切断主升级链；此处再开需单独回归媒体播放。
   options.webPreferences = {
     preload: join(__dirname, '../preload/index.js'),
     sandbox: false,
     contextIsolation: true,
-    webSecurity: false
+    webSecurity: false,
+    // 播歌时常在后台：别把定时器/动画节流到几乎停，减轻唤醒后图层僵死
+    backgroundThrottling: false
   };
 
   console.log(
@@ -426,6 +514,8 @@ export function createMainWindow(icon: Electron.NativeImage): BrowserWindow {
   }
 
   initWindowSizeHandlers(mainWindow);
+
+  setupDisplayWakeRecovery(mainWindow);
 
   mainWindowInstance = mainWindow;
 

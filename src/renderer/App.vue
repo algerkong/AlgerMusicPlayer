@@ -15,7 +15,7 @@
 <script setup lang="ts">
 import { cloneDeep } from 'lodash';
 import { darkTheme, type GlobalThemeOverrides } from 'naive-ui';
-import { computed, nextTick, onMounted, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import DisclaimerModal from '@/components/common/DisclaimerModal.vue';
@@ -26,7 +26,12 @@ import { useSettingsStore } from '@/store/modules/settings';
 import { useUserStore } from '@/store/modules/user';
 import { isElectron } from '@/utils';
 import { checkLoginStatus, purgeCredentialStorage } from '@/utils/auth';
-import { buildNaivePrimaryOverrides } from '@/utils/coverChrome';
+import {
+  applyCoverChromeToRoot,
+  buildCoverChromeVars,
+  buildNaivePrimaryOverrides
+} from '@/utils/coverChrome';
+import { installWakeRecovery } from '@/utils/wakeRecovery';
 
 import { initAudioListeners, initMusicHook } from './hooks/MusicHook';
 import { audioService } from './services/audioService';
@@ -81,6 +86,27 @@ if (loginInfo.isLoggedIn) {
 // 使用应用内快捷键
 useAppShortcuts();
 
+let uninstallWakeRecovery: (() => void) | undefined;
+
+/** 唤醒后重刷封面 chrome + 音频上下文，避免白屏/哑音 */
+const recoverAfterWake = async () => {
+  const music = playerStore.playMusic as {
+    backgroundColor?: string;
+    primaryColor?: string;
+  } | null;
+  try {
+    const vars = buildCoverChromeVars(music?.backgroundColor || '', music?.primaryColor || '');
+    applyCoverChromeToRoot(vars);
+  } catch (error) {
+    console.warn('[wake] reapply cover chrome failed', error);
+  }
+  try {
+    await audioService.resumeContextIfNeeded();
+  } catch {
+    /* ignore */
+  }
+};
+
 onMounted(async () => {
   playerStore.setIsPlay(false);
 
@@ -103,6 +129,14 @@ onMounted(async () => {
   }
 
   audioService.releaseOperationLock();
+
+  // 屏幕休眠 / 系统挂起 → 白屏自愈
+  uninstallWakeRecovery = installWakeRecovery(recoverAfterWake);
+});
+
+onUnmounted(() => {
+  uninstallWakeRecovery?.();
+  uninstallWakeRecovery = undefined;
 });
 </script>
 

@@ -40,6 +40,11 @@ html.has-cover-chrome body {
   color: var(--chrome-text, #f8fafc);
 }
 
+/* 休眠唤醒强制重绘时短暂挂上（见 wakeRecovery.ts） */
+html.wake-repaint body {
+  transform: translateZ(0);
+}
+
 .chrome-surface {
   background: var(--chrome-surface);
   border: 1px solid var(--chrome-border);
