@@ -62,14 +62,10 @@
 
 ---
 
-## 过时脚手架（勿用）
+## 已清理
 
-Trellis 初始化时的 **React** 模板残留，**不描述本仓库**：
-
-- `components.md`、`hooks.md`、`quality.md`、`css-design.md`
-- `ipc-electron.md`、`electron-browser-api-restrictions.md`、`react-pitfalls.md`
-
-只认上表六份权威文档。后端 / 其它层若仍是模板，勿照抄。
+原 React 脚手架文档（`components.md`、`hooks.md`、`quality.md`、`css-design.md`、`ipc-electron.md`、`electron-browser-api-restrictions.md`、`react-pitfalls.md`）**已删除**。  
+`backend/`、`big-question/`、`guides/` 等目录仍可能是 Trellis 通用模板，见 [spec/README.md](../README.md)；**勿当本项目实现规范**。
 
 ---
 

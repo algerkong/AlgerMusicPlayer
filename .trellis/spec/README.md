@@ -1,88 +1,45 @@
-# Electron Development Guidelines
+# 开发规范索引
 
-Universal development guidelines extracted from production Electron projects.
+> **本仓库真相源**：`DEV.md` + 下方「前端权威指南」。  
+> 其它目录若标为过时，**勿当作 LYMusicPlayer 实现依据**。
 
-## Structure
+## 前端（权威）
 
-### [Frontend](./frontend/index.md)
+入口：[frontend/index.md](./frontend/index.md)
 
-React + TypeScript frontend development patterns:
+| 文档                                                          | 内容             |
+| ------------------------------------------------------------- | ---------------- |
+| [directory-structure.md](./frontend/directory-structure.md)   | 目录与命名       |
+| [component-guidelines.md](./frontend/component-guidelines.md) | 组件 / UI 库     |
+| [hook-guidelines.md](./frontend/hook-guidelines.md)           | 组合式函数       |
+| [state-management.md](./frontend/state-management.md)         | Pinia / services |
+| [type-safety.md](./frontend/type-safety.md)                   | 类型与 Track     |
+| [quality-guidelines.md](./frontend/quality-guidelines.md)     | lint、注释、提交 |
 
-- [Directory Structure](./frontend/directory-structure.md)
-- [Components](./frontend/components.md)
-- [State Management](./frontend/state-management.md)
-- [Hooks](./frontend/hooks.md)
-- [IPC Communication](./frontend/ipc-electron.md)
-- [CSS Design](./frontend/css-design.md)
-- [Type Safety](./frontend/type-safety.md)
-- [React Pitfalls](./frontend/react-pitfalls.md)
-- [Electron Browser API Restrictions](./frontend/electron-browser-api-restrictions.md)
+人读总览：[DEV.md](../../DEV.md)
 
-### [Backend](./backend/index.md)
+## 本仓库实际技术栈
 
-Electron main process development patterns:
+- **渲染**：Vue 3、TypeScript、Pinia、Tailwind、shadcn-vue（naive-ui 遗留）
+- **主进程**：Electron、electron-store、本地下载 / 缓存 / 音源 IPC（`ly-music-source`）
+- **本地数据**：electron-store、localStorage、IndexedDB（**不是** Drizzle / SQLite 应用层）
+- **构建**：electron-vite、electron-builder
 
-- [Directory Structure](./backend/directory-structure.md)
-- [API Module](./backend/api-module.md)
-- [API Patterns](./backend/api-patterns.md)
-- [Database](./backend/database.md)
-- [Logging](./backend/logging.md)
-- [Error Handling](./backend/error-handling.md)
-- [Pagination](./backend/pagination.md)
-- [Environment](./backend/environment.md)
-- [Type Safety](./backend/type-safety.md)
-- [macOS Permissions](./backend/macos-permissions.md)
-- [Text Input](./backend/text-input.md)
+## 过时 / 模板区（勿照抄）
 
-### [Shared](./shared/index.md)
+| 目录                             | 说明                                                 |
+| -------------------------------- | ---------------------------------------------------- |
+| [backend/](./backend/)           | Trellis 通用 Electron+Drizzle 模板，**非本项目结构** |
+| [big-question/](./big-question/) | 通用踩坑文，含 React/Drizzle 示例，仅作参考          |
+| [guides/](./guides/)             | 通用思考清单模板，未按本仓库重写                     |
+| [shared/](./shared/)             | 部分条目仍为模板约定，与代码冲突时以代码为准         |
 
-Cross-cutting concerns:
+前端旧脚手架 md（`components.md`、`hooks.md`、`react-pitfalls.md` 等）**已删除**，勿再引用。
 
-- [TypeScript Conventions](./shared/typescript.md)
-- [Code Quality](./shared/code-quality.md)
-- [Git Conventions](./shared/git-conventions.md)
-- [Timestamp Handling](./shared/timestamp.md)
-- [pnpm + Electron Setup](./shared/pnpm-electron-setup.md)
+## 用法
 
-### [Guides](./guides/index.md)
+1. 写前端 / 壳层 UI → 只看 **前端权威六份 + DEV.md**
+2. 主进程改动 → 以 `src/main/` 实码为准，不要跟 backend 模板目录结构走
+3. 代码评审 → quality-guidelines 检查清单
 
-Development thinking guides:
-
-- [Pre-Implementation Checklist](./guides/pre-implementation-checklist.md)
-- [Cross-Layer Thinking Guide](./guides/cross-layer-thinking-guide.md)
-- [Code Reuse Thinking Guide](./guides/code-reuse-thinking-guide.md)
-- [Bug Root Cause Thinking Guide](./guides/bug-root-cause-thinking-guide.md)
-- [DB Schema Change Guide](./guides/db-schema-change-guide.md)
-- [Transaction Consistency Guide](./guides/transaction-consistency-guide.md)
-- [Semantic Change Checklist](./guides/semantic-change-checklist.md)
-
-### [Big Questions / Pitfalls](./big-question/index.md)
-
-Common issues and solutions:
-
-- [Native Module Packaging](./big-question/native-module-packaging.md)
-- [Native Module Complex Dependencies](./big-question/native-module-complex-deps.md)
-- [IPC Handler Registration](./big-question/ipc-handler-registration.md)
-- [Network Stack Differences](./big-question/network-stack-differences.md)
-- [Transaction Silent Failure](./big-question/transaction-silent-failure.md)
-- [React useState Function](./big-question/react-usestate-function.md)
-- [CSS Flex Centering](./big-question/css-flex-centering.md)
-- [Timestamp Precision](./big-question/timestamp-precision.md)
-- [Bluetooth HID Device](./big-question/bluetooth-hid-device.md)
-- [Global Keyboard Hooks](./big-question/global-keyboard-hooks.md)
-
-## Tech Stack
-
-- **Frontend**: React 18, TypeScript, TanStack Query, Tailwind CSS
-- **Backend**: Electron (Main Process), better-sqlite3, TypeScript
-- **IPC**: Type-safe contextBridge pattern
-- **Build**: Vite, electron-builder
-
-## Usage
-
-These guidelines can be used as:
-
-1. **New Project Template** - Copy the entire structure for new Electron projects
-2. **Reference Documentation** - Consult specific guides when implementing features
-3. **Code Review Checklist** - Verify implementations against established patterns
-4. **Onboarding Material** - Help new developers understand project conventions
+**文档语言**：中文。
