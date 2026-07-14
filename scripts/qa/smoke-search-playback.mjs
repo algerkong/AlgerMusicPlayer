@@ -82,6 +82,22 @@ async function waitForState(cdp, expression, predicate, timeoutMs, label) {
   }
   throw new Error(`${label} timeout: ${JSON.stringify(last)}`);
 }
+
+async function removeTempRootWithRetry() {
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    try {
+      await rm(tempRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 250 });
+      return;
+    } catch (error) {
+      if (attempt === 5) {
+        console.warn(`[qa] temp cleanup skipped: ${error instanceof Error ? error.message : String(error)}`);
+        return;
+      }
+      await delay(250 * (attempt + 1));
+    }
+  }
+}
+
 async function kill() {
   if (!child?.pid) return;
   await new Promise((resolve) => {
@@ -155,20 +171,22 @@ try {
       audioSrc: document.querySelector('audio')?.getAttribute('src') || '',
       audioCurrentSrc: document.querySelector('audio')?.currentSrc || '',
       audioReadyState: document.querySelector('audio')?.readyState ?? null,
-      playBarTitle: document.querySelector('#play-bar-current-song-title')?.textContent?.trim() || '',
-      playBarArtistText: document.querySelector('#play-bar-current-song-artist')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
-      playPauseAriaLabel: document.querySelector('.music-buttons-play')?.getAttribute('aria-label') || '',
-      playPausePressed: document.querySelector('.music-buttons-play')?.getAttribute('aria-pressed') || '',
-      firstRowPlayAriaLabel: document.querySelector('.standard-song-item .song-item-operating-play')?.getAttribute('aria-label') || '',
+      playBarVisible: Boolean(document.querySelector('.music-play-bar')),
+      playBarTitle: document.querySelector('.music-play-bar .music-content-title')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
+      playBarArtistText: document.querySelector('.music-play-bar .music-content-name')?.textContent?.replace(/\\s+/g, ' ').trim() || '',
+      playPauseIconClass: document.querySelector('.music-buttons-play .iconfont')?.className || '',
+      firstRowPlayClass: document.querySelector('.standard-song-item .song-item-operating-play')?.className || '',
+      firstRowPlayIconClass: document.querySelector('.standard-song-item .song-item-operating-play .iconfont')?.className || '',
       playerButtons: Array.from(document.querySelectorAll('button')).map((node) => node.innerText?.replace(/\\s+/g, ' ').trim()).filter(Boolean).slice(-20),
       auditEvents: Array.isArray(window.__amplAuditEvents) ? window.__amplAuditEvents.slice(-20) : []
     }))()`,
     (state) =>
       state?.hash?.startsWith('#/search-result') &&
+      state?.playBarVisible === true &&
       state?.playBarTitle === beforeClick.firstSongTitle &&
-      /pause|暂停/i.test(state?.playPauseAriaLabel || '') &&
-      state?.playPausePressed === 'true' &&
-      /pause|暂停/i.test(state?.firstRowPlayAriaLabel || ''),
+      /icon-stop/.test(state?.playPauseIconClass || '') &&
+      (/bg-green-600/.test(state?.firstRowPlayClass || '') ||
+        /icon-stop/.test(state?.firstRowPlayIconClass || '')),
     30_000,
     'search playback settled'
   );
@@ -182,5 +200,5 @@ try {
 } finally {
   cdp?.close();
   await kill();
-  await rm(tempRoot, { recursive: true, force: true });
+  await removeTempRootWithRetry();
 }

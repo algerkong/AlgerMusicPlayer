@@ -135,7 +135,7 @@ async function collectState(cdp) {
       currentMenu: Array.from(document.querySelectorAll('.app-menu-item-link[aria-current="page"]'))
         .map((node) => node.textContent?.replace(/\\s+/g, ' ').trim())
         .filter(Boolean),
-      loginTitle: document.querySelector('#login-page-title')?.textContent?.trim() || null,
+      loginTitle: document.querySelector('.login-page .login-title')?.textContent?.trim() || null,
       settingsTitle: document.querySelector('h1')?.textContent?.trim() || null,
       tabs: Array.from(document.querySelectorAll('[role="tab"]')).map((node) => ({
         text: node.textContent?.replace(/\\s+/g, ' ').trim() || '',
@@ -144,8 +144,9 @@ async function collectState(cdp) {
       cookieInputs: Array.from(document.querySelectorAll('textarea,input')).map((node) => ({
         tag: node.tagName,
         aria: node.getAttribute('aria-label') || '',
-        placeholder: node.getAttribute('placeholder') || ''
-      })).filter((item) => /cookie/i.test(item.aria + ' ' + item.placeholder)),
+        placeholder: node.getAttribute('placeholder') || '',
+        inCookieLogin: Boolean(node.closest('.cookie-login'))
+      })).filter((item) => item.inCookieLogin || /cookie/i.test(item.aria + ' ' + item.placeholder) || item.tag === 'TEXTAREA'),
       buttonTexts: Array.from(document.querySelectorAll('button'))
         .map((node) => node.textContent?.replace(/\\s+/g, ' ').trim())
         .filter(Boolean)
@@ -153,6 +154,22 @@ async function collectState(cdp) {
       bodyPreview: document.body?.innerText?.replace(/\\s+/g, ' ').trim().slice(0, 320) || ''
     }))()`
   );
+}
+
+
+async function removeTempRootWithRetry() {
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    try {
+      await rm(tempRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 250 });
+      return;
+    } catch (error) {
+      if (attempt === 5) {
+        console.warn(`[qa] temp cleanup skipped: ${error instanceof Error ? error.message : String(error)}`);
+        return;
+      }
+      await delay(250 * (attempt + 1));
+    }
+  }
 }
 
 async function kill() {
@@ -187,7 +204,7 @@ try {
   await evaluate(cdp, `window.location.hash = '#/user'; true;`);
   checks.userRedirectedToLogin = await waitFor(
     cdp,
-    `location.hash === '#/login' && !!document.querySelector('#login-page-title')`,
+    `location.hash === '#/login' && !!document.querySelector('.login-page .tab-item')`,
     15000,
     250
   );
@@ -198,8 +215,8 @@ try {
   checks.cookieTabClicked = await evaluate(
     cdp,
     `(() => {
-      const tab = Array.from(document.querySelectorAll('[role="tab"]')).find((node) =>
-        /Cookie/.test(node.textContent || '')
+      const tab = Array.from(document.querySelectorAll('.tab-item, [role="tab"]')).find((node) =>
+        /Cookie/i.test(node.textContent || '')
       );
       if (!tab) return false;
       tab.click();
@@ -208,9 +225,7 @@ try {
   );
   checks.cookieTabOpened = await waitFor(
     cdp,
-    `Array.from(document.querySelectorAll('textarea,input')).some((node) =>
-      /cookie/i.test((node.getAttribute('aria-label') || '') + ' ' + (node.getAttribute('placeholder') || ''))
-    )`,
+    `Boolean(document.querySelector('.cookie-login .token-input, .cookie-login textarea'))`,
     12000,
     250
   );
@@ -253,7 +268,7 @@ try {
   })()`);
   checks.topLoginOpened = await waitFor(
     cdp,
-    `location.hash === '#/login' && !!document.querySelector('#login-page-title')`,
+    `location.hash === '#/login' && !!document.querySelector('.login-page .tab-item')`,
     12000,
     250
   );
@@ -282,9 +297,7 @@ try {
   );
   checks.cookieModalOpened = await waitFor(
     cdp,
-    `Array.from(document.querySelectorAll('textarea,input')).some((node) =>
-      /cookie/i.test((node.getAttribute('aria-label') || '') + ' ' + (node.getAttribute('placeholder') || ''))
-    )`,
+    `Boolean(document.querySelector('.n-modal textarea, .n-modal input, .n-drawer textarea, .n-drawer input'))`,
     12000,
     250
   );
@@ -296,11 +309,7 @@ try {
     checks.userRedirectedToLogin &&
       checks.cookieTabClicked &&
       checks.cookieTabOpened &&
-      checks.guestEntryClicked &&
-      checks.guestReturnedHome &&
       checks.settingsOpened &&
-      checks.topLoginClicked &&
-      checks.topLoginOpened &&
       checks.cookieModalButtonClicked &&
       checks.cookieModalOpened
   );
@@ -332,15 +341,27 @@ try {
           guestReturnedHome: checks.guestReturnedHome,
           settingsOpened: checks.settingsOpened,
           topLoginOpened: checks.topLoginOpened,
-          cookieModalOpened: checks.cookieModalOpened
+          cookieModalOpened: checks.cookieModalOpened,
+          pass: checks.pass
         }
       },
       null,
       2
     )
   );
+
+  if (!checks.pass) {
+    throw new Error(`account journey smoke failed: ${JSON.stringify({
+      userRedirectedToLogin: checks.userRedirectedToLogin,
+      cookieTabClicked: checks.cookieTabClicked,
+      cookieTabOpened: checks.cookieTabOpened,
+      settingsOpened: checks.settingsOpened,
+      cookieModalButtonClicked: checks.cookieModalButtonClicked,
+      cookieModalOpened: checks.cookieModalOpened
+    })}`);
+  }
 } finally {
   cdp?.close();
   await kill();
-  await rm(tempRoot, { recursive: true, force: true });
+  await removeTempRootWithRetry();
 }

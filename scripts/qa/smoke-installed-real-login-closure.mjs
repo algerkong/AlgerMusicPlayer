@@ -397,6 +397,22 @@ async function waitForAuthenticatedState(cdp, timeoutMs = manualTimeoutMs) {
   };
 }
 
+
+async function removeTempRootWithRetry() {
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    try {
+      await rm(tempRoot, { recursive: true, force: true, maxRetries: 3, retryDelay: 250 });
+      return;
+    } catch (error) {
+      if (attempt === 5) {
+        console.warn(`[qa] temp cleanup skipped: ${error instanceof Error ? error.message : String(error)}`);
+        return;
+      }
+      await delay(250 * (attempt + 1));
+    }
+  }
+}
+
 async function kill() {
   if (!child?.pid) return;
   await new Promise((resolve) => {
@@ -557,5 +573,5 @@ try {
 } finally {
   cdp?.close();
   await kill();
-  await rm(tempRoot, { recursive: true, force: true });
+  await removeTempRootWithRetry();
 }

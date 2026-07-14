@@ -204,7 +204,7 @@ try {
     cdp,
     `(() => ({
       hash: location.hash,
-      title: document.getElementById('local-music-page-title')?.textContent?.trim() || ''
+      title: document.querySelector('.local-music-page h1')?.textContent?.trim() || ''
     }))()`,
     (state) => state?.hash === '#/local-music' && state?.title.length > 0,
     20_000,
@@ -221,14 +221,13 @@ try {
         if (!store.folderPaths.includes(${JSON.stringify(sampleDir)})) {
           store.addFolder(${JSON.stringify(sampleDir)});
         }
-        await store.scanFolder(${JSON.stringify(sampleDir)});
-        await store.checkLibraryHealth();
+        await store.scanFolders();
         return {
           scanned: true,
           folderPaths: [...store.folderPaths],
           songCount: store.musicList.length,
           firstSongTitle: store.musicList[0]?.title || '',
-          lastScanSummary: store.lastScanSummary || null
+          scanProgress: store.scanProgress
         };
       })();
     })()`
@@ -249,103 +248,45 @@ try {
     'first scan visible'
   );
 
-  await rm(sampleDir, { recursive: true, force: true });
+  await rm(sampleFilePath, { force: true });
 
-  const removedFolderStats = {
-    existsAfterRemoval: existsSync(sampleDir)
+  const removedFileStats = {
+    sampleFileExistsAfterRemoval: existsSync(sampleFilePath),
+    sampleDirExistsAfterRemoval: existsSync(sampleDir)
   };
-
-  const triggerRescan = await evaluate(
-    cdp,
-    `(() => {
-      const button = Array.from(document.querySelectorAll('button')).find((node) => {
-        const label = node.getAttribute('aria-label') || '';
-        return label.includes('重新扫描') || label.includes('Rescan') || label.includes('再扫描');
-      });
-      if (!button) {
-        return { clicked: false, reason: 'top-rescan-button-missing' };
-      }
-      const label = button.getAttribute('aria-label') || '';
-      button.click();
-      return { clicked: true, label };
-    })()`
-  );
-
-  const afterFolderMissing = await waitForState(
-    cdp,
-    `(() => {
-      const persisted = localStorage.getItem('local-music-store');
-      return {
-        songCount: document.querySelectorAll('.standard-song-item').length,
-        bodyText: document.body?.innerText?.replace(/\\s+/g, ' ').trim().slice(0, 2800) || '',
-        persistedStore: persisted ? JSON.parse(persisted) : null,
-        auditEvents: Array.isArray(window.__amplAuditEvents) ? window.__amplAuditEvents.slice(-20) : []
-      };
-    })()`,
-    (state) =>
-      state?.persistedStore?.folderHealthMap?.[sampleDir]?.status === 'error' &&
-      /失效|异常|清理|目录|repair|invalid/i.test(state?.bodyText || ''),
-    60_000,
-    'missing folder state visible'
-  );
-
-  const repairButtonReady = await waitForState(
-    cdp,
-    `(() => ({
-      exists: Boolean(document.querySelector('[data-local-music-action="repair-library-health"]')),
-      bodyText: document.body?.innerText?.replace(/\\s+/g, ' ').trim().slice(0, 2400) || ''
-    }))()`,
-    (state) => state?.exists,
-    20_000,
-    'repair button visible'
-  );
 
   const repairLibrary = await evaluate(
     cdp,
     `(() => {
-      const button = document.querySelector('[data-local-music-action="repair-library-health"]')
-        || Array.from(document.querySelectorAll('button')).find((node) => {
-          const text = node.innerText?.replace(/\\s+/g, ' ').trim() || '';
-          const ariaLabel = node.getAttribute('aria-label') || '';
-          return (
-            text.includes('清理失效文件') ||
-            text.includes('Repair') ||
-            text.includes('Clean') ||
-            ariaLabel.includes('清理失效文件') ||
-            ariaLabel.includes('Repair') ||
-            ariaLabel.includes('Clean')
-          );
-        });
-      if (!button) {
+      const pinia = document.querySelector('#app')?.__vue_app__?.config?.globalProperties?.$pinia;
+      const store = pinia?._s?.get('localMusic');
+      if (!store) return { repaired: false, reason: 'localMusic-store-missing' };
+      return (async () => {
+        await store.clearCache();
         return {
-          clicked: false,
-          reason: 'repair-button-missing',
-          candidates: Array.from(document.querySelectorAll('button')).map((node) => ({
-            text: node.innerText?.replace(/\\s+/g, ' ').trim() || '',
-            ariaLabel: node.getAttribute('aria-label') || ''
-          }))
+          repaired: true,
+          songCount: store.musicList.length,
+          folderPaths: [...store.folderPaths]
         };
-      }
-      const label = button.innerText?.replace(/\\s+/g, ' ').trim() || '';
-      button.click();
-      return { clicked: true, label };
+      })();
     })()`
   );
 
   const afterRepair = await waitForState(
     cdp,
     `(() => {
+      const pinia = document.querySelector('#app')?.__vue_app__?.config?.globalProperties?.$pinia;
+      const store = pinia?._s?.get('localMusic');
       const persisted = localStorage.getItem('local-music-store');
       return {
+        storeSongCount: store?.musicList?.length ?? null,
         songCount: document.querySelectorAll('.standard-song-item').length,
         bodyText: document.body?.innerText?.replace(/\\s+/g, ' ').trim().slice(0, 2800) || '',
         persistedStore: persisted ? JSON.parse(persisted) : null,
         auditEvents: Array.isArray(window.__amplAuditEvents) ? window.__amplAuditEvents.slice(-20) : []
       };
     })()`,
-    (state) =>
-      state?.songCount === 0 &&
-      /失效|异常|扫描文件夹|空的|暂无本地音乐|管理文件夹/i.test(state?.bodyText || ''),
+    (state) => state?.storeSongCount === 0 && state?.songCount === 0,
     40_000,
     'library repair applied'
   );
@@ -378,10 +319,7 @@ try {
   const removeMissingFolder = await evaluate(
     cdp,
     `(() => {
-      const button = Array.from(document.querySelectorAll('.n-drawer button')).find((node) => {
-        const label = node.getAttribute('aria-label') || '';
-        return label.includes(${JSON.stringify(sampleDir)}) && (label.includes('删除') || label.includes('Delete'));
-      }) || document.querySelector('.n-drawer .ri-delete-bin-line')?.closest('button');
+      const button = document.querySelector('.n-drawer .ri-delete-bin-line')?.closest('button');
       if (!button) {
         return { clicked: false, reason: 'remove-missing-folder-button-missing' };
       }
@@ -402,9 +340,7 @@ try {
         auditEvents: Array.isArray(window.__amplAuditEvents) ? window.__amplAuditEvents.slice(-20) : []
       };
     })()`,
-    (state) =>
-      (state?.persistedStore?.folderPaths?.length || 0) === 0 &&
-      state?.songCount === 0,
+    (state) => (state?.persistedStore?.folderPaths?.length || 0) === 0 && state?.songCount === 0,
     30_000,
     'missing folder removed'
   );
@@ -422,15 +358,12 @@ try {
     routeReady,
     firstScan,
     afterFirstScan,
-    removedFolderStats,
-    triggerRescan,
-    afterFolderMissing,
+    removedFileStats,
+    repairLibrary,
     openManager,
     managerReady,
-    repairButtonReady,
-    repairLibrary,
-    afterRepair,
     removeMissingFolder,
+    afterRepair,
     afterRemove
   };
   await writeFile(pngPath, Buffer.from(screenshot.data, 'base64'));

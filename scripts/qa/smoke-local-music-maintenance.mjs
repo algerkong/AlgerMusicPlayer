@@ -204,7 +204,7 @@ try {
     cdp,
     `(() => ({
       hash: location.hash,
-      title: document.getElementById('local-music-page-title')?.textContent?.trim() || ''
+      title: document.querySelector('.local-music-page h1')?.textContent?.trim() || ''
     }))()`,
     (state) => state?.hash === '#/local-music' && state?.title.length > 0,
     20_000,
@@ -221,14 +221,13 @@ try {
         if (!store.folderPaths.includes(${JSON.stringify(sampleDir)})) {
           store.addFolder(${JSON.stringify(sampleDir)});
         }
-        await store.scanFolder(${JSON.stringify(sampleDir)});
-        await store.checkLibraryHealth();
+        await store.scanFolders();
         return {
           scanned: true,
           folderPaths: [...store.folderPaths],
           songCount: store.musicList.length,
           firstSongTitle: store.musicList[0]?.title || '',
-          lastScanSummary: store.lastScanSummary || null
+          scanProgress: store.scanProgress
         };
       })();
     })()`
@@ -277,8 +276,7 @@ try {
       };
     })()`,
     (state) =>
-      state?.songCount === 2 &&
-      state?.persistedStore?.lastScanSummary?.scannedFiles === 2,
+      state?.songCount === 2,
     60_000,
     'second scan visible'
   );

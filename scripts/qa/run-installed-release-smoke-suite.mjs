@@ -130,13 +130,26 @@ for (const step of steps) {
 
   const artifact = await tryReadJson(jsonPath);
 
+  const artifactPass =
+    typeof artifact?.pass === 'boolean'
+      ? artifact.pass
+      : typeof artifact?.payload?.pass === 'boolean'
+        ? artifact.payload.pass
+        : typeof parsedStdout?.pass === 'boolean'
+          ? parsedStdout.pass
+          : typeof parsedStdout?.payload?.pass === 'boolean'
+            ? parsedStdout.payload.pass
+            : null;
+  const ok = execution.code === 0 && artifactPass !== false;
+
   results.push({
     key: step.key,
     script: step.script,
     startedAt,
     finishedAt,
     exitCode: execution.code,
-    ok: execution.code === 0,
+    ok,
+    artifactPass,
     jsonPath,
     parsedStdout,
     artifact,
