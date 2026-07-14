@@ -9,7 +9,7 @@
     ]"
     :title="label"
   >
-    <!-- SVIP：一闪而过的光带 -->
+    <!-- SVIP：一闪而过的高光 -->
     <span v-if="tier === 'svip'" class="vip-badge__flash" aria-hidden="true" />
     <span class="vip-badge__text">{{ label }}</span>
   </span>
@@ -46,137 +46,157 @@ const label = computed(() => (tier.value === 'svip' ? 'SVIP' : tier.value === 'v
 
 <style scoped>
 /*
- * 黑金实体标：不跟封面 accent。
- * VIP 沉稳、SVIP 更亮 + 一闪而过光带。
+ * 会员标：胶囊、细边、柔金，不跟封面 accent。
+ * VIP 克制；SVIP 略亮 + 一闪而过高光。
  */
 .vip-badge {
+  --vip-pad-y: 3px;
+  --vip-pad-x: 8px;
+  --vip-fs: 10px;
+  --vip-ls: 0.04em;
+  --vip-fw: 600;
+
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   overflow: hidden;
-  padding: 3px 7px;
-  border-radius: 4px;
   box-sizing: border-box;
   user-select: none;
   line-height: 1;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  color: #e8c547;
-  background: #141210;
-  border: 1px solid #a88420;
+  padding: var(--vip-pad-y) var(--vip-pad-x);
+  border-radius: 999px;
+  border: 0.5px solid rgba(255, 214, 140, 0.38);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
+  font-size: var(--vip-fs);
+  font-weight: var(--vip-fw);
+  letter-spacing: var(--vip-ls);
+  color: #f3e2b0;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 42%),
+    linear-gradient(165deg, #3a3228 0%, #1c1814 55%, #12100e 100%);
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 230, 150, 0.12);
+    0 0.5px 0 rgba(255, 255, 255, 0.12) inset,
+    0 1px 2px rgba(0, 0, 0, 0.28);
+  -webkit-font-smoothing: antialiased;
 }
 
 .vip-badge__text {
   position: relative;
   z-index: 1;
-  font-size: 10px;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
   line-height: 1;
   color: inherit;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
 }
 
-/* VIP：哑金 */
+/* VIP：哑光香槟金 */
 .vip-badge--vip {
-  color: #d4b84a;
-  border-color: #9a7a1e;
-  background: linear-gradient(180deg, #1e1a14 0%, #100e0b 100%);
+  color: #e8d5a3;
+  border-color: rgba(212, 184, 120, 0.32);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 40%),
+    linear-gradient(165deg, #2e2922 0%, #181512 100%);
+  box-shadow:
+    0 0.5px 0 rgba(255, 255, 255, 0.08) inset,
+    0 1px 2px rgba(0, 0, 0, 0.22);
 }
 
-/* SVIP：亮金 + 外发光 */
+/* SVIP：亮金材质 + 轻外晕 */
 .vip-badge--svip {
-  color: #ffe28a;
-  border-color: #e8c547;
-  background: linear-gradient(180deg, #2a2210 0%, #0c0a06 100%);
+  color: #fff1c8;
+  border-color: rgba(255, 220, 140, 0.55);
+  background:
+    linear-gradient(180deg, rgba(255, 248, 220, 0.22) 0%, rgba(255, 255, 255, 0) 45%),
+    linear-gradient(145deg, #5a4520 0%, #2a1f10 48%, #141008 100%);
   box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.85),
-    0 0 10px rgba(232, 197, 71, 0.35),
-    0 1px 3px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 240, 180, 0.28);
+    0 0.5px 0 rgba(255, 244, 200, 0.35) inset,
+    0 0 0 0.5px rgba(232, 197, 71, 0.2),
+    0 1px 4px rgba(201, 162, 39, 0.28),
+    0 1px 2px rgba(0, 0, 0, 0.3);
 }
 .vip-badge--svip .vip-badge__text {
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em;
 }
 
 /*
- * 一闪而过：细光带从左扫到右，停一阵再扫
- * 总周期 2.4s，真正亮的只有前 ~0.45s
+ * 一闪而过：窄高光带扫过，停顿后再来
+ * 周期 3.4s，扫过段约 0.7s，略慢一点
  */
 .vip-badge__flash {
   pointer-events: none;
   position: absolute;
-  top: 0;
-  bottom: 0;
+  top: -20%;
+  bottom: -20%;
   left: 0;
-  width: 55%;
+  width: 42%;
   z-index: 2;
   background: linear-gradient(
-    100deg,
+    105deg,
     transparent 0%,
-    rgba(255, 255, 255, 0) 35%,
-    rgba(255, 252, 230, 0.75) 50%,
-    rgba(255, 255, 255, 0) 65%,
+    rgba(255, 255, 255, 0) 28%,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(255, 255, 255, 0) 72%,
     transparent 100%
   );
-  transform: translateX(-160%) skewX(-18deg);
-  animation: vip-flash-pass 2.4s ease-in-out infinite;
+  transform: translateX(-180%) skewX(-16deg);
+  animation: vip-flash-pass 3.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 @keyframes vip-flash-pass {
   0% {
-    transform: translateX(-160%) skewX(-18deg);
+    transform: translateX(-180%) skewX(-16deg);
     opacity: 0;
   }
   8% {
     opacity: 1;
   }
-  28% {
-    transform: translateX(220%) skewX(-18deg);
-    opacity: 1;
+  32% {
+    transform: translateX(280%) skewX(-16deg);
+    opacity: 0.85;
   }
-  32%,
+  38%,
   100% {
-    transform: translateX(220%) skewX(-18deg);
+    transform: translateX(280%) skewX(-16deg);
     opacity: 0;
   }
 }
 
-/* 窄条（头像角标 / 菜单行） */
+/* 窄条 */
 .vip-badge--compact {
-  padding: 2px 5px;
-}
-.vip-badge--compact .vip-badge__text {
-  font-size: 9px;
-  letter-spacing: 0.06em;
+  --vip-pad-y: 2px;
+  --vip-pad-x: 6px;
+  --vip-fs: 9px;
+  --vip-ls: 0.03em;
 }
 
-/* 头像角标 */
+/* 头像角标：贴边小胶囊 */
 .vip-badge--corner {
+  --vip-pad-y: 1.5px;
+  --vip-pad-x: 5px;
+  --vip-fs: 8px;
+  --vip-ls: 0.02em;
+  --vip-fw: 600;
+
   position: absolute;
-  right: -4px;
-  bottom: -4px;
+  right: -3px;
+  bottom: -3px;
   z-index: 3;
-  padding: 1px 4px;
-  border-radius: 3px;
   box-shadow:
-    0 0 0 1.5px #0a0a0b,
-    0 2px 5px rgba(0, 0, 0, 0.5);
+    0 0 0 1.5px rgba(10, 10, 11, 0.92),
+    0 0.5px 0 rgba(255, 255, 255, 0.1) inset,
+    0 1px 3px rgba(0, 0, 0, 0.4);
 }
 .vip-badge--corner.vip-badge--svip {
   box-shadow:
-    0 0 0 1.5px #050505,
-    0 0 8px rgba(255, 214, 100, 0.45),
-    0 2px 6px rgba(0, 0, 0, 0.55);
-}
-.vip-badge--corner .vip-badge__text {
-  font-size: 8px;
-  letter-spacing: 0.04em;
+    0 0 0 1.5px rgba(8, 8, 9, 0.95),
+    0 0.5px 0 rgba(255, 244, 200, 0.3) inset,
+    0 0 6px rgba(232, 197, 71, 0.32),
+    0 1px 3px rgba(0, 0, 0, 0.42);
 }
 .vip-badge--corner .vip-badge__flash {
-  width: 70%;
+  width: 55%;
 }
 </style>
