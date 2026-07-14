@@ -105,7 +105,8 @@ Rules:
 3. If work touches a second independent concern, **open a second branch** (and PR) instead of stacking both into the same branch.
 4. Small polish PRs usually merge **into `ui/polish-draft`** (or into their parent polish branch), not necessarily straight to `main`.
 5. Larger features that are not “polish” still branch from `main` with normal GitHub Flow.
-6. Commit only when the author is satisfied; push / open PR when they say so.
+6. Commit only when the author is satisfied; push when they say so (polish work can merge into `ui/polish-draft` without a formal PR if they prefer).
+7. **Delete child branches immediately after merge** into the parent (local always; remote if it was pushed). No leftover feature branches.
 
 ---
 
