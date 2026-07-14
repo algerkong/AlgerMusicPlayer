@@ -747,6 +747,17 @@ class AudioService {
       }
     });
   }
+
+  /** 休眠/唤醒后尝试拉起挂起的 AudioContext（有歌在播时） */
+  async resumeContextIfNeeded(): Promise<void> {
+    if (!this.context || this.context.state !== 'suspended') return;
+    try {
+      await this.context.resume();
+      console.log('[audio] AudioContext resumed after wake');
+    } catch (e) {
+      console.warn('[audio] resume after wake failed', e);
+    }
+  }
 }
 
 export const audioService = new AudioService();

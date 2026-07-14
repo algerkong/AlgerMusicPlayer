@@ -13,6 +13,7 @@ const MUSIC_SOURCE_CHANNELS = [
   'music-source:qr-validate-mfa-sms',
   'music-source:logout',
   'music-source:get-profile',
+  'music-source:get-membership',
   'music-source:search-songs',
   'music-source:search-playlists',
   'music-source:search-albums',
@@ -125,6 +126,9 @@ const api = {
 
   // —— 快捷键（内置默认，主进程注册全局；renderer 只收动作）——
   onGlobalShortcut: (callback: (action: string) => void) => onChannel('global-shortcut', callback),
+
+  // —— 系统休眠/锁屏唤醒（主进程 powerMonitor → 渲染进程自愈白屏）——
+  onSystemPowerResume: (callback: () => void) => onChannel('system-power-resume', callback),
 
   // —— 通知（主进程若未注册则静默无效）——
   showNotification: (payload: { title: string; body: string }) =>
