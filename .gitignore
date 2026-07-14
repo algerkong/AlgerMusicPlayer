@@ -50,3 +50,6 @@ AGENTS.md
 
 src/renderer/auto-imports.d.ts
 src/renderer/components.d.ts
+
+# Codegraph local index (machine-only)
+.codegraph/
