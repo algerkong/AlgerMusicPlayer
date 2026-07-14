@@ -40,7 +40,7 @@
           <n-ellipsis
             class="song-item-content-title text-ellipsis"
             line-clamp="1"
-            :class="{ 'text-green-500': isPlaying }"
+            :class="{ 'text-primary': isPlaying }"
           >
             {{ item.name }}
             <span
@@ -53,7 +53,7 @@
           <n-ellipsis class="song-item-content-name text-ellipsis" line-clamp="1">
             <template v-for="(artist, index) in artists" :key="index">
               <span
-                class="cursor-pointer hover:text-green-500"
+                class="cursor-pointer hover:text-primary"
                 @click.stop="onArtistClick(artist.id)"
                 >{{ artist.name }}</span
               >
@@ -76,7 +76,7 @@
         </div>
         <div
           class="song-item-operating-list-play bg-gray-300 dark:bg-gray-800 animate__animated"
-          :class="{ 'bg-green-600': isPlaying, animate__flipInY: playLoading }"
+          :class="{ 'bg-primary': isPlaying, animate__flipInY: playLoading }"
           @click="onPlayMusic"
         >
           <i v-if="isPlaying && play" class="iconfont icon-stop"></i>
@@ -243,8 +243,8 @@ const onPlayMusic = () => {
         font-size: 1rem; /* text-base */
       }
 
-      &.bg-green-600 {
-        background-color: rgb(34 197 94);
+      &.bg-primary {
+        background-color: var(--primary-color, #22c55e);
         color: white;
       }
     }

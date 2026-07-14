@@ -37,7 +37,7 @@
     <template #content>
       <div class="song-item-content">
         <div class="song-item-content-title">
-          <n-ellipsis class="text-ellipsis" line-clamp="1" :class="{ 'text-green-500': isPlaying }"
+          <n-ellipsis class="text-ellipsis" line-clamp="1" :class="{ 'text-primary': isPlaying }"
             >{{ item.name }}
             <span
               v-if="item.tns?.length || item.alia?.length"
@@ -60,7 +60,7 @@
           <n-ellipsis class="text-ellipsis" line-clamp="1">
             <template v-for="(artist, index) in artists" :key="index">
               <span
-                class="cursor-pointer hover:text-green-500"
+                class="cursor-pointer hover:text-primary"
                 @click.stop="onArtistClick(artist.id)"
                 >{{ artist.name }}</span
               >
@@ -91,7 +91,7 @@
         </n-tooltip>
         <div
           class="song-item-operating-play bg-gray-300 dark:bg-gray-800 animate__animated"
-          :class="{ 'bg-green-600': isPlaying, animate__flipInY: playLoading }"
+          :class="{ 'bg-primary': isPlaying, animate__flipInY: playLoading }"
           @click="onPlayMusic"
         >
           <i v-if="isPlaying && play" class="iconfont icon-stop"></i>
@@ -243,7 +243,10 @@ const onPlayNext = () => {
       @apply mr-2 cursor-pointer transition-all;
 
       .iconfont {
-        @apply text-xl transition text-gray-500 dark:text-gray-400 hover:text-green-500;
+        @apply text-xl transition text-gray-500 dark:text-gray-400;
+        &:hover {
+          color: var(--primary-color, #22c55e);
+        }
       }
     }
 
@@ -256,8 +259,10 @@ const onPlayNext = () => {
              border dark:border-gray-700 border-gray-200 text-gray-900 dark:text-white;
 
       &:hover,
-      &.bg-green-600 {
-        @apply bg-green-500 border-green-500 text-white;
+      &.bg-primary {
+        background-color: var(--primary-color, #22c55e);
+        border-color: var(--primary-color, #22c55e);
+        color: #fff;
       }
     }
   }

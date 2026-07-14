@@ -21,7 +21,7 @@
           <span
             v-for="(artists, artistsindex) in artistList"
             :key="artistsindex"
-            class="cursor-pointer hover:text-green-500"
+            class="cursor-pointer hover:text-primary"
             @click.stop="handleArtistClick(artists.id)"
           >
             {{ artists.name }}{{ artistsindex < artistList.length - 1 ? ' / ' : '' }}
@@ -400,9 +400,10 @@ const setMusicFull = () => {
   }
 
   &.play {
-    @apply bg-primary text-white;
+    background-color: var(--primary-color, #22c55e);
+    color: #fff;
     &:hover {
-      @apply bg-green-800;
+      background-color: var(--primary-color, #22c55e);
     }
   }
 
@@ -467,7 +468,7 @@ const setMusicFull = () => {
 .progress-fill {
   @apply absolute bottom-0 left-0;
   height: 4px;
-  background: var(--primary-color, #18a058);
+  background: var(--primary-color, #22c55e);
   transition: background-color 0.2s ease;
 }
 
@@ -476,7 +477,10 @@ const setMusicFull = () => {
 }
 
 .volume-slider-wrapper {
-  @apply p-2 py-4 rounded-xl bg-white dark:bg-dark-100 shadow-lg bg-opacity-90 backdrop-blur;
+  @apply p-2 py-4 rounded-xl shadow-lg backdrop-blur;
+  background: var(--chrome-surface-strong, rgba(24, 24, 27, 0.9));
+  border: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.1));
+  color: var(--chrome-text, #f8fafc);
   height: 160px;
 
   :deep(.n-slider) {
@@ -526,7 +530,10 @@ const setMusicFull = () => {
 
 // 播放列表样式
 .playlist-container {
-  @apply fixed left-0 right-0 bg-white dark:bg-dark-100 overflow-hidden;
+  @apply fixed left-0 right-0 overflow-hidden;
+  background: var(--chrome-surface-strong, rgba(24, 24, 27, 0.92));
+  border-top: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.1));
+  color: var(--chrome-text, #f8fafc);
   top: 64px;
   height: 330px;
   max-height: 330px;

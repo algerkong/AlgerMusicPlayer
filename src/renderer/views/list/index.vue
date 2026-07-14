@@ -273,7 +273,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   font-size: 22px;
-  color: #22c55e;
+  color: var(--primary-color, #22c55e);
 }
 
 .cover-fallback {

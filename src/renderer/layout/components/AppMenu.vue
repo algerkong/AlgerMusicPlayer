@@ -224,8 +224,8 @@ const sliderStyle = computed(() => {
     transform 0.15s;
 
   &:hover {
-    color: #22c55e;
-    background: rgba(34, 197, 94, 0.12);
+    color: var(--primary-color, #22c55e);
+    background: var(--chrome-surface, rgba(255, 255, 255, 0.1));
     transform: scale(1.05);
   }
 }
@@ -270,8 +270,8 @@ const sliderStyle = computed(() => {
   top: 0;
   left: 0;
   border-radius: 14px;
-  background: #22c55e;
-  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
+  background: var(--primary-color, #22c55e);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
   transition:
     transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1),
     width 0.28s cubic-bezier(0.34, 1.4, 0.64, 1),
@@ -320,7 +320,7 @@ const sliderStyle = computed(() => {
 }
 
 .app-menu-item-link.is-off:hover .app-menu-item-icon {
-  color: #22c55e !important;
+  color: var(--primary-color, #22c55e) !important;
 }
 
 /* 选中只改图标为白；绿底交给滑动块 */
@@ -353,15 +353,15 @@ const sliderStyle = computed(() => {
 
   &:hover,
   &.is-off:hover {
-    color: #22c55e;
-    background: rgba(34, 197, 94, 0.14);
+    color: var(--primary-color, #22c55e);
+    background: var(--chrome-surface, rgba(255, 255, 255, 0.1));
     transform: scale(1.05);
   }
 
   &.is-on {
     color: #ffffff !important;
-    background: #22c55e;
-    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
+    background: var(--primary-color, #22c55e);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   }
 }
 

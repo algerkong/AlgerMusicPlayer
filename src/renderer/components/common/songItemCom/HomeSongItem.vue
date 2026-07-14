@@ -30,7 +30,7 @@
     <div class="song-info flex flex-col overflow-hidden flex-1 min-w-0">
       <n-ellipsis
         class="song-name text-sm md:text-base font-semibold text-neutral-800 dark:text-neutral-100 transition-colors duration-200 group-hover:text-primary dark:group-hover:text-white"
-        :class="{ 'text-green-500': isPlaying }"
+        :class="{ 'text-primary': isPlaying }"
       >
         {{ item.name }}
         <span
@@ -43,7 +43,7 @@
         class="artist-name text-xs md:text-sm text-neutral-500 dark:text-neutral-400 mt-0.5"
       >
         <template v-for="(artist, index) in artists" :key="index">
-          <span class="cursor-pointer hover:text-green-500" @click.stop="onArtistClick(artist.id)">
+          <span class="cursor-pointer hover:text-primary" @click.stop="onArtistClick(artist.id)">
             {{ artist.name }}
           </span>
           <span v-if="index < artists.length - 1"> / </span>

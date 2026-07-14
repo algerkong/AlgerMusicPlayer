@@ -274,22 +274,29 @@ const applyThemeColor = (colorValue: string) => {
   }
 };
 
-// 监听主题色变化
+// 监听主题色变化（封面 primaryColor 或全局 --primary-color）
 watch(
   () => playerStore.playMusic.primaryColor,
   (newVal) => {
-    if (newVal) {
-      applyThemeColor(newVal);
-    }
-  }
+    const fallback =
+      typeof getComputedStyle !== 'undefined'
+        ? getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim()
+        : '';
+    const color = (newVal as string) || fallback;
+    if (color) applyThemeColor(color);
+  },
+  { immediate: true }
 );
 
 onMounted(() => {
-  if (playerStore.playMusic?.primaryColor) {
-    setTimeout(() => {
-      applyThemeColor(playerStore.playMusic.primaryColor as string);
-    }, 50);
-  }
+  setTimeout(() => {
+    const fromStore = playerStore.playMusic?.primaryColor as string | undefined;
+    const fromCss = getComputedStyle(document.documentElement)
+      .getPropertyValue('--primary-color')
+      .trim();
+    const color = fromStore || fromCss;
+    if (color) applyThemeColor(color);
+  }, 50);
 });
 </script>
 
@@ -303,15 +310,16 @@ onMounted(() => {
   --text-on-fill: #ffffff;
   --high-contrast-color: #ffffff;
 
+  /* 进度/主按钮默认跟封面强调色；有 primaryColor 时由 applyThemeColor 覆盖 */
   &.dark-theme {
     --text-color: #333333;
     --muted-color: rgba(0, 0, 0, 0.6);
     --track-color: rgba(0, 0, 0, 0.2);
     --track-color-hover: rgba(0, 0, 0, 0.4);
-    --fill-color: #1ed760;
-    --fill-color-alt: #1ed760;
-    --fill-color-transparent: rgba(30, 215, 96, 0.25);
-    --fill-color-light: rgba(30, 215, 96, 0.5);
+    --fill-color: var(--primary-color, #22c55e);
+    --fill-color-alt: var(--primary-color, #22c55e);
+    --fill-color-transparent: rgba(255, 255, 255, 0.25);
+    --fill-color-light: rgba(255, 255, 255, 0.45);
     --button-bg: rgba(0, 0, 0, 0.1);
     --button-hover: rgba(0, 0, 0, 0.2);
   }
@@ -321,10 +329,10 @@ onMounted(() => {
     --muted-color: rgba(255, 255, 255, 0.6);
     --track-color: rgba(255, 255, 255, 0.1);
     --track-color-hover: rgba(255, 255, 255, 0.2);
-    --fill-color: #73e49a;
-    --fill-color-alt: #73e49a;
-    --fill-color-transparent: rgba(115, 228, 154, 0.25);
-    --fill-color-light: rgba(115, 228, 154, 0.5);
+    --fill-color: var(--primary-color, #22c55e);
+    --fill-color-alt: var(--primary-color, #22c55e);
+    --fill-color-transparent: rgba(255, 255, 255, 0.25);
+    --fill-color-light: rgba(255, 255, 255, 0.45);
     --button-bg: rgba(255, 255, 255, 0.05);
     --button-hover: rgba(255, 255, 255, 0.1);
   }
@@ -547,6 +555,6 @@ onMounted(() => {
 }
 
 .intelligence-active {
-  @apply text-green-500;
+  color: var(--primary-color, #22c55e);
 }
 </style>

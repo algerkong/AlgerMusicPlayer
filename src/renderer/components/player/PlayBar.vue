@@ -2,11 +2,9 @@
   <div
     class="music-play-bar"
     :class="[
-      setAnimationClass('animate__bounceInUp'),
-      musicFullVisible ? 'play-bar-opcity' : '',
-      musicFullVisible && MusicFullRef?.musicFullRef?.config?.hidePlayBar
-        ? 'animate__animated animate__slideOutDown'
-        : ''
+      // 首屏 bounce 一次；之后大屏开合只用滑动，避免 animation 盖住 transform
+      !musicFullVisible && !playBarSettled ? setAnimationClass('animate__bounceInUp') : '',
+      musicFullVisible ? 'play-bar-hidden' : ''
     ]"
     :style="{
       color: musicFullVisible
@@ -73,7 +71,7 @@
           <span
             v-for="(artists, artistsindex) in artistList"
             :key="artistsindex"
-            class="cursor-pointer hover:text-green-500"
+            class="cursor-pointer hover:text-primary"
             @click="handleArtistClick(artists.id)"
           >
             {{ artists.name }}{{ artistsindex < artistList.length - 1 ? ' / ' : '' }}
@@ -179,7 +177,7 @@
       <n-tooltip trigger="hover" :z-index="9999999">
         <template #trigger>
           <i
-            class="iconfont icon-list text-2xl hover:text-green-500 transition-colors cursor-pointer"
+            class="iconfont icon-list text-2xl hover:text-primary transition-colors cursor-pointer"
             @click="openPlayListDrawer"
           ></i>
         </template>
@@ -193,7 +191,7 @@
 
 <script lang="ts" setup>
 import { useThrottleFn } from '@vueuse/core';
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import MusicFullWrapper from '@/components/lyric/MusicFullWrapper.vue';
@@ -314,6 +312,13 @@ const formatTooltip = (value: number) => {
 
 const MusicFullRef = ref<any>(null);
 const showSliderTooltip = ref(false);
+/** 首屏 bounce 只播一次，之后大屏开合只用滑动 */
+const playBarSettled = ref(false);
+onMounted(() => {
+  window.setTimeout(() => {
+    playBarSettled.value = true;
+  }, 700);
+});
 
 const musicFullVisible = computed({
   get: () => playerStore.musicFull,
@@ -350,23 +355,27 @@ const openPlayListDrawer = () => {
 .music-play-bar {
   @apply w-full absolute bottom-0 left-0 flex items-center box-border px-6 py-2 pt-3;
   height: var(--play-bar-height, 5rem);
-  /* 保证在封面底上可见、可点 */
+  /* 跟封面取色：半透明环境色 + 模糊 */
   background: var(--chrome-surface-strong, rgba(24, 24, 27, 0.88));
   border-top: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.1));
   backdrop-filter: blur(var(--chrome-blur, 16px));
   -webkit-backdrop-filter: blur(var(--chrome-blur, 16px));
+  color: var(--chrome-text, #f8fafc);
   pointer-events: auto;
   box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.18);
+  /* 高于大屏抽屉(9998)：展开时底栏在上，像从进度条处被推下去 */
   z-index: 9999;
   animation-duration: 0.5s !important;
+  /* 与 .music-full-drawer 同时长、同曲线：一上一下 */
+  transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1);
 
-  &.play-bar-opcity {
-    @apply bg-transparent !important;
-    box-shadow: 0 0 20px 5px #0000001d;
-  }
-
-  &.animate__slideOutDown {
-    animation-duration: 0.3s !important;
+  /*
+   * 大屏展开：整条底栏往下滑收起（不淡出，纯位移）。
+   * 必须关掉 bounceInUp 的 animation-fill，否则 transform 被关键帧盖掉。
+   */
+  &.play-bar-hidden {
+    animation: none !important;
+    transform: translateY(100%) !important;
     pointer-events: none;
   }
 
@@ -393,12 +402,20 @@ const openPlayListDrawer = () => {
 
   .iconfont {
     @apply text-2xl transition;
-    @apply hover:text-green-500;
+    color: var(--chrome-text, inherit);
+  }
+
+  .iconfont:hover {
+    color: var(--primary-color, #22c55e);
   }
 
   .icon {
     @apply text-3xl;
-    @apply hover:text-green-500;
+    color: var(--chrome-text, inherit);
+  }
+
+  .icon:hover {
+    color: var(--primary-color, #22c55e);
   }
 
   @apply flex items-center;
@@ -426,7 +443,9 @@ const openPlayListDrawer = () => {
 
   .iconfont {
     @apply text-2xl transition;
-    @apply hover:text-green-500;
+    &:hover {
+      color: var(--primary-color, #22c55e);
+    }
   }
 
   .volume-slider {
@@ -452,7 +471,9 @@ const openPlayListDrawer = () => {
 
   .iconfont {
     @apply text-2xl transition cursor-pointer mx-3;
-    @apply hover:text-green-500;
+    &:hover {
+      color: var(--primary-color, #22c55e);
+    }
   }
 }
 
@@ -509,9 +530,9 @@ const openPlayListDrawer = () => {
     --n-rail-height: 4px;
     --n-rail-color: theme('colors.gray.200');
     --n-rail-color-dark: theme('colors.gray.700');
-    --n-fill-color: theme('colors.green.500');
+    --n-fill-color: var(--primary-color, #22c55e);
     --n-handle-size: 12px;
-    --n-handle-color: theme('colors.green.500');
+    --n-handle-color: var(--primary-color, #22c55e);
 
     &.n-slider--vertical {
       height: 100%;
@@ -596,7 +617,7 @@ const openPlayListDrawer = () => {
 }
 
 .intelligence-active {
-  @apply text-green-500 hover:text-green-600 !important;
+  color: var(--primary-color, #22c55e) !important;
 }
 
 .disabled-icon {
@@ -680,14 +701,19 @@ const openPlayListDrawer = () => {
 }
 
 .playback-rate-badge {
-  @apply ml-2 px-1.5 h-4 flex items-center text-xs rounded bg-green-500 bg-opacity-15 text-green-600 dark:text-green-400;
+  @apply ml-2 px-1.5 h-4 flex items-center text-xs rounded;
+  color: var(--primary-color, #22c55e);
+  background: rgba(255, 255, 255, 0.08);
   font-weight: 500;
   vertical-align: 1px;
 }
 
 .quality-btn {
   @apply min-w-[1.75rem] h-7 px-1.5 rounded-md text-xs font-semibold;
-  @apply hover:text-green-500 hover:bg-black/5 dark:hover:bg-white/10 transition-colors;
+  @apply hover:bg-black/5 dark:hover:bg-white/10 transition-colors;
+  &:hover {
+    color: var(--primary-color, #22c55e);
+  }
   border: 1px solid currentColor;
   opacity: 0.85;
 }
@@ -704,6 +730,8 @@ const openPlayListDrawer = () => {
 }
 
 .quality-menu-item.active {
-  @apply text-green-600 dark:text-green-400 font-medium bg-green-500/10;
+  @apply font-medium;
+  color: var(--primary-color, #22c55e);
+  background: rgba(255, 255, 255, 0.08);
 }
 </style>

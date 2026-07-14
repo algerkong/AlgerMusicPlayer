@@ -176,9 +176,9 @@ watch(
           --n-rail-height: 3px;
           --n-rail-color: rgba(255, 255, 255, 0.15);
           --n-rail-color-dark: rgba(255, 255, 255, 0.15);
-          --n-fill-color: #22c55e;
+          --n-fill-color: var(--primary-color, #22c55e);
           --n-handle-size: 0px; /* 隐藏滑块 */
-          --n-handle-color: #22c55e;
+          --n-handle-color: var(--primary-color, #22c55e);
 
           &:hover {
             --n-handle-size: 10px; /* 鼠标悬停时显示滑块 */
@@ -251,9 +251,14 @@ watch(
     }
   }
 
-  // Mini模式样式
+  // Mini模式样式：跟封面取色
   .mobile-mini-controls {
-    @apply flex items-center justify-between pr-4 mx-3 h-12 rounded-full bg-light-100 dark:bg-dark-100 shadow-lg;
+    @apply flex items-center justify-between pr-4 mx-3 h-12 rounded-full shadow-lg;
+    background: var(--chrome-surface-strong, rgba(24, 24, 27, 0.85));
+    border: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.12));
+    backdrop-filter: blur(var(--chrome-blur, 16px));
+    -webkit-backdrop-filter: blur(var(--chrome-blur, 16px));
+    color: var(--chrome-text, #f8fafc);
 
     .mini-song-info {
       @apply flex items-center flex-1 min-w-0 cursor-pointer;
@@ -283,17 +288,24 @@ watch(
 
         &.play {
           @apply w-9 h-9 rounded-full flex items-center justify-center mr-2;
-          @apply bg-gray-100 dark:bg-gray-800;
+          background: var(--chrome-surface, rgba(255, 255, 255, 0.12));
+          border: 1px solid var(--chrome-border, transparent);
 
           .iconfont {
-            @apply text-xl text-green-500 transition hover:text-green-600;
+            @apply text-xl transition;
+            color: var(--primary-color, #22c55e);
+            &:hover {
+              color: var(--primary-color, #22c55e);
+            }
           }
         }
       }
 
       .mini-list-icon {
         @apply text-xl p-1 transition cursor-pointer;
-        @apply hover:text-green-500;
+        &:hover {
+          color: var(--primary-color, #22c55e);
+        }
       }
     }
   }
