@@ -77,20 +77,36 @@
     <!-- 用户 / 登录（设置已挪到侧栏底部） -->
     <n-popover v-if="userStore.user" trigger="hover" placement="bottom-end" :show-arrow="false" raw>
       <template #trigger>
-        <div class="user-btn">
+        <div
+          class="user-btn"
+          :class="{ 'user-btn--member': userStore.vipLevel !== 'none' }"
+          :data-vip="userStore.vipLevel"
+        >
           <n-avatar
             circle
-            :size="26"
+            :size="36"
             :src="getImgUrl(userStore.user.avatarUrl)"
-            class="cursor-pointer"
+            class="cursor-pointer user-avatar"
             @click="selectItem('user')"
+          />
+          <vip-badge
+            v-if="userStore.vipLevel === 'vip' || userStore.vipLevel === 'svip'"
+            :level="userStore.vipLevel"
+            compact
+            corner
           />
         </div>
       </template>
       <div class="user-menu">
         <div class="user-menu-top" @click="selectItem('user')">
-          <n-avatar circle :size="28" :src="getImgUrl(userStore.user?.avatarUrl)" />
-          <span class="user-name">{{ userStore.user?.nickname }}</span>
+          <n-avatar circle :size="36" :src="getImgUrl(userStore.user?.avatarUrl)" />
+          <span class="user-name">
+            {{ userStore.user?.nickname }}
+            <vip-badge
+              v-if="userStore.vipLevel === 'vip' || userStore.vipLevel === 'svip'"
+              :level="userStore.vipLevel"
+            />
+          </span>
         </div>
         <div class="menu-sep" />
         <div class="menu-list">
@@ -112,6 +128,7 @@ import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
+import VipBadge from '@/components/common/VipBadge.vue';
 import LoginQrModal from '@/components/login/LoginQrModal.vue';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SEARCH_TYPE } from '@/const/bar-const';
@@ -434,28 +451,66 @@ const selectItem = (key: string) => {
   background: rgba(236, 72, 153, 0.1);
 }
 
-/* ── 用户按钮 ────────────────────────────────────── */
+/* ── 用户按钮：描边贴头像，无内间隙 ───────────────── */
 .user-btn {
+  --user-btn-size: 36px;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: var(--bar-h);
-  height: var(--bar-h);
-  padding: 2px;
+  width: var(--user-btn-size);
+  min-width: var(--user-btn-size);
+  height: var(--user-btn-size);
+  padding: 0;
   border-radius: 9999px;
-  border: 1px solid var(--chrome-border);
-  background: var(--chrome-surface);
-  backdrop-filter: blur(var(--chrome-blur));
-  -webkit-backdrop-filter: blur(var(--chrome-blur));
+  border: 1.5px solid var(--chrome-border);
+  background: transparent;
   cursor: pointer;
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
   box-sizing: border-box;
+  /* 角标可溢出；头像本身由 n-avatar circle 裁切 */
+  overflow: visible;
 }
 .user-btn:hover {
   border-color: var(--primary-color, #22c55e);
   box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.22);
+}
+/* 会员头像：黑金描边贴边 */
+.user-btn--member[data-vip='vip'] {
+  border-color: #c9a227;
+  box-shadow: 0 0 0 1px rgba(201, 162, 39, 0.25);
+}
+.user-btn--member[data-vip='svip'] {
+  border-color: #f0d56a;
+  box-shadow:
+    0 0 0 1px rgba(232, 197, 71, 0.4),
+    0 0 10px rgba(232, 197, 71, 0.28);
+}
+.user-btn--member:hover {
+  border-color: #e8c547;
+  box-shadow:
+    0 0 0 2px rgba(232, 197, 71, 0.3),
+    0 0 12px rgba(232, 197, 71, 0.22);
+}
+.user-avatar,
+.user-btn :deep(.n-avatar) {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: 9999px !important;
+  flex-shrink: 0;
+}
+.user-btn :deep(.n-avatar img) {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  border-radius: 9999px;
 }
 
 .login-label {
@@ -516,6 +571,10 @@ const selectItem = (key: string) => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }
 .dark .user-name {
   color: #f3f4f6;
