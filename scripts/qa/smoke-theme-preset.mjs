@@ -1,18 +1,24 @@
 ﻿const { spawn } = await import('node:child_process');
-const { mkdtemp, mkdir, rm, writeFile } = await import('node:fs/promises');
+const { mkdtemp, mkdir, readFile, rm, writeFile } = await import('node:fs/promises');
 const { existsSync } = await import('node:fs');
 const path = await import('node:path');
+
+const appVersion = JSON.parse(await readFile(path.resolve('package.json'), 'utf8')).version;
 
 const exePath = process.env.AMPL_EXE_PATH ? path.resolve(process.env.AMPL_EXE_PATH) : path.resolve('dist', 'win-unpacked', 'AMPL Music.exe');
 if (!existsSync(exePath)) throw new Error(`exe not found: ${exePath}`);
 const outBase = process.env.AMPL_ROUTE_OUT_BASENAME || 'theme-preset-smoke';
 const port = Number(process.env.AMPL_DEBUG_PORT || 9410);
-const tempRoot = await mkdtemp(path.join(path.resolve('.tmp'), `${outBase}-profile-`));
+const tempBase = path.resolve('.tmp');
+await mkdir(tempBase, { recursive: true });
+const tempRoot = await mkdtemp(path.join(tempBase, `${outBase}-profile-`));
 for (const dir of ['APPDATA', 'LOCALAPPDATA', 'TEMP']) await mkdir(path.join(tempRoot, dir), { recursive: true });
 const child = spawn(exePath, [`--remote-debugging-port=${port}`], { env: { ...process.env, APPDATA: path.join(tempRoot, 'APPDATA'), LOCALAPPDATA: path.join(tempRoot, 'LOCALAPPDATA'), TEMP: path.join(tempRoot, 'TEMP'), TMP: path.join(tempRoot, 'TEMP') }, stdio: 'ignore' });
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function fetchJson(url) { const res = await fetch(url); if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json(); }
-async function waitForTarget() { const end = Date.now() + 45000; while (Date.now() < end) { try { const targets = await fetchJson(`http://127.0.0.1:${port}/json/list`); const page = targets.find((target) => target?.type === 'page' && typeof target.webSocketDebuggerUrl === 'string' && !String(target.url || '').includes('#/lyric') && !String(target.url || '').startsWith('devtools://')); if (page) return page; } catch {} await delay(500); } throw new Error('target timeout'); }
+async function waitForTarget() { const end = Date.now() + 45000; while (Date.now() < end) { try { const targets = await fetchJson(`http://127.0.0.1:${port}/json/list`); const page = targets.find((target) => target?.type === 'page' && typeof target.webSocketDebuggerUrl === 'string' && !String(target.url || '').includes('#/lyric') && !String(target.url || '').startsWith('devtools://')); if (page) return page; } catch {
+      // Ignore transient polling errors while the app is still loading.
+    } await delay(500); } throw new Error('target timeout'); }
 function createCdp(url) { const ws = new WebSocket(url); let nextId = 0; const pending = new Map(); const opened = new Promise((resolve, reject) => { ws.addEventListener('open', resolve, { once: true }); ws.addEventListener('error', (event) => reject(event.error || new Error('ws error')), { once: true }); }); ws.addEventListener('message', (event) => { const payload = JSON.parse(String(event.data)); if (!payload.id || !pending.has(payload.id)) return; const { resolve, reject } = pending.get(payload.id); pending.delete(payload.id); if (payload.error) reject(new Error(payload.error.message || JSON.stringify(payload.error))); else resolve(payload.result || {}); }); return { async send(method, params = {}) { await opened; const id = ++nextId; ws.send(JSON.stringify({ id, method, params })); return new Promise((resolve, reject) => pending.set(id, { resolve, reject })); }, close() { ws.close(); } }; }
 async function evaluate(cdp, expression) { const result = await cdp.send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true }); return result.result?.value; }
 async function waitForState(cdp, expression, predicate, timeoutMs, label) {
@@ -34,7 +40,8 @@ try {
   cdp = createCdp(target.webSocketDebuggerUrl);
   await cdp.send('Page.enable');
   await cdp.send('Runtime.enable');
-  await cdp.send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => { localStorage.clear(); localStorage.setItem('disclaimer_agreed_timestamp', '1720000000000'); localStorage.setItem('traffic_warning_dismissed', 'true'); localStorage.setItem('first_run_guide_dismissed', 'true'); })();` });
+  await cdp.send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => { localStorage.clear(); localStorage.setItem('disclaimer_agreed_timestamp', '1720000000000'); localStorage.setItem('traffic_warning_dismissed', 'true'); localStorage.setItem('first_run_guide_dismissed', 'true');
+      localStorage.setItem('donation_shown_version', ${JSON.stringify(appVersion)}); })();` });
   await cdp.send('Page.reload', { ignoreCache: true });
   await delay(2500);
   await evaluate(cdp, `window.location.hash = '#/set'; true;`);
@@ -57,7 +64,7 @@ try {
     const target = Array.from(document.querySelectorAll('.theme-preset-card')).find((node) => node.textContent?.includes('Dark Cinema'));
     if (!target) return { clicked: false, skipped: false, reason: 'dark-cinema-not-found', activeLabel };
     target.click();
-    return { clicked: true, skipped: false, activeLabel, label: target.textContent?.replace(/\s+/g, ' ').trim() || '' };
+    return { clicked: true, skipped: false, activeLabel, label: target.textContent?.replace(/\\s+/g, ' ').trim() || '' };
   })()`);
   const stateBeforeSwitch = await waitForState(cdp, `(() => {
     const style = getComputedStyle(document.documentElement);
@@ -71,7 +78,7 @@ try {
     const target = Array.from(document.querySelectorAll('.theme-preset-card')).find((node) => node.textContent?.includes('Galaxy Dream'));
     if (!target) return { clicked: false, reason: 'preset-not-found' };
     target.click();
-    return { clicked: true, label: target.textContent?.replace(/\s+/g, ' ').trim() || '' };
+    return { clicked: true, label: target.textContent?.replace(/\\s+/g, ' ').trim() || '' };
   })()`);
   const after = await waitForState(cdp, `(() => {
     const style = getComputedStyle(document.documentElement);
@@ -79,7 +86,7 @@ try {
       accent: style.getPropertyValue('--ampl-accent').trim(),
       accentSoft: style.getPropertyValue('--ampl-accent-soft').trim(),
       activePreset: document.querySelector('.theme-preset-card--active .theme-preset-card__name')?.textContent?.trim() || '',
-      bodyText: document.body?.innerText?.replace(/\s+/g, ' ').trim().slice(0, 1200) || ''
+      bodyText: document.body?.innerText?.replace(/\\s+/g, ' ').trim().slice(0, 1200) || ''
     };
   })()`, (state) => state?.activePreset === 'Galaxy Dream' && state?.accent.toLowerCase() === GALAXY_DREAM_ACCENT, 20_000, 'galaxy dream active');
   const screenshot = await cdp.send('Page.captureScreenshot', { format: 'png' });

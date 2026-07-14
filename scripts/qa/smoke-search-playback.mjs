@@ -1,7 +1,9 @@
 ﻿const { spawn } = await import('node:child_process');
-const { mkdtemp, mkdir, rm, writeFile } = await import('node:fs/promises');
+const { mkdtemp, mkdir, readFile, rm, writeFile } = await import('node:fs/promises');
 const { existsSync } = await import('node:fs');
 const path = await import('node:path');
+
+const appVersion = JSON.parse(await readFile(path.resolve('package.json'), 'utf8')).version;
 
 const exePath = process.env.AMPL_EXE_PATH
   ? path.resolve(process.env.AMPL_EXE_PATH)
@@ -9,7 +11,9 @@ const exePath = process.env.AMPL_EXE_PATH
 if (!existsSync(exePath)) throw new Error(`exe not found: ${exePath}`);
 const outBase = process.env.AMPL_ROUTE_OUT_BASENAME || 'search-playback-smoke';
 const port = Number(process.env.AMPL_DEBUG_PORT || 9408);
-const tempRoot = await mkdtemp(path.join(path.resolve('.tmp'), `${outBase}-profile-`));
+const tempBase = path.resolve('.tmp');
+await mkdir(tempBase, { recursive: true });
+const tempRoot = await mkdtemp(path.join(tempBase, `${outBase}-profile-`));
 for (const dir of ['APPDATA', 'LOCALAPPDATA', 'TEMP']) {
   await mkdir(path.join(tempRoot, dir), { recursive: true });
 }
@@ -32,7 +36,9 @@ async function waitForTarget() {
       const targets = await fetchJson(`http://127.0.0.1:${port}/json/list`);
       const page = targets.find((target) => target?.type === 'page' && typeof target.webSocketDebuggerUrl === 'string' && !String(target.url || '').includes('#/lyric') && !String(target.url || '').startsWith('devtools://'));
       if (page) return page;
-    } catch {}
+    } catch {
+      // Ignore transient polling errors while the app is still loading.
+    }
     await delay(500);
   }
   throw new Error('target timeout');
@@ -96,11 +102,14 @@ try {
       localStorage.setItem('disclaimer_agreed_timestamp', '1720000000000');
       localStorage.setItem('traffic_warning_dismissed', 'true');
       localStorage.setItem('first_run_guide_dismissed', 'true');
+      localStorage.setItem('donation_shown_version', ${JSON.stringify(appVersion)});
       window.__amplAuditEvents = [];
       const push = (type, payload) => {
         try {
           window.__amplAuditEvents.push({ type, payload, hash: location.hash, ts: Date.now() });
-        } catch {}
+        } catch {
+      // Ignore transient polling errors while the app is still loading.
+    }
       };
       const originalConsoleError = console.error;
       console.error = (...args) => {
@@ -125,13 +134,13 @@ try {
     playButtonCount: document.querySelectorAll('.song-item-operating-play').length,
     audioSrc: document.querySelector('audio')?.getAttribute('src') || '',
     audioCurrentSrc: document.querySelector('audio')?.currentSrc || '',
-    buttons: Array.from(document.querySelectorAll('button')).map((node) => node.innerText?.replace(/\s+/g, ' ').trim()).filter(Boolean).slice(0, 30)
+    buttons: Array.from(document.querySelectorAll('button')).map((node) => node.innerText?.replace(/\\s+/g, ' ').trim()).filter(Boolean).slice(0, 30)
   }))()`);
 
   const clickResult = await evaluate(cdp, `(() => {
     const button = document.querySelector('.song-item-operating-play');
     if (!button) return { clicked: false, reason: 'no-play-button' };
-    const cardText = button.closest('.standard-song-item')?.innerText?.replace(/\s+/g, ' ').trim().slice(0, 200) || '';
+    const cardText = button.closest('.standard-song-item')?.innerText?.replace(/\\s+/g, ' ').trim().slice(0, 200) || '';
     button.click();
     return { clicked: true, cardText };
   })()`);

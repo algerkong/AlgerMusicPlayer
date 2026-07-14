@@ -1,7 +1,9 @@
 ﻿const { spawn } = await import('node:child_process');
 const { existsSync } = await import('node:fs');
-const { mkdtemp, mkdir, rm, writeFile } = await import('node:fs/promises');
+const { mkdtemp, mkdir, readFile, rm, writeFile } = await import('node:fs/promises');
 const path = await import('node:path');
+
+const appVersion = JSON.parse(await readFile(path.resolve('package.json'), 'utf8')).version;
 
 const exePath = process.env.AMPL_EXE_PATH
   ? path.resolve(process.env.AMPL_EXE_PATH)
@@ -13,7 +15,9 @@ if (!existsSync(exePath)) {
   throw new Error(`exe not found: ${exePath}`);
 }
 
-const tempRoot = await mkdtemp(path.join(path.resolve('.tmp'), `${outBase}-profile-`));
+const tempBase = path.resolve('.tmp');
+await mkdir(tempBase, { recursive: true });
+const tempRoot = await mkdtemp(path.join(tempBase, `${outBase}-profile-`));
 for (const dir of ['APPDATA', 'LOCALAPPDATA', 'TEMP']) {
   await mkdir(path.join(tempRoot, dir), { recursive: true });
 }
@@ -126,9 +130,9 @@ async function collectState(cdp) {
     cdp,
     `(() => ({
       hash: location.hash,
-      tabs: Array.from(document.querySelectorAll('[role="tab"]')).map((node) => ({
+      tabs: Array.from(document.querySelectorAll('.tab-item, [role="tab"]')).map((node) => ({
         text: node.textContent?.replace(/\\s+/g, ' ').trim() || '',
-        selected: node.getAttribute('aria-selected')
+        selected: node.classList.contains('active') ? 'true' : node.getAttribute('aria-selected')
       })),
       autoCookieStatus: (() => {
         const node = document.querySelector('.auto-cookie-status');
@@ -312,6 +316,7 @@ try {
       localStorage.setItem('disclaimer_agreed_timestamp', '1720000000000');
       localStorage.setItem('traffic_warning_dismissed', 'true');
       localStorage.setItem('first_run_guide_dismissed', 'true');
+      localStorage.setItem('donation_shown_version', ${JSON.stringify(appVersion)});
     })();`
   });
   await cdp.send('Page.reload', { ignoreCache: true });
@@ -320,7 +325,7 @@ try {
   await evaluate(cdp, `window.location.hash = '#/user'; true;`);
   const loginReady = await waitFor(
     cdp,
-    `location.hash === '#/login' && !!document.querySelector('#login-page-title')`,
+    `location.hash === '#/login' && !!document.querySelector('.login-page .login-tabs .tab-item')`,
     15000,
     250
   );
@@ -329,9 +334,8 @@ try {
   const cookieTabClicked = await evaluate(
     cdp,
     `(() => {
-    const tab = Array.from(document.querySelectorAll('[role="tab"]')).find((node) =>
-      /Cookie/.test(node.textContent || '')
-    );
+    const candidates = Array.from(document.querySelectorAll('.tab-item, [role="tab"], button'));
+    const tab = candidates.find((node) => /Cookie/i.test(node.textContent || ''));
     if (!tab) return false;
     tab.click();
     return true;
@@ -339,9 +343,7 @@ try {
   );
   const cookieTabOpened = await waitFor(
     cdp,
-    `Array.from(document.querySelectorAll('textarea,input')).some((node) =>
-      /cookie/i.test((node.getAttribute('aria-label') || '') + ' ' + (node.getAttribute('placeholder') || ''))
-    )`,
+    `Boolean(document.querySelector('.cookie-login .token-input, .cookie-login textarea'))`,
     12000,
     250
   );

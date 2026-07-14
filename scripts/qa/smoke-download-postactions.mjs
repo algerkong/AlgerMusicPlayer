@@ -1,7 +1,9 @@
 const { spawn } = await import('node:child_process');
 const { existsSync } = await import('node:fs');
-const { mkdtemp, mkdir, readdir, rm, stat, writeFile } = await import('node:fs/promises');
+const { mkdtemp, mkdir, readFile, readdir, rm, stat, writeFile } = await import('node:fs/promises');
 const path = await import('node:path');
+
+const appVersion = JSON.parse(await readFile(path.resolve('package.json'), 'utf8')).version;
 
 const exePath = process.env.AMPL_EXE_PATH
   ? path.resolve(process.env.AMPL_EXE_PATH)
@@ -10,7 +12,9 @@ if (!existsSync(exePath)) throw new Error(`exe not found: ${exePath}`);
 
 const outBase = process.env.AMPL_ROUTE_OUT_BASENAME || 'smoke-download-postactions';
 const port = Number(process.env.AMPL_DEBUG_PORT || 9421);
-const tempRoot = await mkdtemp(path.join(path.resolve('.tmp'), `${outBase}-profile-`));
+const tempBase = path.resolve('.tmp');
+await mkdir(tempBase, { recursive: true });
+const tempRoot = await mkdtemp(path.join(tempBase, `${outBase}-profile-`));
 const downloadDir = path.join(tempRoot, 'download-output');
 for (const dir of ['APPDATA', 'LOCALAPPDATA', 'TEMP']) {
   await mkdir(path.join(tempRoot, dir), { recursive: true });
@@ -49,7 +53,9 @@ async function waitForTarget() {
           !String(target.url || '').startsWith('devtools://')
       );
       if (page) return page;
-    } catch {}
+    } catch {
+      // Ignore transient polling errors while the app is still loading.
+    }
     await delay(500);
   }
   throw new Error('target timeout');
@@ -186,6 +192,7 @@ try {
       localStorage.setItem('disclaimer_agreed_timestamp', '1720000000000');
       localStorage.setItem('traffic_warning_dismissed', 'true');
       localStorage.setItem('first_run_guide_dismissed', 'true');
+      localStorage.setItem('donation_shown_version', ${JSON.stringify(appVersion)});
       window.__amplAuditEvents = [];
       window.__amplDownloadHooks = {
         addBatchCalls: [],
@@ -195,7 +202,9 @@ try {
       const push = (type, payload) => {
         try {
           window.__amplAuditEvents.push({ type, payload, hash: location.hash, ts: Date.now() });
-        } catch {}
+        } catch {
+      // Ignore transient polling errors while the app is still loading.
+    }
       };
       const originalConsoleError = console.error;
       console.error = (...args) => {
