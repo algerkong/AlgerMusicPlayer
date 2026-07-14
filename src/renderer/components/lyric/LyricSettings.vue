@@ -29,10 +29,8 @@
       </div>
     </div>
 
-    <!-- 内容区域 -->
-    <div
-      class="px-3 pb-3 max-h-[450px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent"
-    >
+    <!-- 内容区域：shadcn ScrollArea -->
+    <scroll-area class="px-3 pb-3 max-h-[450px]">
       <!-- 显示设置 -->
       <div v-show="activeTab === 'display'" class="space-y-2 pt-2">
         <div class="setting-item">
@@ -370,7 +368,7 @@
           </p>
         </div>
       </div>
-    </div>
+    </scroll-area>
   </div>
 </template>
 
@@ -378,6 +376,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { DEFAULT_LYRIC_CONFIG, LyricConfig } from '@/types/lyric';
 
 const { t } = useI18n();
@@ -775,23 +774,5 @@ defineExpose({
 .select-input:focus {
   border-color: #10b981;
   box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
-}
-
-/* 滚动条 */
-.scrollbar-thin::-webkit-scrollbar {
-  width: 6px;
-}
-
-.scrollbar-thin::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.scrollbar-thin::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
-}
-
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
 }
 </style>

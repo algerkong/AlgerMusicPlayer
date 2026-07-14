@@ -18,7 +18,7 @@
       class="flex-1 flex items-center justify-center"
       :description="t('favorite.emptyTip')"
     />
-    <n-scrollbar v-else class="flex-1">
+    <scroll-area v-else class="flex-1 min-h-0">
       <div class="space-y-1 pb-32">
         <song-item
           v-for="(song, index) in favoriteSongs"
@@ -27,16 +27,17 @@
           :index="index"
         />
       </div>
-    </n-scrollbar>
+    </scroll-area>
   </div>
 </template>
 
 <script setup lang="ts">
-import { NButton, NEmpty, NScrollbar } from 'naive-ui';
+import { NButton, NEmpty } from 'naive-ui';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import SongItem from '@/components/common/SongItem.vue';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { usePlayerStore } from '@/store';
 import { usePlayHistoryStore } from '@/store/modules/playHistory';
 import type { SongResult } from '@/types/music';

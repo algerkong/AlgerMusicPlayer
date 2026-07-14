@@ -106,7 +106,7 @@
       class="playlist-container"
       :class="{ 'mini-mode-list': settingsStore.isMiniMode }"
     >
-      <n-scrollbar ref="palyListRef" class="playlist-scrollbar">
+      <scroll-area ref="palyListRef" class="playlist-scrollbar">
         <div class="playlist-items">
           <div v-for="item in playList" :key="item.id" class="music-play-list-content">
             <div class="flex items-center justify-between">
@@ -119,7 +119,7 @@
             </div>
           </div>
         </div>
-      </n-scrollbar>
+      </scroll-area>
     </div>
   </div>
 </template>
@@ -128,6 +128,7 @@
 import { computed, provide, ref, useTemplateRef } from 'vue';
 
 import SongItem from '@/components/common/SongItem.vue';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { allTime, artistList, nowTime, playMusic } from '@/hooks/MusicHook';
 import { useArtist } from '@/hooks/useArtist';
 import { useFavorite } from '@/hooks/useFavorite';

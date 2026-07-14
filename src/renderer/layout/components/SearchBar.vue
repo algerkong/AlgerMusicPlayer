@@ -47,7 +47,7 @@
           </div>
         </template>
         <div class="suggestions-box">
-          <n-scrollbar style="max-height: 260px">
+          <scroll-area class="max-h-[260px]">
             <div v-if="suggestionsLoading" class="suggest-loading">
               <n-spin size="small" />
             </div>
@@ -62,7 +62,7 @@
               <i class="ri-search-line suggest-icon" />
               <span>{{ s }}</span>
             </div>
-          </n-scrollbar>
+          </scroll-area>
         </div>
       </n-popover>
     </div>
@@ -110,6 +110,7 @@ import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { SEARCH_TYPE } from '@/const/bar-const';
 import { useDownloadStore } from '@/store/modules/download';
 import { useNavTitleStore } from '@/store/modules/navTitle';

@@ -27,11 +27,11 @@
             </button>
           </div>
 
-          <div
-            class="flex-1 overflow-y-auto px-5 pb-6"
+          <scroll-area
+            class="flex-1 min-h-0"
             :style="{ paddingBottom: `calc(24px + var(--safe-area-inset-bottom, 0px))` }"
           >
-            <div class="mb-6">
+            <div class="mb-6 px-5 pb-6">
               <div class="flex items-center justify-between mb-3">
                 <span class="text-sm font-medium text-white/80">
                   {{ t('player.settings.playbackSpeed') }}
@@ -54,7 +54,7 @@
                 </button>
               </div>
             </div>
-          </div>
+          </scroll-area>
         </div>
       </div>
     </Transition>
@@ -65,6 +65,7 @@
 import { storeToRefs } from 'pinia';
 import { useI18n } from 'vue-i18n';
 
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { usePlayerStore } from '@/store/modules/player';
 
 const { t } = useI18n();

@@ -47,14 +47,12 @@
           </div>
 
           <!-- 更新内容 -->
-          <div
-            class="mx-6 mb-6 max-h-80 overflow-y-auto rounded-2xl bg-gray-50 dark:bg-gray-800/50"
-          >
+          <scroll-area class="mx-6 mb-6 max-h-80 rounded-2xl bg-gray-50 dark:bg-gray-800/50">
             <div
               class="p-5 text-sm text-gray-600 dark:text-gray-300 leading-relaxed"
               v-html="parsedReleaseNotes"
             ></div>
-          </div>
+          </scroll-area>
 
           <!-- 操作按钮 -->
           <div
@@ -87,6 +85,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { renderSafeMarkdown } from '@/utils/safeMarkdown';
 import { checkUpdate, getProxyNodes, UpdateResult } from '@/utils/update';
 

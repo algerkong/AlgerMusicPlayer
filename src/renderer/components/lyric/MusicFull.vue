@@ -102,10 +102,9 @@
             'full-width': config.hideCover
           }"
         >
-          <n-layout
+          <scroll-area
             ref="lrcSider"
-            class="music-lrc"
-            :native-scrollbar="false"
+            class="music-lrc h-full"
             @mouseover="mouseOverLayout"
             @mouseleave="mouseLeaveLayout"
           >
@@ -172,7 +171,7 @@
               :correction-time="correctionTime"
               @adjust="adjustCorrectionTime"
             />
-          </n-layout>
+          </scroll-area>
         </div>
       </div>
     </div>
@@ -188,6 +187,7 @@ import Cover3D from '@/components/cover/Cover3D.vue';
 import LyricCorrectionControl from '@/components/lyric/LyricCorrectionControl.vue';
 import LyricSettings from '@/components/lyric/LyricSettings.vue';
 import SimplePlayBar from '@/components/player/SimplePlayBar.vue';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   adjustCorrectionTime,
   artistList,
@@ -317,15 +317,17 @@ const isVisible = computed({
   set: (value) => emit('update:modelValue', value)
 });
 
-/** n-layout 内部真正滚的是 scrollbar container */
+/** shadcn ScrollArea 真正滚的是 viewport */
 const getLrcScrollEl = (): HTMLElement | null => {
-  const root = lrcSider.value?.$el as HTMLElement | undefined;
-  if (!root) return null;
-  return (
-    (root.querySelector('.n-scrollbar-container') as HTMLElement | null) ||
-    (root.querySelector('.n-layout-scroll-container') as HTMLElement | null) ||
-    root
-  );
+  const comp = lrcSider.value as {
+    getViewport?: () => HTMLElement | null;
+    viewport?: HTMLElement;
+  } | null;
+  if (!comp) return null;
+  if (typeof comp.getViewport === 'function') {
+    return comp.getViewport();
+  }
+  return comp.viewport ?? null;
 };
 
 let lrcScrollAnimId = 0;
@@ -538,9 +540,10 @@ watch(
 
 // 监听滚动事件
 const handleScroll = () => {
-  if (!lrcSider.value || !config.value.hideCover) return;
-  const { scrollTop } = lrcSider.value.$el;
-  showStickyHeader.value = scrollTop > 100;
+  if (!config.value.hideCover) return;
+  const el = getLrcScrollEl();
+  if (!el) return;
+  showStickyHeader.value = el.scrollTop > 100;
 };
 
 const playerStore = usePlayerStore();
@@ -578,9 +581,7 @@ const handleFullScreenChange = () => {
 
 // 添加滚动监听和全屏状态监听
 onMounted(() => {
-  if (lrcSider.value?.$el) {
-    lrcSider.value.$el.addEventListener('scroll', handleScroll);
-  }
+  getLrcScrollEl()?.addEventListener('scroll', handleScroll);
   document.addEventListener('fullscreenchange', handleFullScreenChange);
 });
 
@@ -590,9 +591,7 @@ onBeforeUnmount(() => {
     cancelAnimationFrame(lrcScrollAnimId);
     lrcScrollAnimId = 0;
   }
-  if (lrcSider.value?.$el) {
-    lrcSider.value.$el.removeEventListener('scroll', handleScroll);
-  }
+  getLrcScrollEl()?.removeEventListener('scroll', handleScroll);
   document.removeEventListener('fullscreenchange', handleFullScreenChange);
   // 退出全屏模式
   if (document.fullscreenElement) {
@@ -638,9 +637,7 @@ onMounted(() => {
   if (savedConfig) {
     config.value = { ...config.value, ...JSON.parse(savedConfig) };
   }
-  if (lrcSider.value?.$el) {
-    lrcSider.value.$el.addEventListener('scroll', handleScroll);
-  }
+  getLrcScrollEl()?.addEventListener('scroll', handleScroll);
 });
 
 // 添加对 playMusic.id 的监听，歌曲切换时滚动到顶部

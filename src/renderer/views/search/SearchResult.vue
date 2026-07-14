@@ -1,6 +1,6 @@
 <template>
   <div class="search-result-page h-full w-full bg-white dark:bg-black">
-    <n-scrollbar class="h-full">
+    <scroll-area class="h-full">
       <!-- 播放条占位由布局 PlayBottom 负责，这里只留一点滚到底的呼吸距 -->
       <div class="result-scroll-body">
         <!-- 复用分类选择器：line 变体 = 底线高亮，不要手搓圆角胶囊 -->
@@ -65,12 +65,12 @@
           </n-spin>
         </div>
       </div>
-    </n-scrollbar>
+    </scroll-area>
   </div>
 </template>
 
 <script setup lang="ts">
-import { NEmpty, NImage, NScrollbar, NSpin, useMessage } from 'naive-ui';
+import { NEmpty, NImage, NSpin, useMessage } from 'naive-ui';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
@@ -87,6 +87,7 @@ import {
 import CategorySelector from '@/components/common/CategorySelector.vue';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import SongItem from '@/components/common/SongItem.vue';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { SEARCH_TYPE } from '@/const/bar-const';
 import type { SongResult } from '@/types/music';
 

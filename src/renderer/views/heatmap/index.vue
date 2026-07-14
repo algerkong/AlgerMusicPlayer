@@ -16,7 +16,7 @@
       </div>
     </div>
 
-    <n-scrollbar class="heatmap-content">
+    <scroll-area class="heatmap-content">
       <div class="heatmap-wrapper" :class="setAnimationClass('animate__fadeInUp')">
         <div v-if="loading" class="loading-wrapper">
           <n-spin size="large" />
@@ -140,7 +140,7 @@
           <n-empty :description="t('history.heatmap.noData')" />
         </div>
       </div>
-    </n-scrollbar>
+    </scroll-area>
   </div>
 </template>
 
@@ -148,6 +148,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { usePlayerStore } from '@/store/modules/player';
 import { usePlayHistoryStore } from '@/store/modules/playHistory';
 import type { SongResult } from '@/types/music';

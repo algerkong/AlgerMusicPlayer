@@ -17,11 +17,7 @@
         <div class="main">
           <!-- 搜索 / 登录已并入 TitleBar，与窗口按钮同一行 -->
           <!-- 主页面路由 -->
-          <div
-            class="main-content"
-            :native-scrollbar="false"
-            :class="{ 'mobile-content': !shouldShowMobileMenu }"
-          >
+          <div class="main-content" :class="{ 'mobile-content': !shouldShowMobileMenu }">
             <router-view
               v-slot="{ Component }"
               class="main-page"
@@ -253,7 +249,7 @@ provide('openPlaylistDrawer', openPlaylistDrawer);
 .mobile {
   .main-content {
     height: calc(100vh - 130px);
-    overflow: auto;
+    overflow: hidden;
     display: block;
     flex: none;
     position: relative;

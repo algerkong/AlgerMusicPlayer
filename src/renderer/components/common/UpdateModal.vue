@@ -39,12 +39,12 @@
         v-if="hasReleaseNotes"
         class="mb-6 overflow-hidden rounded-2xl bg-neutral-50 dark:bg-neutral-800/50"
       >
-        <n-scrollbar style="max-height: 300px">
+        <scroll-area class="max-h-[300px]">
           <div
             class="update-body p-5 text-sm leading-relaxed text-neutral-600 dark:text-neutral-300"
             v-html="parsedReleaseNotes"
           />
-        </n-scrollbar>
+        </scroll-area>
       </div>
 
       <div
@@ -104,6 +104,7 @@
 import { computed, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSettingsStore } from '@/store/modules/settings';
 import { renderSafeMarkdown } from '@/utils/safeMarkdown';
 
