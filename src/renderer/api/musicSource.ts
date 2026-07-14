@@ -137,7 +137,17 @@ export interface MsUserProfile {
   nickname: string;
   avatarUrl?: string;
   isVip: boolean;
+  /** none | vip | svip */
   vipLevel: string;
+}
+
+/** commerce 会员（区分 VIP / SVIP） */
+export interface MsMembership {
+  isVip: boolean;
+  vipLevel: string;
+  vipStage?: string;
+  expireAt?: number;
+  membershipType?: string;
 }
 
 async function invokeMs<T>(channel: string, ...args: unknown[]): Promise<T> {
@@ -280,6 +290,33 @@ export async function msLogout() {
 
 export async function msGetProfile(): Promise<MsUserProfile> {
   return invokeMs('music-source:get-profile');
+}
+
+export async function msGetMembership(): Promise<MsMembership> {
+  return invokeMs('music-source:get-membership');
+}
+
+/**
+ * 登录后拉档位：优先 commerce（SVIP），失败再退回 /me 的 vipLevel。
+ */
+export async function msResolveVipLevel(profileLevel?: string): Promise<'none' | 'vip' | 'svip'> {
+  const normalize = (raw?: string): 'none' | 'vip' | 'svip' => {
+    const s = String(raw || '')
+      .trim()
+      .toLowerCase();
+    if (s.includes('svip') || s.includes('super')) return 'svip';
+    if (s.includes('vip')) return 'vip';
+    if (s === 'none' || !s) return 'none';
+    return 'none';
+  };
+  try {
+    const m = await msGetMembership();
+    const fromCommerce = normalize(m.vipLevel || m.vipStage || m.membershipType);
+    if (fromCommerce !== 'none') return fromCommerce;
+  } catch {
+    /* commerce 失败时用 profile */
+  }
+  return normalize(profileLevel);
 }
 
 export async function msSearchSongs(

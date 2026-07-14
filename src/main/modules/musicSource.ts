@@ -302,6 +302,16 @@ export function initializeMusicSource(): void {
     }
   });
 
+  /** 会员档位（commerce，含 SVIP）；/me 往往只有 is_vip */
+  ipcMain.handle('music-source:get-membership', async () => {
+    try {
+      const membership = await getClient().getMembership('qishui');
+      return wrapOk(membership);
+    } catch (error) {
+      return toIpcError(error);
+    }
+  });
+
   ipcMain.handle(
     'music-source:search-songs',
     async (_e, keyword: string, options?: { limit?: number; cursor?: number | string }) => {

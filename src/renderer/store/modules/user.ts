@@ -96,9 +96,29 @@ export const useUserStore = defineStore('user', () => {
     return collectedAlbumIds.value.has(albumId);
   };
 
+  /** 是否会员（VIP 或 SVIP） */
   const isVip = computed(() => {
     if (!user.value) return false;
-    return user.value.vipType && user.value.vipType !== 0;
+    const level = String(user.value.vipLevel || '').toLowerCase();
+    if (level === 'svip' || level === 'vip') return true;
+    return !!(user.value.vipType && user.value.vipType !== 0);
+  });
+
+  /** none | vip | svip */
+  const vipLevel = computed(() => {
+    const level = String(user.value?.vipLevel || '').toLowerCase();
+    if (level.includes('svip') || level.includes('super')) return 'svip' as const;
+    if (level.includes('vip') || (user.value?.vipType && user.value.vipType !== 0)) {
+      return 'vip' as const;
+    }
+    return 'none' as const;
+  });
+
+  /** 展示用：SVIP / VIP / 空 */
+  const vipLabel = computed(() => {
+    if (vipLevel.value === 'svip') return 'SVIP';
+    if (vipLevel.value === 'vip') return 'VIP';
+    return '';
   });
 
   const initializeUser = async () => {
@@ -118,6 +138,8 @@ export const useUserStore = defineStore('user', () => {
     playList,
     albumList,
     isVip,
+    vipLevel,
+    vipLabel,
     setUser,
     setLoginType,
     handleLogout,

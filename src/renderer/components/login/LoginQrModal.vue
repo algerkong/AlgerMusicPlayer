@@ -138,7 +138,8 @@ import {
   type MsQrLoginMfa,
   type MsQrLoginStatus,
   msQrSendMfaSms,
-  msQrValidateMfaSms
+  msQrValidateMfaSms,
+  msResolveVipLevel
 } from '@/api/musicSource';
 import { Button as UiButton } from '@/components/ui/button';
 import {
@@ -296,13 +297,16 @@ function applyProfile(p: {
   vipLevel: string;
 }) {
   const idNum = Number(p.id);
+  const level = String(p.vipLevel || 'none').toLowerCase();
+  // vipType：0 无 / 1 VIP / 2 SVIP（兼容旧 isVip 布尔）
+  const vipType = level.includes('svip') ? 2 : p.isVip || level.includes('vip') ? 1 : 0;
   userStore.setUser({
     userId: Number.isFinite(idNum) ? idNum : 0,
     user_id: p.id,
     nickname: p.nickname,
     avatarUrl: p.avatarUrl || '',
-    vipType: p.isVip ? 1 : 0,
-    vipLevel: p.vipLevel,
+    vipType,
+    vipLevel: level.includes('svip') ? 'svip' : level.includes('vip') ? 'vip' : 'none',
     platform: 'qishui'
   });
   userStore.setLoginType('qr');
@@ -311,7 +315,12 @@ function applyProfile(p: {
 async function finishLogin() {
   try {
     const profile = await msGetProfile();
-    applyProfile(profile);
+    const vipLevel = await msResolveVipLevel(profile.vipLevel);
+    applyProfile({
+      ...profile,
+      isVip: vipLevel !== 'none',
+      vipLevel
+    });
     message.success(`欢迎，${profile.nickname}`);
   } catch {
     applyProfile({

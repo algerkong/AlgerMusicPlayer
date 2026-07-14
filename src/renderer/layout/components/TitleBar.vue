@@ -269,15 +269,21 @@ const drag = (event: MouseEvent) => {
   line-height: 1;
 }
 
+/*
+ * 版本号：普通字体 + 封面主色（红封面→红字），不再用等宽白字
+ */
 .brand-ver {
   font-size: 11px;
   font-weight: 500;
-  color: var(--chrome-text-muted, #6b7280);
+  letter-spacing: 0;
   line-height: 1;
   padding: 2px 6px;
   border-radius: 9999px;
-  background: var(--chrome-surface, rgba(0, 0, 0, 0.06));
-  border: 1px solid var(--chrome-border, transparent);
+  color: var(--primary-color, #22c55e) !important;
+  background: var(--chrome-surface);
+  border: 1px solid var(--chrome-border);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
 }
 
 .support-banner {
