@@ -186,7 +186,7 @@ const dropdownOptions = computed<MenuOption[]>(() => {
       key: 'dislike',
       icon: () =>
         h('i', {
-          class: `iconfont ${props.isDislike ? 'ri-dislike-fill text-green-500' : 'ri-dislike-line'}`
+          class: `iconfont ${props.isDislike ? 'ri-dislike-fill text-primary' : 'ri-dislike-line'}`
         })
     }
   ];

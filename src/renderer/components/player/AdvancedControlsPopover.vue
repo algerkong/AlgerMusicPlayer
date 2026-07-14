@@ -41,7 +41,7 @@ const showEQModal = ref(false);
   transition: color 0.15s;
 
   &:hover {
-    @apply text-green-500;
+    color: var(--primary-color, #22c55e);
   }
 }
 

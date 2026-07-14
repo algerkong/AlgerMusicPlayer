@@ -6,6 +6,9 @@
     :style="drawerBaseStyle"
     :to="`#layout-main`"
     :z-index="9998"
+    drawer-class="music-full-drawer"
+    :show-mask="false"
+    :mask-closable="false"
   >
     <!-- 背景层（用于图片模糊和明暗效果） -->
     <div
@@ -15,31 +18,28 @@
       class="background-layer"
       :style="backgroundImageStyle"
     ></div>
-    <div id="drawer-target" :class="[config.theme]" class="relative z-10">
-      <!-- 左侧关闭按钮 -->
+    <div
+      id="drawer-target"
+      :class="[config.theme]"
+      class="relative z-10"
+      @mousemove="bumpChrome"
+      @mousedown="bumpChrome"
+    >
+      <!-- 左侧关闭：鼠标静止自动隐藏，一动就显示 -->
       <div
         class="control-left absolute top-8 left-8 z-[9999]"
-        :class="{ 'pure-mode': config.pureModeEnabled }"
+        :class="{ 'chrome-hidden': !chromeVisible }"
       >
         <div class="control-btn" @click="closeMusicFull">
           <i class="ri-arrow-down-s-line"></i>
         </div>
       </div>
 
-      <!-- 右侧功能按钮组 -->
+      <!-- 右侧全屏：同上 idle 隐藏（设置入口已移除） -->
       <div
         class="control-right absolute top-8 right-8 z-[9999]"
-        :class="{ 'pure-mode': config.pureModeEnabled }"
+        :class="{ 'chrome-hidden': !chromeVisible }"
       >
-        <n-popover trigger="click" placement="bottom" raw>
-          <template #trigger>
-            <div class="control-btn">
-              <i class="ri-settings-3-line"></i>
-            </div>
-          </template>
-          <lyric-settings ref="lyricSettingsRef" />
-        </n-popover>
-
         <div class="control-btn" @click="toggleFullScreen">
           <i :class="isFullScreen ? 'ri-fullscreen-exit-line' : 'ri-fullscreen-line'"></i>
         </div>
@@ -76,7 +76,7 @@
                 <span
                   v-for="(item, index) in artistList"
                   :key="index"
-                  class="cursor-pointer hover:text-green-500"
+                  class="cursor-pointer hover:text-primary"
                   @click="handleArtistClick(item.id)"
                 >
                   {{ item.name }}
@@ -84,12 +84,7 @@
                 </span>
               </n-ellipsis>
             </div>
-            <simple-play-bar
-              v-if="!config.hideMiniPlayBar"
-              class="mt-4"
-              :pure-mode-enabled="config.pureModeEnabled"
-              :isDark="textColors.theme === 'dark'"
-            />
+            <simple-play-bar class="mt-4" :isDark="textColors.theme === 'dark'" />
           </div>
         </div>
 
@@ -120,7 +115,7 @@
                   <span
                     v-for="(item, index) in artistList"
                     :key="index"
-                    class="cursor-pointer hover:text-green-500"
+                    class="cursor-pointer hover:text-primary"
                     @click="handleArtistClick(item.id)"
                   >
                     {{ item.name }}
@@ -185,7 +180,6 @@ import { useI18n } from 'vue-i18n';
 
 import Cover3D from '@/components/cover/Cover3D.vue';
 import LyricCorrectionControl from '@/components/lyric/LyricCorrectionControl.vue';
-import LyricSettings from '@/components/lyric/LyricSettings.vue';
 import SimplePlayBar from '@/components/player/SimplePlayBar.vue';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -213,6 +207,23 @@ const { t } = useI18n();
 // 定义 refs
 const lrcSider = ref<any>(null);
 const isMouse = ref(false);
+/** 顶栏控件：静止隐藏，鼠标一动显示 */
+const chromeVisible = ref(true);
+let chromeIdleTimer: ReturnType<typeof setTimeout> | null = null;
+const CHROME_IDLE_MS = 2200;
+
+const bumpChrome = () => {
+  if (isMobile.value) {
+    chromeVisible.value = true;
+    return;
+  }
+  chromeVisible.value = true;
+  if (chromeIdleTimer) clearTimeout(chromeIdleTimer);
+  chromeIdleTimer = setTimeout(() => {
+    chromeVisible.value = false;
+  }, CHROME_IDLE_MS);
+};
+
 const { currentBackground, applyBackground } = useLyricBackground();
 
 // 计算自定义背景样式
@@ -262,33 +273,11 @@ const backgroundImageStyle = computed(() => {
   };
 });
 const showStickyHeader = ref(false);
-const lyricSettingsRef = ref<InstanceType<typeof LyricSettings>>();
 const isSongChanging = ref(false);
 const isFullScreen = ref(false);
 
+/** 大屏设置 UI 已删除；保留默认配置（可从旧 localStorage 读入字号等） */
 const config = ref<LyricConfig>({ ...DEFAULT_LYRIC_CONFIG });
-
-watch(
-  () => lyricSettingsRef.value?.config,
-  (newConfig) => {
-    if (newConfig) {
-      config.value = newConfig;
-    }
-  },
-  { deep: true, immediate: true }
-);
-
-// 监听本地配置变化，保存到 localStorage
-watch(
-  () => config.value,
-  (newConfig) => {
-    localStorage.setItem('music-full-config', JSON.stringify(newConfig));
-    if (lyricSettingsRef.value) {
-      lyricSettingsRef.value.config = newConfig;
-    }
-  },
-  { deep: true }
-);
 
 const supportAutoScroll = computed(() => {
   return lrcArray.value.length > 0 && lrcArray.value[0].startTime !== -1;
@@ -591,6 +580,10 @@ onBeforeUnmount(() => {
     cancelAnimationFrame(lrcScrollAnimId);
     lrcScrollAnimId = 0;
   }
+  if (chromeIdleTimer) {
+    clearTimeout(chromeIdleTimer);
+    chromeIdleTimer = null;
+  }
   getLrcScrollEl()?.removeEventListener('scroll', handleScroll);
   document.removeEventListener('fullscreenchange', handleFullScreenChange);
   // 退出全屏模式
@@ -631,13 +624,28 @@ watch(
   }
 );
 
-// 加载保存的配置
+// 加载保存的配置（去掉已删除的「显示」类开关）
 onMounted(() => {
   const savedConfig = localStorage.getItem('music-full-config');
   if (savedConfig) {
-    config.value = { ...config.value, ...JSON.parse(savedConfig) };
+    try {
+      config.value = {
+        ...config.value,
+        ...JSON.parse(savedConfig),
+        pureModeEnabled: false,
+        hideCover: false,
+        centerLyrics: false,
+        hideLyrics: false,
+        // 设置 UI 已去掉：封面下迷你条始终显示，底栏由 PlayBar 在大屏时自行隐藏
+        hideMiniPlayBar: false,
+        hidePlayBar: true
+      };
+    } catch {
+      // 损坏的 music-full-config 忽略，用默认
+    }
   }
   getLrcScrollEl()?.addEventListener('scroll', handleScroll);
+  bumpChrome();
 });
 
 // 添加对 playMusic.id 的监听，歌曲切换时滚动到顶部
@@ -973,22 +981,15 @@ defineExpose({
 
 .control-left,
 .control-right {
-  &.pure-mode {
-    @apply pointer-events-auto;
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+  pointer-events: auto;
 
-    .control-btn {
-      @apply opacity-0 transition-all duration-300;
-      pointer-events: none;
-    }
-
-    &:hover .control-btn {
-      @apply opacity-100;
-      pointer-events: auto;
-    }
-  }
-
-  &:not(.pure-mode) .control-btn {
-    pointer-events: auto;
+  &.chrome-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-6px);
   }
 }
 
@@ -997,20 +998,24 @@ defineExpose({
 }
 
 .control-btn {
-  @apply w-9 h-9 flex items-center justify-center rounded cursor-pointer transition-all duration-300;
-  background: rgba(142, 142, 142, 0.192);
-  backdrop-filter: blur(12px);
+  @apply w-9 h-9 flex items-center justify-center rounded-full cursor-pointer transition-all duration-300;
+  background: var(--chrome-surface, rgba(142, 142, 142, 0.22));
+  border: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.14));
+  backdrop-filter: blur(var(--chrome-blur, 12px));
+  -webkit-backdrop-filter: blur(var(--chrome-blur, 12px));
 
   i {
     @apply text-xl;
-    color: var(--text-color-active);
+    color: var(--chrome-text, var(--text-color-active, #fff));
   }
 
   &:hover {
-    background: rgba(126, 121, 121, 0.2);
+    background: var(--chrome-surface-strong, rgba(126, 121, 121, 0.35));
+    border-color: var(--primary-color, rgba(255, 255, 255, 0.28));
 
     i {
       opacity: 1;
+      color: var(--primary-color, #fff);
     }
   }
 }

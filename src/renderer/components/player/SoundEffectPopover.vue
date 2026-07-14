@@ -128,7 +128,7 @@ const open = async () => {
   transition: color 0.15s;
 }
 .fx-btn:hover {
-  color: #22c55e;
+  color: var(--primary-color, #22c55e);
 }
 
 .fx-panel {
@@ -163,7 +163,7 @@ const open = async () => {
   cursor: pointer;
 }
 .fx-close:hover {
-  color: #22c55e;
+  color: var(--primary-color, #22c55e);
   background: rgba(0, 0, 0, 0.05);
 }
 
@@ -190,8 +190,8 @@ const open = async () => {
   transition: all 0.15s;
 }
 .fx-chip--on {
-  border-color: #22c55e;
-  color: #16a34a;
+  border-color: var(--primary-color, #22c55e);
+  color: var(--primary-color, #22c55e);
   background: rgba(34, 197, 94, 0.12);
 }
 
@@ -227,7 +227,7 @@ const open = async () => {
   cursor: pointer;
 }
 .fx-icon-btn:hover:not(:disabled) {
-  color: #22c55e;
+  color: var(--primary-color, #22c55e);
   background: rgba(0, 0, 0, 0.05);
 }
 .fx-icon-btn:disabled {

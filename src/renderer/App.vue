@@ -1,6 +1,6 @@
 <template>
   <div class="app-container h-full w-full" :class="{ mobile: isMobile, noElectron: !isElectron }">
-    <n-config-provider :theme="darkTheme">
+    <n-config-provider :theme="darkTheme" :theme-overrides="naiveThemeOverrides">
       <n-dialog-provider>
         <n-message-provider>
           <router-view></router-view>
@@ -14,8 +14,8 @@
 
 <script setup lang="ts">
 import { cloneDeep } from 'lodash';
-import { darkTheme } from 'naive-ui';
-import { nextTick, onMounted, watch } from 'vue';
+import { darkTheme, type GlobalThemeOverrides } from 'naive-ui';
+import { computed, nextTick, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import DisclaimerModal from '@/components/common/DisclaimerModal.vue';
@@ -26,6 +26,7 @@ import { useSettingsStore } from '@/store/modules/settings';
 import { useUserStore } from '@/store/modules/user';
 import { isElectron } from '@/utils';
 import { checkLoginStatus, purgeCredentialStorage } from '@/utils/auth';
+import { buildNaivePrimaryOverrides } from '@/utils/coverChrome';
 
 import { initAudioListeners, initMusicHook } from './hooks/MusicHook';
 import { audioService } from './services/audioService';
@@ -37,6 +38,12 @@ const settingsStore = useSettingsStore();
 const playerStore = usePlayerStore();
 const playerCoreStore = usePlayerCoreStore();
 const userStore = useUserStore();
+
+/** 封面强调色驱动 naive-ui 按钮/滑块/开关等 primary（不再写死绿） */
+const naiveThemeOverrides = computed<GlobalThemeOverrides>(() => {
+  const music = playerStore.playMusic as { primaryColor?: string } | undefined;
+  return buildNaivePrimaryOverrides(music?.primaryColor) as GlobalThemeOverrides;
+});
 
 // 固定简体中文
 locale.value = 'zh-CN';

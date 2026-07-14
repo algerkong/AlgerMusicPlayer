@@ -36,7 +36,7 @@
                 <span class="text-sm font-medium text-white/80">
                   {{ t('player.settings.playbackSpeed') }}
                 </span>
-                <span class="text-sm text-green-400 font-medium">{{ playbackRate }}x</span>
+                <span class="text-sm text-primary font-medium">{{ playbackRate }}x</span>
               </div>
               <div class="flex flex-wrap gap-2">
                 <button
@@ -45,7 +45,7 @@
                   class="px-4 py-2 rounded-full text-sm font-medium transition-colors"
                   :class="
                     playbackRate === option
-                      ? 'bg-green-500 text-white'
+                      ? 'bg-primary text-white'
                       : 'bg-white/10 text-white/70 hover:bg-white/15'
                   "
                   @click="setSpeed(option)"

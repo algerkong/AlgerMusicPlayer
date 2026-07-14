@@ -55,7 +55,16 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, defineAsyncComponent, nextTick, onMounted, provide, ref } from 'vue';
+import {
+  computed,
+  defineAsyncComponent,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  provide,
+  ref,
+  watch
+} from 'vue';
 import { useRoute } from 'vue-router';
 
 import PlayBottom from '@/components/common/PlayBottom.vue';
@@ -69,6 +78,7 @@ import { useMenuStore } from '@/store/modules/menu';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 import { isElectron } from '@/utils';
+import { applyCoverChromeToRoot, buildCoverChromeVars } from '@/utils/coverChrome';
 
 import AppMenu from './components/AppMenu.vue';
 import TitleBar from './components/TitleBar.vue';
@@ -106,7 +116,7 @@ const isPlay = computed(() => {
 });
 const route = useRoute();
 
-/** 封面取色：展开全屏时有，未展开时壳层同样使用 */
+/** 封面取色：壳层背景 + 全站 chrome token（含 teleport 到 body 的弹层） */
 const coverBackground = computed(() => {
   const m = playerStore.playMusic as any;
   return (m?.backgroundColor as string) || '';
@@ -117,22 +127,36 @@ const coverPrimary = computed(() => {
   return (m?.primaryColor as string) || '';
 });
 
+const coverChromeVars = computed(() =>
+  buildCoverChromeVars(coverBackground.value, coverPrimary.value)
+);
+
+/** 布局页：铺封面渐变 + 同套 token（与 :root 同步） */
 const layoutBgStyle = computed(() => {
-  if (!coverBackground.value) return undefined;
-  // iOS-style wash is always dark enough for light chrome; accent only tints frosted controls
-  let tint = '40, 40, 48';
-  const p = coverPrimary.value;
-  if (p) {
-    const m = p.match(/\d+/g);
-    if (m && m.length >= 3) tint = `${m[0]}, ${m[1]}, ${m[2]}`;
+  if (!coverChromeVars.value) return undefined;
+  return coverChromeVars.value as Record<string, string>;
+});
+
+// 写到 html，保证 TitleBar / 搜索 / 登录 / 播放条 / popover 都跟封面色
+watch(
+  coverChromeVars,
+  (vars) => {
+    try {
+      applyCoverChromeToRoot(vars);
+    } catch (error) {
+      console.error('[cover-chrome] watch apply failed', error);
+      applyCoverChromeToRoot(null);
+    }
+  },
+  { immediate: true }
+);
+
+onUnmounted(() => {
+  try {
+    applyCoverChromeToRoot(null);
+  } catch {
+    /* ignore */
   }
-  return {
-    background: coverBackground.value,
-    '--chrome-tint': tint,
-    '--chrome-text': '#f8fafc',
-    '--chrome-text-muted': 'rgba(248, 250, 252, 0.78)',
-    '--chrome-border': 'rgba(255,255,255,0.14)'
-  } as Record<string, string>;
 });
 
 // 判断当前路由是否应该在移动端显示AppMenu

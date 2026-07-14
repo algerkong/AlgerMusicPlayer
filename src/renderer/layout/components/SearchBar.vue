@@ -331,22 +331,23 @@ const selectItem = (key: string) => {
   -webkit-backdrop-filter: blur(var(--chrome-blur));
   transition: border-color 0.15s;
   box-sizing: border-box;
+  color: var(--chrome-text);
 }
-/* 点击/聚焦：只高亮边框，背景保持不变 */
+/* 点击/聚焦：用封面强调色描边 */
 .search-inner--focus {
-  border-color: #22c55e;
-  background: var(--chrome-surface);
-  box-shadow: none;
+  border-color: var(--primary-color, #22c55e);
+  background: var(--chrome-surface-strong);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.22);
 }
 
 .search-icon-glyph {
   font-size: 16px;
-  color: #9ca3af;
+  color: var(--chrome-text-muted, #9ca3af);
   flex-shrink: 0;
   transition: color 0.2s;
 }
 .search-inner--focus .search-icon-glyph {
-  color: #22c55e;
+  color: var(--primary-color, #22c55e);
 }
 
 .search-input {
@@ -390,7 +391,7 @@ const selectItem = (key: string) => {
 }
 .search-clear-btn:hover {
   background: rgba(34, 197, 94, 0.2);
-  color: #16a34a;
+  color: var(--primary-color, #22c55e);
 }
 
 /* ── Action buttons ──────────────────────────────────── */
@@ -412,14 +413,9 @@ const selectItem = (key: string) => {
   box-sizing: border-box;
 }
 .action-btn:hover {
-  color: #22c55e;
-  border-color: #bbf7d0;
-  background: #f0fdf4;
-}
-.dark .action-btn:hover {
-  border-color: #166534;
-  background: rgba(34, 197, 94, 0.08);
-  color: #22c55e;
+  color: var(--primary-color, #22c55e);
+  border-color: rgba(34, 197, 94, 0.45);
+  background: var(--chrome-surface-strong);
 }
 .action-btn.intelligence-active {
   color: #ec4899;
@@ -452,8 +448,8 @@ const selectItem = (key: string) => {
   box-sizing: border-box;
 }
 .user-btn:hover {
-  border-color: #22c55e;
-  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.12);
+  border-color: var(--primary-color, #22c55e);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.22);
 }
 
 .login-label {
@@ -475,8 +471,8 @@ const selectItem = (key: string) => {
   white-space: nowrap;
 }
 .login-label:hover {
-  color: #22c55e;
-  border-color: rgba(34, 197, 94, 0.35);
+  color: var(--primary-color, #22c55e);
+  border-color: rgba(34, 197, 94, 0.45);
 }
 
 /* ── User menu：附着半透明，不锁死黑/白 ───────────────── */
@@ -584,12 +580,12 @@ const selectItem = (key: string) => {
 .suggest-row:hover,
 .suggest-row--hi {
   background: #f0fdf4;
-  color: #16a34a;
+  color: var(--primary-color, #22c55e);
 }
 .dark .suggest-row:hover,
 .dark .suggest-row--hi {
   background: rgba(34, 197, 94, 0.06);
-  color: #22c55e;
+  color: var(--primary-color, #22c55e);
 }
 .suggest-icon {
   font-size: 13px;

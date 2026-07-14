@@ -94,7 +94,7 @@
               彻底退出
             </button>
             <button
-              class="rounded-full bg-green-500 px-6 py-2 text-sm font-medium text-white hover:bg-green-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 transition-colors shadow-lg shadow-green-500/20"
+              class="rounded-full bg-primary px-6 py-2 text-sm font-medium text-white hover:bg-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors shadow-lg shadow-primary/20"
               @click="handleAction('minimize')"
             >
               好的
@@ -232,8 +232,8 @@ const drag = (event: MouseEvent) => {
     background 0.15s;
 }
 .win-btn:hover {
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.1);
+  color: var(--primary-color, #22c55e);
+  background: rgba(34, 197, 94, 0.14);
 }
 .win-btn-close:hover {
   color: #ef4444;
@@ -276,7 +276,8 @@ const drag = (event: MouseEvent) => {
   line-height: 1;
   padding: 2px 6px;
   border-radius: 9999px;
-  background: rgba(0, 0, 0, 0.06);
+  background: var(--chrome-surface, rgba(0, 0, 0, 0.06));
+  border: 1px solid var(--chrome-border, transparent);
 }
 
 .support-banner {
