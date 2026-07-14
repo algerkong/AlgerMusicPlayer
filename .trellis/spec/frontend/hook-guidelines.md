@@ -1,138 +1,75 @@
-# Hook / Composable Guidelines
+# Hook / 组合式函数规范
 
-> In this repo “hooks” are **Vue composables** under `src/renderer/hooks/`, not React hooks.
-
----
-
-## Location and naming
-
-| Pattern              | Used for               | Examples                                             |
-| -------------------- | ---------------------- | ---------------------------------------------------- |
-| `useX.ts`            | Standard composable    | `useSongItem.ts`, `useDownload.ts`, `usePlayMode.ts` |
-| `*Hook.ts`           | Legacy / large modules | `MusicHook.ts`, `IndexDBHook.ts`                     |
-| `utils/*.ts` helpers | Non-reactive utilities | `utils/playerUtils.ts`, `utils/appShortcuts.ts`      |
-
-New code: prefer **`use` + descriptive camelCase**. Do not create a parallel `composables/` tree unless tooling requires it (`components.json` aliases `composables` for shadcn; runtime code today uses `hooks/`).
+> 本仓库的 hook 是 `src/renderer/hooks/` 下的 **Vue composable**，不是 React Hooks。
 
 ---
 
-## What belongs in a composable
+## 位置与命名
 
-| Put in hooks                              | Keep out of hooks                                  |
-| ----------------------------------------- | -------------------------------------------------- |
-| UI-adjacent reactive logic shared by SFCs | Pinia global state (use `store/modules`)           |
-| Feature glue (download + message + store) | Audio engine / URL resolve (use `services/`)       |
-| Progressive list rendering helpers        | IPC channel definitions (use preload `window.api`) |
+| 模式         | 用途              | 示例                                |
+| ------------ | ----------------- | ----------------------------------- |
+| `useX.ts`    | 标准 composable   | `useSongItem.ts`、`useDownload.ts`  |
+| `*Hook.ts`   | 遗留 / 大体量模块 | `MusicHook.ts`、`IndexDBHook.ts`    |
+| `utils/*.ts` | 无响应式工具      | `playerUtils.ts`、`appShortcuts.ts` |
+
+新代码优先 **`use` + camelCase**。不要另起 `composables/` 运行时树（shadcn 配置里的 alias 仅工具用）。
 
 ---
 
-## Standard shape
+## 放什么 / 不放什么
+
+| 适合放 hooks                       | 不要塞进 hooks                    |
+| ---------------------------------- | --------------------------------- |
+| 多 SFC 共享的 UI 邻接响应式逻辑    | 全局状态 → `store/modules`        |
+| 功能胶水（下载 + message + store） | 音频引擎 / URL 解析 → `services/` |
+| 长列表渐进渲染等                   | IPC 定义 → preload `window.api`   |
+
+---
+
+## 标准形态
 
 ```ts
-// useSongItem.ts — props in, reactive API out
 export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
   const { t } = useI18n();
   const playerStore = usePlayerStore();
-  const message = useMessage();
-  const { downloadMusic, downloadLyric } = useDownload();
+  const { downloadMusic } = useDownload();
 
   const isPlaying = computed(() => playMusic.value.id === props.item.id);
-  // …
 
-  return {
-    t,
-    isPlaying,
-    playMusicEvent,
-    toggleFavorite
-    // …
-  };
+  return { t, isPlaying, playMusicEvent, toggleFavorite };
 }
 ```
 
-Consumers destructure only what the SFC needs (`BaseSongItem.vue`).
+SFC 按需解构（见 `BaseSongItem.vue`）。
 
 ---
 
-## Real composables (inventory)
+## 清单（现状）
 
-| File                                                               | Role                                                                                 |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| `useSongItem.ts`                                                   | Song row: play, favorite, dislike, context menu, duration                            |
-| `usePlayerHooks.ts`                                                | Song URL / lyric / detail fetch helpers re-exported by player store                  |
-| `MusicHook.ts`                                                     | App-level music + lyric timing; **must** `initMusicHook(playerStore)` from `App.vue` |
-| `useDownload.ts`                                                   | Download + lyric file actions                                                        |
-| `useArtist.ts`                                                     | Navigate to artist                                                                   |
-| `usePlayMode.ts` / `usePlaybackControl.ts` / `useVolumeControl.ts` | Small player UX helpers                                                              |
-| `usePlayerHooks.ts`                                                | Data loading for playback                                                            |
-| `useProgressiveRender.ts`                                          | Virtual-ish progressive list window for long scroll lists                            |
-| `useLyricBackground.ts` / `useScrollTitle.ts` / `useZoom.ts`       | Presentation helpers                                                                 |
-| `IndexDBHook.ts`                                                   | IndexedDB wrapper used by MusicHook caches                                           |
-
----
-
-## MusicHook special rules
-
-`MusicHook.ts` is module-scoped state, not a classic `use*` function:
-
-1. Call `initMusicHook(playerStore)` once after stores exist (`App.vue` `onMounted`).
-2. Do not instantiate a second audio pipeline; it coordinates with `audioService`.
-3. Lyric time base / preview-stream flags live here — change carefully and test preview + full-song seek.
-
-```ts
-// App.vue
-initMusicHook(playerStore);
-await playerStore.initializePlayState();
-```
+| 文件                                                      | 职责                                                  |
+| --------------------------------------------------------- | ----------------------------------------------------- |
+| `useSongItem.ts`                                          | 列表行：播放、收藏、不喜欢、菜单、时长                |
+| `usePlayerHooks.ts`                                       | URL / 歌词 / 详情拉取（player 侧复用）                |
+| `MusicHook.ts`                                            | 全局歌词时序与进度；须在 `App.vue` 调 `initMusicHook` |
+| `useDownload.ts`                                          | 下载与歌词文件                                        |
+| `useArtist.ts`                                            | 跳转歌手                                              |
+| `usePlayMode` / `usePlaybackControl` / `useVolumeControl` | 播放条小组件逻辑                                      |
+| `useProgressiveRender.ts`                                 | 长列表窗口化渲染                                      |
+| `useLyricBackground` / `useScrollTitle` / `useZoom`       | 展示辅助                                              |
+| `IndexDBHook.ts`                                          | IndexedDB，供 MusicHook 等缓存                        |
 
 ---
 
-## Composing stores inside hooks
+## MusicHook 注意点
 
-Allowed and common:
-
-```ts
-const playerStore = usePlayerStore();
-const result = await playerStore.setPlay(item);
-```
-
-Prefer calling **store actions** over reimplementing playlist mutation. For throttle/debounce of pure side effects, `@vueuse/core` is already a dependency (`useThrottleFn` in playlist store).
+1. stores 就绪后只初始化一次：`initMusicHook(playerStore)`（`App.vue`）
+2. 不第二套音频管线；与 `audioService` 协作
+3. 歌词时间轴 / 试听基线改动需测 seek 与试听
 
 ---
 
-## Progressive rendering pattern
+## 注释
 
-```ts
-// useProgressiveRender.ts
-export const useProgressiveRender = (options: ProgressiveRenderOptions) => {
-  const renderLimit = ref(initialCount);
-  const renderedItems = computed(() => items.value.slice(0, renderLimit.value));
-  const handleScroll = (e: Event) => {
-    /* expand renderLimit */
-  };
-  return { renderedItems, placeholderHeight, handleScroll /* … */ };
-};
-```
+中文、写约束与边界；禁止复述函数名。见 [quality-guidelines.md](./quality-guidelines.md)。
 
-Use for long song lists; pair with `n-scrollbar` `@scroll`.
-
----
-
-## Anti-patterns
-
-- New React-style `useEffect` mental model → use `watch` / `onMounted` / store subscribers.
-- Duplicating `useSongItem` logic inside a one-off list component.
-- Calling `initMusicHook` from random pages.
-- Putting `defineStore` inside a hook file — stores stay in `store/modules/`.
-- Top-level `await` in new hooks without understanding SSR/web startup (MusicHook already uses top-level await for IndexedDB — treat as legacy constraint).
-
----
-
-## Checklist
-
-- [ ] Named `useX` (unless extending an existing `*Hook` module intentionally)
-- [ ] File under `src/renderer/hooks/`
-- [ ] Returns a plain object of refs/computed/functions
-- [ ] No direct `ipcRenderer`; use `window.api` when Electron is required
-- [ ] Document non-obvious lifecycle (`init*` functions) at the call site
-
-**Language**: English for this spec.
+**文档语言**：中文。

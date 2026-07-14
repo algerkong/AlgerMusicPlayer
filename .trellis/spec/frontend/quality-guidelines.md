@@ -1,27 +1,27 @@
-# Quality Guidelines
+# 质量规范
 
-> Lint, format, test, and commit rules as enforced in this repo today.
-
----
-
-## Commands
-
-| Script              | Purpose                                                      |
-| ------------------- | ------------------------------------------------------------ |
-| `npm run lint`      | ESLint on `./src` + i18n key check (`scripts/check_i18n.ts`) |
-| `npm run format`    | Prettier write on `./src`                                    |
-| `npm run typecheck` | `typecheck:node` + `typecheck:web` (`vue-tsc`)               |
-| `npm run test`      | Vitest (`vitest run`)                                        |
-| `npm run dev`       | electron-vite desktop dev                                    |
-| `npm run dev:web`   | Vite web-only                                                |
-
-Husky + lint-staged: ESLint fix + Prettier on staged `ts/tsx/vue/js` (and Prettier on css/scss/md/json).
+> 以本仓库当前脚本与 hook 为准：lint、格式化、测试、提交。
 
 ---
 
-## Formatting (Prettier)
+## 常用命令
 
-From `prettier.config.js`:
+| 脚本                | 作用                                            |
+| ------------------- | ----------------------------------------------- |
+| `npm run lint`      | ESLint（`./src`）+ i18n 键检查                  |
+| `npm run format`    | Prettier 写回 `./src`                           |
+| `npm run typecheck` | `typecheck:node` + `typecheck:web`（`vue-tsc`） |
+| `npm run test`      | Vitest                                          |
+| `npm run dev`       | electron-vite 桌面开发                          |
+| `npm run dev:web`   | 仅 Vite 网页                                    |
+
+Husky + lint-staged：暂存的 ts/tsx/vue/js 跑 ESLint fix + Prettier；css/scss/md/json 跑 Prettier。
+
+---
+
+## 格式化（Prettier）
+
+见 `prettier.config.js`：
 
 - `singleQuote: true`
 - `semi: true`
@@ -29,101 +29,126 @@ From `prettier.config.js`:
 - `trailingComma: 'none'`
 - `endOfLine: 'auto'`
 
-Match surrounding files; do not reformat unrelated regions.
+只动相关文件，勿整库重排。
 
 ---
 
-## ESLint highlights
+## ESLint 要点
 
-Config: `eslint.config.mjs` (Vue + TypeScript + Prettier + simple-import-sort + vue-scoped-css).
+配置：`eslint.config.mjs`（Vue + TS + Prettier + import 排序 + vue-scoped-css）。
 
-Practical expectations observed in the tree:
+- 改 import 时保持分组稳定
+- `console` 在播放/服务里可用，建议带前缀（如 `[PlaylistStore]`）
+- SFC 可用 `defineOptions({ name })` 固定组件名
 
-- Import sort plugin is enabled — keep import groups stable when editing.
-- `no-console` is off in base JS config; console logging is used for diagnostics in player/services (prefer scoped prefixes like `[PlaylistStore]`).
-- Vue SFCs: use `eslint-plugin-vue`; avoid multi-word component name fights by setting `defineOptions({ name })` where peers do.
-
-Run `npm run lint` before claiming a task done.
+任务完成前跑 `npm run lint`。
 
 ---
 
-## Testing
+## 测试
 
-| Runner | `vitest` (`vitest.config.ts`)        |
-| ------ | ------------------------------------ |
-| Layout | Colocated `*.test.ts` next to source |
+| 项     | 说明                         |
+| ------ | ---------------------------- |
+| 运行器 | Vitest（`vitest.config.ts`） |
+| 位置   | 与源码同目录 `*.test.ts`     |
 
-Current examples:
+示例：`playlistPlayMode.test.ts`、`persistenceService.test.ts`、`pathGuard` / `urlGuard`、`trackAdapter`、`coverChrome.test.ts`。
 
-- `src/renderer/store/modules/playlistPlayMode.test.ts`
-- `src/renderer/services/persistenceService.test.ts`
-- `src/renderer/utils/safeMarkdown.test.ts`
-- `src/main/modules/pathGuard.test.ts`, `urlGuard.test.ts`
-- `src/shared/domain/trackAdapter.test.ts`
+**何时补测**：纯函数、迁移、路径/URL 守卫、适配器。不必给每个 Vue 组件写测试；逻辑尽量抽到 utils / store / service 再测。
 
-**When to add a test**: pure functions, migrations (`normalizePlayMode`), path/url guards, adapters. Not every Vue SFC needs a component test; prefer testing logic extracted to utils/stores/services.
+---
+
+## 注释规范
+
+| 要求   | 说明                                                                 |
+| ------ | -------------------------------------------------------------------- |
+| 语言   | **中文**；协议名、API、库名可保留英文                                |
+| 写什么 | 边界、平台差异、非显然约束、与调用方约定                             |
+| 不写   | 复述下一行代码；changelog（「已删」「不再」）；英文碎碎念；堆砌 TODO |
+
+正确示例：
+
+```ts
+// 无可靠背景色时不强行开 has-cover-chrome，避免浅字落在白底
+```
+
+错误示例：
+
+```ts
+// 初始化应用
+// 设置 UI 已删除，这里不再读 hidePlayBar
+// Always re-sample cover to avoid pre-iOS colors
+```
+
+---
+
+## 文档规范
+
+- 面向协作者的说明用**中文**，简洁、可执行
+- 权威来源：`DEV.md` + 本目录六份指南
+- 勿更新 / 勿引用过时 React 脚手架文档
+- 写清「现状是什么 / 新代码怎么做」，少写变更流水账
 
 ---
 
 ## i18n
 
-- Lang packs under `src/i18n/lang/`
-- Locale forced to `zh-CN` in `App.vue` (product decision; multi-language was slimmed)
-- `npm run lint` includes `lint:i18n` — keep keys consistent when adding `t('…')` usage
+- 文案包：`src/i18n/lang/`
+- 产品固定 `zh-CN`（`App.vue`）
+- `lint` 含 `lint:i18n`：新增 `t('…')` 时同步键
 
 ---
 
-## Accessibility & UX norms (as practiced)
+## 无障碍与体验（现状）
 
-- Prefer real controls / accessible primitives; **new** UI uses shadcn-vue, not additional naive-ui.
-- Empty states via `n-empty`.
-- Mobile vs desktop branches use `isMobile` / settings store flags; test both mental models when touching layout chrome.
-- User selection often disabled on media chrome (`user-select: none` on app shell / song rows) — do not “fix” this without product intent.
-
----
-
-## Security / Electron quality
-
-- Renderer talks **only** through `window.api` (context isolation; no generic `ipcRenderer.invoke(anyChannel)`).
-- Music-source channels are **whitelisted** in preload (`MUSIC_SOURCE_CHANNELS`).
-- Settings writes are field-whitelisted in main; download/cache paths via dialog APIs.
-- Markdown/HTML that reaches the DOM must go through existing sanitization (`safeMarkdown` / DOMPurify patterns) — do not `v-html` raw remote content.
+- 新 UI 用 shadcn-vue 原语
+- 空状态仍常见 `n-empty`（遗留）
+- 布局分桌面 / 移动时用 `isMobile` 等设置项
+- 媒体壳层常见 `user-select: none`，无产品意图勿改
 
 ---
 
-## Git / commits
+## Electron / 安全
 
-Commitlint: `@commitlint/config-conventional`.
-
-Allowed types: `feat`, `fix`, `perf`, `refactor`, `docs`, `style`, `test`, `build`, `ci`, `chore`, `revert`.
-
-Examples matching recent history:
-
-- `fix: enforce built-in shortcut defaults`
-- `chore: remove shortcut settings UI and dead feature leftovers`
+- 渲染进程 **只** 通过 `window.api`（隔离上下文）
+- 音源 channel 在 preload **白名单**
+- 设置写入主进程字段白名单；下载/缓存路径走对话框 API
+- 进 DOM 的 Markdown/HTML 须经现有净化（`safeMarkdown` / DOMPurify）；禁止 `v-html` 未净化远程内容
 
 ---
 
-## Code review checklist (AI / human)
+## Git / 提交
 
-- [ ] `npm run lint` — 0 errors
-- [ ] `npm run typecheck` — 0 errors
-- [ ] Relevant unit tests pass (`npm run test`)
-- [ ] No new arbitrary IPC channels
-- [ ] No accidental React / Drizzle / wrong-stack patterns
-- [ ] Persistence paths minify songs / avoid huge base64 in storage
-- [ ] i18n keys added when introducing user-visible strings
-- [ ] Electron-only code guarded with `isElectron`
+Commitlint：`@commitlint/config-conventional`。
+
+类型：`feat`、`fix`、`perf`、`refactor`、`docs`、`style`、`test`、`build`、`ci`、`chore`、`revert`。
+
+小改长期线：`ui/polish-draft`；一个能力一条短命分支，合完删除。
 
 ---
 
-## Anti-patterns
+## 检查清单
 
-| Avoid                                       | Prefer                    |
-| ------------------------------------------- | ------------------------- |
-| Committing with failing typecheck           | Fix or split PR           |
-| Drive-by reformat of whole `src/`           | Touch only needed files   |
-| Skipping i18n check after adding `t()` keys | Run full `npm run lint`   |
-| “Tests later” for pure migrations           | Colocated `*.test.ts` now |
+- [ ] `npm run lint` 无错误
+- [ ] `npm run typecheck` 无错误
+- [ ] 相关单测通过
+- [ ] 无任意 IPC channel
+- [ ] 无 React / 错误技术栈模式
+- [ ] 持久化 minify，无大体积 base64
+- [ ] 用户可见文案有 i18n 键
+- [ ] Electron 专用逻辑有 `isElectron` 守卫
+- [ ] 注释与文档符合上文规范
 
-**Language**: English for this spec.
+---
+
+## 反模式
+
+| 避免                      | 应做               |
+| ------------------------- | ------------------ |
+| typecheck 失败仍提交      | 先修或拆开         |
+| 整库无意义 reformat       | 只改相关文件       |
+| 加了 `t()` 不跑 i18n 检查 | 跑完整 `lint`      |
+| 纯逻辑迁移「以后再测」    | 同目录 `*.test.ts` |
+| 注释写返工故事            | 写稳定约束         |
+
+**文档语言**：中文。

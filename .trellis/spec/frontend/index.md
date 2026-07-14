@@ -1,81 +1,85 @@
-# Frontend Development Guidelines
+# 前端开发指南
 
-> **Project**: LYMusicPlayer — Electron + **Vue 3** + TypeScript + Pinia + **shadcn-vue**  
-> Scaffold docs that mention React/Drizzle are **obsolete leftovers** — do not follow them.
+> **项目**：LYMusicPlayer — Electron + **Vue 3** + TypeScript + Pinia + **shadcn-vue**  
+> 文中若出现 React / Drizzle 等脚手架残留，一律忽略，以仓库实码为准。
 
-## Tech Stack (actual)
+## 技术栈（现状）
 
-- **Framework**: Electron + Vue 3 (`script setup`)
-- **Build**: electron-vite / Vite
-- **UI**: **shadcn-vue / reka-ui** (preferred for all new UI) under `components/ui/`; **naive-ui** still in legacy screens and being replaced gradually
-- **State**: Pinia + pinia-plugin-persistedstate
-- **Router**: vue-router (hash history)
-- **CSS**: Tailwind + scoped SCSS; Lucide (shadcn path) + Remix Icon (legacy)
-- **i18n**: vue-i18n (locale fixed zh-CN)
-
----
-
-## Documentation Files (authoritative)
-
-| File                                                 | Description                                     | Priority      |
-| ---------------------------------------------------- | ----------------------------------------------- | ------------- |
-| [directory-structure.md](./directory-structure.md)   | `src/` layout, naming, where to put new code    | **Must Read** |
-| [component-guidelines.md](./component-guidelines.md) | SFC patterns, props, SongItem variants, UI kits | **Must Read** |
-| [hook-guidelines.md](./hook-guidelines.md)           | Vue composables under `hooks/`                  | **Must Read** |
-| [state-management.md](./state-management.md)         | Pinia modules, services boundary, persistence   | **Must Read** |
-| [type-safety.md](./type-safety.md)                   | types layout, SongResult vs Track, window.api   | **Must Read** |
-| [quality-guidelines.md](./quality-guidelines.md)     | lint, typecheck, test, commit, Electron safety  | **Must Read** |
+- **框架**：Electron + Vue 3（`script setup`）
+- **构建**：electron-vite / Vite
+- **UI**：**shadcn-vue / reka-ui**（新 UI，目录 `components/ui/`）；**naive-ui** 仍在旧页，逐步替换，禁止新增
+- **状态**：Pinia + pinia-plugin-persistedstate
+- **路由**：vue-router（hash）
+- **样式**：Tailwind + 局部 scoped SCSS；新图标 Lucide，旧界面常见 Remix Icon
+- **i18n**：vue-i18n（固定 zh-CN）
+- **壳层取色**：封面色 → `coverChrome` / `linearColor` → CSS 变量与 naive primary
 
 ---
 
-## Quick Navigation
+## 权威文档（必读）
 
-| Task                  | File                                                                                              |
-| --------------------- | ------------------------------------------------------------------------------------------------- |
-| New page / route      | [directory-structure.md](./directory-structure.md)                                                |
-| New Vue component     | [component-guidelines.md](./component-guidelines.md)                                              |
-| Shared song-row logic | [component-guidelines.md](./component-guidelines.md) + [hook-guidelines.md](./hook-guidelines.md) |
-| New composable        | [hook-guidelines.md](./hook-guidelines.md)                                                        |
-| New Pinia store       | [state-management.md](./state-management.md)                                                      |
-| Playback / audio      | [state-management.md](./state-management.md) (`services/` + player stores)                        |
-| Domain types / Track  | [type-safety.md](./type-safety.md)                                                                |
-| Pre-commit quality    | [quality-guidelines.md](./quality-guidelines.md)                                                  |
+| 文件                                                 | 内容                                        | 优先级   |
+| ---------------------------------------------------- | ------------------------------------------- | -------- |
+| [directory-structure.md](./directory-structure.md)   | `src/` 布局、命名、新代码放哪               | **必读** |
+| [component-guidelines.md](./component-guidelines.md) | SFC、props、SongItem、UI 库                 | **必读** |
+| [hook-guidelines.md](./hook-guidelines.md)           | `hooks/` 组合式函数                         | **必读** |
+| [state-management.md](./state-management.md)         | Pinia、services 边界、持久化                | **必读** |
+| [type-safety.md](./type-safety.md)                   | 类型、`Track` vs `SongResult`、`window.api` | **必读** |
+| [quality-guidelines.md](./quality-guidelines.md)     | lint、测试、注释、提交、Electron 安全       | **必读** |
 
----
-
-## Core Rules (MANDATORY)
-
-| Rule                                                                               | Reference                                                                                              |
-| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Vue 3 + `<script setup lang="ts">`, not React                                      | [directory-structure.md](./directory-structure.md)                                                     |
-| New UI → shadcn-vue; do not grow naive-ui                                          | [component-guidelines.md](./component-guidelines.md)                                                   |
-| UI state via Pinia; audio engine via `services/`                                   | [state-management.md](./state-management.md)                                                           |
-| Renderer IPC only through `window.api`                                             | [component-guidelines.md](./component-guidelines.md), [quality-guidelines.md](./quality-guidelines.md) |
-| Prefer existing `SongItem` / `useSongItem` for list rows                           | [component-guidelines.md](./component-guidelines.md)                                                   |
-| **Confirmed**: new code → `Track` + `PlaybackRuntime`; `SongResult` is legacy only | [type-safety.md](./type-safety.md)                                                                     |
-| Persist minified songs (no huge base64 covers)                                     | [state-management.md](./state-management.md)                                                           |
-| `npm run lint` + `typecheck` (+ tests when pure logic)                             | [quality-guidelines.md](./quality-guidelines.md)                                                       |
+人读总览：[DEV.md](../../../DEV.md)
 
 ---
 
-## Obsolete scaffold files (do not use)
+## 按任务导航
 
-These were generated by Trellis init for a **React** Electron template and **do not match this codebase**:
-
-- `components.md`, `hooks.md`, `quality.md`, `css-design.md`
-- `ipc-electron.md`, `electron-browser-api-restrictions.md`, `react-pitfalls.md`
-
-Prefer the six authoritative files above. Backend/shared Trellis layers may still be template-only until a separate bootstrap pass.
-
----
-
-## Before Every Commit
-
-- [ ] `npm run lint` — 0 errors
-- [ ] `npm run typecheck` — 0 errors
-- [ ] Relevant `npm run test` cases for pure logic changes
-- [ ] Conventional commit message (`feat` / `fix` / `chore` / …)
+| 任务             | 文档                                            |
+| ---------------- | ----------------------------------------------- |
+| 新页面 / 路由    | directory-structure                             |
+| 新 Vue 组件      | component-guidelines                            |
+| 列表行 / 歌曲项  | component-guidelines + hook-guidelines          |
+| 新 composable    | hook-guidelines                                 |
+| 新 Pinia store   | state-management                                |
+| 播放 / 音频      | state-management（`services/` + player stores） |
+| 领域类型 / Track | type-safety                                     |
+| 提交前质量       | quality-guidelines                              |
 
 ---
 
-**Language**: All documentation in this layer should be written in **English**.
+## 硬性规则
+
+| 规则                                                      | 参考                                     |
+| --------------------------------------------------------- | ---------------------------------------- |
+| Vue 3 + `<script setup lang="ts">`，禁止 React            | directory-structure                      |
+| 新 UI → shadcn-vue；不扩展 naive-ui                       | component-guidelines                     |
+| UI 状态 Pinia；音频引擎 `services/`                       | state-management                         |
+| 渲染进程 IPC 只走 `window.api`                            | component-guidelines、quality-guidelines |
+| 列表行优先复用 `SongItem` / `useSongItem`                 | component-guidelines                     |
+| 新代码 → `Track` + `PlaybackRuntime`；`SongResult` 仅遗留 | type-safety                              |
+| 持久化曲目 minify，禁止大体积 base64 封面落盘             | state-management                         |
+| 注释与文档用中文，专业、简洁                              | quality-guidelines                       |
+| `npm run lint` + `typecheck`（纯逻辑补测试）              | quality-guidelines                       |
+
+---
+
+## 过时脚手架（勿用）
+
+Trellis 初始化时的 **React** 模板残留，**不描述本仓库**：
+
+- `components.md`、`hooks.md`、`quality.md`、`css-design.md`
+- `ipc-electron.md`、`electron-browser-api-restrictions.md`、`react-pitfalls.md`
+
+只认上表六份权威文档。后端 / 其它层若仍是模板，勿照抄。
+
+---
+
+## 提交前检查
+
+- [ ] `npm run lint` 无错误
+- [ ] `npm run typecheck` 无错误
+- [ ] 纯逻辑变更有对应 `npm run test`
+- [ ] 约定式提交信息（`feat` / `fix` / `chore` / `docs` …）
+
+---
+
+**文档语言**：本层指南用**中文**撰写；代码标识符保持英文。

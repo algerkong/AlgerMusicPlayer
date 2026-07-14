@@ -39,7 +39,9 @@ npm run dev
 
 ## 开发文档
 
-见 [DEV.md](./DEV.md)
+- 总览：[DEV.md](./DEV.md)
+- 前端规范（中文）：[`.trellis/spec/frontend/`](./.trellis/spec/frontend/)（以 `index.md` 与六份权威指南为准）
+- 注释与文档：用专业中文；禁止复述代码与 changelog 式注释
 
 ## 声明
 
