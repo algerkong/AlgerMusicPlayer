@@ -26,26 +26,30 @@
       </a>
     </div>
 
-    <div id="buttons" class="flex gap-4 items-center">
-      <n-button
-        v-if="!isElectron"
-        type="primary"
-        size="small"
-        text
-        title="下载应用"
-        @click="openDownloadPage"
-      >
-        <i class="ri-download-line"></i>
-        下载桌面版
-      </n-button>
-      <template v-if="isElectron">
-        <div class="text-gray-600 dark:text-gray-400 hover:text-green-500" @click="minimize">
-          <i class="iconfont icon-minisize"></i>
-        </div>
-        <div class="text-gray-600 dark:text-gray-400 hover:text-green-500" @click="handleClose">
-          <i class="iconfont icon-close"></i>
-        </div>
-      </template>
+    <!-- 搜索 / 登录 与 缩小·关闭 同一行（右上角工具簇） -->
+    <div class="title-bar-end no-drag-children">
+      <search-bar class="title-search" />
+      <div id="buttons" class="flex gap-3 items-center">
+        <n-button
+          v-if="!isElectron"
+          type="primary"
+          size="small"
+          text
+          title="下载应用"
+          @click="openDownloadPage"
+        >
+          <i class="ri-download-line"></i>
+          下载桌面版
+        </n-button>
+        <template v-if="isElectron">
+          <div class="win-btn" title="最小化" @click="minimize">
+            <i class="iconfont icon-minisize"></i>
+          </div>
+          <div class="win-btn win-btn-close" title="关闭" @click="handleClose">
+            <i class="iconfont icon-close"></i>
+          </div>
+        </template>
+      </div>
     </div>
   </div>
 
@@ -111,6 +115,7 @@ import { useSettingsStore } from '@/store/modules/settings';
 import { isElectron } from '@/utils';
 
 import config from '../../../../package.json';
+import SearchBar from './SearchBar.vue';
 
 const settingsStore = useSettingsStore();
 const showCloseModal = ref(false);
@@ -188,13 +193,51 @@ const drag = (event: MouseEvent) => {
   -webkit-app-region: drag;
   z-index: 3000;
   min-height: 48px;
+  gap: 8px;
+}
+
+.title-bar-end {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  min-width: 0;
+  margin-left: auto;
+  -webkit-app-region: no-drag;
+  z-index: 1;
+}
+
+.title-search {
+  min-width: 0;
 }
 
 #buttons {
   -webkit-app-region: no-drag;
   flex-shrink: 0;
-  min-width: 72px;
+  min-width: 56px;
   justify-content: flex-end;
+}
+
+.win-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: var(--chrome-text-muted, #9ca3af);
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+.win-btn:hover {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.1);
+}
+.win-btn-close:hover {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
 }
 
 .brand {
@@ -245,7 +288,8 @@ const drag = (event: MouseEvent) => {
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  max-width: min(420px, 46vw);
+  /* 右侧有搜索/登录/窗控，中间文案略收窄避免挤在一起 */
+  max-width: min(360px, 34vw);
   pointer-events: auto;
   -webkit-app-region: no-drag;
   text-align: center;

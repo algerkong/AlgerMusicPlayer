@@ -131,6 +131,30 @@ LYMusicPlayer/
 - 旧 UI / 旧 store 仍要 `SongResult` 时：经 `trackBridge` / `trackAdapter` 转换，不要在 `SongResult` 上继续堆新领域字段
 - 持久化列表/历史仍按现有 minify 策略（见 `persistedSong`），勿把大体积运行态当元数据存
 
+#### Git / 分支习惯（GitHub Flow + 小改长期线）
+
+整体跟 **GitHub Flow**：`main` 可合可发；功能用短命分支 + PR 合入。
+
+**小改 / 界面打磨** 有一条长期线：
+
+```
+main
+  └── ui/polish-draft                 ← 长期 PR / 长期分支（小改汇合处）
+        ├── feat/xxx                  ← 一个小功能一条分支
+        │     ├── feat/xxx-part-a     ← 小分支里还可再开子分支
+        │     └── feat/xxx-part-b
+        ├── fix/yyy
+        └── feat/zzz
+```
+
+规则：
+
+1. **一个功能 = 一条小分支**（通常从 `ui/polish-draft` 拉出；做完 PR 合回目标父分支）
+2. **小分支里面可以继续开分支**（子能力 / 子问题拆开做，再合回上一级小分支）
+3. **若一次改动扯到另一块独立能力** → **再开一条分支**，不要塞进同一条
+4. 满意再 commit；你点头再 push / 开 PR
+5. 大功能、不适合「小改」的，仍从 `main` 拉独立分支，走正常 GitHub Flow
+
 ### 如何启动？
 
 安装依赖（最好使用node18+）：
