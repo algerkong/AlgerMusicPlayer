@@ -15,8 +15,7 @@
         <!-- 侧边菜单栏 -->
         <app-menu v-if="!settingsStore.isMobile" class="menu" :menus="menuStore.menus" />
         <div class="main">
-          <!-- 搜索栏 -->
-          <search-bar class="search-bar" />
+          <!-- 搜索 / 登录已并入 TitleBar，与窗口按钮同一行 -->
           <!-- 主页面路由 -->
           <div
             class="main-content"
@@ -76,7 +75,6 @@ import { useSettingsStore } from '@/store/modules/settings';
 import { isElectron } from '@/utils';
 
 import AppMenu from './components/AppMenu.vue';
-import SearchBar from './components/SearchBar.vue';
 import TitleBar from './components/TitleBar.vue';
 // 移动端专用布局
 import MobileLayout from './MobileLayout.vue';
@@ -200,7 +198,6 @@ provide('openPlaylistDrawer', openPlaylistDrawer);
 .layout-page.has-cover-bg .layout-main,
 .layout-page.has-cover-bg .main-content,
 .layout-page.has-cover-bg .main-page,
-.layout-page.has-cover-bg .search-bar,
 .layout-page.has-cover-bg :deep(#title-bar) {
   background: transparent !important;
 }
@@ -251,12 +248,6 @@ provide('openPlaylistDrawer', openPlaylistDrawer);
 .main-page {
   @apply h-full;
   background: transparent;
-}
-
-.search-bar {
-  flex-shrink: 0;
-  position: relative;
-  z-index: 30;
 }
 
 .mobile {

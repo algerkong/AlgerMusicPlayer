@@ -1,11 +1,9 @@
 <template>
-  <div class="search-bar-row flex items-center gap-2">
-    <!-- 返回键已搬家去侧栏；这里只剩滚动标题（有则显示） -->
+  <div class="search-bar-row">
+    <!-- 页面滚动标题（有则显示，与搜索同一顶栏） -->
     <span v-if="navTitleStore.isVisible" class="nav-page-title flex-shrink-0">
       {{ navTitleStore.title }}
     </span>
-
-    <div class="flex-1" />
 
     <!-- 搜索：悬停立即展开，无延迟；聚焦时保持展开 -->
     <div
@@ -82,7 +80,7 @@
         <div class="user-btn">
           <n-avatar
             circle
-            :size="30"
+            :size="26"
             :src="getImgUrl(userStore.user.avatarUrl)"
             class="cursor-pointer"
             @click="selectItem('user')"
@@ -91,7 +89,7 @@
       </template>
       <div class="user-menu">
         <div class="user-menu-top" @click="selectItem('user')">
-          <n-avatar circle :size="30" :src="getImgUrl(userStore.user?.avatarUrl)" />
+          <n-avatar circle :size="28" :src="getImgUrl(userStore.user?.avatarUrl)" />
           <span class="user-name">{{ userStore.user?.nickname }}</span>
         </div>
         <div class="menu-sep" />
@@ -281,20 +279,24 @@ const selectItem = (key: string) => {
 </script>
 
 <style scoped>
-/* 整条顶栏控件统一高度；左右跟页面 token，不跟侧栏赛像素 */
+/* 嵌在 TitleBar 右端：与缩小/关闭同一行 */
 .search-bar-row {
-  --bar-h: 42px;
-  padding-right: var(--page-pr);
-  padding-bottom: 0.5rem;
+  --bar-h: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
   box-sizing: border-box;
+  min-width: 0;
+  -webkit-app-region: no-drag;
 }
 
 /* ── Search wrap：聚焦略变宽（避免被 flex 压死）──────── */
 .search-wrap {
   flex: 0 0 auto !important;
-  width: 240px;
-  max-width: 240px;
-  min-width: 240px;
+  width: 200px;
+  max-width: min(200px, 28vw);
+  min-width: 140px;
   /* 悬停立即开启动画：无 delay，短时长 ease-out */
   transition:
     width 0.16s cubic-bezier(0.22, 1, 0.36, 1),
@@ -305,14 +307,14 @@ const selectItem = (key: string) => {
   z-index: 40;
 }
 .search-wrap--idle {
-  width: 240px;
-  max-width: 240px;
-  min-width: 240px;
+  width: 200px;
+  max-width: min(200px, 28vw);
+  min-width: 140px;
 }
 .search-wrap--open {
-  width: 340px;
-  max-width: 340px;
-  min-width: 340px;
+  width: 280px;
+  max-width: min(280px, 36vw);
+  min-width: 180px;
 }
 
 .search-inner {
@@ -320,8 +322,8 @@ const selectItem = (key: string) => {
   align-items: center;
   gap: 8px;
   height: var(--bar-h);
-  padding: 0 14px;
-  border-radius: 10px;
+  padding: 0 12px;
+  border-radius: 9999px;
   border: 1px solid var(--chrome-border);
   background: var(--chrome-surface);
   backdrop-filter: blur(var(--chrome-blur));
@@ -352,9 +354,9 @@ const selectItem = (key: string) => {
   border: none;
   outline: none;
   background: transparent;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.2;
-  color: #111827;
+  color: var(--chrome-text, #111827);
 }
 .dark .search-input {
   color: #f3f4f6;
@@ -456,11 +458,24 @@ const selectItem = (key: string) => {
 .login-label {
   font-size: 13px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--chrome-text-muted, #6b7280);
   padding: 0 10px;
+  height: var(--bar-h);
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  border: 1px solid var(--chrome-border);
+  background: var(--chrome-surface);
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+  box-sizing: border-box;
+  white-space: nowrap;
 }
-.dark .login-label {
-  color: #9ca3af;
+.login-label:hover {
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.35);
 }
 
 /* ── User menu：附着半透明，不锁死黑/白 ───────────────── */
@@ -586,18 +601,15 @@ const selectItem = (key: string) => {
   padding: 12px;
 }
 
-/* ── Nav page title ──────────────────────────────────── */
+/* ── Nav page title（顶栏左侧空间有限）──────────────── */
 .nav-page-title {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
-  color: #111827;
+  color: var(--chrome-text, #111827);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 280px;
+  max-width: min(160px, 18vw);
   letter-spacing: -0.01em;
-}
-.dark .nav-page-title {
-  color: #f9fafb;
 }
 </style>
