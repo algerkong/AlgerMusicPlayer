@@ -7,16 +7,16 @@
 ### 技术栈
 
 - **前端框架**：Vue 3 + TypeScript
-- **UI 组件库**：naive-ui
-- **样式框架**：Tailwind CSS
-- **图标库**：remixicon
-- **状态管理**：Pinia
+- **UI 组件库**：**shadcn-vue**（reka-ui，目录 `src/renderer/components/ui/`）为主；**naive-ui** 仍大量存在于旧页面，**正在逐步替换，禁止新增**
+- **样式框架**：Tailwind CSS（+ `cn()` / `src/renderer/lib/utils.ts`）
+- **图标库**：新 UI 优先 Lucide（shadcn-vue）；旧界面仍常见 Remix Icon
+- **状态管理**：Pinia（`pinia-plugin-persistedstate`）
 - **工具库**：VueUse
 - **构建工具**：Vite, electron-vite
 - **打包工具**：electron-builder
-- **国际化**：vue-i18n
+- **国际化**：vue-i18n（当前固定 zh-CN）
 - **HTTP 客户端**：axios（下载封面等）
-- **本地存储**：electron-store localstorage
+- **本地存储**：electron-store、localStorage、IndexedDB
 - **音乐**：当前仅本地音乐播放；在线音源将接入独立库 ly-music-source
 
 ### 项目结构
@@ -78,12 +78,11 @@ LYMusicPlayer/
 渲染进程是基于 Vue 3 的前端应用，负责 UI 渲染和用户交互。
 
 - **components/**: 包含各种 UI 组件
-    - **common/**: 通用组件
-    - **home/**: 首页相关组件
+    - **ui/**: shadcn-vue 设计系统（新 UI 优先放这里）
+    - **common/**: 通用业务组件（列表项、抽屉等）
     - **lyric/**: 歌词显示组件
+    - **player/**: 播放栏 / 播放器相关
     - **settings/**: 设置界面组件
-    - **MusicList.vue**: 音乐列表组件
-    - **MvPlayer.vue**: MV 播放器
     - **EQControl.vue**: 均衡器控制
     - **...**: 其他组件
 
@@ -113,7 +112,24 @@ LYMusicPlayer/
 - 使用 TypeScript 类型系统
 - 优先使用类型而非接口
 - 避免使用枚举，使用 const 对象代替
-- 使用 tailwind 实现响应式设计
+- 使用 Tailwind 实现响应式设计
+- **新界面 / 新控件用 shadcn-vue**，不要再引入新的 naive-ui（`n-*`）；改旧页时可顺手迁移
+- AI 编码约定见 `.trellis/spec/frontend/`（与本文不一致时以仓库代码 + Trellis spec 为准）
+
+#### 曲目数据模型（必读）
+
+「一首歌」拆成两层，**新代码优先走新模型**：
+
+| 类型                  | 装什么                                                     | 路径                          |
+| --------------------- | ---------------------------------------------------------- | ----------------------------- |
+| **`Track`**           | 元数据：标题、歌手、封面、时长等（「是什么歌」）           | `src/shared/domain/track.ts`  |
+| **`PlaybackRuntime`** | 会话态：播放 URL、试听标记、歌词、颜色等（「这次怎么播」） | 同上                          |
+| **`PlayableTrack`**   | `Track` + 可选 `runtime`                                   | 同上                          |
+| **`SongResult`**      | 历史播放器 DTO，元数据与运行态混在一起                     | `src/renderer/types/music.ts` |
+
+- 新功能 / 新边界：用 `Track` / `PlayableTrack`，不要把 URL、歌词等写回 `Track`
+- 旧 UI / 旧 store 仍要 `SongResult` 时：经 `trackBridge` / `trackAdapter` 转换，不要在 `SongResult` 上继续堆新领域字段
+- 持久化列表/历史仍按现有 minify 策略（见 `persistedSong`），勿把大体积运行态当元数据存
 
 ### 如何启动？
 
