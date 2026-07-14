@@ -24,7 +24,11 @@
     "build:mac": "npm run build && electron-builder --mac --x64 --publish never && cp dist/latest-mac.yml dist/latest-mac-x64.yml && electron-builder --mac --arm64 --publish never && cp dist/latest-mac.yml dist/latest-mac-arm64.yml && node scripts/merge_latest_mac_yml.mjs dist/latest-mac-x64.yml dist/latest-mac-arm64.yml dist/latest-mac.yml",
     "build:mac:x64": "npm run build && electron-builder --mac --x64 --publish never && cp dist/latest-mac.yml dist/latest-mac-x64.yml",
     "build:mac:arm64": "npm run build && electron-builder --mac --arm64 --publish never && cp dist/latest-mac.yml dist/latest-mac-arm64.yml",
-    "build:linux": "npm run build && electron-builder --linux --publish never"
+    "build:linux": "npm run build && electron-builder --linux --publish never",
+    "qa:release:installed": "node scripts/qa/run-installed-release-smoke-suite.mjs",
+    "qa:installed:account": "node scripts/qa/smoke-installed-account-journey.mjs",
+    "qa:installed:auto-cookie": "node scripts/qa/smoke-installed-auto-cookie-window.mjs",
+    "qa:installed:real-login": "node scripts/qa/smoke-installed-real-login-closure.mjs"
   },
   "lint-staged": {
     "*.{ts,tsx,vue,js}": [
