@@ -1,6 +1,6 @@
 <template>
   <div class="download-page h-full w-full bg-white dark:bg-black transition-colors duration-500">
-    <n-scrollbar ref="scrollbarRef" class="h-full" @scroll="handleDownloadScroll">
+    <scroll-area ref="scrollbarRef" class="h-full" @scroll="handleDownloadScroll">
       <div class="download-content" :style="{ paddingBottom: contentPaddingBottom }">
         <!-- Hero Section -->
         <section class="hero-section relative overflow-hidden rounded-tl-2xl">
@@ -309,7 +309,7 @@
           </div>
         </section>
       </div>
-    </n-scrollbar>
+    </scroll-area>
 
     <!-- 删除确认对话框 -->
     <n-modal
@@ -554,6 +554,7 @@ import { useMessage } from 'naive-ui';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useProgressiveRender } from '@/hooks/useProgressiveRender';
 import { useDownloadStore } from '@/store/modules/download';
 import { usePlayerStore } from '@/store/modules/player';

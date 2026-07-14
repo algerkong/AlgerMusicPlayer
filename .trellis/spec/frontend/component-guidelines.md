@@ -144,6 +144,13 @@ Common pattern: local `ref` + `v-model` on drawer components, or settings-store 
 
 ---
 
+## Scrolling
+
+- **Page / list / drawer scroll**: use shadcn-vue `ScrollArea` (`@/components/ui/scroll-area`).
+- Do **not** add new `n-scrollbar` (naive-ui) or bare `overflow-y-auto` for primary page chrome.
+- Horizontal tabs/presets: `<scroll-area orientation="horizontal">`.
+- Need scrollTo / @scroll: use exposed `scrollTo` / `getViewport` / `@scroll` on `ScrollArea`.
+
 ## shadcn-vue UI kit (preferred)
 
 - Config: `components.json` (style `reka-nova`, aliases `@/components/ui`, `@/lib/utils`, Lucide).

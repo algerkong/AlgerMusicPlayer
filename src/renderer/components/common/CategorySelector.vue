@@ -3,7 +3,7 @@
     class="category-selector z-10"
     :class="variant === 'line' ? 'category-selector--line' : 'category-selector--pill'"
   >
-    <n-scrollbar ref="scrollbarRef" x-scrollable>
+    <scroll-area ref="scrollbarRef" orientation="horizontal" class="w-full">
       <div
         ref="rowRef"
         class="category-selector__row flex items-center page-padding"
@@ -29,14 +29,14 @@
           {{ getItemLabel(category) }}
         </span>
       </div>
-    </n-scrollbar>
+    </scroll-area>
   </div>
 </template>
 
 <script setup lang="ts">
-import { NScrollbar } from 'naive-ui';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
 
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { setAnimationDelay } from '@/utils';
 
 type Category = string | number | { [key: string]: any };

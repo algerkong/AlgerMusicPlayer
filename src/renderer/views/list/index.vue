@@ -1,6 +1,6 @@
 <template>
   <div class="list-page h-full w-full">
-    <n-scrollbar class="h-full">
+    <scroll-area class="h-full">
       <!-- 与首页一致：page-padding + max-w + mx-auto，不靠硬塞左边距 -->
       <div class="w-full pb-32 page-padding max-w-3xl mx-auto pt-6">
         <div class="list-frame chrome-surface-strong">
@@ -83,12 +83,12 @@
           </section>
         </div>
       </div>
-    </n-scrollbar>
+    </scroll-area>
   </div>
 </template>
 
 <script setup lang="ts">
-import { NButton, NEmpty, NImage, NScrollbar, NSpin, useMessage } from 'naive-ui';
+import { NButton, NEmpty, NImage, NSpin, useMessage } from 'naive-ui';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
@@ -102,6 +102,7 @@ import {
   type MsPlaylist
 } from '@/api/musicSource';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { isElectron } from '@/utils';
 
 defineOptions({ name: 'List' });

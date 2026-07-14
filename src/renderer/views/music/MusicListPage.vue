@@ -23,7 +23,7 @@
         </n-button>
       </div>
       <div class="flex-1 min-h-0">
-        <n-scrollbar class="h-full" @scroll="onScroll">
+        <scroll-area class="h-full" @scroll="onScroll">
           <div class="space-y-1 pb-32">
             <song-item
               v-for="(song, index) in songList"
@@ -39,19 +39,20 @@
               已加载全部
             </div>
           </div>
-        </n-scrollbar>
+        </scroll-area>
       </div>
     </template>
   </div>
 </template>
 
 <script setup lang="ts">
-import { NButton, NEmpty, NScrollbar, NSpin, useMessage } from 'naive-ui';
+import { NButton, NEmpty, NSpin, useMessage } from 'naive-ui';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
 import { mapMsSongToSongResult, msGetPlaylist } from '@/api/musicSource';
 import SongItem from '@/components/common/SongItem.vue';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useMusicStore, usePlayerStore, useRecommendStore } from '@/store';
 import type { SongResult } from '@/types/music';
 import { isElectron } from '@/utils';

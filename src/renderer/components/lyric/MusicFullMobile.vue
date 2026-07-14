@@ -52,7 +52,7 @@
             </div>
           </div>
 
-          <div
+          <scroll-area
             ref="lyricsScrollerRef"
             class="lyrics-scroller"
             @touchstart="handleTouchStart"
@@ -94,7 +94,7 @@
               </div>
             </div>
             <div class="lyrics-padding-bottom"></div>
-          </div>
+          </scroll-area>
         </div>
       </transition>
 
@@ -254,7 +254,7 @@
           </div>
 
           <!-- 歌词滚动区域 -->
-          <div
+          <scroll-area
             ref="landscapeLyricsRef"
             class="landscape-lyrics-scroller"
             @touchstart="handleTouchStart"
@@ -296,7 +296,7 @@
               </div>
             </div>
             <div class="lyrics-padding-bottom"></div>
-          </div>
+          </scroll-area>
 
           <!-- 右下角控制按钮 -->
           <div class="landscape-main-controls">
@@ -381,6 +381,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n';
 
 import MobilePlayerSettings from '@/components/player/MobilePlayerSettings.vue';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   allTime,
   artistList,
@@ -438,7 +439,7 @@ const toggleFavorite = () => {
 // 歌词全屏控制
 const showFullLyrics = ref(false);
 const isAutoScrollEnabled = ref(true);
-const lyricsScrollerRef = ref<HTMLElement | null>(null);
+const lyricsScrollerRef = ref<any>(null);
 const isTouchScrolling = ref(false);
 const touchStartY = ref(0);
 const lastScrollTop = ref(0);
@@ -448,7 +449,16 @@ const isSongChanging = ref(false);
 // 横屏检测相关
 const { width, height } = useWindowSize();
 const isLandscape = computed(() => width.value > height.value);
-const landscapeLyricsRef = ref<HTMLElement | null>(null);
+const landscapeLyricsRef = ref<any>(null);
+
+/** ScrollArea 实例或 DOM → 真正可滚的 viewport */
+const resolveScrollEl = (refLike: any): HTMLElement | null => {
+  if (!refLike) return null;
+  if (refLike instanceof HTMLElement) return refLike;
+  if (typeof refLike.getViewport === 'function') return refLike.getViewport();
+  if (refLike.viewport instanceof HTMLElement) return refLike.viewport;
+  return null;
+};
 
 // 监听横屏变化
 watch(isLandscape, (newVal) => {
@@ -495,9 +505,9 @@ const closeFullLyrics = () => {
 };
 
 // 滚动到当前歌词，添加错误处理和日志
-const scrollToCurrentLyric = (immediate = false, customScrollerRef?: HTMLElement | null) => {
+const scrollToCurrentLyric = (immediate = false, customScrollerRef?: any) => {
   try {
-    const scrollerRef = customScrollerRef || lyricsScrollerRef.value;
+    const scrollerRef = resolveScrollEl(customScrollerRef || lyricsScrollerRef.value);
     if (!scrollerRef) {
       console.log('歌词容器引用不存在');
       return;
@@ -619,11 +629,13 @@ const handleTouchStart = (e: TouchEvent) => {
   touchStartY.value = e.touches[0].clientY;
 
   // 根据当前模式获取正确的滚动容器
-  const scrollerRef = showFullLyrics.value
-    ? lyricsScrollerRef.value
-    : isLandscape.value
-      ? landscapeLyricsRef.value
-      : lyricsScrollerRef.value;
+  const scrollerRef = resolveScrollEl(
+    showFullLyrics.value
+      ? lyricsScrollerRef.value
+      : isLandscape.value
+        ? landscapeLyricsRef.value
+        : lyricsScrollerRef.value
+  );
 
   lastScrollTop.value = scrollerRef?.scrollTop || 0;
   isTouchScrolling.value = true;
@@ -958,14 +970,14 @@ watch(
       setTimeout(() => {
         // 在全屏歌词模式下滚动到顶部
         if (showFullLyrics.value && lyricsScrollerRef.value) {
-          lyricsScrollerRef.value.scrollTo({
+          resolveScrollEl(lyricsScrollerRef.value)?.scrollTo({
             top: 0,
             behavior: 'smooth'
           });
         }
         // 在横屏模式下滚动到顶部
         else if (isLandscape.value && landscapeLyricsRef.value) {
-          landscapeLyricsRef.value.scrollTo({
+          resolveScrollEl(landscapeLyricsRef.value)?.scrollTo({
             top: 0,
             behavior: 'smooth'
           });
@@ -1331,11 +1343,9 @@ const getWordStyle = (lineIndex: number, _wordIndex: number, word: any) => {
           }
         }
 
-        // 歌词滚动区域
+        // 歌词滚动区域（shadcn ScrollArea）
         .landscape-lyrics-scroller {
-          @apply h-full w-full overflow-y-auto pt-24 pb-24;
-          scroll-behavior: smooth;
-          -webkit-overflow-scrolling: touch;
+          @apply h-full w-full pt-24 pb-24;
           mask-image: linear-gradient(
             to bottom,
             transparent 5%,
@@ -1707,9 +1717,7 @@ const getWordStyle = (lineIndex: number, _wordIndex: number, word: any) => {
   }
 
   .lyrics-scroller {
-    @apply flex-1 overflow-y-auto px-4;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
+    @apply flex-1 min-h-0 px-4;
     mask-image: linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%);
     -webkit-mask-image: linear-gradient(
       to bottom,

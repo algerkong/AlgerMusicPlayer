@@ -22,7 +22,7 @@
         </div>
       </Transition>
 
-      <div class="app-menu-list">
+      <scroll-area class="app-menu-list">
         <!-- 滑动高亮绿底 -->
         <div class="menu-slider-bg" :style="sliderStyle" />
         <div
@@ -49,7 +49,7 @@
             <div>{{ t(item.meta.title) }}</div>
           </n-tooltip>
         </div>
-      </div>
+      </scroll-area>
 
       <!-- 设置钉在侧栏底部（桌面）；移动端仍用顶栏入口 -->
       <div v-if="!isMobile" class="menu-footer">
@@ -76,6 +76,7 @@ import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { isMobile } from '@/utils';
 
 const props = defineProps({
@@ -261,27 +262,7 @@ const sliderStyle = computed(() => {
   flex: 1 1 auto;
   min-height: 0;
   max-height: none;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
   padding-bottom: 8px;
-
-  &::-webkit-scrollbar {
-    width: 4px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background-color: transparent;
-  }
-
-  &:hover {
-    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
-
-    &::-webkit-scrollbar-thumb {
-      background-color: rgba(156, 163, 175, 0.5);
-    }
-  }
 }
 
 .menu-slider-bg {

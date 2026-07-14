@@ -1,6 +1,6 @@
 <template>
   <div class="home-container h-full w-full">
-    <n-scrollbar class="h-full">
+    <scroll-area class="h-full">
       <div class="home-content w-full pb-32 page-padding max-w-3xl mx-auto pt-10">
         <div class="space-y-6">
           <h1 class="home-title text-3xl font-bold">LYMusic</h1>
@@ -21,13 +21,15 @@
           </div>
         </div>
       </div>
-    </n-scrollbar>
+    </scroll-area>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { NButton, NScrollbar } from 'naive-ui';
+import { NButton } from 'naive-ui';
 import { useRouter } from 'vue-router';
+
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 defineOptions({ name: 'Home' });
 

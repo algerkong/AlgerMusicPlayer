@@ -1,6 +1,6 @@
 <template>
   <div class="h-full w-full bg-white transition-colors duration-500 dark:bg-black">
-    <n-scrollbar ref="scrollbarRef" class="h-full" :size="100" @scroll="handleScroll">
+    <scroll-area ref="scrollbarRef" class="h-full" @scroll="handleScroll">
       <div class="w-full pb-32">
         <!-- Page Header (scrolls away) -->
         <div ref="headerRef" class="page-padding pt-6 pb-2">
@@ -33,7 +33,7 @@
           <slot />
         </div>
       </div>
-    </n-scrollbar>
+    </scroll-area>
   </div>
 </template>
 
@@ -41,6 +41,7 @@
 import { ref } from 'vue';
 
 import CategorySelector from '@/components/common/CategorySelector.vue';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type Category = string | number | { [key: string]: any };
 

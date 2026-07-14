@@ -16,7 +16,7 @@
     </div>
 
     <div class="eq-presets mb-2 relative h-10">
-      <n-scrollbar x-scrollable>
+      <scroll-area orientation="horizontal" class="w-full">
         <n-space :size="6" :wrap="false">
           <n-tag
             v-for="preset in presetOptions"
@@ -31,7 +31,7 @@
             {{ preset.label }}
           </n-tag>
         </n-space>
-      </n-scrollbar>
+      </scroll-area>
     </div>
 
     <div
@@ -71,6 +71,7 @@
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { audioService } from '@/services/audioService';
 import { isElectron } from '@/utils';
 
@@ -282,13 +283,6 @@ const formatFreq = (freq: number) => {
 </script>
 
 <style lang="scss" scoped>
-:deep(.n-scrollbar) {
-  margin-left: -0.5rem;
-  margin-right: -0.5rem;
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
-}
-
 :deep(.n-tag) {
   cursor: pointer;
   transition: all 0.2s;

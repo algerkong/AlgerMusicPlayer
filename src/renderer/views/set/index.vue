@@ -17,8 +17,8 @@
       />
     </div>
 
-    <!-- 播放条占位交给布局 PlayBottom，这里只留一点呼吸距（同 SearchResult） -->
-    <div class="flex-1 min-h-0 overflow-y-auto">
+    <!-- shadcn-vue ScrollArea：设置/关于不出现系统原生滚动条 -->
+    <scroll-area class="settings-scroll flex-1 min-h-0">
       <div class="settings-body page-padding">
         <!-- 通用 / 存储 / 关于（快捷键设置页已移除，使用内置默认快捷键） -->
         <div v-show="currentSection === 'basic'" class="animate-fade-in">
@@ -31,7 +31,7 @@
           <about-tab />
         </div>
       </div>
-    </div>
+    </scroll-area>
   </div>
 </template>
 
@@ -42,6 +42,7 @@ import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import CategorySelector from '@/components/common/CategorySelector.vue';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSettingsStore } from '@/store/modules/settings';
 import { isElectron } from '@/utils';
 
@@ -133,6 +134,15 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* reka ScrollArea 在 flex 列里要占满剩余高度，viewport 才能滚 */
+.settings-scroll {
+  overflow: hidden;
+}
+
+.settings-scroll :deep([data-slot='scroll-area-viewport']) {
+  height: 100%;
+}
+
 .settings-body {
   /* 同搜索结果：只留一点底距，别再 pb-32 + h-20 + PlayBottom 叠三层 */
   padding-top: 0.75rem;
