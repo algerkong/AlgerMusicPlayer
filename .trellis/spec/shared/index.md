@@ -1,61 +1,24 @@
-# Shared Development Guidelines
+# 共享约定（部分模板 · 慎用）
 
-> These guidelines apply to all Electron applications using this architecture.
+> 原为通用 Electron 模板。**与本仓库冲突时以实码与前端权威指南为准。**
 
----
+## 可参考
 
-## Documentation Files
+| 文件                                       | 说明                                        |
+| ------------------------------------------ | ------------------------------------------- |
+| [git-conventions.md](./git-conventions.md) | 提交类型；分支习惯另见 `DEV.md` 小改线      |
+| [typescript.md](./typescript.md)           | 通用 TS 习惯；严格度以本仓库 tsconfig 为准  |
+| [code-quality.md](./code-quality.md)       | 通用质量条目；组件/注释规范以 frontend 为准 |
 
-| File                                               | Description                       | When to Read           |
-| -------------------------------------------------- | --------------------------------- | ---------------------- |
-| [code-quality.md](./code-quality.md)               | Code quality mandatory rules      | Always                 |
-| [typescript.md](./typescript.md)                   | TypeScript best practices         | Type-related decisions |
-| [git-conventions.md](./git-conventions.md)         | Git commit and branch conventions | Before committing      |
-| [timestamp.md](./timestamp.md)                     | Timestamp format specification    | Date/time handling     |
-| [pnpm-electron-setup.md](./pnpm-electron-setup.md) | pnpm + Electron project setup     | Project initialization |
+## 勿照抄
 
----
+| 文件                                               | 原因                                                 |
+| -------------------------------------------------- | ---------------------------------------------------- |
+| [timestamp.md](./timestamp.md)                     | 面向 Drizzle `timestamp_ms`，本项目无该 ORM 层       |
+| [pnpm-electron-setup.md](./pnpm-electron-setup.md) | 本仓库用 npm + electron-vite，以 `package.json` 为准 |
 
-## Quick Navigation
+## 项目规范入口
 
-| Task                  | File                                       |
-| --------------------- | ------------------------------------------ |
-| Code quality rules    | [code-quality.md](./code-quality.md)       |
-| Type annotations      | [typescript.md](./typescript.md)           |
-| Commit message format | [git-conventions.md](./git-conventions.md) |
-| Branch naming         | [git-conventions.md](./git-conventions.md) |
-| Timestamp handling    | [timestamp.md](./timestamp.md)             |
-
----
-
-## Core Rules (MANDATORY)
-
-| Rule                                 | File                                       |
-| ------------------------------------ | ------------------------------------------ |
-| No non-null assertions (`!`)         | [code-quality.md](./code-quality.md)       |
-| Use explicit type annotations        | [typescript.md](./typescript.md)           |
-| Follow commit message format         | [git-conventions.md](./git-conventions.md) |
-| Use Unix milliseconds for timestamps | [timestamp.md](./timestamp.md)             |
-
----
-
-## Before Every Commit
-
-- [ ] `npm run lint` - 0 errors
-- [ ] `npm run typecheck` - 0 errors
-- [ ] No non-null assertions (`!`)
-- [ ] Commit message follows format
-- [ ] Tests pass (if applicable)
-
----
-
-## Code Review Checklist
-
-- [ ] Types are explicit, not `any`
-- [ ] Error handling is proper
-- [ ] Naming follows conventions
-- [ ] No duplicate code
-
----
-
-**Language**: All documentation must be written in **English**.
+- [../frontend/index.md](../frontend/index.md)
+- [DEV.md](../../../DEV.md)
+- [../README.md](../README.md)

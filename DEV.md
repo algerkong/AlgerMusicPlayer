@@ -144,7 +144,7 @@ LYMusicPlayer/
   - 复述下一行代码（如「初始化应用」「获取音量」）
   - changelog / 返工叙事（「已删除」「不再」「我们改成」）
   - 英文碎碎念、emoji 式吐槽、临时 TODO 堆砌在业务路径上
-- **文档**：`DEV.md` + `.trellis/spec/frontend/` 中六份权威指南；过时脚手架（React 模板）勿跟
+- **文档**：`DEV.md` + `.trellis/spec/frontend/` 六份权威指南；索引见 `.trellis/spec/README.md`
 
 #### 曲目数据模型（必读）
 
@@ -204,7 +204,7 @@ npm run dev
 
 #### 网页端开发
 
-当前版本以本地音乐为主，在线音源将接入独立库。
+网页模式无完整 Electron 音源 IPC；桌面请用 `npm run dev`。
 
 ```
 npm run dev:web
