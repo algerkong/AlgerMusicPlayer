@@ -214,6 +214,66 @@ export async function msImportCookie(cookie: string) {
   return invokeMs('music-source:import-cookie', cookie);
 }
 
+/** 扫码登录：创建二维码会话（token + 图/链接，无 cookie） */
+export interface MsQrLoginSession {
+  platform: string;
+  token: string;
+  qrcode?: string;
+  qrcodeIndexUrl?: string;
+  expireTime?: number;
+}
+
+export type MsQrLoginStatus = 'waiting' | 'scanned' | 'confirmed' | 'expired' | 'failed';
+
+export interface MsQrLoginMfa {
+  needSms: boolean;
+  encryptUid?: string;
+  verifyParams?: string;
+  mobile?: string;
+  upSmsMobile?: string;
+  upSmsContent?: string;
+  smsMode?: 'sms' | 'up' | '';
+}
+
+export interface MsQrLoginPollResult {
+  status: MsQrLoginStatus;
+  message?: string;
+  mfa?: MsQrLoginMfa;
+  /** 限流/节流：下次 poll 前应等待的秒数 */
+  retryAfterSec?: number;
+  throttled?: boolean;
+  auth?: MsAuthState;
+}
+
+export async function msCreateQrLogin(): Promise<MsQrLoginSession> {
+  return invokeMs('music-source:create-qr-login');
+}
+
+export async function msPollQrLogin(token: string): Promise<MsQrLoginPollResult> {
+  return invokeMs('music-source:poll-qr-login', token);
+}
+
+export async function msQrSendMfaSms(token: string): Promise<{
+  ok: boolean;
+  message: string;
+  mobile?: string;
+  retryTime?: number;
+}> {
+  return invokeMs('music-source:qr-send-mfa-sms', token);
+}
+
+export async function msQrValidateMfaSms(
+  token: string,
+  code: string
+): Promise<{
+  ok: boolean;
+  message: string;
+  status?: MsQrLoginStatus;
+  auth?: MsAuthState;
+}> {
+  return invokeMs('music-source:qr-validate-mfa-sms', token, code);
+}
+
 export async function msLogout() {
   return invokeMs('music-source:logout');
 }

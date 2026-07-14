@@ -7,6 +7,10 @@ import type { AppUpdateState } from '../shared/appUpdate';
 const MUSIC_SOURCE_CHANNELS = [
   'music-source:get-auth-state',
   'music-source:import-cookie',
+  'music-source:create-qr-login',
+  'music-source:poll-qr-login',
+  'music-source:qr-send-mfa-sms',
+  'music-source:qr-validate-mfa-sms',
   'music-source:logout',
   'music-source:get-profile',
   'music-source:search-songs',

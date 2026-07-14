@@ -101,6 +101,8 @@
       </div>
     </n-popover>
     <span v-else class="login-label" @click="toLogin">{{ t('comp.searchBar.login') }}</span>
+
+    <login-qr-modal v-model:show="showLoginModal" />
   </div>
 </template>
 
@@ -110,6 +112,7 @@ import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
+import LoginQrModal from '@/components/login/LoginQrModal.vue';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SEARCH_TYPE } from '@/const/bar-const';
 import { useDownloadStore } from '@/store/modules/download';
@@ -265,12 +268,15 @@ const handleKeydown = (e: KeyboardEvent) => {
 };
 
 // ── 用户 / 其它 ───────────────────────────────────
-const toLogin = () => router.push('/user');
+const showLoginModal = ref(false);
+const toLogin = () => {
+  showLoginModal.value = true;
+};
 
 const selectItem = (key: string) => {
   switch (key) {
     case 'logout':
-      userStore.handleLogout();
+      void userStore.handleLogout();
       break;
     case 'user':
       router.push('/user');
