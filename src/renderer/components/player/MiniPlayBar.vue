@@ -99,7 +99,7 @@
       <div class="progress-fill" :style="{ width: `${(nowTime / allTime) * 100}%` }"></div>
     </div>
 
-    <!-- 播放列表 - 单独放在外层，不再使用 popover -->
+    <!-- 播放列表放在外层（不用 popover） -->
     <div
       v-if="!component"
       v-show="isPlaylistOpen"
@@ -168,7 +168,6 @@ withDefaults(
   }
 );
 
-// 处理关闭按钮点击
 const handleClose = () => {
   if (settingsStore.isMiniMode) {
     window.api.restore();
@@ -190,7 +189,6 @@ provide('openPlaylistDrawer', (songId: number) => {
   window.api.restore();
 });
 
-// 切换播放列表显示/隐藏
 const togglePlaylist = () => {
   isPlaylistOpen.value = !isPlaylistOpen.value;
   console.log('切换播放列表状态', isPlaylistOpen.value);
@@ -199,7 +197,6 @@ const togglePlaylist = () => {
   if (settingsStore.isMiniMode) {
     try {
       if (isPlaylistOpen.value) {
-        // 打开播放列表时调整DOM
         document.body.style.height = 'auto';
         document.body.style.overflow = 'visible';
 
@@ -208,7 +205,6 @@ const togglePlaylist = () => {
           window.api.resizeMiniWindow(true);
         }
       } else {
-        // 关闭播放列表时强制调整DOM
         document.body.style.height = '64px';
         document.body.style.overflow = 'hidden';
 
@@ -273,7 +269,6 @@ const handleProgressLeave = () => {
   isHovering.value = false;
 };
 
-// 切换到完整播放器
 const setMusicFull = () => {
   playerStore.setMusicFull(true);
 };

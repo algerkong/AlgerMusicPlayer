@@ -39,7 +39,7 @@ const playerStore = usePlayerStore();
 const playerCoreStore = usePlayerCoreStore();
 const userStore = useUserStore();
 
-/** 封面强调色驱动 naive-ui 按钮/滑块/开关等 primary（不再写死绿） */
+/** 封面强调色 → naive-ui primary */
 const naiveThemeOverrides = computed<GlobalThemeOverrides>(() => {
   const music = playerStore.playMusic as { primaryColor?: string } | undefined;
   return buildNaivePrimaryOverrides(music?.primaryColor) as GlobalThemeOverrides;
@@ -48,7 +48,6 @@ const naiveThemeOverrides = computed<GlobalThemeOverrides>(() => {
 // 固定简体中文
 locale.value = 'zh-CN';
 
-// 监听字体变化并应用
 watch(
   () => [settingsStore.setData.fontFamily, settingsStore.setData.fontScope],
   ([newFont, fontScope]) => {
@@ -87,18 +86,15 @@ onMounted(async () => {
 
   // 初始化 MusicHook，注入 playerStore
   initMusicHook(playerStore);
-  // 设置 URL 过期自动续播处理器
   const { playbackCoordinator } = await import('@/services/playbackCoordinator');
   playbackCoordinator.setupUrlExpiredHandler();
-  // 初始化播放状态
   await playerStore.initializePlayState();
 
-  // 初始化音频设备变化监听器
   playerCoreStore.initAudioDeviceListener();
 
   // 如果有正在播放的音乐，则初始化音频监听器
   if (playerStore.playMusic && playerStore.playMusic.id) {
-    // 使用 nextTick 确保 DOM 更新后再初始化
+    // 等 DOM 更新后再初始化
     await nextTick();
     initAudioListeners();
     if (isElectron) {

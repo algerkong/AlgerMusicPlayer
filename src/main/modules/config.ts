@@ -111,7 +111,7 @@ function invalidatePathGuardIfAvailable(): void {
   try {
     require('./pathGuard').invalidatePathGuardCaches();
   } catch {
-    // ignore
+    // 忽略
   }
 }
 
@@ -188,7 +188,7 @@ export function initializeConfig() {
     if (store.get('set.enableDiskCache') === undefined) {
       store.set('set.enableDiskCache', true);
     }
-    // GPU 始终开启，设置页不再暴露开关（纠正旧版关闭过的配置）
+    // GPU 始终开启；纠正旧版可能关掉的配置，设置页不暴露开关
     store.set('set.enableGpuAcceleration', true);
   } catch (error) {
     console.error('[config] 初始化默认配置失败:', error);

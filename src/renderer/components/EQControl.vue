@@ -263,7 +263,6 @@ const updateEQ = (frequency: string, gain: number) => {
     }
   });
 
-  // 更新当前预设状态
   if (matchedPreset !== null) {
     currentPreset.value = matchedPreset;
     audioService.setCurrentPreset(matchedPreset);

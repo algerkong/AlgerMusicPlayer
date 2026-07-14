@@ -16,7 +16,7 @@ export function navigateToMusicList(
     songList?: any[];
     listInfo?: any;
     canRemove?: boolean;
-    /** e.g. qishui — used by MusicListPage to load remote playlists */
+    /** 如 qishui — MusicListPage 加载远程歌单用 */
     source?: string;
   }
 ) {
@@ -31,7 +31,7 @@ export function navigateToMusicList(
       musicStore.setBasicListInfo(name, listInfo, canRemove);
     }
   } else {
-    // 确保 musicStore 的数据被清空，避免显示旧的列表
+    // 清空 musicStore，避免列表残留旧数据
     musicStore.clearCurrentMusicList();
   }
 

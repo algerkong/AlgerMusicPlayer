@@ -415,7 +415,7 @@ class DiskCacheManager {
     };
 
     // 注意：getCacheConfig 是纯读取，处于播放/下载/歌词等多个热路径。
-    // 此处不再落盘（electron-store.set 每次整文件写 config.json，会造成写放大与文件争用），
+    // 此处不落盘（electron-store.set 会整文件写 config.json，易写放大）
     // 持久化交由 updateCacheConfig / setCacheDirectory 等真正的写操作完成。
     return normalizedConfig;
   }

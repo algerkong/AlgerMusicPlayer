@@ -13,16 +13,12 @@ function cleanFontName(fontName: string): string {
     .replace(/\s+/g, ' '); // 将多个空格替换为单个空格
 }
 
-/**
- * 获取系统字体列表
- */
 async function getSystemFonts(): Promise<string[]> {
   try {
     // 使用 font-list 获取系统字体
     const fonts = await getFonts();
     // 清理字体名称并去重
     const cleanedFonts = [...new Set(fonts.map(cleanFontName))];
-    // 添加系统默认字体并排序
     return ['system-ui', ...cleanedFonts].sort();
   } catch (error) {
     console.error('获取系统字体失败:', error);
@@ -31,11 +27,7 @@ async function getSystemFonts(): Promise<string[]> {
   }
 }
 
-/**
- * 初始化字体管理模块
- */
 export function initializeFonts() {
-  // 添加获取系统字体的 IPC 处理
   ipcMain.handle('get-system-fonts', async () => {
     return await getSystemFonts();
   });

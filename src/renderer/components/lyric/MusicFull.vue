@@ -25,7 +25,7 @@
       @mousemove="bumpChrome"
       @mousedown="bumpChrome"
     >
-      <!-- 左侧关闭：鼠标静止自动隐藏，一动就显示 -->
+      <!-- 关闭 -->
       <div
         class="control-left absolute top-8 left-8 z-[9999]"
         :class="{ 'chrome-hidden': !chromeVisible }"
@@ -35,7 +35,7 @@
         </div>
       </div>
 
-      <!-- 右侧全屏：同上 idle 隐藏（设置入口已移除） -->
+      <!-- 全屏 -->
       <div
         class="control-right absolute top-8 right-8 z-[9999]"
         :class="{ 'chrome-hidden': !chromeVisible }"
@@ -204,10 +204,9 @@ import { getTextColors } from '@/utils/linearColor';
 import { getActiveLineWordStyle, getInactiveLineWordStyle } from '@/utils/lyricWordStyle';
 
 const { t } = useI18n();
-// 定义 refs
 const lrcSider = ref<any>(null);
 const isMouse = ref(false);
-/** 顶栏控件：静止隐藏，鼠标一动显示 */
+/** 顶栏：静止隐藏，移动显示 */
 const chromeVisible = ref(true);
 let chromeIdleTimer: ReturnType<typeof setTimeout> | null = null;
 const CHROME_IDLE_MS = 2200;
@@ -226,7 +225,6 @@ const bumpChrome = () => {
 
 const { currentBackground, applyBackground } = useLyricBackground();
 
-// 计算自定义背景样式
 const customBackgroundStyle = computed(() => {
   if (!config.value.useCustomBackground) {
     return null;
@@ -241,7 +239,6 @@ const customBackgroundStyle = computed(() => {
     }
     case 'image':
       if (!config.value.backgroundImage) return null;
-      // 构建完整的背景样式，包括滤镜效果
       return config.value.backgroundImage;
     case 'css':
       return config.value.customCss || null;
@@ -250,20 +247,17 @@ const customBackgroundStyle = computed(() => {
   }
 });
 
-// drawer 基础样式（非图片模式）
+/** 非图片模式写在 drawer 上；图片模式用单独背景层 */
 const drawerBaseStyle = computed(() => {
-  // 图片模式时不设置背景，使用单独的背景层
   if (config.value.useCustomBackground && config.value.backgroundMode === 'image') {
     return { background: 'transparent' };
   }
-  // 其他模式正常设置背景
   if (config.value.useCustomBackground && customBackgroundStyle.value) {
     return { background: customBackgroundStyle.value };
   }
   return { background: currentBackground.value || props.background };
 });
 
-// 背景图片层样式（只在图片模式下使用）
 const backgroundImageStyle = computed(() => {
   const blur = config.value.imageBlur || 0;
   const brightness = config.value.imageBrightness || 100;
@@ -276,7 +270,7 @@ const showStickyHeader = ref(false);
 const isSongChanging = ref(false);
 const isFullScreen = ref(false);
 
-/** 大屏设置 UI 已删除；保留默认配置（可从旧 localStorage 读入字号等） */
+/** 大屏展示配置（字号等可从 localStorage 恢复） */
 const config = ref<LyricConfig>({ ...DEFAULT_LYRIC_CONFIG });
 
 const supportAutoScroll = computed(() => {
@@ -429,7 +423,6 @@ const targetBackground = computed(() => {
   return props.background;
 });
 
-// 监听目标背景变化并更新文字颜色
 watch(
   targetBackground,
   (newBg) => {
@@ -492,7 +485,6 @@ const handleArtistClick = (id: number) => {
 
 const setData = computed(() => settingsStore.setData);
 
-// 监听字体变化并更新 CSS 变量
 watch(
   () => [setData.value.fontFamily, setData.value.fontScope],
   ([newFont, fontScope]) => {
@@ -508,7 +500,7 @@ watch(
     if (newFont === 'system-ui') {
       document.documentElement.style.setProperty('--current-font-family', defaultFonts);
     } else {
-      // 处理多个字体，确保每个字体名都被正确引用
+      // 多字体名加引号并拼到 CSS 变量
       const fontList = newFont.split(',').map((font) => {
         const trimmedFont = font.trim();
         // 如果字体名包含空格或特殊字符，添加引号（如果还没有引号的话）
@@ -527,7 +519,6 @@ watch(
   { immediate: true }
 );
 
-// 监听滚动事件
 const handleScroll = () => {
   if (!config.value.hideCover) return;
   const el = getLrcScrollEl();
@@ -563,12 +554,10 @@ const toggleFullScreen = async () => {
   }
 };
 
-// 监听全屏状态变化
 const handleFullScreenChange = () => {
   isFullScreen.value = !!document.fullscreenElement;
 };
 
-// 添加滚动监听和全屏状态监听
 onMounted(() => {
   getLrcScrollEl()?.addEventListener('scroll', handleScroll);
   document.addEventListener('fullscreenchange', handleFullScreenChange);
@@ -592,7 +581,6 @@ onBeforeUnmount(() => {
   }
 });
 
-// 监听字体大小变化
 watch(
   () => config.value.fontSize,
   (newSize) => {
@@ -600,7 +588,6 @@ watch(
   }
 );
 
-// 监听字体粗细变化
 watch(
   () => config.value.fontWeight,
   (newWeight) => {
@@ -608,7 +595,6 @@ watch(
   }
 );
 
-// 添加文字间距监听
 watch(
   () => config.value.letterSpacing,
   (newSpacing) => {
@@ -616,7 +602,6 @@ watch(
   }
 );
 
-// 添加行高监听
 watch(
   () => config.value.lineHeight,
   (newLineHeight) => {
@@ -624,7 +609,6 @@ watch(
   }
 );
 
-// 加载保存的配置（去掉已删除的「显示」类开关）
 onMounted(() => {
   const savedConfig = localStorage.getItem('music-full-config');
   if (savedConfig) {
@@ -632,16 +616,16 @@ onMounted(() => {
       config.value = {
         ...config.value,
         ...JSON.parse(savedConfig),
+        // 显示类开关固定为默认布局
         pureModeEnabled: false,
         hideCover: false,
         centerLyrics: false,
         hideLyrics: false,
-        // 设置 UI 已去掉：封面下迷你条始终显示，底栏由 PlayBar 在大屏时自行隐藏
         hideMiniPlayBar: false,
         hidePlayBar: true
       };
     } catch {
-      // 损坏的 music-full-config 忽略，用默认
+      // 配置损坏则忽略
     }
   }
   getLrcScrollEl()?.addEventListener('scroll', handleScroll);
@@ -652,10 +636,10 @@ onMounted(() => {
 watch(
   () => playMusic.value.id,
   (newId, oldId) => {
-    // 只在歌曲真正切换时滚动到顶部
+    // 仅当歌曲 id 真正变化时滚到顶
     if (newId !== oldId && newId) {
       isSongChanging.value = true;
-      // 延迟滚动，确保 nowIndex 已重置
+      // 延迟滚动，等待 nowIndex 重置
       setTimeout(() => {
         lrcScroll('instant', true);
         // 延迟恢复自动滚动，等待歌词数据更新
@@ -959,11 +943,9 @@ defineExpose({
 }
 
 .music-drawer {
-  transition: none; // 移除之前的过渡效果，现在使用 JS 动画
+  transition: none;
 }
 
-// 添加全局字体样式
-// 字体设置已移至上方或不再需要单独的 drawer-target 块
 :root {
   --current-font-family:
     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,

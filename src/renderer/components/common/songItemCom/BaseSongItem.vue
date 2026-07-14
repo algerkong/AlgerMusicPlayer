@@ -76,7 +76,6 @@ const {
   downloadLyric
 } = useSongItem(props);
 
-// 处理图片加载
 const imageLoad = async (event: Event) => {
   const target = event.target as HTMLImageElement;
   if (!target) return;
@@ -89,7 +88,6 @@ const handlePlay = (song: SongResult) => {
   playMusicEvent(song);
 };
 
-// 切换选择状态
 const toggleSelect = () => {
   emits('select', props.item.id, !props.selected);
 };

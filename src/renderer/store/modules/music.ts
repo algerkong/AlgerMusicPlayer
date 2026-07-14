@@ -16,7 +16,6 @@ export const useMusicStore = defineStore('music', {
   }),
 
   actions: {
-    // 设置当前音乐列表
     setCurrentMusicList(list: any[], name: string, listInfo: any = null, canRemove = false) {
       this.currentMusicList = list;
       this.currentMusicListName = name;

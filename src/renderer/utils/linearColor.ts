@@ -26,33 +26,32 @@ interface LyricSettings {
   highlightColor?: string;
 }
 
-/** Downsample size for palette extraction (iOS-style sampling, not full-res average). */
+/** 取色采样分辨率（降采样，非全图像素平均） */
 const SAMPLE_SIZE = 64;
 
 type Rgb = { r: number; g: number; b: number };
 
 /**
- * iOS Music–inspired palette:
- * - primaryColor: vivid accent for progress / chrome tint (readable on dark UI)
- * - backgroundColor: always-dark vertical wash so white text/icons stay clear
+ * 由主色 RGB 生成封面色盘：
+ * - primaryColor：进度条/壳层强调色（暗色 UI 可读）
+ * - backgroundColor：偏暗纵向铺色，保证浅色文字清晰
  */
 export const buildIosPaletteFromRgb = (rgb: Rgb): IColor => {
   const base = tinycolor({ r: rgb.r, g: rgb.g, b: rgb.b });
   const hsl = base.toHsl();
 
-  // Low-chroma art (B&W covers): gentle cool gray-blue wash, not washed-out mid gray
+  // 近灰色封面：用冷蓝灰铺色，避免脏中灰
   const isNearGray = hsl.s < 0.12;
   const h = isNearGray ? 220 : hsl.h;
   const s = isNearGray ? 0.18 : Math.min(Math.max(hsl.s * 1.05, 0.35), 0.78);
 
-  // Accent: lively but not neon; clamped so it works on dark chrome
   const accent = tinycolor({
     h,
     s: Math.min(s * 1.08, 0.82),
     l: Math.min(Math.max(isNearGray ? 0.55 : hsl.l, 0.42), 0.62)
   });
 
-  // Background wash: top has color presence, bottom sinks to near-black (Apple Music style)
+  // 铺色：上方有色，底部近黑
   const top = tinycolor({ h, s: s * 0.75, l: 0.28 });
   const mid = tinycolor({ h, s: s * 0.7, l: 0.14 });
   const bottom = tinycolor({ h, s: s * 0.55, l: 0.05 });
@@ -64,11 +63,11 @@ export const buildIosPaletteFromRgb = (rgb: Rgb): IColor => {
 };
 
 /**
- * Score pixels by “vibrancy” (prefer saturated mid-tones; skip near-black / near-white / pure gray).
- * Returns dominant RGB or a neutral fallback.
+ * 按「鲜艳度」给像素打分（偏好饱和中调；跳过近黑/近白/纯灰）
+ * 返回主色 RGB，否则中性回退色
  */
 export const extractVibrantRgbFromImageData = (data: Uint8ClampedArray): Rgb => {
-  // 32 hue buckets × quantized saturation/value for stability
+  // 32 个色相桶 × 量化饱和度/明度，稳定聚类
   const buckets = new Map<string, { r: number; g: number; b: number; weight: number }>();
 
   for (let i = 0; i < data.length; i += 4) {
@@ -79,16 +78,16 @@ export const extractVibrantRgbFromImageData = (data: Uint8ClampedArray): Rgb => 
     const g = data[i + 1];
     const b = data[i + 2];
 
-    // Skip near-black / near-white (labels, borders, letterbox)
+    // 跳过近黑/近白（字幕、描边、黑边）
     const max = Math.max(r, g, b);
     const min = Math.min(r, g, b);
     if (max < 28 || min > 245) continue;
 
     const tc = tinycolor({ r, g, b });
     const { h, s, l } = tc.toHsl();
-    // Skip muddy gray
+    // 跳过脏灰
     if (s < 0.08 && l > 0.15 && l < 0.9) continue;
-    // Prefer mid brightness (artwork subject, not glare)
+    // 偏好中等亮度（主体，非高光）
     if (l < 0.08 || l > 0.92) continue;
 
     const hBucket = Math.round(h / 12) * 12; // 30 buckets over 360
@@ -96,7 +95,7 @@ export const extractVibrantRgbFromImageData = (data: Uint8ClampedArray): Rgb => 
     const lBucket = Math.round(l * 5) / 5;
     const key = `${hBucket}|${sBucket}|${lBucket}`;
 
-    // Weight: saturation * how “mid” the lightness is * slight boost for count
+    // 权重：饱和度 × 明度居中程度 × 计数微加成
     const midBoost = 1 - Math.abs(l - 0.45) * 1.4;
     const weight = Math.max(0.05, s * 1.6 + 0.15) * Math.max(0.2, midBoost);
 
@@ -144,7 +143,7 @@ const sampleImageToImageData = (
   if (!ctx) {
     throw new Error('无法获取canvas上下文');
   }
-  // Cover-fit into sample square
+  // cover 方式裁入采样方块
   const scale = Math.max(size / Math.max(sourceWidth, 1), size / Math.max(sourceHeight, 1));
   const dw = sourceWidth * scale;
   const dh = sourceHeight * scale;
@@ -177,12 +176,12 @@ export const getImageLinearBackground = async (imageSrc: string): Promise<IColor
 
 export const getImageBackground = async (img: HTMLImageElement): Promise<IColor> => {
   try {
-    // Ensure decode finished when possible
+    // 尽量等图片 decode 完成
     if (typeof img.decode === 'function' && !img.complete) {
       try {
         await img.decode();
       } catch {
-        /* use whatever is painted */
+        /* 用当前已绘制内容 */
       }
     }
     return paletteFromImageElement(img);
@@ -201,7 +200,7 @@ const loadImage = (src: string): Promise<HTMLImageElement> =>
     img.src = src;
   });
 
-/** Solid ambient from a palette background (for CSS vars that cannot be gradients). */
+/** 从色盘背景取纯色环境色（CSS 变量不能用渐变时） */
 export const getAmbientSolidFromBackground = (background: string): string => {
   if (!background) return 'rgb(25, 25, 28)';
   if (!background.startsWith('linear-gradient')) {
@@ -211,7 +210,7 @@ export const getAmbientSolidFromBackground = (background: string): string => {
   }
   const colors = parseGradient(background);
   if (!colors.length) return 'rgb(25, 25, 28)';
-  // Prefer mid stop (readable wash), fall back to last (deepest)
+  // 优先中间色标（可读铺色），否则取最深
   const c = colors[1] || colors[colors.length - 1] || colors[0];
   return `rgb(${c.r}, ${c.g}, ${c.b})`;
 };
@@ -219,7 +218,6 @@ export const getAmbientSolidFromBackground = (background: string): string => {
 export const parseGradient = (gradientStr: string) => {
   if (!gradientStr) return [];
 
-  // 处理非渐变色
   if (!gradientStr.startsWith('linear-gradient')) {
     const color = tinycolor(gradientStr);
     if (color.isValid()) {
@@ -239,7 +237,7 @@ export const parseGradient = (gradientStr: string) => {
 };
 
 export const getTextColors = (gradient: string = ''): ITextColors => {
-  // theme: 'light' = light-colored text (for dark washes); 'dark' = dark text (legacy bright bg)
+  // theme: light=浅色字（深色铺色）；dark=深色字（旧浅色背景）
   const lightOnDark: ITextColors = {
     primary: 'rgba(255, 255, 255, 0.62)',
     active: '#ffffff',
@@ -257,14 +255,13 @@ export const getTextColors = (gradient: string = ''): ITextColors => {
   const colors = parseGradient(gradient);
   if (!colors.length) return lightOnDark;
 
-  // Sample the brightest stop — iOS washes stay dark; only rare legacy bright bgs flip text
+  // 最亮渐变色标决定文字明暗
   let maxBrightness = 0;
   for (const c of colors) {
     maxBrightness = Math.max(maxBrightness, tinycolor(c).getBrightness());
   }
 
-  // Our iOS palette tops out ~L0.28 (~70 brightness); keep white text there.
-  // Only very bright backgrounds (legacy / mistakes) switch to dark text.
+  // 封面铺色偏暗（~L0.28）；仅极亮背景用深色字
   if (maxBrightness > 175) return darkOnLight;
   return lightOnDark;
 };
@@ -300,22 +297,21 @@ export const animateGradient = (() => {
     onUpdate: (gradient: string) => void,
     duration = 300
   ) => {
-    // 如果新旧渐变色相同，不执行动画
+    // 渐变色未变则跳过动画
     if (oldGradient === newGradient) {
       return null;
     }
 
-    // 如果正在动画中，取消当前动画
+    // 取消进行中的渐变动画
     if (currentAnimation !== null) {
       cancelAnimationFrame(currentAnimation);
       currentAnimation = null;
     }
 
-    // 解析颜色
+    // 解析渐变/颜色数组
     const startColors = parseGradient(oldGradient);
     const endColors = parseGradient(newGradient);
 
-    // 验证颜色数组
     if (
       !startColors.length ||
       !endColors.length ||
@@ -327,7 +323,7 @@ export const animateGradient = (() => {
       return null;
     }
 
-    // 如果颜色数量不匹配，直接更新到目标颜色
+    // 色标数量不一致时直接落到目标色
     if (startColors.length !== endColors.length) {
       onUpdate(newGradient);
       return null;
@@ -341,11 +337,11 @@ export const animateGradient = (() => {
 
       const elapsed = currentTime - startTime;
       const rawProgress = Math.min(elapsed / duration, 1);
-      // 使用缓动函数使动画更平滑
+      // 缓动插值，动画更顺
       const progress = easeInOutCubic(rawProgress);
 
       try {
-        // 使用上一帧的进度来平滑过渡
+        // 用上一帧进度做平滑过渡
         const effectiveProgress = lastProgress + (progress - lastProgress) * 0.6;
         lastProgress = effectiveProgress;
 
@@ -368,7 +364,7 @@ export const animateGradient = (() => {
           currentAnimation = requestAnimationFrame(animateFrame);
           return currentAnimation;
         }
-        // 确保最终颜色正确
+        // 收尾对齐最终颜色
         onUpdate(newGradient);
         isAnimating = false;
         currentAnimation = null;
@@ -388,7 +384,7 @@ export const animateGradient = (() => {
     return currentAnimation;
   };
 
-  // 使用更短的防抖时间
+  // 缩短防抖间隔
   return useDebounceFn(animate, 50);
 })();
 
@@ -399,7 +395,7 @@ export const createGradientString = (
   const count = colors.length;
   return `linear-gradient(to bottom, ${colors
     .map((color, i) => {
-      // 当颜色数量与传入的 percentages 不一致时，按索引均匀分布，避免出现 undefined%
+      // 色标数与 percentages 不一致时按索引均分，避免 undefined%
       const percent = percentages[i] ?? (count > 1 ? Math.round((i / (count - 1)) * 100) : 0);
       return `rgb(${color.r}, ${color.g}, ${color.b}) ${percent}%`;
     })
@@ -521,18 +517,12 @@ export const optimizeColorForTheme = (color: string, theme: 'light' | 'dark'): s
   }
 };
 
-/**
- * 获取默认高亮颜色
- */
 export const getDefaultHighlightColor = (theme?: 'light' | 'dark'): string => {
   const defaultColor = PRESET_LYRIC_COLORS[0]; // Spotify 绿
   if (!theme) return defaultColor.light;
   return theme === 'dark' ? defaultColor.dark : defaultColor.light;
 };
 
-/**
- * 获取预设主题色列表
- */
 export const getLyricThemeColors = (): LyricThemeColor[] => {
   return [...PRESET_LYRIC_COLORS];
 };
@@ -555,7 +545,6 @@ const safeLoadLyricSettings = (): LyricSettings => {
     if (stored) {
       const parsed = JSON.parse(stored) as LyricSettings;
 
-      // 验证 highlightColor 字段
       if (parsed.highlightColor && !validateColor(parsed.highlightColor)) {
         console.warn('Invalid stored highlight color, removing it');
         delete parsed.highlightColor;
@@ -567,7 +556,6 @@ const safeLoadLyricSettings = (): LyricSettings => {
     console.error('Failed to load lyric settings:', error);
   }
 
-  // 返回默认设置
   return {
     isTop: false,
     theme: 'dark',
@@ -586,9 +574,6 @@ const safeSaveLyricSettings = (settings: LyricSettings): void => {
   }
 };
 
-/**
- * 保存歌词主题色
- */
 export const saveLyricThemeColor = (color: string): void => {
   if (!validateColor(color)) {
     console.warn('Attempted to save invalid color:', color);
@@ -600,9 +585,6 @@ export const saveLyricThemeColor = (color: string): void => {
   safeSaveLyricSettings(settings);
 };
 
-/**
- * 加载歌词主题色
- */
 export const loadLyricThemeColor = (): string => {
   const settings = safeLoadLyricSettings();
 
@@ -610,7 +592,7 @@ export const loadLyricThemeColor = (): string => {
     return settings.highlightColor;
   }
 
-  // 如果没有保存的颜色或颜色无效，返回默认颜色
+  // 无有效已存颜色则用默认
   return getDefaultHighlightColor(settings.theme);
 };
 
@@ -623,9 +605,6 @@ export const resetLyricThemeColor = (): void => {
   safeSaveLyricSettings(settings);
 };
 
-/**
- * 获取当前有效的歌词主题色
- */
 export const getCurrentLyricThemeColor = (theme: 'light' | 'dark'): string => {
   const savedColor = loadLyricThemeColor();
 

@@ -20,7 +20,7 @@ watch(modelValue, (newVal) => {
   settingsStore.setShowArtistDrawer(newVal);
 });
 
-// keep settings artist id reactive without unused warning
+// 保持设置页歌手 id 响应式，避免 unused 警告
 const _artistId = computed(() => settingsStore.currentArtistId);
 void _artistId;
 </script>

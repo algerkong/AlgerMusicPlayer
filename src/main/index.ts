@@ -63,26 +63,19 @@ const icon = nativeImage.createFromPath(
 
 let mainWindow: Electron.BrowserWindow;
 
-// 初始化应用
 function initialize(configStore: any) {
   // 使用已初始化的配置存储
   const store = configStore;
 
-  // 设置初始语言
   const savedLanguage = store.get('set.language') as Language;
   if (savedLanguage) {
     i18n.global.locale = savedLanguage;
   }
 
-  // 初始化文件管理
   initializeFileManager();
-  // 初始化下载管理
   initializeDownloadManager();
-  // 初始化歌词缓存管理
   initializeCacheManager();
-  // 初始化窗口管理
   initializeWindowManager();
-  // 初始化字体管理
   initializeFonts();
   // 在线音源（ly-music-source，主进程）
   initializeMusicSource();
@@ -90,19 +83,15 @@ function initialize(configStore: any) {
   // 创建主窗口
   mainWindow = createMainWindow(icon);
 
-  // 设置下载管理器窗口引用
   setDownloadManagerWindow(mainWindow);
 
-  // 初始化托盘
   initializeTray(iconPath, mainWindow);
 
-  // 初始化快捷键
   initializeShortcuts(mainWindow);
 
-  // 初始化 MPRIS 服务 (Linux)
+  // Linux MPRIS
   initializeMpris(mainWindow);
 
-  // 初始化更新处理程序
   setupUpdateHandlers(mainWindow);
 }
 
@@ -120,7 +109,6 @@ if (!isSingleInstance) {
   // 在应用准备就绪前初始化GPU加速设置
   // 必须在 app.ready 之前调用 disableHardwareAcceleration
   try {
-    // 初始化配置管理以获取GPU加速设置
     const store = initializeConfig();
     const enableGpuAcceleration = store.get('set.enableGpuAcceleration', true) as boolean;
 
@@ -147,15 +135,12 @@ if (!isSingleInstance) {
 
   // 应用程序准备就绪时的处理
   app.whenReady().then(() => {
-    // 设置应用ID
     electronApp.setAppUserModelId('com.luoye.music');
 
-    // 监听窗口创建事件
     app.on('browser-window-created', (_, window) => {
       optimizer.watchWindowShortcuts(window);
     });
 
-    // 初始化窗口大小管理器
     initWindowSizeManager();
 
     // 权限白名单：默认拒绝；仅放行当前业务需要的能力，并校验请求来源。
@@ -220,7 +205,6 @@ if (!isSingleInstance) {
     // 重新初始化配置管理以获取完整的配置存储
     const store = initializeConfig();
 
-    // 初始化应用
     initialize(store);
 
     // macOS 激活应用时的处理
@@ -229,23 +213,18 @@ if (!isSingleInstance) {
     });
   });
 
-  // 监听语言切换
   ipcMain.on('change-language', (_, locale: Language) => {
-    // 更新主进程的语言设置
     i18n.global.locale = locale;
-    // 更新托盘菜单
     updateTrayMenu(mainWindow);
     // 通知所有窗口语言已更改
     mainWindow?.webContents.send('language-changed', locale);
   });
 
-  // 监听播放状态变化
   ipcMain.on('update-play-state', (_, playing: boolean) => {
     updatePlayState(playing);
     updateMprisPlayState(playing);
   });
 
-  // 监听当前歌曲变化
   ipcMain.on('update-current-song', (_, song: any) => {
     updateCurrentSong(song);
     updateMprisCurrentSong(song);
@@ -260,7 +239,6 @@ if (!isSingleInstance) {
 
   // 应用即将退出时的处理
   app.on('before-quit', () => {
-    // 设置退出标志
     setAppQuitting(true);
   });
 
@@ -270,7 +248,6 @@ if (!isSingleInstance) {
     app.exit(0);
   });
 
-  // 获取系统架构信息
   ipcMain.on('get-arch', (event) => {
     event.returnValue = process.arch;
   });

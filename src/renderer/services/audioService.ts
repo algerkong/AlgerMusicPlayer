@@ -40,23 +40,23 @@ class AudioService {
     '16000': 0
   };
 
-  // Event system
+  // 事件系统
   private callbacks: { [key: string]: Function[] } = {};
 
   constructor() {
-    // Create persistent audio element
+    // 创建常驻 audio 元素
     this.audio = new Audio();
     this.audio.crossOrigin = 'anonymous';
     this.audio.preload = 'auto';
 
-    // Bind native DOM events
+    // 绑定原生 DOM 事件
     this.bindAudioEvents();
 
     if ('mediaSession' in navigator) {
       this.initMediaSession();
     }
 
-    // Restore EQ bypass state
+    // 恢复 EQ 旁路状态
     const bypassState = localStorage.getItem('eqBypass');
     this.bypass = bypassState ? JSON.parse(bypassState) : false;
 
@@ -64,7 +64,7 @@ class AudioService {
     window.addEventListener('beforeunload', () => this.forceResetOperationLock());
   }
 
-  // ==================== Native DOM Event Binding ====================
+  // ==================== 原生 DOM 事件绑定 ====================
 
   private bindAudioEvents() {
     this.audio.addEventListener('play', () => {
@@ -87,7 +87,7 @@ class AudioService {
     });
 
     this.audio.addEventListener('timeupdate', () => {
-      // Consumers can listen to this if needed; mainly for MediaSession sync
+      // 需要时可监听；主要用于 MediaSession 同步
     });
 
     this.audio.addEventListener('waiting', () => {
@@ -105,7 +105,7 @@ class AudioService {
     });
   }
 
-  // ==================== MediaSession ====================
+  // ==================== 系统媒体会话 ====================
 
   private initMediaSession() {
     navigator.mediaSession.setActionHandler('play', () => {
@@ -193,7 +193,7 @@ class AudioService {
     }
   }
 
-  // ==================== Event Emitter ====================
+  // ==================== 事件发射 ====================
 
   private emit(event: string, ...args: any[]) {
     const eventCallbacks = this.callbacks[event];
@@ -220,7 +220,7 @@ class AudioService {
     this.callbacks = {};
   }
 
-  // ==================== EQ ====================
+  // ==================== 均衡器 ====================
 
   private setupEQ() {
     if (this.sourceNode) return; // Already initialized
@@ -236,7 +236,7 @@ class AudioService {
       this.sourceNode = this.context.createMediaElementSource(this.audio);
       this.gainNode = this.context.createGain();
 
-      // Create 10-band filter chain
+      // 创建 10 段滤波链
       const savedSettings = this.loadEQSettings();
       this.filters = this.frequencies.map((freq) => {
         const filter = this.context!.createBiquadFilter();
@@ -247,22 +247,21 @@ class AudioService {
         return filter;
       });
 
-      // Wire up the graph
+      // 连接音频图
       this.applyBypassState();
 
-      // Apply saved volume（静态 import，renderer 无 Node require）
+      // 应用已保存音量（静态 import，renderer 无 Node require）
       this.applyVolume(persistenceService.load(volumeSchema));
 
-      // Monitor context state
       this.setupContextStateMonitoring();
 
-      // Restore saved audio device
+      // 恢复已保存的音频输出设备
       this.restoreSavedAudioDevice();
 
       console.log('EQ initialization successful');
     } catch (error) {
       console.error('EQ initialization failed:', error);
-      // Fallback: connect audio directly (no EQ)
+      // 回退：audio 直连（无 EQ）
       this.sourceNode = null;
       this.context = null;
     }
@@ -272,31 +271,31 @@ class AudioService {
     if (!this.sourceNode || !this.gainNode || !this.context) return;
 
     try {
-      // Disconnect all
+      // 全部断开
       try {
         this.sourceNode.disconnect();
       } catch {
-        /* already disconnected */
+        /* 已断开 */
       }
       this.filters.forEach((filter) => {
         try {
           filter.disconnect();
         } catch {
-          /* already disconnected */
+          /* 已断开 */
         }
       });
       try {
         this.gainNode.disconnect();
       } catch {
-        /* already disconnected */
+        /* 已断开 */
       }
 
       if (this.bypass) {
-        // EQ disabled: source -> gain -> destination
+        // EQ 关闭：source -> gain -> destination
         this.sourceNode.connect(this.gainNode);
         this.gainNode.connect(this.context.destination);
       } else {
-        // EQ enabled: source -> filters[0] -> ... -> filters[9] -> gain -> destination
+        // EQ 开启：source -> filters[0..9] -> gain -> destination
         this.sourceNode.connect(this.filters[0]);
         this.filters.forEach((filter, index) => {
           if (index < this.filters.length - 1) {
@@ -370,7 +369,7 @@ class AudioService {
     return savedSettings ? JSON.parse(savedSettings) : { ...this.defaultEQSettings };
   }
 
-  // ==================== Operation Lock ====================
+  // ==================== 操作锁 ====================
 
   private setOperationLock(): boolean {
     if (this.operationLock) {
@@ -403,7 +402,7 @@ class AudioService {
     }
   }
 
-  // ==================== Playback Control ====================
+  // ==================== 播放控制 ====================
 
   public play(
     url: string,
@@ -412,7 +411,7 @@ class AudioService {
     seekTime: number = 0,
     _existingSound?: HTMLAudioElement
   ): Promise<HTMLAudioElement> {
-    // Resume current playback if no new URL/track provided
+    // 无新 URL/曲目时恢复当前播放
     if (this.audio.src && !url && !track) {
       this.audio.play();
       return Promise.resolve(this.audio);
@@ -426,7 +425,7 @@ class AudioService {
       return Promise.reject(new Error('缺少必要参数: url和track'));
     }
 
-    // Check if same URL — just resume/seek
+    // 同一 URL 则仅恢复/seek
     const currentSrc = this.audio.src;
     const isSameUrl = currentSrc && currentSrc === url;
 
@@ -496,10 +495,10 @@ class AudioService {
         this._isLoading = true;
         this.currentTrack = track;
 
-        // Ensure EQ/AudioContext is set up (only runs once)
+        // 初始化 EQ/AudioContext（只跑一次）
         this.setupEQ();
 
-        // Resume AudioContext if suspended (user gesture requirement)
+        // AudioContext 挂起时恢复（需用户手势）
         if (this.context && this.context.state === 'suspended') {
           this.context.resume().catch((e) => console.warn('Failed to resume AudioContext:', e));
         }
@@ -570,7 +569,6 @@ class AudioService {
         this.audio.addEventListener('canplay', onCanPlay, { once: true });
         this.audio.addEventListener('error', onError, { once: true });
 
-        // Change source and load
         this.audio.src = url;
         this.audio.load();
       };
@@ -632,7 +630,7 @@ class AudioService {
       this.gainNode.gain.cancelScheduledValues(this.context.currentTime);
       this.gainNode.gain.setValueAtTime(normalizedVolume, this.context.currentTime);
     } else {
-      // Fallback: direct volume (no Web Audio context)
+      // 回退：直接设音量（无 Web Audio）
       this.audio.volume = normalizedVolume;
     }
 
@@ -649,7 +647,7 @@ class AudioService {
     return this.playbackRate;
   }
 
-  // ==================== State Queries ====================
+  // ==================== 状态查询 ====================
 
   getCurrentSound(): HTMLAudioElement | null {
     return this.audio.src ? this.audio : null;
@@ -675,7 +673,7 @@ class AudioService {
     }
   }
 
-  // ==================== Audio Output Devices ====================
+  // ==================== 音频输出设备 ====================
 
   public async getAudioOutputDevices(): Promise<AudioOutputDevice[]> {
     try {

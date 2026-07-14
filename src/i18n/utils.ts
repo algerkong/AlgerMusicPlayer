@@ -1,7 +1,6 @@
 // 自动导入所有语言的所有翻译文件
 const allLangModules = import.meta.glob('./lang/**/*.ts', { eager: true });
 
-// 构建语言消息对象
 export const buildLanguageMessages = () => {
   const messages: Record<string, Record<string, any>> = {};
 
@@ -24,7 +23,6 @@ export const buildLanguageMessages = () => {
   return messages;
 };
 
-// 获取所有支持的语言
 export const getSupportedLanguages = (): string[] => {
   const messages = buildLanguageMessages();
   return Object.keys(messages);
@@ -36,7 +34,6 @@ export const isLanguageSupported = (lang: string): boolean => {
 
 import { LANGUAGE_DISPLAY_NAMES, LANGUAGE_PRIORITY } from './languages';
 
-// 获取语言显示名称的映射
 export const getLanguageDisplayNames = (): Record<string, string> => {
   return LANGUAGE_DISPLAY_NAMES;
 };

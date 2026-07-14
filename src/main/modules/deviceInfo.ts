@@ -50,9 +50,6 @@ export function getDeviceId(): string {
   return deviceId;
 }
 
-/**
- * 获取系统信息
- */
 export function getSystemInfo() {
   return {
     osType: os.type(),

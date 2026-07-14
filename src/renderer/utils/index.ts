@@ -2,11 +2,9 @@ import { computed } from 'vue';
 
 import { useSettingsStore } from '@/store/modules/settings';
 
-// 设置歌手背景图片
 export const setBackgroundImg = (url: String) => {
   return `background-image:url(${url})`;
 };
-// 设置动画类型
 export const setAnimationClass = (type: String) => {
   const settingsStore = useSettingsStore();
   if (settingsStore.setData && settingsStore.setData.noAnimate) {
@@ -22,7 +20,6 @@ export const setAnimationClass = (type: String) => {
 
   return `animate__animated ${type}${speedClass ? ` ${speedClass}` : ''}`;
 };
-// 设置动画延时
 export const setAnimationDelay = (index: number = 6, time: number = 50) => {
   const settingsStore = useSettingsStore();
   if (settingsStore.setData?.noAnimate) {

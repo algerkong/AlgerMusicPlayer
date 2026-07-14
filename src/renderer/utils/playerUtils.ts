@@ -35,7 +35,6 @@ export const isBilibiliIdMatch = (id1: string | number, id2: string | number): b
     return str1 === str2;
   }
 
-  // 处理B站视频ID
   if (str1.includes('--') || str2.includes('--')) {
     // 尝试从ID中提取bvid和cid
     const extractBvIdAndCid = (str: string) => {

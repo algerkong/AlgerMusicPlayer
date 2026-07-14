@@ -41,15 +41,12 @@ export const usePlaylistStore = defineStore(
     const consecutiveFailCount = ref(0);
     const MAX_CONSECUTIVE_FAILS = 5; // 最大连续失败次数
 
-    // ==================== Computed ====================
+    // ==================== 计算属性 ====================
     const currentPlayList = computed(() => playList.value);
     const currentPlayListIndex = computed(() => playListIndex.value);
 
-    // ==================== Actions ====================
+    // ==================== 操作 ====================
 
-    /**
-     * 获取歌曲详情并预加载
-     */
     const fetchSongs = async (startIndex: number, endIndex: number) => {
       try {
         const songs = playList.value.slice(
@@ -178,7 +175,6 @@ export const usePlaylistStore = defineStore(
       console.log('[PlaylistStore] shufflePlayList called');
       if (playList.value.length === 0) return;
 
-      // 保存原始列表
       if (originalPlayList.value.length === 0) {
         console.log('[PlaylistStore] Saving original list, length:', playList.value.length);
         originalPlayList.value = [...playList.value];
@@ -189,7 +185,7 @@ export const usePlaylistStore = defineStore(
 
       // 执行洗牌
       const shuffled = performShuffle([...playList.value], currentSong);
-      // 确保触发 shallowRef 的响应式
+      // 触发 shallowRef 更新
       playList.value = [...shuffled];
       playListIndex.value = 0;
 
@@ -220,9 +216,6 @@ export const usePlaylistStore = defineStore(
       console.log('[PlaylistStore] Original order restored, new index:', playListIndex.value);
     };
 
-    /**
-     * 设置播放列表
-     */
     const setPlayList = (
       list: SongResult[],
       keepIndex: boolean = false,
@@ -309,9 +302,6 @@ export const usePlaylistStore = defineStore(
       // pinia-plugin-persistedstate 会自动保存状态
     };
 
-    /**
-     * 添加到下一首播放
-     */
     const addToNextPlay = (song: SongResult) => {
       const list = [...playList.value];
       const currentIndex = playListIndex.value;
@@ -354,9 +344,6 @@ export const usePlaylistStore = defineStore(
       setPlayList(newPlayList, false, true);
     };
 
-    /**
-     * 清空播放列表
-     */
     const clearPlayAll = async () => {
       const { audioService } = await import('@/services/audioService');
       const playerCore = usePlayerCoreStore();
@@ -375,9 +362,6 @@ export const usePlaylistStore = defineStore(
       }, 500);
     };
 
-    /**
-     * 切换播放模式
-     */
     const togglePlayMode = async () => {
       const wasRandom = playMode.value === 2;
       // 0 顺序 / 1 循环 / 2 随机
@@ -453,7 +437,7 @@ export const usePlaylistStore = defineStore(
           return;
         }
 
-        // Sequential mode: at the last song
+        // 顺序模式：已是最后一首
         if (playMode.value === 0 && playListIndex.value >= playList.value.length - 1) {
           if (autoEnd) {
             // 歌曲自然播放结束：停止播放
@@ -484,7 +468,7 @@ export const usePlaylistStore = defineStore(
         const { playbackCoordinator } = await import('@/services/playbackCoordinator');
         const success = await playbackCoordinator.playTrack(nextSong, true);
 
-        // Check if we were superseded by a newer operation
+        // 是否被更新的操作抢占
         if (playerCore.playMusic.id !== nextSong.id) {
           console.log('[nextPlay] 被新操作取代，静默退出');
           return;
@@ -554,7 +538,7 @@ export const usePlaylistStore = defineStore(
           playListIndex.value = nowPlayListIndex;
           console.log(`[prevPlay] 播放成功，索引: ${nowPlayListIndex}`);
         } else if (playerCore.playMusic.id === prevSong.id) {
-          // Only show error if not superseded
+          // 仅在未被抢占时提示错误
           playerCore.setIsPlay(false);
           getMessage().error(i18n.global.t('player.playFailed'));
         }
@@ -565,9 +549,6 @@ export const usePlaylistStore = defineStore(
 
     const prevPlay = useThrottleFn(_prevPlay, 500);
 
-    /**
-     * 设置播放列表抽屉显示状态
-     */
     const setPlayListDrawerVisible = (value: boolean) => {
       playListDrawerVisible.value = value;
     };
@@ -587,7 +568,7 @@ export const usePlaylistStore = defineStore(
       try {
         const playerCore = usePlayerCoreStore();
 
-        // Check URL expiration
+        // 检查 URL 是否过期
         if (song.expiredAt && song.expiredAt < Date.now()) {
           if (!song.playMusicUrl?.startsWith('local://')) {
             console.info(`歌曲URL已过期，重新获取: ${song.name}`);
@@ -596,7 +577,6 @@ export const usePlaylistStore = defineStore(
           }
         }
 
-        // Toggle play/pause for current song
         if (
           playerCore.playMusic.id === song.id &&
           playerCore.playMusic.playMusicUrl === song.playMusicUrl
@@ -614,7 +594,7 @@ export const usePlaylistStore = defineStore(
             if (sound) {
               sound.play();
             } else {
-              // No audio instance, rebuild via playTrack
+              // 无音频实例，经 playTrack 重建
               const { playbackCoordinator } = await import('@/services/playbackCoordinator');
               const recoverSong = {
                 ...playerCore.playMusic,
@@ -635,7 +615,6 @@ export const usePlaylistStore = defineStore(
 
         if (song.isFirstPlay) song.isFirstPlay = false;
 
-        // Update playlist index
         const songIndex = playList.value.findIndex(
           (item: SongResult) => item.id === song.id && item.source === song.source
         );
@@ -686,18 +665,15 @@ export const usePlaylistStore = defineStore(
     };
 
     return {
-      // 状态
       playList,
       playListIndex,
       playMode,
       originalPlayList,
       playListDrawerVisible,
 
-      // Computed
       currentPlayList,
       currentPlayListIndex,
 
-      // Actions
       setPlayList,
       patchSongMeta,
       addToNextPlay,

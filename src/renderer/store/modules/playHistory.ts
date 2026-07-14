@@ -98,13 +98,13 @@ type PersistedPlayHistoryState = {
 };
 
 // 序列化层兜底：哪怕有代码绕过 addMusic 直接 push 完整 SongResult，也能在 serialize 时
-// 再过一遍 minifyHistoryList，确保 localStorage 里的 musicHistory 不混入 lyric/song/base64 封面
+// 再 minify 一遍，避免 history 混入 lyric/song/base64 封面
 //
 // podcast/playlist/album/podcastRadio 等历史也走 stripBase64CoversList 兜底：
 // 它们的图片字段（picUrl / coverImgUrl / coverUrl）若被注入 base64 Data URL，
 // 同样会撑爆 5MB 配额；保持四类历史的防御对称，避免某一处漏掉变成隐患
 //
-// 入参用 any 是为了同时兼容 persistedstate 的 StateTree 与 clearAll 手工构造的 PersistedPlayHistoryState
+// 入参 any：兼容 StateTree 与 clearAll 构造的 PersistedPlayHistoryState
 const serializePlayHistoryState = (state: any): string => {
   const s = state as PersistedPlayHistoryState;
   return JSON.stringify({
@@ -334,7 +334,6 @@ export const usePlayHistoryStore = defineStore(
     };
 
     return {
-      // 状态
       musicHistory,
       podcastHistory,
       playlistHistory,

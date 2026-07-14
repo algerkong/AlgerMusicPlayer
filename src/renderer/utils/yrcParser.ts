@@ -63,8 +63,7 @@ export class LyricParseError extends Error {
  * 解析结果类型
  */
 export type ParseResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: LyricParseError };
+  { success: true; data: T } | { success: false; error: LyricParseError };
 
 // 预编译正则表达式以提高性能
 const METADATA_PATTERN = /^\{("t":|"c":)/; // 匹配 {"t": 或 {"c":
@@ -259,7 +258,6 @@ const parseWordByWordLine = (line: string): ParseResult<LyricLine> => {
       continue;
     }
 
-    // 计算单词结束位置
     const wordEndPos = wordIndex + word.text.length;
     // 检查单词后面是否有空格
     const hasSpace = wordEndPos < fullText.length && fullText[wordEndPos] === ' ';
@@ -268,7 +266,6 @@ const parseWordByWordLine = (line: string): ParseResult<LyricLine> => {
       space: hasSpace
     });
 
-    // 更新搜索位置
     currentPos = wordEndPos;
   }
 
@@ -324,7 +321,6 @@ const calculateLrcDurations = (lyrics: LyricLine[]): LyricLine[] => {
       continue;
     }
 
-    // 计算LRC格式的持续时间
     let duration = 0;
     if (i < lyrics.length - 1) {
       // 使用下一行的开始时间减去当前行的开始时间
@@ -440,7 +436,6 @@ export const parseLyrics = (lyricsStr: string): ParseResult<ParsedLyrics> => {
       return a.startTime - b.startTime;
     });
 
-    // 计算LRC格式的持续时间
     const finalLyrics = calculateLrcDurations(lyrics);
 
     return {

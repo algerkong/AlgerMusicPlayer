@@ -4,7 +4,7 @@ import type { SongResult } from '@/types/music';
  * 预加载服务
  *
  * 新架构下 audioService 使用单一 HTMLAudioElement（换歌改 src），
- * 不再需要预创建 Howl 实例。PreloadService 改为验证 URL 可用性并缓存元数据。
+ * PreloadService：校验 URL 可用并缓存元数据（不再预创建 Howl）
  */
 class PreloadService {
   private validatedUrls: Map<string | number, string> = new Map();
@@ -61,7 +61,7 @@ class PreloadService {
   }
 
   /**
-   * 验证 URL 可用性（通过创建临时 Audio 元素检测是否可加载）
+   * 用临时 Audio 探测 URL 是否可加载
    */
   private async _validate(url: string, song: SongResult): Promise<string> {
     return new Promise<string>((resolve, reject) => {
@@ -149,9 +149,6 @@ class PreloadService {
     this.validatedUrls.delete(songId);
   }
 
-  /**
-   * 获取已验证的 URL
-   */
   public getPreloadedSound(songId: string | number): string | undefined {
     return this.validatedUrls.get(songId);
   }

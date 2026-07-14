@@ -183,7 +183,7 @@ const clearSearch = () => {
   nextTick(() => inputRef.value?.focus());
 };
 
-// ── Search logic ──────────────────────────────────────
+// ── 搜索逻辑 ──────────────────────────────────────
 const hotSearchKeyword = ref(t('comp.searchBar.searchPlaceholder'));
 const hotSearchValue = ref('');
 const searchValue = ref('');
@@ -264,7 +264,7 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 };
 
-// ── User / misc ───────────────────────────────────────
+// ── 用户 / 其它 ───────────────────────────────────
 const toLogin = () => router.push('/user');
 
 const selectItem = (key: string) => {
@@ -394,7 +394,7 @@ const selectItem = (key: string) => {
   color: var(--primary-color, #22c55e);
 }
 
-/* ── Action buttons ──────────────────────────────────── */
+/* ── 操作按钮 ────────────────────────────────────── */
 .action-btn {
   display: flex;
   align-items: center;
@@ -428,7 +428,7 @@ const selectItem = (key: string) => {
   background: rgba(236, 72, 153, 0.1);
 }
 
-/* ── User button ─────────────────────────────────────── */
+/* ── 用户按钮 ────────────────────────────────────── */
 .user-btn {
   display: flex;
   align-items: center;
@@ -556,7 +556,7 @@ const selectItem = (key: string) => {
   text-align: center;
 }
 
-/* ── Suggestions ─────────────────────────────────────── */
+/* ── 建议列表 ────────────────────────────────────── */
 .suggestions-box {
   background: #fff;
 }

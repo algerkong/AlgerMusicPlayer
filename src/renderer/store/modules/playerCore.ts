@@ -32,39 +32,27 @@ export const usePlayerCoreStore = defineStore(
     );
     const availableAudioDevices = ref<AudioOutputDevice[]>([]);
 
-    // ==================== Computed ====================
+    // ==================== 计算属性 ====================
     const currentSong = computed(() => playMusic.value);
     const isPlaying = computed(() => isPlay.value);
 
-    // ==================== Actions ====================
+    // ==================== 操作 ====================
 
-    /**
-     * 设置播放状态
-     */
     const setIsPlay = (value: boolean) => {
       isPlay.value = value;
       play.value = value;
       window.api?.updatePlayState(value);
     };
 
-    /**
-     * 设置全屏状态
-     */
     const setMusicFull = (value: boolean) => {
       musicFull.value = value;
     };
 
-    /**
-     * 设置播放速度
-     */
     const setPlaybackRate = (rate: number) => {
       playbackRate.value = rate;
       audioService.setPlaybackRate(rate);
     };
 
-    /**
-     * 设置音量
-     */
     const setVolume = (newVolume: number) => {
       const normalizedVolume = Math.max(0, Math.min(1, newVolume));
       volume.value = normalizedVolume;
@@ -84,16 +72,10 @@ export const usePlayerCoreStore = defineStore(
       audioService.setVolume(isMuted.value ? 0 : volume.value);
     };
 
-    /**
-     * 切换静音
-     */
     const toggleMute = () => {
       setMuted(!isMuted.value);
     };
 
-    /**
-     * 获取音量
-     */
     const getVolume = () => volume.value;
 
     /**
@@ -130,9 +112,6 @@ export const usePlayerCoreStore = defineStore(
       }
     };
 
-    /**
-     * 设置播放/暂停
-     */
     const setPlayMusic = async (value: boolean | SongResult) => {
       if (typeof value === 'boolean') {
         setIsPlay(value);
@@ -155,9 +134,6 @@ export const usePlayerCoreStore = defineStore(
       availableAudioDevices.value = await audioService.getAudioOutputDevices();
     };
 
-    /**
-     * 切换音频输出设备
-     */
     const setAudioOutputDevice = async (deviceId: string): Promise<boolean> => {
       const success = await audioService.setAudioOutputDevice(deviceId);
       if (success) {
@@ -166,9 +142,6 @@ export const usePlayerCoreStore = defineStore(
       return success;
     };
 
-    /**
-     * 初始化设备变化监听
-     */
     const initAudioDeviceListener = () => {
       if (navigator.mediaDevices) {
         navigator.mediaDevices.addEventListener('devicechange', async () => {
@@ -184,7 +157,6 @@ export const usePlayerCoreStore = defineStore(
     };
 
     return {
-      // 状态
       play,
       isPlay,
       playMusic,
@@ -198,11 +170,9 @@ export const usePlayerCoreStore = defineStore(
       audioOutputDeviceId,
       availableAudioDevices,
 
-      // Computed
       currentSong,
       isPlaying,
 
-      // Actions
       setIsPlay,
       setMusicFull,
       setPlayMusic,

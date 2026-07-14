@@ -4,7 +4,7 @@
     @click="onPlayMusic"
     @contextmenu.prevent="onMenuClick"
   >
-    <!-- Album Cover -->
+    <!-- 封面 -->
     <div
       class="cover relative h-14 w-14 md:h-16 md:w-16 flex-shrink-0 overflow-hidden rounded-lg md:rounded-xl bg-neutral-100 dark:bg-neutral-800 shadow-sm"
     >
@@ -26,7 +26,7 @@
       </div>
     </div>
 
-    <!-- Song Info -->
+    <!-- 歌曲信息 -->
     <div class="song-info flex flex-col overflow-hidden flex-1 min-w-0">
       <n-ellipsis
         class="song-name text-sm md:text-base font-semibold text-neutral-800 dark:text-neutral-100 transition-colors duration-200 group-hover:text-primary dark:group-hover:text-white"
@@ -51,7 +51,7 @@
       </n-ellipsis>
     </div>
 
-    <!-- More Button -->
+    <!-- 更多按钮 -->
     <button
       class="more-btn flex h-8 w-8 items-center justify-center rounded-full opacity-0 transition-all duration-300 group-hover:bg-white dark:group-hover:bg-neutral-800 group-hover:opacity-100 hover:scale-110 active:scale-95"
       @click.stop="onMenuClick"
@@ -59,7 +59,7 @@
       <i class="ri-more-fill text-sm text-neutral-600 dark:text-neutral-300"></i>
     </button>
 
-    <!-- Dropdown Menu -->
+    <!-- 下拉菜单 -->
     <song-item-dropdown
       v-if="isElectron"
       :item="item"

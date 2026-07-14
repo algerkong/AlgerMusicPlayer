@@ -94,9 +94,6 @@ class WindowSizeManager {
     console.log('窗口大小管理器初始化完成');
   }
 
-  /**
-   * 设置主窗口引用
-   */
   setMainWindow(win: BrowserWindow): void {
     if (!this.isInitialized) {
       this.initialize();
@@ -107,16 +104,12 @@ class WindowSizeManager {
     // 读取保存的状态
     this.savedState = this.getWindowState();
 
-    // 监听重要事件
     this.setupEventListeners(win);
 
     // 立即保存初始状态
     this.saveWindowState(win);
   }
 
-  /**
-   * 初始化最小窗口尺寸
-   */
   private initMinimumWindowSize(): void {
     if (!app.isReady()) {
       console.warn('不能在 app ready 之前访问 screen 模块');
@@ -139,9 +132,6 @@ class WindowSizeManager {
     }
   }
 
-  /**
-   * 设置事件监听器
-   */
   private setupEventListeners(win: BrowserWindow): void {
     // 监听窗口大小调整事件（防抖，拖动结束后统一落盘）
     win.on('resize', () => {
@@ -157,14 +147,12 @@ class WindowSizeManager {
       }
     });
 
-    // 监听窗口最大化事件
     win.on('maximize', () => {
       if (!win.isDestroyed()) {
         this.saveWindowState(win);
       }
     });
 
-    // 监听窗口从最大化恢复事件
     win.on('unmaximize', () => {
       if (!win.isDestroyed()) {
         this.saveWindowState(win);
@@ -208,7 +196,7 @@ class WindowSizeManager {
         `强制调整窗口大小: 当前=${currentWidth}x${currentHeight}, 目标=${this.savedState.width}x${this.savedState.height}`
       );
 
-      // 临时禁用minimum size限制
+      // 临时关闭最小尺寸限制
       const [minWidth, minHeight] = win.getMinimumSize();
       win.setMinimumSize(1, 1);
 
@@ -295,9 +283,6 @@ class WindowSizeManager {
   //   }, 50);
   // }
 
-  /**
-   * 获取窗口创建选项
-   */
   getWindowOptions(): Electron.BrowserWindowConstructorOptions {
     // 确保初始化
     if (!this.isInitialized && app.isReady()) {
@@ -365,9 +350,6 @@ class WindowSizeManager {
     }
   }
 
-  /**
-   * 保存窗口状态
-   */
   saveWindowState(win: BrowserWindow): WindowState {
     // 如果窗口已销毁，则返回之前的状态或默认状态
     if (win.isDestroyed()) {
@@ -448,16 +430,12 @@ class WindowSizeManager {
       console.error('保存窗口状态失败:', error);
     }
 
-    // 更新内部状态
     this.savedState = state;
     console.log('state', state);
 
     return state;
   }
 
-  /**
-   * 获取保存的窗口状态
-   */
   getWindowState(): WindowState | null {
     let state: WindowState | undefined;
     try {
@@ -511,9 +489,6 @@ class WindowSizeManager {
     return false;
   }
 
-  /**
-   * 计算适合当前缩放比的缩放因子
-   */
   calculateContentZoomFactor(): number {
     // 只有在 app 准备好后才能使用screen
     if (!app.isReady()) {
@@ -521,7 +496,6 @@ class WindowSizeManager {
     }
 
     try {
-      // 获取系统的缩放因子
       const { scaleFactor } = screen.getPrimaryDisplay();
 
       // 缩放因子默认为1
@@ -548,7 +522,6 @@ class WindowSizeManager {
         }
       }
 
-      // 获取用户的自定义缩放设置（如果有）
       const userZoomFactor = this.store.get('set.contentZoomFactor') as number | undefined;
       if (userZoomFactor) {
         zoomFactor = userZoomFactor;
@@ -581,9 +554,6 @@ class WindowSizeManager {
     }
   }
 
-  /**
-   * 初始化IPC消息处理程序
-   */
   setupIPCHandlers(): void {
     // 防止重复注册IPC处理程序
     if (ipcHandlersRegistered) {
@@ -656,11 +626,9 @@ class WindowSizeManager {
         const adjustedWidth = Math.max(width, MIN_WIDTH);
         const adjustedHeight = Math.max(height, MIN_HEIGHT);
 
-        // 设置窗口的大小
         win.setSize(adjustedWidth, adjustedHeight);
         console.log(`窗口大小已调整为: ${adjustedWidth}x${adjustedHeight}`);
 
-        // 保存窗口状态
         this.saveWindowState(win);
       }
     });
@@ -684,7 +652,6 @@ class WindowSizeManager {
 
     // 只在app ready后设置显示器变化监听
     if (app.isReady()) {
-      // 监听显示器变化事件
       screen.on('display-metrics-changed', (_event, _display, changedMetrics) => {
         if (this.mainWindow && !this.mainWindow.isDestroyed()) {
           // 当缩放因子变化时，重新应用页面缩放
@@ -698,7 +665,6 @@ class WindowSizeManager {
       });
     }
 
-    // 监听 store 中的缩放设置变化
     this.store.onDidChange('set.contentZoomFactor', () => {
       if (this.mainWindow && !this.mainWindow.isDestroyed()) {
         this.applyContentZoom(this.mainWindow);
@@ -744,7 +710,7 @@ export const applyContentZoom = (win: BrowserWindow): void => {
 };
 
 export const initWindowSizeHandlers = (mainWindow: BrowserWindow | null): void => {
-  // 确保app ready后再初始化
+  // app ready 后再初始化
   if (!app.isReady()) {
     app.on('ready', () => {
       if (mainWindow) {

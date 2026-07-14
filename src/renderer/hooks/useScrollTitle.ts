@@ -32,7 +32,6 @@ export function useScrollTitle(title: string | Ref<string>, titleEl: Ref<HTMLEle
   };
 
   onMounted(() => {
-    // 设置初始标题
     store.setTitle(isRef(title) ? title.value : title);
 
     // 等待 DOM 就绪后启动 observer

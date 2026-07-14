@@ -19,7 +19,7 @@ import { getImageLinearBackground } from '@/utils/linearColor';
 
 const { message } = createDiscreteApi(['message']);
 
-// Generation counter for cancellation
+// 代次计数，用于取消过期请求
 let generation = 0;
 
 /**
@@ -69,7 +69,7 @@ const loadMetadata = async (
       return await loadLrc(music.id);
     })(),
     (async () => {
-      // Always re-sample cover (palette algo is cheap at 200px; avoids stale pre-iOS colors)
+      // 每次重采样封面色（200px 足够，避免陈旧缓存色）
       return await getImageLinearBackground(getImgUrl(music?.picUrl, '200y200'));
     })()
   ]);
@@ -77,9 +77,6 @@ const loadMetadata = async (
   return { lyrics, backgroundColor, primaryColor };
 };
 
-/**
- * 加载并播放音频
- */
 const loadAndPlayAudio = async (song: SongResult, shouldPlay: boolean): Promise<boolean> => {
   if (!song.playMusicUrl) {
     throw new Error('歌曲没有播放URL');
@@ -129,9 +126,6 @@ const triggerPreload = async (song: SongResult): Promise<void> => {
   }
 };
 
-/**
- * 更新文档标题
- */
 const updateDocumentTitle = (music: SongResult): void => {
   let title = music.name;
   const artists = music.ar || music.song?.artists;
@@ -186,7 +180,6 @@ export const playTrack = async (
   playerCore.playMusic = music;
   updateDocumentTitle(music);
 
-  // 保存原始歌曲数据
   const originalMusic = { ...music };
 
   // 4.5 立即并行加载元数据（歌词 + 背景色），与取 URL/加载音频同时进行：
@@ -301,7 +294,7 @@ export const playTrack = async (
           expiredAt: cur.expiredAt
         });
       } catch {
-        /* ignore */
+        /* 忽略 */
       }
       playbackRequestManager.completeRequest(requestId);
       console.log(`[playbackController] gen=${gen} 播放成功: ${music.name}`);
@@ -399,7 +392,7 @@ export const setupUrlExpiredHandler = (): void => {
       return;
     }
 
-    // 当前歌曲已变更（例如 nextPlay 的失败跳歌已接管），不再恢复旧歌，
+    // 当前曲已切换（如失败跳歌），放弃恢复旧歌，
     // 避免两个恢复驱动并发争抢 generation
     if (playerCore.playMusic?.id !== expiredTrack.id) {
       console.log('[playbackController] 当前歌曲已变更，跳过URL过期处理');
@@ -417,7 +410,7 @@ export const setupUrlExpiredHandler = (): void => {
     // 先清掉可能已损坏的解析 URL 缓存，让重试真正拿到新 URL
     await clearParsedUrlCache(expiredTrack.id);
 
-    // 超过重试上限：不再原地循环，静默切下一首
+    // 超过重试上限：静默切下一首
     if (urlExpiredRetryCount > MAX_URL_EXPIRED_RETRIES) {
       console.warn(`[playbackController] ${expiredTrack.name} 恢复重试失败，切换下一首`);
       resetUrlExpiredRetry();
@@ -435,7 +428,6 @@ export const setupUrlExpiredHandler = (): void => {
       return;
     }
 
-    // 保存当前播放位置
     const currentSound = audioService.getCurrentSound();
     let seekPosition = 0;
     if (currentSound) {
@@ -487,7 +479,6 @@ export const initializePlayState = async (): Promise<void> => {
 
   if (!playerCore.playMusic || Object.keys(playerCore.playMusic).length === 0) {
     console.log('[playbackController] 没有保存的播放状态，跳过初始化');
-    // 设置播放速率
     setTimeout(() => {
       audioService.setPlaybackRate(playerCore.playbackRate);
     }, 2000);

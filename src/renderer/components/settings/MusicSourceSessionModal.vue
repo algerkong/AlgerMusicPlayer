@@ -67,7 +67,7 @@ const handleSave = async () => {
       const p = await msGetProfile();
       profile = { nickname: p.nickname };
     } catch {
-      // cookie may work for search without /me
+      // 无 /me 时 cookie 仍可能用于搜索
     }
     message.success(t('settings.musicSource.sessionSaved'));
     emit('saved', profile);

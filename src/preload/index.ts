@@ -173,7 +173,7 @@ const api = {
 
 if (process.contextIsolated) {
   try {
-    // 不再暴露完整 electronAPI / 任意 channel 的 ipcRenderer
+    // 仅暴露白名单 API，禁止任意 channel 的 ipcRenderer
     contextBridge.exposeInMainWorld('api', api);
   } catch (error) {
     console.error(error);

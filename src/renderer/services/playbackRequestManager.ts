@@ -48,9 +48,6 @@ class PlaybackRequestManager {
     console.log(`[RequestManager] 失败: ${requestId}`);
   }
 
-  /**
-   * 获取当前请求ID
-   */
   getCurrentRequestId(): string | null {
     return this.currentRequestId;
   }

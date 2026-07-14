@@ -418,7 +418,6 @@ const showPlayerSettings = ref(false);
 
 // 播放模式
 const { playModeIcon, playModeText, togglePlayMode: togglePlayModeBase } = usePlayMode();
-// 打开播放列表
 const showPlaylist = () => {
   playerStore.setPlayListDrawerVisible(true);
 };
@@ -460,7 +459,6 @@ const resolveScrollEl = (refLike: any): HTMLElement | null => {
   return null;
 };
 
-// 监听横屏变化
 watch(isLandscape, (newVal) => {
   if (newVal) {
     // 横屏模式下，确保歌词容器可见并滚动到当前歌词
@@ -495,7 +493,6 @@ const supportAutoScroll = computed(() => {
   return lrcArray.value.length > 0 && lrcArray.value[0].startTime !== -1;
 });
 
-// 关闭全屏歌词
 const closeFullLyrics = () => {
   showFullLyrics.value = false;
   if (autoScrollTimer.value) {
@@ -551,7 +548,6 @@ const scrollToCurrentLyric = (immediate = false, customScrollerRef?: any) => {
   }
 };
 
-// 监听歌词变化，自动滚动
 watch(nowIndex, (newIndex, oldIndex) => {
   console.log(`歌词索引变化: ${oldIndex} -> ${newIndex}`);
 
@@ -598,7 +594,6 @@ watch(nowTime, () => {
   }
 });
 
-// 处理滚动事件
 const handleScroll = () => {
   if (!isTouchScrolling.value) return;
 
@@ -610,7 +605,6 @@ const handleScroll = () => {
     clearTimeout(autoScrollTimer.value);
   }
 
-  // 设置新的计时器，3秒后恢复自动滚动
   autoScrollTimer.value = window.setTimeout(() => {
     isAutoScrollEnabled.value = true;
     isTouchScrolling.value = false;
@@ -656,7 +650,6 @@ const handleTouchMove = () => {
 };
 
 const handleTouchEnd = () => {
-  // 设置计时器，3秒后恢复自动滚动
   if (autoScrollTimer.value) {
     clearTimeout(autoScrollTimer.value);
   }
@@ -681,7 +674,6 @@ const cycleCoverStyle = () => {
   const nextIdx = (currentIdx + 1) % styles.length;
   config.value.mobileCoverStyle = styles[nextIdx] as 'record' | 'square' | 'full';
 
-  // 添加动画反馈
   const container = document.querySelector('.cover-container');
   if (container) {
     container.classList.add('style-changing');
@@ -698,7 +690,6 @@ const progressContainerWidth = ref(0);
 // 鼠标拖动进度条相关变量
 const isMouseDragging = ref(false);
 
-// 处理进度条点击
 const handleProgressBarClick = (e: MouseEvent) => {
   if (!sound.value) return;
 
@@ -739,7 +730,6 @@ const handleMouseDown = (e: MouseEvent) => {
     console.log(`鼠标按下，位置: ${percentage.toFixed(2)}, 时间: ${newTime.toFixed(2)}秒`);
   }
 
-  // 添加全局鼠标事件监听
   document.addEventListener('mousemove', handleMouseMove);
   document.addEventListener('mouseup', handleMouseUp);
 };
@@ -783,13 +773,11 @@ const handleMouseUp = (e: MouseEvent) => {
   document.removeEventListener('mouseup', handleMouseUp);
 };
 
-// 处理滑块拖动
 const handleThumbTouchStart = (e: TouchEvent) => {
   e.preventDefault(); // 阻止默认行为
   e.stopPropagation(); // 阻止事件冒泡
   isThumbDragging.value = true;
 
-  // 获取进度条宽度
   const target = e.currentTarget as HTMLElement;
   const progressBar = target.parentElement?.parentElement as HTMLElement;
   if (progressBar) {
@@ -809,7 +797,6 @@ const handleThumbTouchMove = (e: TouchEvent) => {
   const rect = progressBar.getBoundingClientRect();
   const offsetX = touch.clientX - rect.left;
 
-  // 计算百分比并限制在0-1之间
   const percentage = Math.max(0, Math.min(1, offsetX / rect.width));
   const newTime = percentage * allTime.value;
 
@@ -833,7 +820,7 @@ const handleThumbTouchEnd = (e: TouchEvent) => {
 
 // 背景相关（由 composable 管理）
 const { isDark, applyBackground } = useLyricBackground({
-  // solid ambient for CSS vars (gradients not valid here); page bg uses backgroundColor
+  // CSS 变量用纯色环境色（此处不能渐变）；页面背景用 backgroundColor
   writeBgColor: () => {
     const bg = playerStore.playMusic.backgroundColor;
     return bg ? getAmbientSolidFromBackground(bg) : undefined;
@@ -850,12 +837,10 @@ const visibleLyrics = computed(() => {
   let startIdx = centerIndex - halfLines;
   let endIdx = centerIndex + halfLines;
 
-  // 处理奇偶数行数的情况
   if (numLines % 2 === 0) {
     endIdx -= 1;
   }
 
-  // 处理边界情况
   if (startIdx < 0) {
     startIdx = 0;
     endIdx = Math.min(numLines - 1, lrcArray.value.length - 1);
@@ -866,7 +851,6 @@ const visibleLyrics = computed(() => {
     startIdx = Math.max(0, endIdx - numLines + 1);
   }
 
-  // 返回带有原始索引的歌词数组
   return lrcArray.value.slice(startIdx, endIdx + 1).map((item, idx) => ({
     ...item,
     originalIndex: startIdx + idx
@@ -903,7 +887,6 @@ const targetBackground = computed(() => {
   return props.background;
 });
 
-// 监听目标背景变化并更新文字颜色
 watch(
   targetBackground,
   (newBg) => {
@@ -963,10 +946,10 @@ const closeMusicFull = () => {
 watch(
   () => playMusic.value.id,
   (newId, oldId) => {
-    // 只在歌曲真正切换时滚动到顶部
+    // 仅当歌曲 id 真正变化时滚到顶
     if (newId !== oldId && newId) {
       isSongChanging.value = true;
-      // 延迟滚动，确保 nowIndex 已重置
+      // 延迟滚动，等待 nowIndex 重置
       setTimeout(() => {
         // 在全屏歌词模式下滚动到顶部
         if (showFullLyrics.value && lyricsScrollerRef.value) {
@@ -991,14 +974,12 @@ watch(
   }
 );
 
-// 加载保存的配置
 onMounted(() => {
   const savedConfig = localStorage.getItem('music-full-config');
   if (savedConfig) {
     config.value = { ...config.value, ...JSON.parse(savedConfig) };
   }
 
-  // 初始化自动滚动状态
   isAutoScrollEnabled.value = true;
   isTouchScrolling.value = false;
 
@@ -1037,7 +1018,6 @@ watch(isVisible, (newVal) => {
   }
 });
 
-// 添加getLrcStyle函数
 const { getLrcStyle: originalLrcStyle } = useLyricProgress();
 
 // 修改 getLrcStyle 函数
@@ -1512,7 +1492,6 @@ const getWordStyle = (lineIndex: number, _wordIndex: number, word: any) => {
   }
 }
 
-// 加载动画
 .loading-overlay {
   @apply absolute top-0 left-0 w-full h-full flex items-center justify-center;
   background-color: rgba(0, 0, 0, 0.5);

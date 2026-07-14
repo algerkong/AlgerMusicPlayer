@@ -184,9 +184,6 @@ function handleKeyDown(event: KeyboardEvent) {
   }
 }
 
-/**
- * 初始化应用内快捷键
- */
 export function initAppShortcuts() {
   if (!isElectron || appShortcutsInitialized) {
     return;

@@ -17,7 +17,7 @@
           : '#000000'
     }"
   >
-    <!-- Mini模式 - 在musicFullVisible为false时显示 -->
+    <!-- 迷你条 -->
     <div v-if="!playerStore.musicFull" class="mobile-mini-controls">
       <!-- 歌曲信息 -->
       <div class="mini-song-info" @click="setMusicFull">
@@ -251,7 +251,6 @@ watch(
     }
   }
 
-  // Mini模式样式：跟封面取色
   .mobile-mini-controls {
     @apply flex items-center justify-between pr-4 mx-3 h-12 rounded-full shadow-lg;
     background: var(--chrome-surface-strong, rgba(24, 24, 27, 0.85));

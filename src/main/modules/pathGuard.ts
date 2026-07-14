@@ -165,7 +165,7 @@ export function parseLocalProtocolUrl(url: string): string | null {
   try {
     let filePath = decodeURIComponent(url.replace(/^local:\/\/\/?/, ''));
 
-    // Windows: /C:/... → C:/...
+    // Windows 路径：/C:/... → C:/...
     if (/^\/[a-zA-Z]:\//.test(filePath)) {
       filePath = filePath.slice(1);
     }

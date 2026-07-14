@@ -36,17 +36,14 @@ let currentSong: SongInfo | null = null;
 // 使用自动导入的语言选项
 const LANGUAGES = getLanguageOptions();
 
-// 更新播放状态
 export function updatePlayState(playing: boolean) {
   isPlaying = playing;
   if (tray) {
     updateTrayMenu(BrowserWindow.getAllWindows()[0]);
   }
-  // 更新播放/暂停图标
   updateStatusBarTray();
 }
 
-// 获取艺术家名称字符串
 function getArtistString(song: SongInfo | null): string {
   if (!song || !song.song || !song.song.artists) return '';
   return song.song.artists.map((item) => item.name).join(' / ');
@@ -66,17 +63,15 @@ function getTruncatedSongTitle(song: SongInfo | null, maxLength: number = 14): s
   return fullTitle.slice(0, maxLength) + '...';
 }
 
-// 更新当前播放的音乐信息
 export function updateCurrentSong(song: SongInfo | null) {
   currentSong = song;
   if (tray) {
     updateTrayMenu(BrowserWindow.getAllWindows()[0]);
   }
-  // 更新状态栏歌曲信息
   updateStatusBarTray();
 }
 
-// 确保 macOS 状态栏图标能正确显示
+// 适配 macOS 状态栏图标显示
 function getProperIconSize() {
   // macOS 状态栏通常高度为22像素
   const height = 18;
@@ -84,13 +79,11 @@ function getProperIconSize() {
   return { width, height };
 }
 
-// 更新macOS状态栏图标
 function updateStatusBarTray() {
   if (process.platform !== 'darwin') return;
 
   const iconSize = getProperIconSize();
 
-  // 更新歌曲标题显示
   if (songTitleTray) {
     if (currentSong) {
       // 限制歌曲名显示长度，添加作者名
@@ -102,7 +95,6 @@ function updateStatusBarTray() {
         title = `${songName} - ${artistStr.slice(0, 6)}${artistStr.length > 6 ? '..' : ''}`;
       }
 
-      // 设置标题和提示
       songTitleTray.setTitle(title, {
         fontType: 'monospacedDigit' // 使用等宽字体以确保更好的可读性
       });
@@ -120,7 +112,6 @@ function updateStatusBarTray() {
     }
   }
 
-  // 更新播放/暂停图标
   if (playPauseTray) {
     // 使用PNG图标替代文本
     const iconPath = join(
@@ -159,7 +150,7 @@ export function updateTrayMenu(mainWindow: BrowserWindow) {
     }
 
     // 上一首、播放/暂停、下一首的菜单项
-    // 在macOS上临时使用文本菜单项替代图标，确保基本功能正常
+    // macOS 上暂用文本菜单项代替图标，保证功能可用
     menu.append(
       new MenuItem({
         label: i18n.global.t('common.tray.prev'),
@@ -365,7 +356,6 @@ function createTrayNativeImage(iconPath: string): Electron.NativeImage {
   return resized;
 }
 
-// 初始化状态栏Tray
 function initializeStatusBarTray(mainWindow: BrowserWindow) {
   const store = getStore();
   if (process.platform !== 'darwin' || !store.get('set.showTopAction')) return;
@@ -414,10 +404,9 @@ function initializeStatusBarTray(mainWindow: BrowserWindow) {
   titleIcon.setTemplateImage(true);
   songTitleTray = new Tray(titleIcon);
 
-  // 初始化显示文本
   const initialText = getSongTitle(currentSong);
 
-  // 在macOS上，特别设置title来显示文本，确保它能正确显示
+  // macOS 上设置 title 以正确显示文本
   songTitleTray.setTitle(initialText, {
     fontType: 'monospacedDigit' // 使用等宽字体以确保更好的可读性
   });
@@ -434,22 +423,16 @@ function initializeStatusBarTray(mainWindow: BrowserWindow) {
   console.log('状态栏初始化完成，歌曲显示标题:', initialText);
 }
 
-/**
- * 初始化系统托盘
- */
 export function initializeTray(iconPath: string, mainWindow: BrowserWindow) {
   // 托盘用圆形专用图：细线头像在 16px 几乎看不见，Linux 用 32、macOS 用 22
   const trayIcon = createTrayNativeImage(iconPath);
 
   tray = new Tray(trayIcon);
 
-  // 设置托盘图标的提示文字
   tray.setToolTip('LYMusic');
 
-  // 初始化菜单
   updateTrayMenu(mainWindow);
 
-  // 初始化状态栏控制按钮 (macOS)
   initializeStatusBarTray(mainWindow);
 
   // 在 macOS 上，点击图标时显示菜单

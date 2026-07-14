@@ -66,7 +66,6 @@ export interface SongResult {
   source?: string;
   // 过期时间
   expiredAt?: number;
-  // 获取时间
   createdAt?: number;
   // 时长
   duration?: number;

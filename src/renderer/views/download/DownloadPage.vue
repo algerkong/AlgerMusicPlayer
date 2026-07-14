@@ -2,9 +2,9 @@
   <div class="download-page h-full w-full bg-white dark:bg-black transition-colors duration-500">
     <scroll-area ref="scrollbarRef" class="h-full" @scroll="handleDownloadScroll">
       <div class="download-content" :style="{ paddingBottom: contentPaddingBottom }">
-        <!-- Hero Section -->
+        <!-- 顶部 Hero -->
         <section class="hero-section relative overflow-hidden rounded-tl-2xl">
-          <!-- Background with Blur -->
+          <!-- 模糊背景 -->
           <div class="hero-bg absolute inset-0 -top-20">
             <div
               class="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/10 blur-3xl opacity-50 dark:opacity-30"
@@ -14,7 +14,7 @@
             ></div>
           </div>
 
-          <!-- Hero Content -->
+          <!-- Hero 内容 -->
           <div class="hero-content relative z-10 page-padding-x pt-10 pb-8">
             <div class="flex flex-col md:flex-row gap-8 items-center md:items-end">
               <div class="cover-wrapper relative group">
@@ -56,12 +56,12 @@
           </div>
         </section>
 
-        <!-- Action Bar (Sticky) -->
+        <!-- 操作栏（吸顶） -->
         <section
           class="action-bar sticky top-0 z-20 page-padding-x py-3 md:py-4 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-neutral-100 dark:border-neutral-800/50"
         >
           <div class="flex items-center justify-between gap-4">
-            <!-- Tabs (Segment Control) -->
+            <!-- 标签分段 -->
             <div class="flex items-center gap-2 bg-neutral-100 dark:bg-neutral-900 p-1 rounded-xl">
               <button
                 v-for="tab in ['downloading', 'downloaded']"
@@ -78,7 +78,7 @@
               </button>
             </div>
 
-            <!-- Right Actions -->
+            <!-- 右侧操作 -->
             <div class="flex items-center gap-3">
               <button
                 v-if="tabName === 'downloaded' && downloadStore.completedList.length > 0"
@@ -106,9 +106,9 @@
           </div>
         </section>
 
-        <!-- List Section -->
+        <!-- 列表区 -->
         <section class="list-section page-padding-x mt-6">
-          <!-- Downloading List -->
+          <!-- 下载中列表 -->
           <div v-if="tabName === 'downloading'" class="downloading-container">
             <div
               v-if="downloadStore.downloadingList.length === 0"
@@ -159,7 +159,7 @@
                         {{ formatSize(item.loaded) }} / {{ formatSize(item.total) }}
                       </span>
                       <div class="flex items-center gap-1">
-                        <!-- Pause button (shown when downloading) -->
+                        <!-- 暂停（下载中显示） -->
                         <button
                           v-if="item.state === 'downloading'"
                           class="w-6 h-6 rounded-full flex items-center justify-center text-neutral-400 hover:text-yellow-500 hover:bg-yellow-500/10 transition-all"
@@ -167,7 +167,7 @@
                         >
                           <i class="ri-pause-circle-line text-sm" />
                         </button>
-                        <!-- Resume button (shown when paused) -->
+                        <!-- 继续（暂停时显示） -->
                         <button
                           v-if="item.state === 'paused'"
                           class="w-6 h-6 rounded-full flex items-center justify-center text-neutral-400 hover:text-primary hover:bg-primary/10 transition-all"
@@ -175,7 +175,7 @@
                         >
                           <i class="ri-play-circle-line text-sm" />
                         </button>
-                        <!-- Cancel button (shown for all active states) -->
+                        <!-- 取消（进行中状态显示） -->
                         <button
                           v-if="
                             ['queued', 'downloading', 'paused', 'waitingForUrl'].includes(
@@ -198,7 +198,7 @@
             </div>
           </div>
 
-          <!-- Downloaded List -->
+          <!-- 已下载列表 -->
           <div v-else class="downloaded-container">
             <n-spin :show="downloadStore.isLoadingCompleted">
               <div
@@ -373,7 +373,7 @@
     >
       <n-drawer-content :title="t('download.settingsPanel.title')" closable>
         <div class="download-settings-content space-y-8 py-4">
-          <!-- Path Section -->
+          <!-- 路径设置 -->
           <div class="setting-group">
             <h3 class="text-sm font-bold text-neutral-900 dark:text-white mb-2">
               {{ t('download.settingsPanel.path') }}
@@ -392,7 +392,7 @@
             </div>
           </div>
 
-          <!-- Save Lyric File -->
+          <!-- 保存歌词文件 -->
           <div class="setting-group">
             <div class="flex items-center justify-between">
               <div>
@@ -407,7 +407,7 @@
             </div>
           </div>
 
-          <!-- Concurrency Section -->
+          <!-- 并发设置 -->
           <div class="setting-group">
             <div class="flex items-center justify-between">
               <div>
@@ -429,7 +429,7 @@
             </div>
           </div>
 
-          <!-- Format Section -->
+          <!-- 格式设置 -->
           <div class="setting-group">
             <h3 class="text-sm font-bold text-neutral-900 dark:text-white mb-2">
               {{ t('download.settingsPanel.fileFormat') }}
@@ -586,7 +586,7 @@ const {
 
 const tabName = ref(downloadStore.downloadingList.length > 0 ? 'downloading' : 'downloaded');
 
-// ── Status helpers ──────────────────────────────────────────────────────────
+// ── 状态辅助 ──────────────────────────────────────────────────────────
 
 const getStatusText = (item: DownloadTask) => {
   const statusMap: Record<string, string> = {
@@ -619,7 +619,7 @@ const getProgressClass = (item: DownloadTask) => {
   return 'bg-primary';
 };
 
-// ── Task action handlers ────────────────────────────────────────────────────
+// ── 任务操作 ──────────────────────────────────────────────────────────
 
 const handlePause = (taskId: string) => downloadStore.pauseTask(taskId);
 const handleResume = (taskId: string) => downloadStore.resumeTask(taskId);
@@ -629,7 +629,7 @@ const handleCoverError = (e: Event) => {
   (e.target as HTMLImageElement).src = '/images/default_cover.png';
 };
 
-// ── Utility functions ───────────────────────────────────────────────────────
+// ── 工具函数 ──────────────────────────────────────────────────────────
 
 const formatSize = (bytes: number) => {
   if (!bytes) return '0 B';
@@ -671,7 +671,7 @@ const openDirectory = (path: string) => {
   window.api.openDirectory(path);
 };
 
-// ── Play music ──────────────────────────────────────────────────────────────
+// ── 播放 ──────────────────────────────────────────────────────────────
 
 const handlePlayMusic = async (item: any) => {
   try {
@@ -725,7 +725,7 @@ const handlePlayMusic = async (item: any) => {
   }
 };
 
-// ── Delete / Clear ──────────────────────────────────────────────────────────
+// ── 删除 / 清空 ──────────────────────────────────────────────────────
 
 const showDeleteConfirm = ref(false);
 const itemToDelete = ref<any>(null);
@@ -766,7 +766,7 @@ const clearDownloadRecords = async () => {
   }
 };
 
-// ── Download settings ───────────────────────────────────────────────────────
+// ── 下载设置 ──────────────────────────────────────────────────────────
 
 const showSettingsDrawer = ref(false);
 const showNotSaveConfirm = ref(false);
@@ -892,7 +892,7 @@ const openDownloadPath = () => {
 };
 
 const saveDownloadSettings = () => {
-  // downloadPath 已在 selectDownloadPath 时由主进程写入，此处不再经 setSettings 传路径
+  // 路径已在 selectDownloadPath 时由主进程写入，此处不经 setSettings 再传
   window.api.setSettings({
     downloadNameFormat: downloadSettings.value.nameFormat,
     downloadSeparator: downloadSettings.value.separator,
@@ -946,7 +946,7 @@ const updateFormatComponents = () => {
 
 watch(() => downloadSettings.value.nameFormat, updateFormatComponents);
 
-// ── Lifecycle & watchers ────────────────────────────────────────────────────
+// ── 生命周期与监听 ────────────────────────────────────────────────────
 
 onMounted(() => {
   downloadStore.initListeners();
