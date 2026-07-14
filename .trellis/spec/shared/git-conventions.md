@@ -85,6 +85,30 @@ refactor/type-definitions
 
 ---
 
+## Project workflow (this repo)
+
+**GitHub Flow** overall: keep `main` releasable; short-lived branches + PRs.
+
+### UI polish long line
+
+| Branch                    | Role                                                                          |
+| ------------------------- | ----------------------------------------------------------------------------- |
+| `main`                    | Stable / merge target for releases                                            |
+| `ui/polish-draft`         | **Long-lived** polish integration branch (long-running PR OK)                 |
+| `feat/*`, `fix/*`, …      | **One small feature or fix per branch**, usually cut from `ui/polish-draft`   |
+| Nested `feat/*` / `fix/*` | **Allowed:** a small branch may spawn further child branches for sub-concerns |
+
+Rules:
+
+1. **One concern → one branch.** Do not mix unrelated polish into one branch.
+2. **Nesting is fine:** a feature branch may open child branches for sub-parts; merge children back into the parent branch first, then the parent into `ui/polish-draft` (or the chosen parent).
+3. If work touches a second independent concern, **open a second branch** (and PR) instead of stacking both into the same branch.
+4. Small polish PRs usually merge **into `ui/polish-draft`** (or into their parent polish branch), not necessarily straight to `main`.
+5. Larger features that are not “polish” still branch from `main` with normal GitHub Flow.
+6. Commit only when the author is satisfied; push / open PR when they say so.
+
+---
+
 ## Commit Best Practices
 
 ### Keep Commits Atomic
