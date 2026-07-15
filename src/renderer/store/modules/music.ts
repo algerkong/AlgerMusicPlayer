@@ -39,11 +39,11 @@ export const useMusicStore = defineStore('music', {
       this.canRemoveSong = false;
     },
 
-    // 从列表中移除一首歌曲
-    removeSongFromList(id: number) {
+    // 从列表中移除一首歌曲（id 可能是汽水长整型字符串）
+    removeSongFromList(id: string | number) {
       if (!this.currentMusicList) return;
 
-      const index = this.currentMusicList.findIndex((song) => song.id === id);
+      const index = this.currentMusicList.findIndex((song) => String(song.id) === String(id));
       if (index !== -1) {
         this.currentMusicList.splice(index, 1);
       }
