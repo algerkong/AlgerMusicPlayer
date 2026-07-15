@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap');
+
 /* ./src/index.css */
 
 /* ! @import */
@@ -313,5 +315,17 @@ html.wake-repaint body {
     --border: 0 0% 18%;
     --input: 0 0% 22%;
     --ring: 142 71% 45%;
+  }
+  .theme {
+    --font-heading: var(--font-sans);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
   }
 }

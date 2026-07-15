@@ -369,6 +369,39 @@ export async function msGetPlaylist(
   return invokeMs('music-source:get-playlist', playlistId, options);
 }
 
+export async function msCreatePlaylist(options: {
+  name: string;
+  isPrivate?: boolean;
+  trackIds?: string[];
+}): Promise<MsPlaylist> {
+  return invokeMs('music-source:create-playlist', options);
+}
+
+export async function msUpdatePlaylist(
+  playlistId: string,
+  options: { name?: string; isPrivate?: boolean }
+): Promise<MsPlaylist> {
+  return invokeMs('music-source:update-playlist', playlistId, options);
+}
+
+export async function msDeletePlaylist(playlistId: string | string[]): Promise<string[]> {
+  return invokeMs('music-source:delete-playlist', playlistId);
+}
+
+export async function msAppendPlaylistTracks(
+  playlistId: string,
+  trackIds: string[]
+): Promise<MsPlaylist> {
+  return invokeMs('music-source:append-playlist-tracks', playlistId, trackIds);
+}
+
+export async function msRemovePlaylistTracks(
+  playlistId: string,
+  trackIds: string[]
+): Promise<MsPlaylist> {
+  return invokeMs('music-source:remove-playlist-tracks', playlistId, trackIds);
+}
+
 export async function msResolve(query: {
   title?: string;
   artists?: string[];

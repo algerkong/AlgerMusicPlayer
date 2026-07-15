@@ -1,57 +1,71 @@
 <template>
-  <div
-    id="title-bar"
-    class="flex justify-between items-center px-4 py-2 select-none relative text-dark dark:text-white"
-    @mousedown="drag"
-  >
-    <div class="brand chrome-surface-strong no-drag-children">
-      <img :src="appIcon" class="brand-icon" alt="LYMusic" />
-      <span class="brand-name">LYMusic</span>
-      <span class="brand-ver">v{{ appVersion }}</span>
-    </div>
+  <tooltip-provider :delay-duration="300">
+    <div
+      id="title-bar"
+      class="flex justify-between items-center px-4 py-2 select-none relative text-dark dark:text-white"
+      @mousedown="drag"
+    >
+      <tooltip>
+        <tooltip-trigger as-child>
+          <button
+            type="button"
+            class="brand chrome-surface-strong no-drag-children"
+            @click="openRepo"
+          >
+            <img :src="appIcon" class="brand-icon" alt="LYMusic" />
+            <span class="brand-name">LYMusic</span>
+            <span class="brand-ver">v{{ appVersion }}</span>
+          </button>
+        </tooltip-trigger>
+        <tooltip-content side="bottom" :side-offset="6">打开 GitHub 仓库</tooltip-content>
+      </tooltip>
 
-    <!-- 与左上角品牌同一行：顶中两行支持正版 -->
-    <div class="support-banner no-drag-children">
-      <p class="support-line1">好音乐值得被认真对待，请大家支持正版</p>
-      <a
-        class="support-line2"
-        href="https://music.douyin.com/"
-        target="_blank"
-        rel="noopener noreferrer"
-        @click.prevent="openQishui"
-      >
-        <img :src="qishuiIcon" alt="汽水音乐" class="support-icon" />
-        <span>汽水音乐 · 购买会员</span>
-        <i class="ri-external-link-line support-ext" />
-      </a>
-    </div>
-
-    <!-- 搜索 / 登录 与 缩小·关闭 同一行（右上角工具簇） -->
-    <div class="title-bar-end no-drag-children">
-      <search-bar class="title-search" />
-      <div id="buttons" class="flex gap-3 items-center">
-        <n-button
-          v-if="!isElectron"
-          type="primary"
-          size="small"
-          text
-          title="下载应用"
-          @click="openDownloadPage"
+      <!-- 与左上角品牌同一行：顶中两行支持正版 -->
+      <div class="support-banner no-drag-children">
+        <p class="support-line1">好音乐值得被认真对待，请大家支持正版</p>
+        <a
+          class="support-line2"
+          href="https://music.douyin.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          @click.prevent="openQishui"
         >
-          <i class="ri-download-line"></i>
-          下载桌面版
-        </n-button>
-        <template v-if="isElectron">
-          <div class="win-btn" title="最小化" @click="minimize">
-            <i class="iconfont icon-minisize"></i>
-          </div>
-          <div class="win-btn win-btn-close" title="关闭" @click="handleClose">
-            <i class="iconfont icon-close"></i>
-          </div>
-        </template>
+          <img :src="qishuiIcon" alt="汽水音乐" class="support-icon" />
+          <span>汽水音乐 · 购买会员</span>
+          <i class="ri-external-link-line support-ext" />
+        </a>
+      </div>
+
+      <!-- 搜索 / 登录 与 缩小·关闭 同一行（右上角工具簇） -->
+      <div class="title-bar-end no-drag-children">
+        <search-bar class="title-search" />
+        <div id="buttons" class="flex gap-3 items-center">
+          <n-button v-if="!isElectron" type="primary" size="small" text @click="openDownloadPage">
+            <i class="ri-download-line"></i>
+            下载桌面版
+          </n-button>
+          <template v-if="isElectron">
+            <tooltip>
+              <tooltip-trigger as-child>
+                <div class="win-btn" @click="minimize">
+                  <i class="iconfont icon-minisize"></i>
+                </div>
+              </tooltip-trigger>
+              <tooltip-content side="bottom" :side-offset="6">最小化</tooltip-content>
+            </tooltip>
+            <tooltip>
+              <tooltip-trigger as-child>
+                <div class="win-btn win-btn-close" @click="handleClose">
+                  <i class="iconfont icon-close"></i>
+                </div>
+              </tooltip-trigger>
+              <tooltip-content side="bottom" :side-offset="6">关闭</tooltip-content>
+            </tooltip>
+          </template>
+        </div>
       </div>
     </div>
-  </div>
+  </tooltip-provider>
 
   <Teleport to="body">
     <Transition
@@ -111,6 +125,7 @@ import { ref } from 'vue';
 
 import appIcon from '@/assets/icon.png';
 import qishuiIcon from '@/assets/qishui-icon.png';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSettingsStore } from '@/store/modules/settings';
 import { isElectron } from '@/utils';
 
@@ -122,9 +137,16 @@ const showCloseModal = ref(false);
 const appVersion = config.version;
 const TRAY_TIP_KEY = 'lymusic-tray-close-tip-seen';
 const QISHUI_VIP_URL = 'https://music.douyin.com/';
+const REPO_URL =
+  (config as { homepage?: string }).homepage || 'https://github.com/LuoYe17/AlgerMusicPlayer';
 
 const openQishui = () => {
   window.open(QISHUI_VIP_URL, '_blank');
+};
+
+/** 左上角品牌 → GitHub 仓库 */
+const openRepo = () => {
+  window.open(REPO_URL, '_blank');
 };
 
 const openDownloadPage = () => {
@@ -246,11 +268,36 @@ const drag = (event: MouseEvent) => {
   gap: 8px;
   min-width: 0;
   padding: 4px 10px 4px 4px;
+  border: none;
   border-radius: 9999px;
-  /* 防止封面色导致品牌字消失 */
+  /* 顶栏是 drag 区，可点元素必须 no-drag，否则 Electron 不换 pointer */
   -webkit-app-region: no-drag;
+  app-region: no-drag;
   flex-shrink: 0;
-  z-index: 1;
+  z-index: 2;
+  cursor: pointer !important;
+  transition:
+    filter 0.15s,
+    transform 0.12s;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+
+  /* 子节点也强制 pointer，避免 drag 区继承成默认箭头 */
+  &,
+  & * {
+    cursor: pointer !important;
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+  }
+
+  &:hover {
+    filter: brightness(1.06);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
 }
 
 .brand-icon {
@@ -259,6 +306,7 @@ const drag = (event: MouseEvent) => {
   border-radius: 9999px;
   object-fit: cover;
   flex-shrink: 0;
+  pointer-events: none;
 }
 
 .brand-name {
@@ -267,6 +315,7 @@ const drag = (event: MouseEvent) => {
   letter-spacing: -0.01em;
   color: var(--chrome-text, #111827);
   line-height: 1;
+  pointer-events: none;
 }
 
 /*
@@ -284,6 +333,7 @@ const drag = (event: MouseEvent) => {
   border: 1px solid var(--chrome-border);
   backdrop-filter: blur(var(--chrome-blur));
   -webkit-backdrop-filter: blur(var(--chrome-blur));
+  pointer-events: none;
 }
 
 .support-banner {

@@ -30,7 +30,9 @@ const layoutRouter = [
       title: 'comp.list',
       icon: 'icon-Paper',
       keepAlive: true,
-      isMobile: true
+      isMobile: true,
+      // 用户歌单已挂到侧栏底部区域，主导航不再占「歌单」入口
+      hideInSidebar: true
     },
     component: () => import('@/views/list/index.vue')
   },

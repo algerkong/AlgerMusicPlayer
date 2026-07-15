@@ -21,6 +21,11 @@ const MUSIC_SOURCE_CHANNELS = [
   'music-source:search-suggestions',
   'music-source:list-user-playlists',
   'music-source:get-playlist',
+  'music-source:create-playlist',
+  'music-source:update-playlist',
+  'music-source:delete-playlist',
+  'music-source:append-playlist-tracks',
+  'music-source:remove-playlist-tracks',
   'music-source:resolve',
   'music-source:get-lyric'
 ] as const;
