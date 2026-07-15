@@ -42,9 +42,12 @@
                   @click.stop
                 >
                   <i
-                    class="iconfont app-menu-item-icon"
+                    class="app-menu-item-icon"
+                    :class="[
+                      item.meta.icon,
+                      String(item.meta.icon || '').startsWith('ri-') ? '' : 'iconfont'
+                    ]"
                     :style="{ fontSize: size }"
-                    :class="item.meta.icon"
                   />
                 </router-link>
               </tooltip-trigger>

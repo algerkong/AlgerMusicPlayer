@@ -14,6 +14,7 @@ pinia.use(({ store }) => {
 });
 
 // 导出所有 store
+export * from './modules/discoverFeed';
 export * from './modules/download';
 export * from './modules/favorite';
 export * from './modules/lyric';

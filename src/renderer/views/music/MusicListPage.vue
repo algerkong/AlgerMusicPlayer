@@ -133,6 +133,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useVisibleSongPrefetch } from '@/hooks/useVisibleSongPrefetch';
 import { useMusicStore, usePlayerStore, useRecommendStore, useUserPlaylistsStore } from '@/store';
 import type { SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
@@ -179,6 +180,13 @@ const name = computed(() => {
 const songList = computed(() => {
   if (isDailyRecommend.value) return recommendStore.dailyRecommendSongs;
   return musicStore.currentMusicList || [];
+});
+
+// P2：歌单/日推前 5 首可见预取
+useVisibleSongPrefetch(songList, {
+  maxConcurrent: 2,
+  maxPrefetch: 5,
+  auto: true
 });
 
 const displayCount = computed(() => {

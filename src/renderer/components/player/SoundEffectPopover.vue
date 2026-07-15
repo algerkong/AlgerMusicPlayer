@@ -25,7 +25,7 @@
           type="button"
           class="fx-chip"
           :class="{ 'fx-chip--on': active === item.key }"
-          @click="active = item.key"
+          @click="setEffect(item.key as any)"
         >
           {{ item.label }}
         </button>
@@ -62,23 +62,18 @@
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import { SOUND_EFFECT_PRESETS, useSoundEffect } from '@/hooks/useSoundEffect';
 import { usePlayerCoreStore } from '@/store/modules/playerCore';
 
 const { t } = useI18n();
 const playerStore = usePlayerCoreStore();
+const { activeEffect, setEffect } = useSoundEffect();
 
 const show = ref(false);
-const active = ref('none');
+const active = activeEffect;
 const isLoading = ref(false);
 
-const presets = [
-  { key: 'none', label: '关闭' },
-  { key: '3d', label: '3D 环绕' },
-  { key: 'bass', label: '超重低音' },
-  { key: 'vocal', label: '人声增强' },
-  { key: 'clear', label: '清澈人声' },
-  { key: 'live', label: '现场' }
-];
+const presets = SOUND_EFFECT_PRESETS;
 
 const deviceOptions = computed(() => {
   const systemLabel = t('settings.playback.systemDefault');

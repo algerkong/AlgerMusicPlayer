@@ -84,7 +84,9 @@ import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import PlaylistItem from '@/components/common/PlaylistItem.vue';
 import SongItem from '@/components/common/SongItem.vue';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useVisibleSongPrefetch } from '@/hooks/useVisibleSongPrefetch';
 import { usePlayHistoryStore } from '@/store/modules/playHistory';
+import type { SongResult } from '@/types/music';
 import { isMobile } from '@/utils';
 
 defineOptions({ name: 'History' });
@@ -103,6 +105,14 @@ const displayList = computed(() => {
   if (currentCategory.value === 'albums') return playHistoryStore.albumHistory;
   return [];
 });
+
+const historySongs = computed(
+  () =>
+    (currentCategory.value === 'songs'
+      ? (playHistoryStore.musicHistory as SongResult[])
+      : []) as SongResult[]
+);
+useVisibleSongPrefetch(historySongs, { maxConcurrent: 2, maxPrefetch: 5, auto: true });
 
 const handleDelSong = (item: any) => {
   playHistoryStore.delMusic(item);

@@ -5,7 +5,7 @@
 
 import type { SongResult } from '@/types/music';
 
-import type { ArtistRef,PlayableTrack, PlaybackRuntime, Track } from '../../shared/domain/track';
+import type { ArtistRef, PlayableTrack, PlaybackRuntime, Track } from '../../shared/domain/track';
 
 export function trackToSongResult(track: Track): SongResult {
   const artists = track.artists.map((a, i) => ({
@@ -49,7 +49,10 @@ export function trackToSongResult(track: Track): SongResult {
     digital: track.digital,
     genreTags: track.genreTags,
     lyricists: track.lyricists,
-    composers: track.composers
+    composers: track.composers,
+    likedCount: track.likeCount,
+    commentCount: track.commentCount,
+    shareCount: track.shareCount
   };
 }
 

@@ -89,6 +89,7 @@ import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import SongItem from '@/components/common/SongItem.vue';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SEARCH_TYPE } from '@/const/bar-const';
+import { useVisibleSongPrefetch } from '@/hooks/useVisibleSongPrefetch';
 import type { SongResult } from '@/types/music';
 
 defineOptions({ name: 'SearchResult' });
@@ -108,6 +109,13 @@ const playlists = ref<any[]>([]);
 const albums = ref<any[]>([]);
 /** 各类型对应的关键词，用来判断缓存是否还属于这次搜索 */
 const loadedKeywordByType = ref<Record<number, string>>({});
+
+// P2：搜索结果前 5 首并发预取 URL + standby（上限 2）
+useVisibleSongPrefetch(songs, {
+  maxConcurrent: 2,
+  maxPrefetch: 5,
+  auto: true
+});
 
 const typeOptions = computed(() => [
   { key: SEARCH_TYPE.MUSIC, label: t('search.search.single') },

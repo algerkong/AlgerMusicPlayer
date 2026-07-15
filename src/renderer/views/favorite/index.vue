@@ -38,6 +38,7 @@ import { useI18n } from 'vue-i18n';
 
 import SongItem from '@/components/common/SongItem.vue';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useVisibleSongPrefetch } from '@/hooks/useVisibleSongPrefetch';
 import { usePlayerStore } from '@/store';
 import { usePlayHistoryStore } from '@/store/modules/playHistory';
 import type { SongResult } from '@/types/music';
@@ -48,6 +49,8 @@ const { t } = useI18n();
 const playerStore = usePlayerStore();
 const playHistoryStore = usePlayHistoryStore();
 const favoriteSongs = ref<SongResult[]>([]);
+
+useVisibleSongPrefetch(favoriteSongs, { maxConcurrent: 2, maxPrefetch: 5, auto: true });
 
 const favoriteList = computed(() => playerStore.favoriteList);
 

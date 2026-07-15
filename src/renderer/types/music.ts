@@ -105,6 +105,10 @@ export interface SongResult {
     paymentItemType?: number;
     onlineDate?: number;
   };
+  /** Feed 收藏/喜欢数 */
+  likedCount?: number;
+  commentCount?: number;
+  shareCount?: number;
   genreTags?: string[];
   lyricists?: string[];
   composers?: string[];

@@ -55,9 +55,10 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
     props.item.primaryColor = primaryColor;
   };
 
-  // 播放音乐
+  // 播放音乐（点播单曲：队列只留这一首 → 发现页下一首进推荐流）
   const playMusicEvent = async (item: SongResult) => {
     try {
+      playerStore.setPlayList([item], false, true);
       const result = await playerStore.setPlay(item);
       if (!result) {
         throw new Error('播放失败');

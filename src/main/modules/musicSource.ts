@@ -1,4 +1,6 @@
 import { app, ipcMain, safeStorage } from 'electron';
+import http from 'http';
+import https from 'https';
 import {
   createMusicSource,
   isMusicSourceError,
@@ -19,6 +21,50 @@ const SESSION_KEY_ENC = 'musicSourceSessionEnc';
 
 let client: MusicSourceClient | null = null;
 let initialized = false;
+
+/** resolve 短缓存：同 id+quality+vip 5 分钟内不重复打源 */
+const RESOLVE_CACHE_TTL_MS = 5 * 60 * 1000;
+const resolveResultCache = new Map<string, { at: number; payload: Record<string, unknown> }>();
+
+function resolveCacheKey(
+  query: ResolveQuery & { quality?: string; vipLevel?: string },
+  quality: string
+): string {
+  const ids = query.ids || {};
+  const idPart = Object.keys(ids)
+    .sort()
+    .map((k) => `${k}:${ids[k]}`)
+    .join('|');
+  return `${idPart}|q=${quality}|v=${query.vipLevel || 'none'}`;
+}
+
+/** 后台 Range 拉首包，预热 CDN/连接（不改返回 URL；整曲仍走原地址流式） */
+function primeFirstPacket(url: string | undefined): void {
+  if (!url || !/^https?:\/\//i.test(url)) return;
+  try {
+    const lib = url.startsWith('https') ? https : http;
+    const req = lib.get(
+      url,
+      {
+        headers: { Range: 'bytes=0-524287', 'User-Agent': 'LYMusic/prime' },
+        timeout: 10000
+      },
+      (res) => {
+        res.resume();
+      }
+    );
+    req.on('error', () => undefined);
+    req.setTimeout(10000, () => {
+      try {
+        req.destroy();
+      } catch {
+        /* ignore */
+      }
+    });
+  } catch {
+    /* ignore */
+  }
+}
 
 /** 汽水 6 档 + standard≡medium；未知回落 higher */
 function mapQuality(raw?: string): Quality {
@@ -480,10 +526,19 @@ export function initializeMusicSource(): void {
         const quality = mapQuality(
           query.quality || (store.get('set') as { musicQuality?: string } | undefined)?.musicQuality
         );
+        const vipLevel = query.vipLevel || 'none';
+        const key = resolveCacheKey(query, quality);
+        const cached = resolveResultCache.get(key);
+        if (cached && Date.now() - cached.at < RESOLVE_CACHE_TTL_MS) {
+          // 缓存命中仍后台 prime，保持连接热
+          primeFirstPacket(cached.payload.playMusicUrl as string | undefined);
+          return wrapOk(cached.payload);
+        }
+
         const result = await getClient().resolve({
           ...query,
           quality,
-          vipLevel: query.vipLevel || 'none'
+          vipLevel
         });
 
         // IPC 不传 Buffer，仅 file/local 或远程 URL
@@ -492,7 +547,7 @@ export function initializeMusicSource(): void {
           playMusicUrl = filePathToLocalUrl(result.filePath);
         }
 
-        return wrapOk({
+        const payload = {
           platform: result.platform,
           songId: result.songId,
           playMusicUrl,
@@ -508,7 +563,19 @@ export function initializeMusicSource(): void {
           previewDurationMs: result.previewDurationMs,
           lyricTranslations: result.lyricTranslations,
           expireAt: result.expireAt
-        });
+        };
+
+        resolveResultCache.set(key, { at: Date.now(), payload });
+        // 简单上限：超过 200 条删最旧
+        if (resolveResultCache.size > 200) {
+          const oldest = resolveResultCache.keys().next().value;
+          if (oldest !== undefined) resolveResultCache.delete(oldest);
+        }
+
+        // 后台 Range 首包预热 CDN（不替换 URL）
+        primeFirstPacket(playMusicUrl);
+
+        return wrapOk(payload);
       } catch (error) {
         return toIpcError(error);
       }
@@ -527,6 +594,80 @@ export function initializeMusicSource(): void {
         raw: lyric.raw,
         translations: lyric.translations
       });
+    } catch (error) {
+      return toIpcError(error);
+    }
+  });
+
+  // ─── Discovery / like ───
+
+  ipcMain.handle(
+    'music-source:get-song-feed',
+    async (
+      _e,
+      options?: {
+        isFirst?: boolean;
+        playedMedia?: { id: string; type?: string }[];
+        mixSessionCount?: number;
+        sceneModeId?: number;
+      }
+    ) => {
+      try {
+        const page = await getClient().getSongFeed(options || {});
+        return wrapOk(page);
+      } catch (error) {
+        return toIpcError(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    'music-source:get-related-songs',
+    async (
+      _e,
+      songId: string,
+      options?: {
+        artistIds?: string[];
+        sceneName?: string;
+        searchQuery?: string;
+        playedMedia?: { id: string; type?: string }[];
+        limit?: number;
+      }
+    ) => {
+      try {
+        const page = await getClient().getRelatedSongs(String(songId), options || {});
+        return wrapOk(page);
+      } catch (error) {
+        return toIpcError(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    'music-source:dislike-track',
+    async (_e, songId: string, options?: { artistIds?: string[] }) => {
+      try {
+        await getClient().dislikeTrack(String(songId), options || {});
+        return wrapOk(true);
+      } catch (error) {
+        return toIpcError(error);
+      }
+    }
+  );
+
+  ipcMain.handle('music-source:like-track', async (_e, songId: string) => {
+    try {
+      await getClient().likeTrack(String(songId));
+      return wrapOk(true);
+    } catch (error) {
+      return toIpcError(error);
+    }
+  });
+
+  ipcMain.handle('music-source:unlike-track', async (_e, songId: string) => {
+    try {
+      await getClient().unlikeTrack(String(songId));
+      return wrapOk(true);
     } catch (error) {
       return toIpcError(error);
     }

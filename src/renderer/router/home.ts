@@ -11,6 +11,18 @@ const layoutRouter = [
     component: () => import('@/views/home/index.vue')
   },
   {
+    path: '/discover',
+    name: 'discover',
+    meta: {
+      title: 'comp.discover',
+      icon: 'ri-compass-discover-line',
+      keepAlive: true,
+      isMobile: true,
+      noScroll: true
+    },
+    component: () => import('@/views/discover/index.vue')
+  },
+  {
     path: '/search',
     name: 'search',
     meta: {

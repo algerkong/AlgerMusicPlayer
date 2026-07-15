@@ -257,6 +257,7 @@ export default {
   list: '歌单',
   mv: 'MV',
   home: '首页',
+  discover: '发现',
   search: '搜索',
   album: '专辑',
   pages: {

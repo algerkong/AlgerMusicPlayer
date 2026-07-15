@@ -46,6 +46,9 @@ export interface MsSong {
   genreTags?: string[];
   lyricists?: string[];
   composers?: string[];
+  likeCount?: number;
+  commentCount?: number;
+  shareCount?: number;
 }
 
 export interface MsPlaylist {
@@ -416,6 +419,49 @@ export async function msResolve(query: {
 
 export async function msGetLyric(songId: string): Promise<MsLyricResult> {
   return invokeMs('music-source:get-lyric', songId);
+}
+
+export interface MsPageResult<T> {
+  items: T[];
+  hasMore?: boolean;
+  nextCursor?: string;
+}
+
+export async function msGetSongFeed(options?: {
+  isFirst?: boolean;
+  playedMedia?: { id: string; type?: string }[];
+  mixSessionCount?: number;
+  sceneModeId?: number;
+}): Promise<MsPageResult<MsSong>> {
+  return invokeMs('music-source:get-song-feed', options);
+}
+
+export async function msGetRelatedSongs(
+  songId: string,
+  options?: {
+    artistIds?: string[];
+    sceneName?: string;
+    searchQuery?: string;
+    playedMedia?: { id: string; type?: string }[];
+    limit?: number;
+  }
+): Promise<MsPageResult<MsSong>> {
+  return invokeMs('music-source:get-related-songs', songId, options);
+}
+
+export async function msDislikeTrack(
+  songId: string,
+  options?: { artistIds?: string[] }
+): Promise<boolean> {
+  return invokeMs('music-source:dislike-track', songId, options);
+}
+
+export async function msLikeTrack(songId: string): Promise<boolean> {
+  return invokeMs('music-source:like-track', songId);
+}
+
+export async function msUnlikeTrack(songId: string): Promise<boolean> {
+  return invokeMs('music-source:unlike-track', songId);
 }
 
 /** 带时间戳的歌词行转 LRC 文本（仅行级，无逐字） */

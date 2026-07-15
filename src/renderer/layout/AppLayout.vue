@@ -6,9 +6,11 @@
   <div
     v-else
     class="layout-page"
-    :class="{ mobile: settingsStore.isMobile, 'has-cover-bg': !!coverBackground }"
-    :style="layoutBgStyle"
+    :class="{ mobile: settingsStore.isMobile, 'has-cover-bg': hasCoverBg }"
   >
+    <!-- 双层背景交叉淡入，封面取色切换时渐变过渡 -->
+    <div class="layout-bg-layer" :class="{ 'is-on': bgActive === 0 }" :style="bgLayer0Style" />
+    <div class="layout-bg-layer" :class="{ 'is-on': bgActive === 1 }" :style="bgLayer1Style" />
     <div id="layout-main" class="layout-main">
       <title-bar />
       <div class="layout-main-page">
@@ -131,20 +133,43 @@ const coverChromeVars = computed(() =>
   buildCoverChromeVars(coverBackground.value, coverPrimary.value)
 );
 
-const layoutBgStyle = computed(() => {
-  if (!coverChromeVars.value) return undefined;
-  return coverChromeVars.value as Record<string, string>;
-});
+// 含「暂无新取色、仍保留上一层」的情况
+const hasCoverBg = computed(() => !!(coverBackground.value || bgLayer0.value || bgLayer1.value));
 
-// 同步到 html，teleport 弹层也能继承
+/** 双层交叉淡入：渐变 background 本身难 transition，用两层 opacity 过渡 */
+const bgLayer0 = ref('');
+const bgLayer1 = ref('');
+const bgActive = ref(0);
+const bgLayer0Style = computed(() => (bgLayer0.value ? { background: bgLayer0.value } : undefined));
+const bgLayer1Style = computed(() => (bgLayer1.value ? { background: bgLayer1.value } : undefined));
+
+watch(
+  coverBackground,
+  (bg) => {
+    const next = (bg || '').trim();
+    // 新曲尚未取色时保留上一首背景，避免闪纯黑
+    if (!next) return;
+    const cur = bgActive.value === 0 ? bgLayer0.value : bgLayer1.value;
+    if (cur === next) return;
+    const other = bgActive.value === 0 ? 1 : 0;
+    if (other === 0) bgLayer0.value = next;
+    else bgLayer1.value = next;
+    requestAnimationFrame(() => {
+      bgActive.value = other;
+    });
+  },
+  { immediate: true }
+);
+
+// 同步到 html；无新 token 时保留旧 chrome，勿清空导致闪黑
 watch(
   coverChromeVars,
   (vars) => {
+    if (!vars) return;
     try {
       applyCoverChromeToRoot(vars);
     } catch (error) {
       console.error('[cover-chrome] watch apply failed', error);
-      applyCoverChromeToRoot(null);
     }
   },
   { immediate: true }
@@ -203,12 +228,24 @@ provide('openPlaylistDrawer', openPlaylistDrawer);
 <style lang="scss" scoped>
 .layout-page {
   @apply w-screen h-screen overflow-hidden bg-light dark:bg-black;
-  transition: background 0.45s ease;
+  position: relative;
+}
+
+.layout-bg-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.55s ease;
+  background-size: cover;
+  background-position: center;
+}
+.layout-bg-layer.is-on {
+  opacity: 1;
 }
 
 .layout-page.has-cover-bg {
-  /* 封面渐变作整页底，子层全部透出 */
-  background-attachment: fixed;
   color: var(--chrome-text);
 }
 
@@ -231,6 +268,7 @@ provide('openPlaylistDrawer', openPlaylistDrawer);
   display: flex;
   flex-direction: column;
   min-height: 0;
+  z-index: 1;
 }
 
 .layout-main-page {

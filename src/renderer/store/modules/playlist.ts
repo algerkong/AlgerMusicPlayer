@@ -5,6 +5,7 @@ import { computed, ref, shallowRef, triggerRef } from 'vue';
 
 import i18n from '@/../i18n/renderer';
 import { useSongDetail } from '@/hooks/usePlayerHooks';
+import { audioService } from '@/services/audioService';
 import { preloadService } from '@/services/preloadService';
 import type { SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
@@ -103,13 +104,15 @@ export const usePlaylistStore = defineStore(
         // 触发 shallowRef 响应式更新（直接修改元素不会自动触发）
         triggerRef(playList);
 
-        // 预加载下一首歌曲的音频和封面
+        // P2：resolve 写回后立刻灌 standby（真缓冲），封面并行
         if (nextSong) {
           if (nextSong.playMusicUrl) {
-            // 预加载失败（URL 验证不过）不应影响主流程，捕获避免未处理的 Promise rejection
-            preloadService.load(nextSong).catch((err) => {
+            try {
+              audioService.preload(nextSong.playMusicUrl, nextSong);
+            } catch (err) {
               console.warn('预加载下一首失败:', err);
-            });
+            }
+            void preloadService.load(nextSong).catch(() => undefined);
           }
           if (nextSong.picUrl) {
             preloadCoverImage(nextSong.picUrl, getImgUrl);
@@ -122,7 +125,7 @@ export const usePlaylistStore = defineStore(
 
     /**
      * 智能预加载下一首歌曲
-     * 短去抖：快速连续切歌时只保留最后一次，避免对音源 API 的请求风暴
+     * 短去抖：快速连切只保留最后一次；P2 从 800ms 收到 200ms 提高 promote 命中
      */
     let preloadDebounceTimer: ReturnType<typeof setTimeout> | null = null;
     const preloadNextSongs = (currentIndex: number) => {
@@ -130,7 +133,7 @@ export const usePlaylistStore = defineStore(
       preloadDebounceTimer = setTimeout(() => {
         preloadDebounceTimer = null;
         doPreloadNextSongs(currentIndex);
-      }, 800);
+      }, 200);
     };
 
     const doPreloadNextSongs = (currentIndex: number) => {
@@ -573,6 +576,22 @@ export const usePlaylistStore = defineStore(
       if (idx < 0) return;
       playList.value[idx] = { ...playList.value[idx], ...patch };
       triggerRef(playList);
+
+      // 当前播放曲 meta 写回后：预热「下一首」standby（若已有 URL）
+      if (idx === playListIndex.value && playList.value.length > 1) {
+        let nextIdx = playListIndex.value + 1;
+        if (nextIdx >= playList.value.length) {
+          nextIdx = playMode.value === 0 ? -1 : 0;
+        }
+        const next = nextIdx >= 0 ? playList.value[nextIdx] : null;
+        if (next?.playMusicUrl && !(next.expiredAt != null && next.expiredAt < Date.now())) {
+          try {
+            audioService.preload(next.playMusicUrl, next);
+          } catch {
+            /* ignore */
+          }
+        }
+      }
     };
 
     const setPlay = async (song: SongResult) => {
@@ -588,44 +607,77 @@ export const usePlaylistStore = defineStore(
           }
         }
 
-        // 同曲且 URL 仍在：才是播放/暂停切换。
-        // 音质切换会清掉 playMusicUrl，必须走 playTrack 重取链，不能进这里。
-        if (
-          playerCore.playMusic.id === song.id &&
-          song.playMusicUrl &&
-          playerCore.playMusic.playMusicUrl &&
-          playerCore.playMusic.playMusicUrl === song.playMusicUrl
-        ) {
-          if (playerCore.play) {
+        // 强制重取音质时不进切换分支
+        const forceResolve = !!(song as SongResult & { forceQualityResolve?: boolean })
+          .forceQualityResolve;
+
+        // 同曲：播放/暂停切换（含加载中）。
+        // 旧逻辑要求两侧 URL 都齐才 toggle → 加载中点暂停会 re-enter playTrack，
+        // 恢复时又清掉非 local URL → 再 resolve 一次，体感极差。
+        const sameSong =
+          !!playerCore.playMusic?.id && String(playerCore.playMusic.id) === String(song.id);
+        const coreUrl = playerCore.playMusic?.playMusicUrl;
+        const songUrl = song.playMusicUrl;
+        const urlsMatch = !!(coreUrl && songUrl && coreUrl === songUrl);
+        const loadingSame = sameSong && !!playerCore.playMusic?.playLoading;
+        // 同曲且（URL 对齐 / 仍在加载 / 核心已有有效 URL 且本次未强制换质）
+        const canToggle =
+          sameSong && !forceResolve && (urlsMatch || loadingSame || (!!coreUrl && !songUrl));
+
+        if (canToggle) {
+          const { audioService } = await import('@/services/audioService');
+
+          // 正在播或仍想播（含加载中）→ 只切暂停意图，不打断 resolve
+          if (playerCore.play || playerCore.userPlayIntent) {
             playerCore.setPlayMusic(false);
-            const { audioService } = await import('@/services/audioService');
-            audioService.getCurrentSound()?.pause();
             playerCore.userPlayIntent = false;
-          } else {
-            playerCore.setPlayMusic(true);
-            playerCore.userPlayIntent = true;
-            const { audioService } = await import('@/services/audioService');
-            const sound = audioService.getCurrentSound();
-            if (sound) {
-              sound.play();
-            } else {
-              // 无音频实例，经 playTrack 重建
+            audioService.getCurrentSound()?.pause();
+            return true;
+          }
+
+          // 恢复意图
+          playerCore.setPlayMusic(true);
+          playerCore.userPlayIntent = true;
+          const sound = audioService.getCurrentSound();
+          if (sound && sound.src) {
+            try {
+              await sound.play();
+            } catch (e) {
+              console.warn('[setPlay] resume play failed, keep URL and rebuild audio', e);
               const { playbackCoordinator } = await import('@/services/playbackCoordinator');
-              const recoverSong = {
-                ...playerCore.playMusic,
-                isFirstPlay: true,
-                playMusicUrl: playerCore.playMusic.playMusicUrl?.startsWith('local://')
-                  ? playerCore.playMusic.playMusicUrl
-                  : undefined
-              };
-              const recovered = await playbackCoordinator.playTrack(recoverSong, true);
+              // 保留已有 URL，禁止再走 resolve
+              const recovered = await playbackCoordinator.playTrack(
+                { ...playerCore.playMusic, isFirstPlay: false },
+                true
+              );
               if (!recovered) {
                 playerCore.setIsPlay(false);
                 getMessage().error(i18n.global.t('player.playFailed'));
               }
             }
+            return true;
           }
-          return;
+
+          // 仍在加载：intent 已 true，等 playTrack 收尾时按 userPlayIntent 起播
+          if (playerCore.playMusic?.playLoading) {
+            return true;
+          }
+
+          // URL 已有但 audio 未挂上：用现有 URL 建实例，禁止清链重 resolve
+          if (coreUrl) {
+            const { playbackCoordinator } = await import('@/services/playbackCoordinator');
+            const recovered = await playbackCoordinator.playTrack(
+              { ...playerCore.playMusic, isFirstPlay: false },
+              true
+            );
+            if (!recovered) {
+              playerCore.setIsPlay(false);
+              getMessage().error(i18n.global.t('player.playFailed'));
+            }
+            return recovered;
+          }
+
+          // 极端：同曲无 URL 且不在 loading（例如中断失败）→ 落下面 playTrack
         }
 
         if (song.isFirstPlay) song.isFirstPlay = false;
@@ -642,7 +694,10 @@ export const usePlaylistStore = defineStore(
         const success = await playbackCoordinator.playTrack(song);
 
         if (success) {
-          playerCore.isPlay = true;
+          // 尊重加载过程中用户改过的意图（可能已点暂停）
+          if (playerCore.userPlayIntent) {
+            playerCore.isPlay = true;
+          }
           if (songIndex !== -1) {
             // 立即预加载，不等待
             preloadNextSongs(playListIndex.value);

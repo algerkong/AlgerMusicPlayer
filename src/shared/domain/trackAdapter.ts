@@ -20,6 +20,9 @@ export interface MsSongLike {
   genreTags?: string[];
   lyricists?: string[];
   composers?: string[];
+  likeCount?: number;
+  commentCount?: number;
+  shareCount?: number;
 }
 
 export function msSongToTrack(song: MsSongLike): Track {
@@ -47,6 +50,9 @@ export function msSongToTrack(song: MsSongLike): Track {
     digital: song.digital,
     genreTags: song.genreTags,
     lyricists: song.lyricists,
-    composers: song.composers
+    composers: song.composers,
+    likeCount: song.likeCount,
+    commentCount: song.commentCount,
+    shareCount: song.shareCount
   };
 }

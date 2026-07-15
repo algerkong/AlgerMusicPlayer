@@ -48,6 +48,10 @@ export interface Track {
   genreTags?: string[];
   lyricists?: string[];
   composers?: string[];
+  /** 收藏/喜欢数（feed stats） */
+  likeCount?: number;
+  commentCount?: number;
+  shareCount?: number;
 }
 
 /** 当前播放源（可过期，不写回 Track） */

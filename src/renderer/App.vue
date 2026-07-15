@@ -134,6 +134,21 @@ onMounted(async () => {
   uninstallWakeRecovery = installWakeRecovery(recoverAfterWake);
 });
 
+// 热更新 MusicHook 后重新注入 store，并强制恢复当前曲歌词（模块级 lrcArray 会重置为空）
+if (import.meta.hot) {
+  import.meta.hot.accept('./hooks/MusicHook', (mod) => {
+    try {
+      const init = mod?.initMusicHook || initMusicHook;
+      init(playerStore);
+      void (mod?.ensureLyricsLoaded?.(true) ?? Promise.resolve());
+      void (mod?.initAudioListeners?.() ?? Promise.resolve());
+      console.info('[HMR] MusicHook re-inited + lyrics restored');
+    } catch (e) {
+      console.warn('[HMR] MusicHook re-init failed', e);
+    }
+  });
+}
+
 onUnmounted(() => {
   uninstallWakeRecovery?.();
   uninstallWakeRecovery = undefined;

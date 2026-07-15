@@ -120,19 +120,6 @@
         </template>
         {{ playModeText }}
       </n-tooltip>
-      <n-tooltip v-if="!isMobile" trigger="hover" :z-index="9999999">
-        <template #trigger>
-          <button
-            type="button"
-            class="bar-icon"
-            :class="{ 'bar-icon--liked': isFavorite }"
-            @click="toggleFavorite"
-          >
-            <i :class="isFavorite ? 'ri-heart-3-fill' : 'ri-heart-3-line'" />
-          </button>
-        </template>
-        {{ t('player.playBar.like') }}
-      </n-tooltip>
       <n-tooltip v-if="playMusic?.id && isElectron" trigger="hover" :z-index="9999999">
         <template #trigger>
           <button
@@ -148,49 +135,7 @@
         {{ isDownloading ? t('songItem.message.downloading') : t('player.playBar.download') }}
       </n-tooltip>
 
-      <!-- 音质 -->
-      <n-popover
-        v-if="isElectron"
-        trigger="click"
-        placement="top"
-        :show-arrow="false"
-        raw
-        :z-index="9999999"
-      >
-        <template #trigger>
-          <n-tooltip trigger="hover" :z-index="9999999">
-            <template #trigger>
-              <button type="button" class="quality-btn" :title="qualityLabel">
-                {{ qualityShort }}
-              </button>
-            </template>
-            {{ t('settings.playback.quality') }}：{{ qualityLabel }}
-          </n-tooltip>
-        </template>
-        <div class="quality-menu">
-          <div v-if="!playMusic?.id" class="quality-menu-item quality-menu-item--muted">
-            未在播放
-          </div>
-          <div
-            v-for="opt in songQualityMenu"
-            :key="opt.value"
-            class="quality-menu-item"
-            :class="{
-              active: opt.active,
-              disabled: opt.disabled,
-              locked: opt.locked
-            }"
-            :title="opt.disabled ? opt.disabledReason : undefined"
-            @click="onQualityItemClick(opt)"
-          >
-            <span class="quality-menu-label">{{ opt.label }}</span>
-            <span v-if="opt.svip" class="quality-svip-tag">SVIP</span>
-          </div>
-        </div>
-      </n-popover>
-
-      <!-- 音效 + 输出设备（与音质拉开间距） -->
-      <sound-effect-popover class="bar-fx-slot" />
+      <!-- 音质 / 音效已迁到发现页曲目标识；播放条不再重复 -->
 
       <n-tooltip trigger="hover" :z-index="9999999">
         <template #trigger>
@@ -217,193 +162,20 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import MusicFullWrapper from '@/components/lyric/MusicFullWrapper.vue';
-import SoundEffectPopover from '@/components/player/SoundEffectPopover.vue';
 import { allTime, artistList, nowTime, playMusic, textColors } from '@/hooks/MusicHook';
 import { useArtist } from '@/hooks/useArtist';
 import { useDownload } from '@/hooks/useDownload';
-import { useFavorite } from '@/hooks/useFavorite';
 import { usePlaybackControl } from '@/hooks/usePlaybackControl';
 import { usePlayMode } from '@/hooks/usePlayMode';
 import { useVolumeControl } from '@/hooks/useVolumeControl';
 import { audioService } from '@/services/audioService';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
-import { useUserStore } from '@/store/modules/user';
 import { getImgUrl, isElectron, isMobile, secondToMinute, setAnimationClass } from '@/utils';
 
 const playerStore = usePlayerStore();
 const settingsStore = useSettingsStore();
-const userStore = useUserStore();
 const { t } = useI18n();
-
-/**
- * 汽水全档：菜单按「最好在上」排（与 QUALITY_META 顺序一致）
- * medium/higher/highest 免费；lossless/spatial/hi_res 需 SVIP
- */
-const QUALITY_META: { value: string; label: string; short: string; svip?: boolean }[] = [
-  { value: 'hi_res', label: '录音室音质', short: '室', svip: true },
-  { value: 'spatial', label: '超清全景声', short: '全', svip: true },
-  { value: 'lossless', label: '无损音质', short: '损', svip: true },
-  { value: 'highest', label: '极高音质', short: '极' },
-  { value: 'higher', label: '较高音质', short: '高' },
-  { value: 'medium', label: '标准音质', short: '标' }
-];
-
-const normalizeQ = (q?: string) => {
-  const s = String(q || '').toLowerCase();
-  if (s === 'standard') return 'medium';
-  return s;
-};
-
-const isAccountSvip = computed(() => userStore.vipLevel === 'svip');
-
-/** 按钮展示：优先本曲实际流档，其次偏好 */
-const displayQualityKey = computed(() => {
-  const song = playMusic.value as { streamQuality?: string };
-  const stream = normalizeQ(song?.streamQuality);
-  if (stream && QUALITY_META.some((m) => m.value === stream)) return stream;
-  return normalizeQ(settingsStore.setData.musicQuality || 'higher') || 'higher';
-});
-
-const qualityLabel = computed(() => {
-  return (
-    QUALITY_META.find((o) => o.value === displayQualityKey.value)?.label || displayQualityKey.value
-  );
-});
-
-const qualityShort = computed(() => {
-  return QUALITY_META.find((o) => o.value === displayQualityKey.value)?.short || '音';
-});
-
-/**
- * 本曲可用档。热更/复用 URL 常丢 availableQualities：
- * 有则用真数据；无则免费三档 + 当前流档兜底（避免菜单全空）。
- */
-const songAvailableQualities = computed(() => {
-  const song = playMusic.value as {
-    availableQualities?: string[];
-    streamQuality?: string;
-    id?: string | number;
-  };
-  if (!song?.id) return [] as string[];
-  const list = song.availableQualities;
-  if (Array.isArray(list) && list.length) {
-    return list.map(normalizeQ).filter(Boolean);
-  }
-  const fallback = new Set(['highest', 'higher', 'medium']);
-  const stream = normalizeQ(song.streamQuality);
-  if (stream) fallback.add(stream);
-  return [...fallback];
-});
-
-type QualityMenuItem = {
-  value: string;
-  label: string;
-  short: string;
-  svip: boolean;
-  locked: boolean;
-  disabled: boolean;
-  disabledReason?: string;
-  active: boolean;
-};
-
-/** 本曲有的档；最好的在最上；SVIP 档始终带标识，非会员灰掉 */
-const songQualityMenu = computed((): QualityMenuItem[] => {
-  const avail = new Set(songAvailableQualities.value);
-  if (!avail.size) return [];
-  const pref = normalizeQ(settingsStore.setData.musicQuality || 'higher');
-  const stream = normalizeQ((playMusic.value as { streamQuality?: string })?.streamQuality);
-  return QUALITY_META.filter((m) => avail.has(m.value)).map((m) => {
-    const locked = Boolean(m.svip) && !isAccountSvip.value;
-    return {
-      value: m.value,
-      label: m.label,
-      short: m.short,
-      svip: Boolean(m.svip),
-      locked,
-      disabled: locked,
-      disabledReason: locked ? '需要 SVIP' : undefined,
-      active: stream === m.value || (!stream && pref === m.value)
-    };
-  });
-});
-
-const onQualityItemClick = (opt: QualityMenuItem) => {
-  if (opt.disabled) return;
-  void setQuality(opt.value);
-};
-
-/** 写偏好并强制 playTrack 重取链（不走 setPlay 的同曲暂停逻辑） */
-const setQuality = async (value: string) => {
-  const key = normalizeQ(value);
-  const item = songQualityMenu.value.find((o) => o.value === key);
-  if (!item || item.disabled) return;
-
-  // 已是当前实际流档则只同步偏好
-  const streamNow = normalizeQ((playMusic.value as { streamQuality?: string })?.streamQuality);
-  settingsStore.setSetData({
-    ...settingsStore.setData,
-    musicQuality: key
-  });
-  if (streamNow === key) {
-    console.info('[quality] already streaming', key);
-    return;
-  }
-
-  if (!isElectron) return;
-  const cur = playerStore.playMusic as {
-    id?: string | number;
-    playMusicUrl?: string;
-    source?: string;
-  } | null;
-  if (!cur?.id) return;
-  // 真正的用户本地文件不换档；ly-music-cache 的 local 要重取
-  const url = String(cur.playMusicUrl || '');
-  if (url.startsWith('local://') && !url.includes('ly-music-cache') && cur.source === 'local') {
-    return;
-  }
-
-  try {
-    const keepPlaying = !!playerStore.isPlay;
-    // 记住进度，切档后续播
-    let seekSec = 0;
-    try {
-      const sound = audioService.getCurrentSound() as HTMLAudioElement | null;
-      if (sound && Number.isFinite(sound.currentTime)) seekSec = sound.currentTime;
-    } catch {
-      /* ignore */
-    }
-
-    const { playbackCoordinator } = await import('@/services/playbackCoordinator');
-    const ok = await playbackCoordinator.playTrack(
-      {
-        ...(playerStore.playMusic as object),
-        playMusicUrl: undefined,
-        expiredAt: undefined,
-        streamQuality: undefined,
-        preferredQuality: key,
-        forceQualityResolve: true,
-        isFirstPlay: true
-      } as any,
-      keepPlaying
-    );
-    if (ok && seekSec > 1) {
-      // 等 canplay 后再 seek：短延迟兜底
-      setTimeout(() => {
-        try {
-          audioService.seek(seekSec);
-        } catch {
-          /* ignore */
-        }
-      }, 400);
-    }
-    if (!ok) {
-      console.warn('[quality] playTrack returned false for', key);
-    }
-  } catch (error) {
-    console.warn('[quality] re-resolve after switch failed', error);
-  }
-};
 
 // 播放控制
 const { isPlaying: play, playMusicEvent, handleNext, handlePrev } = usePlaybackControl();
@@ -417,10 +189,7 @@ const {
   handleVolumeWheel
 } = useVolumeControl();
 
-// 收藏
-const { isFavorite, toggleFavorite } = useFavorite();
-
-// 下载
+// 下载（喜欢已迁到发现页操作区）
 const { downloadMusic, isDownloading } = useDownload();
 const handleDownload = () => {
   if (!playMusic.value || isDownloading.value) return;
@@ -546,6 +315,8 @@ const openPlayListDrawer = () => {
   .music-content {
     width: 200px;
     @apply ml-4;
+    flex-shrink: 0;
+    min-width: 0;
 
     &-title {
       @apply text-base;
@@ -561,8 +332,18 @@ const openPlayListDrawer = () => {
   @apply w-14 h-14 rounded-2xl;
 }
 
+/* 绝对居中：不受左右列宽度不对称影响 */
 .music-buttons {
-  @apply mx-6 flex-1 flex items-center justify-center gap-2;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  z-index: 2;
+  pointer-events: auto;
 }
 
 /* 中间播放控件：圆润填充 */
@@ -631,6 +412,10 @@ const openPlayListDrawer = () => {
 
 .audio-button {
   @apply flex items-center gap-1.5;
+  margin-left: auto;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
 }
 
 /* 右侧工具图标：统一圆按钮 */
@@ -740,7 +525,7 @@ const openPlayListDrawer = () => {
     @apply mx-0;
   }
   .music-buttons {
-    @apply m-0 gap-0;
+    gap: 0;
     .pb-ctrl:not(.pb-ctrl--play) {
       display: none;
     }
@@ -750,6 +535,7 @@ const openPlayListDrawer = () => {
   }
   .music-content {
     flex: 1;
+    width: auto;
   }
 }
 
