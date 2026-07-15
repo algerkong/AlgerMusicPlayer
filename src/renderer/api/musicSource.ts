@@ -82,6 +82,10 @@ export interface MsResolveResult {
   mimeType?: string;
   ext?: string;
   quality?: string;
+  /** 本曲真实存在的档（规范 key） */
+  availableQualities?: string[];
+  /** 会员 + 本曲可用 后的实际取流档 */
+  effectiveQuality?: string;
   bitrate?: number;
   size?: number;
   isPreview: boolean;
@@ -371,6 +375,8 @@ export async function msResolve(query: {
   durationMs?: number;
   ids?: Record<string, string>;
   quality?: string;
+  /** none | vip | svip — 库侧拦截会员档 */
+  vipLevel?: string;
 }): Promise<MsResolveResult> {
   return invokeMs('music-source:resolve', query);
 }

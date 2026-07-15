@@ -86,6 +86,18 @@ export interface SongResult {
    * true 时歌词时钟 = 音频进度 + preview.startMs。
    */
   isPreviewStream?: boolean;
+  /**
+   * 本曲接口声明的可用音质档（medium/higher/highest/lossless/spatial/hi_res）。
+   * 播放条只展示这里有的项。
+   */
+  availableQualities?: string[];
+  /** 本次实际取流档（会员降级 / 本曲无档 之后） */
+  streamQuality?: string;
+  streamBitrate?: number;
+  /** 本次 resolve 强制使用的音质（优先于全局 musicQuality） */
+  preferredQuality?: string;
+  /** 强制重新 resolve（切换音质时置 true，忽略已有 playMusicUrl） */
+  forceQualityResolve?: boolean;
   isDigital?: boolean;
   digital?: {
     paymentItemId?: string;

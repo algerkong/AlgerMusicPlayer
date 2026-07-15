@@ -61,6 +61,9 @@ export type MinifiedSong = {
   source?: SongResult['source'];
   dt?: SongResult['dt'];
   playMusicUrl?: SongResult['playMusicUrl'];
+  availableQualities?: SongResult['availableQualities'];
+  streamQuality?: SongResult['streamQuality'];
+  streamBitrate?: SongResult['streamBitrate'];
   isPodcast?: SongResult['isPodcast'];
   program?: MinifiedDjProgram;
 };
@@ -129,6 +132,12 @@ export const minifySong = (s: SongResult): MinifiedSong => {
     source: s.source,
     dt: s.dt,
     playMusicUrl: s.playMusicUrl?.startsWith('local://') ? s.playMusicUrl : undefined,
+    // 音质档位很小（字符串数组），热更/重启后菜单依赖它；丢掉会空菜单
+    availableQualities: Array.isArray(s.availableQualities)
+      ? s.availableQualities.map(String).slice(0, 12)
+      : undefined,
+    streamQuality: s.streamQuality ? String(s.streamQuality) : undefined,
+    streamBitrate: typeof s.streamBitrate === 'number' ? s.streamBitrate : undefined,
     // 必须保留 isPodcast/program：playbackController.playTrack 用 music.isPodcast 决定写
     // 普通歌历史还是播客历史；缺失会让重启恢复后的播客被误记进 musicHistory
     isPodcast: s.isPodcast,

@@ -79,21 +79,26 @@
       </div>
     </div>
     <div class="music-buttons">
-      <div class="music-buttons-prev" @click="handlePrev">
-        <i class="iconfont icon-prev"></i>
-      </div>
-      <div class="music-buttons-play" @click="playMusicEvent">
-        <i class="iconfont icon" :class="play ? 'icon-stop' : 'icon-play'"></i>
-      </div>
-      <div class="music-buttons-next" @click="handleNext">
-        <i class="iconfont icon-next"></i>
-      </div>
+      <button type="button" class="pb-ctrl" :title="t('player.playBar.prev')" @click="handlePrev">
+        <i class="ri-skip-back-mini-fill" />
+      </button>
+      <button
+        type="button"
+        class="pb-ctrl pb-ctrl--play"
+        :title="play ? t('player.playBar.pause') : t('player.playBar.play')"
+        @click="playMusicEvent"
+      >
+        <i :class="play ? 'ri-pause-fill' : 'ri-play-fill'" />
+      </button>
+      <button type="button" class="pb-ctrl" :title="t('player.playBar.next')" @click="handleNext">
+        <i class="ri-skip-forward-mini-fill" />
+      </button>
     </div>
     <div class="audio-button">
       <div class="audio-volume custom-slider" @wheel.prevent="handleVolumeWheel">
-        <div class="volume-icon" @click="mute">
-          <i class="iconfont" :class="getVolumeIcon"></i>
-        </div>
+        <button type="button" class="bar-icon" :title="t('player.playBar.volume')" @click="mute">
+          <i :class="getVolumeIcon" />
+        </button>
         <div class="volume-slider">
           <div class="volume-percentage" :class="{ 'volume-percentage-disabled': isMuted }">
             {{ Math.round(volumeSlider) }}%
@@ -109,36 +114,41 @@
       </div>
       <n-tooltip v-if="!isMobile" trigger="hover" :z-index="9999999">
         <template #trigger>
-          <i class="iconfont" :class="playModeIcon" @click="togglePlayMode"></i>
+          <button type="button" class="bar-icon" @click="togglePlayMode">
+            <i :class="playModeIcon" />
+          </button>
         </template>
         {{ playModeText }}
       </n-tooltip>
       <n-tooltip v-if="!isMobile" trigger="hover" :z-index="9999999">
         <template #trigger>
-          <i
-            class="iconfont"
-            :class="{
-              'like-active': isFavorite,
-              'ri-heart-3-fill': isFavorite,
-              'ri-heart-3-line': !isFavorite
-            }"
+          <button
+            type="button"
+            class="bar-icon"
+            :class="{ 'bar-icon--liked': isFavorite }"
             @click="toggleFavorite"
-          ></i>
+          >
+            <i :class="isFavorite ? 'ri-heart-3-fill' : 'ri-heart-3-line'" />
+          </button>
         </template>
         {{ t('player.playBar.like') }}
       </n-tooltip>
       <n-tooltip v-if="playMusic?.id && isElectron" trigger="hover" :z-index="9999999">
         <template #trigger>
-          <i
-            class="iconfont ri-download-line"
-            :class="{ 'disabled-icon': isDownloading }"
+          <button
+            type="button"
+            class="bar-icon"
+            :class="{ 'bar-icon--disabled': isDownloading }"
+            :disabled="isDownloading"
             @click="playMusic?.id && handleDownload()"
-          />
+          >
+            <i class="ri-download-2-line" />
+          </button>
         </template>
         {{ isDownloading ? t('songItem.message.downloading') : t('player.playBar.download') }}
       </n-tooltip>
 
-      <!-- 音质（从设置页挪到播放条） -->
+      <!-- 音质 -->
       <n-popover
         v-if="isElectron"
         trigger="click"
@@ -158,27 +168,40 @@
           </n-tooltip>
         </template>
         <div class="quality-menu">
+          <div v-if="!playMusic?.id" class="quality-menu-item quality-menu-item--muted">
+            未在播放
+          </div>
           <div
-            v-for="opt in qualityOptions"
+            v-for="opt in songQualityMenu"
             :key="opt.value"
             class="quality-menu-item"
-            :class="{ active: settingsStore.setData.musicQuality === opt.value }"
-            @click="setQuality(opt.value)"
+            :class="{
+              active: opt.active,
+              disabled: opt.disabled,
+              locked: opt.locked
+            }"
+            :title="opt.disabled ? opt.disabledReason : undefined"
+            @click="onQualityItemClick(opt)"
           >
-            {{ opt.label }}
+            <span class="quality-menu-label">{{ opt.label }}</span>
+            <span v-if="opt.svip" class="quality-svip-tag">SVIP</span>
           </div>
         </div>
       </n-popover>
 
-      <!-- 音效 + 输出设备 -->
-      <sound-effect-popover />
+      <!-- 音效 + 输出设备（与音质拉开间距） -->
+      <sound-effect-popover class="bar-fx-slot" />
 
       <n-tooltip trigger="hover" :z-index="9999999">
         <template #trigger>
-          <i
-            class="iconfont icon-list text-2xl hover:text-primary transition-colors cursor-pointer"
+          <button
+            type="button"
+            class="bar-icon"
+            :title="t('player.playBar.playList')"
             @click="openPlayListDrawer"
-          ></i>
+          >
+            <i class="ri-play-list-2-line" />
+          </button>
         </template>
         {{ t('player.playBar.playList') }}
       </n-tooltip>
@@ -205,34 +228,181 @@ import { useVolumeControl } from '@/hooks/useVolumeControl';
 import { audioService } from '@/services/audioService';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
+import { useUserStore } from '@/store/modules/user';
 import { getImgUrl, isElectron, isMobile, secondToMinute, setAnimationClass } from '@/utils';
 
 const playerStore = usePlayerStore();
 const settingsStore = useSettingsStore();
+const userStore = useUserStore();
 const { t } = useI18n();
 
-/** 与 ly-music-source 对齐的常用音质 */
-const qualityOptions = [
-  { value: 'standard', label: '标准', short: '标' },
-  { value: 'higher', label: '较高', short: '高' },
-  { value: 'lossless', label: '无损', short: '损' }
+/**
+ * 汽水全档：菜单按「最好在上」排（与 QUALITY_META 顺序一致）
+ * medium/higher/highest 免费；lossless/spatial/hi_res 需 SVIP
+ */
+const QUALITY_META: { value: string; label: string; short: string; svip?: boolean }[] = [
+  { value: 'hi_res', label: '录音室音质', short: '室', svip: true },
+  { value: 'spatial', label: '超清全景声', short: '全', svip: true },
+  { value: 'lossless', label: '无损音质', short: '损', svip: true },
+  { value: 'highest', label: '极高音质', short: '极' },
+  { value: 'higher', label: '较高音质', short: '高' },
+  { value: 'medium', label: '标准音质', short: '标' }
 ];
 
+const normalizeQ = (q?: string) => {
+  const s = String(q || '').toLowerCase();
+  if (s === 'standard') return 'medium';
+  return s;
+};
+
+const isAccountSvip = computed(() => userStore.vipLevel === 'svip');
+
+/** 按钮展示：优先本曲实际流档，其次偏好 */
+const displayQualityKey = computed(() => {
+  const song = playMusic.value as { streamQuality?: string };
+  const stream = normalizeQ(song?.streamQuality);
+  if (stream && QUALITY_META.some((m) => m.value === stream)) return stream;
+  return normalizeQ(settingsStore.setData.musicQuality || 'higher') || 'higher';
+});
+
 const qualityLabel = computed(() => {
-  const q = settingsStore.setData.musicQuality || 'higher';
-  return qualityOptions.find((o) => o.value === q)?.label || q;
+  return (
+    QUALITY_META.find((o) => o.value === displayQualityKey.value)?.label || displayQualityKey.value
+  );
 });
 
 const qualityShort = computed(() => {
-  const q = settingsStore.setData.musicQuality || 'higher';
-  return qualityOptions.find((o) => o.value === q)?.short || '音';
+  return QUALITY_META.find((o) => o.value === displayQualityKey.value)?.short || '音';
 });
 
-const setQuality = (value: string) => {
+/**
+ * 本曲可用档。热更/复用 URL 常丢 availableQualities：
+ * 有则用真数据；无则免费三档 + 当前流档兜底（避免菜单全空）。
+ */
+const songAvailableQualities = computed(() => {
+  const song = playMusic.value as {
+    availableQualities?: string[];
+    streamQuality?: string;
+    id?: string | number;
+  };
+  if (!song?.id) return [] as string[];
+  const list = song.availableQualities;
+  if (Array.isArray(list) && list.length) {
+    return list.map(normalizeQ).filter(Boolean);
+  }
+  const fallback = new Set(['highest', 'higher', 'medium']);
+  const stream = normalizeQ(song.streamQuality);
+  if (stream) fallback.add(stream);
+  return [...fallback];
+});
+
+type QualityMenuItem = {
+  value: string;
+  label: string;
+  short: string;
+  svip: boolean;
+  locked: boolean;
+  disabled: boolean;
+  disabledReason?: string;
+  active: boolean;
+};
+
+/** 本曲有的档；最好的在最上；SVIP 档始终带标识，非会员灰掉 */
+const songQualityMenu = computed((): QualityMenuItem[] => {
+  const avail = new Set(songAvailableQualities.value);
+  if (!avail.size) return [];
+  const pref = normalizeQ(settingsStore.setData.musicQuality || 'higher');
+  const stream = normalizeQ((playMusic.value as { streamQuality?: string })?.streamQuality);
+  return QUALITY_META.filter((m) => avail.has(m.value)).map((m) => {
+    const locked = Boolean(m.svip) && !isAccountSvip.value;
+    return {
+      value: m.value,
+      label: m.label,
+      short: m.short,
+      svip: Boolean(m.svip),
+      locked,
+      disabled: locked,
+      disabledReason: locked ? '需要 SVIP' : undefined,
+      active: stream === m.value || (!stream && pref === m.value)
+    };
+  });
+});
+
+const onQualityItemClick = (opt: QualityMenuItem) => {
+  if (opt.disabled) return;
+  void setQuality(opt.value);
+};
+
+/** 写偏好并强制 playTrack 重取链（不走 setPlay 的同曲暂停逻辑） */
+const setQuality = async (value: string) => {
+  const key = normalizeQ(value);
+  const item = songQualityMenu.value.find((o) => o.value === key);
+  if (!item || item.disabled) return;
+
+  // 已是当前实际流档则只同步偏好
+  const streamNow = normalizeQ((playMusic.value as { streamQuality?: string })?.streamQuality);
   settingsStore.setSetData({
     ...settingsStore.setData,
-    musicQuality: value
+    musicQuality: key
   });
+  if (streamNow === key) {
+    console.info('[quality] already streaming', key);
+    return;
+  }
+
+  if (!isElectron) return;
+  const cur = playerStore.playMusic as {
+    id?: string | number;
+    playMusicUrl?: string;
+    source?: string;
+  } | null;
+  if (!cur?.id) return;
+  // 真正的用户本地文件不换档；ly-music-cache 的 local 要重取
+  const url = String(cur.playMusicUrl || '');
+  if (url.startsWith('local://') && !url.includes('ly-music-cache') && cur.source === 'local') {
+    return;
+  }
+
+  try {
+    const keepPlaying = !!playerStore.isPlay;
+    // 记住进度，切档后续播
+    let seekSec = 0;
+    try {
+      const sound = audioService.getCurrentSound() as HTMLAudioElement | null;
+      if (sound && Number.isFinite(sound.currentTime)) seekSec = sound.currentTime;
+    } catch {
+      /* ignore */
+    }
+
+    const { playbackCoordinator } = await import('@/services/playbackCoordinator');
+    const ok = await playbackCoordinator.playTrack(
+      {
+        ...(playerStore.playMusic as object),
+        playMusicUrl: undefined,
+        expiredAt: undefined,
+        streamQuality: undefined,
+        preferredQuality: key,
+        forceQualityResolve: true,
+        isFirstPlay: true
+      } as any,
+      keepPlaying
+    );
+    if (ok && seekSec > 1) {
+      // 等 canplay 后再 seek：短延迟兜底
+      setTimeout(() => {
+        try {
+          audioService.seek(seekSec);
+        } catch {
+          /* ignore */
+        }
+      }, 400);
+    }
+    if (!ok) {
+      console.warn('[quality] playTrack returned false for', key);
+    }
+  } catch (error) {
+    console.warn('[quality] re-resolve after switch failed', error);
+  }
 };
 
 // 播放控制
@@ -392,36 +562,45 @@ const openPlayListDrawer = () => {
 }
 
 .music-buttons {
-  @apply mx-6 flex-1 flex justify-center;
+  @apply mx-6 flex-1 flex items-center justify-center gap-2;
+}
 
-  .iconfont {
-    @apply text-2xl transition;
-    color: var(--chrome-text, inherit);
-  }
-
-  .iconfont:hover {
-    color: var(--primary-color, #22c55e);
-  }
-
-  .icon {
-    @apply text-3xl;
-    color: var(--chrome-text, inherit);
-  }
-
-  .icon:hover {
-    color: var(--primary-color, #22c55e);
-  }
-
-  @apply flex items-center;
-
-  > div {
-    @apply cursor-pointer;
-  }
-
-  &-play {
-    @apply flex justify-center items-center w-20 h-12 rounded-full mx-4 transition text-gray-500;
-    @apply bg-gray-100 bg-opacity-60 dark:bg-gray-800 dark:bg-opacity-60 hover:bg-gray-200;
-  }
+/* 中间播放控件：圆润填充 */
+.pb-ctrl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--chrome-text, #f8fafc);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    transform 0.12s;
+  font-size: 1.55rem;
+  line-height: 1;
+  padding: 0;
+}
+.pb-ctrl:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--primary-color, #22c55e);
+}
+.pb-ctrl:active {
+  transform: scale(0.94);
+}
+.pb-ctrl--play {
+  width: 48px;
+  height: 48px;
+  margin: 0 6px;
+  font-size: 1.75rem;
+  background: rgba(255, 255, 255, 0.12);
+}
+.pb-ctrl--play:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .audio-volume {
@@ -431,19 +610,9 @@ const openPlayListDrawer = () => {
       @apply opacity-100 visible;
     }
   }
-  .volume-icon {
-    @apply cursor-pointer;
-  }
-
-  .iconfont {
-    @apply text-2xl transition;
-    &:hover {
-      color: var(--primary-color, #22c55e);
-    }
-  }
 
   .volume-slider {
-    @apply absolute opacity-0 invisible transition-all duration-300 bottom-[30px] left-1/2 -translate-x-1/2 h-[180px] px-2 py-4 rounded-xl;
+    @apply absolute opacity-0 invisible transition-all duration-300 bottom-[36px] left-1/2 -translate-x-1/2 h-[180px] px-2 py-4 rounded-2xl;
     @apply bg-light dark:bg-dark-200;
     @apply border border-gray-200 dark:border-gray-700;
 
@@ -461,14 +630,81 @@ const openPlayListDrawer = () => {
 }
 
 .audio-button {
-  @apply flex items-center;
+  @apply flex items-center gap-1.5;
+}
 
-  .iconfont {
-    @apply text-2xl transition cursor-pointer mx-3;
-    &:hover {
-      color: var(--primary-color, #22c55e);
-    }
-  }
+/* 右侧工具图标：统一圆按钮 */
+.bar-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--chrome-text, #f8fafc);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    transform 0.12s;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+}
+.bar-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--primary-color, #22c55e);
+}
+.bar-icon:active {
+  transform: scale(0.94);
+}
+.bar-icon--liked {
+  color: #ec4899;
+}
+.bar-icon--liked:hover {
+  color: #f472b6;
+}
+.bar-icon--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* 音质胶囊与音效之间多留空 */
+.quality-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 32px;
+  padding: 0 10px;
+  margin: 0 4px 0 2px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+  flex-shrink: 0;
+}
+.quality-btn:hover {
+  color: var(--primary-color, #22c55e);
+  border-color: color-mix(in srgb, var(--primary-color, #22c55e) 55%, transparent);
+  background: color-mix(in srgb, var(--primary-color, #22c55e) 14%, transparent);
+}
+
+.bar-fx-slot {
+  margin-left: 6px;
+  margin-right: 2px;
 }
 
 .music-play {
@@ -504,13 +740,12 @@ const openPlayListDrawer = () => {
     @apply mx-0;
   }
   .music-buttons {
-    @apply m-0;
-    &-prev,
-    &-next {
+    @apply m-0 gap-0;
+    .pb-ctrl:not(.pb-ctrl--play) {
       display: none;
     }
-    &-play {
-      @apply m-0;
+    .pb-ctrl--play {
+      margin: 0;
     }
   }
   .music-content {
@@ -702,30 +937,67 @@ const openPlayListDrawer = () => {
   vertical-align: 1px;
 }
 
-.quality-btn {
-  @apply min-w-[1.75rem] h-7 px-1.5 rounded-md text-xs font-semibold;
-  @apply hover:bg-black/5 dark:hover:bg-white/10 transition-colors;
-  &:hover {
-    color: var(--primary-color, #22c55e);
-  }
-  border: 1px solid currentColor;
-  opacity: 0.85;
-}
-
 .quality-menu {
-  @apply min-w-[7rem] py-1 rounded-xl border border-neutral-200 dark:border-neutral-700;
-  @apply bg-white dark:bg-neutral-900 shadow-lg;
+  min-width: 11rem;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.12));
+  background: var(--chrome-surface-strong, rgba(24, 24, 27, 0.94));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(16px);
 }
 
 .quality-menu-item {
-  @apply px-3 py-2 text-sm cursor-pointer transition-colors;
-  @apply text-neutral-700 dark:text-neutral-300;
-  @apply hover:bg-neutral-100 dark:hover:bg-neutral-800;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--chrome-text, #f3f4f6);
+  transition: background 0.12s;
+}
+
+.quality-menu-item:hover:not(.disabled) {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .quality-menu-item.active {
-  @apply font-medium;
+  font-weight: 650;
   color: var(--primary-color, #22c55e);
-  background: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--primary-color, #22c55e) 14%, transparent);
+}
+
+.quality-menu-item.disabled,
+.quality-menu-item.locked {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.quality-menu-item--muted {
+  opacity: 0.55;
+  cursor: default;
+  font-size: 12px;
+  justify-content: center;
+}
+
+.quality-menu-label {
+  min-width: 0;
+}
+
+/* 需要 SVIP 的档始终带小标 */
+.quality-svip-tag {
+  flex-shrink: 0;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #f5e6b8;
+  background: linear-gradient(180deg, #2a2210 0%, #141008 100%);
+  border: 1px solid rgba(232, 197, 71, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 244, 200, 0.2);
 }
 </style>

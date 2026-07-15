@@ -74,21 +74,69 @@ export const getSongUrl = async (
     throw new Error('Request cancelled');
   }
 
+  const normalizeQualityKey = (q?: string) =>
+    String(q || '')
+      .toLowerCase()
+      .replace('standard', 'medium')
+      .trim();
+
+  // 切音质：强制丢弃旧 URL / 旧流档（用户本地文件 source=local 且非缓存目录除外）
+  if (songData.forceQualityResolve) {
+    const url = String(songData.playMusicUrl || '');
+    const isUserLocalFile =
+      url.startsWith('local://') && !url.includes('ly-music-cache') && songData.source === 'local';
+    console.info(`[getSongUrl] forceQualityResolve id=${id} userLocal=${isUserLocalFile}`);
+    if (!isUserLocalFile) {
+      songData.playMusicUrl = undefined;
+      songData.streamQuality = undefined;
+    }
+    songData.forceQualityResolve = false;
+  }
+
   if (songData.playMusicUrl) {
     // 复用缓存 URL 时也要恢复试听标记（否则切回第一首 isPreviewStream 丢失 → 歌词错位）
     restorePreviewStreamFlags(songData);
+    // 偏好音质与当前流不一致 → 必须重取（切换音质）
+    const prefQ = normalizeQualityKey(
+      songData.preferredQuality || getSetData()?.musicQuality || 'higher'
+    );
+    const streamQ = normalizeQualityKey(songData.streamQuality);
+    const qualityMismatch =
+      !!streamQ && !!prefQ && streamQ !== prefQ && !songData.playMusicUrl.startsWith('local://');
     // 有试听文件路径却丢了 startMs：必须重 resolve，否则歌词 base=0
     const needPreviewMeta =
       (songData.isPreviewStream || isPreviewStreamUrl(songData.playMusicUrl)) &&
       !(Number(songData.preview?.startMs) > 0);
-    if (!needPreviewMeta) {
+    // local:// 在线缓存：若 URL 里不带当前音质标记，也重取
+    const localQualityStale =
+      songData.playMusicUrl.startsWith('local://') &&
+      !!prefQ &&
+      !songData.playMusicUrl.includes(`.${prefQ}.`) &&
+      // 真正的用户本地文件（非 ly-music-cache）不重取
+      songData.playMusicUrl.includes('ly-music-cache');
+
+    if (!needPreviewMeta && !qualityMismatch && !localQualityStale) {
+      // 热更/持久化丢 availableQualities 时：至少塞免费三档 + 当前流档，避免菜单空
+      if (!songData.availableQualities?.length) {
+        const fallback = new Set(['medium', 'higher', 'highest']);
+        if (streamQ) fallback.add(streamQ);
+        songData.availableQualities = [...fallback];
+      }
       if (isDownloaded) return songData.playMusicUrl;
-      if (songData.playMusicUrl.startsWith('local://')) {
+      if (songData.playMusicUrl.startsWith('local://') && !localQualityStale) {
         return songData.playMusicUrl;
       }
-      return await resolveCachedPlaybackUrl(songData.playMusicUrl, songData);
+      if (!localQualityStale) {
+        return await resolveCachedPlaybackUrl(songData.playMusicUrl, songData);
+      }
     }
-    console.warn(`[getSongUrl] 试听 URL 缺少 startMs，重新 resolve id=${id}`);
+    if (qualityMismatch || localQualityStale) {
+      console.info(
+        `[getSongUrl] 音质需重取 stream=${streamQ || '-'} pref=${prefQ} localStale=${localQualityStale} id=${id}`
+      );
+    } else {
+      console.warn(`[getSongUrl] 试听 URL 缺少 startMs，重新 resolve id=${id}`);
+    }
     songData.playMusicUrl = undefined;
   }
 
@@ -99,7 +147,17 @@ export const getSongUrl = async (
 
   try {
     const setData = getSetData();
-    const quality = setData?.musicQuality || 'higher';
+    // 切音质时 preferredQuality 优先，避免 settings 异步/未落盘
+    const quality = songData.preferredQuality || setData?.musicQuality || 'higher';
+    songData.preferredQuality = undefined;
+    // 会员档传给库，非 SVIP 不会落到无损/全景/录音室
+    let vipLevel = 'none';
+    try {
+      const { useUserStore } = await import('@/store/modules/user');
+      vipLevel = useUserStore().vipLevel || 'none';
+    } catch {
+      /* pinia 未就绪 */
+    }
     const artists =
       songData.ar?.map((a) => a.name).filter(Boolean) ||
       songData.artists?.map((a) => a.name).filter(Boolean) ||
@@ -115,12 +173,14 @@ export const getSongUrl = async (
       ids.qishui = String(id);
     }
 
+    console.info(`[getSongUrl] resolve id=${id} quality=${quality} vip=${vipLevel}`);
     const result = await msResolve({
       ids,
       title: songData.name,
       artists,
       durationMs: songData.dt || songData.duration,
-      quality
+      quality,
+      vipLevel
     });
 
     if (requestId && !playbackRequestManager.isRequestValid(requestId)) {
@@ -131,6 +191,13 @@ export const getSongUrl = async (
       console.warn(`[getSongUrl] resolve 无 URL (id=${id})`);
       return null;
     }
+
+    // 本曲可用档 + 实际流档，供播放条按曲展示
+    if (Array.isArray(result.availableQualities)) {
+      songData.availableQualities = result.availableQualities.map(String);
+    }
+    songData.streamQuality = String(result.effectiveQuality || result.quality || '');
+    if (result.bitrate) songData.streamBitrate = Number(result.bitrate);
 
     // 试听片段：写入 song，供歌词时钟加 preview.start 偏移
     if (result.isPreview) {
