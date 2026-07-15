@@ -406,6 +406,73 @@ export function initializeMusicSource(): void {
   );
 
   ipcMain.handle(
+    'music-source:create-playlist',
+    async (_e, options: { name: string; isPrivate?: boolean; trackIds?: string[] }) => {
+      try {
+        const pl = await getClient().createPlaylist({
+          name: String(options?.name || '').trim(),
+          isPrivate: options?.isPrivate,
+          trackIds: options?.trackIds
+        });
+        return wrapOk(pl);
+      } catch (error) {
+        return toIpcError(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    'music-source:update-playlist',
+    async (_e, playlistId: string, options: { name?: string; isPrivate?: boolean }) => {
+      try {
+        const pl = await getClient().updatePlaylist(String(playlistId), options || {});
+        return wrapOk(pl);
+      } catch (error) {
+        return toIpcError(error);
+      }
+    }
+  );
+
+  ipcMain.handle('music-source:delete-playlist', async (_e, playlistId: string | string[]) => {
+    try {
+      const deleted = await getClient().deletePlaylist(playlistId);
+      return wrapOk(deleted);
+    } catch (error) {
+      return toIpcError(error);
+    }
+  });
+
+  ipcMain.handle(
+    'music-source:append-playlist-tracks',
+    async (_e, playlistId: string, trackIds: string[]) => {
+      try {
+        const pl = await getClient().appendPlaylistTracks(
+          String(playlistId),
+          (trackIds || []).map(String)
+        );
+        return wrapOk(pl);
+      } catch (error) {
+        return toIpcError(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    'music-source:remove-playlist-tracks',
+    async (_e, playlistId: string, trackIds: string[]) => {
+      try {
+        const pl = await getClient().removePlaylistTracks(
+          String(playlistId),
+          (trackIds || []).map(String)
+        );
+        return wrapOk(pl);
+      } catch (error) {
+        return toIpcError(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
     'music-source:resolve',
     async (_e, query: ResolveQuery & { quality?: string; vipLevel?: string }) => {
       try {
