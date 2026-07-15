@@ -120,15 +120,26 @@ const open = async () => {
 
 <style scoped>
 .fx-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.35rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  font-size: 1.25rem;
+  line-height: 1;
   cursor: pointer;
-  transition: color 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s,
+    transform 0.12s;
 }
 .fx-btn:hover {
   color: var(--primary-color, #22c55e);
+  background: rgba(255, 255, 255, 0.1);
+}
+.fx-btn:active {
+  transform: scale(0.94);
 }
 
 .fx-panel {

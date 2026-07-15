@@ -291,7 +291,10 @@ export const playTrack = async (
           playMusicUrl: cur.playMusicUrl,
           isPreviewStream: cur.isPreviewStream,
           preview: cur.preview,
-          expiredAt: cur.expiredAt
+          expiredAt: cur.expiredAt,
+          availableQualities: cur.availableQualities,
+          streamQuality: cur.streamQuality,
+          streamBitrate: cur.streamBitrate
         });
       } catch {
         /* 忽略 */

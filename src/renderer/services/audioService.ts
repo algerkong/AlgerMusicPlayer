@@ -425,9 +425,9 @@ class AudioService {
       return Promise.reject(new Error('缺少必要参数: url和track'));
     }
 
-    // 同一 URL 则仅恢复/seek
+    // 同一 URL 则仅恢复/seek。切音质后 cache 路径带 .higher./.lossless. 等，一般不会相等。
     const currentSrc = this.audio.src;
-    const isSameUrl = currentSrc && currentSrc === url;
+    const isSameUrl = Boolean(currentSrc && (currentSrc === url || currentSrc.endsWith(url)));
 
     if (isSameUrl) {
       this.currentTrack = track;

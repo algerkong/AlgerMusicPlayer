@@ -553,10 +553,21 @@ export const usePlaylistStore = defineStore(
       playListDrawerVisible.value = value;
     };
 
-    /** 播放成功后写回 URL / 试听标记，循环切歌不丢 lyric base */
+    /** 播放成功后写回 URL / 试听标记 / 音质信息，循环切歌不丢 */
     const patchSongMeta = (
       id: string | number,
-      patch: Partial<Pick<SongResult, 'playMusicUrl' | 'isPreviewStream' | 'preview' | 'expiredAt'>>
+      patch: Partial<
+        Pick<
+          SongResult,
+          | 'playMusicUrl'
+          | 'isPreviewStream'
+          | 'preview'
+          | 'expiredAt'
+          | 'availableQualities'
+          | 'streamQuality'
+          | 'streamBitrate'
+        >
+      >
     ) => {
       const idx = playList.value.findIndex((s) => String(s.id) === String(id));
       if (idx < 0) return;
@@ -577,8 +588,12 @@ export const usePlaylistStore = defineStore(
           }
         }
 
+        // 同曲且 URL 仍在：才是播放/暂停切换。
+        // 音质切换会清掉 playMusicUrl，必须走 playTrack 重取链，不能进这里。
         if (
           playerCore.playMusic.id === song.id &&
+          song.playMusicUrl &&
+          playerCore.playMusic.playMusicUrl &&
           playerCore.playMusic.playMusicUrl === song.playMusicUrl
         ) {
           if (playerCore.play) {

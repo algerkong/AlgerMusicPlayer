@@ -20,9 +20,17 @@ const SESSION_KEY_ENC = 'musicSourceSessionEnc';
 let client: MusicSourceClient | null = null;
 let initialized = false;
 
+/** 汽水 6 档 + standard≡medium；未知回落 higher */
 function mapQuality(raw?: string): Quality {
-  if (raw === 'standard' || raw === 'lossless') return raw;
-  // higher / exhigh / 其它 → higher
+  const q = String(raw || '')
+    .toLowerCase()
+    .trim();
+  if (q === 'standard' || q === 'medium') return q === 'standard' ? 'standard' : 'medium';
+  if (q === 'higher' || q === 'exhigh' || q === '320') return 'higher';
+  if (q === 'highest') return 'highest';
+  if (q === 'lossless' || q === 'flac') return 'lossless';
+  if (q === 'spatial' || q === 'atmos') return 'spatial';
+  if (q === 'hi_res' || q === 'hires' || q === 'hi-res') return 'hi_res';
   return 'higher';
 }
 
@@ -397,42 +405,48 @@ export function initializeMusicSource(): void {
     }
   );
 
-  ipcMain.handle('music-source:resolve', async (_e, query: ResolveQuery & { quality?: string }) => {
-    try {
-      const store = getSharedStore();
-      const quality = mapQuality(
-        query.quality || (store.get('set') as { musicQuality?: string } | undefined)?.musicQuality
-      );
-      const result = await getClient().resolve({
-        ...query,
-        quality
-      });
+  ipcMain.handle(
+    'music-source:resolve',
+    async (_e, query: ResolveQuery & { quality?: string; vipLevel?: string }) => {
+      try {
+        const store = getSharedStore();
+        const quality = mapQuality(
+          query.quality || (store.get('set') as { musicQuality?: string } | undefined)?.musicQuality
+        );
+        const result = await getClient().resolve({
+          ...query,
+          quality,
+          vipLevel: query.vipLevel || 'none'
+        });
 
-      // IPC 不传 Buffer，仅 file/local 或远程 URL
-      let playMusicUrl: string | undefined = result.url;
-      if (result.filePath) {
-        playMusicUrl = filePathToLocalUrl(result.filePath);
+        // IPC 不传 Buffer，仅 file/local 或远程 URL
+        let playMusicUrl: string | undefined = result.url;
+        if (result.filePath) {
+          playMusicUrl = filePathToLocalUrl(result.filePath);
+        }
+
+        return wrapOk({
+          platform: result.platform,
+          songId: result.songId,
+          playMusicUrl,
+          mimeType: result.mimeType,
+          ext: result.ext,
+          quality: result.quality,
+          availableQualities: result.availableQualities,
+          effectiveQuality: result.effectiveQuality,
+          bitrate: result.bitrate,
+          size: result.size,
+          isPreview: result.isPreview,
+          previewStartMs: result.previewStartMs,
+          previewDurationMs: result.previewDurationMs,
+          lyricTranslations: result.lyricTranslations,
+          expireAt: result.expireAt
+        });
+      } catch (error) {
+        return toIpcError(error);
       }
-
-      return wrapOk({
-        platform: result.platform,
-        songId: result.songId,
-        playMusicUrl,
-        mimeType: result.mimeType,
-        ext: result.ext,
-        quality: result.quality,
-        bitrate: result.bitrate,
-        size: result.size,
-        isPreview: result.isPreview,
-        previewStartMs: result.previewStartMs,
-        previewDurationMs: result.previewDurationMs,
-        lyricTranslations: result.lyricTranslations,
-        expireAt: result.expireAt
-      });
-    } catch (error) {
-      return toIpcError(error);
     }
-  });
+  );
 
   ipcMain.handle('music-source:get-lyric', async (_e, songId: string) => {
     try {
