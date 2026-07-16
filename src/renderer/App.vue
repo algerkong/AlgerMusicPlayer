@@ -140,8 +140,10 @@ if (import.meta.hot) {
     try {
       const init = mod?.initMusicHook || initMusicHook;
       init(playerStore);
-      void (mod?.ensureLyricsLoaded?.(true) ?? Promise.resolve());
-      void (mod?.initAudioListeners?.() ?? Promise.resolve());
+      // 先挂进度环（已在播时没有 play 事件），再拉歌词（含逐字升级）
+      void Promise.resolve(mod?.initAudioListeners?.() ?? initAudioListeners()).then(() =>
+        mod?.ensureLyricsLoaded?.(true)
+      );
       console.info('[HMR] MusicHook re-inited + lyrics restored');
     } catch (e) {
       console.warn('[HMR] MusicHook re-init failed', e);

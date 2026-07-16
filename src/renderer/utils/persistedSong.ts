@@ -64,6 +64,10 @@ export type MinifiedSong = {
   availableQualities?: SongResult['availableQualities'];
   streamQuality?: SongResult['streamQuality'];
   streamBitrate?: SongResult['streamBitrate'];
+  /** feed 互动数（小字段）；发现页 rebuild 依赖，勿丢 */
+  likedCount?: SongResult['likedCount'];
+  commentCount?: SongResult['commentCount'];
+  shareCount?: SongResult['shareCount'];
   isPodcast?: SongResult['isPodcast'];
   program?: MinifiedDjProgram;
 };
@@ -138,6 +142,14 @@ export const minifySong = (s: SongResult): MinifiedSong => {
       : undefined,
     streamQuality: s.streamQuality ? String(s.streamQuality) : undefined,
     streamBitrate: typeof s.streamBitrate === 'number' ? s.streamBitrate : undefined,
+    likedCount:
+      typeof s.likedCount === 'number' && Number.isFinite(s.likedCount) ? s.likedCount : undefined,
+    commentCount:
+      typeof s.commentCount === 'number' && Number.isFinite(s.commentCount)
+        ? s.commentCount
+        : undefined,
+    shareCount:
+      typeof s.shareCount === 'number' && Number.isFinite(s.shareCount) ? s.shareCount : undefined,
     // 必须保留 isPodcast/program：playbackController.playTrack 用 music.isPodcast 决定写
     // 普通歌历史还是播客历史；缺失会让重启恢复后的播客被误记进 musicHistory
     isPodcast: s.isPodcast,

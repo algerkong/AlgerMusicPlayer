@@ -234,6 +234,13 @@ const applyLyricsIfCurrent = (
   return true;
 };
 
+/** 展示层是否已有可用逐字（words 非空） */
+const lyricLinesHaveWords = (lines?: ILyricText[] | null): boolean =>
+  !!lines?.some(
+    (l) =>
+      !!(l as any).hasWordByWord && Array.isArray((l as any).words) && (l as any).words.length > 1
+  );
+
 /** 加载/刷新当前曲歌词（HMR 或切歌后可 force 重拉） */
 export const ensureLyricsLoaded = async (force = false) => {
   // HMR 后可能尚未 init：先尝试从 pinia 绑定
@@ -247,7 +254,8 @@ export const ensureLyricsLoaded = async (force = false) => {
   }
   const expectedId = String(songId);
 
-  // 已展示的就是本曲且非强制 → 跳过（但允许「无译文 → 有译文」原地升级）
+  // 已展示的就是本曲且非强制 → 跳过（仅允许 store 侧译文/逐字原地升级）
+  // HMR 走 force=true，会落到下面补 words，避免这里 return 后永远行级
   if (!force && lrcArray.value.length > 0 && lyricBoundSongId === expectedId) {
     const lyricData = playMusic.value.lyric;
     const incoming =
@@ -257,8 +265,8 @@ export const ensureLyricsLoaded = async (force = false) => {
     const needTrUpgrade =
       !!incoming?.lrcArray?.some((l: any) => !!l.trText) && !lrcArray.value.some((l) => !!l.trText);
     const needWordUpgrade =
-      !!incoming?.lrcArray?.some((l: any) => !!l.hasWordByWord) &&
-      !lrcArray.value.some((l) => !!(l as any).hasWordByWord);
+      lyricLinesHaveWords(incoming?.lrcArray as ILyricText[]) &&
+      !lyricLinesHaveWords(lrcArray.value);
     if (needTrUpgrade || needWordUpgrade) {
       const loadGen = ++lyricLoadGen;
       applyLyricsIfCurrent(expectedId, loadGen, {
@@ -269,21 +277,16 @@ export const ensureLyricsLoaded = async (force = false) => {
     return;
   }
 
-  // 同曲已有展示 + force：只在「缺译文 / 缺逐字」时再打网，避免写回 lyric 触发 watch 死循环、nowIndex 狂重置
+  // 同曲已有展示 + force：已有逐字则只校正行号；仅有行级/译文仍要打网补 words
   const alreadyShowing = lrcArray.value.length > 0 && lyricBoundSongId === expectedId;
-  if (force && alreadyShowing) {
-    const hasTr = lrcArray.value.some((l) => !!l.trText);
-    const hasWords = lrcArray.value.some((l) => !!(l as any).hasWordByWord);
-    if (hasTr || hasWords) {
-      // 仅按当前进度校正行号
-      try {
-        const t = audioService.getCurrentSound()?.currentTime ?? nowTime.value ?? 0;
-        nowIndex.value = computeLrcIndex(typeof t === 'number' ? t : 0);
-      } catch {
-        /* ignore */
-      }
-      return;
+  if (force && alreadyShowing && lyricLinesHaveWords(lrcArray.value)) {
+    try {
+      const t = audioService.getCurrentSound()?.currentTime ?? nowTime.value ?? 0;
+      nowIndex.value = computeLrcIndex(typeof t === 'number' ? t : 0);
+    } catch {
+      /* ignore */
     }
+    return;
   }
 
   // 仅在「切到别的歌」时立刻清空，避免上一首残留。
@@ -334,12 +337,13 @@ export const ensureLyricsLoaded = async (force = false) => {
     }
   }
 
-  // 已从 store 应用成功：不再强制 loadLrc（否则写回 lyric → watch → force → 死循环）
-  if (applied && lrcArray.value.length > 0) {
+  // store 有行级歌词但无逐字：不能 return，还要 loadLrc 升级（HMR 常见）
+  const displayHasWords = lyricLinesHaveWords(lrcArray.value);
+  if (applied && lrcArray.value.length > 0 && displayHasWords) {
     return;
   }
 
-  // store 上没有可用歌词：走网络或磁盘
+  // store 上没有可用歌词 / 缺逐字：走网络或磁盘
   if (isElectron && playMusic.value.playMusicUrl?.startsWith('local:///')) {
     try {
       let filePath = decodeURIComponent(playMusic.value.playMusicUrl.replace('local:///', ''));
@@ -359,6 +363,7 @@ export const ensureLyricsLoaded = async (force = false) => {
             lrcTimeArray: parsedTimeArray,
             hasWordByWord
           });
+          if (lyricLinesHaveWords(lrcArray.value)) return;
         }
       }
     } catch (err) {
@@ -366,7 +371,7 @@ export const ensureLyricsLoaded = async (force = false) => {
     }
   }
 
-  if (!applied && isElectron && songId) {
+  if (isElectron && songId && !lyricLinesHaveWords(lrcArray.value)) {
     try {
       const { loadLrc } = await import('@/hooks/usePlayerHooks');
       const loaded = await loadLrc(songId);
@@ -377,22 +382,15 @@ export const ensureLyricsLoaded = async (force = false) => {
           lrcArray: loaded.lrcArray as any,
           lrcTimeArray: loaded.lrcTimeArray || []
         });
-        // 写回 store；用浅比较避免同内容反复触发 lyric watch
+        // 写回 store，便于下次 HMR 直接恢复逐字
         if (String(playMusic.value?.id || '') === expectedId) {
           const store = peekPlayerStore();
           if (store?.playMusic && String(store.playMusic.id) === expectedId) {
-            const prev = store.playMusic.lyric as { lrcArray?: unknown[] } | undefined;
-            const prevLen = prev?.lrcArray?.length || 0;
-            if (prevLen !== loaded.lrcArray.length) {
-              store.playMusic.lyric = loaded;
-            } else {
-              // 同长度：只补字段，不整体替换引用（减少 watch）
-              store.playMusic.lyric = loaded;
-            }
+            store.playMusic.lyric = loaded;
           }
         }
         console.log(
-          `[ensureLyricsLoaded] loadLrc ok id=${expectedId} tr=${loaded.lrcArray.filter((l) => l.trText).length}/${loaded.lrcArray.length}`
+          `[ensureLyricsLoaded] loadLrc ok id=${expectedId} words=${lyricLinesHaveWords(loaded.lrcArray)} tr=${loaded.lrcArray.filter((l) => l.trText).length}/${loaded.lrcArray.length}`
         );
       }
     } catch (e) {
@@ -719,6 +717,17 @@ const setupAudioListeners = () => {
   audioService.on('nexttrack', () => {
     getPlayerStore().nextPlay();
   });
+
+  // HMR / 重入：若已在播放不会再收到 play 事件，必须立刻开进度环，否则 nowTime 停住 → 逐字不动
+  try {
+    const st = getPlayerStore();
+    const snd = audioService.getCurrentSound();
+    if (st.play || (snd && !snd.paused)) {
+      startProgressInterval();
+    }
+  } catch {
+    /* pinia 未就绪 */
+  }
 
   return () => {
     clearInterval();
