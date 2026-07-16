@@ -293,7 +293,7 @@ const loadRemotePlaylist = async (reset = true) => {
         unique,
         musicStore.currentMusicListName || detail.playlist.name,
         {
-          ...(musicStore.currentListInfo || {}),
+          ...musicStore.currentListInfo,
           id: detail.playlist.id,
           name: detail.playlist.name || musicStore.currentMusicListName,
           picUrl: detail.playlist.coverUrl || musicStore.currentListInfo?.picUrl,

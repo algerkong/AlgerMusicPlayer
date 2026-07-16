@@ -30,7 +30,7 @@
           <div
             v-for="(item, index) in menus"
             :key="item.path"
-            :ref="(el) => setItemRef(el as HTMLElement | null, index)"
+            :ref="(el) => setItemRef(el as HTMLElement | null, Number(index))"
             class="app-menu-item"
           >
             <tooltip>
