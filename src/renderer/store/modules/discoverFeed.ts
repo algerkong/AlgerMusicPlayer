@@ -50,6 +50,17 @@ export const useDiscoverFeedStore = defineStore('discoverFeed', () => {
       type: 'track' as const
     }));
 
+  /** 互动数：优先保留 >0 的值，避免 queue/playMusic 无字段冲掉 feed stats */
+  const pickCount = (...vals: Array<number | undefined | null>): number | undefined => {
+    for (const v of vals) {
+      if (v != null && Number.isFinite(Number(v)) && Number(v) > 0) return Number(v);
+    }
+    for (const v of vals) {
+      if (v != null && Number.isFinite(Number(v)) && Number(v) >= 0) return Number(v);
+    }
+    return undefined;
+  };
+
   const mergeRuntime = (base: SongResult, extra?: SongResult | null): SongResult => {
     if (!extra) return { ...base };
     return {
@@ -70,8 +81,28 @@ export const useDiscoverFeedStore = defineStore('discoverFeed', () => {
       al: extra.al || base.al,
       ar: extra.ar || base.ar,
       artists: extra.artists || base.artists,
-      name: extra.name || base.name
+      name: extra.name || base.name,
+      likedCount: pickCount(extra.likedCount, base.likedCount),
+      commentCount: pickCount(extra.commentCount, base.commentCount),
+      shareCount: pickCount(extra.shareCount, base.shareCount)
     };
+  };
+
+  /** 用推荐流里同 id 的 stats 盖回队列/播放器精简曲 */
+  const withFeedStats = (song: SongResult, feedById: Map<string, SongResult>): SongResult => {
+    const fromFeed = feedById.get(String(song.id));
+    if (!fromFeed) return song;
+    const likedCount = pickCount(song.likedCount, fromFeed.likedCount);
+    const commentCount = pickCount(song.commentCount, fromFeed.commentCount);
+    const shareCount = pickCount(song.shareCount, fromFeed.shareCount);
+    if (
+      likedCount === song.likedCount &&
+      commentCount === song.commentCount &&
+      shareCount === song.shareCount
+    ) {
+      return song;
+    }
+    return { ...song, likedCount, commentCount, shareCount };
   };
 
   const patchSongRuntime = (list: SongResult[], songId: string, patch: Partial<SongResult>) => {
@@ -142,6 +173,8 @@ export const useDiscoverFeedStore = defineStore('discoverFeed', () => {
     const qi = queue.findIndex((s) => String(s.id) === targetId);
     const isListQueue = queue.length > 1 && qi >= 0;
     const runtimeMap = new Map(items.value.map((s) => [String(s.id), s]));
+    // 推荐流 stats 字典：队列前缀里同 id 的曲也要盖回数字
+    const feedById = new Map(recommendItems.value.map((s) => [String(s.id), s]));
 
     if (isListQueue) {
       const queueIds = new Set(queue.map((s) => String(s.id)));
@@ -149,11 +182,11 @@ export const useDiscoverFeedStore = defineStore('discoverFeed', () => {
         const id = String(s.id);
         let song = mergeRuntime(s, runtimeMap.get(id));
         if (cur && String(cur.id) === id) song = mergeRuntime(song, cur);
-        return song;
+        return withFeedStats(song, feedById);
       });
       const tail = recommendItems.value
         .filter((s) => !queueIds.has(String(s.id)))
-        .map((s) => mergeRuntime(s, runtimeMap.get(String(s.id))));
+        .map((s) => withFeedStats(mergeRuntime(s, runtimeMap.get(String(s.id))), feedById));
       items.value = [...prefix, ...tail];
       index.value = qi;
       // 接上推荐尾：队列播完后自动进推荐（不打断当前曲）
@@ -165,16 +198,17 @@ export const useDiscoverFeedStore = defineStore('discoverFeed', () => {
 
     // 单曲：当前 + 推荐尾
     const existing = runtimeMap.get(targetId);
-    const snap =
+    const snapRaw =
       cur && String(cur.id) === targetId
         ? mergeRuntime(existing || cur, cur)
         : existing
           ? { ...existing }
           : null;
+    const snap = snapRaw ? withFeedStats(snapRaw, feedById) : null;
     if (snap) {
       const tail = recommendItems.value
         .filter((s) => String(s.id) !== targetId)
-        .map((s) => mergeRuntime(s, runtimeMap.get(String(s.id))));
+        .map((s) => withFeedStats(mergeRuntime(s, runtimeMap.get(String(s.id))), feedById));
       items.value = [snap, ...tail];
       index.value = 0;
       // 下一首（含播完自动）进推荐流
@@ -187,7 +221,9 @@ export const useDiscoverFeedStore = defineStore('discoverFeed', () => {
     // 仅在推荐流内
     const fi = recommendItems.value.findIndex((s) => String(s.id) === targetId);
     if (fi >= 0) {
-      items.value = recommendItems.value.map((s) => mergeRuntime(s, runtimeMap.get(String(s.id))));
+      items.value = recommendItems.value.map((s) =>
+        withFeedStats(mergeRuntime(s, runtimeMap.get(String(s.id))), feedById)
+      );
       index.value = items.value.findIndex((s) => String(s.id) === targetId);
       cacheSongRuntime(targetId);
     }

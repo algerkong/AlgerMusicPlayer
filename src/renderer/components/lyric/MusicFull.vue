@@ -174,7 +174,6 @@
 </template>
 
 <script setup lang="ts">
-import { useDebounceFn } from '@vueuse/core';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
@@ -315,26 +314,32 @@ const getLrcScrollEl = (): HTMLElement | null => {
 
 let lrcScrollAnimId = 0;
 
-/** 缓动滚到目标：逐字时盯着看，别用浏览器默认 snap 一下 */
-const softScrollTo = (el: HTMLElement, targetTop: number, durationMs = 1100) => {
+const stopLrcScrollAnim = () => {
   if (lrcScrollAnimId) {
     cancelAnimationFrame(lrcScrollAnimId);
     lrcScrollAnimId = 0;
   }
+};
+
+/** 偏慢 easeInOutCubic，方便跟唱；说唱短行也别闪太快 */
+const softScrollTo = (el: HTMLElement, targetTop: number) => {
+  stopLrcScrollAnim();
   const startTop = el.scrollTop;
   const delta = targetTop - startTop;
-  if (Math.abs(delta) < 1) return;
-
+  if (Math.abs(delta) < 0.5) {
+    el.scrollTop = targetTop;
+    return;
+  }
+  const durationMs = Math.min(1000, Math.max(620, Math.abs(delta) * 6));
   const startTs = performance.now();
-  // easeInOutCubic：起停都软
-  const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
-
+  const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
   const tick = (now: number) => {
     const p = Math.min(1, (now - startTs) / durationMs);
-    el.scrollTop = startTop + delta * ease(p);
+    el.scrollTop = startTop + delta * easeInOutCubic(p);
     if (p < 1) {
       lrcScrollAnimId = requestAnimationFrame(tick);
     } else {
+      el.scrollTop = targetTop;
       lrcScrollAnimId = 0;
     }
   };
@@ -350,9 +355,10 @@ const lrcScroll = (behavior: ScrollBehavior | 'soft' = 'soft', forceTop: boolean
 
   if (forceTop) {
     if (behavior === 'instant' || behavior === 'auto') {
+      stopLrcScrollAnim();
       scrollEl.scrollTop = 0;
     } else {
-      softScrollTo(scrollEl, 0, 700);
+      softScrollTo(scrollEl, 0);
     }
     return;
   }
@@ -367,15 +373,16 @@ const lrcScroll = (behavior: ScrollBehavior | 'soft' = 'soft', forceTop: boolean
     const scrollTop = elementTop - containerHeight * 0.4 + nowEl.clientHeight / 2;
 
     if (behavior === 'instant' || behavior === 'auto') {
+      stopLrcScrollAnim();
       scrollEl.scrollTop = scrollTop;
     } else {
-      // 换行滚动加长到 ~1.1s，避免生硬跳
-      softScrollTo(scrollEl, scrollTop, 1100);
+      softScrollTo(scrollEl, scrollTop);
     }
   }
 };
 
-const debouncedLrcScroll = useDebounceFn(() => lrcScroll('soft'), 80);
+// 不再 debounce：换行应立刻开一段短 ease；debounce 会变成「先停再滚」像微调
+const debouncedLrcScroll = () => lrcScroll('soft');
 
 const mouseOverLayout = () => {
   if (isMobile.value) {

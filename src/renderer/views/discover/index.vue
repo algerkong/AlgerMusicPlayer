@@ -656,74 +656,68 @@ const onPointerUp = () => {
 };
 
 /**
- * 歌词跟滚：指数趋近目标，无起停感。
- * 换行只改 target，动画不重启，避免 0→1 行「顿一下」。
+ * 歌词跟滚：固定时长 easeInOutCubic，一次到位。
+ * 偏慢、起停都软——方便跟着逐字唱；说唱短行也别 200ms 闪一下。
  */
 let lrcScrollAnimId = 0;
-let lrcScrollTarget: number | null = null;
-let lrcScrollEl: HTMLElement | null = null;
-/** 时间常数（秒）：越大越「无感」，略慢；大跳变时临时加快 */
-const LRC_SCROLL_TAU = 0.38;
-const LRC_SCROLL_TAU_FAST = 0.2;
+/** 切歌后短暂吞 soft，避免与 instant 叠滚 */
+let lrcSkipSoftUntil = 0;
+let lrcSongScrollGen = 0;
+/** 本次跟滚对应的行号；过期 rAF 丢弃 */
+let lrcScrollForIndex = -1;
 
 const stopLrcScrollAnim = () => {
   if (lrcScrollAnimId) {
     cancelAnimationFrame(lrcScrollAnimId);
     lrcScrollAnimId = 0;
   }
-  lrcScrollTarget = null;
-  lrcScrollEl = null;
 };
 
-const softScrollLrcTo = (el: HTMLElement, targetTop: number) => {
-  lrcScrollEl = el;
-  lrcScrollTarget = targetTop;
-  if (lrcScrollAnimId) return; // 只改目标，沿当前速度继续趋近
+/** easeInOutCubic：中间匀一些，不抢逐字视线 */
+const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
 
-  let lastTs = performance.now();
+const softScrollLrcTo = (el: HTMLElement, targetTop: number) => {
+  stopLrcScrollAnim();
+  const startTop = el.scrollTop;
+  const delta = targetTop - startTop;
+  if (Math.abs(delta) < 0.5) {
+    el.scrollTop = targetTop;
+    return;
+  }
+  // 行距级约 0.6–0.8s；大跳最多约 1s。说唱短行也按下限走，别太冲
+  const durationMs = Math.min(1000, Math.max(620, Math.abs(delta) * 6));
+  const startTs = performance.now();
   const tick = (now: number) => {
-    if (lrcScrollTarget == null || !lrcScrollEl) {
+    const p = Math.min(1, (now - startTs) / durationMs);
+    el.scrollTop = startTop + delta * easeInOutCubic(p);
+    if (p < 1) {
+      lrcScrollAnimId = requestAnimationFrame(tick);
+    } else {
+      el.scrollTop = targetTop;
       lrcScrollAnimId = 0;
-      return;
     }
-    const dt = Math.min(0.048, Math.max(0, (now - lastTs) / 1000));
-    lastTs = now;
-    const cur = lrcScrollEl.scrollTop;
-    const diff = lrcScrollTarget - cur;
-    if (Math.abs(diff) < 0.35) {
-      lrcScrollEl.scrollTop = lrcScrollTarget;
-      lrcScrollAnimId = 0;
-      lrcScrollTarget = null;
-      lrcScrollEl = null;
-      return;
-    }
-    const tau = Math.abs(diff) > 160 ? LRC_SCROLL_TAU_FAST : LRC_SCROLL_TAU;
-    const alpha = 1 - Math.exp(-dt / tau);
-    lrcScrollEl.scrollTop = cur + diff * alpha;
-    lrcScrollAnimId = requestAnimationFrame(tick);
   };
   lrcScrollAnimId = requestAnimationFrame(tick);
 };
 
-const scrollActiveLyric = (behavior: 'soft' | 'instant' = 'soft') => {
-  const line = document.getElementById(`discover-lrc-${nowIndex.value}`);
+const getLrcViewport = (line: HTMLElement): HTMLElement | null =>
+  (line.closest('[data-slot="scroll-area-viewport"]') as HTMLElement | null) ||
+  (line.closest('[data-reka-scroll-area-viewport]') as HTMLElement | null) ||
+  (line.parentElement as HTMLElement | null);
+
+const scrollActiveLyric = (behavior: 'soft' | 'instant' = 'soft', index = nowIndex.value) => {
+  const line = document.getElementById(`discover-lrc-${index}`);
   if (!line) return;
-  // reka ScrollArea viewport
-  const viewport =
-    (line.closest('[data-slot="scroll-area-viewport"]') as HTMLElement | null) ||
-    (line.closest('[data-reka-scroll-area-viewport]') as HTMLElement | null) ||
-    (line.parentElement as HTMLElement | null);
+  const viewport = getLrcViewport(line);
   if (!viewport) return;
 
   const containerHeight = viewport.clientHeight;
-  const lineRect = line.getBoundingClientRect();
-  const viewRect = viewport.getBoundingClientRect();
-  // 当前 scroll 下的内容坐标（已去掉 active scale，测量稳定）
-  const lineTopInView = lineRect.top - viewRect.top + viewport.scrollTop;
-
-  // 固定锚点：全程一致，杜绝 0→1 行因 anchor 突变多滚一截
+  // 静止帧测量：内容坐标 = 视口相对位置 + 当前 scrollTop（动画过程中不再重测）
+  const lineTop =
+    line.getBoundingClientRect().top - viewport.getBoundingClientRect().top + viewport.scrollTop;
+  // 固定锚点 30%
   const anchor = 0.3;
-  const target = Math.max(0, lineTopInView - containerHeight * anchor + line.offsetHeight / 2);
+  const target = Math.max(0, lineTop - containerHeight * anchor + line.offsetHeight / 2);
 
   if (behavior === 'instant') {
     stopLrcScrollAnim();
@@ -733,20 +727,33 @@ const scrollActiveLyric = (behavior: 'soft' | 'instant' = 'soft') => {
   softScrollLrcTo(viewport, target);
 };
 
-watch(nowIndex, async () => {
-  await nextTick();
-  // 首句也走 soft：与后续换行同一套趋近，避免 0 瞬移、1 再动画的割裂
-  scrollActiveLyric(nowIndex.value < 0 ? 'instant' : 'soft');
+/** 布局稳定后再滚：nextTick + 一帧，保证 is-active 已上且只跟一次 */
+const scheduleScrollActiveLyric = (behavior: 'soft' | 'instant', index: number) => {
+  if (Date.now() < lrcSkipSoftUntil && behavior === 'soft') return;
+  lrcScrollForIndex = index;
+  void nextTick(() => {
+    requestAnimationFrame(() => {
+      if (lrcScrollForIndex !== index) return;
+      if (nowIndex.value !== index && behavior === 'soft') return;
+      if (Date.now() < lrcSkipSoftUntil && behavior === 'soft') return;
+      scrollActiveLyric(behavior, index);
+    });
+  });
+};
+
+watch(nowIndex, (idx) => {
+  if (Date.now() < lrcSkipSoftUntil) return;
+  // 每一行只 schedule 一次；换行打断上一段，从当前位置新开一段短 ease
+  scheduleScrollActiveLyric(idx < 0 ? 'instant' : 'soft', idx);
 });
 
-// 歌词异步到齐后再定位一次（否则刚加载时 pad/空列表导致首句落在中间）
+// 歌词异步到齐：切歌 instant 窗口内跳过
 watch(
   () => lrcArray.value.length,
-  async (n, prev) => {
-    if (n > 0 && (prev === 0 || prev === undefined)) {
-      await nextTick();
-      scrollActiveLyric('instant');
-    }
+  (n, prev) => {
+    if (!(n > 0 && (prev === 0 || prev === undefined))) return;
+    if (Date.now() < lrcSkipSoftUntil) return;
+    scheduleScrollActiveLyric('soft', nowIndex.value);
   }
 );
 
@@ -760,10 +767,16 @@ watch(
     void measureTitle();
     // 切歌：MusicHook 会按 playMusic.id 清歌词并重载；这里 force，避免串曲
     if (id && id !== prev) {
+      const g = ++lrcSongScrollGen;
+      lrcSkipSoftUntil = Date.now() + 500;
+      stopLrcScrollAnim();
       await ensureLyricsLoaded(true);
+      if (g !== lrcSongScrollGen) return;
       await nextTick();
-      // 新歌先顶到视口上部，避免首句被大 padding 顶到封面中间
-      scrollActiveLyric('instant');
+      if (g !== lrcSongScrollGen) return;
+      // 只 instant 一次钉住当前行
+      scheduleScrollActiveLyric('instant', nowIndex.value);
+      lrcSkipSoftUntil = Date.now() + 280;
     }
   }
 );
@@ -836,10 +849,6 @@ onUnmounted(() => {
     }
   } catch {
     /* ignore */
-  }
-  if (lrcScrollAnimId) {
-    cancelAnimationFrame(lrcScrollAnimId);
-    lrcScrollAnimId = 0;
   }
 });
 </script>
@@ -1224,9 +1233,8 @@ onUnmounted(() => {
   will-change: auto;
 }
 .discover-lrc-line.is-active {
-  font-weight: 600;
+  /* 不改 font-weight：避免行高 reflow 让跟滚目标再蹭一截 */
   color: var(--chrome-text, #fff);
-  /* 不用 scale：换行时布局/视觉都不抖，跟滚才「无感」 */
 }
 .discover-word-line {
   display: flex;
