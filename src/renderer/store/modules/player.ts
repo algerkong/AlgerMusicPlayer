@@ -102,6 +102,7 @@ export const usePlayerStore = defineStore('player', () => {
     shufflePlayList: playlist.shufflePlayList,
     restoreOriginalOrder: playlist.restoreOriginalOrder,
     preloadNextSongs: playlist.preloadNextSongs,
+    patchSongMeta: playlist.patchSongMeta,
     nextPlay: playlist.nextPlay,
     prevPlay: playlist.prevPlay,
     setPlayListDrawerVisible: playlist.setPlayListDrawerVisible,

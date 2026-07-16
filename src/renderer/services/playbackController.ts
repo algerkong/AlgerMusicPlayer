@@ -4,7 +4,7 @@
  * 核心播放流程管理，使用 generation-based 取消模式替代原 playerCore.ts 中的控制流。
  * 每次 playTrack() 调用递增 generation，所有异步操作在 await 后检查 generation 是否过期。
  *
- * 导出：playTrack, initializePlayState, setupUrlExpiredHandler, getCurrentGeneration
+ * 导出：playTrack, seamlessSwitchQuality, initializePlayState, setupUrlExpiredHandler, getCurrentGeneration
  */
 
 import { createDiscreteApi } from 'naive-ui';
@@ -147,15 +147,15 @@ const triggerPreload = async (song: SongResult): Promise<void> => {
     const playlistStore = await getPlaylistStore();
     const list = playlistStore.playList;
     if (Array.isArray(list) && list.length > 0) {
-      const idx = list.findIndex(
-        (item: SongResult) => item.id === song.id && item.source === song.source
-      );
+      // 雪花 id 可能是 string/number 混用，必须 String 比较
+      const idx = list.findIndex((item: SongResult) => String(item.id) === String(song.id));
       if (idx !== -1) {
-        // 列表 resolve 预热
+        // 列表 resolve 预热（含 getSongDetail + standby）
         playlistStore.preloadNextSongs(idx);
 
-        // P1：下一首已有 URL 时灌进 audio standby 槽
-        const next = list[(idx + 1) % list.length];
+        // P1：下一首已有 URL 时立刻灌 standby（不必等 debounce 200ms）
+        const nextIdx = (idx + 1) % list.length;
+        const next = list[nextIdx];
         if (
           next &&
           String(next.id) !== String(song.id) &&
@@ -164,6 +164,8 @@ const triggerPreload = async (song: SongResult): Promise<void> => {
         ) {
           audioService.preload(next.playMusicUrl, next);
         }
+      } else {
+        console.warn('[triggerPreload] 当前曲不在 playList，跳过预热 id=', song.id);
       }
     }
   } catch (e) {
@@ -180,23 +182,66 @@ const updateDocumentTitle = (music: SongResult): void => {
   document.title = 'LYMusic - ' + title;
 };
 
-/**
- * 先播后升质：首包用 higher 起播后，后台 resolve 无损等并 seek 接上。
- */
-const maybeUpgradeStreamQuality = async (song: SongResult, gen: number) => {
-  const upgradeTo = (song as SongResult & { _streamUpgradeTo?: string })._streamUpgradeTo;
-  if (!upgradeTo || !song.id) return;
-  // 目标不高于当前流则跳过
-  const { normalizeQualityKey, clampQualityToAvailable } = await import('@/hooks/usePlayerHooks');
-  const target = clampQualityToAvailable(upgradeTo, song.availableQualities);
-  const stream = normalizeQualityKey(song.streamQuality);
-  if (!target || target === stream) {
-    delete (song as any)._streamUpgradeTo;
-    return;
-  }
+/** 用户手选音质 / 后台升质：可取消的代数（切歌或再次改档时作废） */
+let qualitySwitchGen = 0;
+
+/** 仅当「正在出声的曲」就是 songId 时才取进度；否则 0（防切歌后把上一首 45s 写到下一首） */
+const getSeekSecondsForSong = (songId: string | number): number => {
   try {
-    const seek = audioService.getCurrentSound()?.currentTime || 0;
-    const { getSongDetail } = await import('@/hooks/usePlayerHooks');
+    const track = audioService.getCurrentTrack();
+    if (!track || String(track.id) !== String(songId)) return 0;
+    const sound = audioService.getCurrentSound();
+    if (!sound || !Number.isFinite(sound.currentTime)) return 0;
+    return Math.max(0, sound.currentTime);
+  } catch {
+    return 0;
+  }
+};
+
+const isQualitySwitchStale = (
+  switchGen: number,
+  playGenAtStart: number,
+  songId: string,
+  playerCore: { playMusic?: { id?: string | number } }
+) => {
+  if (switchGen !== qualitySwitchGen) return true;
+  if (playGenAtStart !== generation) return true;
+  if (String(playerCore.playMusic?.id ?? '') !== songId) return true;
+  return false;
+};
+
+/**
+ * 无感换档：当前流继续播，后台 resolve 目标档，就绪后 seek 接上。
+ * 不置 playLoading、不走 playTrack，避免「切无损要等很久」。
+ */
+export const seamlessSwitchQuality = async (
+  targetQuality: string,
+  opts?: { songId?: string | number; playGen?: number }
+): Promise<boolean> => {
+  const switchGen = ++qualitySwitchGen;
+  const playGenAtStart = opts?.playGen ?? generation;
+
+  const playerCore = await getPlayerCoreStore();
+  const song = playerCore.playMusic as SongResult | undefined;
+  if (!song?.id) return false;
+  if (opts?.songId != null && String(opts.songId) !== String(song.id)) return false;
+
+  const { normalizeQualityKey, clampQualityToAvailable, getSongDetail } =
+    await import('@/hooks/usePlayerHooks');
+  const stream = normalizeQualityKey(song.streamQuality);
+  const target = clampQualityToAvailable(targetQuality, song.availableQualities);
+  if (!target || target === stream) {
+    delete (playerCore.playMusic as any)._streamUpgradeTo;
+    return true;
+  }
+
+  const songId = String(song.id);
+  console.info(
+    `[playbackController] seamless quality ${song.name}: ${stream || '-'} → ${target} (bg)`
+  );
+
+  try {
+    // 1) 当前曲不停；后台取新 URL（占 standby，勿打断 active）
     const upgraded = await getSongDetail({
       ...song,
       playMusicUrl: undefined,
@@ -204,32 +249,68 @@ const maybeUpgradeStreamQuality = async (song: SongResult, gen: number) => {
       expiredAt: undefined,
       preferredQuality: target,
       forceQualityResolve: true,
-      _streamUpgradeTo: undefined
+      _streamUpgradeTo: undefined,
+      playLoading: false
     } as SongResult);
-    if (gen !== generation) return;
-    const playerCore = await getPlayerCoreStore();
-    if (String(playerCore.playMusic?.id) !== String(song.id)) return;
-    if (!upgraded.playMusicUrl) return;
-    // 升质结果若仍相同档，不打断播放
-    if (normalizeQualityKey(upgraded.streamQuality) === stream) {
+
+    if (isQualitySwitchStale(switchGen, playGenAtStart, songId, playerCore)) return false;
+    if (!upgraded.playMusicUrl) return false;
+
+    const got = normalizeQualityKey(upgraded.streamQuality) || target;
+    if (got === stream) {
       delete (playerCore.playMusic as any)._streamUpgradeTo;
-      return;
+      return false;
     }
-    console.info(
-      `[playbackController] upgrade stream ${song.name}: ${stream} → ${upgraded.streamQuality || target} seek=${seek.toFixed(1)}s`
-    );
-    delete (upgraded as any)._streamUpgradeTo;
+
+    // 2) 仅当仍是本曲在播时才灌 standby；已切歌则放弃（避免占槽/误 promote）
+    if (isQualitySwitchStale(switchGen, playGenAtStart, songId, playerCore)) return false;
+    try {
+      audioService.preload(upgraded.playMusicUrl, {
+        ...playerCore.playMusic,
+        ...upgraded,
+        id: song.id,
+        playLoading: false
+      } as SongResult);
+    } catch {
+      /* ignore */
+    }
+
+    const deadline = Date.now() + 2500;
+    while (Date.now() < deadline) {
+      if (isQualitySwitchStale(switchGen, playGenAtStart, songId, playerCore)) return false;
+      if (audioService.hasPreloaded(upgraded.playMusicUrl)) break;
+      await new Promise((r) => setTimeout(r, 80));
+    }
+
+    if (isQualitySwitchStale(switchGen, playGenAtStart, songId, playerCore)) return false;
+
+    // 3) 进度必须来自「本曲」audio；切歌后 currentTime 是上一首的，绝不能用
+    const seek = getSeekSecondsForSong(songId);
+    const keepPlaying = playerCore.userPlayIntent !== false && !!playerCore.isPlay;
+
+    // play 前最后一次校验，缩小竞态窗
+    if (isQualitySwitchStale(switchGen, playGenAtStart, songId, playerCore)) return false;
+
     playerCore.playMusic = {
       ...playerCore.playMusic,
       ...upgraded,
+      id: song.id,
       playLoading: false
     };
     playerCore.playMusicUrl = upgraded.playMusicUrl;
-    const keepPlaying = !!playerCore.userPlayIntent;
+    delete (playerCore.playMusic as any)._streamUpgradeTo;
+
     await audioService.play(upgraded.playMusicUrl, playerCore.playMusic, keepPlaying, seek);
+
+    // play 后若已切歌：不要把旧曲 meta 写回新列表项（patch 按 id）
+    if (isQualitySwitchStale(switchGen, playGenAtStart, songId, playerCore)) {
+      console.info('[playbackController] seamless quality aborted after play (song changed)');
+      return false;
+    }
+
     try {
-      const { usePlaylistStore } = await import('@/store/modules/playlist');
-      usePlaylistStore().patchSongMeta?.(song.id, {
+      const pl = await getPlaylistStore();
+      pl.patchSongMeta?.(song.id, {
         playMusicUrl: upgraded.playMusicUrl,
         streamQuality: upgraded.streamQuality,
         streamBitrate: upgraded.streamBitrate,
@@ -239,9 +320,26 @@ const maybeUpgradeStreamQuality = async (song: SongResult, gen: number) => {
     } catch {
       /* ignore */
     }
+
+    console.info(
+      `[playbackController] seamless quality ok ${song.name}: ${stream} → ${got} @${seek.toFixed(1)}s`
+    );
+    return true;
   } catch (e) {
-    console.warn('[playbackController] stream upgrade failed', e);
+    console.warn('[playbackController] seamless quality failed', e);
+    return false;
   }
+};
+
+/**
+ * 先播后升质：首包 boot 后后台 resolve 无损等并 seek 接上。
+ */
+const maybeUpgradeStreamQuality = async (song: SongResult, gen: number) => {
+  const upgradeTo = (song as SongResult & { _streamUpgradeTo?: string })._streamUpgradeTo;
+  if (!upgradeTo || !song.id) return;
+  delete (song as any)._streamUpgradeTo;
+  // 仅升不降；且必须仍是本曲 playGen
+  await seamlessSwitchQuality(upgradeTo, { songId: song.id, playGen: gen });
 };
 
 // ==================== 导出函数 ====================
@@ -257,8 +355,9 @@ export const playTrack = async (
   music: SongResult,
   shouldPlay: boolean = true
 ): Promise<boolean> => {
-  // 1. 递增 generation，创建 requestId
+  // 1. 递增 generation，创建 requestId；作废进行中的无感换档（防上一首 45s 接到下一首）
   const gen = ++generation;
+  qualitySwitchGen += 1;
   const requestId = playbackRequestManager.createRequest(music);
   const ttfaId = ttfaBegin(music.id, shouldPlay ? 'play' : 'load');
   console.log(
@@ -284,19 +383,31 @@ export const playTrack = async (
   playerCore.isPlay = intendedPlay;
   playerCore.userPlayIntent = intendedPlay;
 
-  // 切歌过渡：不硬 stop。standby 可 promote 则不必 pause 旧曲
+  // 换曲：立刻停掉上一首（含「standby 可 promote」——先静音旧 active，再 promote）
   const nextUrl = music.playMusicUrl;
-  if (!(nextUrl && audioService.hasPreloaded(nextUrl))) {
+  const prevTrack = audioService.getCurrentTrack();
+  const isSameTrack = !!(prevTrack && String(prevTrack.id) === String(music.id));
+  const canPromote = !!(nextUrl && audioService.hasPreloaded(nextUrl));
+  if (!isSameTrack) {
     audioService.softPause();
-    // 再钉一次意图，防 pause 事件时序残留
+    // 清掉上一首遗留的升质标记
+    if (playerCore.playMusic && String(playerCore.playMusic.id) !== String(music.id)) {
+      delete (playerCore.playMusic as any)._streamUpgradeTo;
+    }
+    playerCore.userPlayIntent = intendedPlay;
+    playerCore.play = intendedPlay;
+    playerCore.isPlay = intendedPlay;
+  } else if (!canPromote) {
+    audioService.softPause();
     playerCore.userPlayIntent = intendedPlay;
     playerCore.play = intendedPlay;
     playerCore.isPlay = intendedPlay;
   }
 
-  // 4. 先设置基本歌曲信息（立即显示UI）
-  music.playLoading = true;
-  playerCore.playMusic = music;
+  // 4. 先设置基本歌曲信息（立即显示UI）；换曲 loading，同曲升质不在此路径
+  music.playLoading = !isSameTrack || !canPromote;
+  // 换曲时禁止带着上一首的进度感：新曲从 0 起（loadAndPlayAudio 也会按 songId 读进度）
+  playerCore.playMusic = { ...music, playLoading: music.playLoading };
   updateDocumentTitle(music);
 
   const originalMusic = { ...music };

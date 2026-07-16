@@ -1,10 +1,10 @@
 import { computed } from 'vue';
 
-import { audioService } from '@/services/audioService';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 import { useUserStore } from '@/store/modules/user';
 import { isElectron } from '@/utils';
+import { clampQualityToAvailable } from '@/utils/qualityClamp';
 
 /** 汽水全档：最好在上 */
 export const QUALITY_META: { value: string; label: string; short: string; svip?: boolean }[] = [
@@ -55,17 +55,15 @@ export function useStreamQuality() {
     }
     const pref = normalizeQ(settingsStore.setData.musicQuality || 'higher') || 'higher';
     if (avail.length) {
-      if (avail.includes(pref)) return pref;
-      // 取本曲最高可用，不要用全局偏好冒充
-      const order = ['hi_res', 'spatial', 'lossless', 'highest', 'higher', 'medium'];
-      for (const k of order) {
-        if (avail.includes(k)) return k;
-      }
-      return avail[0];
+      // 与 resolve 同一套回落：无损→极高…；绝不自动显示录音室/全景
+      return clampQualityToAvailable(pref, avail);
     }
-    // 尚无本曲档位（未 resolve）：只展示免费三档内的偏好，禁止显示全局无损/录音室
-    const free = ['highest', 'higher', 'medium'];
-    if (free.includes(pref)) return pref;
+    // 尚无本曲档位（未 resolve）：只展示偏好在「可自动档」内的标签
+    if (pref === 'lossless' || pref === 'highest' || pref === 'higher' || pref === 'medium') {
+      return pref;
+    }
+    // 手选录音室/全景但尚未 resolve：先显示该标签；resolve 后以 stream 为准
+    if (pref === 'hi_res' || pref === 'spatial') return pref;
     return 'higher';
   });
 
@@ -119,6 +117,7 @@ export function useStreamQuality() {
     if (!item || item.disabled) return;
 
     const streamNow = normalizeQ(currentSong.value?.streamQuality);
+    // 先落全局偏好（后续切歌/预取用新档）
     settingsStore.setSetData({
       ...settingsStore.setData,
       musicQuality: key
@@ -133,44 +132,17 @@ export function useStreamQuality() {
     } | null;
     if (!cur?.id) return;
     const url = String(cur.playMusicUrl || '');
+    // 用户本地文件无多档
     if (url.startsWith('local://') && !url.includes('ly-music-cache') && cur.source === 'local') {
       return;
     }
 
+    // 无感换档：当前流继续播，后台 resolve，就绪后再接（不 playTrack、不转圈）
     try {
-      const keepPlaying = !!playerStore.isPlay;
-      let seekSec = 0;
-      try {
-        const sound = audioService.getCurrentSound() as HTMLAudioElement | null;
-        if (sound && Number.isFinite(sound.currentTime)) seekSec = sound.currentTime;
-      } catch {
-        /* ignore */
-      }
-
-      const { playbackCoordinator } = await import('@/services/playbackCoordinator');
-      const ok = await playbackCoordinator.playTrack(
-        {
-          ...(playerStore.playMusic as object),
-          playMusicUrl: undefined,
-          expiredAt: undefined,
-          streamQuality: undefined,
-          preferredQuality: key,
-          forceQualityResolve: true,
-          isFirstPlay: true
-        } as any,
-        keepPlaying
-      );
-      if (ok && seekSec > 1) {
-        setTimeout(() => {
-          try {
-            audioService.seek(seekSec);
-          } catch {
-            /* ignore */
-          }
-        }, 400);
-      }
+      const { seamlessSwitchQuality } = await import('@/services/playbackController');
+      void seamlessSwitchQuality(key, { songId: cur.id });
     } catch (error) {
-      console.warn('[quality] switch failed', error);
+      console.warn('[quality] seamless switch failed', error);
     }
   };
 

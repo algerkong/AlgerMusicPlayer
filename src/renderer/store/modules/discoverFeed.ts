@@ -459,6 +459,35 @@ export const useDiscoverFeedStore = defineStore('discoverFeed', () => {
     }
   };
 
+  /** 把 feed 预取到的 URL/歌词写回 playList，并给「下一首」灌 standby */
+  const syncPrefetchToPlayer = async (songId: string, patch: Partial<SongResult>) => {
+    try {
+      const { usePlaylistStore } = await import('@/store/modules/playlist');
+      // patchSongMeta 会在目标是下一首时自动 preload
+      usePlaylistStore().patchSongMeta(songId, {
+        playMusicUrl: patch.playMusicUrl,
+        streamQuality: patch.streamQuality,
+        streamBitrate: patch.streamBitrate,
+        availableQualities: patch.availableQualities,
+        expiredAt: patch.expiredAt,
+        isPreviewStream: patch.isPreviewStream,
+        preview: patch.preview,
+        lyric: patch.lyric as SongResult['lyric'],
+        backgroundColor: patch.backgroundColor,
+        primaryColor: patch.primaryColor
+      });
+      // 发现页 index 与 playListIndex 可能短暂不一致：显式灌下一首
+      const at = items.value.findIndex((x) => String(x.id) === songId);
+      if (at === index.value + 1 && patch.playMusicUrl) {
+        const { audioService } = await import('@/services/audioService');
+        const merged = { ...(items.value[at] || {}), ...patch } as SongResult;
+        audioService.preload(String(patch.playMusicUrl), merged);
+      }
+    } catch {
+      /* ignore */
+    }
+  };
+
   /** 单曲预取：URL / 歌词 / 取色尽量并行；URL 走 getSongDetail inflight，与 playTrack 去重 */
   const prefetchOne = async (idx: number) => {
     if (idx < 0 || idx >= items.value.length) return;
@@ -470,7 +499,23 @@ export const useDiscoverFeedStore = defineStore('discoverFeed', () => {
     const needUrl = !s.playMusicUrl || (s.expiredAt != null && s.expiredAt < Date.now());
     const needLrc = !(s.lyric && (s.lyric as any).lrcArray?.length);
     const needColor = !s.backgroundColor || !s.primaryColor;
-    if (!needUrl && !needLrc && !needColor) return;
+
+    // 已有全部元数据：仍要保证 standby + playList 同步（此前 early return 会漏灌）
+    if (!needUrl && !needLrc && !needColor) {
+      void syncPrefetchToPlayer(id, {
+        playMusicUrl: s.playMusicUrl,
+        streamQuality: s.streamQuality,
+        streamBitrate: s.streamBitrate,
+        availableQualities: s.availableQualities,
+        expiredAt: s.expiredAt,
+        isPreviewStream: s.isPreviewStream,
+        preview: s.preview,
+        lyric: s.lyric,
+        backgroundColor: s.backgroundColor,
+        primaryColor: s.primaryColor
+      });
+      return;
+    }
 
     prefetchingIds.add(id);
     try {
@@ -569,16 +614,20 @@ export const useDiscoverFeedStore = defineStore('discoverFeed', () => {
         };
       }
       if (at < 0) return;
-      // P2：写回 feed 后若是「当前下一首」，再保证 standby（prefetchSongUrl 内已 warm，此处兜底）
+      // 写回 playList + standby（下一首切歌才能 hit promote，不必再 resolve）
       const merged = items.value[at];
-      if (merged.playMusicUrl && at === index.value + 1) {
-        try {
-          const { audioService } = await import('@/services/audioService');
-          audioService.preload(merged.playMusicUrl, merged);
-        } catch {
-          /* ignore */
-        }
-      }
+      void syncPrefetchToPlayer(id, {
+        playMusicUrl: merged.playMusicUrl,
+        streamQuality: merged.streamQuality,
+        streamBitrate: merged.streamBitrate,
+        availableQualities: merged.availableQualities,
+        expiredAt: merged.expiredAt,
+        isPreviewStream: merged.isPreviewStream,
+        preview: merged.preview,
+        lyric: merged.lyric,
+        backgroundColor: merged.backgroundColor,
+        primaryColor: merged.primaryColor
+      });
     } catch (e) {
       console.warn('[discoverFeed] prefetch failed', s?.name, e);
     } finally {
