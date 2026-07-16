@@ -13,12 +13,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - id: mac-x64
-            os: macos-latest
-            build_command: npm run build:mac:x64
-          - id: mac-arm64
-            os: macos-latest
-            build_command: npm run build:mac:arm64
           - id: windows
             os: windows-latest
             build_command: npm run build:win
@@ -45,22 +39,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 libappindicator3-dev librsvg2-dev patchelf
 
-      # 本地/无证书 CI：关闭自动签名发现。正式公证时配置 secrets：
-      # CSC_LINK、CSC_KEY_PASSWORD、APPLE_ID、APPLE_APP_SPECIFIC_PASSWORD、APPLE_TEAM_ID
-      # 并将 package.json build.mac.notarize 设为 true 或改用 afterSign 钩子。
       - name: Build artifacts
         run: ${{ matrix.build_command }}
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.CSC_LINK != '' && 'true' || 'false' }}
           CSC_LINK: ${{ secrets.CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-
-      - name: Prepare mac update metadata
-        if: startsWith(matrix.id, 'mac-')
-        run: rm -f dist/latest-mac.yml
 
       - name: Upload release bundle
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
@@ -68,8 +52,6 @@ jobs:
           name: ${{ matrix.id }}
           if-no-files-found: error
           path: |
-            dist/*.dmg
-            dist/*.zip
             dist/*.exe
             dist/*.deb
             dist/*.rpm
@@ -103,14 +85,7 @@ jobs:
       - name: Prepare release files
         run: |
           mkdir -p release-upload
-          find release-artifacts -type f \
-            ! -name 'latest-mac-x64.yml' \
-            ! -name 'latest-mac-arm64.yml' \
-            -exec cp {} release-upload/ \;
-          node scripts/merge_latest_mac_yml.mjs \
-            release-artifacts/mac-x64/latest-mac-x64.yml \
-            release-artifacts/mac-arm64/latest-mac-arm64.yml \
-            release-upload/latest-mac.yml
+          find release-artifacts -type f -exec cp {} release-upload/ \;
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65  # v2
