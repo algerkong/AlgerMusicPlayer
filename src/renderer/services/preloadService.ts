@@ -1,4 +1,5 @@
 import type { SongResult } from '@/types/music';
+import { isElectron } from '@/utils';
 
 /**
  * 预加载服务
@@ -66,7 +67,9 @@ class PreloadService {
   private async _validate(url: string, song: SongResult): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       const testAudio = new Audio();
-      testAudio.crossOrigin = 'anonymous';
+      if (isElectron || !import.meta.env.VITE_CONTAINER_MUSIC_API?.trim()) {
+        testAudio.crossOrigin = 'anonymous';
+      }
       testAudio.preload = 'metadata';
 
       let timeoutId: ReturnType<typeof setTimeout> | null = null;
