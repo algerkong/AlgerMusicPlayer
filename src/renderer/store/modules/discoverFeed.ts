@@ -480,7 +480,7 @@ export const useDiscoverFeedStore = defineStore('discoverFeed', () => {
       const at = items.value.findIndex((x) => String(x.id) === songId);
       if (at === index.value + 1 && patch.playMusicUrl) {
         const { audioService } = await import('@/services/audioService');
-        const merged = { ...(items.value[at] || {}), ...patch } as SongResult;
+        const merged = { ...items.value[at], ...patch } as SongResult;
         audioService.preload(String(patch.playMusicUrl), merged);
       }
     } catch {

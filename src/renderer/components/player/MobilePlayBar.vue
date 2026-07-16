@@ -51,11 +51,7 @@
     </div>
 
     <!-- 全屏播放器 -->
-    <music-full-wrapper
-      ref="MusicFullRef"
-      v-model="playerStore.musicFull"
-      :background="background"
-    />
+    <music-full-wrapper v-model="playerStore.musicFull" :background="background" />
   </div>
 </template>
 
@@ -81,9 +77,6 @@ const { isPlaying: play, playMusicEvent, handleNext, handlePrev } = usePlaybackC
 
 // 背景颜色
 const background = ref('#000');
-
-// 全屏播放器
-const MusicFullRef = ref<any>(null);
 
 const setMusicFull = () => {
   playerStore.setMusicFull(!playerStore.musicFull);

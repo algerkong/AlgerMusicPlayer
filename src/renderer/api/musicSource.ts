@@ -537,8 +537,8 @@ export function msLyricToILyric(result: MsLyricResult): ILyric {
 
   // get-lyric 的 translations + resolve 缓存 二选一
   const mergedTr = {
-    ...(takeCachedLyricTranslations(result.songId) || {}),
-    ...(result.translations || {})
+    ...takeCachedLyricTranslations(result.songId),
+    ...result.translations
   };
   const tLrc = pickMsTranslationLrc(Object.keys(mergedTr).length ? mergedTr : result.translations);
   attachTranslationLrc(lrcArray, lrcTimeArray, tLrc);

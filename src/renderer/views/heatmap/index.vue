@@ -264,7 +264,7 @@ const processHistoryData = () => {
     const startDate = new Date(oneYearAgo);
     const endDate = new Date();
 
-    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+    for (const d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
       const dateKey = d.toLocaleDateString('zh-CN');
       const dayData = dailyMap[dateKey];
 

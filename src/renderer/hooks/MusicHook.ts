@@ -454,7 +454,6 @@ const setupAudioListeners = () => {
   let interval: number | null = null;
   // 播放状态恢复定时器：当 interval 因异常被清除时，自动恢复
   let recoveryTimer: number | null = null;
-  let lyricThrottleCounter = 0;
 
   const clearInterval = () => {
     if (interval != null) {
@@ -534,8 +533,6 @@ const setupAudioListeners = () => {
             const duration = end - start;
             currentLrcProgress.value = Math.min(Math.max((elapsed / duration) * 100, 0), 100);
           }
-
-          lyricThrottleCounter++;
 
           const floorT = Math.floor(currentTime);
           if (floorT % 2 === 0 && floorT !== lastPersistFloor) {

@@ -1,6 +1,6 @@
 <template>
   <div class="download-page h-full w-full bg-white dark:bg-black transition-colors duration-500">
-    <scroll-area ref="scrollbarRef" class="h-full" @scroll="handleDownloadScroll">
+    <scroll-area class="h-full" @scroll="handleDownloadScroll">
       <div class="download-content" :style="{ paddingBottom: contentPaddingBottom }">
         <!-- 顶部 Hero -->
         <section class="hero-section relative overflow-hidden rounded-tl-2xl">
@@ -568,7 +568,6 @@ const { t } = useI18n();
 const playerStore = usePlayerStore();
 const downloadStore = useDownloadStore();
 const message = useMessage();
-const scrollbarRef = ref();
 
 const completedList = computed(() => downloadStore.completedList);
 

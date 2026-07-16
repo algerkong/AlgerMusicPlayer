@@ -152,7 +152,7 @@
       </n-tooltip>
     </div>
     <!-- 全屏播放器 -->
-    <music-full-wrapper ref="MusicFullRef" v-model="musicFullVisible" :background="background" />
+    <music-full-wrapper v-model="musicFullVisible" :background="background" />
   </div>
 </template>
 
@@ -248,7 +248,6 @@ const formatTooltip = (value: number) => {
   return `${secondToMinute(value)} / ${secondToMinute(allTime.value)}`;
 };
 
-const MusicFullRef = ref<any>(null);
 const showSliderTooltip = ref(false);
 /* 进场动画结束后去掉 bounce class，避免盖住下滑 transform */
 const playBarSettled = ref(false);

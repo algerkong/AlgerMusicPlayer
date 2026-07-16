@@ -2,10 +2,10 @@ import { computed } from 'vue';
 
 import { useSettingsStore } from '@/store/modules/settings';
 
-export const setBackgroundImg = (url: String) => {
+export const setBackgroundImg = (url: string) => {
   return `background-image:url(${url})`;
 };
-export const setAnimationClass = (type: String) => {
+export const setAnimationClass = (type: string) => {
   const settingsStore = useSettingsStore();
   if (settingsStore.setData && settingsStore.setData.noAnimate) {
     return '';
