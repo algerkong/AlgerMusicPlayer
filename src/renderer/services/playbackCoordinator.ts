@@ -14,13 +14,15 @@ import {
   getCurrentGeneration,
   initializePlayState,
   playTrack,
+  seamlessSwitchQuality,
   setupUrlExpiredHandler
 } from './playbackController';
 
 export type PlaybackCommand =
   | { type: 'play'; song: SongResult; shouldPlay?: boolean }
   | { type: 'initialize' }
-  | { type: 'setupUrlExpired' };
+  | { type: 'setupUrlExpired' }
+  | { type: 'switchQuality'; quality: string; songId?: string | number };
 
 export const playbackCoordinator = {
   /** 播放指定曲目（换曲主路径） */
@@ -35,6 +37,9 @@ export const playbackCoordinator = {
   /** 注册 URL 过期处理 */
   setupUrlExpiredHandler,
 
+  /** 无感换档：后台加载，就绪后接上 */
+  seamlessSwitchQuality,
+
   /** 统一 command 分发 */
   async dispatch(command: PlaybackCommand): Promise<boolean | void> {
     switch (command.type) {
@@ -45,10 +50,18 @@ export const playbackCoordinator = {
       case 'setupUrlExpired':
         setupUrlExpiredHandler();
         return;
+      case 'switchQuality':
+        return seamlessSwitchQuality(command.quality, { songId: command.songId });
       default:
         return;
     }
   }
 };
 
-export { getCurrentGeneration, initializePlayState, playTrack, setupUrlExpiredHandler };
+export {
+  getCurrentGeneration,
+  initializePlayState,
+  playTrack,
+  seamlessSwitchQuality,
+  setupUrlExpiredHandler
+};

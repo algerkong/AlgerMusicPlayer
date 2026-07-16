@@ -34,44 +34,11 @@ const getSongArtistText = (songData: SongResult): string => {
   return '';
 };
 
-/** 音质 key 归一 */
-export const normalizeQualityKey = (q?: string) => {
-  const s = String(q || '')
-    .toLowerCase()
-    .trim();
-  if (s === 'standard' || s === '128') return 'medium';
-  if (s === 'exhigh' || s === '320') return 'higher';
-  if (s === 'hires' || s === 'hi-res') return 'hi_res';
-  if (s === 'atmos') return 'spatial';
-  if (s.includes('flac') && !s.includes('hi')) return 'lossless';
-  return s;
-};
+export { clampQualityToAvailable, normalizeQualityKey, qualityRank } from '@/utils/qualityClamp';
 
-const qualityRank = (q?: string) => {
-  const k = normalizeQualityKey(q);
-  if (k === 'lossless') return 100;
-  if (k === 'hi_res') return 95;
-  if (k === 'spatial') return 90;
-  if (k === 'highest') return 85;
-  if (k === 'higher') return 80;
-  if (k === 'medium') return 40;
-  return 20;
-};
+import { clampQualityToAvailable, normalizeQualityKey, qualityRank } from '@/utils/qualityClamp';
 
-/** 本曲已有可用档时，把偏好压到「本曲实际有的最高且不超过偏好」 */
-export const clampQualityToAvailable = (wanted: string, available?: string[]) => {
-  const want = normalizeQualityKey(wanted) || 'higher';
-  if (!available?.length) return want;
-  const avail = available.map(normalizeQualityKey).filter(Boolean);
-  if (avail.includes(want)) return want;
-  const wantR = qualityRank(want);
-  const below = avail
-    .filter((k) => qualityRank(k) <= wantR)
-    .sort((a, b) => qualityRank(b) - qualityRank(a));
-  if (below[0]) return below[0];
-  return [...avail].sort((a, b) => qualityRank(b) - qualityRank(a))[0] || want;
-};
-
+/** 起播可先极高再升：无损 / 用户手选的录音室·全景 */
 const HI_TIERS = new Set(['lossless', 'hi_res', 'spatial']);
 
 /**
@@ -254,7 +221,7 @@ export const getSongUrl = async (
     let vipLevel = 'none';
     try {
       // 运行时 pinia 已 active 时直接用；失败再懒加载
-       
+
       const mod = (await import('@/store/modules/user')) as {
         useUserStore: () => { vipLevel?: string };
       };
@@ -324,12 +291,13 @@ export const getSongUrl = async (
     }
     if (result.bitrate) songData.streamBitrate = Number(result.bitrate);
 
-    // 纠正升质目标：全局偏好 ∩ 真实 available；已达目标则不再升
+    // 纠正升质目标：仅当「全局偏好目标」高于当前流才后台升（极高不会自动升无损）
     {
       const pref = normalizeQualityKey(getSetData()?.musicQuality || 'higher') || 'higher';
       const target = clampQualityToAvailable(pref, songData.availableQualities);
       const stream = normalizeQualityKey(songData.streamQuality);
-      if (stream === target) {
+      // force 路径（用户手选）不在这里二次安排升质，由 seamlessSwitchQuality 负责
+      if (forceResolve || stream === target || !target || !stream) {
         (songData as SongResult & { _streamUpgradeTo?: string })._streamUpgradeTo = undefined;
       } else if (qualityRank(target) > qualityRank(stream)) {
         (songData as SongResult & { _streamUpgradeTo?: string })._streamUpgradeTo = target;

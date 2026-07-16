@@ -129,11 +129,14 @@ export const usePlaylistStore = defineStore(
      */
     let preloadDebounceTimer: ReturnType<typeof setTimeout> | null = null;
     const preloadNextSongs = (currentIndex: number) => {
+      // 首包立即预热下一首（缩短 debounce，避免「第一首播完第二首还在 resolve」）
       if (preloadDebounceTimer) clearTimeout(preloadDebounceTimer);
+      doPreloadNextSongs(currentIndex);
+      // 仍 debounce 一次，合并连切时的重复触发
       preloadDebounceTimer = setTimeout(() => {
         preloadDebounceTimer = null;
         doPreloadNextSongs(currentIndex);
-      }, 200);
+      }, 120);
     };
 
     const doPreloadNextSongs = (currentIndex: number) => {
@@ -569,6 +572,9 @@ export const usePlaylistStore = defineStore(
           | 'availableQualities'
           | 'streamQuality'
           | 'streamBitrate'
+          | 'lyric'
+          | 'backgroundColor'
+          | 'primaryColor'
         >
       >
     ) => {
@@ -577,13 +583,19 @@ export const usePlaylistStore = defineStore(
       playList.value[idx] = { ...playList.value[idx], ...patch };
       triggerRef(playList);
 
-      // 当前播放曲 meta 写回后：预热「下一首」standby（若已有 URL）
-      if (idx === playListIndex.value && playList.value.length > 1) {
-        let nextIdx = playListIndex.value + 1;
-        if (nextIdx >= playList.value.length) {
-          nextIdx = playMode.value === 0 ? -1 : 0;
-        }
-        const next = nextIdx >= 0 ? playList.value[nextIdx] : null;
+      // 算「下一首」下标
+      let nextIdx = playListIndex.value + 1;
+      if (nextIdx >= playList.value.length) {
+        nextIdx = playMode.value === 0 ? -1 : 0;
+      }
+
+      // 当前曲 meta 写回 → 灌下一首 standby；或直接写的是下一首 URL → 立刻灌
+      const shouldWarmNext =
+        playList.value.length > 1 &&
+        nextIdx >= 0 &&
+        (idx === playListIndex.value || idx === nextIdx);
+      if (shouldWarmNext) {
+        const next = playList.value[nextIdx];
         if (next?.playMusicUrl && !(next.expiredAt != null && next.expiredAt < Date.now())) {
           try {
             audioService.preload(next.playMusicUrl, next);
