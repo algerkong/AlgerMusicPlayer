@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import type { Track } from '../../shared/domain/track';
 import type { SongResult } from '../types/music';
-import { normalizeSongResult, songResultToTrack, trackToSongResult } from './trackBridge';
+import {
+  normalizeSongResult,
+  playableToSongResult,
+  songResultToPlayable,
+  songResultToTrack,
+  trackToSongResult
+} from './trackBridge';
 
 describe('trackBridge snowflake ids', () => {
   it('keeps song id as string without Number coercion', () => {
@@ -40,6 +46,34 @@ describe('trackBridge snowflake ids', () => {
     // normalize mirrors both sides
     expect(song.artists?.[0].id).toBe(42);
     expect(song.dt).toBe(song.duration);
+  });
+});
+
+describe('songResultToPlayable roundtrip', () => {
+  it('preserves runtime stream fields', () => {
+    const song = normalizeSongResult({
+      id: '7',
+      name: 'R',
+      picUrl: '',
+      ar: [{ id: 1, name: 'A' }] as any,
+      al: { id: 1, name: 'AL', picUrl: '' } as any,
+      count: 0,
+      playMusicUrl: 'http://x',
+      playLoading: true,
+      streamQuality: 'higher',
+      isPartialStream: true,
+      pendingFullUrl: 'local://full'
+    } as any);
+    const playable = songResultToPlayable(song);
+    expect(playable.track.id).toBe('7');
+    expect(playable.runtime?.source?.url).toBe('http://x');
+    expect(playable.runtime?.streamQuality).toBe('higher');
+    expect(playable.runtime?.isPartialStream).toBe(true);
+    const back = playableToSongResult(playable);
+    expect(back.playMusicUrl).toBe('http://x');
+    expect(back.streamQuality).toBe('higher');
+    expect(back.isPartialStream).toBe(true);
+    expect(back.pendingFullUrl).toBe('local://full');
   });
 });
 

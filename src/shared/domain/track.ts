@@ -64,7 +64,7 @@ export interface PlaybackSource {
   createdAt?: number;
 }
 
-/** 播放器运行态（仅会话内） */
+/** 播放器运行态（仅会话内；勿写回 Track） */
 export interface PlaybackRuntime {
   source?: PlaybackSource;
   playLoading?: boolean;
@@ -73,6 +73,14 @@ export interface PlaybackRuntime {
   lyric?: unknown;
   backgroundColor?: string;
   primaryColor?: string;
+  /** 加密前缀秒播 / 完整文件接上 */
+  isPartialStream?: boolean;
+  pendingFullUrl?: string;
+  availableQualities?: string[];
+  streamQuality?: string;
+  streamBitrate?: number;
+  preferredQuality?: string;
+  forceQualityResolve?: boolean;
 }
 
 /** 列表/播放器组合视图：Track + 可选运行态 */

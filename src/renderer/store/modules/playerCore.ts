@@ -6,10 +6,25 @@ import type { AudioOutputDevice } from '@/types/audio';
 import type { SongResult } from '@/types/music';
 import { debouncedLocalStorage } from '@/utils/debouncedStorage';
 import { minifySong } from '@/utils/persistedSong';
+import {
+  normalizeSongResult,
+  playableToSongResult,
+  songResultToPlayable,
+  songResultToRuntime,
+  songResultToTrack
+} from '@/utils/trackBridge';
+
+import type { PlaybackRuntime, PlayableTrack, Track } from '../../../shared/domain/track';
+
+const emptySong = {} as SongResult;
 
 /**
- * 核心播放控制 Store
- * 负责：播放/暂停、当前歌曲、音频URL、音量、播放速度、全屏状态
+ * 核心播放控制 Store（P2：内部分层 Track + Runtime）
+ *
+ * - 兼容壳 `playMusic`：仍是 SongResult，旧代码赋值/读字段继续可用
+ * - `currentTrack` / `currentRuntime`：从壳同步投影（领域读口）
+ * - 规范写口：`setCurrentSong`（整曲替换）、`patchCurrentSong`（运行态补丁）
+ * - 换曲：playlist.setPlay → playbackCoordinator（勿在此塞 SongResult 换曲）
  */
 export const usePlayerCoreStore = defineStore(
   'playerCore',
@@ -17,24 +32,85 @@ export const usePlayerCoreStore = defineStore(
     // ==================== 状态 ====================
     const play = ref(false);
     const isPlay = ref(false);
-    const playMusic = ref<SongResult>({} as SongResult);
+    /** 兼容壳：对外 SongResult；内部与 Track/Runtime 同步 */
+    const playMusic = ref<SongResult>(emptySong);
     const playMusicUrl = ref('');
     const musicFull = ref(false);
     const playbackRate = ref(1.0);
     const volume = ref(1);
     const isMuted = ref(false);
-    const userPlayIntent = ref(false); // 用户是否想要播放
-    const isFmPlaying = ref(false); // 是否正在播放私人FM
+    const userPlayIntent = ref(false);
+    const isFmPlaying = ref(false);
 
-    // 音频输出设备
     const audioOutputDeviceId = ref<string>(
       localStorage.getItem('audioOutputDeviceId') || 'default'
     );
     const availableAudioDevices = ref<AudioOutputDevice[]>([]);
 
+    // ==================== P2 领域投影 ====================
+    const currentTrack = computed<Track | null>(() => {
+      const s = playMusic.value;
+      if (s?.id == null || s.id === '') return null;
+      return songResultToTrack(s);
+    });
+
+    const currentRuntime = computed<PlaybackRuntime>(() => {
+      const s = playMusic.value;
+      if (s?.id == null || s.id === '') return {};
+      return songResultToRuntime(s);
+    });
+
+    const currentPlayable = computed<PlayableTrack | null>(() => {
+      const t = currentTrack.value;
+      if (!t) return null;
+      return { track: t, runtime: currentRuntime.value };
+    });
+
     // ==================== 计算属性 ====================
     const currentSong = computed(() => playMusic.value);
     const isPlaying = computed(() => isPlay.value);
+
+    // ==================== 规范写口 ====================
+
+    /** 整曲替换（换曲 / 恢复）；空 id 清空 */
+    const setCurrentSong = (song: SongResult | null | undefined) => {
+      if (!song || song.id == null || song.id === '') {
+        playMusic.value = emptySong;
+        playMusicUrl.value = '';
+        return;
+      }
+      const n = normalizeSongResult(song);
+      playMusic.value = n;
+      playMusicUrl.value = n.playMusicUrl || '';
+    };
+
+    /** 从 PlayableTrack 写入（领域入口） */
+    const setCurrentPlayable = (playable: PlayableTrack | null) => {
+      if (!playable?.track?.id) {
+        setCurrentSong(null);
+        return;
+      }
+      setCurrentSong(playableToSongResult(playable));
+    };
+
+    /**
+     * 补丁当前曲（歌词/颜色/URL/loading 等）。
+     * 优先用此法替代 `playMusic.xxx =` 原地写，便于后续收口。
+     */
+    const patchCurrentSong = (patch: Partial<SongResult>) => {
+      if (playMusic.value?.id == null || playMusic.value.id === '') return;
+      const n = normalizeSongResult({ ...playMusic.value, ...patch });
+      playMusic.value = n;
+      if (patch.playMusicUrl !== undefined) {
+        playMusicUrl.value = patch.playMusicUrl || '';
+      }
+    };
+
+    /** 调试/迁移：当前壳拆成 PlayableTrack */
+    const getCurrentPlayable = (): PlayableTrack | null => {
+      if (playMusic.value?.id == null) return null;
+      return songResultToPlayable(playMusic.value);
+    };
 
     // ==================== 操作 ====================
 
@@ -56,16 +132,12 @@ export const usePlayerCoreStore = defineStore(
     const setVolume = (newVolume: number) => {
       const normalizedVolume = Math.max(0, Math.min(1, newVolume));
       volume.value = normalizedVolume;
-      // 用户调高音量时自动解除静音
       if (isMuted.value && normalizedVolume > 0) {
         isMuted.value = false;
       }
       audioService.setVolume(isMuted.value ? 0 : normalizedVolume);
     };
 
-    /**
-     * 设置静音状态（不改变 volume，仅控制音频输出）
-     */
     const setMuted = (value: boolean) => {
       if (isMuted.value === value) return;
       isMuted.value = value;
@@ -78,27 +150,18 @@ export const usePlayerCoreStore = defineStore(
 
     const getVolume = () => volume.value;
 
-    /**
-     * 增加音量
-     */
     const increaseVolume = (step: number = 0.1) => {
       const newVolume = Math.min(1, volume.value + step);
       setVolume(newVolume);
       return newVolume;
     };
 
-    /**
-     * 减少音量
-     */
     const decreaseVolume = (step: number = 0.1) => {
       const newVolume = Math.max(0, volume.value - step);
       setVolume(newVolume);
       return newVolume;
     };
 
-    /**
-     * 暂停播放
-     */
     const handlePause = async () => {
       try {
         const currentSound = audioService.getCurrentSound();
@@ -114,18 +177,15 @@ export const usePlayerCoreStore = defineStore(
 
     /**
      * 仅切换播放/暂停意图与 isPlay 标志。
-     * 换曲请走 playlist.setPlay → playbackCoordinator.playTrack，勿在此塞 SongResult。
+     * 换曲请走 playlist.setPlay → playbackCoordinator.playTrack。
      */
     const setPlayMusic = (value: boolean) => {
       setIsPlay(value);
       userPlayIntent.value = value;
     };
 
-    // ==================== 音频输出设备管理 ====================
+    // ==================== 音频输出设备 ====================
 
-    /**
-     * 刷新可用音频输出设备列表
-     */
     const refreshAudioDevices = async () => {
       availableAudioDevices.value = await audioService.getAudioOutputDevices();
     };
@@ -166,12 +226,21 @@ export const usePlayerCoreStore = defineStore(
       audioOutputDeviceId,
       availableAudioDevices,
 
+      // P2 领域投影
+      currentTrack,
+      currentRuntime,
+      currentPlayable,
+
       currentSong,
       isPlaying,
 
       setIsPlay,
       setMusicFull,
       setPlayMusic,
+      setCurrentSong,
+      setCurrentPlayable,
+      patchCurrentSong,
+      getCurrentPlayable,
       setPlaybackRate,
       setVolume,
       getVolume,
@@ -188,11 +257,6 @@ export const usePlayerCoreStore = defineStore(
   {
     persist: {
       key: 'player-core-store',
-      // 使用 debouncedLocalStorage：volume 拖动 / 静音切换会高频触发 mutation，
-      // 直接写 localStorage 会导致每次都 stringify + minify 整个 state，浪费 I/O。
-      // 防抖 2s 写一次足够，beforeunload 钩子兜底刷盘。
-      // Trade-off：极端非正常退出（kill -9 / 断电 / 主进程崩溃）下 beforeunload 不触发，
-      // 最近 2s 的 volume / isPlay / playMusic 变更会丢——这些状态丢一次无大碍，可接受
       storage: debouncedLocalStorage,
       pick: [
         'playMusic',
@@ -203,13 +267,6 @@ export const usePlayerCoreStore = defineStore(
         'isPlay',
         'audioOutputDeviceId'
       ],
-      // playMusic 持久化前过 minifySong：剥离 base64 封面、lyric、song 等大字段。
-      // 单首歌的 lyric 持久化后没有用（重启后会重新加载），但 picUrl 若是 base64 会
-      // 拖累整个 player-core-store 写入失败（5MB 配额）。playMusicUrl 在 store 层级单独
-      // 持久化，不受 playMusic 内部精简影响——本地音乐 local:// URL 仍保持可恢复。
-      // id 守卫：空 playMusic 走 minifySong 会得到 {picUrl:'', ar:[]}（stripDataUrl
-      // 把 undefined 转成空串、ar 缺省返回空数组），下次启动 playbackController 的
-      // Object.keys().length === 0 判空就会失效，误恢复一首无 id 的空歌
       serializer: {
         serialize: (state: any) =>
           JSON.stringify({

@@ -325,13 +325,12 @@ export const seamlessSwitchQuality = async (
     // play 前最后一次校验，缩小竞态窗
     if (isQualitySwitchStale(switchGen, playGenAtStart, songId, playerCore)) return false;
 
-    playerCore.playMusic = {
+    playerCore.setCurrentSong({
       ...playerCore.playMusic,
       ...upgraded,
       id: song.id,
       playLoading: false
-    };
-    playerCore.playMusicUrl = upgraded.playMusicUrl;
+    });
     delete (playerCore.playMusic as any)._streamUpgradeTo;
 
     await audioService.play(upgraded.playMusicUrl, playerCore.playMusic, keepPlaying, seek);
@@ -479,8 +478,7 @@ const seamlessSwitchToFullUrl = async (
   const seek = getSeekSecondsForSong(songId);
   const keepPlaying = playerCore.userPlayIntent !== false && !!playerCore.isPlay;
 
-  playerCore.playMusic = { ...track, id: base.id };
-  playerCore.playMusicUrl = fullUrl;
+  playerCore.setCurrentSong({ ...track, id: base.id, playMusicUrl: fullUrl });
 
   await audioService.play(fullUrl, playerCore.playMusic, keepPlaying, seek);
 
@@ -639,7 +637,7 @@ export const playTrack = async (
   // 4. 先设置基本歌曲信息（立即显示UI）；换曲 loading，同曲升质不在此路径
   music.playLoading = !isSameTrack || !canPromote;
   // 换曲时禁止带着上一首的进度感：新曲从 0 起（loadAndPlayAudio 也会按 songId 读进度）
-  playerCore.playMusic = { ...music, playLoading: music.playLoading };
+  playerCore.setCurrentSong({ ...music, playLoading: music.playLoading });
   updateDocumentTitle(music);
 
   const originalMusic = { ...music };
@@ -656,24 +654,25 @@ export const playTrack = async (
     if (!loadedMetadata || gen !== generation) return;
     if (!sameTrackId(playerCore.playMusic?.id, originalMusic.id)) return;
     // 歌词可覆盖；颜色：若 UI 已为「本曲」取到色则不回退旧结果
+    const patch: Partial<SongResult> = {};
     if (loadedMetadata.lyrics) {
-      playerCore.playMusic.lyric = loadedMetadata.lyrics;
+      patch.lyric = loadedMetadata.lyrics;
     }
     const curBg = playerCore.playMusic.backgroundColor;
     const curPrimary = playerCore.playMusic.primaryColor;
-    // 仅在本曲尚无色，或 loadMetadata 结果非空时写入（避免空串冲掉）
     if (loadedMetadata.backgroundColor) {
-      // 若当前色来自本曲后续 extract（同 id 已有色），仍允许用封面采样覆盖 hold 残留
-      playerCore.playMusic.backgroundColor = loadedMetadata.backgroundColor;
+      patch.backgroundColor = loadedMetadata.backgroundColor;
     } else if (!curBg) {
       /* keep */
     }
     if (loadedMetadata.primaryColor) {
-      playerCore.playMusic.primaryColor = loadedMetadata.primaryColor;
+      patch.primaryColor = loadedMetadata.primaryColor;
     } else if (!curPrimary) {
       /* keep */
     }
-    playerCore.playMusic = { ...playerCore.playMusic };
+    if (Object.keys(patch).length) {
+      playerCore.patchCurrentSong(patch);
+    }
   };
   loadMetadata(originalMusic)
     .then((result) => {
@@ -737,8 +736,7 @@ export const playTrack = async (
     }
 
     // 保持 loading 直到音频 canplay
-    playerCore.playMusic = { ...updatedPlayMusic, playLoading: true };
-    playerCore.playMusicUrl = updatedPlayMusic.playMusicUrl as string;
+    playerCore.setCurrentSong({ ...updatedPlayMusic, playLoading: true });
     music.playMusicUrl = updatedPlayMusic.playMusicUrl as string;
     music.isPreviewStream = updatedPlayMusic.isPreviewStream;
     if (updatedPlayMusic.preview) music.preview = updatedPlayMusic.preview;
@@ -749,8 +747,7 @@ export const playTrack = async (
       .then((lyrics) => {
         if (gen !== generation) return;
         if (!lyrics?.lrcArray?.some((l) => l.trText)) return;
-        playerCore.playMusic.lyric = lyrics;
-        playerCore.playMusic = { ...playerCore.playMusic };
+        playerCore.patchCurrentSong({ lyric: lyrics });
       })
       .catch(() => undefined);
   } catch (error) {
@@ -762,8 +759,8 @@ export const playTrack = async (
       return false;
     }
     console.error('[playbackController] 获取歌曲详情失败:', error);
-    if (playerCore.playMusic) {
-      playerCore.playMusic.playLoading = false;
+    if (playerCore.playMusic?.id != null) {
+      playerCore.patchCurrentSong({ playLoading: false });
     }
     playbackRequestManager.failRequest(requestId);
     // 同曲清链重试一次
@@ -811,8 +808,7 @@ export const playTrack = async (
 
       // 9. 播放成功，重置 URL 过期恢复计数
       resetUrlExpiredRetry();
-      playerCore.playMusic.playLoading = false;
-      playerCore.playMusic.isFirstPlay = false;
+      playerCore.patchCurrentSong({ playLoading: false, isFirstPlay: false });
       // 最终意图：入参要播且用户未在加载中点暂停
       const finalIntent = intendedPlay && playerCore.userPlayIntent !== false;
       playerCore.userPlayIntent = finalIntent;
@@ -906,8 +902,8 @@ export const playTrack = async (
       }
     }
 
-    if (playerCore.playMusic) {
-      playerCore.playMusic.playLoading = false;
+    if (playerCore.playMusic?.id != null) {
+      playerCore.patchCurrentSong({ playLoading: false });
     }
     playbackRequestManager.failRequest(requestId);
 
@@ -1120,9 +1116,7 @@ export const initializePlayState = async (): Promise<void> => {
       void loadMetadata(playerCore.playMusic)
         .then(({ lyrics, backgroundColor, primaryColor }) => {
           if (!playerCore.playMusic?.id) return;
-          playerCore.playMusic.lyric = lyrics;
-          playerCore.playMusic.backgroundColor = backgroundColor;
-          playerCore.playMusic.primaryColor = primaryColor;
+          playerCore.patchCurrentSong({ lyric: lyrics, backgroundColor, primaryColor });
         })
         .catch((e) => console.warn('[playbackController] 加载元数据失败:', e));
     } else {
@@ -1143,7 +1137,7 @@ export const initializePlayState = async (): Promise<void> => {
     console.error('[playbackController] 恢复播放状态失败:', error);
     playerCore.play = false;
     playerCore.isPlay = false;
-    playerCore.playMusic = {} as SongResult;
+    playerCore.setCurrentSong(null);
     playerCore.playMusicUrl = '';
   }
 

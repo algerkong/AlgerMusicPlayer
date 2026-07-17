@@ -459,9 +459,12 @@ const measureTitle = async () => {
 const applyPaletteToPlayer = (primary?: string, background?: string) => {
   if (!playerStore.playMusic) return;
   if (!sameTrackId(playerStore.playMusic.id, feed.current?.id)) return;
-  if (primary) playerStore.playMusic.primaryColor = primary;
-  if (background) playerStore.playMusic.backgroundColor = background;
-  playerStore.playMusic = { ...playerStore.playMusic };
+  if (primary || background) {
+    playerStore.patchCurrentSong({
+      ...(primary ? { primaryColor: primary } : {}),
+      ...(background ? { backgroundColor: background } : {})
+    });
+  }
   // 写回 feed，下次切到此曲直接有色
   const id = feed.current?.id;
   if (id != null) {

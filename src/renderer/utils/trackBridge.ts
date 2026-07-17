@@ -129,7 +129,14 @@ export function attachRuntime(song: SongResult, runtime?: PlaybackRuntime): Song
     createdAt: runtime.source?.createdAt ?? song.createdAt,
     lyric: (runtime.lyric as SongResult['lyric']) ?? song.lyric,
     backgroundColor: runtime.backgroundColor ?? song.backgroundColor,
-    primaryColor: runtime.primaryColor ?? song.primaryColor
+    primaryColor: runtime.primaryColor ?? song.primaryColor,
+    isPartialStream: runtime.isPartialStream ?? song.isPartialStream,
+    pendingFullUrl: runtime.pendingFullUrl ?? song.pendingFullUrl,
+    availableQualities: runtime.availableQualities ?? song.availableQualities,
+    streamQuality: runtime.streamQuality ?? song.streamQuality,
+    streamBitrate: runtime.streamBitrate ?? song.streamBitrate,
+    preferredQuality: runtime.preferredQuality ?? song.preferredQuality,
+    forceQualityResolve: runtime.forceQualityResolve ?? song.forceQualityResolve
   });
 }
 
@@ -173,6 +180,8 @@ export function songResultToRuntime(song: SongResult): PlaybackRuntime {
     source: {
       url: song.playMusicUrl,
       isPreviewStream: song.isPreviewStream,
+      previewStartMs: song.preview?.startMs,
+      previewDurationMs: song.preview?.durationMs,
       expiresAt: song.expiredAt,
       createdAt: song.createdAt
     },
@@ -180,6 +189,21 @@ export function songResultToRuntime(song: SongResult): PlaybackRuntime {
     isFirstPlay: song.isFirstPlay,
     lyric: song.lyric,
     backgroundColor: song.backgroundColor,
-    primaryColor: song.primaryColor
+    primaryColor: song.primaryColor,
+    isPartialStream: song.isPartialStream,
+    pendingFullUrl: song.pendingFullUrl,
+    availableQualities: song.availableQualities,
+    streamQuality: song.streamQuality,
+    streamBitrate: song.streamBitrate,
+    preferredQuality: song.preferredQuality,
+    forceQualityResolve: song.forceQualityResolve
+  };
+}
+
+/** 从兼容壳拆出 PlayableTrack（P2 store 分层） */
+export function songResultToPlayable(song: SongResult): PlayableTrack {
+  return {
+    track: songResultToTrack(song),
+    runtime: songResultToRuntime(song)
   };
 }

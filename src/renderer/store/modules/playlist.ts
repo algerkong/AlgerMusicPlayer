@@ -369,7 +369,7 @@ export const usePlaylistStore = defineStore(
 
       audioService.pause();
       setTimeout(() => {
-        playerCore.playMusic = {} as SongResult;
+        playerCore.setCurrentSong(null);
         playerCore.playMusicUrl = '';
         playList.value = [];
         playListIndex.value = 0;

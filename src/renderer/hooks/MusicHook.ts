@@ -387,7 +387,7 @@ export const ensureLyricsLoaded = async (force = false) => {
         if (String(playMusic.value?.id || '') === expectedId) {
           const store = peekPlayerStore();
           if (store?.playMusic && String(store.playMusic.id) === expectedId) {
-            store.playMusic.lyric = loaded;
+            store.patchCurrentSong({ lyric: loaded });
           }
         }
         console.log(
