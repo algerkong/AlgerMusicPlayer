@@ -7,7 +7,13 @@
 
 ## [未发布]
 
-（发版前在此累积，归入版本号时再拆「新增 / 修复 / 变更 / 移除」。）
+### 文档
+
+- 新增 `AGENTS.md`：贡献与 AI 代理指南（GitHub Flow、多分支并行、小 PR）
+- 刷新 `README.md`、`DEV.md`；新增 `docs/README.md`、`docs/github-flow.md`；PR 模板补充 Flow 自查
+- Track / SongResult 领域整理与 `docs/track-migration.md` 路线图
+
+（发版前归入版本号时再拆「新增 / 修复 / 变更 / 移除」。）
 
 ## [v5.1.0]
 

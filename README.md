@@ -102,6 +102,19 @@ Linux 沙箱相关若启动失败，可先看 `npm run fix-sandbox`。
 
 ---
 
+## 文档与协作
+
+| 文档                           | 内容                                   |
+| ------------------------------ | -------------------------------------- |
+| [DEV.md](./DEV.md)             | 目录结构、模块说明、开发约定、打包细节 |
+| [AGENTS.md](./AGENTS.md)       | 贡献与 AI 代理指南；**GitHub Flow**    |
+| [docs/](./docs/)               | 文档索引、Flow 速查、Track 迁移路线图  |
+| [CHANGELOG.md](./CHANGELOG.md) | 版本更新日志                           |
+
+协作摘要：从最新 `main` 开短分支 → Conventional Commits → 尽早提 PR → CI 通过后合并 → 删分支。完整约定见 [AGENTS.md](./AGENTS.md) 与 [docs/github-flow.md](./docs/github-flow.md)。
+
+---
+
 ## 声明
 
 - 仅供学习与个人交流，**禁止用于商业用途**。请支持官方正版（如 [汽水音乐](https://music.douyin.com/)）。

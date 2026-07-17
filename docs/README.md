@@ -1,0 +1,23 @@
+# 文档目录
+
+本目录存放 LYMusic 的补充文档与界面截图资源。
+
+## 仓库文档索引
+
+| 文档                                       | 说明                                                                       |
+| ------------------------------------------ | -------------------------------------------------------------------------- |
+| [../README.md](../README.md)               | 项目简介、安装启动、与上游差异、免责声明                                   |
+| [../DEV.md](../DEV.md)                     | 技术栈、目录结构、开发/打包命令、代码约定                                  |
+| [../AGENTS.md](../AGENTS.md)               | **贡献与 AI 代理指南**；**GitHub Flow**（多分支并行、小 PR、主分支可发布） |
+| [../CHANGELOG.md](../CHANGELOG.md)         | 版本更新日志                                                               |
+| [github-flow.md](./github-flow.md)         | GitHub Flow 操作速查（与 AGENTS 互补）                                     |
+| [track-migration.md](./track-migration.md) | Track / SongResult 迁移路线图与领域约定                                    |
+
+## 截图
+
+`image*.png` 为产品或文档插图资源，可按需在 README / Issue / PR 中引用。
+
+## 维护约定
+
+- 架构或音源接入方式变更时，同步更新 `DEV.md` 与 `AGENTS.md`。
+- 工作流规则以 `AGENTS.md` 为准；本目录文档只做补充，避免两套互相矛盾的流程说明。
