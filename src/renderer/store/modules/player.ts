@@ -40,8 +40,16 @@ export const usePlayerStore = defineStore('player', () => {
     currentPlayable
   } = storeToRefs(playerCore);
 
-  const { playList, playListIndex, playMode, originalPlayList, playListDrawerVisible } =
-    storeToRefs(playlist);
+  const {
+    playList,
+    playablePlayList,
+    playListIndex,
+    playMode,
+    originalPlayList,
+    playListDrawerVisible,
+    playListTracks,
+    currentPlayableItem
+  } = storeToRefs(playlist);
 
   const { favoriteList, dislikeList } = storeToRefs(favorite);
 
@@ -96,6 +104,7 @@ export const usePlayerStore = defineStore('player', () => {
     handlePause: playerCore.handlePause,
 
     playList,
+    playablePlayList,
     playListIndex,
     playMode,
     originalPlayList,
@@ -103,8 +112,11 @@ export const usePlayerStore = defineStore('player', () => {
 
     currentPlayList,
     currentPlayListIndex,
+    playListTracks,
+    currentPlayableItem,
 
     setPlayList: playlist.setPlayList,
+    setPlayListFromPlayables: playlist.setPlayListFromPlayables,
     addToNextPlay: playlist.addToNextPlay,
     removeFromPlayList: playlist.removeFromPlayList,
     clearPlayAll: playlist.clearPlayAll,

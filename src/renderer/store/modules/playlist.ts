@@ -1,7 +1,7 @@
 import { useThrottleFn } from '@vueuse/core';
 import { createDiscreteApi } from 'naive-ui';
 import { defineStore, storeToRefs } from 'pinia';
-import { computed, ref, shallowRef, triggerRef } from 'vue';
+import { computed, ref, shallowRef } from 'vue';
 
 import i18n from '@/../i18n/renderer';
 import { useSongDetail } from '@/hooks/usePlayerHooks';
@@ -12,8 +12,13 @@ import { getImgUrl } from '@/utils';
 import { debouncedLocalStorage } from '@/utils/debouncedStorage';
 import { minifySongList } from '@/utils/persistedSong';
 import { performShuffle, preloadCoverImage, sameTrackId } from '@/utils/playerUtils';
-import { normalizeSongResult } from '@/utils/trackBridge';
+import {
+  normalizeSongResult,
+  playableToSongResult,
+  songResultToPlayable
+} from '@/utils/trackBridge';
 
+import type { PlayableTrack, Track } from '../../../shared/domain/track';
 import { usePlayerCoreStore } from './playerCore';
 import { normalizePlayMode } from './playlistPlayMode';
 
@@ -25,8 +30,11 @@ const getMessage = () => {
 };
 
 /**
- * 播放列表管理 Store
- * 负责：播放列表、索引、播放模式、预加载、上/下一首
+ * 播放列表管理 Store（P3：内部分层 PlayableTrack）
+ *
+ * - 兼容壳 `playList`：SongResult[]，UI / 持久化 / 旧调用方不变
+ * - 领域镜像 `playablePlayList`：与壳同步的 PlayableTrack[]
+ * - 写列表请走 setPlayList / replaceEntryAt / patchSongMeta，勿只改壳
  */
 export const usePlaylistStore = defineStore(
   'playlist',
@@ -34,18 +42,76 @@ export const usePlaylistStore = defineStore(
     // ==================== 状态 ====================
     // 状态将由 pinia-plugin-persistedstate 自动从 localStorage 恢复
     const playList = shallowRef<SongResult[]>([]);
+    /** P3 领域镜像（不持久化；由壳重建） */
+    const playablePlayList = shallowRef<PlayableTrack[]>([]);
     const playListIndex = ref(0);
     const playMode = ref(0);
     const originalPlayList = shallowRef<SongResult[]>([]);
+    const playableOriginalPlayList = shallowRef<PlayableTrack[]>([]);
     const playListDrawerVisible = ref(false);
 
     // 连续失败计数器（用于防止无限循环）
     const consecutiveFailCount = ref(0);
     const MAX_CONSECUTIVE_FAILS = 5; // 最大连续失败次数
 
+    // ==================== P3 同步写口 ====================
+
+    const toSongs = (list: SongResult[]) => list.map((s) => normalizeSongResult(s));
+
+    const commitPlayList = (songs: SongResult[], alreadyNormalized = false) => {
+      const list = alreadyNormalized ? songs : toSongs(songs);
+      playList.value = list;
+      playablePlayList.value = list.map((s) => songResultToPlayable(s));
+    };
+
+    const commitOriginalPlayList = (songs: SongResult[], alreadyNormalized = false) => {
+      const list = alreadyNormalized ? songs : toSongs(songs);
+      originalPlayList.value = list;
+      playableOriginalPlayList.value = list.map((s) => songResultToPlayable(s));
+    };
+
+    const clearAllLists = () => {
+      playList.value = [];
+      playablePlayList.value = [];
+      originalPlayList.value = [];
+      playableOriginalPlayList.value = [];
+      playListIndex.value = 0;
+    };
+
+    /** 替换单条（fetchSongs / patch / updateSong） */
+    const replaceEntryAt = (idx: number, song: SongResult) => {
+      if (idx < 0 || idx >= playList.value.length) return;
+      const n = normalizeSongResult(song);
+      const next = playList.value.slice();
+      next[idx] = n;
+      playList.value = next;
+      const pnext = playablePlayList.value.slice();
+      if (pnext.length === next.length) {
+        pnext[idx] = songResultToPlayable(n);
+        playablePlayList.value = pnext;
+      } else {
+        playablePlayList.value = next.map((s) => songResultToPlayable(s));
+      }
+    };
+
+    /** 从领域列表写入（API / 测试） */
+    const setPlayListFromPlayables = (
+      playables: PlayableTrack[],
+      keepIndex = false,
+      preserveOrder = false
+    ) => {
+      setPlayList(
+        playables.map((p) => playableToSongResult(p)),
+        keepIndex,
+        preserveOrder
+      );
+    };
+
     // ==================== 计算属性 ====================
     const currentPlayList = computed(() => playList.value);
     const currentPlayListIndex = computed(() => playListIndex.value);
+    const playListTracks = computed<Track[]>(() => playablePlayList.value.map((p) => p.track));
+    const currentPlayableItem = computed(() => playablePlayList.value[playListIndex.value] ?? null);
 
     // ==================== 操作 ====================
 
@@ -100,13 +166,11 @@ export const usePlaylistStore = defineStore(
 
         detailedSongs.forEach((song, index) => {
           if (song && startIndex + index < playList.value.length) {
-            playList.value[startIndex + index] = song;
+            replaceEntryAt(startIndex + index, song);
           }
         });
-        // 触发 shallowRef 响应式更新（直接修改元素不会自动触发）
-        triggerRef(playList);
 
-        // P2：resolve 写回后立刻灌 standby（真缓冲），封面并行
+        // resolve 写回后立刻灌 standby（真缓冲），封面并行
         if (nextSong) {
           if (nextSong.playMusicUrl) {
             try {
@@ -189,16 +253,14 @@ export const usePlaylistStore = defineStore(
 
       if (originalPlayList.value.length === 0) {
         console.log('[PlaylistStore] Saving original list, length:', playList.value.length);
-        originalPlayList.value = [...playList.value];
+        commitOriginalPlayList([...playList.value], true);
       }
 
       const currentSong = playList.value[playListIndex.value];
       console.log('[PlaylistStore] Current song before shuffle:', currentSong?.name);
 
-      // 执行洗牌
       const shuffled = performShuffle([...playList.value], currentSong);
-      // 触发 shallowRef 更新
-      playList.value = [...shuffled];
+      commitPlayList([...shuffled], true);
       playListIndex.value = 0;
 
       console.log('[PlaylistStore] List shuffled, new length:', playList.value.length);
@@ -215,10 +277,9 @@ export const usePlaylistStore = defineStore(
       const currentSong = playList.value[playListIndex.value];
       console.log('[PlaylistStore] Current song before restore:', currentSong?.name);
 
-      playList.value = [...originalPlayList.value];
-      originalPlayList.value = [];
+      commitPlayList([...originalPlayList.value], true);
+      commitOriginalPlayList([], true);
 
-      // 找到当前歌曲在原始列表中的索引
       if (currentSong) {
         const index = playList.value.findIndex((s) => sameTrackId(s.id, currentSong.id));
         if (index !== -1) {
@@ -242,14 +303,12 @@ export const usePlaylistStore = defineStore(
       }
 
       if (list.length === 0) {
-        playList.value = [];
-        playListIndex.value = 0;
-        originalPlayList.value = [];
+        clearAllLists();
         return;
       }
 
       // 入口归一：镜像字段 ar/artists、duration/dt 对齐
-      list = list.map((s) => normalizeSongResult(s));
+      list = toSongs(list);
 
       const playerCore = usePlayerCoreStore();
       const { playMusic } = storeToRefs(playerCore);
@@ -268,9 +327,9 @@ export const usePlaylistStore = defineStore(
               reconciled.push(song);
             }
           }
-          originalPlayList.value = reconciled;
+          commitOriginalPlayList(reconciled, true);
         } else if (originalPlayList.value.length > 0) {
-          originalPlayList.value = [];
+          commitOriginalPlayList([], true);
         }
 
         // 修正当前索引，指向当前正在播放的歌曲
@@ -284,12 +343,12 @@ export const usePlaylistStore = defineStore(
             ? currentIndex
             : Math.min(Math.max(0, playListIndex.value), list.length - 1);
 
-        playList.value = list;
+        commitPlayList(list, true);
       } else if (playMode.value === 2) {
         // 随机模式：全新列表，保存原始顺序并洗牌
         console.log('随机模式下设置新播放列表，保存原始顺序并洗牌');
 
-        originalPlayList.value = [...list];
+        commitOriginalPlayList([...list], true);
 
         const currentSong = playMusic.value;
         const shuffledList = performShuffle(list, currentSong);
@@ -304,11 +363,11 @@ export const usePlaylistStore = defineStore(
           playListIndex.value = keepIndex ? Math.max(0, playListIndex.value) : 0;
         }
 
-        playList.value = shuffledList;
+        commitPlayList(shuffledList, true);
       } else {
         console.log('顺序/循环模式下设置新播放列表');
         if (originalPlayList.value.length > 0) {
-          originalPlayList.value = [];
+          commitOriginalPlayList([], true);
         }
 
         if (!keepIndex) {
@@ -316,7 +375,7 @@ export const usePlaylistStore = defineStore(
           playListIndex.value = foundIndex !== -1 ? foundIndex : 0;
         }
 
-        playList.value = list;
+        commitPlayList(list, true);
       }
       // pinia-plugin-persistedstate 会自动保存状态
     };
@@ -371,9 +430,7 @@ export const usePlaylistStore = defineStore(
       setTimeout(() => {
         playerCore.setCurrentSong(null);
         playerCore.playMusicUrl = '';
-        playList.value = [];
-        playListIndex.value = 0;
-        originalPlayList.value = [];
+        clearAllLists();
         // 只清除 playerCore 的 localStorage（这些由 playerCore store 管理）
         localStorage.removeItem('currentPlayMusic');
         localStorage.removeItem('currentPlayMusicUrl');
@@ -607,8 +664,7 @@ export const usePlaylistStore = defineStore(
     ) => {
       const idx = playList.value.findIndex((s) => sameTrackId(s.id, id));
       if (idx < 0) return;
-      playList.value[idx] = { ...playList.value[idx], ...patch };
-      triggerRef(playList);
+      replaceEntryAt(idx, { ...playList.value[idx], ...patch });
 
       // 算「下一首」下标
       let nextIdx = playListIndex.value + 1;
@@ -842,6 +898,16 @@ export const usePlaylistStore = defineStore(
         playMode.value = normalized;
       }
 
+      // 持久化只恢复 SongResult 壳：重建 PlayableTrack 镜像
+      commitPlayList(
+        playList.value.map((s) => normalizeSongResult(s)),
+        true
+      );
+      commitOriginalPlayList(
+        originalPlayList.value.map((s) => normalizeSongResult(s)),
+        true
+      );
+
       // 重启后恢复随机播放状态
       if (playMode.value === 2 && playList.value.length > 0) {
         if (originalPlayList.value.length === 0) {
@@ -855,15 +921,21 @@ export const usePlaylistStore = defineStore(
 
     return {
       playList,
+      playablePlayList,
       playListIndex,
       playMode,
       originalPlayList,
+      playableOriginalPlayList,
       playListDrawerVisible,
 
       currentPlayList,
       currentPlayListIndex,
+      playListTracks,
+      currentPlayableItem,
 
       setPlayList,
+      setPlayListFromPlayables,
+      replaceEntryAt,
       patchSongMeta,
       addToNextPlay,
       removeFromPlayList,
@@ -884,9 +956,7 @@ export const usePlaylistStore = defineStore(
           (item) => sameTrackId(item.id, song.id) && item.source === song.source
         );
         if (index !== -1) {
-          playList.value[index] = song;
-          // 触发响应式更新
-          playList.value = [...playList.value];
+          replaceEntryAt(index, song);
         }
       }
     };

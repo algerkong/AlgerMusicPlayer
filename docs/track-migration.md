@@ -27,7 +27,7 @@
 | P0 门禁             | ✅   | `npm run lint:song-fields`                                                                   |
 | P1 PlayableView     | ✅   | `toPlayableView` / `trackToPlayableView`                                                     |
 | P2 Store 内部分层   | ✅   | `currentTrack` / `currentRuntime` + `setCurrentSong` / `patchCurrentSong`；壳仍为 SongResult |
-| P3 列表改结构       | 待做 | `PlayableTrack[]` 或 id 字典                                                                 |
+| P3 列表改结构       | ✅   | `playablePlayList` 镜像 + commit/replace API；壳仍 `SongResult[]`                            |
 | P4 UI 脱 SongResult | 待做 | 组件 props 改 Track/View                                                                     |
 | P5 持久化 v2        | 待做 | MinifiedTrack                                                                                |
 | P6 删 ar/al/dt      | 待做 | 类型与 normalize 镜像逻辑                                                                    |
@@ -41,7 +41,18 @@
 | `patchCurrentSong(patch)`         | 歌词/色/loading/URL 补丁 |
 | `currentTrack` / `currentRuntime` | 只读投影（从壳推导）     |
 
-优先 `patchCurrentSong`，少写 `playMusic.xxx =`。下一阶段 P3 把 `playList` 也改成可拆层结构。
+优先 `patchCurrentSong`，少写 `playMusic.xxx =`。
+
+### P3 列表写口（playlist store）
+
+| API                                   | 用途                     |
+| ------------------------------------- | ------------------------ |
+| `playablePlayList` / `playListTracks` | 领域镜像 / Track[] 投影  |
+| `currentPlayableItem`                 | 当前索引的 PlayableTrack |
+| `setPlayListFromPlayables`            | 从领域列表写入           |
+| `replaceEntryAt` / `patchSongMeta`    | 单条替换与运行态补丁     |
+
+持久化仍只存 SongResult 壳；启动 `initializePlaylist` 重建镜像。
 
 ## 命令
 
