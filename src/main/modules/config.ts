@@ -176,9 +176,12 @@ export function initializeConfig() {
   initialized = true;
 
   try {
-    store.get('set.downloadPath') || store.set('set.downloadPath', app.getPath('downloads'));
-    store.get('set.diskCacheDir') ||
+    if (!store.get('set.downloadPath')) {
+      store.set('set.downloadPath', app.getPath('downloads'));
+    }
+    if (!store.get('set.diskCacheDir')) {
       store.set('set.diskCacheDir', path.join(app.getPath('userData'), 'cache'));
+    }
     if (store.get('set.diskCacheMaxSizeMB') === undefined) {
       store.set('set.diskCacheMaxSizeMB', 4096);
     }

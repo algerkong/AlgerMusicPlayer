@@ -275,9 +275,11 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
   if (e.key === 'Enter') {
     e.preventDefault();
-    highlightedIndex.value >= 0
-      ? selectSuggestion(suggestions.value[highlightedIndex.value])
-      : search();
+    if (highlightedIndex.value >= 0) {
+      selectSuggestion(suggestions.value[highlightedIndex.value]);
+    } else {
+      search();
+    }
   }
   if (e.key === 'Escape') {
     showSuggestions.value = false;

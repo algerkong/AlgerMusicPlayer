@@ -68,7 +68,7 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
   };
 
   const toggleFavorite = async (e: Event) => {
-    e && e.stopPropagation();
+    e?.stopPropagation();
     const id = props.item.id;
     if (id == null) return;
 
@@ -113,7 +113,7 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
 
   // 切换不喜欢状态（仅本地）
   const toggleDislike = async (e: Event) => {
-    e && e.stopPropagation();
+    e?.stopPropagation();
 
     if (isDislike.value) {
       playerStore.removeFromDislikeList(props.item.id);

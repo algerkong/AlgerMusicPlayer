@@ -22,7 +22,7 @@ import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
-defineOptions({ name: 'Search' });
+defineOptions({ name: 'SearchPage' });
 
 const { t } = useI18n();
 const router = useRouter();
