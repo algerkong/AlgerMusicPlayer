@@ -124,33 +124,68 @@
 
                 <p class="discover-artist">{{ artistText }}</p>
 
-                <div class="discover-ops">
-                  <button type="button" class="discover-op" @click.stop="onLike">
-                    <span v-if="likeCountText" class="discover-op-badge">{{ likeCountText }}</span>
-                    <i
-                      :class="isLiked ? 'ri-heart-fill is-liked' : 'ri-heart-fill'"
-                      :style="isLiked ? undefined : { opacity: 0.55 }"
-                    />
-                  </button>
-                  <button type="button" class="discover-op" @click.stop="onDislike">
-                    <i class="ri-dislike-fill" />
-                  </button>
-                  <button type="button" class="discover-op" @click.stop="addOpen = true">
-                    <i class="ri-play-list-add-fill" />
-                  </button>
-                  <button type="button" class="discover-op" @click.stop="onComment">
-                    <span v-if="commentCountText" class="discover-op-badge">{{
-                      commentCountText
-                    }}</span>
-                    <i class="ri-chat-3-fill" />
-                  </button>
-                  <button type="button" class="discover-op" @click.stop="onShare">
-                    <span v-if="shareCountText" class="discover-op-badge">{{
-                      shareCountText
-                    }}</span>
-                    <i class="ri-share-forward-fill" />
-                  </button>
-                </div>
+                <tooltip-provider :delay-duration="200">
+                  <div class="discover-ops">
+                    <tooltip>
+                      <tooltip-trigger as-child>
+                        <button type="button" class="discover-op" @click.stop="onLike">
+                          <span v-if="likeCountText" class="discover-op-badge">{{
+                            likeCountText
+                          }}</span>
+                          <i
+                            :class="isLiked ? 'ri-heart-fill is-liked' : 'ri-heart-fill'"
+                            :style="isLiked ? undefined : { opacity: 0.55 }"
+                          />
+                        </button>
+                      </tooltip-trigger>
+                      <tooltip-content side="bottom" :side-offset="8">
+                        {{ isLiked ? '取消喜欢' : '喜欢' }}
+                      </tooltip-content>
+                    </tooltip>
+
+                    <tooltip>
+                      <tooltip-trigger as-child>
+                        <button type="button" class="discover-op" @click.stop="onDislike">
+                          <i class="ri-dislike-fill" />
+                        </button>
+                      </tooltip-trigger>
+                      <tooltip-content side="bottom" :side-offset="8">不感兴趣</tooltip-content>
+                    </tooltip>
+
+                    <tooltip>
+                      <tooltip-trigger as-child>
+                        <button type="button" class="discover-op" @click.stop="addOpen = true">
+                          <i class="ri-play-list-add-fill" />
+                        </button>
+                      </tooltip-trigger>
+                      <tooltip-content side="bottom" :side-offset="8">添加到歌单</tooltip-content>
+                    </tooltip>
+
+                    <tooltip>
+                      <tooltip-trigger as-child>
+                        <button type="button" class="discover-op" @click.stop="onComment">
+                          <span v-if="commentCountText" class="discover-op-badge">{{
+                            commentCountText
+                          }}</span>
+                          <i class="ri-chat-3-fill" />
+                        </button>
+                      </tooltip-trigger>
+                      <tooltip-content side="bottom" :side-offset="8">评论</tooltip-content>
+                    </tooltip>
+
+                    <tooltip>
+                      <tooltip-trigger as-child>
+                        <button type="button" class="discover-op" @click.stop="onShare">
+                          <span v-if="shareCountText" class="discover-op-badge">{{
+                            shareCountText
+                          }}</span>
+                          <i class="ri-share-forward-fill" />
+                        </button>
+                      </tooltip-trigger>
+                      <tooltip-content side="bottom" :side-offset="8">分享</tooltip-content>
+                    </tooltip>
+                  </div>
+                </tooltip-provider>
               </div>
 
               <div class="discover-lyric-col" @wheel.stop @pointerdown.stop>
@@ -266,6 +301,7 @@ import {
   DialogTitle
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   ensureLyricsLoaded,
   getLrcStyle,
