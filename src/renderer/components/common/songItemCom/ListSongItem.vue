@@ -135,7 +135,10 @@ const onToggleSelect = () => {
   emit('select', props.item.id, !props.selected);
 };
 const onImageLoad = (event: Event) => baseItem.value?.imageLoad(event);
-const onArtistClick = (id: number) => baseItem.value?.handleArtistClick(id);
+const onArtistClick = (id: number | string | undefined) => {
+  if (id == null) return;
+  baseItem.value?.handleArtistClick(id);
+};
 const onToggleFavorite = (event: Event) => {
   baseItem.value?.toggleFavorite(event);
 };

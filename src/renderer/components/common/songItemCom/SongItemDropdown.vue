@@ -22,6 +22,7 @@ import { useI18n } from 'vue-i18n';
 import { useUserStore } from '@/store';
 import type { SongResult } from '@/types/music';
 import { getImgUrl, isElectron } from '@/utils';
+import { getSongArtistNames } from '@/utils/songFields';
 
 const { message } = createDiscreteApi(['message']);
 
@@ -115,10 +116,7 @@ const renderSongPreview = () => {
                 },
                 {
                   default: () => {
-                    const artistNames = (props.item.ar || props.item.song?.artists)
-                      ?.map((a) => a.name)
-                      .join(' / ');
-                    return artistNames || '未知艺术家';
+                    return getSongArtistNames(props.item, ' / ', '未知艺术家');
                   }
                 }
               )

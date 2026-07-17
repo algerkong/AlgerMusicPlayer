@@ -779,7 +779,7 @@ export const usePlaylistStore = defineStore(
 
         // UI 索引立刻跟上（连点时界面先变）
         const songIndex = playList.value.findIndex(
-          (item: SongResult) => item.id === song.id && item.source === song.source
+          (item: SongResult) => sameTrackId(item.id, song.id) && item.source === song.source
         );
         if (songIndex !== -1 && songIndex !== playListIndex.value) {
           playListIndex.value = songIndex;

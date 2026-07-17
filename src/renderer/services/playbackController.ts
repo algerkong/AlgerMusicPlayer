@@ -21,6 +21,7 @@ import { getImgUrl } from '@/utils';
 import { getImageLinearBackground } from '@/utils/linearColor';
 import { sameTrackId } from '@/utils/playerUtils';
 import { restorePreviewStreamFlags } from '@/utils/previewStream';
+import { getSongArtistNames } from '@/utils/songFields';
 import { ttfaBegin, ttfaMark } from '@/utils/ttfaMetrics';
 
 // 代次计数，用于取消过期请求
@@ -194,9 +195,9 @@ const triggerPreload = async (song: SongResult): Promise<void> => {
 
 const updateDocumentTitle = (music: SongResult): void => {
   let title = music.name;
-  const artists = music.ar || music.song?.artists;
-  if (artists?.length) {
-    title += ` - ${artists.map((a: any) => a.name).join('/')}`;
+  const artistNames = getSongArtistNames(music, '/');
+  if (artistNames) {
+    title += ` - ${artistNames}`;
   }
   document.title = 'LYMusic - ' + title;
 };

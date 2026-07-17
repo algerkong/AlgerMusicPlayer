@@ -154,6 +154,7 @@ import { usePlayHistoryStore } from '@/store/modules/playHistory';
 import type { SongResult } from '@/types/music';
 import { setAnimationClass } from '@/utils';
 import type { MusicHistoryItem } from '@/utils/persistedSong';
+import { getSongArtists } from '@/utils/songFields';
 
 const { t } = useI18n();
 const playHistoryStore = usePlayHistoryStore();
@@ -307,7 +308,7 @@ const mostPlayedSong = computed<{
     const id = music.id;
     const count = music.count || 1;
     const name = music.name || 'Unknown';
-    const artist = music.ar?.[0]?.name || 'Unknown Artist';
+    const artist = getSongArtists(music as any)[0]?.name || 'Unknown Artist';
 
     if (songPlayCounts.has(id)) {
       songPlayCounts.get(id)!.playCount += count;
@@ -389,7 +390,7 @@ const latestNightSong = computed<{
     return {
       id: song.id,
       name: song.name || 'Unknown',
-      artist: song.ar?.[0]?.name || 'Unknown Artist',
+      artist: getSongArtists(song as any)[0]?.name || 'Unknown Artist',
       time: `凌晨 ${randomHour.toString().padStart(2, '0')}:${randomMinute.toString().padStart(2, '0')}`
     };
   }

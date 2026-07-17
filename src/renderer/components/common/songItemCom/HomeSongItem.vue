@@ -136,7 +136,10 @@ const onPlayMusic = () => {
   emit('play', props.item);
 };
 
-const onArtistClick = (id: number) => handleArtistClick(id);
+const onArtistClick = (id: number | string | undefined) => {
+  if (id == null) return;
+  handleArtistClick(id);
+};
 const onMenuClick = (event: MouseEvent) => handleMenuClick(event);
 </script>
 

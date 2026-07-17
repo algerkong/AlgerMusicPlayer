@@ -17,6 +17,7 @@ import type { SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
 import { sameTrackId } from '@/utils/playerUtils';
 import { showBottomToast } from '@/utils/shortcutToast';
+import { getSongArtists } from '@/utils/songFields';
 
 const PREFETCH_BEFORE = 1;
 const PREFETCH_AFTER = 3;
@@ -64,6 +65,8 @@ export const useDiscoverFeedStore = defineStore('discoverFeed', () => {
 
   const mergeRuntime = (base: SongResult, extra?: SongResult | null): SongResult => {
     if (!extra) return { ...base };
+    const extraAr = getSongArtists(extra);
+    const artists = (extraAr.length ? extraAr : getSongArtists(base)) as SongResult['ar'];
     return {
       ...base,
       ...extra,
@@ -80,8 +83,8 @@ export const useDiscoverFeedStore = defineStore('discoverFeed', () => {
       preview: extra.preview || base.preview,
       picUrl: extra.picUrl || base.picUrl,
       al: extra.al || base.al,
-      ar: extra.ar || base.ar,
-      artists: extra.artists || base.artists,
+      ar: artists,
+      artists: artists as SongResult['artists'],
       name: extra.name || base.name,
       likedCount: pickCount(extra.likedCount, base.likedCount),
       commentCount: pickCount(extra.commentCount, base.commentCount),
@@ -414,8 +417,8 @@ export const useDiscoverFeedStore = defineStore('discoverFeed', () => {
         if (seed) {
           try {
             const related = await msGetRelatedSongs(String(seed.id), {
-              artistIds: (seed.ar || seed.artists || [])
-                .map((a: any) => String(a.id || ''))
+              artistIds: getSongArtists(seed)
+                .map((a) => String(a.id || ''))
                 .filter(Boolean),
               sceneName: 'player',
               playedMedia: playedMedia(),
@@ -757,8 +760,8 @@ export const useDiscoverFeedStore = defineStore('discoverFeed', () => {
     if (!(await requireAuth())) return;
     const fav = useFavoriteStore();
     const id = song.id;
-    const artistIds = (song.ar || song.artists || [])
-      .map((a: any) => String(a.id || ''))
+    const artistIds = getSongArtists(song)
+      .map((a) => String(a.id || ''))
       .filter(Boolean);
     try {
       await msDislikeTrack(String(id), { artistIds });

@@ -20,6 +20,12 @@ import type {
   DownloadTask,
   DownloadTaskState
 } from '../../shared/download';
+import {
+  getSongAlbumName,
+  getSongArtistNames,
+  getSongArtists,
+  getSongCoverUrl
+} from '../../shared/domain/songFields';
 import { getStore } from './config';
 import { resolveSafePath } from './pathGuard';
 import {
@@ -579,7 +585,7 @@ class DownloadManager {
 
       let formattedFilename = task.filename;
       if (task.songInfo) {
-        const artistName = task.songInfo.ar?.map((a: any) => a.name).join('\u3001') || '未知艺术家';
+        const artistName = getSongArtistNames(task.songInfo as any, '\u3001', '未知艺术家');
         const songName = task.songInfo.name || task.filename;
         const albumName = task.songInfo.al?.name || '未知专辑';
 
@@ -861,8 +867,7 @@ class DownloadManager {
     // songInfo 可能带 DownloadSongInfo 以外字段（song、no、publishTime）
     const info: any = task.songInfo;
     const fileFormat = fileExtension.toLowerCase();
-    const artistNames =
-      (info?.ar || info?.song?.artists)?.map((a: any) => a.name).join('\u3001') || '未知艺术家';
+    const artistNames = getSongArtistNames(info, '\u3001', '未知艺术家');
 
     if (['.mp3'].includes(fileFormat)) {
       try {
@@ -873,7 +878,7 @@ class DownloadManager {
           artist: artistNames,
           TPE1: artistNames,
           TPE2: artistNames,
-          album: info?.al?.name || info?.song?.album?.name || info?.name || task.filename,
+          album: getSongAlbumName(info, task.filename),
           APIC: {
             imageBuffer: coverImageBuffer,
             type: { id: 3, name: 'front cover' },
@@ -938,15 +943,18 @@ class DownloadManager {
     };
 
     const totalSize = task.total;
+    const songMeta = task.songInfo as any;
+    const artists = getSongArtists(songMeta);
+    const cover = getSongCoverUrl(songMeta) || defaultInfo.picUrl;
     const newSongInfo = {
-      id: task.songInfo?.id || 0,
-      name: task.songInfo?.name || task.filename,
+      id: songMeta?.id || 0,
+      name: songMeta?.name || task.filename,
       filename: task.filename,
-      picUrl: task.songInfo?.picUrl || task.songInfo?.al?.picUrl || defaultInfo.picUrl,
-      ar: task.songInfo?.ar || defaultInfo.ar,
-      al: task.songInfo?.al || {
-        picUrl: task.songInfo?.picUrl || defaultInfo.picUrl,
-        name: task.songInfo?.name || task.filename
+      picUrl: cover,
+      ar: artists.length ? artists.map((a) => ({ name: a.name || '' })) : defaultInfo.ar,
+      al: songMeta?.al || {
+        picUrl: cover,
+        name: getSongAlbumName(songMeta, task.filename)
       },
       size: totalSize,
       path: finalFilePath,

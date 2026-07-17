@@ -151,7 +151,10 @@ const artists = computed(() => baseItem.value?.artists || []);
 const onToggleSelect = () => {
   baseItem.value?.toggleSelect();
 };
-const onArtistClick = (id: number) => baseItem.value?.handleArtistClick(id);
+const onArtistClick = (id: number | string | undefined) => {
+  if (id == null) return;
+  baseItem.value?.handleArtistClick(id);
+};
 const onToggleFavorite = (event: Event) => {
   baseItem.value?.toggleFavorite(event);
   // 可选：emit 收藏事件

@@ -12,15 +12,12 @@ import { join } from 'path';
 
 import i18n from '../../i18n/main';
 import { getLanguageOptions } from '../../i18n/utils';
+import { getSongArtistNames, type SongLike } from '../../shared/domain/songFields';
 import { getStore } from './config';
 
 // 歌曲信息接口定义
-interface SongInfo {
+interface SongInfo extends SongLike {
   name: string;
-  song: {
-    artists: Array<{ name: string; [key: string]: any }>;
-    [key: string]: any;
-  };
   [key: string]: any;
 }
 
@@ -46,8 +43,7 @@ export function updatePlayState(playing: boolean) {
 }
 
 function getArtistString(song: SongInfo | null): string {
-  if (!song || !song.song || !song.song.artists) return '';
-  return song.song.artists.map((item) => item.name).join(' / ');
+  return getSongArtistNames(song);
 }
 
 // 获取歌曲完整标题（歌曲名 - 艺术家）

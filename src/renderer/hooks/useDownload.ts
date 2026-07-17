@@ -19,7 +19,7 @@ function toDownloadSongInfo(song: SongResult): DownloadSongInfo {
     id: song.id,
     name: song.name,
     picUrl: getSongCoverUrl(song),
-    ar: getSongArtists(song).map((a) => ({ name: a.name })),
+    ar: getSongArtists(song).map((a) => ({ name: a.name || '' })),
     al: {
       name: album?.name ?? '',
       picUrl: album?.picUrl ?? ''
