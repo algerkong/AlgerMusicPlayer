@@ -5,9 +5,9 @@ import { audioService } from '@/services/audioService';
 import { usePlayerStore, useSettingsStore } from '@/store';
 
 import {
+  createDefaultShortcuts,
   hasShortcutAction,
   normalizeShortcutAccelerator,
-  normalizeShortcutsConfig,
   type ShortcutAction,
   shortcutActionOrder,
   type ShortcutsConfig
@@ -22,11 +22,11 @@ const actionTimestamps = new Map<ShortcutAction, number>();
 
 const { t } = i18n.global;
 
-let appShortcuts: ShortcutsConfig = normalizeShortcutsConfig(null);
-let appShortcutsSuspended = false;
+/** 内置默认；无自定义 UI，不再从主进程同步历史配置 */
+let appShortcuts: ShortcutsConfig = createDefaultShortcuts();
 let appShortcutsInitialized = false;
 
-const onGlobalShortcut = (_event: unknown, action: string) => {
+const onGlobalShortcut = (action: string) => {
   if (!hasShortcutAction(action)) {
     return;
   }
@@ -34,15 +34,13 @@ const onGlobalShortcut = (_event: unknown, action: string) => {
   void handleShortcutAction(action);
 };
 
-const onUpdateAppShortcuts = (_event: unknown, shortcuts: unknown) => {
-  updateAppShortcuts(shortcuts);
-};
-
-const onMprisSeekOrSetPosition = (_event: unknown, position: number) => {
+const onMprisSeekOrSetPosition = (position: number) => {
   if (audioService) {
     audioService.seek(position);
   }
 };
+
+const shortcutUnsubscribers: Array<() => void> = [];
 
 const onMprisPlay = async () => {
   const playerStore = usePlayerStore();
@@ -131,8 +129,8 @@ export async function handleShortcutAction(action: ShortcutAction) {
           return;
         }
 
-        const currentSongId = Number(playerStore.playMusic.id);
-        const isFavorite = playerStore.favoriteList.includes(currentSongId);
+        const currentSongId = playerStore.playMusic.id;
+        const isFavorite = playerStore.isFavorite(currentSongId);
 
         if (isFavorite) {
           playerStore.removeFromFavorite(currentSongId);
@@ -160,10 +158,6 @@ export async function handleShortcutAction(action: ShortcutAction) {
  * 全局键盘事件处理函数
  */
 function handleKeyDown(event: KeyboardEvent) {
-  if (appShortcutsSuspended) {
-    return;
-  }
-
   if (isEditableTarget(event.target)) {
     return;
   }
@@ -190,36 +184,21 @@ function handleKeyDown(event: KeyboardEvent) {
   }
 }
 
-/**
- * 更新应用内快捷键
- */
-export function updateAppShortcuts(shortcuts: unknown) {
-  appShortcuts = normalizeShortcutsConfig(shortcuts);
-}
-
-export function setAppShortcutsSuspended(suspended: boolean) {
-  appShortcutsSuspended = suspended;
-}
-
-/**
- * 初始化应用内快捷键
- */
 export function initAppShortcuts() {
   if (!isElectron || appShortcutsInitialized) {
     return;
   }
 
   appShortcutsInitialized = true;
+  appShortcuts = createDefaultShortcuts();
 
-  window.electron.ipcRenderer.on('global-shortcut', onGlobalShortcut);
-  window.electron.ipcRenderer.on('update-app-shortcuts', onUpdateAppShortcuts);
-  window.electron.ipcRenderer.on('mpris-seek', onMprisSeekOrSetPosition);
-  window.electron.ipcRenderer.on('mpris-set-position', onMprisSeekOrSetPosition);
-  window.electron.ipcRenderer.on('mpris-play', onMprisPlay);
-  window.electron.ipcRenderer.on('mpris-pause', onMprisPause);
-
-  const storedShortcuts = window.electron.ipcRenderer.sendSync('get-store-value', 'shortcuts');
-  updateAppShortcuts(storedShortcuts);
+  shortcutUnsubscribers.push(
+    window.api.onGlobalShortcut(onGlobalShortcut),
+    window.api.onMprisSeek(onMprisSeekOrSetPosition),
+    window.api.onMprisSetPosition(onMprisSeekOrSetPosition),
+    window.api.onMprisPlay(onMprisPlay),
+    window.api.onMprisPause(onMprisPause)
+  );
 
   document.addEventListener('keydown', handleKeyDown);
 }
@@ -234,12 +213,10 @@ export function cleanupAppShortcuts() {
 
   appShortcutsInitialized = false;
 
-  window.electron.ipcRenderer.removeListener('global-shortcut', onGlobalShortcut);
-  window.electron.ipcRenderer.removeListener('update-app-shortcuts', onUpdateAppShortcuts);
-  window.electron.ipcRenderer.removeListener('mpris-seek', onMprisSeekOrSetPosition);
-  window.electron.ipcRenderer.removeListener('mpris-set-position', onMprisSeekOrSetPosition);
-  window.electron.ipcRenderer.removeListener('mpris-play', onMprisPlay);
-  window.electron.ipcRenderer.removeListener('mpris-pause', onMprisPause);
+  while (shortcutUnsubscribers.length) {
+    const unsub = shortcutUnsubscribers.pop();
+    unsub?.();
+  }
 
   document.removeEventListener('keydown', handleKeyDown);
 }

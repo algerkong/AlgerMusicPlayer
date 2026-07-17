@@ -23,7 +23,7 @@ type DiskCacheConfig = {
 
 type MusicCacheEntry = {
   key: string;
-  songId: number;
+  songId: string | number;
   source: string;
   filePath: string;
   urlHash: string;
@@ -37,7 +37,8 @@ type MusicCacheEntry = {
 
 type LyricCacheEntry = {
   key: string;
-  songId: number;
+  /** 汽水雪花 id 必须用 string，number 会丢精度 */
+  songId: string | number;
   filePath: string;
   size: number;
   createdAt: number;
@@ -52,9 +53,18 @@ type CacheStoreSchema = {
 };
 
 type ResolveMusicUrlPayload = {
-  songId: number;
+  /** 雪花 id 必须 string，Number() 会丢精度 */
+  songId: string | number;
   source?: string;
   url: string;
+  title?: string;
+  artist?: string;
+};
+
+type RegisterLocalMusicPayload = {
+  songId: string | number;
+  source?: string;
+  filePath: string;
   title?: string;
   artist?: string;
 };
@@ -67,7 +77,12 @@ type ResolveMusicUrlResult = {
 
 type DiskCacheStats = {
   enabled: boolean;
+  /** 歌词等磁盘缓存根（…/cache） */
   directory: string;
+  /** 实际音乐文件目录（…/ly-music-cache，源库解密落盘） */
+  musicDirectory: string;
+  /** 歌词目录（…/cache/lyrics） */
+  lyricDirectory: string;
   maxSizeMB: number;
   cleanupPolicy: CacheCleanupPolicy;
   totalSizeBytes: number;
@@ -140,6 +155,32 @@ class DiskCacheManager {
   public initialize(): void {
     this.ensureConfigDefaults();
     this.ensureDirectories();
+    // 启动时把已有 ly-music-cache 文件登记进 musicEntries，设置页立刻能看到数量
+    this.importLyMusicCacheFiles();
+  }
+
+  /** 扫描 userData/ly-music-cache 并 register（不重复覆盖较新条目） */
+  private importLyMusicCacheFiles(): void {
+    try {
+      const dir = path.join(app.getPath('userData'), 'ly-music-cache');
+      if (!fs.existsSync(dir)) return;
+      const names = fs.readdirSync(dir);
+      for (const name of names) {
+        // 6696....highest.full.m4a 或 旧格式 id.m4a
+        const m = /^(\d+)\.([a-z0-9_]+)\.(full|preview)\.(m4a|flac|mp3)$/i.exec(name);
+        const m2 = !m ? /^(\d+)\.(m4a|flac|mp3)$/i.exec(name) : null;
+        const songId = m?.[1] || m2?.[1];
+        if (!songId) continue;
+        const filePath = path.join(dir, name);
+        this.registerLocalMusicFile({
+          songId,
+          source: 'qishui',
+          filePath
+        });
+      }
+    } catch (e) {
+      console.warn('[disk-cache] import ly-music-cache failed', e);
+    }
   }
 
   private getDefaultCacheDirectory(): string {
@@ -414,7 +455,7 @@ class DiskCacheManager {
     };
 
     // 注意：getCacheConfig 是纯读取，处于播放/下载/歌词等多个热路径。
-    // 此处不再落盘（electron-store.set 每次整文件写 config.json，会造成写放大与文件争用），
+    // 此处不落盘（electron-store.set 会整文件写 config.json，易写放大）
     // 持久化交由 updateCacheConfig / setCacheDirectory 等真正的写操作完成。
     return normalizedConfig;
   }
@@ -524,12 +565,14 @@ class DiskCacheManager {
     this.metadataStore.set('lyricEntries', entries);
   }
 
-  private buildMusicKey(songId: number, source?: string): string {
+  private buildMusicKey(songId: string | number, source?: string): string {
     const safeSource = (source || 'unknown').replace(/[^a-zA-Z0-9_-]/g, '_');
-    return `${songId}_${safeSource}`;
+    // 禁止 Number(snowflake)
+    return `${String(songId)}_${safeSource}`;
   }
 
-  private buildLyricKey(songId: number): string {
+  private buildLyricKey(songId: string | number): string {
+    // 保持原样字符串，避免 parseInt 大整数丢精度后多歌撞 key
     return String(songId);
   }
 
@@ -925,7 +968,7 @@ class DiskCacheManager {
     };
   }
 
-  public async cacheLyric(songId: number, lyricData: unknown): Promise<boolean> {
+  public async cacheLyric(songId: string | number, lyricData: unknown): Promise<boolean> {
     try {
       const config = this.getCacheConfig();
       if (!config.enabled) {
@@ -960,7 +1003,7 @@ class DiskCacheManager {
     }
   }
 
-  public async getCachedLyric(songId: number): Promise<unknown | undefined> {
+  public async getCachedLyric(songId: string | number): Promise<unknown | undefined> {
     try {
       const config = this.getCacheConfig();
       if (!config.enabled) {
@@ -1023,6 +1066,71 @@ class DiskCacheManager {
     return await this.clearCache('lyrics');
   }
 
+  /**
+   * 登记 ly-music-source 已落盘的解密文件，计入设置页「音乐缓存」统计，
+   * 并便于统一清理（与 cache/music 并列展示）。
+   */
+  public registerLocalMusicFile(payload: RegisterLocalMusicPayload): boolean {
+    try {
+      if (!payload?.filePath || !fs.existsSync(payload.filePath)) return false;
+      const config = this.getCacheConfig();
+      if (!config.enabled) return false;
+
+      const size = fs.statSync(payload.filePath).size;
+      if (size < 2048) return false;
+
+      const key = this.buildMusicKey(payload.songId, payload.source || 'qishui');
+      const urlHash = this.buildUrlHash(`local-file:${path.resolve(payload.filePath)}`);
+      const now = Date.now();
+      const entries = this.getMusicEntries();
+      const prev = entries[key];
+      entries[key] = {
+        key,
+        songId: String(payload.songId),
+        source: payload.source || 'qishui',
+        filePath: path.resolve(payload.filePath),
+        urlHash,
+        size,
+        createdAt: prev?.createdAt || now,
+        lastAccessAt: now,
+        playCount: (prev?.playCount || 0) + 1,
+        title: payload.title,
+        artist: payload.artist
+      };
+      this.setMusicEntries(entries);
+      return true;
+    } catch (error) {
+      console.warn('[disk-cache] registerLocalMusicFile failed', error);
+      return false;
+    }
+  }
+
+  /** 扫描 ly-music-cache 目录（源库解密缓存），补进统计 */
+  private scanLyMusicCacheDir(): { files: number; sizeBytes: number } {
+    try {
+      const dir = path.join(app.getPath('userData'), 'ly-music-cache');
+      if (!fs.existsSync(dir)) return { files: 0, sizeBytes: 0 };
+      let files = 0;
+      let sizeBytes = 0;
+      const names = fs.readdirSync(dir);
+      for (const name of names) {
+        if (!/\.(m4a|flac|mp3|aac)$/i.test(name)) continue;
+        try {
+          const st = fs.statSync(path.join(dir, name));
+          if (st.isFile() && st.size > 2048) {
+            files += 1;
+            sizeBytes += st.size;
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+      return { files, sizeBytes };
+    } catch {
+      return { files: 0, sizeBytes: 0 };
+    }
+  }
+
   public async getCacheStats(): Promise<DiskCacheStats> {
     const config = this.getCacheConfig();
     await this.pruneMissingEntries();
@@ -1030,22 +1138,50 @@ class DiskCacheManager {
     const musicEntries = Object.values(this.getMusicEntries());
     const lyricEntries = Object.values(this.getLyricEntries());
 
-    const musicSizeBytes = musicEntries.reduce((sum, entry) => sum + entry.size, 0);
+    // cache/music 登记条目
+    let musicSizeBytes = musicEntries.reduce((sum, entry) => sum + entry.size, 0);
+    let musicFiles = musicEntries.length;
+
+    // ly-music-cache 实际文件（设置页此前显示 0 就是没统计这边）
+    const ly = this.scanLyMusicCacheDir();
+    // 避免双重计算：已登记且路径落在 ly-music-cache 的条目
+    const registeredLyPaths = new Set(
+      musicEntries
+        .filter((e) => e.filePath && e.filePath.includes(`${path.sep}ly-music-cache${path.sep}`))
+        .map((e) => path.resolve(e.filePath))
+    );
+    if (ly.files > 0) {
+      // 用目录扫描为准补差：扫描数更大时用扫描
+      if (ly.files >= registeredLyPaths.size) {
+        // 登记里不在 ly 的 + ly 目录
+        const nonLy = musicEntries.filter(
+          (e) => !e.filePath?.includes(`${path.sep}ly-music-cache${path.sep}`)
+        );
+        musicFiles = nonLy.length + ly.files;
+        musicSizeBytes = nonLy.reduce((sum, e) => sum + e.size, 0) + ly.sizeBytes;
+      }
+    }
+
     const lyricSizeBytes = lyricEntries.reduce((sum, entry) => sum + entry.size, 0);
     const totalSizeBytes = musicSizeBytes + lyricSizeBytes;
     const totalLimitBytes = config.maxSizeMB * 1024 * 1024;
     const usage = totalLimitBytes > 0 ? Math.min(1, totalSizeBytes / totalLimitBytes) : 0;
 
+    const musicDirectory = path.join(app.getPath('userData'), 'ly-music-cache');
+    const lyricDirectory = this.getLyricCacheDir(config.directory);
+
     return {
       enabled: config.enabled,
       directory: config.directory,
+      musicDirectory,
+      lyricDirectory,
       maxSizeMB: config.maxSizeMB,
       cleanupPolicy: config.cleanupPolicy,
       totalSizeBytes,
       musicSizeBytes,
       lyricSizeBytes,
-      totalFiles: musicEntries.length + lyricEntries.length,
-      musicFiles: musicEntries.length,
+      totalFiles: musicFiles + lyricEntries.length,
+      musicFiles,
       lyricFiles: lyricEntries.length,
       usage
     };
@@ -1058,11 +1194,11 @@ export function initializeCacheManager(): void {
   const CLEAR_LYRIC_CHANNELS = ['clear-lyric-cache', 'clear-lyrics-cache'] as const;
   cacheManager.initialize();
 
-  ipcMain.handle('cache-lyric', async (_, id: number, lyricData: unknown) => {
+  ipcMain.handle('cache-lyric', async (_, id: string | number, lyricData: unknown) => {
     return await cacheManager.cacheLyric(id, lyricData);
   });
 
-  ipcMain.handle('get-cached-lyric', async (_, id: number) => {
+  ipcMain.handle('get-cached-lyric', async (_, id: string | number) => {
     return await cacheManager.getCachedLyric(id);
   });
 
@@ -1070,17 +1206,41 @@ export function initializeCacheManager(): void {
     return await cacheManager.resolveMusicUrl(payload);
   });
 
+  ipcMain.handle('register-local-music-cache', async (_, payload: RegisterLocalMusicPayload) => {
+    return cacheManager.registerLocalMusicFile(payload);
+  });
+
   ipcMain.handle('get-disk-cache-config', async () => {
     return cacheManager.getCacheConfig();
   });
 
   ipcMain.handle('set-disk-cache-config', async (_, partial: Partial<DiskCacheConfig>) => {
-    return await cacheManager.updateCacheConfig(partial);
+    // directory 是 path jail 信任根，禁止经普通 IPC 任意指定；仅 enabled/大小/策略可写
+    const safe: Partial<DiskCacheConfig> = {};
+    if (partial && typeof partial === 'object') {
+      if ('enabled' in partial) safe.enabled = Boolean(partial.enabled);
+      if ('maxSizeMB' in partial) safe.maxSizeMB = Number(partial.maxSizeMB);
+      if (partial.cleanupPolicy === 'fifo' || partial.cleanupPolicy === 'lru') {
+        safe.cleanupPolicy = partial.cleanupPolicy;
+      }
+    }
+    return await cacheManager.updateCacheConfig(safe);
   });
 
-  ipcMain.handle('switch-disk-cache-directory', async (_, payload: SwitchCacheDirectoryPayload) => {
-    return await cacheManager.switchCacheDirectory(payload);
-  });
+  // directory 必须已由 settings:select-disk-cache-dir 写入 store；此处只做迁移动作
+  ipcMain.handle(
+    'switch-disk-cache-directory',
+    async (_, payload: Omit<SwitchCacheDirectoryPayload, 'directory'> & { directory?: string }) => {
+      const configStore = getStore();
+      const directory =
+        (configStore?.get('set.diskCacheDir') as string | undefined) ||
+        cacheManager.getCacheConfig().directory;
+      return await cacheManager.switchCacheDirectory({
+        action: payload?.action,
+        directory
+      });
+    }
+  );
 
   ipcMain.handle('get-disk-cache-stats', async () => {
     return await cacheManager.getCacheStats();

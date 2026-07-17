@@ -13,24 +13,23 @@
     "composite": true,
     "target": "esnext",
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "strict": true,
     "jsx": "preserve",
     "sourceMap": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "baseUrl": ".",
     "types": [
       "naive-ui/volar",
       "./src/renderer/auto-imports.d.ts",
       "./src/renderer/components.d.ts"
     ],
     "paths": {
-      "@/*": ["src/renderer/*"],
-      "@renderer/*": ["src/renderer/*"],
-      "@main/*": ["src/main/*"],
-      "@i18n/*": ["src/i18n/*"]
+      "@/*": ["./src/renderer/*"],
+      "@renderer/*": ["./src/renderer/*"],
+      "@main/*": ["./src/main/*"],
+      "@i18n/*": ["./src/i18n/*"]
     }
   }
 }

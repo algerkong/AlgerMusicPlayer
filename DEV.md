@@ -1,7 +1,8 @@
 # LYMusic 开发文档
 
 > 基于 AlgerMusicPlayer 的魔改版（产品名 LYMusic / LYMusicPlayer）  
-> 工作流与 AI/贡献约束见 **[AGENTS.md](./AGENTS.md)**；命令速查见 **[docs/github-flow.md](./docs/github-flow.md)**。
+> 工作流与 AI/贡献约束见 **[AGENTS.md](./AGENTS.md)**；命令速查见 **[docs/github-flow.md](./docs/github-flow.md)**；
+> Track / SongResult 领域见 **[docs/track-migration.md](./docs/track-migration.md)**。
 
 ## 技术栈
 
@@ -21,7 +22,7 @@
 ```
 LYMusicPlayer/
 ├── build/                     # 安装包图标、entitlements、NSIS 等
-├── docs/                      # 补充文档与截图
+├── docs/                      # 补充文档、Flow 速查、track-migration 等
 ├── resources/                 # 运行时资源（图标、manifest、远程控制页等）
 ├── scripts/                   # i18n 检查、sandbox 修复、mac yml 合并等
 ├── src/
@@ -87,7 +88,8 @@ LYMusicPlayer/
 - **components/**：`common` 列表项与抽屉、`player` 播放条、`lyric` 全屏歌词、`settings` 设置控件等。
 - **views/**：首页、搜索、歌单/列表、收藏、历史、热力图、下载、登录、用户、设置 Tabs、歌词页、移动端搜索等。
 - **store/modules/**：`player`、`music`、`search`、`playlist`、`settings`、`download` 等。
-- **services/**：`audioService`、`eqService`、`playbackController`、预加载与歌词翻译等。
+- **services/**：`audioService`、`eqService`、`playbackController` / `playbackCoordinator`、预加载与歌词翻译等。
+- **shared/domain/**：`Track`、`PlaybackRuntime`、`songFields`、`toPlayableView` 等；详见 [`docs/track-migration.md`](./docs/track-migration.md)。
 
 ### 预加载 (`src/preload`)
 

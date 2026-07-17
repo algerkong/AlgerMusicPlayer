@@ -1,10 +1,10 @@
 <template>
   <div class="download-page h-full w-full bg-white dark:bg-black transition-colors duration-500">
-    <n-scrollbar ref="scrollbarRef" class="h-full" @scroll="handleDownloadScroll">
+    <scroll-area class="h-full" @scroll="handleDownloadScroll">
       <div class="download-content" :style="{ paddingBottom: contentPaddingBottom }">
-        <!-- Hero Section -->
+        <!-- 顶部 Hero -->
         <section class="hero-section relative overflow-hidden rounded-tl-2xl">
-          <!-- Background with Blur -->
+          <!-- 模糊背景 -->
           <div class="hero-bg absolute inset-0 -top-20">
             <div
               class="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/10 blur-3xl opacity-50 dark:opacity-30"
@@ -14,7 +14,7 @@
             ></div>
           </div>
 
-          <!-- Hero Content -->
+          <!-- Hero 内容 -->
           <div class="hero-content relative z-10 page-padding-x pt-10 pb-8">
             <div class="flex flex-col md:flex-row gap-8 items-center md:items-end">
               <div class="cover-wrapper relative group">
@@ -56,12 +56,12 @@
           </div>
         </section>
 
-        <!-- Action Bar (Sticky) -->
+        <!-- 操作栏（吸顶） -->
         <section
           class="action-bar sticky top-0 z-20 page-padding-x py-3 md:py-4 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-neutral-100 dark:border-neutral-800/50"
         >
           <div class="flex items-center justify-between gap-4">
-            <!-- Tabs (Segment Control) -->
+            <!-- 标签分段 -->
             <div class="flex items-center gap-2 bg-neutral-100 dark:bg-neutral-900 p-1 rounded-xl">
               <button
                 v-for="tab in ['downloading', 'downloaded']"
@@ -78,7 +78,7 @@
               </button>
             </div>
 
-            <!-- Right Actions -->
+            <!-- 右侧操作 -->
             <div class="flex items-center gap-3">
               <button
                 v-if="tabName === 'downloaded' && downloadStore.completedList.length > 0"
@@ -106,9 +106,9 @@
           </div>
         </section>
 
-        <!-- List Section -->
+        <!-- 列表区 -->
         <section class="list-section page-padding-x mt-6">
-          <!-- Downloading List -->
+          <!-- 下载中列表 -->
           <div v-if="tabName === 'downloading'" class="downloading-container">
             <div
               v-if="downloadStore.downloadingList.length === 0"
@@ -138,7 +138,7 @@
                           item.filename
                         }}</span>
                         <span class="ml-2 text-xs text-neutral-400">{{
-                          item.songInfo?.ar?.map((a) => a.name).join(', ')
+                          artistLabel(item.songInfo)
                         }}</span>
                       </div>
                       <span class="text-xs font-medium" :class="getStatusClass(item)">
@@ -159,7 +159,7 @@
                         {{ formatSize(item.loaded) }} / {{ formatSize(item.total) }}
                       </span>
                       <div class="flex items-center gap-1">
-                        <!-- Pause button (shown when downloading) -->
+                        <!-- 暂停（下载中显示） -->
                         <button
                           v-if="item.state === 'downloading'"
                           class="w-6 h-6 rounded-full flex items-center justify-center text-neutral-400 hover:text-yellow-500 hover:bg-yellow-500/10 transition-all"
@@ -167,7 +167,7 @@
                         >
                           <i class="ri-pause-circle-line text-sm" />
                         </button>
-                        <!-- Resume button (shown when paused) -->
+                        <!-- 继续（暂停时显示） -->
                         <button
                           v-if="item.state === 'paused'"
                           class="w-6 h-6 rounded-full flex items-center justify-center text-neutral-400 hover:text-primary hover:bg-primary/10 transition-all"
@@ -175,9 +175,13 @@
                         >
                           <i class="ri-play-circle-line text-sm" />
                         </button>
-                        <!-- Cancel button (shown for all active states) -->
+                        <!-- 取消（进行中状态显示） -->
                         <button
-                          v-if="['queued', 'downloading', 'paused'].includes(item.state)"
+                          v-if="
+                            ['queued', 'downloading', 'paused', 'waitingForUrl'].includes(
+                              item.state
+                            )
+                          "
                           class="w-6 h-6 rounded-full flex items-center justify-center text-neutral-400 hover:text-red-500 hover:bg-red-500/10 transition-all"
                           @click="handleCancel(item.taskId)"
                         >
@@ -194,7 +198,7 @@
             </div>
           </div>
 
-          <!-- Downloaded List -->
+          <!-- 已下载列表 -->
           <div v-else class="downloaded-container">
             <n-spin :show="downloadStore.isLoadingCompleted">
               <div
@@ -245,7 +249,7 @@
                       </div>
                       <div class="flex items-center gap-4 mt-1">
                         <span class="text-xs text-neutral-500 truncate max-w-[150px]">{{
-                          item.ar?.map((a) => a.name).join(', ')
+                          artistLabel(item)
                         }}</span>
                         <div
                           class="hidden md:flex items-center gap-1 text-[10px] text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-full truncate"
@@ -305,7 +309,7 @@
           </div>
         </section>
       </div>
-    </n-scrollbar>
+    </scroll-area>
 
     <!-- 删除确认对话框 -->
     <n-modal
@@ -369,7 +373,7 @@
     >
       <n-drawer-content :title="t('download.settingsPanel.title')" closable>
         <div class="download-settings-content space-y-8 py-4">
-          <!-- Path Section -->
+          <!-- 路径设置 -->
           <div class="setting-group">
             <h3 class="text-sm font-bold text-neutral-900 dark:text-white mb-2">
               {{ t('download.settingsPanel.path') }}
@@ -388,7 +392,7 @@
             </div>
           </div>
 
-          <!-- Save Lyric File -->
+          <!-- 保存歌词文件 -->
           <div class="setting-group">
             <div class="flex items-center justify-between">
               <div>
@@ -403,7 +407,7 @@
             </div>
           </div>
 
-          <!-- Concurrency Section -->
+          <!-- 并发设置 -->
           <div class="setting-group">
             <div class="flex items-center justify-between">
               <div>
@@ -425,7 +429,7 @@
             </div>
           </div>
 
-          <!-- Format Section -->
+          <!-- 格式设置 -->
           <div class="setting-group">
             <h3 class="text-sm font-bold text-neutral-900 dark:text-white mb-2">
               {{ t('download.settingsPanel.fileFormat') }}
@@ -550,20 +554,24 @@ import { useMessage } from 'naive-ui';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useProgressiveRender } from '@/hooks/useProgressiveRender';
 import { useDownloadStore } from '@/store/modules/download';
 import { usePlayerStore } from '@/store/modules/player';
 import type { SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
+import { getSongArtistNames, getSongArtists } from '@/utils/songFields';
 
 import type { DownloadTask } from '../../../shared/download';
 import { filePathToLocalUrl } from '../../../shared/localUrl';
+
+/** 下载任务 / 已完成条目的艺人展示（走 songFields，不裸读 .ar） */
+const artistLabel = (row: unknown) => getSongArtistNames(row as any, ', ');
 
 const { t } = useI18n();
 const playerStore = usePlayerStore();
 const downloadStore = useDownloadStore();
 const message = useMessage();
-const scrollbarRef = ref();
 
 const completedList = computed(() => downloadStore.completedList);
 
@@ -581,13 +589,14 @@ const {
 
 const tabName = ref(downloadStore.downloadingList.length > 0 ? 'downloading' : 'downloaded');
 
-// ── Status helpers ──────────────────────────────────────────────────────────
+// ── 状态辅助 ──────────────────────────────────────────────────────────
 
 const getStatusText = (item: DownloadTask) => {
   const statusMap: Record<string, string> = {
     queued: t('download.status.queued'),
     downloading: t('download.status.downloading'),
     paused: t('download.status.paused'),
+    waitingForUrl: t('download.status.waitingForUrl'),
     completed: t('download.status.completed'),
     error: t('download.status.failed'),
     cancelled: t('download.status.cancelled')
@@ -600,6 +609,7 @@ const getStatusClass = (item: DownloadTask) => {
     queued: 'text-neutral-400',
     downloading: 'text-primary',
     paused: 'text-yellow-500',
+    waitingForUrl: 'text-yellow-500',
     error: 'text-red-500',
     cancelled: 'text-neutral-400'
   };
@@ -612,7 +622,7 @@ const getProgressClass = (item: DownloadTask) => {
   return 'bg-primary';
 };
 
-// ── Task action handlers ────────────────────────────────────────────────────
+// ── 任务操作 ──────────────────────────────────────────────────────────
 
 const handlePause = (taskId: string) => downloadStore.pauseTask(taskId);
 const handleResume = (taskId: string) => downloadStore.resumeTask(taskId);
@@ -622,7 +632,7 @@ const handleCoverError = (e: Event) => {
   (e.target as HTMLImageElement).src = '/images/default_cover.png';
 };
 
-// ── Utility functions ───────────────────────────────────────────────────────
+// ── 工具函数 ──────────────────────────────────────────────────────────
 
 const formatSize = (bytes: number) => {
   if (!bytes) return '0 B';
@@ -661,40 +671,40 @@ const getLocalFilePath = (path: string) => {
 };
 
 const openDirectory = (path: string) => {
-  window.electron.ipcRenderer.send('open-directory', path);
+  window.api.openDirectory(path);
 };
 
-// ── Play music ──────────────────────────────────────────────────────────────
+// ── 播放 ──────────────────────────────────────────────────────────────
 
 const handlePlayMusic = async (item: any) => {
   try {
     const filePath = item.path || item.filePath;
-    const fileExists = await window.electron.ipcRenderer.invoke('check-file-exists', filePath);
+    const fileExists = await window.api.checkFileExists(filePath);
 
     if (!fileExists) {
       message.error(t('download.delete.fileNotFound', { name: item.displayName || item.filename }));
       return;
     }
 
+    const names = getSongArtists(item as any).map((a) => a.name || '');
     const song: SongResult = {
       id: item.id,
       name: item.displayName || item.filename,
-      ar:
-        item.ar?.map((a: { name: string }) => ({
-          id: 0,
-          name: a.name,
-          picId: 0,
-          img1v1Id: 0,
-          briefDesc: '',
-          picUrl: '',
-          img1v1Url: '',
-          albumSize: 0,
-          alias: [],
-          trans: '',
-          musicSize: 0,
-          topicPerson: 0
-        })) || [],
-      al: {
+      artists: names.map((name) => ({
+        id: 0,
+        name,
+        picId: 0,
+        img1v1Id: 0,
+        briefDesc: '',
+        picUrl: '',
+        img1v1Url: '',
+        albumSize: 0,
+        alias: [],
+        trans: '',
+        musicSize: 0,
+        topicPerson: 0
+      })) as SongResult['artists'],
+      album: {
         name: item.filename,
         id: 0,
         picUrl: item.picUrl,
@@ -718,7 +728,7 @@ const handlePlayMusic = async (item: any) => {
   }
 };
 
-// ── Delete / Clear ──────────────────────────────────────────────────────────
+// ── 删除 / 清空 ──────────────────────────────────────────────────────
 
 const showDeleteConfirm = ref(false);
 const itemToDelete = ref<any>(null);
@@ -759,7 +769,7 @@ const clearDownloadRecords = async () => {
   }
 };
 
-// ── Download settings ───────────────────────────────────────────────────────
+// ── 下载设置 ──────────────────────────────────────────────────────────
 
 const showSettingsDrawer = ref(false);
 const showNotSaveConfirm = ref(false);
@@ -869,41 +879,28 @@ const formatNamePreview = computed(() => {
 });
 
 const selectDownloadPath = async () => {
-  const result = await window.electron.ipcRenderer.invoke('select-directory');
-  if (result && !result.canceled && result.filePaths.length > 0) {
-    downloadSettings.value.path = result.filePaths[0];
+  // 主进程对话框落盘信任根，本地仅刷新展示
+  const result = await window.api.selectDownloadPath();
+  if (!result.canceled) {
+    downloadSettings.value.path = result.path;
   }
 };
 
 const openDownloadPath = () => {
   if (downloadSettings.value.path) {
-    window.electron.ipcRenderer.send('open-directory', downloadSettings.value.path);
+    window.api.openDirectory(downloadSettings.value.path);
   } else {
     message.warning(t('download.settingsPanel.noPathSelected'));
   }
 };
 
 const saveDownloadSettings = () => {
-  window.electron.ipcRenderer.send(
-    'set-store-value',
-    'set.downloadPath',
-    downloadSettings.value.path
-  );
-  window.electron.ipcRenderer.send(
-    'set-store-value',
-    'set.downloadNameFormat',
-    downloadSettings.value.nameFormat
-  );
-  window.electron.ipcRenderer.send(
-    'set-store-value',
-    'set.downloadSeparator',
-    downloadSettings.value.separator
-  );
-  window.electron.ipcRenderer.send(
-    'set-store-value',
-    'set.downloadSaveLyric',
-    downloadSettings.value.saveLyric
-  );
+  // 路径已在 selectDownloadPath 时由主进程写入，此处不经 setSettings 再传
+  window.api.setSettings({
+    downloadNameFormat: downloadSettings.value.nameFormat,
+    downloadSeparator: downloadSettings.value.separator,
+    downloadSaveLyric: downloadSettings.value.saveLyric
+  });
 
   if (tabName.value === 'downloaded') {
     downloadStore.refreshCompleted();
@@ -916,22 +913,14 @@ const saveDownloadSettings = () => {
 };
 
 const initDownloadSettings = async () => {
-  const path = window.electron.ipcRenderer.sendSync('get-store-value', 'set.downloadPath');
-  const nameFormat = window.electron.ipcRenderer.sendSync(
-    'get-store-value',
-    'set.downloadNameFormat'
-  );
-  const separator = window.electron.ipcRenderer.sendSync(
-    'get-store-value',
-    'set.downloadSeparator'
-  );
-  const saveLyric = window.electron.ipcRenderer.sendSync(
-    'get-store-value',
-    'set.downloadSaveLyric'
-  );
+  const settings = window.api.getSettings() || {};
+  const path = settings.downloadPath as string | undefined;
+  const nameFormat = settings.downloadNameFormat as string | undefined;
+  const separator = settings.downloadSeparator as string | undefined;
+  const saveLyric = settings.downloadSaveLyric as boolean | undefined;
 
   downloadSettings.value = {
-    path: path || (await window.electron.ipcRenderer.invoke('get-downloads-path')),
+    path: path || (await window.api.getDownloadsPath()),
     nameFormat: nameFormat || '{songName} - {artistName}',
     separator: separator || ' - ',
     saveLyric: saveLyric || false
@@ -960,7 +949,7 @@ const updateFormatComponents = () => {
 
 watch(() => downloadSettings.value.nameFormat, updateFormatComponents);
 
-// ── Lifecycle & watchers ────────────────────────────────────────────────────
+// ── 生命周期与监听 ────────────────────────────────────────────────────
 
 onMounted(() => {
   downloadStore.initListeners();

@@ -6,6 +6,8 @@ import type { DjProgram } from '@/types/podcast';
 import { debouncedLocalStorage, flushDebouncedStorage } from '@/utils/debouncedStorage';
 import type { MusicHistoryItem } from '@/utils/persistedSong';
 import {
+  inflateHistoryEntry,
+  inflateHistoryList,
   minifyHistoryEntry,
   minifyHistoryList,
   stripBase64CoversList
@@ -98,13 +100,13 @@ type PersistedPlayHistoryState = {
 };
 
 // 序列化层兜底：哪怕有代码绕过 addMusic 直接 push 完整 SongResult，也能在 serialize 时
-// 再过一遍 minifyHistoryList，确保 localStorage 里的 musicHistory 不混入 lyric/song/base64 封面
+// 再 minify 一遍，避免 history 混入 lyric/song/base64 封面
 //
 // podcast/playlist/album/podcastRadio 等历史也走 stripBase64CoversList 兜底：
 // 它们的图片字段（picUrl / coverImgUrl / coverUrl）若被注入 base64 Data URL，
 // 同样会撑爆 5MB 配额；保持四类历史的防御对称，避免某一处漏掉变成隐患
 //
-// 入参用 any 是为了同时兼容 persistedstate 的 StateTree 与 clearAll 手工构造的 PersistedPlayHistoryState
+// 入参 any：兼容 StateTree 与 clearAll 构造的 PersistedPlayHistoryState
 const serializePlayHistoryState = (state: any): string => {
   const s = state as PersistedPlayHistoryState;
   return JSON.stringify({
@@ -148,13 +150,13 @@ export const usePlayHistoryStore = defineStore(
       // 单步 ref 重赋值，避免 splice/pop + unshift 多次触发 watch 与持久化
       let next: MusicHistoryItem[];
       if (index !== -1) {
-        // 命中已有条目：累加计数 + 刷新时间戳，picUrl/al 等用新数据覆盖（封面可能换了短引用）
+        // 命中已有条目：累加计数 + 刷新时间戳；minify→inflate 保证运行时仍是 SongResult 形
         const existing = musicHistory.value[index];
-        const refreshed: MusicHistoryItem = {
+        const refreshed = inflateHistoryEntry({
           ...minifyHistoryEntry(music),
           count: (existing.count || 0) + 1,
           lastPlayTime: Date.now()
-        };
+        });
         next = [
           refreshed,
           ...musicHistory.value.slice(0, index),
@@ -162,7 +164,7 @@ export const usePlayHistoryStore = defineStore(
         ];
       } else {
         next = [
-          minifyHistoryEntry({ ...music, count: 1, lastPlayTime: Date.now() }),
+          inflateHistoryEntry(minifyHistoryEntry({ ...music, count: 1, lastPlayTime: Date.now() })),
           ...musicHistory.value
         ];
       }
@@ -334,7 +336,6 @@ export const usePlayHistoryStore = defineStore(
     };
 
     return {
-      // 状态
       musicHistory,
       podcastHistory,
       playlistHistory,
@@ -386,7 +387,13 @@ export const usePlayHistoryStore = defineStore(
       // 与 clearAll 的同步落盘共用同一个序列化函数，避免格式漂移
       serializer: {
         serialize: serializePlayHistoryState,
-        deserialize: JSON.parse
+        deserialize: (raw: string) => {
+          const state = JSON.parse(raw);
+          if (Array.isArray(state?.musicHistory)) {
+            state.musicHistory = inflateHistoryList(state.musicHistory);
+          }
+          return state;
+        }
       }
     }
   }

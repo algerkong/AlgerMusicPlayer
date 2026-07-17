@@ -1,51 +1,24 @@
 <template>
-  <div class="flex items-center gap-2 pb-4 pr-4 pl-1">
-    <!-- ── LEFT: Tabs（搜索展开时隐藏）─────────────── -->
-    <transition name="tab-slide">
-      <div
-        v-if="!isSearchExpanded && !showBackButton"
-        class="tabs-track flex-shrink-0"
-        ref="tabsTrackRef"
-      >
-        <div class="tab-slider-bg" :style="sliderStyle" />
-        <button
-          v-for="(tab, i) in tabs"
-          :key="tab.key"
-          :ref="(el) => setTabRef(el as HTMLElement, i)"
-          class="tab-btn"
-          :class="isTabActive(tab.path) ? 'tab-btn--on' : 'tab-btn--off'"
-          @click="router.push(tab.path)"
-        >
-          <i :class="tab.icon" />
-          <span>{{ tab.label }}</span>
-        </button>
-      </div>
+  <div class="search-bar-row">
+    <!-- 页面滚动标题（有则显示，与搜索同一顶栏） -->
+    <span v-if="navTitleStore.isVisible" class="nav-page-title flex-shrink-0">
+      {{ navTitleStore.title }}
+    </span>
 
-      <!-- 返回按钮 + 页面标题（meta.back 页面）-->
-      <div v-else-if="showBackButton" class="flex items-center gap-2 flex-shrink-0">
-        <button class="back-btn" @click="goBack">
-          <i class="ri-arrow-left-line" />
-        </button>
-        <transition name="nav-title">
-          <span v-if="navTitleStore.isVisible && !isSearchExpanded" class="nav-page-title">
-            {{ navTitleStore.title }}
-          </span>
-        </transition>
-      </div>
-    </transition>
-
-    <!-- ── SPACER（搜索收起时撑开间距）─────────────── -->
-    <div v-if="!isSearchExpanded" class="flex-1" />
-
-    <!-- 搜索输入框（收起时固定宽，展开时 flex-1 撑满）-->
-    <div class="search-wrap" :class="isSearchExpanded ? 'search-wrap--open' : 'search-wrap--idle'">
+    <!-- 搜索：悬停立即展开，无延迟；聚焦时保持展开 -->
+    <div
+      class="search-wrap"
+      :class="isSearchExpanded ? 'search-wrap--open' : 'search-wrap--idle'"
+      @mouseenter="onSearchEnter"
+      @mouseleave="onSearchLeave"
+    >
       <n-popover
         trigger="manual"
         placement="bottom-end"
         :show="showSuggestions"
         :show-arrow="false"
         style="margin-top: 6px"
-        content-style="padding:0;border-radius:12px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,0.12);"
+        content-style="padding:0;border-radius:8px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.1);"
         raw
       >
         <template #trigger>
@@ -61,24 +34,20 @@
               @focus="handleFocus"
               @blur="handleBlur"
             />
-            <n-dropdown
-              v-if="searchTypeOptions.length && isSearchExpanded"
-              trigger="hover"
-              :options="searchTypeOptions"
-              @select="selectSearchType"
+            <button
+              v-if="searchValue"
+              type="button"
+              class="search-clear-btn"
+              :aria-label="t('common.clear')"
               @mousedown.prevent
+              @click="clearSearch"
             >
-              <div class="type-chip" @mousedown.prevent>
-                <span>{{
-                  searchTypeOptions.find((i) => i.key === searchStore.searchType)?.label
-                }}</span>
-                <i class="iconfont icon-xiasanjiaoxing text-[10px]" />
-              </div>
-            </n-dropdown>
+              <i class="ri-close-line" />
+            </button>
           </div>
         </template>
         <div class="suggestions-box">
-          <n-scrollbar style="max-height: 260px">
+          <scroll-area class="max-h-[260px]">
             <div v-if="suggestionsLoading" class="suggest-loading">
               <n-spin size="small" />
             </div>
@@ -93,7 +62,7 @@
               <i class="ri-search-line suggest-icon" />
               <span>{{ s }}</span>
             </div>
-          </n-scrollbar>
+          </scroll-area>
         </div>
       </n-popover>
     </div>
@@ -105,136 +74,78 @@
       </n-badge>
     </button>
 
-    <!-- 心动模式按钮 -->
-    <n-tooltip v-if="showIntelligenceBtn" trigger="hover">
+    <!-- 用户 / 登录（设置已挪到侧栏底部） -->
+    <n-popover v-if="userStore.user" trigger="hover" placement="bottom-end" :show-arrow="false" raw>
       <template #trigger>
-        <button
-          class="action-btn"
-          :class="{ 'intelligence-active': isIntelligenceMode }"
-          @click="toggleIntelligenceMode"
+        <div
+          class="user-btn"
+          :class="{ 'user-btn--member': userStore.vipLevel !== 'none' }"
+          :data-vip="userStore.vipLevel"
         >
-          <i class="ri-heart-pulse-line" />
-        </button>
-      </template>
-      {{
-        isIntelligenceMode
-          ? t('comp.searchBar.exitIntelligence')
-          : t('comp.searchBar.intelligenceMode')
-      }}
-    </n-tooltip>
-
-    <!-- 用户 -->
-    <n-popover trigger="hover" placement="bottom-end" :show-arrow="false" raw>
-      <template #trigger>
-        <div class="user-btn">
           <n-avatar
-            v-if="userStore.user"
             circle
-            :size="26"
+            :size="36"
             :src="getImgUrl(userStore.user.avatarUrl)"
-            class="cursor-pointer"
+            class="cursor-pointer user-avatar"
             @click="selectItem('user')"
           />
-          <span v-else class="login-label" @click="toLogin">{{ t('comp.searchBar.login') }}</span>
+          <vip-badge
+            v-if="userStore.vipLevel === 'vip' || userStore.vipLevel === 'svip'"
+            :level="userStore.vipLevel"
+            compact
+            corner
+          />
         </div>
       </template>
       <div class="user-menu">
-        <div v-if="userStore.user" class="user-menu-top" @click="selectItem('user')">
-          <n-avatar circle :size="30" :src="getImgUrl(userStore.user?.avatarUrl)" />
-          <span class="user-name">{{ userStore.user?.nickname }}</span>
+        <div class="user-menu-top" @click="selectItem('user')">
+          <n-avatar circle :size="36" :src="getImgUrl(userStore.user?.avatarUrl)" />
+          <span class="user-name">
+            {{ userStore.user?.nickname }}
+            <vip-badge
+              v-if="userStore.vipLevel === 'vip' || userStore.vipLevel === 'svip'"
+              :level="userStore.vipLevel"
+            />
+          </span>
         </div>
-        <div v-if="userStore.user" class="menu-sep" />
+        <div class="menu-sep" />
         <div class="menu-list">
-          <div v-if="!userStore.user" class="menu-row" @click="toLogin">
-            <i class="ri-login-box-line" /><span>{{ t('comp.searchBar.toLogin') }}</span>
-          </div>
-          <div v-if="userStore.user" class="menu-row" @click="selectItem('logout')">
+          <div class="menu-row" @click="selectItem('logout')">
             <i class="ri-logout-box-r-line" /><span>{{ t('comp.searchBar.logout') }}</span>
-          </div>
-          <div class="menu-row" @click="selectItem('set')">
-            <i class="ri-settings-3-line" /><span>{{ t('comp.searchBar.set') }}</span>
-          </div>
-          <div v-if="isElectron" class="menu-row">
-            <i class="ri-zoom-in-line" /><span>{{ t('comp.searchBar.zoom') }}</span>
-            <div class="zoom-ctrl ml-auto">
-              <button class="zoom-btn" @click.stop="decreaseZoom">
-                <i class="ri-subtract-line" />
-              </button>
-              <n-tooltip trigger="hover">
-                <template #trigger>
-                  <span
-                    class="zoom-val"
-                    :class="{ 'zoom-val--100': isZoom100() }"
-                    @click.stop="resetZoom"
-                  >
-                    {{ Math.round(zoomFactor * 100) }}%
-                  </span>
-                </template>
-                {{ isZoom100() ? t('comp.searchBar.zoom100') : t('comp.searchBar.resetZoom') }}
-              </n-tooltip>
-              <button class="zoom-btn" @click.stop="increaseZoom"><i class="ri-add-line" /></button>
-            </div>
-          </div>
-          <div class="menu-row">
-            <i :class="isDark ? 'ri-moon-line' : 'ri-sun-line'" />
-            <span>{{ t('comp.searchBar.theme') }}</span>
-            <n-switch v-model:value="isDark" class="ml-auto" size="small">
-              <template #checked><i class="ri-moon-line text-[10px]" /></template>
-              <template #unchecked><i class="ri-sun-line text-[10px]" /></template>
-            </n-switch>
-          </div>
-          <div class="menu-row" @click="restartApp">
-            <i class="ri-restart-line" /><span>{{ t('comp.searchBar.restart') }}</span>
-          </div>
-          <div class="menu-row" @click="selectItem('refresh')">
-            <i class="ri-refresh-line" /><span>{{ t('comp.searchBar.refresh') }}</span>
-          </div>
-          <div class="menu-sep" />
-          <div class="menu-row" @click="toGithubRelease">
-            <i class="ri-github-fill" /><span>{{ t('comp.searchBar.currentVersion') }}</span>
-            <span class="ver-chip ml-auto">{{ updateInfo.currentVersion }}</span>
-            <n-tag v-if="updateInfo.hasUpdate" type="success" size="small" class="ml-1">New</n-tag>
           </div>
         </div>
       </div>
     </n-popover>
+    <span v-else class="login-label" @click="toLogin">{{ t('comp.searchBar.login') }}</span>
 
-    <!-- GitHub -->
-    <button class="action-btn" @click="toGithub">
-      <i class="ri-github-fill" />
-    </button>
+    <login-qr-modal v-model:show="showLoginModal" />
   </div>
 </template>
 
 <script lang="ts" setup>
 import { useDebounceFn } from '@vueuse/core';
-import { computed, onMounted, ref, watch, watchEffect } from 'vue';
+import { computed, nextTick, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 
-import { SEARCH_TYPES, USER_SET_OPTIONS } from '@/const/bar-const';
-import { useZoom } from '@/hooks/useZoom';
+import VipBadge from '@/components/common/VipBadge.vue';
+import LoginQrModal from '@/components/login/LoginQrModal.vue';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { SEARCH_TYPE } from '@/const/bar-const';
 import { useDownloadStore } from '@/store/modules/download';
-import { useIntelligenceModeStore } from '@/store/modules/intelligenceMode';
 import { useNavTitleStore } from '@/store/modules/navTitle';
 import { useSearchStore } from '@/store/modules/search';
 import { useSettingsStore } from '@/store/modules/settings';
 import { useUserStore } from '@/store/modules/user';
 import { getImgUrl, isElectron } from '@/utils';
-import { checkUpdate, UpdateResult } from '@/utils/update';
-
-import config from '../../../../package.json';
 
 const router = useRouter();
-const route = useRoute();
 const navTitleStore = useNavTitleStore();
 const searchStore = useSearchStore();
 const settingsStore = useSettingsStore();
 const userStore = useUserStore();
-const userSetOptions = ref(USER_SET_OPTIONS);
-const { t, locale } = useI18n();
+const { t } = useI18n();
 
-const intelligenceModeStore = useIntelligenceModeStore();
 const downloadStore = useDownloadStore();
 const downloadingCount = computed(() => downloadStore.downloadingCount);
 const navigateToDownloads = () => {
@@ -244,80 +155,55 @@ const showDownloadButton = computed(
   () =>
     isElectron && (settingsStore.setData?.alwaysShowDownloadButton || downloadingCount.value > 0)
 );
-const { zoomFactor, initZoomFactor, increaseZoom, decreaseZoom, resetZoom, isZoom100 } = useZoom();
 
-// ── 心动模式 ─────────────────────────────────────────
-const isIntelligenceMode = computed(() => intelligenceModeStore.isIntelligenceMode);
-const showIntelligenceBtn = computed(() => userStore.user && userStore.loginType === 'cookie');
-const toggleIntelligenceMode = async () => {
-  if (isIntelligenceMode.value) {
-    intelligenceModeStore.clearIntelligenceMode();
-  } else {
-    await intelligenceModeStore.playIntelligenceMode();
+// ── Search expand / collapse（悬停立即展开，无延迟）────
+const isSearchExpanded = ref(false);
+const inputFocused = ref(false);
+const searchHovered = ref(false);
+const inputRef = ref<HTMLInputElement | null>(null);
+
+const syncSearchExpand = () => {
+  // 悬停或聚焦任一为真即展开
+  isSearchExpanded.value = searchHovered.value || inputFocused.value;
+};
+
+const onSearchEnter = () => {
+  searchHovered.value = true;
+  syncSearchExpand();
+};
+
+const onSearchLeave = () => {
+  searchHovered.value = false;
+  syncSearchExpand();
+  if (!inputFocused.value) {
+    showSuggestions.value = false;
   }
 };
 
-// ── Back button ───────────────────────────────────────
-const showBackButton = computed(() => {
-  const meta = router.currentRoute.value.meta;
-  if (!settingsStore.isMobile && meta.isMobile === false) return false;
-  return meta.back === true;
-});
-const goBack = () => router.back();
-
-// ── Tabs ──────────────────────────────────────────────
-const tabs = computed(() => {
-  const items = [
-    { key: 'home', label: t('comp.home'), path: '/', icon: 'ri-home-4-fill' },
-    { key: 'playlist', label: t('comp.list'), path: '/list', icon: 'ri-play-list-2-fill' },
-    {
-      key: 'localMusic',
-      label: t('comp.localMusic'),
-      path: '/local-music',
-      icon: 'ri-folder-music-fill',
-      electronOnly: true
-    }
-  ];
-  return items.filter((tab) => !tab.electronOnly || isElectron);
-});
-const isTabActive = (path: string) => route.path === path;
-
-// Sliding pill
-const tabsTrackRef = ref<HTMLElement | null>(null);
-const tabElsRef = ref<HTMLElement[]>([]);
-const setTabRef = (el: HTMLElement, i: number) => {
-  if (el) tabElsRef.value[i] = el;
-};
-const activeTabIndex = computed(() => tabs.value.findIndex((t) => isTabActive(t.path)));
-const sliderStyle = computed(() => {
-  const el = tabElsRef.value[activeTabIndex.value];
-  if (!el) return { opacity: '0' };
-  return {
-    transform: `translateX(${el.offsetLeft}px)`,
-    width: `${el.offsetWidth}px`,
-    opacity: '1'
-  };
-});
-
-// ── Search expand / collapse ──────────────────────────
-const isSearchExpanded = ref(false);
-const inputFocused = ref(false);
-const inputRef = ref<HTMLInputElement | null>(null);
-
 const handleFocus = () => {
   inputFocused.value = true;
-  isSearchExpanded.value = true;
+  syncSearchExpand();
   if (searchValue.value && suggestions.value.length) showSuggestions.value = true;
 };
+
 const handleBlur = () => {
   inputFocused.value = false;
-  setTimeout(() => {
-    showSuggestions.value = false;
-    isSearchExpanded.value = false;
-  }, 150);
+  // 失焦收起建议；展开状态由悬停决定，立即同步，不 setTimeout
+  showSuggestions.value = false;
+  syncSearchExpand();
 };
 
-// ── Search logic ──────────────────────────────────────
+const clearSearch = () => {
+  searchValue.value = '';
+  searchStore.searchValue = '';
+  suggestions.value = [];
+  showSuggestions.value = false;
+  highlightedIndex.value = -1;
+  // 清完继续打字，别让焦点跑了
+  nextTick(() => inputRef.value?.focus());
+};
+
+// ── 搜索逻辑 ──────────────────────────────────────
 const hotSearchKeyword = ref(t('comp.searchBar.searchPlaceholder'));
 const hotSearchValue = ref('');
 const searchValue = ref('');
@@ -336,7 +222,8 @@ const search = () => {
     searchValue.value = hotSearchValue.value;
     return;
   }
-  const q = { keyword: val, type: searchStore.searchType };
+  // 搜索框默认搜单曲；专辑 / 歌单在结果页导航切换
+  const q = { keyword: val, type: String(SEARCH_TYPE.MUSIC) };
   if (router.currentRoute.value.path === '/search-result') {
     searchStore.searchValue = val;
     router.replace({ path: '/search-result', query: q });
@@ -345,21 +232,6 @@ const search = () => {
   }
   showSuggestions.value = false;
 };
-
-const selectSearchType = (key: number) => {
-  searchStore.searchType = key;
-  if (searchValue.value)
-    router.push({ path: '/search-result', query: { keyword: searchValue.value, type: key } });
-  nextTick(() => inputRef.value?.focus());
-};
-
-const rawSearchTypes = ref(SEARCH_TYPES);
-const searchTypeOptions = computed(() => {
-  locale.value;
-  return rawSearchTypes.value
-    .filter(() => isElectron)
-    .map((type) => ({ label: t(type.label), key: type.key }));
-});
 
 const suggestions = ref<string[]>([]);
 const showSuggestions = ref(false);
@@ -412,210 +284,93 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 };
 
-// ── User / misc ───────────────────────────────────────
-const loadHotSearch = async () => {
-  // 在线热搜已移除
+// ── 用户 / 其它 ───────────────────────────────────
+const showLoginModal = ref(false);
+const toLogin = () => {
+  showLoginModal.value = true;
 };
-const loadPage = async () => {
-  // 在线用户详情已移除；保留本地 user 状态
-};
-watchEffect(() => {
-  userSetOptions.value = userStore.user
-    ? USER_SET_OPTIONS
-    : USER_SET_OPTIONS.filter((i) => i.key !== 'logout');
-});
-
-const restartApp = () => window.electron.ipcRenderer.send('restart');
-const toLogin = () => router.push('/user');
-const toGithub = () => window.open('https://github.com/LuoYe17/AlgerMusicPlayer', '_blank');
-const toGithubRelease = () => {
-  window.open('https://github.com/LuoYe17/AlgerMusicPlayer/releases', '_blank');
-};
-
-const isDark = computed({
-  get: () => settingsStore.theme === 'dark',
-  set: () => settingsStore.toggleTheme()
-});
 
 const selectItem = (key: string) => {
   switch (key) {
     case 'logout':
-      userStore.handleLogout();
-      break;
-    case 'set':
-      router.push('/set');
+      void userStore.handleLogout();
       break;
     case 'user':
       router.push('/user');
       break;
-    case 'refresh':
-      window.location.reload();
-      break;
   }
 };
-
-const updateInfo = ref<UpdateResult>({
-  hasUpdate: false,
-  latestVersion: '',
-  currentVersion: config.version,
-  releaseInfo: null
-});
-const checkForUpdates = async () => {
-  try {
-    const r = await checkUpdate(config.version);
-    if (r) updateInfo.value = r;
-  } catch (e) {
-    void e; // 更新检查失败时静默处理
-  }
-};
-
-onMounted(() => {
-  void loadHotSearch();
-  void loadPage();
-  checkForUpdates();
-  isElectron && initZoomFactor();
-});
 </script>
 
 <style scoped>
-/* ── Tab track ───────────────────────────────────────── */
-.tabs-track {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  height: 34px;
-  background: #f3f4f6;
-  border-radius: 9999px;
-  padding: 3px;
-  gap: 0;
-  box-sizing: border-box;
-}
-.dark .tabs-track {
-  background: #1f2937;
-}
-
-.tab-slider-bg {
-  position: absolute;
-  top: 3px;
-  left: 0;
-  height: calc(100% - 6px);
-  border-radius: 9999px;
-  background: #22c55e;
-  box-shadow: 0 1px 6px rgba(34, 197, 94, 0.35);
-  transition:
-    transform 0.28s cubic-bezier(0.34, 1.4, 0.64, 1),
-    width 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
-  pointer-events: none;
-  z-index: 0;
-}
-
-.tab-btn {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 13px;
-  border-radius: 9999px;
-  font-size: 12.5px;
-  font-weight: 600;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: color 0.2s;
-}
-.tab-btn--on {
-  color: #fff;
-}
-.tab-btn--off {
-  color: #6b7280;
-}
-.dark .tab-btn--off {
-  color: #9ca3af;
-}
-.tab-btn--off:hover {
-  color: #111827;
-}
-.dark .tab-btn--off:hover {
-  color: #f9fafb;
-}
-
-/* ── Back button ─────────────────────────────────────── */
-.back-btn {
+/* 嵌在 TitleBar 右端：与缩小/关闭同一行 */
+.search-bar-row {
+  --bar-h: 32px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 9999px;
-  border: 1px solid #e5e7eb;
-  background: transparent;
-  color: #6b7280;
-  font-size: 16px;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.dark .back-btn {
-  border-color: #374151;
-  color: #9ca3af;
-}
-.back-btn:hover {
-  color: #22c55e;
-  border-color: #22c55e;
+  gap: 8px;
+  padding: 0;
+  box-sizing: border-box;
+  min-width: 0;
+  -webkit-app-region: no-drag;
 }
 
-/* ── Search wrap ─────────────────────────────────────── */
+/* ── Search wrap：聚焦略变宽（避免被 flex 压死）──────── */
 .search-wrap {
+  flex: 0 0 auto !important;
+  width: 200px;
+  max-width: min(200px, 28vw);
+  min-width: 140px;
+  /* 悬停立即开启动画：无 delay，短时长 ease-out */
   transition:
-    flex 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-    max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    width 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+    max-width 0.16s cubic-bezier(0.22, 1, 0.36, 1),
+    min-width 0.16s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: 0s;
+  position: relative;
+  z-index: 40;
 }
 .search-wrap--idle {
-  flex: 0 0 240px;
-  max-width: 240px;
+  width: 200px;
+  max-width: min(200px, 28vw);
+  min-width: 140px;
 }
 .search-wrap--open {
-  flex: 1 1 0%;
-  max-width: 9999px;
+  width: 280px;
+  max-width: min(280px, 36vw);
+  min-width: 180px;
 }
 
 .search-inner {
   display: flex;
   align-items: center;
-  gap: 6px;
-  height: 34px;
-  padding: 0 10px;
+  gap: 8px;
+  height: var(--bar-h);
+  padding: 0 12px;
   border-radius: 9999px;
-  border: 1.5px solid #e5e7eb;
-  background: #f9fafb;
-  transition:
-    border-color 0.2s,
-    background 0.2s,
-    box-shadow 0.2s;
+  border: 1px solid var(--chrome-border);
+  background: var(--chrome-surface);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+  color: var(--chrome-text);
 }
-.dark .search-inner {
-  border-color: #374151;
-  background: #111827;
-}
+/* 点击/聚焦：用封面强调色描边 */
 .search-inner--focus {
-  border-color: #22c55e;
-  background: #fff;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
-}
-.dark .search-inner--focus {
-  background: #0a0a0a;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.12);
+  border-color: var(--primary-color, #22c55e);
+  background: var(--chrome-surface-strong);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.22);
 }
 
 .search-icon-glyph {
-  font-size: 14px;
-  color: #9ca3af;
+  font-size: 16px;
+  color: var(--chrome-text-muted, #9ca3af);
   flex-shrink: 0;
   transition: color 0.2s;
 }
 .search-inner--focus .search-icon-glyph {
-  color: #22c55e;
+  color: var(--primary-color, #22c55e);
 }
 
 .search-input {
@@ -625,7 +380,8 @@ onMounted(() => {
   outline: none;
   background: transparent;
   font-size: 13px;
-  color: #111827;
+  line-height: 1.2;
+  color: var(--chrome-text, #111827);
 }
 .dark .search-input {
   color: #f3f4f6;
@@ -634,64 +390,55 @@ onMounted(() => {
   color: #9ca3af;
 }
 
-.type-chip {
+.search-clear-btn {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 3px;
-  padding: 2px 7px;
-  border-radius: 6px;
-  background: #f3f4f6;
-  font-size: 11px;
-  font-weight: 500;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 2px;
+  border: none;
+  border-radius: 9999px;
+  background: rgba(156, 163, 175, 0.28);
   color: #6b7280;
+  font-size: 14px;
   cursor: pointer;
-  white-space: nowrap;
   transition:
     background 0.15s,
     color 0.15s;
-  flex-shrink: 0;
 }
-.dark .type-chip {
-  background: #1f2937;
-  color: #9ca3af;
+.dark .search-clear-btn {
+  background: rgba(156, 163, 175, 0.22);
+  color: #d1d5db;
 }
-.type-chip:hover {
-  background: #dcfce7;
-  color: #16a34a;
-}
-.dark .type-chip:hover {
-  background: rgba(34, 197, 94, 0.1);
-  color: #22c55e;
+.search-clear-btn:hover {
+  background: rgba(34, 197, 94, 0.2);
+  color: var(--primary-color, #22c55e);
 }
 
-/* ── Action buttons ──────────────────────────────────── */
+/* ── 操作按钮 ────────────────────────────────────── */
 .action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: var(--bar-h);
+  height: var(--bar-h);
   border-radius: 9999px;
-  border: 1px solid #e5e7eb;
-  background: transparent;
-  color: #6b7280;
-  font-size: 15px;
+  border: 1px solid var(--chrome-border);
+  background: var(--chrome-surface);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
+  color: var(--chrome-text-muted);
+  font-size: 17px;
   cursor: pointer;
   transition: all 0.15s;
-}
-.dark .action-btn {
-  border-color: #374151;
-  color: #9ca3af;
+  box-sizing: border-box;
 }
 .action-btn:hover {
-  color: #22c55e;
-  border-color: #bbf7d0;
-  background: #f0fdf4;
-}
-.dark .action-btn:hover {
-  border-color: #166534;
-  background: rgba(34, 197, 94, 0.08);
-  color: #22c55e;
+  color: var(--primary-color, #22c55e);
+  border-color: rgba(34, 197, 94, 0.45);
+  background: var(--chrome-surface-strong);
 }
 .action-btn.intelligence-active {
   color: #ec4899;
@@ -704,54 +451,102 @@ onMounted(() => {
   background: rgba(236, 72, 153, 0.1);
 }
 
-/* ── User button ─────────────────────────────────────── */
+/* ── 用户按钮：描边贴头像，无内间隙 ───────────────── */
 .user-btn {
+  --user-btn-size: 36px;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 32px;
-  height: 32px;
-  padding: 2px;
+  width: var(--user-btn-size);
+  min-width: var(--user-btn-size);
+  height: var(--user-btn-size);
+  padding: 0;
   border-radius: 9999px;
-  border: 1px solid #e5e7eb;
+  border: 1.5px solid var(--chrome-border);
   background: transparent;
   cursor: pointer;
   transition:
     border-color 0.15s,
     box-shadow 0.15s;
-}
-.dark .user-btn {
-  border-color: #374151;
+  box-sizing: border-box;
+  /* 角标可溢出；头像本身由 n-avatar circle 裁切 */
+  overflow: visible;
 }
 .user-btn:hover {
-  border-color: #22c55e;
-  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.12);
+  border-color: var(--primary-color, #22c55e);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.22);
+}
+/* 会员头像：黑金描边贴边 */
+.user-btn--member[data-vip='vip'] {
+  border-color: #c9a227;
+  box-shadow: 0 0 0 1px rgba(201, 162, 39, 0.25);
+}
+.user-btn--member[data-vip='svip'] {
+  border-color: #f0d56a;
+  box-shadow:
+    0 0 0 1px rgba(232, 197, 71, 0.4),
+    0 0 10px rgba(232, 197, 71, 0.28);
+}
+.user-btn--member:hover {
+  border-color: #e8c547;
+  box-shadow:
+    0 0 0 2px rgba(232, 197, 71, 0.3),
+    0 0 12px rgba(232, 197, 71, 0.22);
+}
+.user-avatar,
+.user-btn :deep(.n-avatar) {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: none !important;
+  max-height: none !important;
+  border-radius: 9999px !important;
+  flex-shrink: 0;
+}
+.user-btn :deep(.n-avatar img) {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  border-radius: 9999px;
 }
 
 .login-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  color: #6b7280;
-  padding: 0 8px;
+  color: var(--chrome-text-muted, #6b7280);
+  padding: 0 10px;
+  height: var(--bar-h);
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  border: 1px solid var(--chrome-border);
+  background: var(--chrome-surface);
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+  box-sizing: border-box;
+  white-space: nowrap;
 }
-.dark .login-label {
-  color: #9ca3af;
+.login-label:hover {
+  color: var(--primary-color, #22c55e);
+  border-color: rgba(34, 197, 94, 0.45);
 }
 
-/* ── User menu ───────────────────────────────────────── */
+/* ── User menu：附着半透明，不锁死黑/白 ───────────────── */
 .user-menu {
-  min-width: 220px;
+  min-width: 200px;
   border-radius: 12px;
   overflow: hidden;
-  background: #fff;
-  border: 1px solid #f3f4f6;
-  box-shadow:
-    0 4px 20px rgba(0, 0, 0, 0.1),
-    0 1px 4px rgba(0, 0, 0, 0.05);
-}
-.dark .user-menu {
-  background: #111827;
-  border-color: #1f2937;
+  background: var(--chrome-surface-strong);
+  border: 1px solid var(--chrome-border);
+  backdrop-filter: blur(var(--chrome-blur));
+  -webkit-backdrop-filter: blur(var(--chrome-blur));
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+  color: var(--chrome-text);
 }
 
 .user-menu-top {
@@ -776,6 +571,10 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
 }
 .dark .user-name {
   color: #f3f4f6;
@@ -822,57 +621,7 @@ onMounted(() => {
   text-align: center;
 }
 
-.zoom-ctrl {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-}
-.zoom-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
-  border: none;
-  background: #f3f4f6;
-  color: #6b7280;
-  font-size: 10px;
-  cursor: pointer;
-  transition: all 0.12s;
-}
-.zoom-btn:hover {
-  background: #dcfce7;
-  color: #16a34a;
-}
-.zoom-val {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: #f3f4f6;
-  color: #6b7280;
-  cursor: pointer;
-  transition: all 0.12s;
-}
-.zoom-val--100 {
-  background: #dcfce7;
-  color: #16a34a;
-}
-.ver-chip {
-  font-size: 11px;
-  font-weight: 500;
-  padding: 1px 6px;
-  border-radius: 5px;
-  background: #f3f4f6;
-  color: #6b7280;
-}
-.dark .ver-chip {
-  background: #1f2937;
-  color: #9ca3af;
-}
-
-/* ── Suggestions ─────────────────────────────────────── */
+/* ── 建议列表 ────────────────────────────────────── */
 .suggestions-box {
   background: #fff;
 }
@@ -896,12 +645,12 @@ onMounted(() => {
 .suggest-row:hover,
 .suggest-row--hi {
   background: #f0fdf4;
-  color: #16a34a;
+  color: var(--primary-color, #22c55e);
 }
 .dark .suggest-row:hover,
 .dark .suggest-row--hi {
   background: rgba(34, 197, 94, 0.06);
-  color: #22c55e;
+  color: var(--primary-color, #22c55e);
 }
 .suggest-icon {
   font-size: 13px;
@@ -914,50 +663,15 @@ onMounted(() => {
   padding: 12px;
 }
 
-/* ── Nav page title ──────────────────────────────────── */
+/* ── Nav page title（顶栏左侧空间有限）──────────────── */
 .nav-page-title {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
-  color: #111827;
+  color: var(--chrome-text, #111827);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 280px;
+  max-width: min(160px, 18vw);
   letter-spacing: -0.01em;
-}
-.dark .nav-page-title {
-  color: #f9fafb;
-}
-
-/* ── Transitions ─────────────────────────────────────── */
-.tab-slide-enter-active,
-.tab-slide-leave-active {
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
-}
-.tab-slide-enter-from,
-.tab-slide-leave-to {
-  opacity: 0;
-  transform: translateX(-8px);
-}
-
-.nav-title-enter-active {
-  transition:
-    opacity 0.22s ease,
-    transform 0.22s ease;
-}
-.nav-title-leave-active {
-  transition:
-    opacity 0.18s ease,
-    transform 0.18s ease;
-}
-.nav-title-enter-from {
-  opacity: 0;
-  transform: translateY(8px);
-}
-.nav-title-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
 }
 </style>

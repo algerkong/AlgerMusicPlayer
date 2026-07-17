@@ -87,8 +87,7 @@ export default {
   dailyRecommend: {
     title: '每日推荐',
     badge: '推荐',
-    empty: '暂无推荐歌曲',
-    intelligenceHint: '开启心动模式，发现更多喜欢的音乐'
+    empty: '暂无推荐歌曲'
   },
   recommendMV: {
     title: '推荐MV'
@@ -110,12 +109,6 @@ export default {
     dailyRecommend: '每日推荐',
     songs: '首',
     playNow: '立即播放',
-    intelligenceMode: '心动模式',
-    intelligenceModeOn: '心动中',
-    intelligenceModeDesc: '开启智能推荐播放',
-    intelligenceModeActiveDesc: '根据你的喜好智能推荐',
-    startIntelligence: '开启心动',
-    stopIntelligence: '关闭心动',
     playing: '播放中',
     toplistDesc: '热门榜单',
     mvDesc: '音乐视频',
@@ -161,9 +154,7 @@ export default {
     tabPlaylist: '播放列表',
     tabMv: 'MV',
     tabCharts: '排行榜',
-    cancelSearch: '取消',
-    intelligenceMode: '心动模式',
-    exitIntelligence: '退出心动模式'
+    cancelSearch: '取消'
   },
   titleBar: {
     closeTitle: '请选择关闭方式',
@@ -266,9 +257,9 @@ export default {
   list: '歌单',
   mv: 'MV',
   home: '首页',
+  discover: '发现',
   search: '搜索',
   album: '专辑',
-  localMusic: '本地音乐',
   pages: {
     toplist: {
       desc: '最具权威的音乐榜单，发现当下最热门的音乐'

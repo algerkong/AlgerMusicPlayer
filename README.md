@@ -1,95 +1,122 @@
-<h2 align="center">🎵 LYMusic</h2>
+# LYMusic
 
-<div align="center">
+桌面端音乐播放器。基于 [AlgerMusicPlayer](https://github.com/algerkong/AlgerMusicPlayer) 的个人维护版，品牌与音源路径已独立。
 
-  <a href="https://github.com/LuoYe17/AlgerMusicPlayer">
-    <img src="https://img.shields.io/badge/GitHub-LuoYe17-blue?style=for-the-badge&logo=github" alt="GitHub">
-  </a>
-  <a href="https://github.com/LuoYe17/AlgerMusicPlayer/releases">
-    <img src="https://img.shields.io/github/v/release/LuoYe17/AlgerMusicPlayer?style=for-the-badge&logo=github&label=Release" alt="GitHub release">
-  </a>
+|      |                                                                                                |
+| ---- | ---------------------------------------------------------------------------------------------- |
+| 产品 | **LYMusic**（包名 `LYMusicPlayer`，appId `com.luoye.music`）                                   |
+| 作者 | [落叶 @LuoYe17](https://github.com/LuoYe17)                                                    |
+| 仓库 | https://github.com/LuoYe17/AlgerMusicPlayer                                                    |
+| 版本 | [Releases](https://github.com/LuoYe17/AlgerMusicPlayer/releases) · [CHANGELOG](./CHANGELOG.md) |
+| 许可 | MIT                                                                                            |
 
-</div>
+> **开发中。** 功能、界面和数据结构可能随时调整。重要数据请自行备份。
 
-## 项目简介
+---
 
-**LYMusic**（包名 `LYMusicPlayer`）是基于 [AlgerMusicPlayer](https://github.com/algerkong/AlgerMusicPlayer) 的个人魔改版桌面音乐播放器。
+## 它是什么
 
-|          |                                                                                  |
-| -------- | -------------------------------------------------------------------------------- |
-| 作者     | 落叶🍂 ([@LuoYe17](https://github.com/LuoYe17))                                  |
-| 仓库     | https://github.com/LuoYe17/AlgerMusicPlayer                                      |
-| 技术栈   | Electron · Vue 3 · TypeScript · Pinia · naive-ui · Tailwind                      |
-| 在线音源 | [`ly-music-source`](https://www.npmjs.com/package/ly-music-source)（主进程接入） |
+Electron 壳 + Vue 3 界面。在线听歌走主进程里的 [`ly-music-source`](https://github.com/LuoYe17/ly-music-source)，当前对接 **汽水音乐**（搜歌、解析、发现流、用户歌单等）。
 
-### 主要能力
+关于页的定位也写得很直白：简洁桌面播放器，支持汽水在线搜播；开源免费，请支持正版。
 
-- 在线搜索与播放（经 `ly-music-source` IPC）
-- 播放列表、收藏、历史与热力图等本地体验
-- 桌面歌词、系统托盘、全局快捷键
-- 下载管理、均衡器 / 音效、远程控制相关能力
-- 多语言：简体中文、繁体中文、English、日本語、한국어
-- Windows / macOS / Linux 打包与自动更新（GitHub Releases）
+**不是**汽水官方客户端，与字节跳动 / 汽水音乐无隶属关系。登录与使用风险见应用内登录说明。
 
-## 与上游的差异（持续更新）
+---
 
-- 去除捐赠 / 赞赏相关入口与资源
-- 品牌与打包元数据切换为 LYMusic / `com.luoye.music`
-- 发布与更新源指向本仓库
-- 网易云官方 API 栈已移除；在线能力迁移至 `ly-music-source`
-- 本地音乐库扫描功能已移除（当前以在线音源为主）
+## 主要能力
+
+| 方向       | 内容                                                                                                     |
+| ---------- | -------------------------------------------------------------------------------------------------------- |
+| 发现与浏览 | 竖滑推荐流（封面 / 歌词）、搜索、歌手 / 歌单列表                                                         |
+| 账号       | 汽水扫码登录（可短信二次验证）；登录态本机加密，不落盘明文                                               |
+| 曲库侧     | 收藏、播放历史、用户歌单增删改、下载管理                                                                 |
+| 播放       | 播放列表与模式、全屏播放页、六档音质（含会员门控）、EQ / 音效预设、输出设备                              |
+| 性能向     | 双槽预加载、低码率起播后升质、下一首预加载、磁盘音乐/歌词缓存                                            |
+| 桌面集成   | 托盘与媒体控制、全局/应用内快捷键（内置默认，无设置页）、Linux MPRIS、Windows 任务栏按钮、打包后自动更新 |
+| 形态       | 桌面主界面；另有迷你窗与偏移动端布局；可用 `dev:web` 只跑渲染进程                                        |
+
+界面语言目前只有 **简体中文**。
+
+### 相对上游的取舍
+
+- 去掉捐赠 / 赞赏
+- 主音源改为汽水 + `ly-music-source`，不再以网易云 API 为主路径
+- 精简多语言、快捷键自定义等周边能力，优先「能听、好切、好刷」
+
+---
+
+## 技术栈（简）
+
+| 层   | 选型                                                              |
+| ---- | ----------------------------------------------------------------- |
+| 桌面 | Electron 43 · electron-vite · electron-builder · electron-updater |
+| 界面 | Vue 3 · Pinia · Vue Router · Naive UI · shadcn-vue · Tailwind     |
+| 音源 | `ly-music-source`（主进程；渲染进程经 IPC）                       |
+| 音频 | HTMLAudio 双槽 + Web Audio（EQ 等）                               |
+| 工程 | TypeScript · Vitest · Oxlint · Prettier · Husky / commitlint      |
+
+源码大致分层：`src/main` 主进程，`src/preload` 桥，`src/renderer` 界面，`src/shared` 共享类型与协议约定。
+
+---
 
 ## 快速开始
 
-要求：**Node.js 18+**（CI 使用 Node 24）。
+需要 **Node.js LTS** 与 npm。
 
 ```bash
 npm install
-npm run dev          # Electron 桌面开发
-# npm run dev:web    # 仅网页端（无主进程时在线音源不可用）
+npm run dev
 ```
 
-常用检查：
+| 命令                  | 用途                                       |
+| --------------------- | ------------------------------------------ |
+| `npm run dev`         | Electron 开发                              |
+| `npm run dev:web`     | 仅渲染进程（浏览器调试；无主进程音源能力） |
+| `npm run build`       | 编译 main / preload / renderer             |
+| `npm run build:win`   | Windows 安装包（NSIS，x64 / arm64）        |
+| `npm run build:linux` | Linux 包（AppImage / deb / rpm）           |
+| `npm test`            | 单元测试                                   |
+| `npm run typecheck`   | 类型检查                                   |
+| `npm run lint`        | Oxlint + i18n 键检查                       |
 
-```bash
-npm run lint
-npm run typecheck
-npm run build
-```
+打 tag `v*` 会走 GitHub Actions 构建 Windows / Linux 产物；Release 说明从 `CHANGELOG.md` 对应 `## [vX.Y.Z]` 段抽取。
 
-打包示例：
+Linux 沙箱相关若启动失败，可先看 `npm run fix-sandbox`。
 
-```bash
-npm run build:win    # Windows
-npm run build:mac    # macOS
-npm run build:linux  # Linux
-```
+---
 
-产物目录：桌面安装包在 `dist/`，渲染构建在 `out/`。
+## 使用注意
 
-## 文档
+1. **登录与合规**  
+   扫码登录前应用内有风险说明：非官方接入、账号风险自负；登录态仅保存在本机，勿分享二维码或 Cookie。
 
-| 文档                           | 内容                                                               |
-| ------------------------------ | ------------------------------------------------------------------ |
-| [DEV.md](./DEV.md)             | 目录结构、模块说明、开发约定、打包细节                             |
-| [AGENTS.md](./AGENTS.md)       | 贡献与 AI 代理指南；**GitHub Flow**（多分支、小 PR、主分支可发布） |
-| [docs/](./docs/)               | 文档索引与流程速查                                                 |
-| [CHANGELOG.md](./CHANGELOG.md) | 版本更新日志                                                       |
+2. **会员与音质**  
+   高码率 / 无损等受汽水侧会员与曲目可用档限制；应用会做门控与回落，不会凭空「解锁」官方未授权能力。
 
-## 协作方式（摘要）
+3. **缓存与下载**  
+   设置页可改下载目录与磁盘缓存目录；默认缓存策略与上限由应用内部控制（界面主要展示用量与清理入口）。
 
-本仓库使用 **GitHub Flow**：
+4. **Web 模式**  
+   `dev:web` / 纯静态部署**没有**主进程音源 IPC，完整听歌以 Electron 包为准。
 
-1. 从最新 `main` 开短生命周期分支（可多开并行）
-2. Conventional Commits 小步提交
-3. 尽早提 PR，CI 必须通过
-4. 合并后删除分支，保持 `main` 始终可发布
+---
 
-完整约定见 [AGENTS.md](./AGENTS.md) 与 [docs/github-flow.md](./docs/github-flow.md)。
+## 文档与协作
+
+| 文档                           | 内容                                   |
+| ------------------------------ | -------------------------------------- |
+| [DEV.md](./DEV.md)             | 目录结构、模块说明、开发约定、打包细节 |
+| [AGENTS.md](./AGENTS.md)       | 贡献与 AI 代理指南；**GitHub Flow**    |
+| [docs/](./docs/)               | 文档索引、Flow 速查、Track 迁移路线图  |
+| [CHANGELOG.md](./CHANGELOG.md) | 版本更新日志                           |
+
+协作摘要：从最新 `main` 开短分支 → Conventional Commits → 尽早提 PR → CI 通过后合并 → 删分支。完整约定见 [AGENTS.md](./AGENTS.md) 与 [docs/github-flow.md](./docs/github-flow.md)。
+
+---
 
 ## 声明
 
-本软件仅用于学习交流，禁止用于商业用途，否则后果自负。  
-请多多支持官方正版音乐服务。
-
-上游原项目版权与贡献归 [algerkong/AlgerMusicPlayer](https://github.com/algerkong/AlgerMusicPlayer) 及其贡献者所有。
+- 仅供学习与个人交流，**禁止用于商业用途**。请支持官方正版（如 [汽水音乐](https://music.douyin.com/)）。
+- 上游版权与贡献归 [algerkong/AlgerMusicPlayer](https://github.com/algerkong/AlgerMusicPlayer) 及其贡献者。
+- 本仓库改动由维护者负责，不保证与上游功能一一对应或持续兼容。

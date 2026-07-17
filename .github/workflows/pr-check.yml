@@ -11,10 +11,10 @@ jobs:
     name: PR Title
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
         with:
           node-version: 24
 
@@ -31,12 +31,12 @@ jobs:
     name: Commit Messages
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
         with:
           fetch-depth: 0
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
         with:
           node-version: 24
 
@@ -51,23 +51,27 @@ jobs:
     name: Code Quality
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
         with:
           node-version: 24
+          cache: npm
 
       # lint:i18n 脚本用 bun 跑（package.json: "bun scripts/check_i18n.ts"），
       # CI 默认环境没有 bun 会报 sh: bun: not found
       - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6  # v2
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
+      # 仓库已切到 oxlint（无 eslint.config）；与 package.json lint:ox / lint:song-fields 对齐
       - name: Lint
-        run: npx eslint --max-warnings 0 "src/**/*.{ts,tsx,vue,js}"
+        run: |
+          npm run lint:ox
+          npm run lint:song-fields
 
       # tsconfig.web.json 显式 require src/renderer/{auto-imports,components}.d.ts
       # 这两个文件由 unplugin-auto-import / unplugin-vue-components 在 vite 启动时
@@ -78,6 +82,9 @@ jobs:
 
       - name: Type check
         run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
 
       - name: I18n check
         run: npm run lint:i18n

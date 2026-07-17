@@ -6,7 +6,7 @@
     @mouseleave="handleMouseLeave"
     @mouseenter="handleMouseEnter"
   >
-    <div ref="coverImage" class="cover-wrapper" :style="coverTransformStyle">
+    <div class="cover-wrapper" :style="coverTransformStyle">
       <n-image :src="src" class="cover-image" lazy preview-disabled :object-fit="objectFit" />
       <div class="cover-shine" :style="shineStyle"></div>
     </div>
@@ -41,7 +41,6 @@ const props = withDefaults(defineProps<Props>(), {
 
 // 3D视差效果相关
 const coverContainer = ref<HTMLElement | null>(null);
-const coverImage = ref<HTMLElement | null>(null);
 const mouseX = ref(0.5);
 const mouseY = ref(0.5);
 const isHovering = ref(false);

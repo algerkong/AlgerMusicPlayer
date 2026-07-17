@@ -13,12 +13,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - id: mac-x64
-            os: macos-latest
-            build_command: npm run build:mac:x64
-          - id: mac-arm64
-            os: macos-latest
-            build_command: npm run build:mac:arm64
           - id: windows
             os: windows-latest
             build_command: npm run build:win
@@ -28,15 +22,16 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
       - name: Install Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
         with:
           node-version: 24
+          cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Install Linux build dependencies
         if: matrix.os == 'ubuntu-latest'
@@ -47,20 +42,16 @@ jobs:
       - name: Build artifacts
         run: ${{ matrix.build_command }}
         env:
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-
-      - name: Prepare mac update metadata
-        if: startsWith(matrix.id, 'mac-')
-        run: rm -f dist/latest-mac.yml
+          CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.CSC_LINK != '' && 'true' || 'false' }}
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
 
       - name: Upload release bundle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: ${{ matrix.id }}
           if-no-files-found: error
           path: |
-            dist/*.dmg
-            dist/*.zip
             dist/*.exe
             dist/*.deb
             dist/*.rpm
@@ -74,7 +65,7 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
 
       - name: Get version from tag
         run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
@@ -87,24 +78,17 @@ jobs:
           echo "EOF" >> $GITHUB_ENV
 
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
           path: release-artifacts
 
       - name: Prepare release files
         run: |
           mkdir -p release-upload
-          find release-artifacts -type f \
-            ! -name 'latest-mac-x64.yml' \
-            ! -name 'latest-mac-arm64.yml' \
-            -exec cp {} release-upload/ \;
-          node scripts/merge_latest_mac_yml.mjs \
-            release-artifacts/mac-x64/latest-mac-x64.yml \
-            release-artifacts/mac-arm64/latest-mac-arm64.yml \
-            release-upload/latest-mac.yml
+          find release-artifacts -type f -exec cp {} release-upload/ \;
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65  # v2
         with:
           body: ${{ env.NOTES }}
           draft: false

@@ -35,7 +35,6 @@ export const isBilibiliIdMatch = (id1: string | number, id2: string | number): b
     return str1 === str2;
   }
 
-  // 处理B站视频ID
   if (str1.includes('--') || str2.includes('--')) {
     // 尝试从ID中提取bvid和cid
     const extractBvIdAndCid = (str: string) => {
@@ -68,6 +67,27 @@ export const isBilibiliIdMatch = (id1: string | number, id2: string | number): b
   // 默认情况，直接比较完整ID
   return str1 === str2;
 };
+
+/** 雪花 id 一律 string，禁止 Number/parseInt 丢精度 */
+export function trackIdKey(id: unknown): string {
+  if (id == null) return '';
+  if (typeof id === 'string' || typeof id === 'number') return String(id);
+  return '';
+}
+
+/**
+ * 曲目 id 相等（含 B 站 bvid--pid--cid）。
+ * 全库 id 比较只走这里，禁止再写 String(a) === String(b)。
+ */
+export function sameTrackId(a: unknown, b: unknown): boolean {
+  const sa = trackIdKey(a);
+  const sb = trackIdKey(b);
+  if (!sa || !sb) return false;
+  if (sa.includes('--') || sb.includes('--')) {
+    return isBilibiliIdMatch(sa, sb);
+  }
+  return sa === sb;
+}
 
 /**
  * Fisher-Yates 洗牌算法

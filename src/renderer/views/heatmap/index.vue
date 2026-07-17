@@ -16,7 +16,7 @@
       </div>
     </div>
 
-    <n-scrollbar class="heatmap-content">
+    <scroll-area class="heatmap-content">
       <div class="heatmap-wrapper" :class="setAnimationClass('animate__fadeInUp')">
         <div v-if="loading" class="loading-wrapper">
           <n-spin size="large" />
@@ -140,7 +140,7 @@
           <n-empty :description="t('history.heatmap.noData')" />
         </div>
       </div>
-    </n-scrollbar>
+    </scroll-area>
   </div>
 </template>
 
@@ -148,11 +148,13 @@
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { usePlayerStore } from '@/store/modules/player';
 import { usePlayHistoryStore } from '@/store/modules/playHistory';
 import type { SongResult } from '@/types/music';
 import { setAnimationClass } from '@/utils';
 import type { MusicHistoryItem } from '@/utils/persistedSong';
+import { getSongArtists } from '@/utils/songFields';
 
 const { t } = useI18n();
 const playHistoryStore = usePlayHistoryStore();
@@ -198,7 +200,6 @@ const formatDate = (timestamp: number): string => {
   });
 };
 
-// 获取指定日期的前三名歌曲
 const getTopSongsForDate = (timestamp: number): DailySongPlay[] => {
   const dateKey = new Date(timestamp).toLocaleDateString('zh-CN');
   const dayData = dailyDataMap.value[dateKey];
@@ -212,7 +213,6 @@ const getTopSongsForDate = (timestamp: number): DailySongPlay[] => {
     .slice(0, 3);
 };
 
-// 处理历史数据并生成热力图数据
 const processHistoryData = () => {
   loading.value = true;
 
@@ -222,7 +222,7 @@ const processHistoryData = () => {
 
     // 遍历音乐历史记录
     playHistoryStore.musicHistory.forEach((music: MusicHistoryItem) => {
-      // 假设每次播放都记录在当前时间，我们根据 count 分散到最近的日期
+      // 每次播放记在当前时间，按 count 分散到最近日期
       const playCount = music.count || 1;
       const now = Date.now();
 
@@ -242,7 +242,6 @@ const processHistoryData = () => {
 
         dailyMap[dateKey].totalPlays++;
 
-        // 更新歌曲播放次数
         const songId = music.id;
         const existingSong = dailyMap[dateKey].songs.get(songId);
 
@@ -252,7 +251,7 @@ const processHistoryData = () => {
           dailyMap[dateKey].songs.set(songId, {
             id: music.id,
             name: music.name || 'Unknown',
-            artist: music.ar?.[0]?.name || 'Unknown Artist',
+            artist: getSongArtists(music as any)[0]?.name || 'Unknown Artist',
             playCount: 1
           });
         }
@@ -266,7 +265,7 @@ const processHistoryData = () => {
     const startDate = new Date(oneYearAgo);
     const endDate = new Date();
 
-    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+    for (const d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
       const dateKey = d.toLocaleDateString('zh-CN');
       const dayData = dailyMap[dateKey];
 
@@ -284,17 +283,14 @@ const processHistoryData = () => {
   }
 };
 
-// 计算总播放次数
 const totalPlays = computed(() => {
   return heatmapData.value.reduce((sum, item) => sum + item.value, 0);
 });
 
-// 计算活跃天数
 const activeDays = computed(() => {
   return heatmapData.value.filter((item) => item.value > 0).length;
 });
 
-// 计算播放最多的歌曲
 const mostPlayedSong = computed<{
   id: string | number;
   name: string;
@@ -312,7 +308,7 @@ const mostPlayedSong = computed<{
     const id = music.id;
     const count = music.count || 1;
     const name = music.name || 'Unknown';
-    const artist = music.ar?.[0]?.name || 'Unknown Artist';
+    const artist = getSongArtists(music as any)[0]?.name || 'Unknown Artist';
 
     if (songPlayCounts.has(id)) {
       songPlayCounts.get(id)!.playCount += count;
@@ -335,7 +331,6 @@ const mostPlayedSong = computed<{
   return maxSong;
 });
 
-// 计算最活跃的一天
 const mostActiveDay = computed<{ date: string; plays: number } | null>(() => {
   if (heatmapData.value.length === 0) return null;
 
@@ -359,7 +354,6 @@ const mostActiveDay = computed<{ date: string; plays: number } | null>(() => {
   return maxDay;
 });
 
-// 计算最晚播放的歌曲（凌晨6点之前）
 const latestNightSong = computed<{
   id: string | number;
   name: string;
@@ -383,7 +377,7 @@ const latestNightSong = computed<{
     return {
       id: randomSong.id,
       name: randomSong.name || 'Unknown',
-      artist: randomSong.ar?.[0]?.name || 'Unknown Artist',
+      artist: getSongArtists(randomSong as any)[0]?.name || 'Unknown Artist',
       time: `凌晨 ${randomHour.toString().padStart(2, '0')}:${randomMinute.toString().padStart(2, '0')}`
     };
   }
@@ -396,7 +390,7 @@ const latestNightSong = computed<{
     return {
       id: song.id,
       name: song.name || 'Unknown',
-      artist: song.ar?.[0]?.name || 'Unknown Artist',
+      artist: getSongArtists(song as any)[0]?.name || 'Unknown Artist',
       time: `凌晨 ${randomHour.toString().padStart(2, '0')}:${randomMinute.toString().padStart(2, '0')}`
     };
   }

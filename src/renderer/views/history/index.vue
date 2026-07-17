@@ -12,23 +12,23 @@
         </button>
       </div>
 
-      <div
-        class="bg-gray-100 dark:bg-neutral-800 p-1 rounded-full inline-flex h-9 items-center overflow-x-auto max-w-full"
-      >
-        <div
-          v-for="tab in categoryTabs"
-          :key="tab"
-          class="px-4 h-7 rounded-full text-xs font-medium cursor-pointer transition-all duration-300 flex items-center justify-center whitespace-nowrap"
-          :class="
-            currentCategory === tab
-              ? 'bg-white dark:bg-neutral-700 text-gray-900 dark:text-white shadow-sm'
-              : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-          "
-          @click="currentCategory = tab"
-        >
-          {{ t(`history.categoryTabs.${tab}`) }}
+      <scroll-area orientation="horizontal" class="max-w-full">
+        <div class="bg-gray-100 dark:bg-neutral-800 p-1 rounded-full inline-flex h-9 items-center">
+          <div
+            v-for="tab in categoryTabs"
+            :key="tab"
+            class="px-4 h-7 rounded-full text-xs font-medium cursor-pointer transition-all duration-300 flex items-center justify-center whitespace-nowrap"
+            :class="
+              currentCategory === tab
+                ? 'bg-white dark:bg-neutral-700 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            "
+            @click="currentCategory = tab"
+          >
+            {{ t(`history.categoryTabs.${tab}`) }}
+          </div>
         </div>
-      </div>
+      </scroll-area>
     </div>
 
     <div class="flex-1 min-h-0 px-6">
@@ -37,7 +37,7 @@
         class="h-full flex items-center justify-center"
         :description="t('history.noData')"
       />
-      <n-scrollbar v-else class="h-full">
+      <scroll-area v-else class="h-full">
         <div class="space-y-1 pb-32">
           <template v-if="currentCategory === 'songs'">
             <song-item
@@ -68,13 +68,13 @@
             />
           </template>
         </div>
-      </n-scrollbar>
+      </scroll-area>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { NEmpty, NScrollbar, useMessage } from 'naive-ui';
+import { NEmpty, useMessage } from 'naive-ui';
 import { computed, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
@@ -83,7 +83,10 @@ import AlbumItem from '@/components/common/AlbumItem.vue';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import PlaylistItem from '@/components/common/PlaylistItem.vue';
 import SongItem from '@/components/common/SongItem.vue';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useVisibleSongPrefetch } from '@/hooks/useVisibleSongPrefetch';
 import { usePlayHistoryStore } from '@/store/modules/playHistory';
+import type { SongResult } from '@/types/music';
 import { isMobile } from '@/utils';
 
 defineOptions({ name: 'History' });
@@ -102,6 +105,14 @@ const displayList = computed(() => {
   if (currentCategory.value === 'albums') return playHistoryStore.albumHistory;
   return [];
 });
+
+const historySongs = computed(
+  () =>
+    (currentCategory.value === 'songs'
+      ? (playHistoryStore.musicHistory as SongResult[])
+      : []) as SongResult[]
+);
+useVisibleSongPrefetch(historySongs, { maxConcurrent: 3, maxPrefetch: 12, auto: true });
 
 const handleDelSong = (item: any) => {
   playHistoryStore.delMusic(item);

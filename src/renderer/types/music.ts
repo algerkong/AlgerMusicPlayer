@@ -33,6 +33,14 @@ export interface ILyric {
   hasWordByWord?: boolean;
 }
 
+/**
+ * 播放器兼容 DTO（历史包袱）。
+ * 新代码优先：shared/domain Track + PlaybackRuntime；经 trackBridge 互转。
+ * 运行态字段（playMusicUrl / lyric / colors 等）不应视为曲目元数据。
+ *
+ * P6：已移除 ar/al/dt 镜像字段；规范侧为 artists / album / duration。
+ * 读请用 songFields 或 toPlayableView。
+ */
 export interface SongResult {
   id: string | number;
   name: string;
@@ -44,9 +52,9 @@ export interface SongResult {
   canDislike?: boolean;
   program?: any;
   alg?: string;
-  ar: Artist[];
+  /** 规范艺人列表 */
   artists?: Artist[];
-  al: Album;
+  /** 规范专辑 */
   album?: Album;
   /** 翻译名（外语歌曲的中文译名等，来自网易 API） */
   tns?: string[];
@@ -61,13 +69,57 @@ export interface SongResult {
   source?: string;
   // 过期时间
   expiredAt?: number;
-  // 获取时间
   createdAt?: number;
-  // 时长
+  /** 规范时长（毫秒） */
   duration?: number;
-  dt?: number;
   isFirstPlay?: boolean;
   isPodcast?: boolean;
+  /** 平台侧 VIP/会员曲（汽水 label_info.only_vip_playable） */
+  isVip?: boolean;
+  /** 原唱：label_info.is_original === true；undefined 未知 */
+  isOriginal?: boolean;
+  /** 限免 */
+  isLimitedFree?: boolean;
+  limitedFreeExpireAt?: number;
+  hasPreview?: boolean;
+  preview?: { startMs: number; durationMs: number; vid?: string };
+  /**
+   * 当前解析到的流是否为试听片段（非全曲）。
+   * true 时歌词时钟 = 音频进度 + preview.startMs。
+   */
+  isPreviewStream?: boolean;
+  /**
+   * 加密前缀秒播：当前 URL 是 .prefix. 短文件，完整 .full. 后台下载中。
+   */
+  isPartialStream?: boolean;
+  /** 完整文件 local://，就绪后 seek 接上 */
+  pendingFullUrl?: string;
+  /**
+   * 本曲接口声明的可用音质档（medium/higher/highest/lossless/spatial/hi_res）。
+   * 播放条只展示这里有的项。
+   */
+  availableQualities?: string[];
+  /** 本次实际取流档（会员降级 / 本曲无档 之后） */
+  streamQuality?: string;
+  streamBitrate?: number;
+  /** 本次 resolve 强制使用的音质（优先于全局 musicQuality） */
+  preferredQuality?: string;
+  /** 强制重新 resolve（切换音质时置 true，忽略已有 playMusicUrl） */
+  forceQualityResolve?: boolean;
+  isDigital?: boolean;
+  digital?: {
+    paymentItemId?: string;
+    amount?: number;
+    paymentItemType?: number;
+    onlineDate?: number;
+  };
+  /** Feed 收藏/喜欢数 */
+  likedCount?: number;
+  commentCount?: number;
+  shareCount?: number;
+  genreTags?: string[];
+  lyricists?: string[];
+  composers?: string[];
 }
 
 export interface Song {

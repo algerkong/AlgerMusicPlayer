@@ -113,7 +113,7 @@ body {
   color: #60a5fa !important;
 }
 
-/* Loading */
+/* 加载中 */
 .n-message--loading-type {
   background: rgba(255, 255, 255, 0.72) !important;
 }

@@ -8,7 +8,11 @@ import { useUserStore } from '../store/modules/user';
 
 function getUserId(): string | null {
   const userStore = useUserStore();
-  return userStore.user?.userId?.toString() || null;
+  const u = userStore.user;
+  if (!u) return null;
+  // 优先雪花字符串，避免 Number 精度丢失
+  if (u.user_id != null && String(u.user_id)) return String(u.user_id);
+  return u.userId != null ? String(u.userId) : null;
 }
 
 const loginRouter = {
@@ -28,10 +32,6 @@ const routes = [
     path: '/',
     component: AppLayout,
     children: [...homeRouter, loginRouter, ...otherRouter]
-  },
-  {
-    path: '/lyric',
-    component: () => import('@/views/lyric/index.vue')
   }
 ];
 

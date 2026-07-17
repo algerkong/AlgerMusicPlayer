@@ -1,48 +1,59 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
-import { getLocalStorageItem, isBilibiliIdMatch, setLocalStorageItem } from '@/utils/playerUtils';
+import {
+  getLocalStorageItem,
+  sameTrackId,
+  setLocalStorageItem,
+  trackIdKey
+} from '@/utils/playerUtils';
+
+/** @deprecated 用 trackIdKey；保留别名以免外部引用断裂 */
+export const favoriteIdKey = trackIdKey;
 
 /**
  * 收藏管理 Store — 仅 localStorage，无云端同步
+ * id 统一存 string，兼容历史 number 条目
  */
 export const useFavoriteStore = defineStore('favorite', () => {
   const favoriteList = ref<Array<number | string>>(getLocalStorageItem('favoriteList', []));
   const dislikeList = ref<Array<number | string>>(getLocalStorageItem('dislikeList', []));
 
-  const addToFavorite = async (id: number | string) => {
-    const isAlreadyInList = favoriteList.value.some((existingId) =>
-      typeof id === 'string' && id.includes('--')
-        ? isBilibiliIdMatch(existingId, id)
-        : existingId === id
-    );
-
-    if (!isAlreadyInList) {
-      favoriteList.value.push(id);
-      setLocalStorageItem('favoriteList', favoriteList.value);
+  const normalizeList = (list: Array<number | string>) => {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const id of list) {
+      const k = trackIdKey(id);
+      if (!k || seen.has(k)) continue;
+      seen.add(k);
+      out.push(k);
     }
+    return out;
+  };
+
+  const addToFavorite = async (id: number | string) => {
+    const key = trackIdKey(id);
+    if (!key) return;
+    if (favoriteList.value.some((existingId) => sameTrackId(existingId, key))) return;
+    favoriteList.value = [...normalizeList(favoriteList.value), key];
+    setLocalStorageItem('favoriteList', favoriteList.value);
   };
 
   const removeFromFavorite = async (id: number | string) => {
-    if (typeof id === 'string' && id.includes('--')) {
-      favoriteList.value = favoriteList.value.filter(
-        (existingId) => !isBilibiliIdMatch(existingId, id)
-      );
-    } else {
-      favoriteList.value = favoriteList.value.filter((existingId) => existingId !== id);
-    }
+    favoriteList.value = favoriteList.value.filter((existingId) => !sameTrackId(existingId, id));
     setLocalStorageItem('favoriteList', favoriteList.value);
   };
 
   const addToDislikeList = (id: number | string) => {
-    if (!dislikeList.value.includes(id)) {
-      dislikeList.value.push(id);
-      setLocalStorageItem('dislikeList', dislikeList.value);
-    }
+    const key = trackIdKey(id);
+    if (!key) return;
+    if (dislikeList.value.some((x) => sameTrackId(x, key))) return;
+    dislikeList.value = [...normalizeList(dislikeList.value as string[]), key];
+    setLocalStorageItem('dislikeList', dislikeList.value);
   };
 
   const removeFromDislikeList = (id: number | string) => {
-    dislikeList.value = dislikeList.value.filter((existingId) => existingId !== id);
+    dislikeList.value = dislikeList.value.filter((existingId) => !sameTrackId(existingId, id));
     setLocalStorageItem('dislikeList', dislikeList.value);
   };
 
@@ -51,20 +62,44 @@ export const useFavoriteStore = defineStore('favorite', () => {
     const localList: Array<number | string> = localFavoriteList
       ? JSON.parse(localFavoriteList)
       : [];
-    favoriteList.value = localList;
+    favoriteList.value = normalizeList(localList);
     setLocalStorageItem('favoriteList', favoriteList.value);
+
+    const localDislike = localStorage.getItem('dislikeList');
+    if (localDislike) {
+      try {
+        dislikeList.value = normalizeList(JSON.parse(localDislike));
+        setLocalStorageItem('dislikeList', dislikeList.value);
+      } catch {
+        /* ignore */
+      }
+    }
   };
 
   const isFavorite = (id: number | string): boolean => {
-    return favoriteList.value.some((existingId) =>
-      typeof id === 'string' && id.includes('--')
-        ? isBilibiliIdMatch(existingId, id)
-        : existingId === id
-    );
+    return favoriteList.value.some((existingId) => sameTrackId(existingId, id));
   };
 
   const isDisliked = (id: number | string): boolean => {
-    return dislikeList.value.includes(id);
+    return dislikeList.value.some((existingId) => sameTrackId(existingId, id));
+  };
+
+  /**
+   * 批量写入喜欢（如打开汽水「我喜欢的音乐」歌单时同步服务端曲目 id）。
+   * 只增不减，避免清掉用户在本机另点的喜欢。
+   */
+  const seedFavorites = (ids: Array<number | string | null | undefined>) => {
+    const set = new Set(normalizeList(favoriteList.value));
+    let added = 0;
+    for (const id of ids) {
+      const k = trackIdKey(id ?? '');
+      if (!k || set.has(k)) continue;
+      set.add(k);
+      added += 1;
+    }
+    if (added === 0) return;
+    favoriteList.value = [...set];
+    setLocalStorageItem('favoriteList', favoriteList.value);
   };
 
   return {
@@ -76,6 +111,7 @@ export const useFavoriteStore = defineStore('favorite', () => {
     removeFromDislikeList,
     initializeFavoriteList,
     isFavorite,
-    isDisliked
+    isDisliked,
+    seedFavorites
   };
 });

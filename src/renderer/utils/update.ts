@@ -81,9 +81,6 @@ const cacheProxyNodes = (nodes: string[]) => {
   );
 };
 
-/**
- * 获取代理节点列表
- */
 export const getProxyNodes = async (): Promise<string[]> => {
   // 尝试从缓存获取
   const cached = getCachedProxyNodes();
@@ -92,7 +89,6 @@ export const getProxyNodes = async (): Promise<string[]> => {
   }
 
   try {
-    // 获取最新代理节点
     const { data } = await axios.get<ProxyResponse>('https://api.akams.cn/github', {
       timeout: REQUEST_TIMEOUT
     });
@@ -122,14 +118,10 @@ export const getProxyNodes = async (): Promise<string[]> => {
   ];
 };
 
-/**
- * 获取 GitHub 最新发布版本信息
- */
 export const getLatestReleaseInfo = async (): Promise<GithubReleaseInfo | null> => {
   try {
     const token = import.meta.env.VITE_GITHUB_TOKEN;
     const headers = {};
-    // 构建 API URL 列表
     const apiUrls = [
       // 本仓库 Releases
       'https://api.github.com/repos/LuoYe17/AlgerMusicPlayer/releases/latest'

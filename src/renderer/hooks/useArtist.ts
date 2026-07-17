@@ -5,10 +5,10 @@ export const useArtist = () => {
 
   /**
    * 跳转到歌手详情页
-   * @param id 歌手ID
+   * @param id 歌手 ID（string 优先，兼容 number）
    */
-  const navigateToArtist = (id: number) => {
-    router.push(`/artist/detail/${id}`);
+  const navigateToArtist = (id: number | string) => {
+    router.push(`/artist/detail/${encodeURIComponent(String(id))}`);
   };
 
   return {

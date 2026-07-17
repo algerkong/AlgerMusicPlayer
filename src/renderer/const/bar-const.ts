@@ -21,21 +21,7 @@ export const USER_SET_OPTIONS = [
   }
 ];
 
-export const SEARCH_TYPES = [
-  {
-    label: 'search.search.single', // 单曲
-    key: 1
-  },
-  {
-    label: 'search.search.album', // 专辑
-    key: 10
-  },
-  {
-    label: 'search.search.playlist', // 歌单
-    key: 1000
-  }
-];
-
+/** 搜索结果页分类（单曲 / 专辑 / 歌单） */
 export const SEARCH_TYPE = {
   MUSIC: 1, // 单曲
   ALBUM: 10, // 专辑

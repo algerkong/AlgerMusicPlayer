@@ -1,10 +1,12 @@
-// Shared types for download system, importable by both main and renderer
-// Follows precedent: src/shared/appUpdate.ts
+// 下载系统共享类型，主进程与渲染进程均可引用
+// 写法对齐 src/shared/appUpdate.ts
 
 export const DOWNLOAD_TASK_STATE = {
   queued: 'queued',
   downloading: 'downloading',
   paused: 'paused',
+  /** 直链过期，等待 renderer 重新解析 URL 后再入队 */
+  waitingForUrl: 'waitingForUrl',
   completed: 'completed',
   error: 'error',
   cancelled: 'cancelled'
@@ -13,7 +15,8 @@ export const DOWNLOAD_TASK_STATE = {
 export type DownloadTaskState = (typeof DOWNLOAD_TASK_STATE)[keyof typeof DOWNLOAD_TASK_STATE];
 
 export type DownloadSongInfo = {
-  id: number;
+  /** 汽水雪花 id 必须用 string，Number 会丢精度 */
+  id: string | number;
   name: string;
   picUrl: string;
   ar: { name: string }[];

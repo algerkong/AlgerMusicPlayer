@@ -16,10 +16,12 @@ export function navigateToMusicList(
     songList?: any[];
     listInfo?: any;
     canRemove?: boolean;
+    /** 如 qishui — MusicListPage 加载远程歌单用 */
+    source?: string;
   }
 ) {
   const musicStore = useMusicStore();
-  const { id, type, name, songList, listInfo, canRemove = false } = options;
+  const { id, type, name, songList, listInfo, canRemove = false, source } = options;
 
   // 如果是每日推荐，不需要设置 musicStore，直接从 recommendStore 获取
   if (type !== 'dailyRecommend') {
@@ -29,7 +31,7 @@ export function navigateToMusicList(
       musicStore.setBasicListInfo(name, listInfo, canRemove);
     }
   } else {
-    // 确保 musicStore 的数据被清空，避免显示旧的列表
+    // 清空 musicStore，避免列表残留旧数据
     musicStore.clearCurrentMusicList();
   }
 
@@ -37,8 +39,11 @@ export function navigateToMusicList(
   if (id) {
     router.push({
       name: 'musicList',
-      params: { id },
-      query: { type }
+      params: { id: String(id) },
+      query: {
+        type,
+        ...(source ? { source } : {})
+      }
     });
   } else {
     router.push({

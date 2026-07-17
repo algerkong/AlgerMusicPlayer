@@ -22,8 +22,8 @@
     <!-- 图片插槽 -->
     <template #image>
       <n-image
-        v-if="item.picUrl"
-        :src="getImgUrl(item.picUrl, '100y100')"
+        v-if="view?.coverUrl"
+        :src="getImgUrl(view.coverUrl, '100y100')"
         class="song-item-img"
         preview-disabled
         :img-props="{
@@ -40,24 +40,22 @@
           <n-ellipsis
             class="song-item-content-title text-ellipsis"
             line-clamp="1"
-            :class="{ 'text-green-500': isPlaying }"
+            :class="{ 'text-primary': isPlaying }"
           >
-            {{ item.name }}
-            <span
-              v-if="item.tns?.length || item.alia?.length"
-              class="text-neutral-400 dark:text-neutral-500"
-              >（{{ item.tns?.[0] || item.alia?.[0] }}）</span
+            {{ view?.title || item.name }}
+            <span v-if="view?.subtitle" class="text-neutral-400 dark:text-neutral-500"
+              >（{{ view.subtitle }}）</span
             >
           </n-ellipsis>
           <div class="song-item-content-divider">-</div>
           <n-ellipsis class="song-item-content-name text-ellipsis" line-clamp="1">
-            <template v-for="(artist, index) in artists" :key="index">
+            <template v-for="(artist, index) in displayArtists" :key="index">
               <span
-                class="cursor-pointer hover:text-green-500"
+                class="cursor-pointer hover:text-primary"
                 @click.stop="onArtistClick(artist.id)"
                 >{{ artist.name }}</span
               >
-              <span v-if="index < artists.length - 1"> / </span>
+              <span v-if="index < displayArtists.length - 1"> / </span>
             </template>
           </n-ellipsis>
         </div>
@@ -76,7 +74,7 @@
         </div>
         <div
           class="song-item-operating-list-play bg-gray-300 dark:bg-gray-800 animate__animated"
-          :class="{ 'bg-green-600': isPlaying, animate__flipInY: playLoading }"
+          :class="{ 'bg-primary': isPlaying, animate__flipInY: playLoading }"
           @click="onPlayMusic"
         >
           <i v-if="isPlaying && play" class="iconfont icon-stop"></i>
@@ -89,60 +87,37 @@
 
 <script lang="ts" setup>
 import { NCheckbox, NEllipsis, NImage } from 'naive-ui';
-import { computed, ref } from 'vue';
 
-import { usePlayerStore } from '@/store';
-import type { SongResult } from '@/types/music';
+import { computed } from 'vue';
+
+import {
+  songItemShellDefaults,
+  useSongItemShell,
+  type SongItemShellProps
+} from '@/hooks/useSongItemShell';
 import { getImgUrl } from '@/utils';
 
 import BaseSongItem from './BaseSongItem.vue';
 
-const playerStore = usePlayerStore();
-
-const props = withDefaults(
-  defineProps<{
-    item: SongResult;
-    favorite?: boolean;
-    selectable?: boolean;
-    selected?: boolean;
-    canRemove?: boolean;
-    isNext?: boolean;
-    index?: number;
-  }>(),
-  {
-    favorite: true,
-    selectable: false,
-    selected: false,
-    canRemove: false,
-    isNext: false,
-    index: undefined
-  }
-);
-
+const props = withDefaults(defineProps<SongItemShellProps>(), songItemShellDefaults);
 const emit = defineEmits(['play', 'select', 'remove-song']);
-const baseItem = ref<InstanceType<typeof BaseSongItem>>();
 
-// 从基础组件获取响应式状态
-const play = computed(() => playerStore.isPlay);
-const isPlaying = computed(() => baseItem.value?.isPlaying || false);
-const playLoading = computed(() => baseItem.value?.playLoading || false);
-const isFavorite = computed(() => baseItem.value?.isFavorite || false);
-const artists = computed(() => baseItem.value?.artists || []);
+const {
+  baseItem,
+  play,
+  isPlaying,
+  playLoading,
+  isFavorite,
+  artists,
+  view,
+  onToggleSelect,
+  onImageLoad,
+  onArtistClick,
+  onToggleFavorite,
+  onPlayMusic
+} = useSongItemShell(props, emit, { reemitSelect: true });
 
-// 包装方法，避免直接访问可能为undefined的ref
-const onToggleSelect = () => {
-  baseItem.value?.toggleSelect();
-  emit('select', props.item.id, !props.selected);
-};
-const onImageLoad = (event: Event) => baseItem.value?.imageLoad(event);
-const onArtistClick = (id: number) => baseItem.value?.handleArtistClick(id);
-const onToggleFavorite = (event: Event) => {
-  baseItem.value?.toggleFavorite(event);
-};
-const onPlayMusic = () => {
-  baseItem.value?.playMusicEvent(props.item);
-  emit('play', props.item);
-};
+const displayArtists = computed(() => view.value?.artists || artists.value || []);
 </script>
 
 <style lang="scss" scoped>
@@ -243,15 +218,15 @@ const onPlayMusic = () => {
         font-size: 1rem; /* text-base */
       }
 
-      &.bg-green-600 {
-        background-color: rgb(34 197 94);
+      &.bg-primary {
+        background-color: var(--primary-color, #22c55e);
         color: white;
       }
     }
   }
 }
 
-/* dark mode */
+/* 暗色模式 */
 .dark .list-song-item {
   border-color: rgb(31 41 55); /* dark:border-gray-800 */
 

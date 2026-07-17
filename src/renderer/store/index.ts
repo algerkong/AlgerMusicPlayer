@@ -9,16 +9,14 @@ const pinia = createPinia();
 
 pinia.use(piniaPluginPersistedstate);
 
-// 添加路由到 Pinia
 pinia.use(({ store }) => {
   store.router = markRaw(router);
 });
 
 // 导出所有 store
+export * from './modules/discoverFeed';
 export * from './modules/download';
 export * from './modules/favorite';
-export * from './modules/intelligenceMode';
-export * from './modules/localMusic';
 export * from './modules/lyric';
 export * from './modules/menu';
 export * from './modules/music';
@@ -31,5 +29,6 @@ export * from './modules/recommend';
 export * from './modules/search';
 export * from './modules/settings';
 export * from './modules/user';
+export * from './modules/userPlaylists';
 
 export default pinia;

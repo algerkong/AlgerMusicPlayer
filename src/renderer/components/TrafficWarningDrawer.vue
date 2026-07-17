@@ -8,12 +8,7 @@
     :z-index="999999999"
     :mask-closable="false"
   >
-    <n-drawer-content
-      title="欢迎使用 LYMusic"
-      closable
-      :native-scrollbar="false"
-      class="mac-style-drawer"
-    >
+    <n-drawer-content title="欢迎使用 LYMusic" closable class="mac-style-drawer">
       <div class="drawer-container">
         <div class="warning-content">
           <div class="warning-message">

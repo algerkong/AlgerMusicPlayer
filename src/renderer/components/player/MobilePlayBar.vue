@@ -17,27 +17,23 @@
           : '#000000'
     }"
   >
-    <!-- Mini模式 - 在musicFullVisible为false时显示 -->
+    <!-- 迷你条 -->
     <div v-if="!playerStore.musicFull" class="mobile-mini-controls">
       <!-- 歌曲信息 -->
       <div class="mini-song-info" @click="setMusicFull">
         <n-image
-          :src="getImgUrl(playMusic?.picUrl, '100y100')"
+          :src="getImgUrl(nowView?.coverUrl || playMusic?.picUrl, '100y100')"
           class="mini-song-cover"
           lazy
           preview-disabled
         />
         <div class="mini-song-text">
           <n-ellipsis line-clamp="1">
-            <span class="mini-song-title">{{ playMusic.name }}</span>
+            <span class="mini-song-title">{{ nowView?.title || playMusic.name }}</span>
             <span class="mx-2 text-gray-500 dark:text-gray-400">-</span>
-            <span
-              class="mini-song-artist"
-              v-for="(artists, artistsindex) in artistList"
-              :key="artistsindex"
-            >
-              {{ artists.name }}{{ artistsindex < artistList.length - 1 ? ' / ' : '' }}
-            </span>
+            <span class="mini-song-artist">{{
+              nowView?.artistText || artistList.map((a: { name: string }) => a.name).join(' / ')
+            }}</span>
           </n-ellipsis>
         </div>
       </div>
@@ -51,57 +47,30 @@
     </div>
 
     <!-- 全屏播放器 -->
-    <music-full-wrapper
-      ref="MusicFullRef"
-      v-model="playerStore.musicFull"
-      :background="background"
-    />
+    <music-full-wrapper v-model="playerStore.musicFull" :background="background" />
   </div>
 </template>
 
 <script lang="ts" setup>
 import { useSwipe } from '@vueuse/core';
 import type { Ref } from 'vue';
-import { inject, onMounted, ref, watch } from 'vue';
+import { inject, onMounted, ref } from 'vue';
 
 import MusicFullWrapper from '@/components/lyric/MusicFullWrapper.vue';
 import { artistList, playMusic, textColors } from '@/hooks/MusicHook';
 import { usePlaybackControl } from '@/hooks/usePlaybackControl';
-import { usePlayerStore } from '@/store/modules/player';
-import { useSettingsStore } from '@/store/modules/settings';
+import { usePlayBarChrome } from '@/hooks/usePlayBarChrome';
+import { usePlayableView } from '@/hooks/usePlayableView';
 import { getImgUrl, setAnimationClass } from '@/utils';
 
 const shouldShowMobileMenu = inject('shouldShowMobileMenu') as Ref<boolean>;
 
-const playerStore = usePlayerStore();
-const settingsStore = useSettingsStore();
-
-// 播放控制
 const { isPlaying: play, playMusicEvent, handleNext, handlePrev } = usePlaybackControl();
-
-// 背景颜色
-const background = ref('#000');
-
-// 全屏播放器
-const MusicFullRef = ref<any>(null);
-
-const setMusicFull = () => {
-  playerStore.setMusicFull(!playerStore.musicFull);
-  if (playerStore.musicFull) {
-    settingsStore.showArtistDrawer = false;
-  }
-};
-
-watch(
-  () => playerStore.musicFull,
-  (_newVal) => {
-    // 状态栏样式更新已在 Web 环境下禁用
-  }
-);
-
-const openPlayListDrawer = () => {
-  playerStore.setPlayListDrawerVisible(true);
-};
+const { playerStore, settingsStore, background, openPlayListDrawer, setMusicFull } =
+  usePlayBarChrome({
+    fullMode: 'toggle'
+  });
+const nowView = usePlayableView(() => playMusic.value);
 
 // 滑动切歌
 const playBarRef = ref<HTMLElement | null>(null);
@@ -116,14 +85,6 @@ onMounted(() => {
     });
   }
 });
-
-watch(
-  () => playerStore.playMusic,
-  async () => {
-    background.value = playMusic.value.backgroundColor as string;
-  },
-  { immediate: true, deep: true }
-);
 </script>
 
 <style lang="scss" scoped>
@@ -176,9 +137,9 @@ watch(
           --n-rail-height: 3px;
           --n-rail-color: rgba(255, 255, 255, 0.15);
           --n-rail-color-dark: rgba(255, 255, 255, 0.15);
-          --n-fill-color: #22c55e;
+          --n-fill-color: var(--primary-color, #22c55e);
           --n-handle-size: 0px; /* 隐藏滑块 */
-          --n-handle-color: #22c55e;
+          --n-handle-color: var(--primary-color, #22c55e);
 
           &:hover {
             --n-handle-size: 10px; /* 鼠标悬停时显示滑块 */
@@ -251,9 +212,13 @@ watch(
     }
   }
 
-  // Mini模式样式
   .mobile-mini-controls {
-    @apply flex items-center justify-between pr-4 mx-3 h-12 rounded-full bg-light-100 dark:bg-dark-100 shadow-lg;
+    @apply flex items-center justify-between pr-4 mx-3 h-12 rounded-full shadow-lg;
+    background: var(--chrome-surface-strong, rgba(24, 24, 27, 0.85));
+    border: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.12));
+    backdrop-filter: blur(var(--chrome-blur, 16px));
+    -webkit-backdrop-filter: blur(var(--chrome-blur, 16px));
+    color: var(--chrome-text, #f8fafc);
 
     .mini-song-info {
       @apply flex items-center flex-1 min-w-0 cursor-pointer;
@@ -283,17 +248,24 @@ watch(
 
         &.play {
           @apply w-9 h-9 rounded-full flex items-center justify-center mr-2;
-          @apply bg-gray-100 dark:bg-gray-800;
+          background: var(--chrome-surface, rgba(255, 255, 255, 0.12));
+          border: 1px solid var(--chrome-border, transparent);
 
           .iconfont {
-            @apply text-xl text-green-500 transition hover:text-green-600;
+            @apply text-xl transition;
+            color: var(--primary-color, #22c55e);
+            &:hover {
+              color: var(--primary-color, #22c55e);
+            }
           }
         }
       }
 
       .mini-list-icon {
         @apply text-xl p-1 transition cursor-pointer;
-        @apply hover:text-green-500;
+        &:hover {
+          color: var(--primary-color, #22c55e);
+        }
       }
     }
   }

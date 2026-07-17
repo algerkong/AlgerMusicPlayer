@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
 import { isElectron } from '@/utils';
+import { getSongArtistNames } from '@/utils/songFields';
 
 import {
   createDefaultDownloadSettings,
@@ -20,21 +21,22 @@ function validatePicUrl(url?: string): string {
 export const useDownloadStore = defineStore(
   'download',
   () => {
-    // ── State ──────────────────────────────────────────────────────────────
+    // ── 状态 ──────────────────────────────────────────────────────────────
     const tasks = ref(new Map<string, DownloadTask>());
     const completedList = ref<any[]>([]);
     const settings = ref<DownloadSettings>(createDefaultDownloadSettings());
     const isLoadingCompleted = ref(false);
 
-    // Track whether IPC listeners have been registered
+    // 是否已注册 IPC 监听
     let listenersInitialised = false;
 
-    // ── Computed ───────────────────────────────────────────────────────────
+    // ── 计算属性 ───────────────────────────────────────────────────────────
     const downloadingList = computed(() => {
       const active = [
         DOWNLOAD_TASK_STATE.queued,
         DOWNLOAD_TASK_STATE.downloading,
-        DOWNLOAD_TASK_STATE.paused
+        DOWNLOAD_TASK_STATE.paused,
+        DOWNLOAD_TASK_STATE.waitingForUrl
       ] as string[];
       return [...tasks.value.values()]
         .filter((t) => active.includes(t.state))
@@ -50,14 +52,14 @@ export const useDownloadStore = defineStore(
       return sum / list.length;
     });
 
-    // ── Actions ────────────────────────────────────────────────────────────
+    // ── 操作 ──────────────────────────────────────────────────────────────
     const addDownload = async (songInfo: DownloadTask['songInfo'], url: string, type: string) => {
       if (!isElectron) return;
       const validatedInfo = {
         ...songInfo,
         picUrl: validatePicUrl(songInfo.picUrl)
       };
-      const artistNames = validatedInfo.ar?.map((a) => a.name).join(',') ?? '';
+      const artistNames = getSongArtistNames(validatedInfo as any, ',', '未知艺术家');
       const filename = `${validatedInfo.name} - ${artistNames}`;
       await window.api.downloadAdd({ url, filename, songInfo: validatedInfo, type });
     };
@@ -71,7 +73,7 @@ export const useDownloadStore = defineStore(
           ...item.songInfo,
           picUrl: validatePicUrl(item.songInfo.picUrl)
         };
-        const artistNames = validatedInfo.ar?.map((a) => a.name).join(',') ?? '';
+        const artistNames = getSongArtistNames(validatedInfo as any, ',', '未知艺术家');
         const filename = `${validatedInfo.name} - ${artistNames}`;
         return { url: item.url, filename, songInfo: validatedInfo, type: item.type };
       });
@@ -170,7 +172,7 @@ export const useDownloadStore = defineStore(
       });
 
       window.api.onDownloadBatchComplete((_event) => {
-        // no-op: main process handles the desktop notification
+        // 空操作：桌面通知由主进程处理
       });
 
       window.api.onDownloadRequestUrl(async (event) => {
@@ -193,16 +195,13 @@ export const useDownloadStore = defineStore(
     };
 
     return {
-      // state
       tasks,
       completedList,
       settings,
       isLoadingCompleted,
-      // computed
       downloadingList,
       downloadingCount,
       totalProgress,
-      // actions
       addDownload,
       batchDownload,
       pauseTask,
@@ -221,7 +220,7 @@ export const useDownloadStore = defineStore(
   {
     persist: {
       key: 'download-settings',
-      // WARNING: Do NOT add 'tasks' — Map doesn't serialize with JSON.stringify
+      // 警告：勿持久化 tasks — Map 无法 JSON 序列化
       pick: ['settings']
     }
   }

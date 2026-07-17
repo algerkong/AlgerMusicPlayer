@@ -2,12 +2,10 @@ import { computed } from 'vue';
 
 import { useSettingsStore } from '@/store/modules/settings';
 
-// 设置歌手背景图片
-export const setBackgroundImg = (url: String) => {
+export const setBackgroundImg = (url: string) => {
   return `background-image:url(${url})`;
 };
-// 设置动画类型
-export const setAnimationClass = (type: String) => {
+export const setAnimationClass = (type: string) => {
   const settingsStore = useSettingsStore();
   if (settingsStore.setData && settingsStore.setData.noAnimate) {
     return '';
@@ -22,7 +20,6 @@ export const setAnimationClass = (type: String) => {
 
   return `animate__animated ${type}${speedClass ? ` ${speedClass}` : ''}`;
 };
-// 设置动画延时
 export const setAnimationDelay = (index: number = 6, time: number = 50) => {
   const settingsStore = useSettingsStore();
   if (settingsStore.setData?.noAnimate) {
@@ -96,16 +93,12 @@ export const isMobile = computed(() => {
   return settingsStore.isMobile;
 });
 
-export const isElectron = (window as any).electron !== undefined;
-
-export const isLyricWindow = computed(() => {
-  return window.location.hash.includes('lyric');
-});
+export const isElectron = typeof window !== 'undefined' && !!(window as any).api;
 
 export const getSetData = (): any => {
-  let setData = null;
-  if (window.electron) {
-    setData = window.electron.ipcRenderer.sendSync('get-store-value', 'set');
+  let setData: any = null;
+  if (window.api) {
+    setData = window.api.getSettings();
   } else {
     const settingsStore = useSettingsStore();
     setData = settingsStore.setData;

@@ -39,12 +39,12 @@
         v-if="hasReleaseNotes"
         class="mb-6 overflow-hidden rounded-2xl bg-neutral-50 dark:bg-neutral-800/50"
       >
-        <n-scrollbar style="max-height: 300px">
+        <scroll-area class="max-h-[300px]">
           <div
             class="update-body p-5 text-sm leading-relaxed text-neutral-600 dark:text-neutral-300"
             v-html="parsedReleaseNotes"
           />
-        </n-scrollbar>
+        </scroll-area>
       </div>
 
       <div
@@ -101,19 +101,18 @@
 </template>
 
 <script setup lang="ts">
-import { marked } from 'marked';
 import { computed, onMounted, onUnmounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSettingsStore } from '@/store/modules/settings';
+import { renderSafeMarkdown } from '@/utils/safeMarkdown';
 
 import {
   APP_UPDATE_STATUS,
   type AppUpdateState,
   createDefaultAppUpdateState
 } from '../../../shared/appUpdate';
-
-marked.setOptions({ breaks: true, gfm: true });
 
 const { t } = useI18n();
 const message = useMessage();
@@ -147,13 +146,7 @@ const errorText = computed(() => updateState.value.errorMessage || t('comp.updat
 const parsedReleaseNotes = computed(() => {
   const releaseNotes = updateState.value.releaseNotes;
   if (!releaseNotes) return '';
-
-  try {
-    return marked.parse(releaseNotes) as string;
-  } catch (error) {
-    console.error('Markdown 解析失败:', error);
-    return releaseNotes;
-  }
+  return renderSafeMarkdown(releaseNotes);
 });
 
 const progressText = computed(() => {

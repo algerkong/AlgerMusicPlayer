@@ -5,6 +5,7 @@ import {
   globalShortcut,
   ipcMain,
   nativeImage,
+  powerMonitor,
   screen,
   session,
   shell
@@ -33,7 +34,6 @@ const store = getSharedStore();
 let mainWindowInstance: BrowserWindow | null = null;
 let isPlaying = false;
 let isAppQuitting = false;
-// 保存迷你模式前的窗口状态
 let preMiniModeState: WindowState = {
   width: DEFAULT_MAIN_WIDTH,
   height: DEFAULT_MAIN_HEIGHT,
@@ -42,16 +42,93 @@ let preMiniModeState: WindowState = {
   isMaximized: false
 };
 
-/**
- * 设置应用退出状态
- */
 export function setAppQuitting(quitting: boolean) {
   isAppQuitting = quitting;
 }
 
 /**
- * 初始化代理设置
+ * 屏幕休眠 / 系统挂起唤醒后，Chromium 合成层偶发卡死成白屏。
+ * invalidate + 轻微尺寸抖动强制重绘；再通知渲染进程自愈。
  */
+function forceWindowRepaint(win: BrowserWindow) {
+  if (win.isDestroyed()) return;
+  try {
+    win.webContents.invalidate();
+  } catch (error) {
+    console.warn('[window] invalidate failed', error);
+  }
+
+  try {
+    if (win.isVisible() && !win.isMinimized() && !win.isMaximized() && !win.isFullScreen()) {
+      const [w, h] = win.getSize();
+      if (w > 0 && h > 0) {
+        win.setSize(w, h + 1, false);
+        win.setSize(w, h, false);
+      }
+    } else if (win.isVisible() && !win.isMinimized()) {
+      // 最大化 / 全屏不能改 size，用透明度抖一下触发合成
+      const opacity = win.getOpacity();
+      win.setOpacity(opacity > 0.99 ? 0.99 : 1);
+      setTimeout(() => {
+        if (!win.isDestroyed()) win.setOpacity(1);
+      }, 32);
+    }
+  } catch (error) {
+    console.warn('[window] repaint nudge failed', error);
+  }
+
+  try {
+    if (!win.webContents.isDestroyed()) {
+      win.webContents.send('system-power-resume');
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+function scheduleWakeRepaint(win: BrowserWindow) {
+  // GPU 驱动恢复需要一点时间；双拍覆盖快/慢唤醒
+  setTimeout(() => forceWindowRepaint(win), 150);
+  setTimeout(() => forceWindowRepaint(win), 700);
+}
+
+function setupDisplayWakeRecovery(win: BrowserWindow) {
+  let lastWakeAt = 0;
+  const onWake = (source: string) => {
+    const now = Date.now();
+    // 合并短时间重复事件（resume + unlock + focus）
+    if (now - lastWakeAt < 1500) return;
+    lastWakeAt = now;
+    console.log('[window] power/display wake → repaint', source);
+    scheduleWakeRepaint(win);
+  };
+
+  powerMonitor.on('resume', () => onWake('resume'));
+  powerMonitor.on('unlock-screen', () => onWake('unlock-screen'));
+
+  // 仅黑屏未走 suspend 时：用户回来点窗口，且系统空闲过一段再救
+  win.on('focus', () => {
+    try {
+      const idleSec = powerMonitor.getSystemIdleTime();
+      if (idleSec >= 20) onWake(`focus-idle-${idleSec}s`);
+    } catch {
+      /* ignore */
+    }
+  });
+
+  win.webContents.on('render-process-gone', (_event, details) => {
+    console.error('[window] render-process-gone', details);
+    if (details.reason !== 'clean-exit' && !win.isDestroyed()) {
+      win.webContents.reload();
+    }
+  });
+
+  win.webContents.on('unresponsive', () => {
+    console.warn('[window] webContents unresponsive → repaint');
+    onWake('unresponsive');
+  });
+}
+
 function initializeProxy() {
   const defaultConfig = {
     enable: false,
@@ -105,11 +182,7 @@ function setThumbarButtons(window: BrowserWindow) {
   ]);
 }
 
-/**
- * 初始化窗口管理相关的IPC监听
- */
 export function initializeWindowManager() {
-  // 初始化代理设置
   initializeProxy();
 
   ipcMain.on('minimize-window', (event) => {
@@ -164,11 +237,9 @@ export function initializeWindowManager() {
       preMiniModeState = saveWindowState(win);
       console.log('保存正常模式状态用于恢复:', JSON.stringify(preMiniModeState));
 
-      // 获取屏幕工作区尺寸
       const display = screen.getDisplayMatching(win.getBounds());
       const { width: screenWidth, x: screenX } = display.workArea;
 
-      // 设置迷你窗口的大小和位置
       win.unmaximize();
       win.setMinimumSize(DEFAULT_MINI_WIDTH, DEFAULT_MINI_HEIGHT);
       win.setMaximumSize(DEFAULT_MINI_WIDTH, DEFAULT_MINI_HEIGHT);
@@ -204,7 +275,6 @@ export function initializeWindowManager() {
 
       console.log('从迷你模式恢复，使用保存的状态:', JSON.stringify(preMiniModeState));
 
-      // 设置适当的最小尺寸
       const { minWidth, minHeight } = calculateMinimumWindowSize();
       win.setMinimumSize(minWidth, minHeight);
 
@@ -231,7 +301,6 @@ export function initializeWindowManager() {
         if (preMiniModeState.isMaximized) {
           win.maximize();
         } else {
-          // 设置正确的窗口大小
           win.setSize(preMiniModeState.width, preMiniModeState.height, false);
         }
 
@@ -265,7 +334,6 @@ export function initializeWindowManager() {
     }
   });
 
-  // 监听代理设置变化
   store.onDidChange('set.proxyConfig', () => {
     initializeProxy();
   });
@@ -290,16 +358,20 @@ export function initializeWindowManager() {
 export function createMainWindow(icon: Electron.NativeImage): BrowserWindow {
   console.log('开始创建主窗口...');
 
-  // 获取窗口创建选项
   const options = getWindowOptions();
 
-  // 添加图标和预加载脚本
   options.icon = icon;
+  // 休眠唤醒 GPU 挂掉时避免 Native 层先闪成默认白底
+  options.backgroundColor = '#0a0a0b';
+  // sandbox / webSecurity 暂保持关闭：本地音频、自定义 local:// 协议、跨源封面依赖
+  // 现有加载路径。收紧 IPC 与 XSS 入口后已切断主升级链；此处再开需单独回归媒体播放。
   options.webPreferences = {
     preload: join(__dirname, '../preload/index.js'),
     sandbox: false,
     contextIsolation: true,
-    webSecurity: false
+    webSecurity: false,
+    // 播歌时常在后台：别把定时器/动画节流到几乎停，减轻唤醒后图层僵死
+    backgroundThrottling: false
   };
 
   console.log(
@@ -368,7 +440,6 @@ export function createMainWindow(icon: Electron.NativeImage): BrowserWindow {
     setThumbarButtons(mainWindow);
   });
 
-  // 处理窗口关闭事件
   mainWindow.on('close', (event) => {
     // 在 macOS 上，阻止默认的关闭行为，改为隐藏窗口
     if (process.platform === 'darwin') {
@@ -428,8 +499,8 @@ export function createMainWindow(icon: Electron.NativeImage): BrowserWindow {
     return { action: 'deny' };
   });
 
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
+  // 基于 electron-vite 的渲染进程 HMR
+  // 开发加载远程 URL，生产加载本地 html
   if (is.dev && process.env.ELECTRON_RENDERER_URL) {
     mainWindow.webContents.openDevTools({ mode: 'detach' });
     mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
@@ -444,7 +515,8 @@ export function createMainWindow(icon: Electron.NativeImage): BrowserWindow {
 
   initWindowSizeHandlers(mainWindow);
 
-  // 保存主窗口引用
+  setupDisplayWakeRecovery(mainWindow);
+
   mainWindowInstance = mainWindow;
 
   return mainWindow;

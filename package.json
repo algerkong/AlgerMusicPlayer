@@ -8,11 +8,14 @@
   "scripts": {
     "prepare": "husky",
     "format": "prettier --write ./src",
-    "lint": "eslint ./src --fix && npm run lint:i18n",
+    "lint": "oxlint ./src --fix && npm run lint:i18n && npm run lint:song-fields",
     "lint:i18n": "bun scripts/check_i18n.ts",
+    "lint:song-fields": "bun scripts/check_song_field_reads.ts",
     "typecheck:node": "tsc --noEmit -p tsconfig.node.json --composite false",
     "typecheck:web": "vue-tsc --noEmit -p tsconfig.web.json --composite false",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
     "dev:web": "vite dev",
@@ -21,14 +24,12 @@
     "fix-sandbox": "node scripts/fix-sandbox.js",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win --publish never",
-    "build:mac": "npm run build && electron-builder --mac --x64 --publish never && cp dist/latest-mac.yml dist/latest-mac-x64.yml && electron-builder --mac --arm64 --publish never && cp dist/latest-mac.yml dist/latest-mac-arm64.yml && node scripts/merge_latest_mac_yml.mjs dist/latest-mac-x64.yml dist/latest-mac-arm64.yml dist/latest-mac.yml",
-    "build:mac:x64": "npm run build && electron-builder --mac --x64 --publish never && cp dist/latest-mac.yml dist/latest-mac-x64.yml",
-    "build:mac:arm64": "npm run build && electron-builder --mac --arm64 --publish never && cp dist/latest-mac.yml dist/latest-mac-arm64.yml",
-    "build:linux": "npm run build && electron-builder --linux --publish never"
+    "build:linux": "npm run build && electron-builder --linux --publish never",
+    "lint:ox": "oxlint ./src"
   },
   "lint-staged": {
-    "*.{ts,tsx,vue,js}": [
-      "eslint --fix"
+    "*.{ts,tsx,vue,js,mjs,cjs}": [
+      "oxlint --fix"
     ],
     "*.{ts,tsx,vue,js,css,scss,md,json}": [
       "prettier --write"
@@ -38,84 +39,75 @@
     "@electron-toolkit/preload": "^3.0.2",
     "@electron-toolkit/utils": "^4.0.0",
     "@httptoolkit/dbus-native": "^0.1.5",
-    "cors": "^2.8.5",
-    "electron-store": "^8.2.0",
-    "electron-updater": "^6.6.2",
+    "@lucide/vue": "^1.24.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "dompurify": "^3.4.12",
+    "electron-store": "^11.0.2",
+    "electron-updater": "^6.8.9",
     "electron-window-state": "^5.0.3",
-    "express": "^4.22.1",
-    "file-type": "^21.1.1",
-    "flac-tagger": "^1.0.7",
-    "font-list": "^1.6.0",
-    "form-data": "^4.0.5",
-    "husky": "^9.1.7",
+    "file-type": "^22.0.1",
+    "flac-tagger": "^2.0.0",
+    "font-list": "^2.1.0",
+    "form-data": "^4.0.6",
+    "ly-music-source": "git+https://github.com/LuoYe17/ly-music-source.git#v0.1.23",
     "mpris-service": "^2.1.2",
-    "music-metadata": "^11.10.3",
-    "node-fetch": "^2.7.0",
+    "music-metadata": "^11.14.0",
     "node-id3": "^0.2.9",
     "node-machine-id": "^1.1.12",
     "pinia-plugin-persistedstate": "^4.7.1",
-    "vue-i18n": "^11.2.2"
+    "reka-ui": "^2.10.1",
+    "shadcn-vue": "^2.8.0",
+    "tailwind-merge": "^3.6.0",
+    "tw-animate-css": "^1.4.0",
+    "vue-i18n": "^11.4.6"
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.5.0",
-    "@commitlint/config-conventional": "^20.5.0",
-    "@electron-toolkit/eslint-config": "^2.1.0",
-    "@electron-toolkit/eslint-config-ts": "^3.1.0",
-    "@electron-toolkit/tsconfig": "^1.0.1",
-    "@eslint/js": "^9.39.2",
-    "@rushstack/eslint-patch": "^1.15.0",
-    "@types/howler": "^2.2.12",
-    "@types/node": "^20.19.26",
-    "@types/node-fetch": "^2.6.13",
+    "@commitlint/cli": "^21.2.1",
+    "@commitlint/config-conventional": "^21.2.0",
+    "@electron-toolkit/tsconfig": "^2.0.0",
+    "@types/howler": "^2.2.13",
+    "@types/node": "^24.0.0",
     "@types/tinycolor2": "^1.4.6",
-    "@typescript-eslint/eslint-plugin": "^8.49.0",
-    "@typescript-eslint/parser": "^8.49.0",
-    "@vitejs/plugin-vue": "^5.2.4",
-    "@vue/compiler-sfc": "^3.5.25",
-    "@vue/eslint-config-prettier": "^10.2.0",
-    "@vue/eslint-config-typescript": "^14.6.0",
-    "@vue/runtime-core": "^3.5.25",
-    "@vueuse/core": "^11.3.0",
-    "@vueuse/electron": "^13.9.0",
+    "@vitejs/plugin-vue": "^6.0.8",
+    "@vue/compiler-sfc": "^3.5.40",
+    "@vue/runtime-core": "^3.5.40",
+    "@vueuse/core": "^14.3.0",
+    "@vueuse/electron": "^14.3.0",
     "animate.css": "^4.1.1",
-    "autoprefixer": "^10.4.22",
-    "axios": "^1.13.2",
-    "cross-env": "^7.0.3",
-    "electron": "^40.1.0",
-    "electron-builder": "^26.0.12",
+    "autoprefixer": "^10.5.4",
+    "axios": "^1.18.1",
+    "cross-env": "^10.1.0",
+    "electron": "^43.1.1",
+    "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
-    "eslint": "^9.39.2",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-import": "^2.32.0",
-    "eslint-plugin-prettier": "^5.5.4",
-    "eslint-plugin-simple-import-sort": "^12.1.1",
-    "eslint-plugin-vue": "^10.6.2",
-    "eslint-plugin-vue-scoped-css": "^2.12.0",
-    "globals": "^16.5.0",
+    "happy-dom": "^20.10.6",
     "howler": "^2.2.4",
-    "lint-staged": "^15.5.2",
-    "lodash": "^4.17.21",
-    "marked": "^15.0.12",
-    "naive-ui": "^2.43.2",
-    "pinia": "^3.0.4",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8",
+    "lodash": "^4.18.1",
+    "marked": "^18.0.6",
+    "naive-ui": "^2.44.1",
+    "oxlint": "^1.74.0",
+    "pinia": "^4.0.2",
     "pinyin-match": "^1.2.10",
-    "postcss": "^8.5.6",
-    "prettier": "^3.7.4",
-    "remixicon": "^4.7.0",
-    "sass": "^1.96.0",
+    "postcss": "^8.5.19",
+    "prettier": "^3.9.5",
+    "remixicon": "^4.9.1",
+    "sass": "^1.101.0",
     "tailwindcss": "^3.4.19",
     "tinycolor2": "^1.6.0",
-    "tunajs": "^1.0.15",
+    "tunajs": "^1.1.3",
     "typescript": "^5.9.3",
-    "unplugin-auto-import": "^19.3.0",
-    "unplugin-vue-components": "^28.8.0",
-    "vite": "^6.4.1",
+    "unplugin-auto-import": "^21.0.0",
+    "unplugin-vue-components": "^32.1.0",
+    "vite": "^7.3.6",
     "vite-plugin-compression": "^0.5.1",
-    "vite-plugin-vue-devtools": "7.7.2",
-    "vue": "^3.5.25",
-    "vue-eslint-parser": "^10.2.0",
-    "vue-router": "^4.6.4",
-    "vue-tsc": "^2.2.12"
+    "vite-plugin-vue-devtools": "8.1.5",
+    "vitest": "^4.1.10",
+    "vue": "^3.5.40",
+    "vue-router": "^5.2.0",
+    "vue-tsc": "^3.3.7"
   },
   "build": {
     "appId": "com.luoye.music",
@@ -127,39 +119,6 @@
         "repo": "AlgerMusicPlayer"
       }
     ],
-    "extraResources": [
-      {
-        "from": "resources/html",
-        "to": "html",
-        "filter": [
-          "**/*"
-        ]
-      }
-    ],
-    "mac": {
-      "icon": "resources/icon.icns",
-      "target": [
-        "dmg",
-        "zip"
-      ],
-      "artifactName": "${productName}-${version}-mac-${arch}.${ext}",
-      "darkModeSupport": true,
-      "hardenedRuntime": false,
-      "gatekeeperAssess": false,
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist",
-      "extendInfo": {
-        "NSCameraUsageDescription": "Application requests access to the device's camera.",
-        "NSDocumentsFolderUsageDescription": "Application requests access to the user's Documents folder.",
-        "NSDownloadsFolderUsageDescription": "Application requests access to the user's Downloads folder."
-      },
-      "notarize": false,
-      "identity": null,
-      "type": "distribution",
-      "binaries": [
-        "Contents/MacOS/LYMusicPlayer"
-      ]
-    },
     "win": {
       "icon": "resources/icon.ico",
       "target": [
@@ -167,7 +126,6 @@
           "target": "nsis",
           "arch": [
             "x64",
-            "ia32",
             "arm64"
           ]
         }
@@ -226,5 +184,11 @@
   "optionalDependencies": {
     "jsbi": "^4.3.2",
     "x11": "^2.3.0"
+  },
+  "allowScripts": {
+    "electron@43.1.1": true,
+    "ly-music-source": true,
+    "github:LuoYe17/ly-music-source#dbaf654723662f66ee9dd557238dcd2b84be9228": true,
+    "github:LuoYe17/ly-music-source#826df12a86a6141e6321694d628ec2d352daa52e": true
   }
 }

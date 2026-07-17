@@ -47,14 +47,12 @@
           </div>
 
           <!-- 更新内容 -->
-          <div
-            class="mx-6 mb-6 max-h-80 overflow-y-auto rounded-2xl bg-gray-50 dark:bg-gray-800/50"
-          >
+          <scroll-area class="mx-6 mb-6 max-h-80 rounded-2xl bg-gray-50 dark:bg-gray-800/50">
             <div
               class="p-5 text-sm text-gray-600 dark:text-gray-300 leading-relaxed"
               v-html="parsedReleaseNotes"
             ></div>
-          </div>
+          </scroll-area>
 
           <!-- 操作按钮 -->
           <div
@@ -84,10 +82,11 @@
 </template>
 
 <script setup lang="ts">
-import { marked } from 'marked';
 import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { renderSafeMarkdown } from '@/utils/safeMarkdown';
 import { checkUpdate, getProxyNodes, UpdateResult } from '@/utils/update';
 
 import config from '../../../../package.json';
@@ -96,12 +95,6 @@ const { t } = useI18n();
 
 // 缓存键：记录用户点击"稍后提醒"的时间
 const REMIND_LATER_KEY = 'update_remind_later_timestamp';
-
-// 配置 marked
-marked.setOptions({
-  breaks: true,
-  gfm: true
-});
 
 const showModal = ref(false);
 
@@ -112,15 +105,10 @@ const updateInfo = ref<UpdateResult>({
   releaseInfo: null
 });
 
-// 解析 Markdown
+// 解析 Markdown（经 DOMPurify 消毒）
 const parsedReleaseNotes = computed(() => {
   if (!updateInfo.value.releaseInfo?.body) return '';
-  try {
-    return marked.parse(updateInfo.value.releaseInfo.body);
-  } catch (error) {
-    console.error('Error parsing markdown:', error);
-    return updateInfo.value.releaseInfo.body;
-  }
+  return renderSafeMarkdown(updateInfo.value.releaseInfo.body);
 });
 
 // 检查是否应该显示更新提醒
@@ -136,7 +124,6 @@ const shouldShowReminder = (): boolean => {
   return now - savedTime >= oneDayInMs;
 };
 
-// 处理"稍后提醒"
 const handleLater = () => {
   // 记录当前时间
   localStorage.setItem(REMIND_LATER_KEY, Date.now().toString());
@@ -172,7 +159,6 @@ const handleUpdate = async () => {
   const downloadUrl = `https://github.com/LuoYe17/AlgerMusicPlayer/releases/download/v${version}/LYMusicPlayer-${version}.apk`;
 
   try {
-    // 获取代理节点
     const proxyHosts = await getProxyNodes();
     const proxyDownloadUrl = `${proxyHosts[0]}/${downloadUrl}`;
 
@@ -182,7 +168,6 @@ const handleUpdate = async () => {
     // 使用系统浏览器打开下载链接
     window.open(proxyDownloadUrl, '_blank');
 
-    // 关闭弹窗
     closeModal();
   } catch (error) {
     console.error('打开下载链接失败:', error);

@@ -4,13 +4,14 @@
 
 ## 仓库文档索引
 
-| 文档                               | 说明                                                                       |
-| ---------------------------------- | -------------------------------------------------------------------------- |
-| [../README.md](../README.md)       | 项目简介、安装启动、与上游差异、免责声明                                   |
-| [../DEV.md](../DEV.md)             | 技术栈、目录结构、开发/打包命令、代码约定                                  |
-| [../AGENTS.md](../AGENTS.md)       | **贡献与 AI 代理指南**；**GitHub Flow**（多分支并行、小 PR、主分支可发布） |
-| [../CHANGELOG.md](../CHANGELOG.md) | 版本更新日志                                                               |
-| [github-flow.md](./github-flow.md) | GitHub Flow 操作速查（与 AGENTS 互补）                                     |
+| 文档                                       | 说明                                                                       |
+| ------------------------------------------ | -------------------------------------------------------------------------- |
+| [../README.md](../README.md)               | 项目简介、安装启动、与上游差异、免责声明                                   |
+| [../DEV.md](../DEV.md)                     | 技术栈、目录结构、开发/打包命令、代码约定                                  |
+| [../AGENTS.md](../AGENTS.md)               | **贡献与 AI 代理指南**；**GitHub Flow**（多分支并行、小 PR、主分支可发布） |
+| [../CHANGELOG.md](../CHANGELOG.md)         | 版本更新日志                                                               |
+| [github-flow.md](./github-flow.md)         | GitHub Flow 操作速查（与 AGENTS 互补）                                     |
+| [track-migration.md](./track-migration.md) | Track / SongResult 迁移路线图与领域约定                                    |
 
 ## 截图
 

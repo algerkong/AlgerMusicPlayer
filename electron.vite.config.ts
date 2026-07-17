@@ -8,7 +8,15 @@ import viteCompression from 'vite-plugin-compression';
 import VueDevTools from 'vite-plugin-vue-devtools';
 
 export default defineConfig({
-  main: {},
+  // 纯 ESM 依赖：默认 external + CJS require 会 ERR_PACKAGE_PATH_NOT_EXPORTED / not a constructor
+  main: {
+    build: {
+      // electron-vite: 打进 main bundle，避免 require ESM 失败
+      externalizeDeps: {
+        exclude: ['ly-music-source', 'flac-tagger', 'file-type', 'music-metadata', 'electron-store']
+      }
+    }
+  },
   preload: {},
   renderer: {
     resolve: {

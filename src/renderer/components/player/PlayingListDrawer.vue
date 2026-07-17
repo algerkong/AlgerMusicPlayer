@@ -84,12 +84,10 @@ const show = computed({
   }
 });
 
-// 监听外部可见性变化
 watch(
   show,
   (newValue) => {
     if (newValue) {
-      // 打开面板
       internalVisible.value = true;
       closing.value = false;
       // 在下一个渲染周期后滚动到当前歌曲
@@ -113,7 +111,6 @@ const playList = computed(() => playerStore.playList as SongResult[]);
 // 播放列表引用
 const playListRef = ref<any>(null);
 
-// 关闭面板
 const closePanel = () => {
   show.value = false;
 };
@@ -125,7 +122,6 @@ const onAnimationEnd = () => {
   }
 };
 
-// 清空播放列表
 const handleClearPlaylist = () => {
   if (playList.value.length === 0) {
     message.info(t('player.playList.alreadyEmpty'));
@@ -143,21 +139,18 @@ const handleClearPlaylist = () => {
     negativeText: t('common.cancel'),
     style: { zIndex: 999999999 }, // 确保对话框显示在遮罩之上
     onPositiveClick: () => {
-      // 清空播放列表
       playerStore.clearPlayAll();
       message.success(t('player.playList.cleared'));
     }
   });
 };
 
-// 处理键盘事件
 const handleKeyDown = (event: KeyboardEvent) => {
   if (event.key === 'Escape' && internalVisible.value) {
     closePanel();
   }
 };
 
-// 添加和移除键盘事件监听
 onMounted(() => {
   window.addEventListener('keydown', handleKeyDown);
 });
@@ -180,9 +173,8 @@ const scrollToCurrentSong = () => {
   }, 100);
 };
 
-// 删除歌曲
 const handleDeleteSong = (song: SongResult) => {
-  playerStore.removeFromPlayList(song.id as number);
+  playerStore.removeFromPlayList(song.id);
 };
 </script>
 
@@ -194,25 +186,26 @@ const handleDeleteSong = (song: SongResult) => {
 }
 
 .playlist-panel {
-  @apply fixed right-0 z-[9999999] rounded-l-xl overflow-hidden;
+  @apply fixed right-0 z-[9999999] rounded-l-xl overflow-hidden shadow-2xl;
   width: 350px;
   height: 70vh;
-  top: 15vh; // 距离顶部15%
-  animation-duration: 0.4s !important; // 动画持续时间
-
-  @apply bg-light dark:bg-dark shadow-2xl dark:border dark:border-gray-700;
+  top: 15vh;
+  animation-duration: 0.4s !important;
+  background: var(--chrome-surface-strong, rgba(18, 18, 18, 0.88));
+  border: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.12));
+  color: var(--chrome-text, #f8fafc);
+  backdrop-filter: blur(var(--chrome-blur, 18px));
+  -webkit-backdrop-filter: blur(var(--chrome-blur, 18px));
 
   &-header {
-    @apply flex items-center justify-between px-4 py-2 border-b border-gray-100 dark:border-gray-900;
+    @apply flex items-center justify-between px-4 py-2;
+    border-bottom: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.1));
+    background: var(--chrome-surface, rgba(255, 255, 255, 0.06));
     backdrop-filter: blur(10px);
-    background-color: rgba(255, 255, 255, 0.7);
-
-    .dark & {
-      background-color: rgba(18, 18, 18, 0.7);
-    }
 
     .title {
-      @apply text-base font-medium text-gray-800 dark:text-gray-200;
+      @apply text-base font-medium;
+      color: var(--chrome-text, #f8fafc);
     }
 
     .header-actions {
@@ -221,18 +214,22 @@ const handleDeleteSong = (song: SongResult) => {
 
     .action-btn,
     .close-btn {
-      @apply w-8 h-8 flex items-center justify-center rounded-full cursor-pointer mx-1 text-gray-800 dark:text-gray-200;
-      @apply hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors;
+      @apply w-8 h-8 flex items-center justify-center rounded-full cursor-pointer mx-1 transition-colors;
+      color: var(--chrome-text-muted, #d1d5db);
 
       .iconfont {
         @apply text-xl;
       }
+
+      &:hover {
+        background: var(--chrome-surface, rgba(255, 255, 255, 0.1));
+        color: var(--chrome-text, #f8fafc);
+      }
     }
 
     .action-btn {
-      @apply text-gray-500 dark:text-gray-400;
       &:hover {
-        @apply text-red-500 dark:text-red-400;
+        @apply text-red-400;
       }
     }
   }
@@ -255,8 +252,9 @@ const handleDeleteSong = (song: SongResult) => {
 }
 
 .music-play-list-content {
-  @apply pr-2 hover:bg-light-100 dark:hover:bg-dark-100;
+  @apply pr-2 transition-colors;
   &:hover {
+    background: var(--chrome-surface, rgba(255, 255, 255, 0.06));
     .delete-btn {
       @apply visible;
     }

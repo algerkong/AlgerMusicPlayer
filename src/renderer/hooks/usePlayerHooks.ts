@@ -1,7 +1,26 @@
+import {
+  attachTranslationLrc,
+  cacheLyricTranslations,
+  msGetLyric,
+  msLyricToILyric,
+  msLyricToLrc,
+  msResolve,
+  pickMsTranslationLrc,
+  takeCachedLyricTranslations
+} from '@/api/musicSource';
+import { audioService } from '@/services/audioService';
 import { playbackRequestManager } from '@/services/playbackRequestManager';
+import { usePlayerCoreStore } from '@/store/modules/playerCore';
 import type { ILyric, ILyricText, IWordData, SongResult } from '@/types/music';
-import { isElectron } from '@/utils';
+import { pickBootQuality } from '@/services/streamPipeline';
+import { getSetData, isElectron } from '@/utils';
+import { sameTrackId } from '@/utils/playerUtils';
+import { isPreviewStreamUrl, restorePreviewStreamFlags } from '@/utils/previewStream';
+import { clampQualityToAvailable, normalizeQualityKey, qualityRank } from '@/utils/qualityClamp';
+import { getSongArtists, getSongDurationMs } from '@/utils/songFields';
 import { parseLyrics as parseYrcLyrics } from '@/utils/yrcParser';
+
+export { clampQualityToAvailable, normalizeQualityKey, qualityRank } from '@/utils/qualityClamp';
 
 type DiskCacheResolveResult = {
   url?: string;
@@ -10,48 +29,88 @@ type DiskCacheResolveResult = {
 };
 
 const getSongArtistText = (songData: SongResult): string => {
-  if (songData?.ar?.length) {
-    return songData.ar.map((artist) => artist.name).join(' / ');
-  }
-
-  if (songData?.song?.artists?.length) {
-    return songData.song.artists.map((artist) => artist.name).join(' / ');
-  }
-
-  return '';
+  const artists = getSongArtists(songData);
+  if (!artists.length) return '';
+  return artists.map((artist) => artist.name).join(' / ');
 };
 
-const resolveCachedPlaybackUrl = async (
+/**
+ * 当前流是否已达到「全局偏好 ∩ 本曲可用」目标。
+ * 预取用 higher/highest 起播后，快路径必须据此拒绝复用，否则有无损也一直卡在较高。
+ */
+export const streamMatchesPreference = (song?: SongResult | null): boolean => {
+  if (!song?.playMusicUrl) return false;
+  const pref = normalizeQualityKey(
+    (song as SongResult).preferredQuality || getSetData()?.musicQuality || 'higher'
+  );
+  const target = clampQualityToAvailable(pref, song.availableQualities);
+  const stream = normalizeQualityKey(song.streamQuality);
+  if (!stream) return false;
+  return stream === target;
+};
+
+/**
+ * 磁盘缓存解析：首播关键路径上不能干等 IPC。
+ * - 短超时内命中 local 缓存 → 用缓存
+ * - 超时/未命中 → 立刻用远端 URL 出声，后台继续写缓存
+ */
+/**
+ * http(s) URL → 短超时竞速磁盘缓存（local://）。
+ * 命中则二次播放更快；超时仍用原 URL 出声，后台继续写缓存。
+ */
+export const preferCachedMusicUrl = async (
   url: string | null | undefined,
-  songData: SongResult
+  songData: SongResult,
+  timeoutMs = 120
 ): Promise<string | null | undefined> => {
   if (!url || !isElectron || !/^https?:\/\//i.test(url)) {
     return url;
   }
 
-  try {
-    const result = (await window.electron.ipcRenderer.invoke('resolve-cached-music-url', {
-      songId: Number(songData.id),
-      source: songData.source,
-      url,
-      title: songData.name,
-      artist: getSongArtistText(songData)
-    })) as DiskCacheResolveResult;
+  const payload = {
+    // 雪花 id 保持 string，禁止 Number() 丢精度导致缓存 key 撞车/永不命中
+    songId: String(songData.id),
+    source: songData.source,
+    url,
+    title: songData.name,
+    artist: getSongArtistText(songData)
+  };
 
-    if (result?.url) {
-      return result.url;
-    }
-  } catch (error) {
-    console.warn('解析缓存播放地址失败，回退到在线地址:', error);
+  const cacheWork = window.api
+    .resolveCachedMusicUrl(payload)
+    .then((result) => result as DiskCacheResolveResult)
+    .catch((error) => {
+      console.warn('解析缓存播放地址失败，回退到在线地址:', error);
+      return null;
+    });
+
+  try {
+    const raced = await Promise.race([
+      cacheWork,
+      new Promise<null>((resolve) => {
+        window.setTimeout(() => resolve(null), timeoutMs);
+      })
+    ]);
+    if (raced?.url) return raced.url;
+  } catch {
+    /* fallthrough */
   }
+
+  // 后台继续：命中后下次同曲走 local://，本次不挡出声
+  void cacheWork.then((result) => {
+    if (result?.url && result.url !== url) {
+      console.info('[getSongUrl] cache ready later, next play may use local', songData.id);
+    }
+  });
 
   return url;
 };
 
+const resolveCachedPlaybackUrl = preferCachedMusicUrl;
+
 /**
- * 获取歌曲播放URL。
- * 已移除网易云官方取链；在线播放待接入独立音源库。
- * 仅支持：已有 playMusicUrl（缓存/本地等）。
+ * 解析并返回可播放的歌曲 URL。
+ * 本地 / 已有 playMusicUrl 优先；在线曲经 ly-music-source（主进程）resolve。
  */
 export const getSongUrl = async (
   id: string | number,
@@ -64,13 +123,239 @@ export const getSongUrl = async (
     throw new Error('Request cancelled');
   }
 
-  if (songData.playMusicUrl) {
-    if (isDownloaded) return songData.playMusicUrl;
-    return await resolveCachedPlaybackUrl(songData.playMusicUrl, songData);
+  // 切音质 / 后台升质：强制丢弃旧 URL（先记下 force，后面选档还要用）
+  const forceResolve = !!songData.forceQualityResolve;
+  if (forceResolve) {
+    const url = String(songData.playMusicUrl || '');
+    const isUserLocalFile =
+      url.startsWith('local://') && !url.includes('ly-music-cache') && songData.source === 'local';
+    console.info(`[getSongUrl] forceQualityResolve id=${id} userLocal=${isUserLocalFile}`);
+    if (!isUserLocalFile) {
+      songData.playMusicUrl = undefined;
+      songData.streamQuality = undefined;
+    }
+    songData.forceQualityResolve = false;
   }
 
-  console.warn(`[getSongUrl] 无播放地址 (id=${id})：官方取链已移除，音源库尚未接入`);
-  return null;
+  if (songData.playMusicUrl) {
+    // 复用缓存 URL 时也要恢复试听标记（否则切回第一首 isPreviewStream 丢失 → 歌词错位）
+    restorePreviewStreamFlags(songData);
+    // 偏好音质与当前流不一致 → 必须重取（切换音质）
+    // 先按本曲 availableQualities 钳制全局偏好，避免「全局无损 + 本曲仅较高」被当成 mismatch 死循环
+    const prefQ = clampQualityToAvailable(
+      songData.preferredQuality || getSetData()?.musicQuality || 'higher',
+      songData.availableQualities
+    );
+    const streamQ = normalizeQualityKey(songData.streamQuality);
+    const qualityMismatch =
+      !!streamQ && !!prefQ && streamQ !== prefQ && !songData.playMusicUrl.startsWith('local://');
+    // 有试听文件路径却丢了 startMs：必须重 resolve，否则歌词 base=0
+    const needPreviewMeta =
+      (songData.isPreviewStream || isPreviewStreamUrl(songData.playMusicUrl)) &&
+      !(Number(songData.preview?.startMs) > 0);
+    // local:// 在线缓存：若 URL 里不带当前音质标记，也重取
+    const localQualityStale =
+      songData.playMusicUrl.startsWith('local://') &&
+      !!prefQ &&
+      !songData.playMusicUrl.includes(`.${prefQ}.`) &&
+      // 真正的用户本地文件（非 ly-music-cache）不重取
+      songData.playMusicUrl.includes('ly-music-cache');
+
+    if (!needPreviewMeta && !qualityMismatch && !localQualityStale) {
+      // 热更/持久化丢 availableQualities 时：至少塞免费三档 + 当前流档，避免菜单空
+      if (!songData.availableQualities?.length) {
+        const fallback = new Set(['medium', 'higher', 'highest']);
+        if (streamQ) fallback.add(streamQ);
+        songData.availableQualities = [...fallback];
+      }
+      if (isDownloaded) return songData.playMusicUrl;
+      if (songData.playMusicUrl.startsWith('local://') && !localQualityStale) {
+        return songData.playMusicUrl;
+      }
+      if (!localQualityStale) {
+        return await resolveCachedPlaybackUrl(songData.playMusicUrl, songData);
+      }
+    }
+    if (qualityMismatch || localQualityStale) {
+      console.info(
+        `[getSongUrl] 音质需重取 stream=${streamQ || '-'} pref=${prefQ} localStale=${localQualityStale} id=${id}`
+      );
+    } else {
+      console.warn(`[getSongUrl] 试听 URL 缺少 startMs，重新 resolve id=${id}`);
+    }
+    songData.playMusicUrl = undefined;
+  }
+
+  if (!isElectron) {
+    console.warn(`[getSongUrl] 非 Electron 环境无法在线取链 (id=${id})`);
+    return null;
+  }
+
+  try {
+    const setData = getSetData();
+    // 全局偏好 ∩ 本曲可用 = 目标档；force 时用 preferredQuality
+    const rawPref = songData.preferredQuality || setData?.musicQuality || 'higher';
+    const globalPref = normalizeQualityKey(String(rawPref)) || 'higher';
+    const availKnown =
+      Array.isArray(songData.availableQualities) && songData.availableQualities.length > 0;
+    let quality: string;
+    let upgradeTo: string | undefined;
+
+    if (forceResolve) {
+      // 用户点选 / 后台升质：直接打目标档（不降 boot）
+      quality = clampQualityToAvailable(globalPref, songData.availableQualities);
+    } else {
+      // 低码率起播：目标高时先 boot 出声，_streamUpgradeTo 后台升到偏好
+      const target = availKnown
+        ? clampQualityToAvailable(globalPref, songData.availableQualities)
+        : globalPref;
+      const { boot, upgradeTo: up } = pickBootQuality(
+        target,
+        availKnown ? songData.availableQualities : undefined
+      );
+      quality = boot;
+      upgradeTo = up;
+      if (upgradeTo) {
+        console.info(
+          `[getSongUrl] boot=${quality} → upgrade ${upgradeTo} (pref=${globalPref} net-aware)`
+        );
+      }
+    }
+    songData.preferredQuality = undefined;
+    (songData as SongResult & { _streamUpgradeTo?: string })._streamUpgradeTo = upgradeTo;
+    // 会员档传给库；优先同步读 pinia，避免首播多等一轮动态 import
+    let vipLevel = 'none';
+    try {
+      // 运行时 pinia 已 active 时直接用；失败再懒加载
+
+      const mod = (await import('@/store/modules/user')) as {
+        useUserStore: () => { vipLevel?: string };
+      };
+      vipLevel = mod.useUserStore().vipLevel || 'none';
+    } catch {
+      /* pinia 未就绪 */
+    }
+    const artists = getSongArtists(songData)
+      .map((a) => a.name)
+      .filter((n): n is string => !!n);
+
+    const ids: Record<string, string> = {};
+    const source = songData.source || 'qishui';
+    if (source === 'qishui' || source === 'local') {
+      // 搜索结果默认 qishui id
+      ids.qishui = String(id);
+    } else {
+      ids[source] = String(id);
+      ids.qishui = String(id);
+    }
+
+    console.info(
+      `[getSongUrl] resolve id=${id} quality=${quality} (pref=${rawPref}) vip=${vipLevel}`
+    );
+    const result = await msResolve({
+      ids,
+      title: songData.name,
+      artists,
+      durationMs: getSongDurationMs(songData) || undefined,
+      quality,
+      vipLevel
+    });
+
+    if (requestId && !playbackRequestManager.isRequestValid(requestId)) {
+      throw new Error('Request cancelled');
+    }
+
+    if (!result.playMusicUrl) {
+      console.warn(`[getSongUrl] resolve 无 URL (id=${id})`);
+      return null;
+    }
+
+    // 本曲可用档 + 实际流档，供播放条按曲展示
+    if (Array.isArray(result.availableQualities)) {
+      songData.availableQualities = result.availableQualities.map(String);
+    }
+    // 以真实取到的流档为准；effective 仅作候选
+    // 禁止把「全局无损偏好」写进 streamQuality（本曲可能只有标准/较高/极高）
+    const actualQ = normalizeQualityKey(result.quality);
+    const effectiveQ = normalizeQualityKey(result.effectiveQuality);
+    const availNow = (songData.availableQualities || []).map(normalizeQualityKey);
+    if (actualQ && (!availNow.length || availNow.includes(actualQ))) {
+      songData.streamQuality = actualQ;
+    } else if (effectiveQ) {
+      songData.streamQuality = clampQualityToAvailable(effectiveQ, songData.availableQualities);
+    } else {
+      songData.streamQuality = clampQualityToAvailable(quality, songData.availableQualities);
+    }
+    // 若 API 未给 availableQualities：只暴露免费三档，避免把全局/误报的无损塞进菜单
+    if (!songData.availableQualities?.length) {
+      songData.availableQualities = ['medium', 'higher', 'highest'];
+      songData.streamQuality = clampQualityToAvailable(
+        songData.streamQuality || quality,
+        songData.availableQualities
+      );
+    }
+    if (result.bitrate) songData.streamBitrate = Number(result.bitrate);
+
+    // 纠正升质目标：仅当「全局偏好目标」高于当前流才后台升（极高不会自动升无损）
+    {
+      const pref = normalizeQualityKey(getSetData()?.musicQuality || 'higher') || 'higher';
+      const target = clampQualityToAvailable(pref, songData.availableQualities);
+      const stream = normalizeQualityKey(songData.streamQuality);
+      // force 路径（用户手选）不在这里二次安排升质，由 seamlessSwitchQuality 负责
+      if (forceResolve || stream === target || !target || !stream) {
+        (songData as SongResult & { _streamUpgradeTo?: string })._streamUpgradeTo = undefined;
+      } else if (qualityRank(target) > qualityRank(stream)) {
+        (songData as SongResult & { _streamUpgradeTo?: string })._streamUpgradeTo = target;
+        console.info(`[getSongUrl] schedule upgrade stream=${stream} → target=${target} id=${id}`);
+      } else {
+        (songData as SongResult & { _streamUpgradeTo?: string })._streamUpgradeTo = undefined;
+      }
+    }
+
+    // 试听片段：写入 song，供歌词时钟加 preview.start 偏移
+    if (result.isPreview) {
+      console.warn(
+        `[getSongUrl] 试听流 id=${id} startMs=${result.previewStartMs ?? 0} durMs=${result.previewDurationMs ?? '?'}`
+      );
+      songData.isPreviewStream = true;
+      songData.preview = {
+        startMs: Number(result.previewStartMs) || songData.preview?.startMs || 0,
+        durationMs: Number(result.previewDurationMs) || songData.preview?.durationMs || 0,
+        vid: songData.preview?.vid
+      };
+    } else {
+      songData.isPreviewStream = false;
+    }
+
+    // 前缀秒播 → 完整文件路径（播放器轮询接上）
+    if (result.isPartial && result.pendingFullLocalUrl) {
+      songData.isPartialStream = true;
+      songData.pendingFullUrl = result.pendingFullLocalUrl;
+    } else if (result.playMusicUrl?.includes('.prefix.')) {
+      songData.isPartialStream = true;
+      songData.pendingFullUrl = result.playMusicUrl.replace('.prefix.', '.full.');
+    } else {
+      songData.isPartialStream = false;
+      songData.pendingFullUrl = undefined;
+    }
+
+    // resolve 顺带的译文，给后续 loadLrc 合并
+    if (result.lyricTranslations && Object.keys(result.lyricTranslations).length) {
+      cacheLyricTranslations(id, result.lyricTranslations);
+      console.log(
+        `[getSongUrl] cached lyricTranslations id=${id} keys=${Object.keys(result.lyricTranslations).join(',')}`
+      );
+    }
+
+    if (result.playMusicUrl.startsWith('local://') || isDownloaded) {
+      return result.playMusicUrl;
+    }
+    return await resolveCachedPlaybackUrl(result.playMusicUrl, songData);
+  } catch (error) {
+    if ((error as Error).message === 'Request cancelled') throw error;
+    console.error(`[getSongUrl] ly-music-source resolve 失败 (id=${id}):`, error);
+    return null;
+  }
 };
 
 /**
@@ -101,8 +386,12 @@ const parseLyrics = (lyricsString: string): { lyrics: ILyricText[]; times: numbe
     const times: number[] = [];
 
     for (const line of parsedLyrics) {
-      // 检查是否有逐字歌词
-      const hasWords = line.words && line.words.length > 0;
+      // 作词/作曲等元信息不走逐字
+      const credit =
+        /^(作词|作曲|编曲|制作人|制作|混音|录音|出品|原唱|翻唱|演唱|监制|和声|by|composer|lyricist)[:：\s]/i.test(
+          (line.fullText || '').trim()
+        );
+      const hasWords = !credit && !!(line.words && line.words.length > 0);
 
       lyrics.push({
         text: line.fullText,
@@ -129,18 +418,51 @@ const parseLyrics = (lyricsString: string): { lyrics: ILyricText[]; times: numbe
  */
 export const loadLrc = async (id: string | number): Promise<ILyric> => {
   try {
-    const numericId = typeof id === 'string' ? parseInt(id, 10) : id;
+    // 汽水 track id 常为 19 位雪花，超过 Number.MAX_SAFE_INTEGER。
+    // 绝不能 parseInt 当缓存 key，否则多首歌撞同一错误 key、歌词/译文串台。
+    const cacheKey = id != null && String(id).trim() !== '' ? String(id) : '';
     let lyricData: any;
 
-    if (isElectron) {
+    if (isElectron && cacheKey) {
       try {
-        lyricData = await window.electron.ipcRenderer.invoke('get-cached-lyric', numericId);
+        lyricData = await window.api.getCachedLyric(cacheKey);
       } catch (error) {
         console.warn('读取磁盘歌词缓存失败:', error);
       }
     }
 
-    // 在线歌词 API 已移除；仅使用磁盘缓存 / 本地内嵌歌词
+    // 在线：ly-music-source（字级时间 + 译文）
+    // ver5：译文对齐放宽；强制刷掉旧缓存（IPC 曾丢 translations）
+    const needMsLyric = !lyricData?._playerLyric?.lrcArray?.length || lyricData?._msLyricVer !== 5;
+    if (isElectron && needMsLyric) {
+      try {
+        const msLyric = await msGetLyric(String(id));
+        if (msLyric?.lines?.length) {
+          const converted = msLyricToILyric(msLyric);
+          const lrcText = msLyric.raw || msLyricToLrc(msLyric.lines);
+          const tLrc = pickMsTranslationLrc(msLyric.translations);
+          const trCount = converted.lrcArray.filter((l) => l.trText).length;
+          console.log(
+            `[loadLrc] id=${id} lines=${converted.lrcArray.length} trLines=${trCount} tlyricLen=${tLrc.length} keys=${Object.keys(msLyric.translations || {}).join(',') || '-'}`
+          );
+          const payload = {
+            lrc: { lyric: typeof lrcText === 'string' ? lrcText : msLyricToLrc(msLyric.lines) },
+            tlyric: tLrc ? { lyric: tLrc } : undefined,
+            _playerLyric: converted,
+            _msLyricVer: 5
+          };
+          if (cacheKey) {
+            void window.api
+              .cacheLyric(cacheKey, payload)
+              .catch((error) => console.warn('写入磁盘歌词缓存失败:', error));
+          }
+          lyricData = payload;
+        }
+      } catch (error) {
+        console.warn('ly-music-source 歌词获取失败:', error);
+      }
+    }
+
     if (!lyricData) {
       return {
         lrcTimeArray: [],
@@ -150,6 +472,39 @@ export const loadLrc = async (id: string | number): Promise<ILyric> => {
     }
 
     const data = lyricData ?? {};
+
+    // 已转换好的播放器歌词（含真实逐字 + 可能已贴 trText）
+    if (data._playerLyric?.lrcArray?.length) {
+      const converted = data._playerLyric as ILyric;
+      let alreadyHasTr = converted.lrcArray.some((l) => l.trText);
+      // resolve 后到的译文缓存（与 get-lyric 竞态时用）
+      if (!alreadyHasTr) {
+        const cachedTr = takeCachedLyricTranslations(id);
+        const tFromCache = pickMsTranslationLrc(cachedTr);
+        const tFromFile = data.tlyric?.lyric ? String(data.tlyric.lyric) : '';
+        const tLrc = tFromCache || tFromFile;
+        if (tLrc) {
+          attachTranslationLrc(converted.lrcArray, converted.lrcTimeArray, tLrc);
+          alreadyHasTr = converted.lrcArray.some((l) => l.trText);
+          if (alreadyHasTr && cacheKey && isElectron) {
+            void window.api
+              .cacheLyric(cacheKey, {
+                ...data,
+                tlyric: { lyric: tLrc },
+                _playerLyric: converted,
+                _msLyricVer: 5
+              })
+              .catch(() => undefined);
+          }
+        }
+      }
+      return {
+        lrcTimeArray: converted.lrcTimeArray,
+        lrcArray: converted.lrcArray,
+        hasWordByWord: !!converted.hasWordByWord
+      };
+    }
+
     const { lyrics, times } = parseLyrics(data?.yrc?.lyric || data?.lrc?.lyric);
 
     // 检查是否有逐字歌词
@@ -233,50 +588,170 @@ export const useLyrics = () => {
 };
 
 /**
- * 获取歌曲详情（优化版 - 只获取URL，背景色在播放后异步获取）
+ * 网络 resolve 在途去重：prefetch / playTrack / 列表预热 共享同一 Promise，
+ * 禁止同曲同音质双打 msResolve（大厂 P0：点击时 URL 往往已在飞或已在手）。
  */
-export const useSongDetail = () => {
-  const getSongDetail = async (playMusic: SongResult, requestId?: string) => {
-    // 验证请求
+const detailInflight = new Map<string, Promise<SongResult>>();
+
+/**
+ * 预热 standby：只给「下一首候选」，禁止当前正在 playTrack 的曲占槽。
+ * resolve 当前曲时若 warm，会冲掉已预热的 next（日志里 standby 被当前 id 覆盖）。
+ */
+const warmAudioByUrl = (url?: string | null, song?: SongResult) => {
+  if (!url) return;
+  if (url.startsWith('local://') && !url.includes('ly-music-cache')) return;
+  if (!song?.id) return;
+  try {
+    const playing = audioService.getCurrentTrack();
+    if (playing && sameTrackId(playing.id, song.id)) {
+      return;
+    }
+    // playMusic 已切到本曲但 audio 尚未换（resolve 中）也不要占 standby
+    try {
+      const core = usePlayerCoreStore();
+      if (core?.playMusic?.id != null && sameTrackId(core.playMusic.id, song.id)) {
+        return;
+      }
+    } catch {
+      /* pinia 未就绪则仅靠 getCurrentTrack */
+    }
+    audioService.preload(url, song, { priority: 'next' });
+  } catch {
+    /* ignore */
+  }
+};
+
+export const isSongUrlFresh = (song?: SongResult | null): boolean => {
+  if (!song?.playMusicUrl) return false;
+  if (song.forceQualityResolve) return false;
+  if (song.expiredAt != null && song.expiredAt < Date.now()) {
+    // local 用户文件不过期
+    if (!song.playMusicUrl.startsWith('local://')) return false;
+  }
+  return true;
+};
+
+/** URL 未过期且音质已对齐全局偏好，才允许 playTrack 跳过 resolve */
+export const canReuseSongUrl = (song?: SongResult | null): boolean => {
+  return isSongUrlFresh(song) && streamMatchesPreference(song);
+};
+
+const detailKeyOf = (song: SongResult): string => {
+  const pref = String(song.preferredQuality || getSetData()?.musicQuality || 'higher');
+  const force = song.forceQualityResolve ? '1' : '0';
+  return `${String(song.id)}|${song.source || 'qishui'}|${pref}|${force}`;
+};
+
+/**
+ * 实际取链（无 inflight）。requestId 仅用于调用方取消检测时由外层处理；
+ * 共享 inflight 路径不传 requestId，避免 A 取消拖死 B。
+ */
+const resolveSongDetail = async (playMusic: SongResult): Promise<SongResult> => {
+  if (playMusic.expiredAt && playMusic.expiredAt < Date.now()) {
+    if (!playMusic.playMusicUrl?.startsWith('local://')) {
+      console.info(`歌曲已过期，重新获取: ${playMusic.name}`);
+      playMusic.playMusicUrl = undefined;
+    }
+  }
+
+  try {
+    const playMusicUrl =
+      (await getSongUrl(playMusic.id, playMusic, false)) || playMusic.playMusicUrl;
+    restorePreviewStreamFlags(playMusic);
+
+    playMusic.createdAt = Date.now();
+    playMusic.expiredAt = playMusic.createdAt + 1800000;
+
+    // 不在 resolve 里 warm standby：当前曲 resolve 会冲掉 next 预热。
+    // standby 仅由 prefetchSongUrl / playlist 下一首 / triggerPreload 写入。
+    return { ...playMusic, playMusicUrl } as SongResult;
+  } catch (error) {
+    console.error('获取音频URL失败:', error);
+    playMusic.playLoading = false;
+    throw error;
+  }
+};
+
+/**
+ * 获取歌曲详情（只解析 URL；歌词/取色另并行）。
+ * 同 key 并发调用会 join 同一 Promise。
+ */
+export const getSongDetail = async (
+  playMusic: SongResult,
+  requestId?: string
+): Promise<SongResult> => {
+  if (requestId && !playbackRequestManager.isRequestValid(requestId)) {
+    console.log(`[getSongDetail] 请求已失效: ${requestId}`);
+    throw new Error('Request cancelled');
+  }
+
+  // 已有新鲜 URL：不占 inflight，快路径直接返回（仍走 getSongUrl 做 quality/试听校验）
+  if (isSongUrlFresh(playMusic) && !playMusic.forceQualityResolve) {
+    const fast = await resolveSongDetail({ ...playMusic });
     if (requestId && !playbackRequestManager.isRequestValid(requestId)) {
-      console.log(`[getSongDetail] 请求已失效: ${requestId}`);
       throw new Error('Request cancelled');
     }
+    return fast;
+  }
 
-    if (playMusic.expiredAt && playMusic.expiredAt < Date.now()) {
-      // 本地音乐（local:// 协议）不会过期，跳过清除
-      if (!playMusic.playMusicUrl?.startsWith('local://')) {
-        console.info(`歌曲已过期，重新获取: ${playMusic.name}`);
-        playMusic.playMusicUrl = undefined;
-      }
-    }
+  const key = detailKeyOf(playMusic);
+  let p = detailInflight.get(key);
+  if (!p) {
+    // seed 副本：避免并发调用互相改同一对象
+    const seed = { ...playMusic, forceQualityResolve: playMusic.forceQualityResolve };
+    p = resolveSongDetail(seed).finally(() => {
+      if (detailInflight.get(key) === p) detailInflight.delete(key);
+    });
+    detailInflight.set(key, p);
+    console.info(`[getSongDetail] start inflight ${key}`);
+  } else {
+    console.info(`[getSongDetail] join inflight ${key}`);
+  }
 
-    try {
-      const playMusicUrl =
-        playMusic.playMusicUrl || (await getSongUrl(playMusic.id, playMusic, false, requestId));
+  const detailed = await p;
+  if (requestId && !playbackRequestManager.isRequestValid(requestId)) {
+    console.log(`[getSongDetail] URL获取后请求已失效: ${requestId}`);
+    throw new Error('Request cancelled');
+  }
 
-      // 验证请求
-      if (requestId && !playbackRequestManager.isRequestValid(requestId)) {
-        console.log(`[getSongDetail] URL获取后请求已失效: ${requestId}`);
-        throw new Error('Request cancelled');
-      }
+  // 合并到调用方视角的字段（保留调用方 lyric/封面等 + 升质标记）
+  return {
+    ...playMusic,
+    playMusicUrl: detailed.playMusicUrl,
+    streamQuality: detailed.streamQuality,
+    streamBitrate: detailed.streamBitrate,
+    availableQualities: detailed.availableQualities || playMusic.availableQualities,
+    expiredAt: detailed.expiredAt,
+    createdAt: detailed.createdAt,
+    isPreviewStream: detailed.isPreviewStream,
+    isPartialStream: detailed.isPartialStream,
+    pendingFullUrl: detailed.pendingFullUrl,
+    preview: detailed.preview || playMusic.preview,
+    forceQualityResolve: false,
+    _streamUpgradeTo: (detailed as SongResult & { _streamUpgradeTo?: string })._streamUpgradeTo
+  } as SongResult;
+};
 
-      playMusic.createdAt = Date.now();
-      // 半小时后过期
-      playMusic.expiredAt = playMusic.createdAt + 1800000;
+/**
+ * 预取 URL（不阻塞播放）：feed/列表在可见时调用，play 时命中 inflight 或缓存。
+ */
+export const prefetchSongUrl = (song: SongResult): Promise<SongResult | null> => {
+  if (!song?.id) return Promise.resolve(null);
+  if (isSongUrlFresh(song)) {
+    if (song.playMusicUrl) warmAudioByUrl(song.playMusicUrl, song);
+    return Promise.resolve(song);
+  }
+  return getSongDetail({ ...song })
+    .then((d) => {
+      if (d?.playMusicUrl) warmAudioByUrl(d.playMusicUrl, d);
+      return d;
+    })
+    .catch((e) => {
+      console.warn('[prefetchSongUrl] failed', song.name, e);
+      return null;
+    });
+};
 
-      playMusic.playLoading = false;
-      // 返回歌曲信息，背景色和歌词将在播放后异步加载
-      return { ...playMusic, playMusicUrl } as SongResult;
-    } catch (error) {
-      if ((error as Error).message === 'Request cancelled') {
-        throw error;
-      }
-      console.error('获取音频URL失败:', error);
-      playMusic.playLoading = false;
-      throw error;
-    }
-  };
-
+export const useSongDetail = () => {
   return { getSongDetail };
 };

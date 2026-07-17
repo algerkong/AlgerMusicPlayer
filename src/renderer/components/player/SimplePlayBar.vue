@@ -25,10 +25,7 @@
       <div class="controls-section">
         <div class="left-controls">
           <button class="control-btn small-btn" @click="togglePlayMode">
-            <i
-              class="iconfont"
-              :class="[playModeIcon, { 'intelligence-active': playMode === 3 }]"
-            ></i>
+            <i class="iconfont" :class="playModeIcon"></i>
           </button>
         </div>
 
@@ -83,10 +80,10 @@ import { computed, onMounted, ref, watch } from 'vue';
 
 import { allTime, nowTime } from '@/hooks/MusicHook';
 import { usePlaybackControl } from '@/hooks/usePlaybackControl';
+import { usePlayBarChrome } from '@/hooks/usePlayBarChrome';
 import { usePlayMode } from '@/hooks/usePlayMode';
 import { useVolumeControl } from '@/hooks/useVolumeControl';
 import { audioService } from '@/services/audioService';
-import { usePlayerStore } from '@/store/modules/player';
 import { secondToMinute } from '@/utils';
 
 const props = withDefaults(
@@ -98,16 +95,12 @@ const props = withDefaults(
   }
 );
 
-const playerStore = usePlayerStore();
 const playBarRef = ref<HTMLElement | null>(null);
 
-// 播放控制
 const { isPlaying: play, playMusicEvent, handleNext, handlePrev } = usePlaybackControl();
+const { playerStore, openPlayListDrawer } = usePlayBarChrome();
+const { playModeIcon, togglePlayMode } = usePlayMode();
 
-// 播放模式
-const { playMode, playModeIcon, togglePlayMode } = usePlayMode();
-
-// 音量控制（统一通过 playerStore 管理）
 const {
   isMuted,
   volumeSlider,
@@ -120,7 +113,6 @@ const {
 const isDragging = ref(false);
 const dragProgress = ref(0); // 拖拽时的预览进度 (0-100)
 
-// 计算当前显示的进度百分比
 const progressPercentage = computed(() => {
   if (isDragging.value) {
     return dragProgress.value;
@@ -129,7 +121,6 @@ const progressPercentage = computed(() => {
   return (nowTime.value / allTime.value) * 100;
 });
 
-// 计算显示的时间
 const displayTime = computed(() => {
   if (isDragging.value) {
     return (dragProgress.value / 100) * allTime.value;
@@ -137,14 +128,12 @@ const displayTime = computed(() => {
   return nowTime.value;
 });
 
-// 计算进度百分比的辅助函数
 const calculateProgress = (clientX: number, element: HTMLElement): number => {
   const rect = element.getBoundingClientRect();
   const percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
   return percent * 100;
 };
 
-// 更新音频进度
 const seekToProgress = (percentage: number) => {
   const targetTime = (percentage / 100) * allTime.value;
   audioService.seek(targetTime);
@@ -159,7 +148,6 @@ const handleProgressMouseDown = (e: MouseEvent) => {
   isDragging.value = true;
   dragProgress.value = calculateProgress(e.clientX, target);
 
-  // 添加全局鼠标移动和释放监听
   const handleMouseMove = (moveEvent: MouseEvent) => {
     if (isDragging.value) {
       dragProgress.value = calculateProgress(moveEvent.clientX, target);
@@ -194,17 +182,8 @@ const handleProgressClick = (e: MouseEvent) => {
   seekToProgress(percentage);
 };
 
-// 格式化时间
-const formatTime = (seconds: number) => {
-  return secondToMinute(seconds);
-};
+const formatTime = (seconds: number) => secondToMinute(seconds);
 
-// 打开播放列表抽屉
-const openPlayListDrawer = () => {
-  playerStore.setPlayListDrawerVisible(true);
-};
-
-// 深色模式
 const isDarkMode = computed(() => props.isDark);
 
 // 主题颜色应用函数
@@ -226,7 +205,6 @@ const applyThemeColor = (colorValue: string) => {
 
     console.log(`主题色亮度: ${brightness}/255`);
 
-    // 设置主色
     playBarElement.style.setProperty('--fill-color', colorValue);
 
     // 亮度自适应处理
@@ -251,7 +229,6 @@ const applyThemeColor = (colorValue: string) => {
       playBarElement.classList.add('dark-theme-color');
       playBarElement.classList.remove('light-theme-color');
     } else {
-      // 计算辅助色和高亮色
       // 普通亮度颜色，正常处理
       playBarElement.style.setProperty('--fill-color-alt', colorValue); // 保持一致
       playBarElement.style.setProperty('--fill-color-transparent', `rgba(${r}, ${g}, ${b}, 0.25)`);
@@ -263,7 +240,6 @@ const applyThemeColor = (colorValue: string) => {
       playBarElement.classList.remove('dark-theme-color');
     }
 
-    // 设置亮色（用于高亮效果）
     const lightenedColor = `rgb(${Math.min(255, r + 40)}, ${Math.min(255, g + 40)}, ${Math.min(255, b + 40)})`;
     playBarElement.style.setProperty('--fill-color-light', lightenedColor);
   } else {
@@ -277,22 +253,29 @@ const applyThemeColor = (colorValue: string) => {
   }
 };
 
-// 监听主题色变化
+// 封面 primaryColor 或全局 --primary-color
 watch(
   () => playerStore.playMusic.primaryColor,
   (newVal) => {
-    if (newVal) {
-      applyThemeColor(newVal);
-    }
-  }
+    const fallback =
+      typeof getComputedStyle !== 'undefined'
+        ? getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim()
+        : '';
+    const color = (newVal as string) || fallback;
+    if (color) applyThemeColor(color);
+  },
+  { immediate: true }
 );
 
 onMounted(() => {
-  if (playerStore.playMusic?.primaryColor) {
-    setTimeout(() => {
-      applyThemeColor(playerStore.playMusic.primaryColor as string);
-    }, 50);
-  }
+  setTimeout(() => {
+    const fromStore = playerStore.playMusic?.primaryColor as string | undefined;
+    const fromCss = getComputedStyle(document.documentElement)
+      .getPropertyValue('--primary-color')
+      .trim();
+    const color = fromStore || fromCss;
+    if (color) applyThemeColor(color);
+  }, 50);
 });
 </script>
 
@@ -306,15 +289,16 @@ onMounted(() => {
   --text-on-fill: #ffffff;
   --high-contrast-color: #ffffff;
 
+  /* 默认跟 --primary-color；有 primaryColor 时 applyThemeColor 覆盖 */
   &.dark-theme {
     --text-color: #333333;
     --muted-color: rgba(0, 0, 0, 0.6);
     --track-color: rgba(0, 0, 0, 0.2);
     --track-color-hover: rgba(0, 0, 0, 0.4);
-    --fill-color: #1ed760;
-    --fill-color-alt: #1ed760;
-    --fill-color-transparent: rgba(30, 215, 96, 0.25);
-    --fill-color-light: rgba(30, 215, 96, 0.5);
+    --fill-color: var(--primary-color, #22c55e);
+    --fill-color-alt: var(--primary-color, #22c55e);
+    --fill-color-transparent: rgba(255, 255, 255, 0.25);
+    --fill-color-light: rgba(255, 255, 255, 0.45);
     --button-bg: rgba(0, 0, 0, 0.1);
     --button-hover: rgba(0, 0, 0, 0.2);
   }
@@ -324,10 +308,10 @@ onMounted(() => {
     --muted-color: rgba(255, 255, 255, 0.6);
     --track-color: rgba(255, 255, 255, 0.1);
     --track-color-hover: rgba(255, 255, 255, 0.2);
-    --fill-color: #73e49a;
-    --fill-color-alt: #73e49a;
-    --fill-color-transparent: rgba(115, 228, 154, 0.25);
-    --fill-color-light: rgba(115, 228, 154, 0.5);
+    --fill-color: var(--primary-color, #22c55e);
+    --fill-color-alt: var(--primary-color, #22c55e);
+    --fill-color-transparent: rgba(255, 255, 255, 0.25);
+    --fill-color-light: rgba(255, 255, 255, 0.45);
     --button-bg: rgba(255, 255, 255, 0.05);
     --button-hover: rgba(255, 255, 255, 0.1);
   }
@@ -550,6 +534,6 @@ onMounted(() => {
 }
 
 .intelligence-active {
-  @apply text-green-500;
+  color: var(--primary-color, #22c55e);
 }
 </style>

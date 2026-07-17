@@ -1,63 +1,37 @@
 <template>
-  <div class="h-full w-full bg-white dark:bg-black transition-colors duration-500 flex flex-col">
-    <!-- 顶部导航区 -->
-    <div
-      class="flex-shrink-0 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-black z-10 page-padding pt-6 pb-2"
-    >
-      <h1 class="text-2xl md:text-3xl font-bold text-neutral-900 dark:text-white mb-6">
+  <!-- 不铺 bg-background：暗色下那是纯黑，会盖住封面底色；跟其它页一样透底 -->
+  <div class="settings-page h-full w-full text-foreground flex flex-col">
+    <!-- 顶区跟搜索结果页一样贴顶，少留天窗 -->
+    <div class="flex-shrink-0 z-10 pt-3">
+      <h1 class="text-2xl font-bold page-padding mb-1">
         {{ t('common.settings') }}
       </h1>
-
-      <n-scrollbar x-scrollable class="w-full">
-        <div class="flex items-center pl-2 pb-2 whitespace-nowrap">
-          <div
-            v-for="section in navSections"
-            :key="section.id"
-            class="py-1.5 px-4 mr-3 inline-block rounded-full cursor-pointer transition-all duration-300 text-sm font-medium select-none"
-            :class="
-              currentSection === section.id
-                ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-105'
-                : 'bg-gray-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-gray-200 dark:hover:bg-neutral-800 hover:text-neutral-900 dark:hover:text-white'
-            "
-            @click="currentSection = section.id"
-          >
-            {{ section.title }}
-          </div>
-        </div>
-      </n-scrollbar>
+      <!-- 与搜索结果同一套 line tab：字高亮 + 底线丝滑滑动 -->
+      <category-selector
+        v-model="currentSection"
+        variant="line"
+        :categories="navSections"
+        label-key="title"
+        value-key="id"
+        animation-class=""
+      />
     </div>
 
-    <!-- 内容区域 -->
-    <n-scrollbar class="flex-1">
-      <div class="w-full mx-auto pb-32 pt-6 page-padding">
+    <!-- shadcn-vue ScrollArea：设置/关于不出现系统原生滚动条 -->
+    <scroll-area class="settings-scroll flex-1 min-h-0">
+      <div class="settings-body page-padding">
+        <!-- 通用 / 存储 / 关于（快捷键设置页已移除，使用内置默认快捷键） -->
         <div v-show="currentSection === 'basic'" class="animate-fade-in">
           <basic-tab />
         </div>
-
-        <div v-show="currentSection === 'playback'" class="animate-fade-in">
-          <playback-tab />
-        </div>
-
-        <div v-show="currentSection === 'application'" class="animate-fade-in">
-          <application-tab />
-        </div>
-
-        <div v-show="currentSection === 'network'" class="animate-fade-in">
-          <network-tab />
-        </div>
-
         <div v-show="currentSection === 'system'" class="animate-fade-in">
           <system-tab />
         </div>
-
         <div v-show="currentSection === 'about'" class="animate-fade-in">
           <about-tab />
         </div>
-
-        <div class="h-20"></div>
-        <play-bottom />
       </div>
-    </n-scrollbar>
+    </scroll-area>
   </div>
 </template>
 
@@ -67,7 +41,8 @@ import { useDialog, useMessage } from 'naive-ui';
 import { computed, onMounted, onUnmounted, provide, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import PlayBottom from '@/components/common/PlayBottom.vue';
+import CategorySelector from '@/components/common/CategorySelector.vue';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSettingsStore } from '@/store/modules/settings';
 import { isElectron } from '@/utils';
 
@@ -75,10 +50,7 @@ import config from '../../../../package.json';
 import { createDefaultAppUpdateState } from '../../../shared/appUpdate';
 import { SETTINGS_DATA_KEY, SETTINGS_DIALOG_KEY, SETTINGS_MESSAGE_KEY } from './keys';
 import AboutTab from './tabs/AboutTab.vue';
-import ApplicationTab from './tabs/ApplicationTab.vue';
 import BasicTab from './tabs/BasicTab.vue';
-import NetworkTab from './tabs/NetworkTab.vue';
-import PlaybackTab from './tabs/PlaybackTab.vue';
 import SystemTab from './tabs/SystemTab.vue';
 
 const settingsStore = useSettingsStore();
@@ -86,7 +58,6 @@ const message = useMessage();
 const dialog = useDialog();
 const { t } = useI18n();
 
-// ==================== 设置数据管理 ====================
 const saveSettings = useDebounceFn((data) => {
   settingsStore.setSetData(data);
 }, 500);
@@ -120,22 +91,18 @@ onUnmounted(() => {
   settingsStore.setSetData(localSetData.value);
 });
 
-// ==================== Provide ====================
 provide(SETTINGS_DATA_KEY, setData);
 provide(SETTINGS_MESSAGE_KEY, message);
 provide(SETTINGS_DIALOG_KEY, dialog);
 
-// ==================== 导航相关 ====================
 type SettingSectionConfig = {
   id: string;
   electron?: boolean;
 };
 
+/** 通用 / 存储 / 关于；Web 无存储时只留通用 + 关于 */
 const settingSections: SettingSectionConfig[] = [
   { id: 'basic' },
-  { id: 'playback' },
-  { id: 'application', electron: true },
-  { id: 'network', electron: true },
   { id: 'system', electron: true },
   { id: 'about' }
 ];
@@ -151,39 +118,45 @@ const navSections = computed(() => {
 
 const currentSection = ref('basic');
 
-// ==================== 初始化 ====================
 onMounted(() => {
   if (isElectron && settingsStore.appUpdateState.currentVersion === '') {
     settingsStore.setAppUpdateState(createDefaultAppUpdateState(config.version));
   }
-  if (setData.value.proxyConfig) {
-    // proxy form init moved to NetworkTab
-  }
-  if (setData.value.enableDiskCache === undefined) {
-    setData.value = { ...setData.value, enableDiskCache: true };
-  }
-  if (!setData.value.diskCacheMaxSizeMB) {
-    setData.value = { ...setData.value, diskCacheMaxSizeMB: 4096 };
-  }
-  if (!['lru', 'fifo'].includes(setData.value.diskCacheCleanupPolicy)) {
-    setData.value = { ...setData.value, diskCacheCleanupPolicy: 'lru' };
-  }
+  // 磁盘缓存默认开启，策略/上限写死，不暴露 UI
+  setData.value = {
+    ...setData.value,
+    enableDiskCache: true,
+    diskCacheMaxSizeMB: setData.value.diskCacheMaxSizeMB || 4096,
+    diskCacheCleanupPolicy: 'lru',
+    enableGpuAcceleration: true
+  };
 });
 </script>
 
 <style scoped>
-:deep(.n-select .n-base-selection) {
-  border-radius: 10px;
+/* reka ScrollArea 在 flex 列里要占满剩余高度，viewport 才能滚 */
+.settings-scroll {
+  overflow: hidden;
+}
+
+.settings-scroll :deep([data-slot='scroll-area-viewport']) {
+  height: 100%;
+}
+
+.settings-body {
+  /* 同搜索结果：只留一点底距，别再 pb-32 + h-20 + PlayBottom 叠三层 */
+  padding-top: 0.75rem;
+  padding-bottom: 1rem;
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.25s ease-out;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;

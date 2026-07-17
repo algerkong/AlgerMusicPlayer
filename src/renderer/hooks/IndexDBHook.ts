@@ -1,6 +1,5 @@
 import { ref } from 'vue';
 
-// 定义表配置的泛型接口
 export interface StoreConfig<T extends string> {
   name: T;
   keyPath?: string;
@@ -14,7 +13,6 @@ const useIndexedDB = async <T extends string, S extends Record<T, Record<string,
 ) => {
   const db = ref<IDBDatabase | null>(null);
 
-  // 打开数据库并创建表
   const initDB = () => {
     return new Promise<void>((resolve, reject) => {
       const request = indexedDB.open(dbName, version);
@@ -106,7 +104,6 @@ const useIndexedDB = async <T extends string, S extends Record<T, Record<string,
     });
   };
 
-  // 删除数据
   const deleteData = <K extends T>(storeName: K, key: string | number) => {
     return new Promise<void>((resolve, reject) => {
       if (!db.value) return reject('数据库未初始化');

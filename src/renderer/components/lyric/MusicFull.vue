@@ -6,6 +6,9 @@
     :style="drawerBaseStyle"
     :to="`#layout-main`"
     :z-index="9998"
+    drawer-class="music-full-drawer"
+    :show-mask="false"
+    :mask-closable="false"
   >
     <!-- 背景层（用于图片模糊和明暗效果） -->
     <div
@@ -15,31 +18,28 @@
       class="background-layer"
       :style="backgroundImageStyle"
     ></div>
-    <div id="drawer-target" :class="[config.theme]" class="relative z-10">
-      <!-- 左侧关闭按钮 -->
+    <div
+      id="drawer-target"
+      :class="[config.theme]"
+      class="relative z-10"
+      @mousemove="bumpChrome"
+      @mousedown="bumpChrome"
+    >
+      <!-- 关闭 -->
       <div
         class="control-left absolute top-8 left-8 z-[9999]"
-        :class="{ 'pure-mode': config.pureModeEnabled }"
+        :class="{ 'chrome-hidden': !chromeVisible }"
       >
         <div class="control-btn" @click="closeMusicFull">
           <i class="ri-arrow-down-s-line"></i>
         </div>
       </div>
 
-      <!-- 右侧功能按钮组 -->
+      <!-- 全屏 -->
       <div
         class="control-right absolute top-8 right-8 z-[9999]"
-        :class="{ 'pure-mode': config.pureModeEnabled }"
+        :class="{ 'chrome-hidden': !chromeVisible }"
       >
-        <n-popover trigger="click" placement="bottom" raw>
-          <template #trigger>
-            <div class="control-btn">
-              <i class="ri-settings-3-line"></i>
-            </div>
-          </template>
-          <lyric-settings ref="lyricSettingsRef" />
-        </n-popover>
-
         <div class="control-btn" @click="toggleFullScreen">
           <i :class="isFullScreen ? 'ri-fullscreen-exit-line' : 'ri-fullscreen-line'"></i>
         </div>
@@ -63,7 +63,7 @@
             />
           </div>
           <div class="music-info">
-            <div class="music-content-name" v-html="playMusic.name"></div>
+            <div class="music-content-name">{{ playMusic.name }}</div>
             <div class="music-content-singer">
               <n-ellipsis
                 class="text-ellipsis"
@@ -76,7 +76,7 @@
                 <span
                   v-for="(item, index) in artistList"
                   :key="index"
-                  class="cursor-pointer hover:text-green-500"
+                  class="cursor-pointer hover:text-primary"
                   @click="handleArtistClick(item.id)"
                 >
                   {{ item.name }}
@@ -84,12 +84,7 @@
                 </span>
               </n-ellipsis>
             </div>
-            <simple-play-bar
-              v-if="!config.hideMiniPlayBar"
-              class="mt-4"
-              :pure-mode-enabled="config.pureModeEnabled"
-              :isDark="textColors.theme === 'dark'"
-            />
+            <simple-play-bar class="mt-4" :isDark="textColors.theme === 'dark'" />
           </div>
         </div>
 
@@ -102,10 +97,9 @@
             'full-width': config.hideCover
           }"
         >
-          <n-layout
+          <scroll-area
             ref="lrcSider"
-            class="music-lrc"
-            :native-scrollbar="false"
+            class="music-lrc h-full"
             @mouseover="mouseOverLayout"
             @mouseleave="mouseLeaveLayout"
           >
@@ -116,12 +110,12 @@
                 class="music-info-header"
                 :style="{ textAlign: config.centerLyrics ? 'center' : 'left' }"
               >
-                <div class="music-info-name" v-html="playMusic.name"></div>
+                <div class="music-info-name">{{ playMusic.name }}</div>
                 <div class="music-info-singer">
                   <span
                     v-for="(item, index) in artistList"
                     :key="index"
-                    class="cursor-pointer hover:text-green-500"
+                    class="cursor-pointer hover:text-primary"
                     @click="handleArtistClick(item.id)"
                   >
                     {{ item.name }}
@@ -144,20 +138,19 @@
                 }"
                 @click="item.startTime !== -1 ? setAudioTime(index) : null"
               >
-                <!-- 逐字歌词显示 -->
+                <!-- 逐字：始终同一 clip 渐变路径，词间不闪 -->
                 <div
                   v-if="item.hasWordByWord && item.words && item.words.length > 0"
                   class="word-by-word-lyric"
                 >
                   <template v-for="(word, wordIndex) in item.words" :key="wordIndex">
-                    <span class="lyric-word" :style="getWordStyle(index, wordIndex, word)">
-                      {{ word.text }} </span
-                    ><span class="lyric-word" v-if="word.space">&nbsp;</span></template
-                  >
+                    <span class="lyric-word" :style="getWordStyle(index, wordIndex, word)"
+                      >{{ word.text }}<template v-if="word.space">&nbsp;</template></span
+                    >
+                  </template>
                 </div>
-                <!-- 普通歌词显示 -->
                 <span v-else :style="getLrcStyle(index)">{{ item.text }}</span>
-                <div v-show="config.showTranslation" class="music-lrc-text-tr">
+                <div v-if="item.trText" class="music-lrc-text-tr">
                   {{ item.trText }}
                 </div>
               </div>
@@ -173,7 +166,7 @@
               :correction-time="correctionTime"
               @adjust="adjustCorrectionTime"
             />
-          </n-layout>
+          </scroll-area>
         </div>
       </div>
     </div>
@@ -181,21 +174,20 @@
 </template>
 
 <script setup lang="ts">
-import { useDebounceFn } from '@vueuse/core';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import Cover3D from '@/components/cover/Cover3D.vue';
 import LyricCorrectionControl from '@/components/lyric/LyricCorrectionControl.vue';
-import LyricSettings from '@/components/lyric/LyricSettings.vue';
 import SimplePlayBar from '@/components/player/SimplePlayBar.vue';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   adjustCorrectionTime,
   artistList,
   correctionTime,
+  getLyricClockSec,
   lrcArray,
   nowIndex,
-  nowTime,
   playMusic,
   setAudioTime,
   textColors,
@@ -208,14 +200,30 @@ import { useSettingsStore } from '@/store/modules/settings';
 import { DEFAULT_LYRIC_CONFIG, LyricConfig } from '@/types/lyric';
 import { getImgUrl, isMobile } from '@/utils';
 import { getTextColors } from '@/utils/linearColor';
+import { getActiveLineWordStyle, getInactiveLineWordStyle } from '@/utils/lyricWordStyle';
 
 const { t } = useI18n();
-// 定义 refs
 const lrcSider = ref<any>(null);
 const isMouse = ref(false);
+/** 顶栏：静止隐藏，移动显示 */
+const chromeVisible = ref(true);
+let chromeIdleTimer: ReturnType<typeof setTimeout> | null = null;
+const CHROME_IDLE_MS = 2200;
+
+const bumpChrome = () => {
+  if (isMobile.value) {
+    chromeVisible.value = true;
+    return;
+  }
+  chromeVisible.value = true;
+  if (chromeIdleTimer) clearTimeout(chromeIdleTimer);
+  chromeIdleTimer = setTimeout(() => {
+    chromeVisible.value = false;
+  }, CHROME_IDLE_MS);
+};
+
 const { currentBackground, applyBackground } = useLyricBackground();
 
-// 计算自定义背景样式
 const customBackgroundStyle = computed(() => {
   if (!config.value.useCustomBackground) {
     return null;
@@ -230,7 +238,6 @@ const customBackgroundStyle = computed(() => {
     }
     case 'image':
       if (!config.value.backgroundImage) return null;
-      // 构建完整的背景样式，包括滤镜效果
       return config.value.backgroundImage;
     case 'css':
       return config.value.customCss || null;
@@ -239,20 +246,17 @@ const customBackgroundStyle = computed(() => {
   }
 });
 
-// drawer 基础样式（非图片模式）
+/** 非图片模式写在 drawer 上；图片模式用单独背景层 */
 const drawerBaseStyle = computed(() => {
-  // 图片模式时不设置背景，使用单独的背景层
   if (config.value.useCustomBackground && config.value.backgroundMode === 'image') {
     return { background: 'transparent' };
   }
-  // 其他模式正常设置背景
   if (config.value.useCustomBackground && customBackgroundStyle.value) {
     return { background: customBackgroundStyle.value };
   }
   return { background: currentBackground.value || props.background };
 });
 
-// 背景图片层样式（只在图片模式下使用）
 const backgroundImageStyle = computed(() => {
   const blur = config.value.imageBlur || 0;
   const brightness = config.value.imageBrightness || 100;
@@ -262,33 +266,11 @@ const backgroundImageStyle = computed(() => {
   };
 });
 const showStickyHeader = ref(false);
-const lyricSettingsRef = ref<InstanceType<typeof LyricSettings>>();
 const isSongChanging = ref(false);
 const isFullScreen = ref(false);
 
+/** 大屏展示配置（字号等可从 localStorage 恢复） */
 const config = ref<LyricConfig>({ ...DEFAULT_LYRIC_CONFIG });
-
-watch(
-  () => lyricSettingsRef.value?.config,
-  (newConfig) => {
-    if (newConfig) {
-      config.value = newConfig;
-    }
-  },
-  { deep: true, immediate: true }
-);
-
-// 监听本地配置变化，保存到 localStorage
-watch(
-  () => config.value,
-  (newConfig) => {
-    localStorage.setItem('music-full-config', JSON.stringify(newConfig));
-    if (lyricSettingsRef.value) {
-      lyricSettingsRef.value.config = newConfig;
-    }
-  },
-  { deep: true }
-);
 
 const supportAutoScroll = computed(() => {
   return lrcArray.value.length > 0 && lrcArray.value[0].startTime !== -1;
@@ -317,15 +299,67 @@ const isVisible = computed({
   set: (value) => emit('update:modelValue', value)
 });
 
+/** shadcn ScrollArea 真正滚的是 viewport */
+const getLrcScrollEl = (): HTMLElement | null => {
+  const comp = lrcSider.value as {
+    getViewport?: () => HTMLElement | null;
+    viewport?: HTMLElement;
+  } | null;
+  if (!comp) return null;
+  if (typeof comp.getViewport === 'function') {
+    return comp.getViewport();
+  }
+  return comp.viewport ?? null;
+};
+
+let lrcScrollAnimId = 0;
+
+const stopLrcScrollAnim = () => {
+  if (lrcScrollAnimId) {
+    cancelAnimationFrame(lrcScrollAnimId);
+    lrcScrollAnimId = 0;
+  }
+};
+
+/** 偏慢 easeInOutCubic，方便跟唱；说唱短行也别闪太快 */
+const softScrollTo = (el: HTMLElement, targetTop: number) => {
+  stopLrcScrollAnim();
+  const startTop = el.scrollTop;
+  const delta = targetTop - startTop;
+  if (Math.abs(delta) < 0.5) {
+    el.scrollTop = targetTop;
+    return;
+  }
+  const durationMs = Math.min(1000, Math.max(620, Math.abs(delta) * 6));
+  const startTs = performance.now();
+  const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+  const tick = (now: number) => {
+    const p = Math.min(1, (now - startTs) / durationMs);
+    el.scrollTop = startTop + delta * easeInOutCubic(p);
+    if (p < 1) {
+      lrcScrollAnimId = requestAnimationFrame(tick);
+    } else {
+      el.scrollTop = targetTop;
+      lrcScrollAnimId = 0;
+    }
+  };
+  lrcScrollAnimId = requestAnimationFrame(tick);
+};
+
 // 歌词滚动方法
-const lrcScroll = (behavior: ScrollBehavior = 'smooth', forceTop: boolean = false) => {
+const lrcScroll = (behavior: ScrollBehavior | 'soft' = 'soft', forceTop: boolean = false) => {
   if (!isVisible.value || !lrcSider.value || !supportAutoScroll.value) return;
 
+  const scrollEl = getLrcScrollEl();
+  if (!scrollEl) return;
+
   if (forceTop) {
-    lrcSider.value.scrollTo({
-      top: 0,
-      behavior
-    });
+    if (behavior === 'instant' || behavior === 'auto') {
+      stopLrcScrollAnim();
+      scrollEl.scrollTop = 0;
+    } else {
+      softScrollTo(scrollEl, 0);
+    }
     return;
   }
 
@@ -333,18 +367,22 @@ const lrcScroll = (behavior: ScrollBehavior = 'smooth', forceTop: boolean = fals
 
   const nowEl = document.querySelector(`#music-lrc-text-${nowIndex.value}`) as HTMLElement;
   if (nowEl) {
-    const containerHeight = lrcSider.value.$el.clientHeight;
+    const containerHeight = scrollEl.clientHeight;
     const elementTop = nowEl.offsetTop;
-    const scrollTop = elementTop - containerHeight / 2 + nowEl.clientHeight / 2;
+    // 当前句略偏上一点（40%），更像盯着逐字在读
+    const scrollTop = elementTop - containerHeight * 0.4 + nowEl.clientHeight / 2;
 
-    lrcSider.value.scrollTo({
-      top: scrollTop,
-      behavior
-    });
+    if (behavior === 'instant' || behavior === 'auto') {
+      stopLrcScrollAnim();
+      scrollEl.scrollTop = scrollTop;
+    } else {
+      softScrollTo(scrollEl, scrollTop);
+    }
   }
 };
 
-const debouncedLrcScroll = useDebounceFn(lrcScroll, 200);
+// 不再 debounce：换行应立刻开一段短 ease；debounce 会变成「先停再滚」像微调
+const debouncedLrcScroll = () => lrcScroll('soft');
 
 const mouseOverLayout = () => {
   if (isMobile.value) {
@@ -392,7 +430,6 @@ const targetBackground = computed(() => {
   return props.background;
 });
 
-// 监听目标背景变化并更新文字颜色
 watch(
   targetBackground,
   (newBg) => {
@@ -435,55 +472,13 @@ const getLrcStyle = (index: number) => {
   };
 };
 
-// 逐字歌词样式函数
+// 逐字：当前行全程同一绘制路径（clip 渐变 0→1），词切完不换 solid 色 → 不闪
 const getWordStyle = (lineIndex: number, _wordIndex: number, word: any) => {
   const colors = textColors.value || getTextColors();
-  // 如果不是当前行，返回普通样式
   if (lineIndex !== nowIndex.value) {
-    return {
-      color: colors.primary,
-      transition: 'color 0.3s ease',
-      // 重置背景相关属性
-      backgroundImage: 'none',
-      WebkitTextFillColor: 'initial'
-    };
+    return getInactiveLineWordStyle(colors);
   }
-
-  // 当前行的逐字效果，应用歌词矫正时间
-  const currentTime = (nowTime.value + correctionTime.value) * 1000; // 转换为毫秒，确保与word时间单位一致
-
-  // 直接使用绝对时间比较
-  const wordStartTime = word.startTime; // 单词开始的绝对时间（毫秒）
-  const wordEndTime = word.startTime + word.duration;
-
-  if (currentTime >= wordStartTime && currentTime < wordEndTime) {
-    // 当前正在播放的单词 - 使用渐变进度效果
-    const progress = Math.min((currentTime - wordStartTime) / word.duration, 1);
-    const progressPercent = Math.round(progress * 100);
-
-    return {
-      backgroundImage: `linear-gradient(to right, ${colors.active} 0%, ${colors.active} ${progressPercent}%, ${colors.primary} ${progressPercent}%, ${colors.primary} 100%)`,
-      backgroundClip: 'text',
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-      textShadow: `0 0 8px ${colors.active}40`,
-      transition: 'all 0.1s ease'
-    };
-  } else if (currentTime >= wordEndTime) {
-    // 已经播放过的单词 - 纯色显示
-    return {
-      color: colors.active,
-      WebkitTextFillColor: 'initial',
-      transition: 'none'
-    };
-  } else {
-    // 还未播放的单词 - 普通状态
-    return {
-      color: colors.primary,
-      WebkitTextFillColor: 'initial',
-      transition: 'none'
-    };
-  }
+  return getActiveLineWordStyle(getLyricClockSec() * 1000, word, colors);
 };
 
 const settingsStore = useSettingsStore();
@@ -497,7 +492,6 @@ const handleArtistClick = (id: number) => {
 
 const setData = computed(() => settingsStore.setData);
 
-// 监听字体变化并更新 CSS 变量
 watch(
   () => [setData.value.fontFamily, setData.value.fontScope],
   ([newFont, fontScope]) => {
@@ -513,7 +507,7 @@ watch(
     if (newFont === 'system-ui') {
       document.documentElement.style.setProperty('--current-font-family', defaultFonts);
     } else {
-      // 处理多个字体，确保每个字体名都被正确引用
+      // 多字体名加引号并拼到 CSS 变量
       const fontList = newFont.split(',').map((font) => {
         const trimmedFont = font.trim();
         // 如果字体名包含空格或特殊字符，添加引号（如果还没有引号的话）
@@ -532,11 +526,11 @@ watch(
   { immediate: true }
 );
 
-// 监听滚动事件
 const handleScroll = () => {
-  if (!lrcSider.value || !config.value.hideCover) return;
-  const { scrollTop } = lrcSider.value.$el;
-  showStickyHeader.value = scrollTop > 100;
+  if (!config.value.hideCover) return;
+  const el = getLrcScrollEl();
+  if (!el) return;
+  showStickyHeader.value = el.scrollTop > 100;
 };
 
 const playerStore = usePlayerStore();
@@ -567,24 +561,26 @@ const toggleFullScreen = async () => {
   }
 };
 
-// 监听全屏状态变化
 const handleFullScreenChange = () => {
   isFullScreen.value = !!document.fullscreenElement;
 };
 
-// 添加滚动监听和全屏状态监听
 onMounted(() => {
-  if (lrcSider.value?.$el) {
-    lrcSider.value.$el.addEventListener('scroll', handleScroll);
-  }
+  getLrcScrollEl()?.addEventListener('scroll', handleScroll);
   document.addEventListener('fullscreenchange', handleFullScreenChange);
 });
 
 // 移除滚动监听和全屏状态监听
 onBeforeUnmount(() => {
-  if (lrcSider.value?.$el) {
-    lrcSider.value.$el.removeEventListener('scroll', handleScroll);
+  if (lrcScrollAnimId) {
+    cancelAnimationFrame(lrcScrollAnimId);
+    lrcScrollAnimId = 0;
   }
+  if (chromeIdleTimer) {
+    clearTimeout(chromeIdleTimer);
+    chromeIdleTimer = null;
+  }
+  getLrcScrollEl()?.removeEventListener('scroll', handleScroll);
   document.removeEventListener('fullscreenchange', handleFullScreenChange);
   // 退出全屏模式
   if (document.fullscreenElement) {
@@ -592,7 +588,6 @@ onBeforeUnmount(() => {
   }
 });
 
-// 监听字体大小变化
 watch(
   () => config.value.fontSize,
   (newSize) => {
@@ -600,7 +595,6 @@ watch(
   }
 );
 
-// 监听字体粗细变化
 watch(
   () => config.value.fontWeight,
   (newWeight) => {
@@ -608,7 +602,6 @@ watch(
   }
 );
 
-// 添加文字间距监听
 watch(
   () => config.value.letterSpacing,
   (newSpacing) => {
@@ -616,7 +609,6 @@ watch(
   }
 );
 
-// 添加行高监听
 watch(
   () => config.value.lineHeight,
   (newLineHeight) => {
@@ -624,25 +616,37 @@ watch(
   }
 );
 
-// 加载保存的配置
 onMounted(() => {
   const savedConfig = localStorage.getItem('music-full-config');
   if (savedConfig) {
-    config.value = { ...config.value, ...JSON.parse(savedConfig) };
+    try {
+      config.value = {
+        ...config.value,
+        ...JSON.parse(savedConfig),
+        // 显示类开关固定为默认布局
+        pureModeEnabled: false,
+        hideCover: false,
+        centerLyrics: false,
+        hideLyrics: false,
+        hideMiniPlayBar: false,
+        hidePlayBar: true
+      };
+    } catch {
+      // 配置损坏则忽略
+    }
   }
-  if (lrcSider.value?.$el) {
-    lrcSider.value.$el.addEventListener('scroll', handleScroll);
-  }
+  getLrcScrollEl()?.addEventListener('scroll', handleScroll);
+  bumpChrome();
 });
 
 // 添加对 playMusic.id 的监听，歌曲切换时滚动到顶部
 watch(
   () => playMusic.value.id,
   (newId, oldId) => {
-    // 只在歌曲真正切换时滚动到顶部
+    // 仅当歌曲 id 真正变化时滚到顶
     if (newId !== oldId && newId) {
       isSongChanging.value = true;
-      // 延迟滚动，确保 nowIndex 已重置
+      // 延迟滚动，等待 nowIndex 重置
       setTimeout(() => {
         lrcScroll('instant', true);
         // 延迟恢复自动滚动，等待歌词数据更新
@@ -703,7 +707,8 @@ defineExpose({
   .content-wrapper {
     @apply grid items-center mx-auto h-full;
     grid-template-columns: minmax(300px, 40%) 1fr;
-    gap: 4rem;
+    /* 左右栏再隔开一点 */
+    gap: 6.5rem;
     max-width: 1600px;
     padding: 2rem;
     transition: width 0.3s ease;
@@ -752,10 +757,23 @@ defineExpose({
   }
 
   .right-side {
-    @apply flex flex-col justify-center h-full relative overflow-hidden;
+    /* 整块歌词区域高度：别 h-full 撑满；略偏上 + 与左侧栏留缝 */
+    --lyric-panel-height: 58vh;
+    @apply flex flex-col justify-center relative overflow-hidden;
+    height: var(--lyric-panel-height);
+    max-height: 100%;
+    /* 相对垂直居中再往上挪一点 */
+    align-self: center;
+    margin-top: -8vh;
+    /* 再跟左边封面拉开一点（叠在 gap 上） */
+    margin-left: 1.75rem;
+    padding-left: 0.75rem;
 
     &.full-width {
       @apply col-span-2;
+      --lyric-panel-height: 70vh;
+      margin-left: 0;
+      padding-left: 0;
     }
 
     &.center {
@@ -782,15 +800,15 @@ defineExpose({
       mask-image: linear-gradient(
         to bottom,
         transparent 0%,
-        black 15%,
-        black 85%,
+        black 12%,
+        black 88%,
         transparent 100%
       );
       -webkit-mask-image: linear-gradient(
         to bottom,
         transparent 0%,
-        black 15%,
-        black 85%,
+        black 12%,
+        black 88%,
         transparent 100%
       );
 
@@ -810,7 +828,8 @@ defineExpose({
     }
 
     .music-lrc-container {
-      padding: 50vh 0;
+      /* 滚动居中用的上下垫高：跟面板高度挂钩，约半高 */
+      padding: calc(var(--lyric-panel-height) * 0.42) 0;
       min-height: 100%;
     }
 
@@ -845,7 +864,8 @@ defineExpose({
         }
       }
 
-      span {
+      // 整行歌词可点区域留白；逐字 .lyric-word 绝不能带这 30px（英文会词间巨大空隙）
+      > span {
         background-clip: text !important;
         -webkit-background-clip: text !important;
         padding-right: 30px;
@@ -857,23 +877,22 @@ defineExpose({
         color: var(--text-color-primary);
       }
 
-      // 逐字歌词样式
+      // 逐字：inline 流式；英文空格靠源数据 word.space → &nbsp;，一个就够
       .word-by-word-lyric {
-        @apply flex flex-wrap;
+        display: block;
+        white-space: pre-wrap;
+        word-break: break-word;
 
         .lyric-word {
-          @apply inline-block;
-          padding-right: 0;
+          display: inline;
+          padding-right: 0 !important;
           font-weight: inherit;
           font-size: inherit;
           letter-spacing: inherit;
           line-height: inherit;
           cursor: inherit;
           position: relative;
-
-          &:hover {
-            background-color: rgba(255, 255, 255, 0.1);
-          }
+          // 不设 background-color hover：会冲掉 clip 渐变造成闪
         }
       }
     }
@@ -883,7 +902,8 @@ defineExpose({
         @apply font-bold opacity-100 rounded-xl;
         background-color: var(--hover-bg-color);
 
-        span {
+        // 仅直接子 span（整行歌词）；.lyric-word 在 div 里，别用 color 冲掉 clip
+        > span {
           color: var(--text-color-active) !important;
         }
       }
@@ -930,11 +950,9 @@ defineExpose({
 }
 
 .music-drawer {
-  transition: none; // 移除之前的过渡效果，现在使用 JS 动画
+  transition: none;
 }
 
-// 添加全局字体样式
-// 字体设置已移至上方或不再需要单独的 drawer-target 块
 :root {
   --current-font-family:
     system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
@@ -952,22 +970,15 @@ defineExpose({
 
 .control-left,
 .control-right {
-  &.pure-mode {
-    @apply pointer-events-auto;
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+  pointer-events: auto;
 
-    .control-btn {
-      @apply opacity-0 transition-all duration-300;
-      pointer-events: none;
-    }
-
-    &:hover .control-btn {
-      @apply opacity-100;
-      pointer-events: auto;
-    }
-  }
-
-  &:not(.pure-mode) .control-btn {
-    pointer-events: auto;
+  &.chrome-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-6px);
   }
 }
 
@@ -976,20 +987,24 @@ defineExpose({
 }
 
 .control-btn {
-  @apply w-9 h-9 flex items-center justify-center rounded cursor-pointer transition-all duration-300;
-  background: rgba(142, 142, 142, 0.192);
-  backdrop-filter: blur(12px);
+  @apply w-9 h-9 flex items-center justify-center rounded-full cursor-pointer transition-all duration-300;
+  background: var(--chrome-surface, rgba(142, 142, 142, 0.22));
+  border: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.14));
+  backdrop-filter: blur(var(--chrome-blur, 12px));
+  -webkit-backdrop-filter: blur(var(--chrome-blur, 12px));
 
   i {
     @apply text-xl;
-    color: var(--text-color-active);
+    color: var(--chrome-text, var(--text-color-active, #fff));
   }
 
   &:hover {
-    background: rgba(126, 121, 121, 0.2);
+    background: var(--chrome-surface-strong, rgba(126, 121, 121, 0.35));
+    border-color: var(--primary-color, rgba(255, 255, 255, 0.28));
 
     i {
       opacity: 1;
+      color: var(--primary-color, #fff);
     }
   }
 }

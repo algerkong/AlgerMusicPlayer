@@ -3,21 +3,23 @@
   <mobile-layout v-if="isPhone && !settingsStore.setData?.tabletMode" :is-phone="isPhone" />
 
   <!-- PC 端 / 浏览器移动端 / 平板模式 保持原有布局 -->
-  <div v-else class="layout-page" :class="{ mobile: settingsStore.isMobile }">
+  <div
+    v-else
+    class="layout-page"
+    :class="{ mobile: settingsStore.isMobile, 'has-cover-bg': hasCoverBg }"
+  >
+    <!-- 双层背景交叉淡入，封面取色切换时渐变过渡 -->
+    <div class="layout-bg-layer" :class="{ 'is-on': bgActive === 0 }" :style="bgLayer0Style" />
+    <div class="layout-bg-layer" :class="{ 'is-on': bgActive === 1 }" :style="bgLayer1Style" />
     <div id="layout-main" class="layout-main">
       <title-bar />
       <div class="layout-main-page">
         <!-- 侧边菜单栏 -->
         <app-menu v-if="!settingsStore.isMobile" class="menu" :menus="menuStore.menus" />
         <div class="main">
-          <!-- 搜索栏 -->
-          <search-bar class="search-bar" />
+          <!-- 搜索 / 登录已并入 TitleBar，与窗口按钮同一行 -->
           <!-- 主页面路由 -->
-          <div
-            class="main-content"
-            :native-scrollbar="false"
-            :class="{ 'mobile-content': !shouldShowMobileMenu }"
-          >
+          <div class="main-content" :class="{ 'mobile-content': !shouldShowMobileMenu }">
             <router-view
               v-slot="{ Component }"
               class="main-page"
@@ -49,29 +51,38 @@
     </div>
     <update-modal v-if="isElectron" />
     <playlist-drawer v-model="showPlaylistDrawer" :song-id="currentSongId" />
-    <sleep-timer-top v-if="!settingsStore.isMobile" />
     <!-- 播放列表抽屉 -->
     <playing-list-drawer />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { computed, defineAsyncComponent, onMounted, provide, ref } from 'vue';
+import {
+  computed,
+  defineAsyncComponent,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  provide,
+  ref,
+  watch
+} from 'vue';
 import { useRoute } from 'vue-router';
 
 import PlayBottom from '@/components/common/PlayBottom.vue';
 import UpdateModal from '@/components/common/UpdateModal.vue';
-import SleepTimerTop from '@/components/player/SleepTimerTop.vue';
+import MobilePlayBar from '@/components/player/MobilePlayBar.vue';
+// 关键布局组件同步导入（始终可见，避免加载闪烁 / 播放条消失）
+import PlayBar from '@/components/player/PlayBar.vue';
 import homeRouter from '@/router/home';
 import otherRouter from '@/router/other';
 import { useMenuStore } from '@/store/modules/menu';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 import { isElectron } from '@/utils';
+import { applyCoverChromeToRoot, buildCoverChromeVars } from '@/utils/coverChrome';
 
-// 关键布局组件同步导入（始终可见，避免加载闪烁）
 import AppMenu from './components/AppMenu.vue';
-import SearchBar from './components/SearchBar.vue';
 import TitleBar from './components/TitleBar.vue';
 // 移动端专用布局
 import MobileLayout from './MobileLayout.vue';
@@ -91,9 +102,6 @@ const keepAliveInclude = computed(() => {
     .filter(Boolean);
 });
 
-// 非关键组件保持异步加载
-const PlayBar = defineAsyncComponent(() => import('@/components/player/PlayBar.vue'));
-const MobilePlayBar = defineAsyncComponent(() => import('@/components/player/MobilePlayBar.vue'));
 const PlayingListDrawer = defineAsyncComponent(
   () => import('@/components/player/PlayingListDrawer.vue')
 );
@@ -103,8 +111,77 @@ const playerStore = usePlayerStore();
 const settingsStore = useSettingsStore();
 const menuStore = useMenuStore();
 
-const isPlay = computed(() => playerStore.playMusic && playerStore.playMusic.id);
+// 兼容 string id / 仅有 playMusicUrl 的本地曲
+const isPlay = computed(() => {
+  const m = playerStore.playMusic as any;
+  return !!(m && (m.id || m.playMusicUrl || playerStore.playMusicUrl));
+});
 const route = useRoute();
+
+/** 封面取色 → 布局背景与 chrome token */
+const coverBackground = computed(() => {
+  const m = playerStore.playMusic as any;
+  return (m?.backgroundColor as string) || '';
+});
+
+const coverPrimary = computed(() => {
+  const m = playerStore.playMusic as any;
+  return (m?.primaryColor as string) || '';
+});
+
+const coverChromeVars = computed(() =>
+  buildCoverChromeVars(coverBackground.value, coverPrimary.value)
+);
+
+// 含「暂无新取色、仍保留上一层」的情况
+const hasCoverBg = computed(() => !!(coverBackground.value || bgLayer0.value || bgLayer1.value));
+
+/** 双层交叉淡入：渐变 background 本身难 transition，用两层 opacity 过渡 */
+const bgLayer0 = ref('');
+const bgLayer1 = ref('');
+const bgActive = ref(0);
+const bgLayer0Style = computed(() => (bgLayer0.value ? { background: bgLayer0.value } : undefined));
+const bgLayer1Style = computed(() => (bgLayer1.value ? { background: bgLayer1.value } : undefined));
+
+watch(
+  coverBackground,
+  (bg) => {
+    const next = (bg || '').trim();
+    // 新曲尚未取色时保留上一首背景，避免闪纯黑
+    if (!next) return;
+    const cur = bgActive.value === 0 ? bgLayer0.value : bgLayer1.value;
+    if (cur === next) return;
+    const other = bgActive.value === 0 ? 1 : 0;
+    if (other === 0) bgLayer0.value = next;
+    else bgLayer1.value = next;
+    requestAnimationFrame(() => {
+      bgActive.value = other;
+    });
+  },
+  { immediate: true }
+);
+
+// 同步到 html；无新 token 时保留旧 chrome，勿清空导致闪黑
+watch(
+  coverChromeVars,
+  (vars) => {
+    if (!vars) return;
+    try {
+      applyCoverChromeToRoot(vars);
+    } catch (error) {
+      console.error('[cover-chrome] watch apply failed', error);
+    }
+  },
+  { immediate: true }
+);
+
+onUnmounted(() => {
+  try {
+    applyCoverChromeToRoot(null);
+  } catch {
+    /* 忽略 */
+  }
+});
 
 // 判断当前路由是否应该在移动端显示AppMenu
 const shouldShowMobileMenu = computed(() => {
@@ -151,36 +228,89 @@ provide('openPlaylistDrawer', openPlaylistDrawer);
 <style lang="scss" scoped>
 .layout-page {
   @apply w-screen h-screen overflow-hidden bg-light dark:bg-black;
+  position: relative;
+}
+
+.layout-bg-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.55s ease;
+  background-size: cover;
+  background-position: center;
+}
+.layout-bg-layer.is-on {
+  opacity: 1;
+}
+
+.layout-page.has-cover-bg {
+  color: var(--chrome-text);
+}
+
+.layout-page.has-cover-bg .menu,
+.layout-page.has-cover-bg .main,
+.layout-page.has-cover-bg .layout-main,
+.layout-page.has-cover-bg .main-content,
+.layout-page.has-cover-bg .main-page,
+.layout-page.has-cover-bg :deep(#title-bar) {
+  background: transparent !important;
+}
+
+.layout-page.has-cover-bg :deep(.app-menu),
+.layout-page.has-cover-bg :deep(.app-menu-list) {
+  background: transparent !important;
 }
 
 .layout-main {
   @apply w-full h-full relative text-gray-900 dark:text-white;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  z-index: 1;
 }
 
 .layout-main-page {
-  @apply flex h-full;
+  @apply flex;
+  flex: 1 1 0;
+  min-height: 0;
+  /* 侧栏 ↔ 主区：走全局 --layout-col-gap，不跟页面里赛 padding */
+  gap: var(--layout-col-gap, 0);
+  /* 播放条占位交给 PlayBottom（--play-bar-height），这里再垫会透出一条空带 */
+  box-sizing: border-box;
 }
 
 .menu {
-  @apply h-full bg-light dark:bg-black;
+  @apply h-full flex-shrink-0;
+  background: transparent;
+  z-index: 20;
 }
 
 .main {
   @apply overflow-hidden flex-1 flex flex-col;
+  min-width: 0;
+  min-height: 0;
+  background: transparent;
+  position: relative;
+  z-index: 1;
 }
 
 .main-content {
   @apply flex-1 overflow-hidden;
+  min-height: 0;
+  background: transparent;
 }
 
 .main-page {
   @apply h-full;
+  background: transparent;
 }
 
 .mobile {
   .main-content {
     height: calc(100vh - 130px);
-    overflow: auto;
+    overflow: hidden;
     display: block;
     flex: none;
     position: relative;

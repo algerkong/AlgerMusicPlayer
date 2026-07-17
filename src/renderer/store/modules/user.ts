@@ -1,11 +1,16 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
+import { msLogout } from '@/api/musicSource';
 import type { IUserDetail } from '@/types/user';
+import { isElectron } from '@/utils';
 import { clearLoginStatus } from '@/utils/auth';
 
 interface UserData {
+  /** 兼容旧 UI；汽水雪花可能超出 safe integer，此时以 user_id 为准 */
   userId: number;
+  /** 权威用户 id（字符串，可表示雪花） */
+  user_id?: string;
   [key: string]: any;
 }
 
@@ -46,6 +51,13 @@ export const useUserStore = defineStore('user', () => {
   };
 
   const handleLogout = async () => {
+    if (isElectron) {
+      try {
+        await msLogout();
+      } catch (error) {
+        console.warn('[user] msLogout failed:', error);
+      }
+    }
     user.value = null;
     loginType.value = null;
     collectedAlbumIds.value.clear();
@@ -87,9 +99,29 @@ export const useUserStore = defineStore('user', () => {
     return collectedAlbumIds.value.has(albumId);
   };
 
+  /** 是否会员（VIP 或 SVIP） */
   const isVip = computed(() => {
     if (!user.value) return false;
-    return user.value.vipType && user.value.vipType !== 0;
+    const level = String(user.value.vipLevel || '').toLowerCase();
+    if (level === 'svip' || level === 'vip') return true;
+    return !!(user.value.vipType && user.value.vipType !== 0);
+  });
+
+  /** none | vip | svip */
+  const vipLevel = computed(() => {
+    const level = String(user.value?.vipLevel || '').toLowerCase();
+    if (level.includes('svip') || level.includes('super')) return 'svip' as const;
+    if (level.includes('vip') || (user.value?.vipType && user.value.vipType !== 0)) {
+      return 'vip' as const;
+    }
+    return 'none' as const;
+  });
+
+  /** 展示用：SVIP / VIP / 空 */
+  const vipLabel = computed(() => {
+    if (vipLevel.value === 'svip') return 'SVIP';
+    if (vipLevel.value === 'vip') return 'VIP';
+    return '';
   });
 
   const initializeUser = async () => {
@@ -109,6 +141,8 @@ export const useUserStore = defineStore('user', () => {
     playList,
     albumList,
     isVip,
+    vipLevel,
+    vipLabel,
     setUser,
     setLoginType,
     handleLogout,

@@ -2,11 +2,8 @@
   <div
     class="music-play-bar"
     :class="[
-      setAnimationClass('animate__bounceInUp'),
-      musicFullVisible ? 'play-bar-opcity' : '',
-      musicFullVisible && MusicFullRef?.musicFullRef?.config?.hidePlayBar
-        ? 'animate__animated animate__slideOutDown'
-        : ''
+      !musicFullVisible && !playBarSettled ? setAnimationClass('animate__bounceInUp') : '',
+      musicFullVisible ? 'play-bar-hidden' : ''
     ]"
     :style="{
       color: musicFullVisible
@@ -34,12 +31,12 @@
     </div>
     <div class="play-bar-img-wrapper" @click="setMusicFull">
       <n-image
-        :src="getImgUrl(playMusic?.picUrl, '100y100')"
+        :src="getImgUrl(nowView?.coverUrl || playMusic?.picUrl, '100y100')"
         class="play-bar-img"
         lazy
         preview-disabled
       />
-      <div v-if="playMusic?.playLoading" class="loading-overlay">
+      <div v-if="nowView?.isLoading || playMusic?.playLoading" class="loading-overlay">
         <i class="ri-loader-4-line loading-icon"></i>
       </div>
       <div class="hover-arrow">
@@ -58,9 +55,8 @@
     <div class="music-content">
       <div class="music-content-title flex items-center">
         <n-ellipsis class="text-ellipsis" line-clamp="1">
-          <p v-html="playMusic?.name || ''"></p>
+          <p>{{ nowView?.title || playMusic?.name || '' }}</p>
         </n-ellipsis>
-        <span v-if="playbackRate !== 1.0" class="playback-rate-badge"> {{ playbackRate }}x </span>
       </div>
       <div class="music-content-name">
         <n-ellipsis
@@ -72,32 +68,37 @@
           }"
         >
           <span
-            v-for="(artists, artistsindex) in artistList"
+            v-for="(artists, artistsindex) in barArtists"
             :key="artistsindex"
-            class="cursor-pointer hover:text-green-500"
+            class="cursor-pointer hover:text-primary"
             @click="handleArtistClick(artists.id)"
           >
-            {{ artists.name }}{{ artistsindex < artistList.length - 1 ? ' / ' : '' }}
+            {{ artists.name }}{{ artistsindex < barArtists.length - 1 ? ' / ' : '' }}
           </span>
         </n-ellipsis>
       </div>
     </div>
     <div class="music-buttons">
-      <div class="music-buttons-prev" @click="handlePrev">
-        <i class="iconfont icon-prev"></i>
-      </div>
-      <div class="music-buttons-play" @click="playMusicEvent">
-        <i class="iconfont icon" :class="play ? 'icon-stop' : 'icon-play'"></i>
-      </div>
-      <div class="music-buttons-next" @click="handleNext">
-        <i class="iconfont icon-next"></i>
-      </div>
+      <button type="button" class="pb-ctrl" :title="t('player.playBar.prev')" @click="handlePrev">
+        <i class="ri-skip-back-mini-fill" />
+      </button>
+      <button
+        type="button"
+        class="pb-ctrl pb-ctrl--play"
+        :title="play ? t('player.playBar.pause') : t('player.playBar.play')"
+        @click="playMusicEvent"
+      >
+        <i :class="play ? 'ri-pause-fill' : 'ri-play-fill'" />
+      </button>
+      <button type="button" class="pb-ctrl" :title="t('player.playBar.next')" @click="handleNext">
+        <i class="ri-skip-forward-mini-fill" />
+      </button>
     </div>
     <div class="audio-button">
       <div class="audio-volume custom-slider" @wheel.prevent="handleVolumeWheel">
-        <div class="volume-icon" @click="mute">
-          <i class="iconfont" :class="getVolumeIcon"></i>
-        </div>
+        <button type="button" class="bar-icon" :title="t('player.playBar.volume')" @click="mute">
+          <i :class="getVolumeIcon" />
+        </button>
         <div class="volume-slider">
           <div class="volume-percentage" :class="{ 'volume-percentage-disabled': isMuted }">
             {{ Math.round(volumeSlider) }}%
@@ -113,103 +114,83 @@
       </div>
       <n-tooltip v-if="!isMobile" trigger="hover" :z-index="9999999">
         <template #trigger>
-          <i
-            class="iconfont"
-            :class="[playModeIcon, { 'intelligence-active': playMode === 3 }]"
-            @click="togglePlayMode"
-          ></i>
+          <button type="button" class="bar-icon" @click="togglePlayMode">
+            <i :class="playModeIcon" />
+          </button>
         </template>
         {{ playModeText }}
       </n-tooltip>
-      <n-tooltip v-if="!isMobile" trigger="hover" :z-index="9999999">
-        <template #trigger>
-          <i
-            class="iconfont"
-            :class="{
-              'like-active': isFavorite,
-              'ri-heart-3-fill': isFavorite,
-              'ri-heart-3-line': !isFavorite
-            }"
-            @click="toggleFavorite"
-          ></i>
-        </template>
-        {{ t('player.playBar.like') }}
-      </n-tooltip>
-      <n-tooltip v-if="isElectron" class="music-lyric" trigger="hover" :z-index="9999999">
-        <template #trigger>
-          <i
-            class="iconfont ri-music-2-line"
-            :class="{ 'text-green-500': isLyricWindowOpen, 'disabled-icon': !playMusic?.id }"
-            @click="playMusic?.id && openLyricWindow()"
-          ></i>
-        </template>
-        {{ playMusic?.id ? t('player.playBar.lyric') : t('player.playBar.noSongPlaying') }}
-      </n-tooltip>
       <n-tooltip v-if="playMusic?.id && isElectron" trigger="hover" :z-index="9999999">
         <template #trigger>
-          <i
-            class="iconfont ri-download-line"
-            :class="{ 'disabled-icon': isDownloading }"
+          <button
+            type="button"
+            class="bar-icon"
+            :class="{ 'bar-icon--disabled': isDownloading }"
+            :disabled="isDownloading"
             @click="playMusic?.id && handleDownload()"
-          />
+          >
+            <i class="ri-download-2-line" />
+          </button>
         </template>
         {{ isDownloading ? t('songItem.message.downloading') : t('player.playBar.download') }}
       </n-tooltip>
 
-      <!-- 高级控制菜单按钮（整合了 EQ、定时关闭、播放速度） -->
-      <advanced-controls-popover />
+      <!-- 音质 / 音效已迁到发现页曲目标识；播放条不再重复 -->
 
       <n-tooltip trigger="hover" :z-index="9999999">
         <template #trigger>
-          <i
-            class="iconfont icon-list text-2xl hover:text-green-500 transition-colors cursor-pointer"
+          <button
+            type="button"
+            class="bar-icon"
+            :title="t('player.playBar.playList')"
             @click="openPlayListDrawer"
-          ></i>
+          >
+            <i class="ri-play-list-2-line" />
+          </button>
         </template>
         {{ t('player.playBar.playList') }}
       </n-tooltip>
     </div>
     <!-- 全屏播放器 -->
-    <music-full-wrapper ref="MusicFullRef" v-model="musicFullVisible" :background="background" />
+    <music-full-wrapper v-model="musicFullVisible" :background="background" />
   </div>
 </template>
 
 <script lang="ts" setup>
 import { useThrottleFn } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import MusicFullWrapper from '@/components/lyric/MusicFullWrapper.vue';
-import AdvancedControlsPopover from '@/components/player/AdvancedControlsPopover.vue';
-import {
-  allTime,
-  artistList,
-  isLyricWindowOpen,
-  nowTime,
-  openLyric,
-  playMusic,
-  textColors
-} from '@/hooks/MusicHook';
-import { useArtist } from '@/hooks/useArtist';
+import { allTime, artistList, nowTime, playMusic, textColors } from '@/hooks/MusicHook';
 import { useDownload } from '@/hooks/useDownload';
-import { useFavorite } from '@/hooks/useFavorite';
 import { usePlaybackControl } from '@/hooks/usePlaybackControl';
+import { usePlayBarChrome } from '@/hooks/usePlayBarChrome';
+import { usePlayableView } from '@/hooks/usePlayableView';
 import { usePlayMode } from '@/hooks/usePlayMode';
 import { useVolumeControl } from '@/hooks/useVolumeControl';
 import { audioService } from '@/services/audioService';
-import { usePlayerStore } from '@/store/modules/player';
-import { useSettingsStore } from '@/store/modules/settings';
 import { getImgUrl, isElectron, isMobile, secondToMinute, setAnimationClass } from '@/utils';
 
-const playerStore = usePlayerStore();
-const settingsStore = useSettingsStore();
 const { t } = useI18n();
 
-// 播放控制
 const { isPlaying: play, playMusicEvent, handleNext, handlePrev } = usePlaybackControl();
+const {
+  playerStore,
+  settingsStore,
+  background,
+  openPlayListDrawer,
+  setMusicFull,
+  handleArtistClick
+} = usePlayBarChrome({ fullMode: 'toggle' });
 
-// 音量控制
+/** P4：当前曲展示字段 */
+const nowView = usePlayableView(() => playMusic.value);
+const barArtists = computed(
+  () =>
+    nowView.value?.artists || (artistList.value as { id: number | string; name: string }[]) || []
+);
+
 const {
   isMuted,
   volumeSlider,
@@ -218,42 +199,19 @@ const {
   handleVolumeWheel
 } = useVolumeControl();
 
-// 收藏
-const { isFavorite, toggleFavorite } = useFavorite();
-
-// 下载
 const { downloadMusic, isDownloading } = useDownload();
 const handleDownload = () => {
   if (!playMusic.value || isDownloading.value) return;
   downloadMusic(playMusic.value);
 };
 
-// 播放模式
-const { playMode, playModeIcon, playModeText, togglePlayMode } = usePlayMode();
+const { playModeIcon, playModeText, togglePlayMode } = usePlayMode();
 
-// 播放速度控制
-const { playbackRate } = storeToRefs(playerStore);
-
-// 背景颜色
-const background = ref('#000');
-
-watch(
-  () => playerStore.playMusic,
-  async () => {
-    if (playMusic && playMusic.value && playMusic.value.backgroundColor) {
-      background.value = playMusic.value.backgroundColor as string;
-    }
-  },
-  { immediate: true, deep: true }
-);
-
-// 节流版本的 seek 函数
 const throttledSeek = useThrottleFn((value: number) => {
   audioService.seek(value);
   nowTime.value = value;
 }, 50);
 
-// 拖动时的临时值
 const dragValue = ref(0);
 const isDragging = ref(false);
 
@@ -283,8 +241,14 @@ const formatTooltip = (value: number) => {
   return `${secondToMinute(value)} / ${secondToMinute(allTime.value)}`;
 };
 
-const MusicFullRef = ref<any>(null);
 const showSliderTooltip = ref(false);
+/* 进场动画结束后去掉 bounce class，避免盖住下滑 transform */
+const playBarSettled = ref(false);
+onMounted(() => {
+  window.setTimeout(() => {
+    playBarSettled.value = true;
+  }, 700);
+});
 
 const musicFullVisible = computed({
   get: () => playerStore.musicFull,
@@ -292,29 +256,6 @@ const musicFullVisible = computed({
     playerStore.setMusicFull(value);
   }
 });
-
-const setMusicFull = () => {
-  musicFullVisible.value = !musicFullVisible.value;
-  playerStore.setMusicFull(musicFullVisible.value);
-  if (musicFullVisible.value) {
-    settingsStore.showArtistDrawer = false;
-  }
-};
-
-const openLyricWindow = () => {
-  openLyric();
-};
-
-const { navigateToArtist } = useArtist();
-
-const handleArtistClick = (id: number) => {
-  musicFullVisible.value = false;
-  navigateToArtist(id);
-};
-
-const openPlayListDrawer = () => {
-  playerStore.setPlayListDrawerVisible(true);
-};
 </script>
 
 <style lang="scss" scoped>
@@ -323,24 +264,32 @@ const openPlayListDrawer = () => {
 }
 
 .music-play-bar {
-  @apply h-20 w-full absolute bottom-0 left-0 flex items-center box-border px-6 py-2 pt-3;
-  @apply bg-light dark:bg-dark shadow-2xl shadow-gray-300;
+  @apply w-full absolute bottom-0 left-0 flex items-center box-border px-6 py-2 pt-3;
+  height: var(--play-bar-height, 5rem);
+  background: var(--chrome-surface-strong, rgba(24, 24, 27, 0.88));
+  border-top: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.1));
+  backdrop-filter: blur(var(--chrome-blur, 16px));
+  -webkit-backdrop-filter: blur(var(--chrome-blur, 16px));
+  color: var(--chrome-text, #f8fafc);
+  pointer-events: auto;
+  box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.18);
+  /* 高于 .music-full-drawer(9998)，展开时底栏压在抽屉上再下滑 */
   z-index: 9999;
   animation-duration: 0.5s !important;
+  transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1);
 
-  &.play-bar-opcity {
-    @apply bg-transparent !important;
-    box-shadow: 0 0 20px 5px #0000001d;
-  }
-
-  &.animate__slideOutDown {
-    animation-duration: 0.3s !important;
+  /* 大屏打开：下滑收起；关掉进场 animation 以免覆盖 transform */
+  &.play-bar-hidden {
+    animation: none !important;
+    transform: translateY(100%) !important;
     pointer-events: none;
   }
 
   .music-content {
     width: 200px;
     @apply ml-4;
+    flex-shrink: 0;
+    min-width: 0;
 
     &-title {
       @apply text-base;
@@ -356,29 +305,56 @@ const openPlayListDrawer = () => {
   @apply w-14 h-14 rounded-2xl;
 }
 
+/* 绝对居中：不受左右列宽度不对称影响 */
 .music-buttons {
-  @apply mx-6 flex-1 flex justify-center;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  z-index: 2;
+  pointer-events: auto;
+}
 
-  .iconfont {
-    @apply text-2xl transition;
-    @apply hover:text-green-500;
-  }
-
-  .icon {
-    @apply text-3xl;
-    @apply hover:text-green-500;
-  }
-
-  @apply flex items-center;
-
-  > div {
-    @apply cursor-pointer;
-  }
-
-  &-play {
-    @apply flex justify-center items-center w-20 h-12 rounded-full mx-4 transition text-gray-500;
-    @apply bg-gray-100 bg-opacity-60 dark:bg-gray-800 dark:bg-opacity-60 hover:bg-gray-200;
-  }
+/* 中间播放控件：圆润填充 */
+.pb-ctrl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--chrome-text, #f8fafc);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    transform 0.12s;
+  font-size: 1.55rem;
+  line-height: 1;
+  padding: 0;
+}
+.pb-ctrl:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--primary-color, #22c55e);
+}
+.pb-ctrl:active {
+  transform: scale(0.94);
+}
+.pb-ctrl--play {
+  width: 48px;
+  height: 48px;
+  margin: 0 6px;
+  font-size: 1.75rem;
+  background: rgba(255, 255, 255, 0.12);
+}
+.pb-ctrl--play:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .audio-volume {
@@ -388,17 +364,9 @@ const openPlayListDrawer = () => {
       @apply opacity-100 visible;
     }
   }
-  .volume-icon {
-    @apply cursor-pointer;
-  }
-
-  .iconfont {
-    @apply text-2xl transition;
-    @apply hover:text-green-500;
-  }
 
   .volume-slider {
-    @apply absolute opacity-0 invisible transition-all duration-300 bottom-[30px] left-1/2 -translate-x-1/2 h-[180px] px-2 py-4 rounded-xl;
+    @apply absolute opacity-0 invisible transition-all duration-300 bottom-[36px] left-1/2 -translate-x-1/2 h-[180px] px-2 py-4 rounded-2xl;
     @apply bg-light dark:bg-dark-200;
     @apply border border-gray-200 dark:border-gray-700;
 
@@ -416,12 +384,85 @@ const openPlayListDrawer = () => {
 }
 
 .audio-button {
-  @apply flex items-center;
+  @apply flex items-center gap-1.5;
+  margin-left: auto;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
 
-  .iconfont {
-    @apply text-2xl transition cursor-pointer mx-3;
-    @apply hover:text-green-500;
-  }
+/* 右侧工具图标：统一圆按钮 */
+.bar-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--chrome-text, #f8fafc);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    transform 0.12s;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+}
+.bar-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--primary-color, #22c55e);
+}
+.bar-icon:active {
+  transform: scale(0.94);
+}
+.bar-icon--liked {
+  color: #ec4899;
+}
+.bar-icon--liked:hover {
+  color: #f472b6;
+}
+.bar-icon--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* 音质胶囊与音效之间多留空 */
+.quality-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  height: 32px;
+  padding: 0 10px;
+  margin: 0 4px 0 2px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: inherit;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+  flex-shrink: 0;
+}
+.quality-btn:hover {
+  color: var(--primary-color, #22c55e);
+  border-color: color-mix(in srgb, var(--primary-color, #22c55e) 55%, transparent);
+  background: color-mix(in srgb, var(--primary-color, #22c55e) 14%, transparent);
+}
+
+.bar-fx-slot {
+  margin-left: 6px;
+  margin-right: 2px;
 }
 
 .music-play {
@@ -457,17 +498,17 @@ const openPlayListDrawer = () => {
     @apply mx-0;
   }
   .music-buttons {
-    @apply m-0;
-    &-prev,
-    &-next {
+    gap: 0;
+    .pb-ctrl:not(.pb-ctrl--play) {
       display: none;
     }
-    &-play {
-      @apply m-0;
+    .pb-ctrl--play {
+      margin: 0;
     }
   }
   .music-content {
     flex: 1;
+    width: auto;
   }
 }
 
@@ -477,9 +518,9 @@ const openPlayListDrawer = () => {
     --n-rail-height: 4px;
     --n-rail-color: theme('colors.gray.200');
     --n-rail-color-dark: theme('colors.gray.700');
-    --n-fill-color: theme('colors.green.500');
+    --n-fill-color: var(--primary-color, #22c55e);
     --n-handle-size: 12px;
-    --n-handle-color: theme('colors.green.500');
+    --n-handle-color: var(--primary-color, #22c55e);
 
     &.n-slider--vertical {
       height: 100%;
@@ -564,7 +605,7 @@ const openPlayListDrawer = () => {
 }
 
 .intelligence-active {
-  @apply text-green-500 hover:text-green-600 !important;
+  color: var(--primary-color, #22c55e) !important;
 }
 
 .disabled-icon {
@@ -648,8 +689,74 @@ const openPlayListDrawer = () => {
 }
 
 .playback-rate-badge {
-  @apply ml-2 px-1.5 h-4 flex items-center text-xs rounded bg-green-500 bg-opacity-15 text-green-600 dark:text-green-400;
+  @apply ml-2 px-1.5 h-4 flex items-center text-xs rounded;
+  color: var(--primary-color, #22c55e);
+  background: rgba(255, 255, 255, 0.08);
   font-weight: 500;
   vertical-align: 1px;
+}
+
+.quality-menu {
+  min-width: 11rem;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.12));
+  background: var(--chrome-surface-strong, rgba(24, 24, 27, 0.94));
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(16px);
+}
+
+.quality-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--chrome-text, #f3f4f6);
+  transition: background 0.12s;
+}
+
+.quality-menu-item:hover:not(.disabled) {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.quality-menu-item.active {
+  font-weight: 650;
+  color: var(--primary-color, #22c55e);
+  background: color-mix(in srgb, var(--primary-color, #22c55e) 14%, transparent);
+}
+
+.quality-menu-item.disabled,
+.quality-menu-item.locked {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.quality-menu-item--muted {
+  opacity: 0.55;
+  cursor: default;
+  font-size: 12px;
+  justify-content: center;
+}
+
+.quality-menu-label {
+  min-width: 0;
+}
+
+/* 需要 SVIP 的档始终带小标 */
+.quality-svip-tag {
+  flex-shrink: 0;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #f5e6b8;
+  background: linear-gradient(180deg, #2a2210 0%, #141008 100%);
+  border: 1px solid rgba(232, 197, 71, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 244, 200, 0.2);
 }
 </style>

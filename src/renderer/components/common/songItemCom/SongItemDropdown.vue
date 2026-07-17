@@ -22,6 +22,7 @@ import { useI18n } from 'vue-i18n';
 import { useUserStore } from '@/store';
 import type { SongResult } from '@/types/music';
 import { getImgUrl, isElectron } from '@/utils';
+import { getSongArtistNames } from '@/utils/songFields';
 
 const { message } = createDiscreteApi(['message']);
 
@@ -59,12 +60,6 @@ const userStore = useUserStore();
 // 后者不具备响应性，登录/登出后菜单禁用状态不会刷新（#706）
 const hasRealAuth = computed(() => !!userStore.user && userStore.loginType !== 'uid');
 
-// 本地歌曲：移除菜单项显示"从本地列表移除"而非"从歌单中删除"（#713）
-const isLocalSong = computed(
-  () =>
-    typeof props.item.playMusicUrl === 'string' && props.item.playMusicUrl.startsWith('local://')
-);
-
 // 渲染歌曲预览
 const renderSongPreview = () => {
   return h(
@@ -74,7 +69,7 @@ const renderSongPreview = () => {
     },
     [
       h(NImage, {
-        src: getImgUrl(props.item.picUrl || props.item.al?.picUrl, '100y100'),
+        src: getImgUrl(props.item.picUrl || props.item.album?.picUrl, '100y100'),
         class: 'w-10 h-10 rounded-lg flex-shrink-0',
         previewDisabled: true,
         imgProps: {
@@ -121,10 +116,7 @@ const renderSongPreview = () => {
                 },
                 {
                   default: () => {
-                    const artistNames = (props.item.ar || props.item.song?.artists)
-                      ?.map((a) => a.name)
-                      .join(' / ');
-                    return artistNames || '未知艺术家';
+                    return getSongArtistNames(props.item, ' / ', '未知艺术家');
                   }
                 }
               )
@@ -192,7 +184,7 @@ const dropdownOptions = computed<MenuOption[]>(() => {
       key: 'dislike',
       icon: () =>
         h('i', {
-          class: `iconfont ${props.isDislike ? 'ri-dislike-fill text-green-500' : 'ri-dislike-line'}`
+          class: `iconfont ${props.isDislike ? 'ri-dislike-fill text-primary' : 'ri-dislike-line'}`
         })
     }
   ];
@@ -204,9 +196,7 @@ const dropdownOptions = computed<MenuOption[]>(() => {
         key: 'd2'
       },
       {
-        label: isLocalSong.value
-          ? t('localMusic.removeFromLibrary')
-          : t('songItem.menu.removeFromPlaylist'),
+        label: t('songItem.menu.removeFromPlaylist'),
         key: 'remove',
         icon: () => h('i', { class: 'iconfont ri-delete-bin-line' })
       }
@@ -216,7 +206,6 @@ const dropdownOptions = computed<MenuOption[]>(() => {
   return options;
 });
 
-// 处理选择
 const handleSelect = (key: string | number) => {
   emits('update:show', false);
 

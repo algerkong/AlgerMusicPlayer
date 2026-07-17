@@ -1,79 +1,160 @@
-import { electronAPI } from '@electron-toolkit/preload';
 import type { IpcRendererEvent } from 'electron';
 import { contextBridge, ipcRenderer } from 'electron';
 
 import type { AppUpdateState } from '../shared/appUpdate';
 
-// Custom APIs for renderer
+/** 音源 IPC 白名单（禁止任意 channel） */
+const MUSIC_SOURCE_CHANNELS = [
+  'music-source:get-auth-state',
+  'music-source:import-cookie',
+  'music-source:create-qr-login',
+  'music-source:poll-qr-login',
+  'music-source:qr-send-mfa-sms',
+  'music-source:qr-validate-mfa-sms',
+  'music-source:logout',
+  'music-source:get-profile',
+  'music-source:get-membership',
+  'music-source:search-songs',
+  'music-source:search-playlists',
+  'music-source:search-albums',
+  'music-source:search-artists',
+  'music-source:search-suggestions',
+  'music-source:list-user-playlists',
+  'music-source:get-playlist',
+  'music-source:create-playlist',
+  'music-source:update-playlist',
+  'music-source:delete-playlist',
+  'music-source:append-playlist-tracks',
+  'music-source:remove-playlist-tracks',
+  'music-source:resolve',
+  'music-source:get-lyric',
+  'music-source:get-song-feed',
+  'music-source:get-related-songs',
+  'music-source:dislike-track',
+  'music-source:like-track',
+  'music-source:unlike-track'
+] as const;
+
+type MusicSourceChannel = (typeof MUSIC_SOURCE_CHANNELS)[number];
+
+function isMusicSourceChannel(channel: string): channel is MusicSourceChannel {
+  return (MUSIC_SOURCE_CHANNELS as readonly string[]).includes(channel);
+}
+
+/** 订阅主进程事件，返回取消订阅函数 */
+function onChannel(channel: string, callback: (...args: any[]) => void): () => void {
+  const wrapped = (_event: IpcRendererEvent, ...args: any[]) => callback(...args);
+  ipcRenderer.on(channel, wrapped);
+  return () => {
+    ipcRenderer.removeListener(channel, wrapped);
+  };
+}
+
+// 仅暴露按业务命名的 API，禁止通用任意 channel IPC
 const api = {
+  // —— 窗口 ——
   minimize: () => ipcRenderer.send('minimize-window'),
   maximize: () => ipcRenderer.send('maximize-window'),
   close: () => ipcRenderer.send('close-window'),
   quitApp: () => ipcRenderer.send('quit-app'),
-  dragStart: (data) => ipcRenderer.send('drag-start', data),
+  dragStart: (data: unknown) => ipcRenderer.send('drag-start', data),
   miniTray: () => ipcRenderer.send('mini-tray'),
   miniWindow: () => ipcRenderer.send('mini-window'),
   restore: () => ipcRenderer.send('restore-window'),
   restart: () => ipcRenderer.send('restart'),
-  resizeWindow: (width, height) => ipcRenderer.send('resize-window', width, height),
-  resizeMiniWindow: (showPlaylist) => ipcRenderer.send('resize-mini-window', showPlaylist),
-  openLyric: () => ipcRenderer.send('open-lyric'),
-  sendLyric: (data) => ipcRenderer.send('send-lyric', data),
-  sendSong: (data) => ipcRenderer.send('update-current-song', data),
-  // 歌词窗口关闭事件
-  onLyricWindowClosed: (callback: () => void) => {
-    ipcRenderer.on('lyric-window-closed', () => callback());
-  },
-  // 歌词窗口就绪事件（Vue 加载完成，可以接收数据）
-  onLyricWindowReady: (callback: () => void) => {
-    ipcRenderer.on('lyric-window-ready', () => callback());
-  },
+  resizeWindow: (width: number, height: number) => ipcRenderer.send('resize-window', width, height),
+  resizeMiniWindow: (showPlaylist: boolean) => ipcRenderer.send('resize-mini-window', showPlaylist),
+
+  // —— 平台（preload 直读，无 IPC）——
+  getPlatform: (): NodeJS.Platform => process.platform,
+
+  // —— 应用设置（字段白名单，禁止任意 key 读写 store；信任根不可经 setSettings 写入）——
+  getSettings: () => ipcRenderer.sendSync('settings:get') as Record<string, unknown>,
+  setSettings: (partial: Record<string, unknown>) =>
+    ipcRenderer.sendSync('settings:set', partial) as Record<string, unknown>,
+  selectDownloadPath: () =>
+    ipcRenderer.invoke('settings:select-download-path') as Promise<
+      { canceled: true } | { canceled: false; path: string }
+    >,
+  selectDiskCacheDir: () =>
+    ipcRenderer.invoke('settings:select-disk-cache-dir') as Promise<
+      { canceled: true } | { canceled: false; path: string }
+    >,
+
+  // —— 语言 ——
+  changeLanguage: (locale: string) => ipcRenderer.send('change-language', locale),
+  onLanguageChanged: (callback: (locale: string) => void) =>
+    onChannel('language-changed', callback),
+
+  // —— 托盘 / MPRIS 当前歌曲 ——
+  sendSong: (data: unknown) => ipcRenderer.send('update-current-song', data),
+
+  // —— 应用更新 ——
   getAppUpdateState: () => ipcRenderer.invoke('app-update:get-state') as Promise<AppUpdateState>,
   checkAppUpdate: (manual = false) =>
     ipcRenderer.invoke('app-update:check', { manual }) as Promise<AppUpdateState>,
   downloadAppUpdate: () => ipcRenderer.invoke('app-update:download') as Promise<AppUpdateState>,
   installAppUpdate: () => ipcRenderer.invoke('app-update:quit-and-install') as Promise<boolean>,
   openAppUpdatePage: () => ipcRenderer.invoke('app-update:open-release-page') as Promise<boolean>,
-  onAppUpdateState: (callback: (state: AppUpdateState) => void) => {
-    ipcRenderer.on('app-update:state', (_event, state: AppUpdateState) => callback(state));
-  },
+  onAppUpdateState: (callback: (state: AppUpdateState) => void) =>
+    onChannel('app-update:state', callback),
   removeAppUpdateListeners: () => {
     ipcRenderer.removeAllListeners('app-update:state');
   },
-  // 语言相关
-  onLanguageChanged: (callback: (locale: string) => void) => {
-    ipcRenderer.on('language-changed', (_event, locale) => {
-      callback(locale);
-    });
-  },
-  // 歌词缓存相关
-  invoke: (channel: string, ...args: any[]) => {
-    const validChannels = [
-      'get-lyrics',
-      'clear-lyrics-cache',
-      'get-system-fonts',
-      'get-cached-lyric',
-      'cache-lyric',
-      'clear-lyric-cache',
-      'scan-local-music',
-      'scan-local-music-with-stats',
-      'parse-local-music-metadata'
-    ];
-    if (validChannels.includes(channel)) {
-      return ipcRenderer.invoke(channel, ...args);
-    }
-    return Promise.reject(new Error(`未授权的 IPC 通道: ${channel}`));
-  },
-  // 本地音乐扫描相关
-  scanLocalMusic: (folderPath: string) => ipcRenderer.invoke('scan-local-music', folderPath),
-  scanLocalMusicWithStats: (folderPath: string) =>
-    ipcRenderer.invoke('scan-local-music-with-stats', folderPath),
-  parseLocalMusicMetadata: (filePaths: string[]) =>
-    ipcRenderer.invoke('parse-local-music-metadata', filePaths),
 
-  // Download manager
-  downloadAdd: (task: any) => ipcRenderer.invoke('download:add', task),
-  downloadAddBatch: (tasks: any) => ipcRenderer.invoke('download:add-batch', tasks),
+  // —— 歌词/音频缓存 ——
+  getCachedLyric: (id: string | number) => ipcRenderer.invoke('get-cached-lyric', id),
+  cacheLyric: (id: string | number, lyricData: unknown) =>
+    ipcRenderer.invoke('cache-lyric', id, lyricData),
+  resolveCachedMusicUrl: (payload: unknown) =>
+    ipcRenderer.invoke('resolve-cached-music-url', payload),
+  getDiskCacheStats: () => ipcRenderer.invoke('get-disk-cache-stats'),
+  setDiskCacheConfig: (partial: unknown) => ipcRenderer.invoke('set-disk-cache-config', partial),
+  getSystemFonts: () => ipcRenderer.invoke('get-system-fonts'),
+
+  // —— 文件 ——
+  selectDirectory: () => ipcRenderer.invoke('select-directory'),
+  openDirectory: (filePath: string) => ipcRenderer.send('open-directory', filePath),
+  checkFileExists: (filePath: string) => ipcRenderer.invoke('check-file-exists', filePath),
+  getDownloadsPath: () => ipcRenderer.invoke('get-downloads-path') as Promise<string>,
+  saveLyricFile: (payload: { filename: string; lrcContent: string }) =>
+    ipcRenderer.invoke('save-lyric-file', payload),
+
+  // —— 缩放 ——
+  getContentZoom: () => ipcRenderer.invoke('get-content-zoom') as Promise<number>,
+  setContentZoom: (zoom: number) => ipcRenderer.send('set-content-zoom', zoom),
+
+  // —— 播放状态 / MPRIS / 托盘歌词 ——
+  updatePlayState: (playing: boolean) => ipcRenderer.send('update-play-state', playing),
+  mprisPositionUpdate: (position: number) => ipcRenderer.send('mpris-position-update', position),
+  trayLyricUpdate: (data: unknown) => ipcRenderer.send('tray-lyric-update', data),
+  onMprisSeek: (callback: (position: number) => void) => onChannel('mpris-seek', callback),
+  onMprisSetPosition: (callback: (position: number) => void) =>
+    onChannel('mpris-set-position', callback),
+  onMprisPlay: (callback: () => void) => onChannel('mpris-play', callback),
+  onMprisPause: (callback: () => void) => onChannel('mpris-pause', callback),
+
+  // —— 快捷键（内置默认，主进程注册全局；renderer 只收动作）——
+  onGlobalShortcut: (callback: (action: string) => void) => onChannel('global-shortcut', callback),
+
+  // —— 系统休眠/锁屏唤醒（主进程 powerMonitor → 渲染进程自愈白屏）——
+  onSystemPowerResume: (callback: () => void) => onChannel('system-power-resume', callback),
+
+  // —— 通知（主进程若未注册则静默无效）——
+  showNotification: (payload: { title: string; body: string }) =>
+    ipcRenderer.send('show-notification', payload),
+
+  // —— 音源（白名单 channel）——
+  musicSourceInvoke: (channel: string, ...args: unknown[]) => {
+    if (!isMusicSourceChannel(channel)) {
+      return Promise.reject(new Error(`未授权的音源 IPC 通道: ${channel}`));
+    }
+    return ipcRenderer.invoke(channel, ...args);
+  },
+
+  // —— 下载管理 ——
+  downloadAdd: (task: unknown) => ipcRenderer.invoke('download:add', task),
+  downloadAddBatch: (tasks: unknown) => ipcRenderer.invoke('download:add-batch', tasks),
   downloadPause: (taskId: string) => ipcRenderer.invoke('download:pause', taskId),
   downloadResume: (taskId: string) => ipcRenderer.invoke('download:resume', taskId),
   downloadCancel: (taskId: string) => ipcRenderer.invoke('download:cancel', taskId),
@@ -88,17 +169,17 @@ const api = {
     ipcRenderer.invoke('download:get-embedded-lyrics', filePath),
   downloadProvideUrl: (taskId: string, url: string) =>
     ipcRenderer.invoke('download:provide-url', { taskId, url }),
-  onDownloadProgress: (cb: (data: any) => void) => {
-    ipcRenderer.on('download:progress', (_event: any, data: any) => cb(data));
+  onDownloadProgress: (cb: (data: unknown) => void) => {
+    onChannel('download:progress', cb);
   },
-  onDownloadStateChange: (cb: (data: any) => void) => {
-    ipcRenderer.on('download:state-change', (_event: any, data: any) => cb(data));
+  onDownloadStateChange: (cb: (data: unknown) => void) => {
+    onChannel('download:state-change', cb);
   },
-  onDownloadBatchComplete: (cb: (data: any) => void) => {
-    ipcRenderer.on('download:batch-complete', (_event: any, data: any) => cb(data));
+  onDownloadBatchComplete: (cb: (data: unknown) => void) => {
+    onChannel('download:batch-complete', cb);
   },
-  onDownloadRequestUrl: (cb: (data: any) => void) => {
-    ipcRenderer.on('download:request-url', (_event: any, data: any) => cb(data));
+  onDownloadRequestUrl: (cb: (data: unknown) => void) => {
+    onChannel('download:request-url', cb);
   },
   removeDownloadListeners: () => {
     ipcRenderer.removeAllListeners('download:progress');
@@ -108,46 +189,14 @@ const api = {
   }
 };
 
-// 创建带类型的ipcRenderer对象，暴露给渲染进程
-const ipc = {
-  // 发送消息到主进程（无返回值）
-  send: (channel: string, ...args: any[]) => {
-    ipcRenderer.send(channel, ...args);
-  },
-  // 调用主进程方法（有返回值）
-  invoke: (channel: string, ...args: any[]) => {
-    return ipcRenderer.invoke(channel, ...args);
-  },
-  // 监听主进程消息
-  on: (channel: string, listener: (...args: any[]) => void) => {
-    const wrappedListener = (_event: IpcRendererEvent, ...args: any[]) => listener(...args);
-    ipcRenderer.on(channel, wrappedListener);
-    return () => {
-      ipcRenderer.removeListener(channel, wrappedListener);
-    };
-  },
-  // 移除所有监听器
-  removeAllListeners: (channel: string) => {
-    ipcRenderer.removeAllListeners(channel);
-  }
-};
-
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
 if (process.contextIsolated) {
   try {
-    contextBridge.exposeInMainWorld('electron', electronAPI);
+    // 仅暴露白名单 API，禁止任意 channel 的 ipcRenderer
     contextBridge.exposeInMainWorld('api', api);
-    contextBridge.exposeInMainWorld('ipcRenderer', ipc);
   } catch (error) {
     console.error(error);
   }
 } else {
   // @ts-ignore (define in dts)
-  window.electron = electronAPI;
-  // @ts-ignore (define in dts)
   window.api = api;
-  // @ts-ignore (define in dts)
-  window.ipcRenderer = ipc;
 }

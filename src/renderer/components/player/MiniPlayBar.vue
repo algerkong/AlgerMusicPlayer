@@ -7,7 +7,7 @@
       <!-- 专辑封面 -->
       <div class="album-cover" @click="setMusicFull">
         <n-image
-          :src="getImgUrl(playMusic?.picUrl, '100y100')"
+          :src="getImgUrl(nowView?.coverUrl || playMusic?.picUrl, '100y100')"
           fallback-src="/placeholder.png"
           class="cover-img"
           preview-disabled
@@ -16,15 +16,15 @@
 
       <!-- 歌曲信息 -->
       <div class="song-info" @click="setMusicFull">
-        <div class="song-title" v-html="playMusic?.name || '未播放'"></div>
+        <div class="song-title">{{ nowView?.title || playMusic?.name || '未播放' }}</div>
         <div class="song-artist">
           <span
-            v-for="(artists, artistsindex) in artistList"
+            v-for="(artists, artistsindex) in barArtists"
             :key="artistsindex"
-            class="cursor-pointer hover:text-green-500"
+            class="cursor-pointer hover:text-primary"
             @click.stop="handleArtistClick(artists.id)"
           >
-            {{ artists.name }}{{ artistsindex < artistList.length - 1 ? ' / ' : '' }}
+            {{ artists.name }}{{ artistsindex < barArtists.length - 1 ? ' / ' : '' }}
           </span>
         </div>
       </div>
@@ -99,14 +99,14 @@
       <div class="progress-fill" :style="{ width: `${(nowTime / allTime) * 100}%` }"></div>
     </div>
 
-    <!-- 播放列表 - 单独放在外层，不再使用 popover -->
+    <!-- 播放列表放在外层（不用 popover） -->
     <div
       v-if="!component"
       v-show="isPlaylistOpen"
       class="playlist-container"
       :class="{ 'mini-mode-list': settingsStore.isMiniMode }"
     >
-      <n-scrollbar ref="palyListRef" class="playlist-scrollbar">
+      <scroll-area ref="palyListRef" class="playlist-scrollbar">
         <div class="playlist-items">
           <div v-for="item in playList" :key="item.id" class="music-play-list-content">
             <div class="flex items-center justify-between">
@@ -119,7 +119,7 @@
             </div>
           </div>
         </div>
-      </n-scrollbar>
+      </scroll-area>
     </div>
   </div>
 </template>
@@ -128,24 +128,28 @@
 import { computed, provide, ref, useTemplateRef } from 'vue';
 
 import SongItem from '@/components/common/SongItem.vue';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { allTime, artistList, nowTime, playMusic } from '@/hooks/MusicHook';
-import { useArtist } from '@/hooks/useArtist';
 import { useFavorite } from '@/hooks/useFavorite';
 import { usePlaybackControl } from '@/hooks/usePlaybackControl';
+import { usePlayBarChrome } from '@/hooks/usePlayBarChrome';
+import { usePlayableView } from '@/hooks/usePlayableView';
 import { useVolumeControl } from '@/hooks/useVolumeControl';
-import { audioService } from '@/services/audioService';
-import { usePlayerStore, useSettingsStore } from '@/store';
 import type { SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
+import { sameTrackId } from '@/utils/playerUtils';
 
-const playerStore = usePlayerStore();
-const settingsStore = useSettingsStore();
-const { navigateToArtist } = useArtist();
-
-// 播放控制
 const { isPlaying: play, playMusicEvent, handleNext, handlePrev } = usePlaybackControl();
+const { playerStore, settingsStore, handleArtistClick, handleProgressClick, setMusicFullTo } =
+  usePlayBarChrome({ fullMode: 'open', closeFullOnArtist: false });
 
-// 音量控制（统一通过 playerStore 管理）
+const setMusicFull = () => setMusicFullTo(true);
+const nowView = usePlayableView(() => playMusic.value);
+const barArtists = computed(
+  () =>
+    nowView.value?.artists || (artistList.value as { id: number | string; name: string }[]) || []
+);
+
 const {
   isMuted,
   volumeSlider,
@@ -154,7 +158,6 @@ const {
   handleVolumeWheel
 } = useVolumeControl();
 
-// 收藏
 const { isFavorite, toggleFavorite } = useFavorite();
 
 withDefaults(
@@ -167,70 +170,46 @@ withDefaults(
   }
 );
 
-// 处理关闭按钮点击
 const handleClose = () => {
   if (settingsStore.isMiniMode) {
     window.api.restore();
   }
 };
 
-// 播放列表
 const playList = computed(() => playerStore.playList as SongResult[]);
-
-// 播放列表相关
 const palyListRef = useTemplateRef('palyListRef') as any;
 const isPlaylistOpen = ref(false);
 
-// 提供 openPlaylistDrawer 给子组件
-// Mini 窗口（340px 宽）容不下 420px 的歌单抽屉：记录待添加歌曲并恢复主窗口，
-// AppLayout 重新挂载后接力打开抽屉（#504）
+// Mini 窗口容不下歌单抽屉：记 pending 并恢复主窗口
 provide('openPlaylistDrawer', (songId: number) => {
   localStorage.setItem('pendingAddToPlaylistSongId', String(songId));
   window.api.restore();
 });
 
-// 切换播放列表显示/隐藏
 const togglePlaylist = () => {
   isPlaylistOpen.value = !isPlaylistOpen.value;
-  console.log('切换播放列表状态', isPlaylistOpen.value);
-
-  // 调整窗口大小
   if (settingsStore.isMiniMode) {
     try {
       if (isPlaylistOpen.value) {
-        // 打开播放列表时调整DOM
         document.body.style.height = 'auto';
         document.body.style.overflow = 'visible';
-
-        // 使用新的专用 API 调整窗口大小
-        if (window.api && typeof window.api.resizeMiniWindow === 'function') {
-          window.api.resizeMiniWindow(true);
-        }
+        window.api?.resizeMiniWindow?.(true);
       } else {
-        // 关闭播放列表时强制调整DOM
         document.body.style.height = '64px';
         document.body.style.overflow = 'hidden';
-
-        // 使用新的专用 API 调整窗口大小
-        if (window.api && typeof window.api.resizeMiniWindow === 'function') {
-          window.api.resizeMiniWindow(false);
-        }
+        window.api?.resizeMiniWindow?.(false);
       }
     } catch (error) {
       console.error('调整窗口大小失败:', error);
     }
   }
-
-  // 如果打开列表，滚动到当前播放歌曲
-  if (isPlaylistOpen.value) {
-    scrollToPlayList();
-  }
+  if (isPlaylistOpen.value) scrollToPlayList();
 };
 
 const scrollToPlayList = () => {
   setTimeout(() => {
     const currentIndex = playerStore.playListIndex;
-    const itemHeight = 69; // 每个列表项的高度
+    const itemHeight = 69;
     palyListRef.value?.scrollTo({
       top: currentIndex * itemHeight,
       behavior: 'smooth'
@@ -239,23 +218,10 @@ const scrollToPlayList = () => {
 };
 
 const handleDeleteSong = (song: SongResult) => {
-  if (song.id === playMusic.value.id) {
+  if (sameTrackId(song.id, playMusic.value?.id)) {
     playerStore.nextPlay();
   }
-  playerStore.removeFromPlayList(song.id as number);
-};
-
-// 艺术家点击
-const handleArtistClick = (id: number) => {
-  navigateToArtist(id);
-};
-
-// 进度条相关
-const handleProgressClick = (e: MouseEvent) => {
-  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-  const percent = (e.clientX - rect.left) / rect.width;
-  audioService.seek(allTime.value * percent);
-  nowTime.value = allTime.value * percent;
+  playerStore.removeFromPlayList(song.id);
 };
 
 const hoverTime = ref(0);
@@ -263,18 +229,14 @@ const isHovering = ref(false);
 
 const handleProgressHover = (e: MouseEvent) => {
   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-  const percent = (e.clientX - rect.left) / rect.width;
+  if (rect.width <= 0 || allTime.value <= 0) return;
+  const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
   hoverTime.value = allTime.value * percent;
   isHovering.value = true;
 };
 
 const handleProgressLeave = () => {
   isHovering.value = false;
-};
-
-// 切换到完整播放器
-const setMusicFull = () => {
-  playerStore.setMusicFull(true);
 };
 </script>
 
@@ -399,9 +361,10 @@ const setMusicFull = () => {
   }
 
   &.play {
-    @apply bg-primary text-white;
+    background-color: var(--primary-color, #22c55e);
+    color: #fff;
     &:hover {
-      @apply bg-green-800;
+      background-color: var(--primary-color, #22c55e);
     }
   }
 
@@ -466,7 +429,7 @@ const setMusicFull = () => {
 .progress-fill {
   @apply absolute bottom-0 left-0;
   height: 4px;
-  background: var(--primary-color, #18a058);
+  background: var(--primary-color, #22c55e);
   transition: background-color 0.2s ease;
 }
 
@@ -475,7 +438,10 @@ const setMusicFull = () => {
 }
 
 .volume-slider-wrapper {
-  @apply p-2 py-4 rounded-xl bg-white dark:bg-dark-100 shadow-lg bg-opacity-90 backdrop-blur;
+  @apply p-2 py-4 rounded-xl shadow-lg backdrop-blur;
+  background: var(--chrome-surface-strong, rgba(24, 24, 27, 0.9));
+  border: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.1));
+  color: var(--chrome-text, #f8fafc);
   height: 160px;
 
   :deep(.n-slider) {
@@ -525,7 +491,10 @@ const setMusicFull = () => {
 
 // 播放列表样式
 .playlist-container {
-  @apply fixed left-0 right-0 bg-white dark:bg-dark-100 overflow-hidden;
+  @apply fixed left-0 right-0 overflow-hidden;
+  background: var(--chrome-surface-strong, rgba(24, 24, 27, 0.92));
+  border-top: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.1));
+  color: var(--chrome-text, #f8fafc);
   top: 64px;
   height: 330px;
   max-height: 330px;

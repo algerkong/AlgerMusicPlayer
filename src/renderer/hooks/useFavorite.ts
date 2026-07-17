@@ -9,10 +9,10 @@ import { usePlayerStore } from '@/store/modules/player';
 export function useFavorite() {
   const playerStore = usePlayerStore();
 
-  /** 当前歌曲是否已收藏 */
+  /** 当前歌曲是否已收藏（sameTrackId，兼容雪花 id） */
   const isFavorite = computed(() => {
     if (!playMusic?.value?.id) return false;
-    return playerStore.favoriteList.includes(playMusic.value.id);
+    return playerStore.isFavorite(playMusic.value.id);
   });
 
   /** 切换收藏状态 */

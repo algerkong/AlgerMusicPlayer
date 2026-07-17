@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia';
 
+import { sameTrackId } from '@/utils/playerUtils';
+
 interface MusicState {
   currentMusicList: any[] | null;
   currentMusicListName: string;
@@ -16,7 +18,6 @@ export const useMusicStore = defineStore('music', {
   }),
 
   actions: {
-    // 设置当前音乐列表
     setCurrentMusicList(list: any[], name: string, listInfo: any = null, canRemove = false) {
       this.currentMusicList = list;
       this.currentMusicListName = name;
@@ -40,11 +41,11 @@ export const useMusicStore = defineStore('music', {
       this.canRemoveSong = false;
     },
 
-    // 从列表中移除一首歌曲
-    removeSongFromList(id: number) {
+    // 从列表中移除一首歌曲（id 可能是汽水长整型字符串）
+    removeSongFromList(id: string | number) {
       if (!this.currentMusicList) return;
 
-      const index = this.currentMusicList.findIndex((song) => song.id === id);
+      const index = this.currentMusicList.findIndex((song) => sameTrackId(song.id, id));
       if (index !== -1) {
         this.currentMusicList.splice(index, 1);
       }

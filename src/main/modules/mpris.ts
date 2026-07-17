@@ -1,6 +1,13 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import Player from 'mpris-service';
 
+import {
+  getSongAlbumName,
+  getSongArtistNames,
+  getSongCoverUrl,
+  getSongDurationMs
+} from '../../shared/domain/songFields';
+
 let dbusModule: any;
 try {
   dbusModule = require('@httptoolkit/dbus-native');
@@ -164,18 +171,14 @@ export function updateMprisCurrentSong(song: SongInfo | null) {
     return;
   }
 
-  const artists =
-    song.ar?.map((a) => a.name).join(', ') ||
-    song.artists?.map((a) => a.name).join(', ') ||
-    song.song?.artists?.map((a) => a.name).join(', ') ||
-    '';
-  const album = song.al?.name || song.album?.name || song.song?.album?.name || '';
-  const duration = song.duration || song.dt || song.song?.duration || 0;
+  const artists = getSongArtistNames(song, ', ');
+  const album = getSongAlbumName(song);
+  const duration = getSongDurationMs(song);
 
   mprisPlayer.metadata = {
     'mpris:trackid': mprisPlayer.objectPath(`track/${song.id || 0}`),
     'mpris:length': duration * 1000,
-    'mpris:artUrl': song.picUrl || '',
+    'mpris:artUrl': getSongCoverUrl(song) || song.picUrl || '',
     'xesam:title': song.name || '',
     'xesam:album': album,
     'xesam:artist': artists ? [artists] : []

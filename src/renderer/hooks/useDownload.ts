@@ -6,23 +6,23 @@ import { useDownloadStore } from '@/store/modules/download';
 import { getSongUrl } from '@/store/modules/player';
 import type { SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
+import { getSongAlbum, getSongArtists, getSongCoverUrl } from '@/utils/songFields';
 
 import type { DownloadSongInfo } from '../../shared/download';
 
-const ipcRenderer = isElectron ? window.electron.ipcRenderer : null;
-
 /**
- * Map a SongResult to the minimal DownloadSongInfo shape required by the download store.
+ * 将 SongResult 映射为 download store 所需的最小 DownloadSongInfo
  */
 function toDownloadSongInfo(song: SongResult): DownloadSongInfo {
+  const album = getSongAlbum(song);
   return {
-    id: song.id as number,
+    id: song.id,
     name: song.name,
-    picUrl: song.picUrl ?? song.al?.picUrl ?? '',
-    ar: (song.ar || song.song?.artists || []).map((a: { name: string }) => ({ name: a.name })),
+    picUrl: getSongCoverUrl(song),
+    ar: getSongArtists(song).map((a) => ({ name: a.name || '' })),
     al: {
-      name: song.al?.name ?? '',
-      picUrl: song.al?.picUrl ?? ''
+      name: album?.name ?? '',
+      picUrl: album?.picUrl ?? ''
     }
   };
 }
@@ -34,8 +34,8 @@ export const useDownload = () => {
   const isDownloading = ref(false);
 
   /**
-   * Download a single song.
-   * Resolves the URL in the renderer then delegates queuing to the download store.
+   * 下载单曲
+   * 在渲染进程解析 URL，再交给 download store 入队
    */
   const downloadMusic = async (song: SongResult) => {
     if (isDownloading.value) {
@@ -46,7 +46,7 @@ export const useDownload = () => {
     try {
       isDownloading.value = true;
 
-      const musicUrl = (await getSongUrl(song.id as number, song, true)) as any;
+      const musicUrl = (await getSongUrl(song.id, song, true)) as any;
       if (!musicUrl) {
         throw new Error(t('songItem.message.getUrlFailed'));
       }
@@ -66,13 +66,13 @@ export const useDownload = () => {
   };
 
   /**
-   * Batch download multiple songs.
+   * 批量下载多首
    *
-   * NOTE: This deviates slightly from the original spec (which envisioned JIT URL resolution in
-   * the main process via onDownloadRequestUrl). Instead we pre-resolve URLs here in batches of 5
-   * to avoid request storms against the local NeteaseCloudMusicApi service (> ~5 concurrent TLS
-   * connections can trigger 502s). The trade-off is acceptable: the renderer already has access to
-   * getSongUrl and this keeps the main process simpler.
+   * 说明：与最初设想（主进程 JIT 解析 URL）略有不同：
+   * 此处在渲染进程每批 5 条预解析 URL，
+   * 避免对本地音源服务请求风暴（并发 TLS >~5
+   * 易触发 502）。可接受：渲染进程已有 getSongUrl，
+   * 且主进程更简单。
    */
   const batchDownloadMusic = async (songs: SongResult[]) => {
     if (isDownloading.value) {
@@ -92,13 +92,13 @@ export const useDownload = () => {
       const BATCH_SIZE = 5;
       const resolvedItems: Array<{ songInfo: DownloadSongInfo; url: string; type: string }> = [];
 
-      // Resolve URLs in batches of 5 to avoid request storms
+      // 每批 5 条解析 URL，避免请求风暴
       for (let i = 0; i < songs.length; i += BATCH_SIZE) {
         const chunk = songs.slice(i, i + BATCH_SIZE);
         const chunkResults = await Promise.all(
           chunk.map(async (song) => {
             try {
-              const data = (await getSongUrl(song.id as number, song, true)) as any;
+              const data = (await getSongUrl(song.id, song, true)) as any;
               const url = typeof data === 'string' ? data : (data?.url ?? '');
               const type = typeof data === 'string' ? '' : (data?.type ?? '');
               if (!url) return null;
@@ -127,12 +127,12 @@ export const useDownload = () => {
   };
 
   /**
-   * Download the lyric (.lrc) for a single song.
-   * 在线歌词 API 已移除；仅支持已有本地/缓存歌词。
+   * 下载单曲歌词（.lrc）
+   * 仅支持本地/缓存歌词
    */
   const downloadLyric = async (song: SongResult) => {
     try {
-      // Prefer already-loaded lyric on the song object
+      // 优先用歌曲对象上已加载的歌词
       let lrcContent = '';
       if (song.lyric?.lrcArray?.length) {
         lrcContent = song.lyric.lrcArray
@@ -158,18 +158,19 @@ export const useDownload = () => {
       }
 
       const nameFormat =
-        (ipcRenderer?.sendSync('get-store-value', 'set.downloadNameFormat') as string) ||
+        (isElectron ? (window.api.getSettings()?.downloadNameFormat as string) : null) ||
         '{songName} - {artistName}';
       const artistNames =
-        (song.ar || song.song?.artists)?.map((a: { name: string }) => a.name).join('、') ||
-        '未知艺术家';
-      const albumName = song.al?.name || '未知专辑';
+        getSongArtists(song)
+          .map((a) => a.name)
+          .join('、') || '未知艺术家';
+      const albumName = getSongAlbum(song)?.name || '未知专辑';
       const filename = nameFormat
         .replace(/\{songName\}/g, song.name || '')
         .replace(/\{artistName\}/g, artistNames)
         .replace(/\{albumName\}/g, albumName);
 
-      const result = await ipcRenderer?.invoke('save-lyric-file', { filename, lrcContent });
+      const result = isElectron ? await window.api.saveLyricFile({ filename, lrcContent }) : null;
 
       if (result?.success) {
         message.success(t('songItem.message.lyricDownloaded'));

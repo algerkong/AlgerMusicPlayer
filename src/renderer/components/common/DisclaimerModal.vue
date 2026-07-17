@@ -85,7 +85,7 @@
 import { onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import { isElectron, isLyricWindow } from '@/utils';
+import { isElectron } from '@/utils';
 
 const { t } = useI18n();
 
@@ -123,8 +123,6 @@ const handleDisagree = () => {
 };
 
 onMounted(() => {
-  if (isLyricWindow.value) return;
-
   if (shouldShowDisclaimer()) {
     showDisclaimer.value = true;
   }

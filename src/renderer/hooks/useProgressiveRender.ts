@@ -1,4 +1,4 @@
-import { computed, type ComputedRef, type Ref,ref } from 'vue';
+import { computed, type ComputedRef, type Ref, ref } from 'vue';
 
 import { usePlayerStore } from '@/store';
 import { isMobile } from '@/utils';
@@ -55,7 +55,7 @@ export const useProgressiveRender = (options: ProgressiveRenderOptions) => {
   };
 
   /**
-   * 滚动事件处理函数，挂载到外层 n-scrollbar 的 @scroll
+   * 滚动事件处理函数，挂载到外层 scroll-area 的 @scroll
    * 根据可视区域动态扩展 renderLimit
    */
   const handleScroll = (e: Event) => {

@@ -1,6 +1,6 @@
 <template>
   <div class="app-container h-full w-full" :class="{ mobile: isMobile, noElectron: !isElectron }">
-    <n-config-provider :theme="theme === 'dark' ? darkTheme : lightTheme">
+    <n-config-provider :theme="darkTheme" :theme-overrides="naiveThemeOverrides">
       <n-dialog-provider>
         <n-message-provider>
           <router-view></router-view>
@@ -14,10 +14,9 @@
 
 <script setup lang="ts">
 import { cloneDeep } from 'lodash';
-import { darkTheme, lightTheme } from 'naive-ui';
-import { computed, nextTick, onMounted, watch } from 'vue';
+import { darkTheme, type GlobalThemeOverrides } from 'naive-ui';
+import { computed, nextTick, onMounted, onUnmounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useRouter } from 'vue-router';
 
 import DisclaimerModal from '@/components/common/DisclaimerModal.vue';
 import TrafficWarningDrawer from '@/components/TrafficWarningDrawer.vue';
@@ -25,8 +24,14 @@ import { usePlayerStore } from '@/store/modules/player';
 import { usePlayerCoreStore } from '@/store/modules/playerCore';
 import { useSettingsStore } from '@/store/modules/settings';
 import { useUserStore } from '@/store/modules/user';
-import { isElectron, isLyricWindow } from '@/utils';
-import { checkLoginStatus } from '@/utils/auth';
+import { isElectron } from '@/utils';
+import { checkLoginStatus, purgeCredentialStorage } from '@/utils/auth';
+import {
+  applyCoverChromeToRoot,
+  buildCoverChromeVars,
+  buildNaivePrimaryOverrides
+} from '@/utils/coverChrome';
+import { installWakeRecovery } from '@/utils/wakeRecovery';
 
 import { initAudioListeners, initMusicHook } from './hooks/MusicHook';
 import { audioService } from './services/audioService';
@@ -38,24 +43,16 @@ const settingsStore = useSettingsStore();
 const playerStore = usePlayerStore();
 const playerCoreStore = usePlayerCoreStore();
 const userStore = useUserStore();
-const router = useRouter();
 
-// 监听语言变化
-watch(
-  () => settingsStore.setData.language,
-  (newLanguage) => {
-    if (newLanguage && newLanguage !== locale.value) {
-      locale.value = newLanguage;
-    }
-  },
-  { immediate: true }
-);
-
-const theme = computed(() => {
-  return settingsStore.theme;
+/** 封面强调色 → naive-ui primary */
+const naiveThemeOverrides = computed<GlobalThemeOverrides>(() => {
+  const music = playerStore.playMusic as { primaryColor?: string } | undefined;
+  return buildNaivePrimaryOverrides(music?.primaryColor) as GlobalThemeOverrides;
 });
 
-// 监听字体变化并应用
+// 固定简体中文
+locale.value = 'zh-CN';
+
 watch(
   () => [settingsStore.setData.fontFamily, settingsStore.setData.fontScope],
   ([newFont, fontScope]) => {
@@ -68,73 +65,75 @@ watch(
   }
 );
 
-const handleSetLanguage = (value: string) => {
-  console.log('应用语言变更:', value);
-  if (value) {
-    locale.value = value;
+// 清除历史 localStorage token，凭据只在主进程
+purgeCredentialStorage();
+
+settingsStore.initializeSettings();
+settingsStore.initializeTheme();
+settingsStore.initializeSystemFonts();
+
+// 初始化登录状态 - 仅恢复非敏感的 user 展示缓存
+const loginInfo = checkLoginStatus();
+if (loginInfo.isLoggedIn) {
+  if (loginInfo.user && !userStore.user) {
+    userStore.setUser(loginInfo.user);
   }
-};
-
-if (!isLyricWindow.value) {
-  settingsStore.initializeSettings();
-  settingsStore.initializeTheme();
-  settingsStore.initializeSystemFonts();
-
-  // 初始化登录状态 - 从 localStorage 恢复用户信息和登录类型
-  const loginInfo = checkLoginStatus();
-  if (loginInfo.isLoggedIn) {
-    if (loginInfo.user && !userStore.user) {
-      userStore.setUser(loginInfo.user);
-    }
-    if (loginInfo.loginType && !userStore.loginType) {
-      userStore.setLoginType(loginInfo.loginType);
-    }
+  if (loginInfo.loginType && !userStore.loginType) {
+    userStore.setLoginType(loginInfo.loginType);
   }
-}
-
-handleSetLanguage(settingsStore.setData.language);
-
-if (isElectron) {
-  window.api.onLanguageChanged(handleSetLanguage);
 }
 
 // 使用应用内快捷键
 useAppShortcuts();
 
+// 用户手势后预热 AudioContext / 双槽解码图（首播少卡一下）
+if (typeof window !== 'undefined') {
+  const warmOnce = () => {
+    void import('@/services/audioService').then(({ audioService }) => {
+      audioService.warmDecodePipeline();
+    });
+    window.removeEventListener('pointerdown', warmOnce);
+    window.removeEventListener('keydown', warmOnce);
+  };
+  window.addEventListener('pointerdown', warmOnce, { once: true, passive: true });
+  window.addEventListener('keydown', warmOnce, { once: true });
+}
+
+let uninstallWakeRecovery: (() => void) | undefined;
+
+/** 唤醒后重刷封面 chrome + 音频上下文，避免白屏/哑音 */
+const recoverAfterWake = async () => {
+  const music = playerStore.playMusic as {
+    backgroundColor?: string;
+    primaryColor?: string;
+  } | null;
+  try {
+    const vars = buildCoverChromeVars(music?.backgroundColor || '', music?.primaryColor || '');
+    applyCoverChromeToRoot(vars);
+  } catch (error) {
+    console.warn('[wake] reapply cover chrome failed', error);
+  }
+  try {
+    await audioService.resumeContextIfNeeded();
+  } catch {
+    /* ignore */
+  }
+};
+
 onMounted(async () => {
   playerStore.setIsPlay(false);
-  if (isLyricWindow.value) {
-    return;
-  }
-
-  // 检查网络状态，离线时自动跳转到本地音乐页面
-  if (!navigator.onLine) {
-    router.push('/local-music');
-  }
-
-  // 监听网络状态变化，断网时跳转到本地音乐页面
-  const handleOffline = () => {
-    router.push('/local-music');
-  };
-  window.addEventListener('offline', handleOffline);
-  onUnmounted(() => {
-    window.removeEventListener('offline', handleOffline);
-  });
 
   // 初始化 MusicHook，注入 playerStore
   initMusicHook(playerStore);
-  // 设置 URL 过期自动续播处理器
-  const { setupUrlExpiredHandler } = await import('@/services/playbackController');
-  setupUrlExpiredHandler();
-  // 初始化播放状态
+  const { playbackCoordinator } = await import('@/services/playbackCoordinator');
+  playbackCoordinator.setupUrlExpiredHandler();
   await playerStore.initializePlayState();
 
-  // 初始化音频设备变化监听器
   playerCoreStore.initAudioDeviceListener();
 
   // 如果有正在播放的音乐，则初始化音频监听器
   if (playerStore.playMusic && playerStore.playMusic.id) {
-    // 使用 nextTick 确保 DOM 更新后再初始化
+    // 等 DOM 更新后再初始化
     await nextTick();
     initAudioListeners();
     if (isElectron) {
@@ -143,6 +142,31 @@ onMounted(async () => {
   }
 
   audioService.releaseOperationLock();
+
+  // 屏幕休眠 / 系统挂起 → 白屏自愈
+  uninstallWakeRecovery = installWakeRecovery(recoverAfterWake);
+});
+
+// 热更新 MusicHook 后重新注入 store，并强制恢复当前曲歌词（模块级 lrcArray 会重置为空）
+if (import.meta.hot) {
+  import.meta.hot.accept('./hooks/MusicHook', (mod) => {
+    try {
+      const init = mod?.initMusicHook || initMusicHook;
+      init(playerStore);
+      // 先挂进度环（已在播时没有 play 事件），再拉歌词（含逐字升级）
+      void Promise.resolve(mod?.initAudioListeners?.() ?? initAudioListeners()).then(() =>
+        mod?.ensureLyricsLoaded?.(true)
+      );
+      console.info('[HMR] MusicHook re-inited + lyrics restored');
+    } catch (e) {
+      console.warn('[HMR] MusicHook re-init failed', e);
+    }
+  });
+}
+
+onUnmounted(() => {
+  uninstallWakeRecovery?.();
+  uninstallWakeRecovery = undefined;
 });
 </script>
 
