@@ -87,6 +87,12 @@ export interface SongResult {
    */
   isPreviewStream?: boolean;
   /**
+   * 加密前缀秒播：当前 URL 是 .prefix. 短文件，完整 .full. 后台下载中。
+   */
+  isPartialStream?: boolean;
+  /** 完整文件 local://，就绪后 seek 接上 */
+  pendingFullUrl?: string;
+  /**
    * 本曲接口声明的可用音质档（medium/higher/highest/lossless/spatial/hi_res）。
    * 播放条只展示这里有的项。
    */

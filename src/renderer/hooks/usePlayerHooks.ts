@@ -333,6 +333,18 @@ export const getSongUrl = async (
       songData.isPreviewStream = false;
     }
 
+    // 前缀秒播 → 完整文件路径（播放器轮询接上）
+    if (result.isPartial && result.pendingFullLocalUrl) {
+      songData.isPartialStream = true;
+      songData.pendingFullUrl = result.pendingFullLocalUrl;
+    } else if (result.playMusicUrl?.includes('.prefix.')) {
+      songData.isPartialStream = true;
+      songData.pendingFullUrl = result.playMusicUrl.replace('.prefix.', '.full.');
+    } else {
+      songData.isPartialStream = false;
+      songData.pendingFullUrl = undefined;
+    }
+
     // resolve 顺带的译文，给后续 loadLrc 合并
     if (result.lyricTranslations && Object.keys(result.lyricTranslations).length) {
       cacheLyricTranslations(id, result.lyricTranslations);
@@ -718,6 +730,8 @@ export const getSongDetail = async (
     expiredAt: detailed.expiredAt,
     createdAt: detailed.createdAt,
     isPreviewStream: detailed.isPreviewStream,
+    isPartialStream: detailed.isPartialStream,
+    pendingFullUrl: detailed.pendingFullUrl,
     preview: detailed.preview || playMusic.preview,
     forceQualityResolve: false,
     _streamUpgradeTo: (detailed as SongResult & { _streamUpgradeTo?: string })._streamUpgradeTo

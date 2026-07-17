@@ -583,6 +583,8 @@ export const usePlaylistStore = defineStore(
           SongResult,
           | 'playMusicUrl'
           | 'isPreviewStream'
+          | 'isPartialStream'
+          | 'pendingFullUrl'
           | 'preview'
           | 'expiredAt'
           | 'availableQualities'

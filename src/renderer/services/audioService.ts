@@ -535,13 +535,9 @@ class AudioService {
   public preload(url: string, track: SongResult): void {
     if (!url || !track) return;
     const active = this.activeSlot();
-    // 已是当前出声曲 / 同 URL：无需 standby
-    if (
-      this.urlsMatch(active.logicUrl, url) ||
-      this.urlsMatch(active.audio.src, url) ||
-      (active.track && String(active.track.id) === String(track.id)) ||
-      (this.currentTrack && String(this.currentTrack.id) === String(track.id))
-    ) {
+    // 同 URL 已在出声：无需 standby。
+    // 注意：同曲不同 URL（前缀→full / 升质）必须允许灌 standby，勿用 track.id 短路。
+    if (this.urlsMatch(active.logicUrl, url) || this.urlsMatch(active.audio.src, url)) {
       return;
     }
     const standby = this.standbySlot();

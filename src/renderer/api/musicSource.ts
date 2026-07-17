@@ -98,6 +98,10 @@ export interface MsResolveResult {
   /** resolve 顺带带回的译文 LRC */
   lyricTranslations?: Record<string, string>;
   expireAt?: number;
+  /** 前缀可播，完整文件后台下载中 */
+  isPartial?: boolean;
+  /** 完整文件 local://（就绪后切换） */
+  pendingFullLocalUrl?: string;
 }
 
 /** resolve 时缓存的译文，供 loadLrc 合并（避免 get-lyric 丢 translations） */

@@ -696,6 +696,31 @@ const setupAudioListeners = () => {
     console.log('音频播放结束事件触发');
     clearInterval();
 
+    // 加密前缀短文件播完：优先接 .full.，避免误切下一首
+    const endedSong = getPlayerStore().playMusic as SongResult | undefined;
+    if (endedSong && (endedSong.isPartialStream || endedSong.playMusicUrl?.includes('.prefix.'))) {
+      try {
+        const { tryUpgradePartialStreamNow } = await import('@/services/playbackController');
+        if (await tryUpgradePartialStreamNow()) {
+          startProgressInterval();
+          return;
+        }
+        // full 可能刚写完：再等最多 ~2.4s
+        for (let i = 0; i < 6; i++) {
+          await new Promise((r) => setTimeout(r, 400));
+          if (await tryUpgradePartialStreamNow()) {
+            startProgressInterval();
+            return;
+          }
+          // 中途用户已切歌则放弃
+          const cur = getPlayerStore().playMusic as SongResult | undefined;
+          if (!cur || String(cur.id) !== String(endedSong.id)) return;
+        }
+      } catch (e) {
+        console.warn('[MusicHook] prefix→full on end failed', e);
+      }
+    }
+
     if (getPlayerStore().playMode === 1) {
       // 单曲循环模式
       replayMusic();

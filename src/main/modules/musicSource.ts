@@ -588,7 +588,12 @@ export function initializeMusicSource(): void {
           previewStartMs: result.previewStartMs,
           previewDurationMs: result.previewDurationMs,
           lyricTranslations: result.lyricTranslations,
-          expireAt: result.expireAt
+          expireAt: result.expireAt,
+          // 前缀秒播：完整文件后台落盘路径（播放器轮询后无感接上）
+          isPartial: !!(result as { isPartial?: boolean }).isPartial,
+          pendingFullLocalUrl: (result as { pendingFullPath?: string }).pendingFullPath
+            ? filePathToLocalUrl(String((result as { pendingFullPath?: string }).pendingFullPath))
+            : undefined
         };
 
         resolveResultCache.set(key, { at: Date.now(), payload });

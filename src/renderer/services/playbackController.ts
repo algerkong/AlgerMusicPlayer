@@ -4,7 +4,8 @@
  * 核心播放流程管理，使用 generation-based 取消模式替代原 playerCore.ts 中的控制流。
  * 每次 playTrack() 调用递增 generation，所有异步操作在 await 后检查 generation 是否过期。
  *
- * 导出：playTrack, seamlessSwitchQuality, initializePlayState, setupUrlExpiredHandler, getCurrentGeneration
+ * 导出：playTrack, seamlessSwitchQuality, tryUpgradePartialStreamNow,
+ * initializePlayState, setupUrlExpiredHandler, getCurrentGeneration
  */
 
 import {
@@ -395,6 +396,168 @@ const maybeUpgradeStreamQuality = async (song: SongResult, gen: number) => {
   await seamlessSwitchQuality(upgradeTo, { songId: song.id, playGen: gen });
 };
 
+/** local:// → 绝对路径（checkFileExists） */
+const localUrlToAbsPath = (url: string): string | null => {
+  if (!url?.startsWith('local://')) return null;
+  try {
+    return decodeURIComponent(url.replace(/^local:\/\/\/?/, ''));
+  } catch {
+    return null;
+  }
+};
+
+const isPartialSong = (song?: SongResult | null): boolean =>
+  !!song && (!!song.isPartialStream || !!song.playMusicUrl?.includes('.prefix.'));
+
+const resolvePendingFullUrl = (song: SongResult): string | undefined => {
+  if (song.pendingFullUrl) return song.pendingFullUrl;
+  if (song.playMusicUrl?.includes('.prefix.')) {
+    return song.playMusicUrl.replace('.prefix.', '.full.');
+  }
+  return undefined;
+};
+
+const fileReady = async (url: string): Promise<boolean> => {
+  const abs = localUrlToAbsPath(url);
+  if (!abs) return true; // 非 local 路径：交给 play 探测
+  const api = typeof window !== 'undefined' ? window.api : undefined;
+  if (!api?.checkFileExists) return false;
+  try {
+    return !!(await api.checkFileExists(abs));
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * 前缀秒播 → 完整文件：standby 预热后 seek 接上（同 seamless 升质路径）。
+ */
+const seamlessSwitchToFullUrl = async (
+  fullUrl: string,
+  songId: string,
+  playGenAtStart: number
+): Promise<boolean> => {
+  const playerCore = await getPlayerCoreStore();
+  if (playGenAtStart !== generation) return false;
+  if (String(playerCore.playMusic?.id ?? '') !== songId) return false;
+  if (!fullUrl) return false;
+
+  const base = playerCore.playMusic as SongResult;
+  const track = {
+    ...base,
+    playMusicUrl: fullUrl,
+    isPartialStream: false,
+    pendingFullUrl: undefined,
+    playLoading: false
+  } as SongResult;
+
+  try {
+    audioService.preload(fullUrl, track);
+  } catch {
+    /* ignore */
+  }
+
+  const warmDeadline = Date.now() + 3500;
+  while (Date.now() < warmDeadline) {
+    if (playGenAtStart !== generation) return false;
+    if (String(playerCore.playMusic?.id ?? '') !== songId) return false;
+    if (audioService.hasPreloaded(fullUrl)) break;
+    if (audioService.getStandbyBufferedAhead() >= 1.0) break;
+    await new Promise((r) => setTimeout(r, 60));
+  }
+
+  if (playGenAtStart !== generation) return false;
+  if (String(playerCore.playMusic?.id ?? '') !== songId) return false;
+
+  const seek = getSeekSecondsForSong(songId);
+  const keepPlaying = playerCore.userPlayIntent !== false && !!playerCore.isPlay;
+
+  playerCore.playMusic = { ...track, id: base.id };
+  playerCore.playMusicUrl = fullUrl;
+
+  await audioService.play(fullUrl, playerCore.playMusic, keepPlaying, seek);
+
+  if (playGenAtStart !== generation) return false;
+  if (String(playerCore.playMusic?.id ?? '') !== songId) return false;
+
+  try {
+    const pl = await getPlaylistStore();
+    pl.patchSongMeta?.(base.id, {
+      playMusicUrl: fullUrl,
+      isPartialStream: false,
+      pendingFullUrl: undefined,
+      expiredAt: track.expiredAt,
+      streamQuality: track.streamQuality,
+      streamBitrate: track.streamBitrate
+    });
+  } catch {
+    /* ignore */
+  }
+
+  console.info(`[playbackController] prefix→full ok ${base.name} @${seek.toFixed(1)}s`);
+  return true;
+};
+
+/**
+ * 起播后挂起：轮询 .full. 落盘，就绪则无感切换。
+ * 切歌（gen 变）自动作废。
+ */
+const armPrefixFullUpgrade = async (song: SongResult, gen: number): Promise<void> => {
+  if (!isPartialSong(song) || !song.id) return;
+  const fullUrl = resolvePendingFullUrl(song);
+  if (!fullUrl) return;
+
+  const songId = String(song.id);
+  console.info(`[playbackController] arm prefix→full ${song.name}`);
+
+  const deadline = Date.now() + 180_000;
+  while (Date.now() < deadline) {
+    if (gen !== generation) return;
+    const playerCore = await getPlayerCoreStore();
+    if (String(playerCore.playMusic?.id ?? '') !== songId) return;
+    if (!isPartialSong(playerCore.playMusic as SongResult)) return;
+
+    const pending = resolvePendingFullUrl(playerCore.playMusic as SongResult) || fullUrl;
+
+    if (await fileReady(pending)) {
+      // 落盘刚完成再确认一次，避免读到半截 write
+      await new Promise((r) => setTimeout(r, 100));
+      if (gen !== generation) return;
+      if (!(await fileReady(pending))) {
+        await new Promise((r) => setTimeout(r, 250));
+        continue;
+      }
+      const ok = await seamlessSwitchToFullUrl(pending, songId, gen);
+      if (ok) return;
+      // 切换失败：稍后重试（文件可能仍在写）
+    }
+
+    await new Promise((r) => setTimeout(r, 400));
+  }
+  console.warn(`[playbackController] prefix→full timeout ${song.name}`);
+};
+
+/**
+ * 前缀文件播到 end 时调用：若 full 已就绪则立刻接上，避免误切下一首。
+ * 未就绪返回 false（调用方可短暂等待再试或 nextPlay）。
+ *
+ * 注意：HTMLAudioElement 播完常伴随 pause，会把 userPlayIntent/isPlay 打成 false；
+ * 此处视为「仍在听」并恢复意图，否则 full 接上后会停住。
+ */
+export const tryUpgradePartialStreamNow = async (): Promise<boolean> => {
+  const playerCore = await getPlayerCoreStore();
+  const song = playerCore.playMusic as SongResult | undefined;
+  if (!isPartialSong(song) || !song?.id) return false;
+  const fullUrl = resolvePendingFullUrl(song);
+  if (!fullUrl) return false;
+  if (!(await fileReady(fullUrl))) return false;
+  // 自然播完前缀 → 接完整曲：恢复连播意图
+  playerCore.userPlayIntent = true;
+  playerCore.play = true;
+  playerCore.isPlay = true;
+  return seamlessSwitchToFullUrl(fullUrl, String(song.id), generation);
+};
+
 // ==================== 导出函数 ====================
 
 export type PlayTrackOptions = {
@@ -663,6 +826,8 @@ export const playTrack = async (
 
       // 后台升质：先 higher 出声后再换 lossless 等
       void maybeUpgradeStreamQuality(playerCore.playMusic, gen);
+      // 前缀秒播：full 落盘后 seek 无感接上
+      void armPrefixFullUpgrade(playerCore.playMusic, gen);
       // 把试听标记 / URL 写回列表，循环切回时不丢 base
       try {
         const { usePlaylistStore } = await import('@/store/modules/playlist');
@@ -671,6 +836,8 @@ export const playTrack = async (
         pl.patchSongMeta?.(cur.id, {
           playMusicUrl: cur.playMusicUrl,
           isPreviewStream: cur.isPreviewStream,
+          isPartialStream: cur.isPartialStream,
+          pendingFullUrl: cur.pendingFullUrl,
           preview: cur.preview,
           expiredAt: cur.expiredAt,
           availableQualities: cur.availableQualities,
