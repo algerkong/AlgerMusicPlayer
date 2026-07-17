@@ -251,7 +251,7 @@ const processHistoryData = () => {
           dailyMap[dateKey].songs.set(songId, {
             id: music.id,
             name: music.name || 'Unknown',
-            artist: music.ar?.[0]?.name || 'Unknown Artist',
+            artist: getSongArtists(music as any)[0]?.name || 'Unknown Artist',
             playCount: 1
           });
         }
@@ -377,7 +377,7 @@ const latestNightSong = computed<{
     return {
       id: randomSong.id,
       name: randomSong.name || 'Unknown',
-      artist: randomSong.ar?.[0]?.name || 'Unknown Artist',
+      artist: getSongArtists(randomSong as any)[0]?.name || 'Unknown Artist',
       time: `凌晨 ${randomHour.toString().padStart(2, '0')}:${randomMinute.toString().padStart(2, '0')}`
     };
   }

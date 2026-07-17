@@ -1,3 +1,10 @@
+## Track / SongResult（半迁移）
+
+- 元数据用 `Track`；会话态用 `PlaybackRuntime`；换曲只经 `playbackCoordinator`。
+- **禁止**业务代码裸读 `song.ar` / `song.dt`：用 `@/utils/songFields` 或 `toPlayableView`。
+- 入口 DTO 写完后 `normalizeSongResult`。门禁：`npm run lint:song-fields`。
+- 路线图：`docs/track-migration.md`。
+
 <!-- CODEGRAPH_START -->
 
 ## CodeGraph

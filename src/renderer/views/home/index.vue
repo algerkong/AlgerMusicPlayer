@@ -111,7 +111,7 @@ import { usePlayHistoryStore } from '@/store/modules/playHistory';
 import { type SidebarPlaylist, useUserPlaylistsStore } from '@/store/modules/userPlaylists';
 import type { SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
-import { getSongArtists } from '@/utils/songFields';
+import { artistTextOf } from '@/utils/playableView';
 
 defineOptions({ name: 'Home' });
 
@@ -123,12 +123,7 @@ const plStore = useUserPlaylistsStore();
 const recentSongs = computed(() => (historyStore.musicHistory || []).slice(0, 8) as SongResult[]);
 useVisibleSongPrefetch(recentSongs, { maxConcurrent: 2, maxPrefetch: 8, auto: true });
 
-const recentArtist = (song: SongResult) => {
-  const names = getSongArtists(song)
-    .map((a) => a.name)
-    .filter(Boolean);
-  return names.join(' / ') || '未知歌手';
-};
+const recentArtist = (song: SongResult) => artistTextOf(song, '未知歌手');
 
 const playRecent = async (song: SongResult | any) => {
   const list = recentSongs.value as SongResult[];

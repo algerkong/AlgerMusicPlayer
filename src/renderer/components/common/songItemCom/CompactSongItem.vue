@@ -58,10 +58,10 @@
           </div>
         </div>
         <div class="song-item-content-compact-album">
-          <n-ellipsis line-clamp="1">{{ item.al?.name || '-' }}</n-ellipsis>
+          <n-ellipsis line-clamp="1">{{ view?.albumName || '-' }}</n-ellipsis>
         </div>
         <div class="song-item-content-compact-duration">
-          {{ formatDuration(getDuration(item)) }}
+          {{ durationLabel }}
         </div>
       </div>
     </template>
@@ -106,13 +106,14 @@
 
 <script lang="ts" setup>
 import { NCheckbox, NEllipsis } from 'naive-ui';
+import { computed } from 'vue';
 
 import {
   songItemShellDefaults,
   useSongItemShell,
   type SongItemShellProps
 } from '@/hooks/useSongItemShell';
-import { formatDurationMs, getSongDurationMs } from '@/utils/songFields';
+import { toPlayableView } from '@/utils/playableView';
 
 import BaseSongItem from './BaseSongItem.vue';
 
@@ -134,8 +135,9 @@ const {
   onMenuClick
 } = useSongItemShell(props, emit);
 
-const getDuration = getSongDurationMs;
-const formatDuration = formatDurationMs;
+/** P1：展示用 PlayableView；时长文本已格式化 */
+const view = computed(() => toPlayableView(props.item));
+const durationLabel = computed(() => view.value?.durationText || '--:--');
 </script>
 
 <style lang="scss" scoped>

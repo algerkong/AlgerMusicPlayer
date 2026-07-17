@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
 import { isElectron } from '@/utils';
+import { getSongArtistNames } from '@/utils/songFields';
 
 import {
   createDefaultDownloadSettings,
@@ -58,7 +59,7 @@ export const useDownloadStore = defineStore(
         ...songInfo,
         picUrl: validatePicUrl(songInfo.picUrl)
       };
-      const artistNames = validatedInfo.ar?.map((a) => a.name).join(',') ?? '';
+      const artistNames = getSongArtistNames(validatedInfo as any, ',', '未知艺术家');
       const filename = `${validatedInfo.name} - ${artistNames}`;
       await window.api.downloadAdd({ url, filename, songInfo: validatedInfo, type });
     };
@@ -72,7 +73,7 @@ export const useDownloadStore = defineStore(
           ...item.songInfo,
           picUrl: validatePicUrl(item.songInfo.picUrl)
         };
-        const artistNames = validatedInfo.ar?.map((a) => a.name).join(',') ?? '';
+        const artistNames = getSongArtistNames(validatedInfo as any, ',', '未知艺术家');
         const filename = `${validatedInfo.name} - ${artistNames}`;
         return { url: item.url, filename, songInfo: validatedInfo, type: item.type };
       });

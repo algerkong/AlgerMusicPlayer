@@ -22,7 +22,7 @@ import { getImgUrl } from '@/utils';
 import { getImageLinearBackground } from '@/utils/linearColor';
 import { sameTrackId } from '@/utils/playerUtils';
 import { restorePreviewStreamFlags } from '@/utils/previewStream';
-import { getSongArtistNames } from '@/utils/songFields';
+import { getSongArtistNames, getSongDurationMs } from '@/utils/songFields';
 import { ttfaBegin, ttfaMark } from '@/utils/ttfaMetrics';
 
 // 代次计数，用于取消过期请求
@@ -1105,8 +1105,9 @@ export const initializePlayState = async (): Promise<void> => {
           ) {
             void import('@/hooks/MusicHook').then(({ nowTime, allTime }) => {
               nowTime.value = Number(data.progress) || 0;
-              if (playerCore.playMusic.dt) {
-                allTime.value = playerCore.playMusic.dt / 1000;
+              const ms = getSongDurationMs(playerCore.playMusic);
+              if (ms > 0) {
+                allTime.value = ms / 1000;
               }
             });
           }

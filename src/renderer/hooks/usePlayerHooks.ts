@@ -235,10 +235,9 @@ export const getSongUrl = async (
     } catch {
       /* pinia 未就绪 */
     }
-    const artists =
-      songData.ar?.map((a) => a.name).filter(Boolean) ||
-      songData.artists?.map((a) => a.name).filter(Boolean) ||
-      [];
+    const artists = getSongArtists(songData)
+      .map((a) => a.name)
+      .filter((n): n is string => !!n);
 
     const ids: Record<string, string> = {};
     const source = songData.source || 'qishui';

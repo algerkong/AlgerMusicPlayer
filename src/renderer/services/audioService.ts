@@ -6,8 +6,9 @@ import {
 } from '@/services/streamPipeline';
 import type { AudioOutputDevice } from '@/types/audio';
 import type { SongResult } from '@/types/music';
-import { sameTrackId } from '@/utils/playerUtils';
 import { getImgUrl, isElectron } from '@/utils';
+import { sameTrackId } from '@/utils/playerUtils';
+import { getSongAlbum, getSongArtists, getSongCoverUrl } from '@/utils/songFields';
 import { ttfaAudioReady } from '@/utils/ttfaMetrics';
 
 type AudioSlot = {
@@ -249,22 +250,23 @@ class AudioService {
     try {
       if (!('mediaSession' in navigator)) return;
 
-      // qishui 等源常无 track.song / al，必须可选链，避免整段元数据失败
-      const artists = track.ar?.length
-        ? track.ar.map((a) => a.name)
-        : track.song?.artists?.map((a) => a.name);
-      const album = track.al?.name || track.song?.album?.name || track.song?.al?.name || '';
+      // qishui 等源常无 track.song / al：走 songFields 统一 fallback
+      const artists = getSongArtists(track)
+        .map((a) => a.name)
+        .filter(Boolean);
+      const album = getSongAlbum(track)?.name || '';
+      const cover = getSongCoverUrl(track) || track.picUrl;
       // 上限提到 1024 提升 SMTC/AMLL 等系统媒体控件的封面清晰度（#595）；
       // 走 getImgUrl 以正确处理 data:/local:// 封面与已带参数的 URL
       const artwork = ['96', '128', '192', '256', '384', '512', '1024'].map((size) => ({
-        src: getImgUrl(track.picUrl, `${size}y${size}`),
+        src: getImgUrl(cover, `${size}y${size}`),
         type: 'image/jpg',
         sizes: `${size}x${size}`
       }));
 
       navigator.mediaSession.metadata = new window.MediaMetadata({
         title: track.name || '',
-        artist: artists?.length ? artists.join(',') : '',
+        artist: artists.length ? artists.join(',') : '',
         album: album || '',
         artwork
       });

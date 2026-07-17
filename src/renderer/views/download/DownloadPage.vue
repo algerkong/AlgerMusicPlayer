@@ -138,7 +138,7 @@
                           item.filename
                         }}</span>
                         <span class="ml-2 text-xs text-neutral-400">{{
-                          item.songInfo?.ar?.map((a) => a.name).join(', ')
+                          artistLabel(item.songInfo)
                         }}</span>
                       </div>
                       <span class="text-xs font-medium" :class="getStatusClass(item)">
@@ -249,7 +249,7 @@
                       </div>
                       <div class="flex items-center gap-4 mt-1">
                         <span class="text-xs text-neutral-500 truncate max-w-[150px]">{{
-                          item.ar?.map((a) => a.name).join(', ')
+                          artistLabel(item)
                         }}</span>
                         <div
                           class="hidden md:flex items-center gap-1 text-[10px] text-neutral-400 bg-neutral-100 dark:bg-neutral-800 px-2 py-0.5 rounded-full truncate"
@@ -560,9 +560,13 @@ import { useDownloadStore } from '@/store/modules/download';
 import { usePlayerStore } from '@/store/modules/player';
 import type { SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
+import { getSongArtistNames, getSongArtists } from '@/utils/songFields';
 
 import type { DownloadTask } from '../../../shared/download';
 import { filePathToLocalUrl } from '../../../shared/localUrl';
+
+/** 下载任务 / 已完成条目的艺人展示（走 songFields，不裸读 .ar） */
+const artistLabel = (row: unknown) => getSongArtistNames(row as any, ', ');
 
 const { t } = useI18n();
 const playerStore = usePlayerStore();
@@ -682,24 +686,24 @@ const handlePlayMusic = async (item: any) => {
       return;
     }
 
+    const names = getSongArtists(item as any).map((a) => a.name || '');
     const song: SongResult = {
       id: item.id,
       name: item.displayName || item.filename,
-      ar:
-        item.ar?.map((a: { name: string }) => ({
-          id: 0,
-          name: a.name,
-          picId: 0,
-          img1v1Id: 0,
-          briefDesc: '',
-          picUrl: '',
-          img1v1Url: '',
-          albumSize: 0,
-          alias: [],
-          trans: '',
-          musicSize: 0,
-          topicPerson: 0
-        })) || [],
+      ar: names.map((name) => ({
+        id: 0,
+        name,
+        picId: 0,
+        img1v1Id: 0,
+        briefDesc: '',
+        picUrl: '',
+        img1v1Url: '',
+        albumSize: 0,
+        alias: [],
+        trans: '',
+        musicSize: 0,
+        topicPerson: 0
+      })) as SongResult['ar'],
       al: {
         name: item.filename,
         id: 0,
