@@ -67,8 +67,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # 仓库已切到 oxlint（无 eslint.config）；与 package.json lint:ox / lint:song-fields 对齐
       - name: Lint
-        run: npx eslint --max-warnings 0 "src/**/*.{ts,tsx,vue,js}"
+        run: |
+          npm run lint:ox
+          npm run lint:song-fields
 
       # tsconfig.web.json 显式 require src/renderer/{auto-imports,components}.d.ts
       # 这两个文件由 unplugin-auto-import / unplugin-vue-components 在 vite 启动时
