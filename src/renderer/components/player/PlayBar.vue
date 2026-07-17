@@ -158,29 +158,31 @@
 
 <script lang="ts" setup>
 import { useThrottleFn } from '@vueuse/core';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import MusicFullWrapper from '@/components/lyric/MusicFullWrapper.vue';
 import { allTime, artistList, nowTime, playMusic, textColors } from '@/hooks/MusicHook';
-import { useArtist } from '@/hooks/useArtist';
 import { useDownload } from '@/hooks/useDownload';
 import { usePlaybackControl } from '@/hooks/usePlaybackControl';
+import { usePlayBarChrome } from '@/hooks/usePlayBarChrome';
 import { usePlayMode } from '@/hooks/usePlayMode';
 import { useVolumeControl } from '@/hooks/useVolumeControl';
 import { audioService } from '@/services/audioService';
-import { usePlayerStore } from '@/store/modules/player';
-import { useSettingsStore } from '@/store/modules/settings';
 import { getImgUrl, isElectron, isMobile, secondToMinute, setAnimationClass } from '@/utils';
 
-const playerStore = usePlayerStore();
-const settingsStore = useSettingsStore();
 const { t } = useI18n();
 
-// 播放控制
 const { isPlaying: play, playMusicEvent, handleNext, handlePrev } = usePlaybackControl();
+const {
+  playerStore,
+  settingsStore,
+  background,
+  openPlayListDrawer,
+  setMusicFull,
+  handleArtistClick
+} = usePlayBarChrome({ fullMode: 'toggle' });
 
-// 音量控制
 const {
   isMuted,
   volumeSlider,
@@ -189,36 +191,19 @@ const {
   handleVolumeWheel
 } = useVolumeControl();
 
-// 下载（喜欢已迁到发现页操作区）
 const { downloadMusic, isDownloading } = useDownload();
 const handleDownload = () => {
   if (!playMusic.value || isDownloading.value) return;
   downloadMusic(playMusic.value);
 };
 
-// 播放模式
 const { playModeIcon, playModeText, togglePlayMode } = usePlayMode();
 
-// 背景颜色
-const background = ref('#000');
-
-watch(
-  () => playerStore.playMusic,
-  async () => {
-    if (playMusic && playMusic.value && playMusic.value.backgroundColor) {
-      background.value = playMusic.value.backgroundColor as string;
-    }
-  },
-  { immediate: true, deep: true }
-);
-
-// 节流版本的 seek 函数
 const throttledSeek = useThrottleFn((value: number) => {
   audioService.seek(value);
   nowTime.value = value;
 }, 50);
 
-// 拖动时的临时值
 const dragValue = ref(0);
 const isDragging = ref(false);
 
@@ -263,25 +248,6 @@ const musicFullVisible = computed({
     playerStore.setMusicFull(value);
   }
 });
-
-const setMusicFull = () => {
-  musicFullVisible.value = !musicFullVisible.value;
-  playerStore.setMusicFull(musicFullVisible.value);
-  if (musicFullVisible.value) {
-    settingsStore.showArtistDrawer = false;
-  }
-};
-
-const { navigateToArtist } = useArtist();
-
-const handleArtistClick = (id: number | string) => {
-  musicFullVisible.value = false;
-  navigateToArtist(id);
-};
-
-const openPlayListDrawer = () => {
-  playerStore.setPlayListDrawerVisible(true);
-};
 </script>
 
 <style lang="scss" scoped>

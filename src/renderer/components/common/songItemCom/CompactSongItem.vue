@@ -106,64 +106,33 @@
 
 <script lang="ts" setup>
 import { NCheckbox, NEllipsis } from 'naive-ui';
-import { computed, ref } from 'vue';
 
-import { usePlayerStore } from '@/store';
-import type { SongResult } from '@/types/music';
+import {
+  songItemShellDefaults,
+  useSongItemShell,
+  type SongItemShellProps
+} from '@/hooks/useSongItemShell';
 import { formatDurationMs, getSongDurationMs } from '@/utils/songFields';
 
 import BaseSongItem from './BaseSongItem.vue';
 
-const playerStore = usePlayerStore();
-
-const props = withDefaults(
-  defineProps<{
-    item: SongResult;
-    favorite?: boolean;
-    selectable?: boolean;
-    selected?: boolean;
-    canRemove?: boolean;
-    isNext?: boolean;
-    index?: number;
-  }>(),
-  {
-    favorite: true,
-    selectable: false,
-    selected: false,
-    canRemove: false,
-    isNext: false,
-    index: undefined
-  }
-);
-
+const props = withDefaults(defineProps<SongItemShellProps>(), songItemShellDefaults);
 const emit = defineEmits(['play', 'select', 'remove-song']);
-const baseItem = ref<InstanceType<typeof BaseSongItem>>();
 
-// 从基础组件获取响应式状态
-const play = computed(() => playerStore.isPlay);
-const isPlaying = computed(() => baseItem.value?.isPlaying || false);
-const playLoading = computed(() => baseItem.value?.playLoading || false);
-const isFavorite = computed(() => baseItem.value?.isFavorite || false);
-const isHovering = computed(() => baseItem.value?.isHovering || false);
-const artists = computed(() => baseItem.value?.artists || []);
-
-// 包装方法，避免直接访问可能为undefined的ref
-const onToggleSelect = () => {
-  baseItem.value?.toggleSelect();
-};
-const onArtistClick = (id: number | string | undefined) => {
-  if (id == null) return;
-  baseItem.value?.handleArtistClick(id);
-};
-const onToggleFavorite = (event: Event) => {
-  baseItem.value?.toggleFavorite(event);
-  // 可选：emit 收藏事件
-};
-const onPlayMusic = () => {
-  baseItem.value?.playMusicEvent(props.item);
-  emit('play', props.item);
-};
-const onMenuClick = (event: MouseEvent) => baseItem.value?.handleMenuClick(event);
+const {
+  baseItem,
+  play,
+  isPlaying,
+  playLoading,
+  isFavorite,
+  isHovering,
+  artists,
+  onToggleSelect,
+  onArtistClick,
+  onToggleFavorite,
+  onPlayMusic,
+  onMenuClick
+} = useSongItemShell(props, emit);
 
 const getDuration = getSongDurationMs;
 const formatDuration = formatDurationMs;

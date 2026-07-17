@@ -130,23 +130,20 @@ import { computed, provide, ref, useTemplateRef } from 'vue';
 import SongItem from '@/components/common/SongItem.vue';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { allTime, artistList, nowTime, playMusic } from '@/hooks/MusicHook';
-import { useArtist } from '@/hooks/useArtist';
 import { useFavorite } from '@/hooks/useFavorite';
 import { usePlaybackControl } from '@/hooks/usePlaybackControl';
+import { usePlayBarChrome } from '@/hooks/usePlayBarChrome';
 import { useVolumeControl } from '@/hooks/useVolumeControl';
-import { audioService } from '@/services/audioService';
-import { usePlayerStore, useSettingsStore } from '@/store';
 import type { SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
+import { sameTrackId } from '@/utils/playerUtils';
 
-const playerStore = usePlayerStore();
-const settingsStore = useSettingsStore();
-const { navigateToArtist } = useArtist();
-
-// 播放控制
 const { isPlaying: play, playMusicEvent, handleNext, handlePrev } = usePlaybackControl();
+const { playerStore, settingsStore, handleArtistClick, handleProgressClick, setMusicFullTo } =
+  usePlayBarChrome({ fullMode: 'open', closeFullOnArtist: false });
 
-// 音量控制（统一通过 playerStore 管理）
+const setMusicFull = () => setMusicFullTo(true);
+
 const {
   isMuted,
   volumeSlider,
@@ -155,7 +152,6 @@ const {
   handleVolumeWheel
 } = useVolumeControl();
 
-// 收藏
 const { isFavorite, toggleFavorite } = useFavorite();
 
 withDefaults(
@@ -174,16 +170,11 @@ const handleClose = () => {
   }
 };
 
-// 播放列表
 const playList = computed(() => playerStore.playList as SongResult[]);
-
-// 播放列表相关
 const palyListRef = useTemplateRef('palyListRef') as any;
 const isPlaylistOpen = ref(false);
 
-// 提供 openPlaylistDrawer 给子组件
-// Mini 窗口（340px 宽）容不下 420px 的歌单抽屉：记录待添加歌曲并恢复主窗口，
-// AppLayout 重新挂载后接力打开抽屉（#504）
+// Mini 窗口容不下歌单抽屉：记 pending 并恢复主窗口
 provide('openPlaylistDrawer', (songId: number) => {
   localStorage.setItem('pendingAddToPlaylistSongId', String(songId));
   window.api.restore();
@@ -191,43 +182,28 @@ provide('openPlaylistDrawer', (songId: number) => {
 
 const togglePlaylist = () => {
   isPlaylistOpen.value = !isPlaylistOpen.value;
-  console.log('切换播放列表状态', isPlaylistOpen.value);
-
-  // 调整窗口大小
   if (settingsStore.isMiniMode) {
     try {
       if (isPlaylistOpen.value) {
         document.body.style.height = 'auto';
         document.body.style.overflow = 'visible';
-
-        // 使用新的专用 API 调整窗口大小
-        if (window.api && typeof window.api.resizeMiniWindow === 'function') {
-          window.api.resizeMiniWindow(true);
-        }
+        window.api?.resizeMiniWindow?.(true);
       } else {
         document.body.style.height = '64px';
         document.body.style.overflow = 'hidden';
-
-        // 使用新的专用 API 调整窗口大小
-        if (window.api && typeof window.api.resizeMiniWindow === 'function') {
-          window.api.resizeMiniWindow(false);
-        }
+        window.api?.resizeMiniWindow?.(false);
       }
     } catch (error) {
       console.error('调整窗口大小失败:', error);
     }
   }
-
-  // 如果打开列表，滚动到当前播放歌曲
-  if (isPlaylistOpen.value) {
-    scrollToPlayList();
-  }
+  if (isPlaylistOpen.value) scrollToPlayList();
 };
 
 const scrollToPlayList = () => {
   setTimeout(() => {
     const currentIndex = playerStore.playListIndex;
-    const itemHeight = 69; // 每个列表项的高度
+    const itemHeight = 69;
     palyListRef.value?.scrollTo({
       top: currentIndex * itemHeight,
       behavior: 'smooth'
@@ -236,23 +212,10 @@ const scrollToPlayList = () => {
 };
 
 const handleDeleteSong = (song: SongResult) => {
-  if (song.id === playMusic.value.id) {
+  if (sameTrackId(song.id, playMusic.value?.id)) {
     playerStore.nextPlay();
   }
   playerStore.removeFromPlayList(song.id);
-};
-
-// 艺术家点击
-const handleArtistClick = (id: number) => {
-  navigateToArtist(id);
-};
-
-// 进度条相关
-const handleProgressClick = (e: MouseEvent) => {
-  const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-  const percent = (e.clientX - rect.left) / rect.width;
-  audioService.seek(allTime.value * percent);
-  nowTime.value = allTime.value * percent;
 };
 
 const hoverTime = ref(0);
@@ -260,17 +223,14 @@ const isHovering = ref(false);
 
 const handleProgressHover = (e: MouseEvent) => {
   const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-  const percent = (e.clientX - rect.left) / rect.width;
+  if (rect.width <= 0 || allTime.value <= 0) return;
+  const percent = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
   hoverTime.value = allTime.value * percent;
   isHovering.value = true;
 };
 
 const handleProgressLeave = () => {
   isHovering.value = false;
-};
-
-const setMusicFull = () => {
-  playerStore.setMusicFull(true);
 };
 </script>
 

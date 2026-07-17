@@ -80,10 +80,10 @@ import { computed, onMounted, ref, watch } from 'vue';
 
 import { allTime, nowTime } from '@/hooks/MusicHook';
 import { usePlaybackControl } from '@/hooks/usePlaybackControl';
+import { usePlayBarChrome } from '@/hooks/usePlayBarChrome';
 import { usePlayMode } from '@/hooks/usePlayMode';
 import { useVolumeControl } from '@/hooks/useVolumeControl';
 import { audioService } from '@/services/audioService';
-import { usePlayerStore } from '@/store/modules/player';
 import { secondToMinute } from '@/utils';
 
 const props = withDefaults(
@@ -95,16 +95,12 @@ const props = withDefaults(
   }
 );
 
-const playerStore = usePlayerStore();
 const playBarRef = ref<HTMLElement | null>(null);
 
-// 播放控制
 const { isPlaying: play, playMusicEvent, handleNext, handlePrev } = usePlaybackControl();
-
-// 播放模式
+const { playerStore, openPlayListDrawer } = usePlayBarChrome();
 const { playModeIcon, togglePlayMode } = usePlayMode();
 
-// 音量控制（统一通过 playerStore 管理）
 const {
   isMuted,
   volumeSlider,
@@ -186,16 +182,8 @@ const handleProgressClick = (e: MouseEvent) => {
   seekToProgress(percentage);
 };
 
-// 格式化时间
-const formatTime = (seconds: number) => {
-  return secondToMinute(seconds);
-};
+const formatTime = (seconds: number) => secondToMinute(seconds);
 
-const openPlayListDrawer = () => {
-  playerStore.setPlayListDrawerVisible(true);
-};
-
-// 深色模式
 const isDarkMode = computed(() => props.isDark);
 
 // 主题颜色应用函数

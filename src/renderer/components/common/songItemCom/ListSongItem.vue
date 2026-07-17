@@ -89,63 +89,32 @@
 
 <script lang="ts" setup>
 import { NCheckbox, NEllipsis, NImage } from 'naive-ui';
-import { computed, ref } from 'vue';
 
-import { usePlayerStore } from '@/store';
-import type { SongResult } from '@/types/music';
+import {
+  songItemShellDefaults,
+  useSongItemShell,
+  type SongItemShellProps
+} from '@/hooks/useSongItemShell';
 import { getImgUrl } from '@/utils';
 
 import BaseSongItem from './BaseSongItem.vue';
 
-const playerStore = usePlayerStore();
-
-const props = withDefaults(
-  defineProps<{
-    item: SongResult;
-    favorite?: boolean;
-    selectable?: boolean;
-    selected?: boolean;
-    canRemove?: boolean;
-    isNext?: boolean;
-    index?: number;
-  }>(),
-  {
-    favorite: true,
-    selectable: false,
-    selected: false,
-    canRemove: false,
-    isNext: false,
-    index: undefined
-  }
-);
-
+const props = withDefaults(defineProps<SongItemShellProps>(), songItemShellDefaults);
 const emit = defineEmits(['play', 'select', 'remove-song']);
-const baseItem = ref<InstanceType<typeof BaseSongItem>>();
 
-// 从基础组件获取响应式状态
-const play = computed(() => playerStore.isPlay);
-const isPlaying = computed(() => baseItem.value?.isPlaying || false);
-const playLoading = computed(() => baseItem.value?.playLoading || false);
-const isFavorite = computed(() => baseItem.value?.isFavorite || false);
-const artists = computed(() => baseItem.value?.artists || []);
-
-// 包装方法，避免直接访问可能为undefined的ref
-const onToggleSelect = () => {
-  baseItem.value?.toggleSelect();
-  emit('select', props.item.id, !props.selected);
-};
-const onImageLoad = (event: Event) => baseItem.value?.imageLoad(event);
-const onArtistClick = (id: number | string | undefined) => {
-  if (id == null) return;
-  baseItem.value?.handleArtistClick(id);
-};
-const onToggleFavorite = (event: Event) => {
-  baseItem.value?.toggleFavorite(event);
-};
-const onPlayMusic = () => {
-  baseItem.value?.playMusicEvent(props.item);
-  emit('play', props.item);
-};
+const {
+  baseItem,
+  play,
+  isPlaying,
+  playLoading,
+  isFavorite,
+  artists,
+  onToggleSelect,
+  onImageLoad,
+  onArtistClick,
+  onToggleFavorite,
+  onPlayMusic
+} = useSongItemShell(props, emit, { reemitSelect: true });
 </script>
 
 <style lang="scss" scoped>

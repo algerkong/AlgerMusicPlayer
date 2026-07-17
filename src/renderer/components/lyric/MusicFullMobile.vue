@@ -397,6 +397,11 @@ import {
 } from '@/hooks/MusicHook';
 import { useArtist } from '@/hooks/useArtist';
 import { useLyricBackground } from '@/hooks/useLyricBackground';
+import {
+  resolveScrollEl,
+  scrollLyricLineToCenter,
+  useLyricUserScrollPause
+} from '@/hooks/useLyricAutoScroll';
 import { usePlayMode } from '@/hooks/usePlayMode';
 import { audioService } from '@/services/audioService';
 import { usePlayerStore } from '@/store/modules/player';
@@ -446,7 +451,6 @@ const lyricsScrollerRef = ref<any>(null);
 const isTouchScrolling = ref(false);
 const touchStartY = ref(0);
 const lastScrollTop = ref(0);
-const autoScrollTimer = ref<number | null>(null);
 const isSongChanging = ref(false);
 
 // 横屏检测相关
@@ -454,14 +458,11 @@ const { width, height } = useWindowSize();
 const isLandscape = computed(() => width.value > height.value);
 const landscapeLyricsRef = ref<any>(null);
 
-/** ScrollArea 实例或 DOM → 真正可滚的 viewport */
-const resolveScrollEl = (refLike: any): HTMLElement | null => {
-  if (!refLike) return null;
-  if (refLike instanceof HTMLElement) return refLike;
-  if (typeof refLike.getViewport === 'function') return refLike.getViewport();
-  if (refLike.viewport instanceof HTMLElement) return refLike.viewport;
-  return null;
-};
+const supportAutoScroll = computed(() => {
+  return lrcArray.value.length > 0 && lrcArray.value[0].startTime !== -1;
+});
+
+const { markUserScrolling, clearResumeTimer, autoScrollTimer } = useLyricUserScrollPause();
 
 watch(isLandscape, (newVal) => {
   if (newVal) {
@@ -493,63 +494,19 @@ const showFullLyricScreen = () => {
   });
 };
 
-const supportAutoScroll = computed(() => {
-  return lrcArray.value.length > 0 && lrcArray.value[0].startTime !== -1;
-});
-
 const closeFullLyrics = () => {
   showFullLyrics.value = false;
-  if (autoScrollTimer.value) {
-    clearTimeout(autoScrollTimer.value);
-    autoScrollTimer.value = null;
-  }
+  clearResumeTimer();
 };
 
-// 滚动到当前歌词，添加错误处理和日志
 const scrollToCurrentLyric = (immediate = false, customScrollerRef?: any) => {
-  try {
-    const scrollerRef = resolveScrollEl(customScrollerRef || lyricsScrollerRef.value);
-    if (!scrollerRef) {
-      console.log('歌词容器引用不存在');
-      return;
-    }
-
-    if (!supportAutoScroll.value) {
-      console.log('歌词不支持自动滚动');
-      return;
-    }
-
-    // 如果用户正在手动滚动，不打断他们的操作
-    if (isTouchScrolling.value && !immediate) {
-      return;
-    }
-
-    const prefix = customScrollerRef ? 'landscape-' : '';
-    const activeEl = document.getElementById(`${prefix}lyric-line-${nowIndex.value}`);
-    if (!activeEl) {
-      console.log(`找不到当前歌词元素: ${prefix}lyric-line-${nowIndex.value}`);
-      return;
-    }
-
-    const containerRect = scrollerRef.getBoundingClientRect();
-    const lineRect = activeEl.getBoundingClientRect();
-
-    // 优化滚动位置计算，确保当前歌词在视图中央
-    const scrollTop =
-      scrollerRef.scrollTop +
-      (lineRect.top - containerRect.top) -
-      containerRect.height / 2 +
-      lineRect.height / 2;
-
-    console.log(`滚动到歌词 #${nowIndex.value}, 位置: ${scrollTop}px`);
-
-    scrollerRef.scrollTo({
-      top: scrollTop,
-      behavior: immediate ? 'auto' : 'smooth'
-    });
-  } catch (err) {
-    console.error('滚动歌词出错:', err);
-  }
+  const scroller = customScrollerRef || lyricsScrollerRef.value;
+  const prefix = customScrollerRef ? 'landscape-' : '';
+  scrollLyricLineToCenter(scroller, `${prefix}lyric-line-${nowIndex.value}`, {
+    immediate,
+    canAutoScroll: supportAutoScroll.value,
+    isUserScrolling: isTouchScrolling.value
+  });
 };
 
 watch(nowIndex, (newIndex, oldIndex) => {
@@ -598,35 +555,25 @@ watch(nowTime, () => {
   }
 });
 
+const resumeAutoScrollAfterGesture = (immediate = false) => {
+  isAutoScrollEnabled.value = true;
+  isTouchScrolling.value = false;
+  if (showFullLyrics.value) {
+    scrollToCurrentLyric(immediate);
+  } else if (isLandscape.value) {
+    scrollToCurrentLyric(immediate, landscapeLyricsRef.value);
+  }
+};
+
 const handleScroll = () => {
   if (!isTouchScrolling.value) return;
-
-  // 用户手动滚动时，临时停止自动滚动
   isAutoScrollEnabled.value = false;
-
-  // 清除之前的计时器
-  if (autoScrollTimer.value) {
-    clearTimeout(autoScrollTimer.value);
-  }
-
-  autoScrollTimer.value = window.setTimeout(() => {
-    isAutoScrollEnabled.value = true;
-    isTouchScrolling.value = false;
-
-    // 滚动到当前歌词
-    if (showFullLyrics.value) {
-      scrollToCurrentLyric(false);
-    } else if (isLandscape.value) {
-      scrollToCurrentLyric(false, landscapeLyricsRef.value);
-    }
-  }, 3000);
+  markUserScrolling(3000, () => resumeAutoScrollAfterGesture(false));
 };
 
 // 触摸相关事件
 const handleTouchStart = (e: TouchEvent) => {
   touchStartY.value = e.touches[0].clientY;
-
-  // 根据当前模式获取正确的滚动容器
   const scrollerRef = resolveScrollEl(
     showFullLyrics.value
       ? lyricsScrollerRef.value
@@ -634,41 +581,18 @@ const handleTouchStart = (e: TouchEvent) => {
         ? landscapeLyricsRef.value
         : lyricsScrollerRef.value
   );
-
   lastScrollTop.value = scrollerRef?.scrollTop || 0;
   isTouchScrolling.value = true;
-
-  // 用户开始触摸时，暂时停止自动滚动
   isAutoScrollEnabled.value = false;
-
-  // 清除之前可能存在的计时器
-  if (autoScrollTimer.value) {
-    clearTimeout(autoScrollTimer.value);
-    autoScrollTimer.value = null;
-  }
+  clearResumeTimer();
 };
 
 const handleTouchMove = () => {
   if (!isTouchScrolling.value) return;
-  // 实际的滚动处理由浏览器默认行为完成
 };
 
 const handleTouchEnd = () => {
-  if (autoScrollTimer.value) {
-    clearTimeout(autoScrollTimer.value);
-  }
-
-  autoScrollTimer.value = window.setTimeout(() => {
-    isAutoScrollEnabled.value = true;
-    isTouchScrolling.value = false;
-
-    // 恢复自动滚动到当前歌词
-    if (showFullLyrics.value) {
-      scrollToCurrentLyric(true);
-    } else if (isLandscape.value) {
-      scrollToCurrentLyric(true, landscapeLyricsRef.value);
-    }
-  }, 3000);
+  markUserScrolling(3000, () => resumeAutoScrollAfterGesture(true));
 };
 
 // 封面样式循环切换

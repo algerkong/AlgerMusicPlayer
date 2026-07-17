@@ -58,43 +58,21 @@
 <script lang="ts" setup>
 import { useSwipe } from '@vueuse/core';
 import type { Ref } from 'vue';
-import { inject, onMounted, ref, watch } from 'vue';
+import { inject, onMounted, ref } from 'vue';
 
 import MusicFullWrapper from '@/components/lyric/MusicFullWrapper.vue';
 import { artistList, playMusic, textColors } from '@/hooks/MusicHook';
 import { usePlaybackControl } from '@/hooks/usePlaybackControl';
-import { usePlayerStore } from '@/store/modules/player';
-import { useSettingsStore } from '@/store/modules/settings';
+import { usePlayBarChrome } from '@/hooks/usePlayBarChrome';
 import { getImgUrl, setAnimationClass } from '@/utils';
 
 const shouldShowMobileMenu = inject('shouldShowMobileMenu') as Ref<boolean>;
 
-const playerStore = usePlayerStore();
-const settingsStore = useSettingsStore();
-
-// 播放控制
 const { isPlaying: play, playMusicEvent, handleNext, handlePrev } = usePlaybackControl();
-
-// 背景颜色
-const background = ref('#000');
-
-const setMusicFull = () => {
-  playerStore.setMusicFull(!playerStore.musicFull);
-  if (playerStore.musicFull) {
-    settingsStore.showArtistDrawer = false;
-  }
-};
-
-watch(
-  () => playerStore.musicFull,
-  (_newVal) => {
-    // 状态栏样式更新已在 Web 环境下禁用
-  }
-);
-
-const openPlayListDrawer = () => {
-  playerStore.setPlayListDrawerVisible(true);
-};
+const { playerStore, settingsStore, background, openPlayListDrawer, setMusicFull } =
+  usePlayBarChrome({
+    fullMode: 'toggle'
+  });
 
 // 滑动切歌
 const playBarRef = ref<HTMLElement | null>(null);
@@ -109,14 +87,6 @@ onMounted(() => {
     });
   }
 });
-
-watch(
-  () => playerStore.playMusic,
-  async () => {
-    background.value = playMusic.value.backgroundColor as string;
-  },
-  { immediate: true, deep: true }
-);
 </script>
 
 <style lang="scss" scoped>
