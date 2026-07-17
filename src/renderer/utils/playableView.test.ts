@@ -19,8 +19,26 @@ describe('toPlayableView', () => {
     expect(v.title).toBe('Hello');
     expect(v.artistText).toBe('A');
     expect(v.durationText).toBe('01:05');
+    expect(v.subtitle).toBe('');
     expect(v.raw.ar[0].name).toBe('A');
     expect(v.raw.dt).toBe(65_000);
+  });
+
+  it('maps subtitle and badges', () => {
+    const song = {
+      id: '2',
+      name: 'X',
+      picUrl: '',
+      tns: ['译名'],
+      isVip: true,
+      playLoading: true,
+      artists: [{ id: 1, name: 'Z' }],
+      count: 0
+    } as unknown as SongResult;
+    const v = toPlayableView(song)!;
+    expect(v.subtitle).toBe('译名');
+    expect(v.isVip).toBe(true);
+    expect(v.isLoading).toBe(true);
   });
 
   it('returns null for empty', () => {

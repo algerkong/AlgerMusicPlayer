@@ -36,23 +36,21 @@
         <div class="song-item-content-compact-wrapper">
           <div class="song-item-content-compact-title">
             <n-ellipsis class="text-ellipsis" line-clamp="1" :class="{ 'text-primary': isPlaying }">
-              {{ item.name }}
-              <span
-                v-if="item.tns?.length || item.alia?.length"
-                class="text-neutral-400 dark:text-neutral-500"
-                >（{{ item.tns?.[0] || item.alia?.[0] }}）</span
+              {{ view?.title || item.name }}
+              <span v-if="view?.subtitle" class="text-neutral-400 dark:text-neutral-500"
+                >（{{ view.subtitle }}）</span
               >
             </n-ellipsis>
           </div>
           <div class="song-item-content-compact-artist">
             <n-ellipsis line-clamp="1">
-              <template v-for="(artist, index) in artists" :key="index">
+              <template v-for="(artist, index) in displayArtists" :key="index">
                 <span
                   class="cursor-pointer hover:text-primary"
                   @click.stop="onArtistClick(artist.id)"
                   >{{ artist.name }}</span
                 >
-                <span v-if="index < artists.length - 1"> / </span>
+                <span v-if="index < displayArtists.length - 1"> / </span>
               </template>
             </n-ellipsis>
           </div>
@@ -113,8 +111,6 @@ import {
   useSongItemShell,
   type SongItemShellProps
 } from '@/hooks/useSongItemShell';
-import { toPlayableView } from '@/utils/playableView';
-
 import BaseSongItem from './BaseSongItem.vue';
 
 const props = withDefaults(defineProps<SongItemShellProps>(), songItemShellDefaults);
@@ -128,6 +124,7 @@ const {
   isFavorite,
   isHovering,
   artists,
+  view,
   onToggleSelect,
   onArtistClick,
   onToggleFavorite,
@@ -135,8 +132,7 @@ const {
   onMenuClick
 } = useSongItemShell(props, emit);
 
-/** P1：展示用 PlayableView；时长文本已格式化 */
-const view = computed(() => toPlayableView(props.item));
+const displayArtists = computed(() => view.value?.artists || artists.value || []);
 const durationLabel = computed(() => view.value?.durationText || '--:--');
 </script>
 

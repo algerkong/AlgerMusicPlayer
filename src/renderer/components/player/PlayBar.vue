@@ -31,12 +31,12 @@
     </div>
     <div class="play-bar-img-wrapper" @click="setMusicFull">
       <n-image
-        :src="getImgUrl(playMusic?.picUrl, '100y100')"
+        :src="getImgUrl(nowView?.coverUrl || playMusic?.picUrl, '100y100')"
         class="play-bar-img"
         lazy
         preview-disabled
       />
-      <div v-if="playMusic?.playLoading" class="loading-overlay">
+      <div v-if="nowView?.isLoading || playMusic?.playLoading" class="loading-overlay">
         <i class="ri-loader-4-line loading-icon"></i>
       </div>
       <div class="hover-arrow">
@@ -55,7 +55,7 @@
     <div class="music-content">
       <div class="music-content-title flex items-center">
         <n-ellipsis class="text-ellipsis" line-clamp="1">
-          <p>{{ playMusic?.name || '' }}</p>
+          <p>{{ nowView?.title || playMusic?.name || '' }}</p>
         </n-ellipsis>
       </div>
       <div class="music-content-name">
@@ -68,12 +68,12 @@
           }"
         >
           <span
-            v-for="(artists, artistsindex) in artistList"
+            v-for="(artists, artistsindex) in barArtists"
             :key="artistsindex"
             class="cursor-pointer hover:text-primary"
             @click="handleArtistClick(artists.id)"
           >
-            {{ artists.name }}{{ artistsindex < artistList.length - 1 ? ' / ' : '' }}
+            {{ artists.name }}{{ artistsindex < barArtists.length - 1 ? ' / ' : '' }}
           </span>
         </n-ellipsis>
       </div>
@@ -166,6 +166,7 @@ import { allTime, artistList, nowTime, playMusic, textColors } from '@/hooks/Mus
 import { useDownload } from '@/hooks/useDownload';
 import { usePlaybackControl } from '@/hooks/usePlaybackControl';
 import { usePlayBarChrome } from '@/hooks/usePlayBarChrome';
+import { usePlayableView } from '@/hooks/usePlayableView';
 import { usePlayMode } from '@/hooks/usePlayMode';
 import { useVolumeControl } from '@/hooks/useVolumeControl';
 import { audioService } from '@/services/audioService';
@@ -182,6 +183,13 @@ const {
   setMusicFull,
   handleArtistClick
 } = usePlayBarChrome({ fullMode: 'toggle' });
+
+/** P4：当前曲展示字段 */
+const nowView = usePlayableView(() => playMusic.value);
+const barArtists = computed(
+  () =>
+    nowView.value?.artists || (artistList.value as { id: number | string; name: string }[]) || []
+);
 
 const {
   isMuted,

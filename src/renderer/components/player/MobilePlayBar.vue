@@ -22,22 +22,18 @@
       <!-- 歌曲信息 -->
       <div class="mini-song-info" @click="setMusicFull">
         <n-image
-          :src="getImgUrl(playMusic?.picUrl, '100y100')"
+          :src="getImgUrl(nowView?.coverUrl || playMusic?.picUrl, '100y100')"
           class="mini-song-cover"
           lazy
           preview-disabled
         />
         <div class="mini-song-text">
           <n-ellipsis line-clamp="1">
-            <span class="mini-song-title">{{ playMusic.name }}</span>
+            <span class="mini-song-title">{{ nowView?.title || playMusic.name }}</span>
             <span class="mx-2 text-gray-500 dark:text-gray-400">-</span>
-            <span
-              class="mini-song-artist"
-              v-for="(artists, artistsindex) in artistList"
-              :key="artistsindex"
-            >
-              {{ artists.name }}{{ artistsindex < artistList.length - 1 ? ' / ' : '' }}
-            </span>
+            <span class="mini-song-artist">{{
+              nowView?.artistText || artistList.map((a: { name: string }) => a.name).join(' / ')
+            }}</span>
           </n-ellipsis>
         </div>
       </div>
@@ -64,6 +60,7 @@ import MusicFullWrapper from '@/components/lyric/MusicFullWrapper.vue';
 import { artistList, playMusic, textColors } from '@/hooks/MusicHook';
 import { usePlaybackControl } from '@/hooks/usePlaybackControl';
 import { usePlayBarChrome } from '@/hooks/usePlayBarChrome';
+import { usePlayableView } from '@/hooks/usePlayableView';
 import { getImgUrl, setAnimationClass } from '@/utils';
 
 const shouldShowMobileMenu = inject('shouldShowMobileMenu') as Ref<boolean>;
@@ -73,6 +70,7 @@ const { playerStore, settingsStore, background, openPlayListDrawer, setMusicFull
   usePlayBarChrome({
     fullMode: 'toggle'
   });
+const nowView = usePlayableView(() => playMusic.value);
 
 // 滑动切歌
 const playBarRef = ref<HTMLElement | null>(null);

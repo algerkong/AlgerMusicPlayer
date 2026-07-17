@@ -7,6 +7,7 @@ import { computed, ref, type Ref } from 'vue';
 import { usePlayerStore } from '@/store';
 import type { SongResult } from '@/types/music';
 import type { SongArtistLike } from '@/utils/songFields';
+import { toPlayableView } from '@/utils/playableView';
 
 export type SongItemShellProps = {
   item: SongResult;
@@ -66,6 +67,8 @@ export function useSongItemShell(
   const isFavorite = computed(() => baseItem.value?.isFavorite || false);
   const isHovering = computed(() => baseItem.value?.isHovering || false);
   const artists = computed(() => (baseItem.value?.artists || []) as SongArtistLike[]);
+  /** P4：展示字段走 PlayableView */
+  const view = computed(() => toPlayableView(props.item));
 
   const onToggleSelect = () => {
     baseItem.value?.toggleSelect();
@@ -104,6 +107,7 @@ export function useSongItemShell(
     isFavorite,
     isHovering,
     artists,
+    view,
     onToggleSelect,
     onImageLoad,
     onArtistClick,

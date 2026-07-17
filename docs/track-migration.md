@@ -28,7 +28,7 @@
 | P1 PlayableView     | ✅   | `toPlayableView` / `trackToPlayableView`                                                     |
 | P2 Store 内部分层   | ✅   | `currentTrack` / `currentRuntime` + `setCurrentSong` / `patchCurrentSong`；壳仍为 SongResult |
 | P3 列表改结构       | ✅   | `playablePlayList` 镜像 + commit/replace API；壳仍 `SongResult[]`                            |
-| P4 UI 脱 SongResult | 待做 | 组件 props 改 Track/View                                                                     |
+| P4 UI 脱 SongResult | ✅   | 歌单项/播放条展示走 PlayableView；props 仍 SongResult（动作/raw）                            |
 | P5 持久化 v2        | 待做 | MinifiedTrack                                                                                |
 | P6 删 ar/al/dt      | 待做 | 类型与 normalize 镜像逻辑                                                                    |
 

@@ -1,10 +1,9 @@
 /**
- * UI 只读视图（P1）：从 SongResult / Track 抽出展示字段。
- * 组件应优先吃 PlayableView，避免直接读 ar/dt 镜像。
- * 换曲/收藏仍用 raw SongResult，直到 P4 脱钩。
+ * UI 只读视图：从 SongResult / Track 抽出展示字段（P1/P4）。
+ * 组件展示优先用 PlayableView；播放/收藏过渡期仍用 raw。
  */
-import type { SongResult } from '../types/music';
 import type { Track } from '../../shared/domain/track';
+import type { SongResult } from '../types/music';
 import {
   formatDurationMs,
   getSongAlbum,
@@ -24,6 +23,8 @@ export type PlayableArtistView = {
 export type PlayableView = {
   id: string | number;
   title: string;
+  /** tns / alia 首项，用于副标题括号 */
+  subtitle: string;
   coverUrl: string;
   artists: PlayableArtistView[];
   /** "A / B" */
@@ -34,7 +35,11 @@ export type PlayableView = {
   durationText: string;
   platform?: string;
   isVip?: boolean;
-  isPlayingHintId?: string | number;
+  isOriginal?: boolean;
+  isLimitedFree?: boolean;
+  isDigital?: boolean;
+  /** 播放加载中 */
+  isLoading?: boolean;
   /** 过渡期：播放/收藏仍走 SongResult */
   raw: SongResult;
 };
@@ -54,9 +59,11 @@ export function toPlayableView(song: SongResult | null | undefined): PlayableVie
   const artists = artistsFromSong(n);
   const durationMs = getSongDurationMs(n);
   const album = getSongAlbum(n);
+  const subtitle = (n.tns?.[0] || n.alia?.[0] || '').trim();
   return {
     id: n.id,
     title: n.name || '',
+    subtitle,
     coverUrl: getSongCoverUrl(n) || n.picUrl || '',
     artists,
     artistText:
@@ -69,6 +76,10 @@ export function toPlayableView(song: SongResult | null | undefined): PlayableVie
     durationText: formatDurationMs(durationMs),
     platform: n.source,
     isVip: n.isVip,
+    isOriginal: n.isOriginal,
+    isLimitedFree: n.isLimitedFree,
+    isDigital: n.isDigital,
+    isLoading: !!n.playLoading,
     raw: n
   };
 }
@@ -80,6 +91,7 @@ export function trackToPlayableView(track: Track): PlayableView {
     return {
       id: track.id,
       title: track.title,
+      subtitle: '',
       coverUrl: track.coverUrl || '',
       artists: track.artists.map((a, i) => ({
         id: a.id || i,
@@ -92,6 +104,9 @@ export function trackToPlayableView(track: Track): PlayableView {
       durationText: formatDurationMs(track.durationMs || 0),
       platform: track.platform,
       isVip: track.isVip,
+      isOriginal: track.isOriginal,
+      isLimitedFree: track.isLimitedFree,
+      isDigital: track.isDigital,
       raw: trackToSongResult(track)
     };
   }
@@ -100,4 +115,12 @@ export function trackToPlayableView(track: Track): PlayableView {
 
 export function artistTextOf(song: SongResult | null | undefined, fallback = ''): string {
   return toPlayableView(song)?.artistText || fallback;
+}
+
+export function titleOf(song: SongResult | null | undefined, fallback = ''): string {
+  return toPlayableView(song)?.title || fallback;
+}
+
+export function coverUrlOf(song: SongResult | null | undefined, fallback = ''): string {
+  return toPlayableView(song)?.coverUrl || fallback;
 }

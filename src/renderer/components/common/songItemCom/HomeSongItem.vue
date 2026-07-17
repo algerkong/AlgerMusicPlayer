@@ -9,14 +9,14 @@
       class="cover relative h-14 w-14 md:h-16 md:w-16 flex-shrink-0 overflow-hidden rounded-lg md:rounded-xl bg-neutral-100 dark:bg-neutral-800 shadow-sm"
     >
       <n-image
-        v-if="item.picUrl"
-        :src="getImgUrl(item.picUrl, '200y200')"
+        v-if="view?.coverUrl || item.picUrl"
+        :src="getImgUrl(view?.coverUrl || item.picUrl, '200y200')"
         class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
         preview-disabled
         :img-props="{
           crossorigin: 'anonymous',
           loading: 'lazy',
-          alt: item.name
+          alt: view?.title || item.name
         }"
       />
       <div
@@ -32,21 +32,19 @@
         class="song-name text-sm md:text-base font-semibold text-neutral-800 dark:text-neutral-100 transition-colors duration-200 group-hover:text-primary dark:group-hover:text-white"
         :class="{ 'text-primary': isPlaying }"
       >
-        {{ item.name }}
-        <span
-          v-if="item.tns?.length || item.alia?.length"
-          class="text-neutral-400 dark:text-neutral-500 font-normal"
-          >（{{ item.tns?.[0] || item.alia?.[0] }}）</span
+        {{ view?.title || item.name }}
+        <span v-if="view?.subtitle" class="text-neutral-400 dark:text-neutral-500 font-normal"
+          >（{{ view.subtitle }}）</span
         >
       </n-ellipsis>
       <n-ellipsis
         class="artist-name text-xs md:text-sm text-neutral-500 dark:text-neutral-400 mt-0.5"
       >
-        <template v-for="(artist, index) in artists" :key="index">
+        <template v-for="(artist, index) in displayArtists" :key="index">
           <span class="cursor-pointer hover:text-primary" @click.stop="onArtistClick(artist.id)">
             {{ artist.name }}
           </span>
-          <span v-if="index < artists.length - 1"> / </span>
+          <span v-if="index < displayArtists.length - 1"> / </span>
         </template>
       </n-ellipsis>
     </div>
@@ -84,9 +82,12 @@
 <script lang="ts" setup>
 import { NEllipsis, NImage } from 'naive-ui';
 
+import { computed } from 'vue';
+
 import { useSongItem } from '@/hooks/useSongItem';
 import type { SongResult } from '@/types/music';
 import { getImgUrl, isElectron } from '@/utils';
+import { toPlayableView } from '@/utils/playableView';
 
 import SongItemDropdown from './SongItemDropdown.vue';
 
@@ -112,7 +113,6 @@ const props = withDefaults(
 
 const emit = defineEmits(['play', 'select', 'remove-song']);
 
-// 使用公共逻辑
 const {
   isPlaying,
   isFavorite,
@@ -130,6 +130,9 @@ const {
   downloadMusic,
   downloadLyric
 } = useSongItem(props);
+
+const view = computed(() => toPlayableView(props.item));
+const displayArtists = computed(() => view.value?.artists || artists.value || []);
 
 const onPlayMusic = () => {
   playMusicEvent(props.item);

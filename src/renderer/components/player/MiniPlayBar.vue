@@ -7,7 +7,7 @@
       <!-- 专辑封面 -->
       <div class="album-cover" @click="setMusicFull">
         <n-image
-          :src="getImgUrl(playMusic?.picUrl, '100y100')"
+          :src="getImgUrl(nowView?.coverUrl || playMusic?.picUrl, '100y100')"
           fallback-src="/placeholder.png"
           class="cover-img"
           preview-disabled
@@ -16,15 +16,15 @@
 
       <!-- 歌曲信息 -->
       <div class="song-info" @click="setMusicFull">
-        <div class="song-title">{{ playMusic?.name || '未播放' }}</div>
+        <div class="song-title">{{ nowView?.title || playMusic?.name || '未播放' }}</div>
         <div class="song-artist">
           <span
-            v-for="(artists, artistsindex) in artistList"
+            v-for="(artists, artistsindex) in barArtists"
             :key="artistsindex"
             class="cursor-pointer hover:text-primary"
             @click.stop="handleArtistClick(artists.id)"
           >
-            {{ artists.name }}{{ artistsindex < artistList.length - 1 ? ' / ' : '' }}
+            {{ artists.name }}{{ artistsindex < barArtists.length - 1 ? ' / ' : '' }}
           </span>
         </div>
       </div>
@@ -133,6 +133,7 @@ import { allTime, artistList, nowTime, playMusic } from '@/hooks/MusicHook';
 import { useFavorite } from '@/hooks/useFavorite';
 import { usePlaybackControl } from '@/hooks/usePlaybackControl';
 import { usePlayBarChrome } from '@/hooks/usePlayBarChrome';
+import { usePlayableView } from '@/hooks/usePlayableView';
 import { useVolumeControl } from '@/hooks/useVolumeControl';
 import type { SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
@@ -143,6 +144,11 @@ const { playerStore, settingsStore, handleArtistClick, handleProgressClick, setM
   usePlayBarChrome({ fullMode: 'open', closeFullOnArtist: false });
 
 const setMusicFull = () => setMusicFullTo(true);
+const nowView = usePlayableView(() => playMusic.value);
+const barArtists = computed(
+  () =>
+    nowView.value?.artists || (artistList.value as { id: number | string; name: string }[]) || []
+);
 
 const {
   isMuted,

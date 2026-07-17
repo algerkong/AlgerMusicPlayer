@@ -22,8 +22,8 @@
     <!-- 图片插槽 -->
     <template #image>
       <n-image
-        v-if="item.picUrl"
-        :src="getImgUrl(item.picUrl, '100y100')"
+        v-if="view?.coverUrl"
+        :src="getImgUrl(view.coverUrl, '100y100')"
         class="song-item-img"
         preview-disabled
         :img-props="{
@@ -38,23 +38,21 @@
       <div class="song-item-content">
         <div class="song-item-content-title">
           <n-ellipsis class="text-ellipsis" line-clamp="1" :class="{ 'text-primary': isPlaying }">
-            {{ item.name }}
-            <span
-              v-if="item.tns?.length || item.alia?.length"
-              class="text-neutral-400 dark:text-neutral-500"
-              >（{{ item.tns?.[0] || item.alia?.[0] }}）</span
+            {{ view?.title || item.name }}
+            <span v-if="view?.subtitle" class="text-neutral-400 dark:text-neutral-500"
+              >（{{ view.subtitle }}）</span
             >
           </n-ellipsis>
         </div>
         <div class="song-item-content-name">
           <n-ellipsis class="text-ellipsis" line-clamp="1">
-            <template v-for="(artist, index) in artists" :key="index">
+            <template v-for="(artist, index) in displayArtists" :key="index">
               <span
                 class="cursor-pointer hover:text-primary"
                 @click.stop="onArtistClick(artist.id)"
                 >{{ artist.name }}</span
               >
-              <span v-if="index < artists.length - 1"> / </span>
+              <span v-if="index < displayArtists.length - 1"> / </span>
             </template>
           </n-ellipsis>
         </div>
@@ -87,6 +85,8 @@
 <script lang="ts" setup>
 import { NCheckbox, NEllipsis, NImage } from 'naive-ui';
 
+import { computed } from 'vue';
+
 import {
   songItemShellDefaults,
   useSongItemShell,
@@ -106,12 +106,15 @@ const {
   playLoading,
   isFavorite,
   artists,
+  view,
   onToggleSelect,
   onImageLoad,
   onArtistClick,
   onToggleFavorite,
   onPlayMusic
 } = useSongItemShell(props, emit, { reemitSelect: true });
+
+const displayArtists = computed(() => view.value?.artists || artists.value || []);
 </script>
 
 <style lang="scss" scoped>
