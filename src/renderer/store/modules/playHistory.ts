@@ -6,6 +6,8 @@ import type { DjProgram } from '@/types/podcast';
 import { debouncedLocalStorage, flushDebouncedStorage } from '@/utils/debouncedStorage';
 import type { MusicHistoryItem } from '@/utils/persistedSong';
 import {
+  inflateHistoryEntry,
+  inflateHistoryList,
   minifyHistoryEntry,
   minifyHistoryList,
   stripBase64CoversList
@@ -148,13 +150,13 @@ export const usePlayHistoryStore = defineStore(
       // 单步 ref 重赋值，避免 splice/pop + unshift 多次触发 watch 与持久化
       let next: MusicHistoryItem[];
       if (index !== -1) {
-        // 命中已有条目：累加计数 + 刷新时间戳，picUrl/al 等用新数据覆盖（封面可能换了短引用）
+        // 命中已有条目：累加计数 + 刷新时间戳；minify→inflate 保证运行时仍是 SongResult 形
         const existing = musicHistory.value[index];
-        const refreshed: MusicHistoryItem = {
+        const refreshed = inflateHistoryEntry({
           ...minifyHistoryEntry(music),
           count: (existing.count || 0) + 1,
           lastPlayTime: Date.now()
-        };
+        });
         next = [
           refreshed,
           ...musicHistory.value.slice(0, index),
@@ -162,7 +164,7 @@ export const usePlayHistoryStore = defineStore(
         ];
       } else {
         next = [
-          minifyHistoryEntry({ ...music, count: 1, lastPlayTime: Date.now() }),
+          inflateHistoryEntry(minifyHistoryEntry({ ...music, count: 1, lastPlayTime: Date.now() })),
           ...musicHistory.value
         ];
       }
@@ -385,7 +387,13 @@ export const usePlayHistoryStore = defineStore(
       // 与 clearAll 的同步落盘共用同一个序列化函数，避免格式漂移
       serializer: {
         serialize: serializePlayHistoryState,
-        deserialize: JSON.parse
+        deserialize: (raw: string) => {
+          const state = JSON.parse(raw);
+          if (Array.isArray(state?.musicHistory)) {
+            state.musicHistory = inflateHistoryList(state.musicHistory);
+          }
+          return state;
+        }
       }
     }
   }

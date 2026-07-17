@@ -10,7 +10,7 @@ import { preloadService } from '@/services/preloadService';
 import type { SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
 import { debouncedLocalStorage } from '@/utils/debouncedStorage';
-import { minifySongList } from '@/utils/persistedSong';
+import { inflateSongList, minifySongList } from '@/utils/persistedSong';
 import { performShuffle, preloadCoverImage, sameTrackId } from '@/utils/playerUtils';
 import {
   normalizeSongResult,
@@ -975,7 +975,16 @@ export const usePlaylistStore = defineStore(
             originalPlayList: minifySongList(state.originalPlayList)
           });
         },
-        deserialize: JSON.parse
+        deserialize: (raw: string) => {
+          const state = JSON.parse(raw);
+          if (Array.isArray(state?.playList)) {
+            state.playList = inflateSongList(state.playList);
+          }
+          if (Array.isArray(state?.originalPlayList)) {
+            state.originalPlayList = inflateSongList(state.originalPlayList);
+          }
+          return state;
+        }
       }
     }
   }

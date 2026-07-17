@@ -5,7 +5,7 @@ import { audioService } from '@/services/audioService';
 import type { AudioOutputDevice } from '@/types/audio';
 import type { SongResult } from '@/types/music';
 import { debouncedLocalStorage } from '@/utils/debouncedStorage';
-import { minifySong } from '@/utils/persistedSong';
+import { inflateSong, minifySong } from '@/utils/persistedSong';
 import {
   normalizeSongResult,
   playableToSongResult,
@@ -273,7 +273,13 @@ export const usePlayerCoreStore = defineStore(
             ...state,
             playMusic: state.playMusic?.id ? minifySong(state.playMusic as SongResult) : {}
           }),
-        deserialize: JSON.parse
+        deserialize: (raw: string) => {
+          const state = JSON.parse(raw);
+          if (state?.playMusic && (state.playMusic.id != null || state.playMusic.title != null)) {
+            state.playMusic = inflateSong(state.playMusic);
+          }
+          return state;
+        }
       }
     }
   }
