@@ -120,22 +120,7 @@
         </template>
         {{ playModeText }}
       </n-tooltip>
-      <n-tooltip v-if="playMusic?.id && isElectron" trigger="hover" :z-index="9999999">
-        <template #trigger>
-          <button
-            type="button"
-            class="bar-icon"
-            :class="{ 'bar-icon--disabled': isDownloading }"
-            :disabled="isDownloading"
-            @click="playMusic?.id && handleDownload()"
-          >
-            <i class="ri-download-2-line" />
-          </button>
-        </template>
-        {{ isDownloading ? t('songItem.message.downloading') : t('player.playBar.download') }}
-      </n-tooltip>
-
-      <!-- 音质 / 音效已迁到发现页曲目标识；播放条不再重复 -->
+      <!-- 音质 / 音效已迁到发现页曲目标识；下载入口也去掉（底栏精简） -->
 
       <n-tooltip trigger="hover" :z-index="9999999">
         <template #trigger>
@@ -163,14 +148,13 @@ import { useI18n } from 'vue-i18n';
 
 import MusicFullWrapper from '@/components/lyric/MusicFullWrapper.vue';
 import { allTime, artistList, nowTime, playMusic, textColors } from '@/hooks/MusicHook';
-import { useDownload } from '@/hooks/useDownload';
 import { usePlaybackControl } from '@/hooks/usePlaybackControl';
 import { usePlayBarChrome } from '@/hooks/usePlayBarChrome';
 import { usePlayableView } from '@/hooks/usePlayableView';
 import { usePlayMode } from '@/hooks/usePlayMode';
 import { useVolumeControl } from '@/hooks/useVolumeControl';
 import { audioService } from '@/services/audioService';
-import { getImgUrl, isElectron, isMobile, secondToMinute, setAnimationClass } from '@/utils';
+import { getImgUrl, isMobile, secondToMinute, setAnimationClass } from '@/utils';
 
 const { t } = useI18n();
 
@@ -198,12 +182,6 @@ const {
   mute,
   handleVolumeWheel
 } = useVolumeControl();
-
-const { downloadMusic, isDownloading } = useDownload();
-const handleDownload = () => {
-  if (!playMusic.value || isDownloading.value) return;
-  downloadMusic(playMusic.value);
-};
 
 const { playModeIcon, playModeText, togglePlayMode } = usePlayMode();
 

@@ -1,5 +1,6 @@
 import type { ILyric, ILyricText, IWordData, SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
+import { injectMakerCredits } from '@/utils/lyricMakerCredits';
 import { trackToSongResult } from '@/utils/trackBridge';
 
 import { msSongToTrack } from '../../shared/domain/trackAdapter';
@@ -135,6 +136,10 @@ export interface MsLyricResult {
   raw?: string;
   /** 抓包 lyric.translations，如 cn → LRC 文本 */
   translations?: Record<string, string>;
+  /** HAR track_v2.track.song_maker_team.lyricists */
+  lyricists?: string[];
+  /** HAR track_v2.track.song_maker_team.composers */
+  composers?: string[];
 }
 
 export interface MsAuthState {
@@ -468,6 +473,94 @@ export async function msUnlikeTrack(songId: string): Promise<boolean> {
   return invokeMs('music-source:unlike-track', songId);
 }
 
+// ─── Comments ───
+
+export interface MsCommentUser {
+  id?: string;
+  nickname?: string;
+  avatarUrl?: string;
+  /** HAR: user.is_vip */
+  isVip?: boolean;
+  /** none | vip | svip — HAR: user.vip_stage */
+  vipLevel?: string;
+}
+
+export interface MsCommentHashtag {
+  id?: string;
+  text: string;
+  prompt?: string;
+}
+
+export interface MsCommentReplyTo {
+  id?: string;
+  content?: string;
+  user?: MsCommentUser;
+}
+
+export interface MsComment {
+  platform?: string;
+  id: string;
+  songId?: string;
+  content: string;
+  diggCount?: number;
+  replyCount?: number;
+  createdAt?: number;
+  user?: MsCommentUser;
+  ipLabel?: string;
+  featured?: boolean;
+  featuredTags?: string[];
+  hashtags?: MsCommentHashtag[];
+  imageUrls?: string[];
+  replyTo?: MsCommentReplyTo;
+  digged?: boolean;
+}
+
+export interface MsCommentList {
+  comments: MsComment[];
+  count?: number;
+  cursor?: string;
+  hasMore: boolean;
+  prompts?: string[];
+}
+
+export async function msListComments(
+  songId: string,
+  options?: { limit?: number; cursor?: number | string }
+): Promise<MsCommentList> {
+  return invokeMs('music-source:list-comments', songId, options);
+}
+
+export async function msListCommentReplies(
+  commentId: string,
+  options?: { limit?: number; cursor?: number | string }
+): Promise<MsCommentList> {
+  return invokeMs('music-source:list-comment-replies', commentId, options);
+}
+
+export async function msCreateComment(
+  songId: string,
+  text: string,
+  options?: { replyId?: string; replyToReplyId?: string; replyToUserId?: string }
+): Promise<{ commentId: string }> {
+  return invokeMs('music-source:create-comment', songId, text, options);
+}
+
+export async function msDeleteComment(
+  commentId: string,
+  options?: { replyId?: string }
+): Promise<boolean> {
+  return invokeMs('music-source:delete-comment', commentId, options);
+}
+
+export async function msLikeComment(
+  songId: string,
+  commentId: string,
+  liked = true,
+  options?: { replyId?: string }
+): Promise<boolean> {
+  return invokeMs('music-source:like-comment', songId, commentId, liked, options);
+}
+
 /** 带时间戳的歌词行转 LRC 文本（仅行级，无逐字） */
 export function msLyricToLrc(lines: MsLyricLine[]): string {
   return lines
@@ -494,14 +587,14 @@ export function pickMsTranslationLrc(translations?: Record<string, string>): str
 
 /**
  * 把 ly-music-source 的 lines（含真实 word 时间）转成播放器 ILyric。
- * 元信息行过滤只在库里做；这里只做格式映射，不二次发明业务规则。
+ * 作词/作曲：HAR 在 track.song_maker_team，不在 lyric content → 接到最前。
  * 不要再 msLyricToLrc → 解析，否则字级时间全丢，只能整行假高亮。
  * 译文：result.translations（LRC）按时间贴到 trText。
  */
 export function msLyricToILyric(result: MsLyricResult): ILyric {
   const lines = result.lines || [];
-  const lrcArray: ILyricText[] = [];
-  const lrcTimeArray: number[] = [];
+  let lrcArray: ILyricText[] = [];
+  let lrcTimeArray: number[] = [];
   let hasWordByWord = false;
 
   for (let i = 0; i < lines.length; i++) {
@@ -546,6 +639,16 @@ export function msLyricToILyric(result: MsLyricResult): ILyric {
   };
   const tLrc = pickMsTranslationLrc(Object.keys(mergedTr).length ? mergedTr : result.translations);
   attachTranslationLrc(lrcArray, lrcTimeArray, tLrc);
+
+  // track_v2.song_maker_team → 歌词最前「作词：/作曲：」
+  const withCredits = injectMakerCredits(
+    lrcArray,
+    lrcTimeArray,
+    result.lyricists,
+    result.composers
+  );
+  lrcArray = withCredits.lrcArray;
+  lrcTimeArray = withCredits.lrcTimeArray;
 
   return { lrcArray, lrcTimeArray, hasWordByWord };
 }

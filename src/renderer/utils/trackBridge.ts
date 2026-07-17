@@ -95,8 +95,9 @@ export function trackToSongResult(track: Track): SongResult {
     isDigital: track.isDigital,
     digital: track.digital,
     genreTags: track.genreTags,
-    lyricists: track.lyricists,
-    composers: track.composers,
+    // 缺字段时不要写 undefined：否则 {...base, ...extra} 会冲掉 feed 里已有的作词/作曲
+    ...(track.lyricists?.length ? { lyricists: track.lyricists } : {}),
+    ...(track.composers?.length ? { composers: track.composers } : {}),
     likedCount: track.likeCount,
     commentCount: track.commentCount,
     shareCount: track.shareCount

@@ -616,14 +616,16 @@ export function initializeMusicSource(): void {
   ipcMain.handle('music-source:get-lyric', async (_e, songId: string) => {
     try {
       const lyric = await getClient().getLyric(String(songId));
-      // 序列化可 JSON 字段（无 Buffer）；translations 必须带回，否则译文永远空
+      // 序列化可 JSON 字段（无 Buffer）；translations / 作词作曲 必须带回
       return wrapOk({
         platform: lyric.platform,
         songId: lyric.songId,
         type: lyric.type,
         lines: lyric.lines,
         raw: lyric.raw,
-        translations: lyric.translations
+        translations: lyric.translations,
+        lyricists: lyric.lyricists,
+        composers: lyric.composers
       });
     } catch (error) {
       return toIpcError(error);
@@ -703,6 +705,79 @@ export function initializeMusicSource(): void {
       return toIpcError(error);
     }
   });
+
+  // ─── Comments ───
+
+  ipcMain.handle(
+    'music-source:list-comments',
+    async (_e, songId: string, options?: { limit?: number; cursor?: number | string }) => {
+      try {
+        const page = await getClient().listComments(String(songId), options || {});
+        return wrapOk(page);
+      } catch (error) {
+        return toIpcError(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    'music-source:list-comment-replies',
+    async (_e, commentId: string, options?: { limit?: number; cursor?: number | string }) => {
+      try {
+        const page = await getClient().listCommentReplies(String(commentId), options || {});
+        return wrapOk(page);
+      } catch (error) {
+        return toIpcError(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    'music-source:create-comment',
+    async (
+      _e,
+      songId: string,
+      text: string,
+      options?: { replyId?: string; replyToReplyId?: string; replyToUserId?: string }
+    ) => {
+      try {
+        const result = await getClient().createComment(
+          String(songId),
+          String(text ?? ''),
+          options || {}
+        );
+        return wrapOk(result);
+      } catch (error) {
+        return toIpcError(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    'music-source:delete-comment',
+    async (_e, commentId: string, options?: { replyId?: string }) => {
+      try {
+        await getClient().deleteComment(String(commentId), {
+          replyId: options?.replyId
+        });
+        return wrapOk(true);
+      } catch (error) {
+        return toIpcError(error);
+      }
+    }
+  );
+
+  ipcMain.handle(
+    'music-source:like-comment',
+    async (_e, songId: string, commentId: string, liked = true, options?: { replyId?: string }) => {
+      try {
+        await getClient().likeComment(String(songId), String(commentId), !!liked, options || {});
+        return wrapOk(true);
+      } catch (error) {
+        return toIpcError(error);
+      }
+    }
+  );
 
   console.log('[musicSource] IPC handlers registered');
 }

@@ -32,7 +32,12 @@ const MUSIC_SOURCE_CHANNELS = [
   'music-source:get-related-songs',
   'music-source:dislike-track',
   'music-source:like-track',
-  'music-source:unlike-track'
+  'music-source:unlike-track',
+  'music-source:list-comments',
+  'music-source:list-comment-replies',
+  'music-source:create-comment',
+  'music-source:delete-comment',
+  'music-source:like-comment'
 ] as const;
 
 type MusicSourceChannel = (typeof MUSIC_SOURCE_CHANNELS)[number];

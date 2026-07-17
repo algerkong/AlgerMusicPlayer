@@ -386,12 +386,8 @@ const parseLyrics = (lyricsString: string): { lyrics: ILyricText[]; times: numbe
     const times: number[] = [];
 
     for (const line of parsedLyrics) {
-      // 作词/作曲等元信息不走逐字
-      const credit =
-        /^(作词|作曲|编曲|制作人|制作|混音|录音|出品|原唱|翻唱|演唱|监制|和声|by|composer|lyricist)[:：\s]/i.test(
-          (line.fullText || '').trim()
-        );
-      const hasWords = !credit && !!(line.words && line.words.length > 0);
+      // 作词/作曲等也保留逐字（与音源库一致）
+      const hasWords = !!(line.words && line.words.length > 0);
 
       lyrics.push({
         text: line.fullText,
@@ -416,14 +412,22 @@ const parseLyrics = (lyricsString: string): { lyrics: ILyricText[]; times: numbe
 /**
  * 加载歌词（独立函数）
  */
-export const loadLrc = async (id: string | number): Promise<ILyric> => {
+const playerLyricHasWords = (lyricData: any): boolean =>
+  !!lyricData?._playerLyric?.lrcArray?.some(
+    (l: any) => Array.isArray(l?.words) && l.words.length > 1
+  );
+
+export const loadLrc = async (
+  id: string | number,
+  opts?: { forceRefresh?: boolean }
+): Promise<ILyric> => {
   try {
     // 汽水 track id 常为 19 位雪花，超过 Number.MAX_SAFE_INTEGER。
     // 绝不能 parseInt 当缓存 key，否则多首歌撞同一错误 key、歌词/译文串台。
     const cacheKey = id != null && String(id).trim() !== '' ? String(id) : '';
     let lyricData: any;
 
-    if (isElectron && cacheKey) {
+    if (isElectron && cacheKey && !opts?.forceRefresh) {
       try {
         lyricData = await window.api.getCachedLyric(cacheKey);
       } catch (error) {
@@ -431,9 +435,14 @@ export const loadLrc = async (id: string | number): Promise<ILyric> => {
       }
     }
 
-    // 在线：ly-music-source（字级时间 + 译文）
-    // ver5：译文对齐放宽；强制刷掉旧缓存（IPC 曾丢 translations）
-    const needMsLyric = !lyricData?._playerLyric?.lrcArray?.length || lyricData?._msLyricVer !== 5;
+    // 在线：ly-music-source（字级时间 + 译文 + song_maker 作词作曲）
+    // ver6：track_v2.song_maker_team 注入歌词最前
+    // HMR 后常见：磁盘有行级 _playerLyric 但无 words → 必须重拉
+    const needMsLyric =
+      opts?.forceRefresh ||
+      !lyricData?._playerLyric?.lrcArray?.length ||
+      lyricData?._msLyricVer !== 6 ||
+      !playerLyricHasWords(lyricData);
     if (isElectron && needMsLyric) {
       try {
         const msLyric = await msGetLyric(String(id));
@@ -442,14 +451,19 @@ export const loadLrc = async (id: string | number): Promise<ILyric> => {
           const lrcText = msLyric.raw || msLyricToLrc(msLyric.lines);
           const tLrc = pickMsTranslationLrc(msLyric.translations);
           const trCount = converted.lrcArray.filter((l) => l.trText).length;
+          const creditCount = converted.lrcArray.filter((l) =>
+            /^\s*(作词|作曲)\s*[:：]/.test(l.text || '')
+          ).length;
           console.log(
-            `[loadLrc] id=${id} lines=${converted.lrcArray.length} trLines=${trCount} tlyricLen=${tLrc.length} keys=${Object.keys(msLyric.translations || {}).join(',') || '-'}`
+            `[loadLrc] id=${id} lines=${converted.lrcArray.length} credits=${creditCount} lyricists=${(msLyric.lyricists || []).join('/')} composers=${(msLyric.composers || []).join('/')} trLines=${trCount} tlyricLen=${tLrc.length}`
           );
           const payload = {
             lrc: { lyric: typeof lrcText === 'string' ? lrcText : msLyricToLrc(msLyric.lines) },
             tlyric: tLrc ? { lyric: tLrc } : undefined,
             _playerLyric: converted,
-            _msLyricVer: 5
+            _msLyricVer: 6,
+            _lyricists: msLyric.lyricists,
+            _composers: msLyric.composers
           };
           if (cacheKey) {
             void window.api
@@ -492,10 +506,32 @@ export const loadLrc = async (id: string | number): Promise<ILyric> => {
                 ...data,
                 tlyric: { lyric: tLrc },
                 _playerLyric: converted,
-                _msLyricVer: 5
+                _msLyricVer: 6
               })
               .catch(() => undefined);
           }
+        }
+      }
+      // 取词时带回的 song_maker：补到当前曲，供 MusicHook 二次注入兜底
+      if (
+        (Array.isArray(data._lyricists) && data._lyricists.length) ||
+        (Array.isArray(data._composers) && data._composers.length)
+      ) {
+        try {
+          const { usePlayerStore } = await import('@/store/modules/player');
+          const store = usePlayerStore();
+          if (store.playMusic && String(store.playMusic.id) === String(id)) {
+            const patch: Partial<SongResult> = {};
+            if (Array.isArray(data._lyricists) && data._lyricists.length) {
+              patch.lyricists = data._lyricists.map(String);
+            }
+            if (Array.isArray(data._composers) && data._composers.length) {
+              patch.composers = data._composers.map(String);
+            }
+            store.patchCurrentSong(patch);
+          }
+        } catch {
+          /* store 未就绪时忽略 */
         }
       }
       return {

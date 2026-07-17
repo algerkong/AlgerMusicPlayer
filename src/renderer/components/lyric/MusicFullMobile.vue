@@ -834,6 +834,7 @@ onBeforeUnmount(() => {
   // 清理鼠标事件监听
   document.removeEventListener('mousemove', handleMouseMove);
   document.removeEventListener('mouseup', handleMouseUp);
+  window.removeEventListener('keydown', onMusicFullKeydown, true);
 });
 
 const { navigateToArtist } = useArtist();
@@ -869,6 +870,28 @@ const closeMusicFull = () => {
   isVisible.value = false;
   playerStore.setMusicFull(false);
 };
+
+/** Esc：先收起全屏歌词，再关大屏 */
+const onMusicFullKeydown = (e: KeyboardEvent) => {
+  if (e.key !== 'Escape' && e.code !== 'Escape') return;
+  if (!isVisible.value) return;
+  e.preventDefault();
+  e.stopPropagation();
+  if (showFullLyrics.value) {
+    closeFullLyrics();
+    return;
+  }
+  closeMusicFull();
+};
+
+watch(
+  () => isVisible.value,
+  (open) => {
+    if (open) window.addEventListener('keydown', onMusicFullKeydown, true);
+    else window.removeEventListener('keydown', onMusicFullKeydown, true);
+  },
+  { immediate: true }
+);
 
 // 添加对 playMusic.id 的监听，歌曲切换时滚动到顶部
 watch(

@@ -544,6 +544,16 @@ const closeMusicFull = () => {
   playerStore.setMusicFull(false);
 };
 
+/** Esc 关闭大屏（浏览器系统全屏时先退全屏，再关大屏） */
+const onMusicFullKeydown = (e: KeyboardEvent) => {
+  if (e.key !== 'Escape' && e.code !== 'Escape') return;
+  if (!isVisible.value) return;
+  // 系统全屏时浏览器会先处理 Esc；这里仍主动关大屏
+  e.preventDefault();
+  e.stopPropagation();
+  closeMusicFull();
+};
+
 // 全屏切换方法
 const toggleFullScreen = async () => {
   try {
@@ -582,11 +592,21 @@ onBeforeUnmount(() => {
   }
   getLrcScrollEl()?.removeEventListener('scroll', handleScroll);
   document.removeEventListener('fullscreenchange', handleFullScreenChange);
+  window.removeEventListener('keydown', onMusicFullKeydown, true);
   // 退出全屏模式
   if (document.fullscreenElement) {
     document.exitFullscreen();
   }
 });
+
+watch(
+  () => isVisible.value,
+  (open) => {
+    if (open) window.addEventListener('keydown', onMusicFullKeydown, true);
+    else window.removeEventListener('keydown', onMusicFullKeydown, true);
+  },
+  { immediate: true }
+);
 
 watch(
   () => config.value.fontSize,

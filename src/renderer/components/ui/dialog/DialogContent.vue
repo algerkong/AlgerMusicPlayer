@@ -38,9 +38,8 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
       v-bind="{ ...$attrs, ...forwarded }"
       :class="
         cn(
-          /* 封面取色：chrome-surface-strong / border / text */
-          'chrome-surface-strong text-[color:var(--chrome-text)] fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-2xl p-6 shadow-xl duration-200 sm:max-w-lg',
-          'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+          /* 实色底，避免 chrome-surface-strong 的 blur 与侧栏叠层打光 */
+          'dialog-content-anim bg-[rgba(22,22,26,0.97)] text-[color:var(--chrome-text)] border border-[color:var(--chrome-border)] fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-2xl p-6 shadow-xl sm:max-w-lg backdrop-blur-none',
           props.class
         )
       "
@@ -59,3 +58,40 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
     </dialog-content>
   </dialog-portal>
 </template>
+
+<!--
+  TW3 未接入 tw-animate（那是 v4 插件），data-[state]:animate-in 不会生效。
+  用 data-state + keyframes，reka Presence 会等 animationend 再卸 DOM。
+-->
+<style>
+@keyframes dialog-content-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 10px)) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+@keyframes dialog-content-out {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 6px)) scale(0.97);
+  }
+}
+
+.dialog-content-anim {
+  transform: translate(-50%, -50%);
+}
+.dialog-content-anim[data-state='open'] {
+  animation: dialog-content-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.dialog-content-anim[data-state='closed'] {
+  animation: dialog-content-out 0.18s ease both;
+}
+</style>

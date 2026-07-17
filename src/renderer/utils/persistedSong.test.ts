@@ -49,6 +49,18 @@ describe('persistedSong v2', () => {
     expect((back as any).ar).toBeUndefined();
   });
 
+  it('persists lyricists/composers for 作词作曲展示', () => {
+    const back = inflateSong(
+      minifySong({
+        ...sample,
+        lyricists: ['甲', '乙'],
+        composers: ['丙']
+      } as SongResult)
+    );
+    expect(back.lyricists).toEqual(['甲', '乙']);
+    expect(back.composers).toEqual(['丙']);
+  });
+
   it('inflates legacy v1 shape', () => {
     const v1 = {
       id: 42,

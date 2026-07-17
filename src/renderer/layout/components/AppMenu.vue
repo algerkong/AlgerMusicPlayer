@@ -58,18 +58,32 @@
           </div>
         </scroll-area>
 
-        <!-- 我的歌单：窄轨封面 + shadcn tip / 右键 -->
-        <div v-if="!isMobile && showPlaylistRail" class="playlist-rail">
+        <!-- 我的歌单：窄轨封面 + 点选添加模式 -->
+        <div
+          v-if="!isMobile && showPlaylistRail"
+          class="playlist-rail"
+          :class="{ 'is-picking': pick.active }"
+        >
           <separator class="playlist-rail-sep" />
           <tooltip>
             <tooltip-trigger as-child>
-              <button type="button" class="playlist-add-btn" @click="openCreateDialog">
+              <button
+                type="button"
+                class="playlist-add-btn"
+                :class="{ 'is-create-open': pick.createOpen || createOpen }"
+                @click="onAddClick"
+              >
                 <i class="ri-add-line" />
               </button>
             </tooltip-trigger>
             <tooltip-content side="right" :side-offset="8">新建歌单</tooltip-content>
           </tooltip>
-          <scroll-area class="playlist-rail-scroll">
+          <!--
+            不用 ScrollArea：reka viewport 强制 tabindex=0 + size-full，
+            弹层打开时视口底边会在约第 3 个歌单下被合成打成一道「光」。
+            歌单数量少，普通滚动即可。
+          -->
+          <div class="playlist-rail-scroll">
             <tooltip v-if="plStore.loading && !plStore.items.length">
               <tooltip-trigger as-child>
                 <div class="playlist-rail-hint">…</div>
@@ -99,21 +113,50 @@
                 <button
                   type="button"
                   class="playlist-rail-item"
-                  :class="{ 'is-on': isPlaylistActive(pl.id) }"
-                  @click="openPlaylist(pl)"
+                  :class="{
+                    'is-on': isPlaylistActive(pl.id),
+                    'is-pick-target': pick.shouldPulsePlaylist(pl),
+                    'is-pick-skip': pick.active && !pick.shouldPulsePlaylist(pl)
+                  }"
+                  :disabled="pick.busy"
+                  @click="onPlaylistClick(pl)"
                   @contextmenu.prevent="openPlCtx($event, pl)"
                 >
-                  <div class="playlist-rail-cover">
-                    <img v-if="pl.coverUrl" :src="pl.coverUrl" alt="" />
-                    <i v-else class="ri-play-list-2-fill" />
+                  <div class="playlist-rail-cover" :class="{ 'is-empty-art': !pl.coverUrl }">
+                    <img
+                      v-if="pl.coverUrl"
+                      :src="pl.coverUrl"
+                      alt=""
+                      @error="onCoverImgError(pl)"
+                    />
+                    <img v-else :src="emptyArtSrc" class="playlist-rail-empty-art" alt="" />
                   </div>
                 </button>
               </tooltip-trigger>
               <tooltip-content side="right" :side-offset="8">
-                {{ playlistTitle(pl) }}
+                {{
+                  pick.active
+                    ? pick.shouldPulsePlaylist(pl)
+                      ? `添加到「${pl.name}」`
+                      : `已在「${pl.name}」· 可点其它歌单`
+                    : playlistTitle(pl)
+                }}
               </tooltip-content>
             </tooltip>
-          </scroll-area>
+          </div>
+
+          <!-- 点选模式：取消（X）从歌单轨下方滑出 -->
+          <Transition name="pl-cancel">
+            <button
+              v-if="pick.active"
+              type="button"
+              class="playlist-pick-cancel"
+              aria-label="取消添加"
+              @click="pick.cancel()"
+            >
+              <i class="ri-close-line" />
+            </button>
+          </Transition>
         </div>
 
         <div v-if="!isMobile" class="menu-footer">
@@ -136,67 +179,111 @@
       </div>
     </tooltip-provider>
 
-    <!-- 新建 -->
-    <ui-dialog :open="createOpen" @update:open="createOpen = $event">
-      <dialog-content class="pl-dialog max-w-sm">
+    <!-- 新建 / 重命名 / 删除：reka Dialog（库动画） -->
+    <ui-dialog :open="createPanelVisible" @update:open="onCreateOpenChange">
+      <dialog-content class="pl-dialog max-w-sm" :show-close-button="false">
         <dialog-header>
           <dialog-title>新建歌单</dialog-title>
-          <dialog-description>创建一个新的私人歌单</dialog-description>
+          <dialog-description>
+            {{ pick.active && pick.song ? '创建歌单并添加当前歌曲' : '创建一个新的私人歌单' }}
+          </dialog-description>
         </dialog-header>
-        <div class="field">
-          <label class="field-label">名称</label>
-          <input
-            v-model="formName"
-            class="field-input"
-            type="text"
-            maxlength="40"
-            placeholder="歌单名称"
-            @keydown.enter.prevent="submitCreate"
-          />
+        <div v-if="pick.active && pick.song" class="pl-dialog-song">
+          <div class="pl-dialog-cover">
+            <img v-if="pick.song.coverUrl" :src="pick.song.coverUrl" alt="" />
+            <i v-else class="ri-music-2-fill opacity-50" />
+          </div>
+          <div class="pl-dialog-meta min-w-0">
+            <div class="truncate font-semibold text-sm">{{ pick.song.name }}</div>
+            <div class="truncate text-xs opacity-65 mt-0.5">{{ pick.song.artistText }}</div>
+          </div>
         </div>
+        <input
+          ref="createInputRef"
+          v-model="formName"
+          class="pl-dialog-input"
+          type="text"
+          maxlength="40"
+          placeholder="歌单名称"
+          @keydown.enter.prevent="submitCreate"
+        />
         <dialog-footer>
-          <ui-button variant="outline" @click="createOpen = false">取消</ui-button>
-          <ui-button :disabled="busy" @click="submitCreate">创建</ui-button>
+          <ui-button variant="outline" @click="closeCreatePanel">取消</ui-button>
+          <ui-button :disabled="busy" @click="submitCreate">
+            {{ pick.active ? '创建并添加' : '创建' }}
+          </ui-button>
         </dialog-footer>
       </dialog-content>
     </ui-dialog>
 
-    <!-- 重命名 -->
-    <ui-dialog :open="renameOpen" @update:open="renameOpen = $event">
-      <dialog-content class="pl-dialog max-w-sm">
+    <ui-dialog :open="renameOpen" @update:open="onRenameOpenChange">
+      <dialog-content class="pl-dialog max-w-sm" :show-close-button="false">
         <dialog-header>
           <dialog-title>重命名歌单</dialog-title>
           <dialog-description>修改「{{ formTarget?.name }}」的名称</dialog-description>
         </dialog-header>
-        <div class="field">
-          <label class="field-label">名称</label>
-          <input
-            v-model="formName"
-            class="field-input"
-            type="text"
-            maxlength="40"
-            placeholder="歌单名称"
-            @keydown.enter.prevent="submitRename"
-          />
+        <div v-if="formTarget" class="pl-dialog-song">
+          <div class="pl-dialog-cover" :class="{ 'is-empty-art': !formTarget.coverUrl }">
+            <img v-if="formTarget.coverUrl" :src="formTarget.coverUrl" alt="" />
+            <img v-else :src="emptyArtSrc" class="pl-dialog-empty-art" alt="" />
+          </div>
+          <div class="pl-dialog-meta min-w-0">
+            <div class="truncate font-semibold text-sm">{{ formTarget.name }}</div>
+            <div class="truncate text-xs opacity-65 mt-0.5">
+              {{
+                formTarget.trackCount != null && formTarget.trackCount > 0
+                  ? `${formTarget.trackCount} 首`
+                  : formTarget.trackCount === 0
+                    ? '这里面啥都没有'
+                    : '重命名歌单'
+              }}
+            </div>
+          </div>
         </div>
+        <input
+          ref="renameInputRef"
+          v-model="formName"
+          class="pl-dialog-input"
+          type="text"
+          maxlength="40"
+          placeholder="歌单名称"
+          @keydown.enter.prevent="submitRename"
+        />
         <dialog-footer>
-          <ui-button variant="outline" @click="renameOpen = false">取消</ui-button>
-          <ui-button :disabled="busy" @click="submitRename">保存</ui-button>
+          <ui-button variant="outline" @click="closeRenamePanel">取消</ui-button>
+          <ui-button :disabled="busy || !renameCanSave" @click="submitRename">保存</ui-button>
         </dialog-footer>
       </dialog-content>
     </ui-dialog>
 
-    <!-- 删除确认 -->
-    <ui-dialog :open="deleteOpen" @update:open="deleteOpen = $event">
-      <dialog-content class="pl-dialog max-w-sm">
+    <ui-dialog :open="deleteOpen" @update:open="onDeleteOpenChange">
+      <dialog-content class="pl-dialog max-w-sm" :show-close-button="false">
         <dialog-header>
           <dialog-title>删除歌单</dialog-title>
           <dialog-description>
             确定删除「{{ formTarget?.name }}」？此操作不可恢复。
           </dialog-description>
         </dialog-header>
+        <div v-if="formTarget" class="pl-dialog-song">
+          <div class="pl-dialog-cover" :class="{ 'is-empty-art': !formTarget.coverUrl }">
+            <img v-if="formTarget.coverUrl" :src="formTarget.coverUrl" alt="" />
+            <img v-else :src="emptyArtSrc" class="pl-dialog-empty-art" alt="" />
+          </div>
+          <div class="pl-dialog-meta min-w-0">
+            <div class="truncate font-semibold text-sm">{{ formTarget.name }}</div>
+            <div class="truncate text-xs opacity-65 mt-0.5">
+              {{
+                formTarget.trackCount != null && formTarget.trackCount > 0
+                  ? `${formTarget.trackCount} 首`
+                  : formTarget.trackCount === 0
+                    ? '这里面啥都没有'
+                    : '即将删除'
+              }}
+            </div>
+          </div>
+        </div>
         <dialog-footer>
-          <ui-button variant="outline" @click="deleteOpen = false">取消</ui-button>
+          <ui-button variant="outline" @click="closeDeletePanel">取消</ui-button>
           <ui-button variant="destructive" :disabled="busy" @click="submitDelete">删除</ui-button>
         </dialog-footer>
       </dialog-content>
@@ -240,10 +327,11 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRoute, useRouter } from 'vue-router';
 
+import emptyArtSrc from '@/assets/empty-playlist.png';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import { Button as UiButton } from '@/components/ui/button';
 import {
@@ -257,6 +345,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { usePlaylistPickStore } from '@/store/modules/playlistPick';
 import { type SidebarPlaylist, useUserPlaylistsStore } from '@/store/modules/userPlaylists';
 import { isElectron, isMobile } from '@/utils';
 import { showBottomToast } from '@/utils/shortcutToast';
@@ -276,8 +365,14 @@ const route = useRoute();
 const router = useRouter();
 const { t } = useI18n();
 const plStore = useUserPlaylistsStore();
+const pick = usePlaylistPickStore();
 
 const showPlaylistRail = computed(() => isElectron);
+const createInputRef = ref<HTMLInputElement | null>(null);
+const renameInputRef = ref<HTMLInputElement | null>(null);
+/** 非点选模式下的本地新建面板（与 pick.createOpen 合并可见） */
+const createOpen = ref(false);
+const createPanelVisible = computed(() => pick.createOpen || createOpen.value);
 
 const sliderTick = ref(0);
 const bumpSlider = async () => {
@@ -359,9 +454,26 @@ const sliderStyle = computed(() => {
   };
 });
 
+/**
+ * tip：
+ * - 有曲目 →「名 · N 首」
+ * - 明确 0 首 →「名 · 这里面啥都没有」
+ * - 未知 count → 只显示名（抖音收藏等列表接口常无 count）
+ */
 const playlistTitle = (pl: SidebarPlaylist) => {
-  const n = pl.trackCount != null ? ` · ${pl.trackCount} 首` : '';
-  return `${pl.name}${n}`;
+  const n = pl.trackCount;
+  if (typeof n === 'number' && Number.isFinite(n)) {
+    if (n > 0) return `${pl.name} · ${n} 首`;
+    if (n === 0) return `${pl.name} · 这里面啥都没有`;
+  }
+  // 无 cover 且无 count：空歌单常见态
+  if (!pl.coverUrl) return `${pl.name} · 这里面啥都没有`;
+  return pl.name;
+};
+
+/** 破图 URL 清掉，回退空空如也 */
+const onCoverImgError = (pl: SidebarPlaylist) => {
+  plStore.patchCover(pl.id, null);
 };
 
 const openPlaylist = (pl: SidebarPlaylist) => {
@@ -381,13 +493,66 @@ const openPlaylist = (pl: SidebarPlaylist) => {
   });
 };
 
-// —— 弹窗表单 ——
+/** 点选模式：加入歌单；否则打开歌单 */
+const onPlaylistClick = async (pl: SidebarPlaylist) => {
+  if (pick.active) {
+    // 已在「我喜欢」仍允许点（可提示），但主要引导其它歌单
+    const ok = await pick.appendTo(pl.id, {
+      toastName: pl.name,
+      kind: pl.kind,
+      name: pl.name
+    });
+    // 封面已乐观更新；只把曲目数 +1，不必整表 reload 冲掉封面
+    if (ok) plStore.patchTrackCount(pl.id, 1);
+    return;
+  }
+  openPlaylist(pl);
+};
+
+// —— 弹窗表单（reka Dialog）——
 const busy = ref(false);
-const createOpen = ref(false);
 const renameOpen = ref(false);
 const deleteOpen = ref(false);
 const formName = ref('');
 const formTarget = ref<SidebarPlaylist | null>(null);
+
+const openCreatePanel = async () => {
+  if (!plStore.authenticated) {
+    showBottomToast('请先登录');
+    return;
+  }
+  renameOpen.value = false;
+  deleteOpen.value = false;
+  formName.value = '';
+  if (pick.active) pick.openCreate();
+  else createOpen.value = true;
+  await nextTick();
+  createInputRef.value?.focus();
+};
+
+const closeCreatePanel = () => {
+  createOpen.value = false;
+  pick.closeCreate();
+};
+
+const onCreateOpenChange = (open: boolean) => {
+  if (!open) closeCreatePanel();
+  else void openCreatePanel();
+};
+
+const onAddClick = () => {
+  if (createPanelVisible.value) closeCreatePanel();
+  else void openCreatePanel();
+};
+
+const onPickEsc = (e: KeyboardEvent) => {
+  if (e.key !== 'Escape') return;
+  // Dialog 自己处理 Esc；这里只处理点选模式
+  if (pick.active && !createPanelVisible.value && !renameOpen.value && !deleteOpen.value) {
+    pick.cancel();
+    e.preventDefault();
+  }
+};
 
 // —— 右键菜单（与 tip 完全分离）——
 const ctxOpen = ref(false);
@@ -400,7 +565,6 @@ const closePlCtx = () => {
 
 const openPlCtx = (e: MouseEvent, pl: SidebarPlaylist) => {
   formTarget.value = pl;
-  // 避免贴边裁切
   const pad = 8;
   const menuW = 160;
   const menuH = 160;
@@ -418,24 +582,53 @@ const onCtxAction = (action: 'open' | 'rename' | 'delete') => {
   else openDeleteDialog(pl);
 };
 
-const openCreateDialog = () => {
-  if (!plStore.authenticated) {
-    showBottomToast('请先登录');
-    return;
-  }
-  formName.value = '';
-  createOpen.value = true;
-};
-
-const openRenameDialog = (pl: SidebarPlaylist) => {
+const openRenameDialog = async (pl: SidebarPlaylist) => {
+  closeCreatePanel();
+  deleteOpen.value = false;
   formTarget.value = pl;
   formName.value = pl.name;
   renameOpen.value = true;
+  await nextTick();
+  renameInputRef.value?.focus();
+  renameInputRef.value?.select();
 };
 
+const closeRenamePanel = () => {
+  renameOpen.value = false;
+};
+
+const onRenameOpenChange = (open: boolean) => {
+  renameOpen.value = open;
+  if (open && formTarget.value) {
+    formName.value = formTarget.value.name;
+    void nextTick(() => {
+      renameInputRef.value?.focus();
+      renameInputRef.value?.select();
+    });
+  }
+};
+
+/** 有改动且非空才可保存（同名「1」→「1」禁用） */
+const renameCanSave = computed(() => {
+  const next = formName.value.trim();
+  if (!next) return false;
+  const prev = (formTarget.value?.name || '').trim();
+  return next !== prev;
+});
+
 const openDeleteDialog = (pl: SidebarPlaylist) => {
+  closeCreatePanel();
+  renameOpen.value = false;
   formTarget.value = pl;
   deleteOpen.value = true;
+};
+
+const closeDeletePanel = () => {
+  deleteOpen.value = false;
+};
+
+const onDeleteOpenChange = (open: boolean) => {
+  deleteOpen.value = open;
 };
 
 const submitCreate = async () => {
@@ -443,9 +636,19 @@ const submitCreate = async () => {
   busy.value = true;
   try {
     const pl = await plStore.create(formName.value || '新建歌单');
-    createOpen.value = false;
-    showBottomToast('已创建');
-    openPlaylist(pl);
+    const wasPicking = pick.active && !!pick.song;
+    closeCreatePanel();
+    if (wasPicking) {
+      await pick.appendTo(pl.id, {
+        toastName: pl.name,
+        kind: pl.kind,
+        name: pl.name
+      });
+      // create() 已 reload；append 再 patch 封面（create 返回的 pl 可能无最新封面）
+    } else {
+      showBottomToast('已创建');
+      openPlaylist(pl);
+    }
   } catch (error: any) {
     showBottomToast(error?.message || '创建失败');
   } finally {
@@ -453,12 +656,31 @@ const submitCreate = async () => {
   }
 };
 
+watch(
+  () => pick.active,
+  (on) => {
+    if (on) {
+      void plStore.reload();
+      createOpen.value = false;
+    } else {
+      pick.closeCreate();
+    }
+  }
+);
+
+onMounted(() => {
+  window.addEventListener('keydown', onPickEsc);
+});
+onUnmounted(() => {
+  window.removeEventListener('keydown', onPickEsc);
+});
+
 const submitRename = async () => {
-  if (busy.value || !formTarget.value) return;
+  if (busy.value || !formTarget.value || !renameCanSave.value) return;
   busy.value = true;
   try {
-    await plStore.rename(formTarget.value.id, formName.value);
-    renameOpen.value = false;
+    await plStore.rename(formTarget.value.id, formName.value.trim());
+    closeRenamePanel();
     showBottomToast('已重命名');
   } catch (error: any) {
     showBottomToast(error?.message || '重命名失败');
@@ -473,7 +695,7 @@ const submitDelete = async () => {
   const id = formTarget.value.id;
   try {
     await plStore.remove(id);
-    deleteOpen.value = false;
+    closeDeletePanel();
     showBottomToast('已删除');
     if (isPlaylistActive(id)) router.push('/');
   } catch (error: any) {
@@ -497,6 +719,13 @@ const submitDelete = async () => {
   height: 100%;
   box-sizing: border-box;
   min-width: 0;
+  /*
+   * 稳定合成层：弹层 Teleport 挂载/卸载时，避免 backdrop-filter 圆角边缘闪一道光。
+   * 不改颜色/描边/blur，观感与原来一致。
+   */
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  overflow: hidden;
 }
 
 .menu-back-slot {
@@ -670,9 +899,22 @@ const submitDelete = async () => {
 }
 
 .playlist-rail-scroll {
-  flex: 1 1 auto;
+  /* 只占内容高度；普通 overflow，不用 reka ScrollArea 视口 */
+  flex: 0 1 auto;
   min-height: 0;
+  max-height: 100%;
   width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  outline: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
 }
 
 .playlist-rail-hint {
@@ -699,17 +941,18 @@ const submitDelete = async () => {
   padding: 0;
   cursor: pointer;
   color: var(--chrome-text, #f3f4f6);
-  transition:
-    background 0.15s,
-    transform 0.12s,
-    box-shadow 0.15s;
+  /* 点选动画用 transform/box-shadow：不要 transition 抢关键帧 */
+  transition: background 0.15s;
 
-  &:hover {
+  &:hover:not(.is-pick-target) {
     background: rgba(255, 255, 255, 0.1);
     transform: scale(1.05);
+    transition:
+      background 0.15s,
+      transform 0.12s;
   }
 
-  &.is-on {
+  &.is-on:not(.is-pick-target) {
     background: color-mix(in srgb, var(--primary-color, #22c55e) 28%, transparent);
     box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--primary-color, #22c55e) 55%, transparent);
   }
@@ -733,6 +976,75 @@ const submitDelete = async () => {
     height: 100%;
     object-fit: cover;
   }
+
+  /* 空空如也是白底圆图：cover 会把白边贴满底，看起来像一道光 */
+  &.is-empty-art {
+    background: color-mix(in srgb, var(--primary-color, #22c55e) 12%, rgba(0, 0, 0, 0.25));
+    padding: 2px;
+    box-sizing: border-box;
+  }
+
+  .playlist-rail-empty-art {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+    opacity: 1;
+  }
+}
+
+/* 点选态：+ 高亮；item 动画在下方 unscoped 块，避免 scoped 被盖掉 */
+.playlist-rail.is-picking .playlist-add-btn {
+  color: var(--primary-color, #22c55e);
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--primary-color, #22c55e) 45%, transparent);
+}
+.playlist-add-btn.is-create-open {
+  color: var(--primary-color, #22c55e);
+  background: rgba(255, 255, 255, 0.12);
+  transform: rotate(45deg);
+}
+
+.playlist-pick-cancel {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  margin-top: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 18px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    transform 0.12s;
+}
+.playlist-pick-cancel:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fecaca;
+  transform: scale(1.05);
+}
+
+.pl-cancel-enter-active,
+.pl-cancel-leave-active {
+  transition:
+    opacity 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    max-height 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    margin 0.28s ease;
+  max-height: 48px;
+  overflow: hidden;
+}
+.pl-cancel-enter-from,
+.pl-cancel-leave-to {
+  opacity: 0;
+  max-height: 0;
+  margin-top: 0;
+  transform: translateY(-8px) scale(0.85);
 }
 
 .menu-footer {
@@ -741,9 +1053,10 @@ const submitDelete = async () => {
   display: flex;
   justify-content: center;
   padding-top: 8px;
-  margin-top: 4px;
+  margin-top: 6px;
   z-index: 2;
-  border-top: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.08));
+  /* 分隔线压暗，避免紫底上像「一道光」 */
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .menu-footer-btn {
@@ -892,5 +1205,107 @@ const submitDelete = async () => {
       }
     }
   }
+}
+</style>
+
+<!-- Teleport / 点选闪烁：非 scoped，保证动画一定挂上 -->
+<style lang="scss">
+/* 左侧歌单点选闪烁（必须够显眼） */
+.playlist-rail.is-picking .playlist-rail-item.is-pick-target {
+  animation: pl-pick-pulse 1s ease-in-out infinite !important;
+  background: color-mix(in srgb, var(--primary-color, #22c55e) 22%, transparent) !important;
+}
+.playlist-rail.is-picking .playlist-rail-item.is-pick-target .playlist-rail-cover {
+  animation: pl-pick-cover 1s ease-in-out infinite !important;
+}
+/* 已在「我喜欢」：不闪，略压暗提示跳过 */
+.playlist-rail.is-picking .playlist-rail-item.is-pick-skip {
+  animation: none !important;
+  opacity: 0.45;
+  filter: grayscale(0.35);
+  box-shadow: none !important;
+}
+@keyframes pl-pick-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary-color, #22c55e) 0%, transparent);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow:
+      0 0 0 3px color-mix(in srgb, var(--primary-color, #22c55e) 65%, transparent),
+      0 0 14px color-mix(in srgb, var(--primary-color, #22c55e) 45%, transparent);
+    filter: brightness(1.2);
+  }
+}
+@keyframes pl-pick-cover {
+  0%,
+  100% {
+    opacity: 0.72;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Dialog 内摘要（动画由 reka Dialog / tw-animate 负责） */
+.pl-dialog-song {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 12px;
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+}
+.pl-dialog-cover {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 18px;
+}
+.pl-dialog-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pl-dialog-cover.is-empty-art {
+  padding: 3px;
+  box-sizing: border-box;
+  background: color-mix(in srgb, var(--primary-color, #22c55e) 12%, rgba(0, 0, 0, 0.25));
+}
+.pl-dialog-empty-art {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+.pl-dialog-meta {
+  min-width: 0;
+  flex: 1;
+}
+.pl-dialog-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  font-size: 14px;
+  outline: none;
+  margin-bottom: 4px;
+}
+.pl-dialog-input:focus {
+  border-color: color-mix(in srgb, var(--primary-color, #22c55e) 55%, transparent);
 }
 </style>
