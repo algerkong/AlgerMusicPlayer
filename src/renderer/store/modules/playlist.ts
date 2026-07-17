@@ -108,7 +108,7 @@ export const usePlaylistStore = defineStore(
         if (nextSong) {
           if (nextSong.playMusicUrl) {
             try {
-              audioService.preload(nextSong.playMusicUrl, nextSong);
+              audioService.preload(nextSong.playMusicUrl, nextSong, { priority: 'next' });
             } catch (err) {
               console.warn('预加载下一首失败:', err);
             }
@@ -616,7 +616,7 @@ export const usePlaylistStore = defineStore(
         const next = playList.value[nextIdx];
         if (next?.playMusicUrl && !(next.expiredAt != null && next.expiredAt < Date.now())) {
           try {
-            audioService.preload(next.playMusicUrl, next);
+            audioService.preload(next.playMusicUrl, next, { priority: 'next' });
           } catch {
             /* ignore */
           }

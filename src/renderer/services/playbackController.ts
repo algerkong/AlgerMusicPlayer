@@ -154,7 +154,7 @@ const warmStandbyIfReady = (candidate: SongResult | undefined, currentId: string
     return;
   }
   try {
-    audioService.preload(candidate.playMusicUrl, candidate);
+    audioService.preload(candidate.playMusicUrl, candidate, { priority: 'next' });
   } catch {
     /* ignore */
   }
@@ -283,12 +283,16 @@ export const seamlessSwitchQuality = async (
     // 2) 仅当仍是本曲在播时才灌 standby；已切歌则放弃（避免占槽/误 promote）
     if (isQualitySwitchStale(switchGen, playGenAtStart, songId, playerCore)) return false;
     try {
-      audioService.preload(upgraded.playMusicUrl, {
-        ...playerCore.playMusic,
-        ...upgraded,
-        id: song.id,
-        playLoading: false
-      } as SongResult);
+      audioService.preload(
+        upgraded.playMusicUrl,
+        {
+          ...playerCore.playMusic,
+          ...upgraded,
+          id: song.id,
+          playLoading: false
+        } as SongResult,
+        { priority: 'next' }
+      );
     } catch {
       /* ignore */
     }
@@ -452,7 +456,7 @@ const seamlessSwitchToFullUrl = async (
   } as SongResult;
 
   try {
-    audioService.preload(fullUrl, track);
+    audioService.preload(fullUrl, track, { priority: 'next' });
   } catch {
     /* ignore */
   }

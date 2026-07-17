@@ -621,7 +621,7 @@ const warmAudioByUrl = (url?: string | null, song?: SongResult) => {
     } catch {
       /* pinia 未就绪则仅靠 getCurrentTrack */
     }
-    audioService.preload(url, song);
+    audioService.preload(url, song, { priority: 'next' });
   } catch {
     /* ignore */
   }

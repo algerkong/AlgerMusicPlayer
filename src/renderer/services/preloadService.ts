@@ -22,7 +22,7 @@ class PreloadService {
 
     const url = song.playMusicUrl;
     try {
-      audioService.preload(url, song);
+      audioService.preload(url, song, { priority: 'next' });
       this.lastUrls.set(song.id, url);
       if (this.lastUrls.size > PreloadService.MAX) {
         const oldest = this.lastUrls.keys().next().value;

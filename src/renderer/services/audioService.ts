@@ -248,10 +248,11 @@ class AudioService {
     try {
       if (!('mediaSession' in navigator)) return;
 
-      const artists = track.ar
+      // qishui 等源常无 track.song / al，必须可选链，避免整段元数据失败
+      const artists = track.ar?.length
         ? track.ar.map((a) => a.name)
-        : track.song.artists?.map((a) => a.name);
-      const album = track.al ? track.al.name : track.song.album.name;
+        : track.song?.artists?.map((a) => a.name);
+      const album = track.al?.name || track.song?.album?.name || track.song?.al?.name || '';
       // 上限提到 1024 提升 SMTC/AMLL 等系统媒体控件的封面清晰度（#595）；
       // 走 getImgUrl 以正确处理 data:/local:// 封面与已带参数的 URL
       const artwork = ['96', '128', '192', '256', '384', '512', '1024'].map((size) => ({
@@ -262,7 +263,7 @@ class AudioService {
 
       navigator.mediaSession.metadata = new window.MediaMetadata({
         title: track.name || '',
-        artist: artists ? artists.join(',') : '',
+        artist: artists?.length ? artists.join(',') : '',
         album: album || '',
         artwork
       });
@@ -531,9 +532,14 @@ class AudioService {
   /**
    * 预加载到 standby 槽（不 play、不打断当前曲）。
    * play(url) 命中时可秒 promote。
+   *
+   * @param opts.priority
+   *  - `next`：播放列表下一首 / 升质 / 前缀→full，可抢占 standby
+   *  - `warm`：发现页等旁路预热，standby 忙则放弃（勿占死真正的下一首）
    */
-  public preload(url: string, track: SongResult): void {
+  public preload(url: string, track: SongResult, opts?: { priority?: 'next' | 'warm' }): void {
     if (!url || !track) return;
+    const priority = opts?.priority ?? 'warm';
     const active = this.activeSlot();
     // 同 URL 已在出声：无需 standby。
     // 注意：同曲不同 URL（前缀→full / 升质）必须允许灌 standby，勿用 track.id 短路。
@@ -547,7 +553,7 @@ class AudioService {
     ) {
       return;
     }
-    // standby 已在缓冲「另一首」且已有数据：勿抢占（保护下一首预热）
+    // standby 已在缓冲「另一首」且已有数据
     if (
       standby.logicUrl &&
       !this.urlsMatch(standby.logicUrl, url) &&
@@ -555,10 +561,13 @@ class AudioService {
       String(standby.track.id) !== String(track.id) &&
       standby.audio.readyState >= 1
     ) {
+      if (priority !== 'next') {
+        // warm 不抢：避免发现页把列表下一首挤掉；也避免 next 被 warm 占死后永远 skip
+        return;
+      }
       console.info(
-        `[audio] preload skip id=${track.id}, standby busy id=${standby.track.id} ready=${standby.audio.readyState}`
+        `[audio] preload steal id=${track.id} (was standby id=${standby.track.id} ready=${standby.audio.readyState})`
       );
-      return;
     }
 
     if (standby.pendingCleanup) {
@@ -573,10 +582,30 @@ class AudioService {
       standby.audio.preload = 'auto';
       standby.audio.src = url;
       standby.audio.load();
-      console.info(`[audio] preload standby id=${track.id} ready=${standby.audio.readyState}`);
+      console.info(
+        `[audio] preload standby id=${track.id} ready=${standby.audio.readyState} prio=${priority}`
+      );
     } catch (e) {
       console.warn('[audio] preload failed', e);
     }
+  }
+
+  /** 卸掉 standby（切歌 hard-load 后若槽里是无关曲，避免占死） */
+  public clearStandby(): void {
+    const standby = this.standbySlot();
+    if (standby.pendingCleanup) {
+      standby.pendingCleanup();
+      standby.pendingCleanup = null;
+    }
+    try {
+      standby.audio.pause();
+      standby.audio.removeAttribute('src');
+      standby.audio.load();
+    } catch {
+      /* ignore */
+    }
+    standby.logicUrl = '';
+    standby.track = null;
   }
 
   public hasPreloaded(url?: string | null): boolean {
@@ -775,6 +804,12 @@ class AudioService {
       return this.promoteStandby(track, isPlay, seekTime);
     }
 
+    // hard-load 本曲：standby 若是「另一首」则清掉。
+    // 否则发现页 warm 占满 ready=4 后，列表下一首永远 preload skip。
+    if (standby.track && String(standby.track.id) !== String(track.id)) {
+      this.clearStandby();
+    }
+
     // 取消 active 上未完成的加载
     if (this.pendingLoadCleanup) {
       this.pendingLoadCleanup();
@@ -785,7 +820,7 @@ class AudioService {
       active.pendingCleanup = null;
     }
 
-    // 立刻停掉旧曲声音（不 clear standby，以免冲掉别的预加载）
+    // 立刻停掉旧曲声音
     try {
       active.audio.pause();
     } catch {
