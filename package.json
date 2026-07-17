@@ -51,7 +51,7 @@
     "flac-tagger": "^2.0.0",
     "font-list": "^2.1.0",
     "form-data": "^4.0.6",
-    "ly-music-source": "file:../ly-music-source",
+    "ly-music-source": "git+https://github.com/LuoYe17/ly-music-source.git#v0.1.24",
     "mpris-service": "^2.1.2",
     "music-metadata": "^11.14.0",
     "node-id3": "^0.2.9",
@@ -190,6 +190,7 @@
     "electron@43.1.1": true,
     "ly-music-source": true,
     "github:LuoYe17/ly-music-source#dbaf654723662f66ee9dd557238dcd2b84be9228": true,
-    "github:LuoYe17/ly-music-source#826df12a86a6141e6321694d628ec2d352daa52e": true
+    "github:LuoYe17/ly-music-source#826df12a86a6141e6321694d628ec2d352daa52e": true,
+    "github:LuoYe17/ly-music-source#v0.1.24": true
   }
 }
