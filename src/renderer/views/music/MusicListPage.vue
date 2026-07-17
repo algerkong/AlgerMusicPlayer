@@ -138,6 +138,7 @@ import { useMusicStore, usePlayerStore, useRecommendStore, useUserPlaylistsStore
 import type { SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
 import { showBottomToast } from '@/utils/shortcutToast';
+import { getSongArtists, getSongCoverUrl } from '@/utils/songFields';
 
 defineOptions({ name: 'MusicList' });
 
@@ -211,12 +212,12 @@ const emptyDesc = computed(() => {
 
 const formatSong = (item: any): SongResult => {
   if (!item) return item;
-  const picUrl = item.al?.picUrl || item.picUrl || '';
+  const picUrl = getSongCoverUrl(item) || item.al?.picUrl || item.picUrl || '';
   return {
     ...item,
     picUrl,
     song: {
-      artists: item.ar || item.artists,
+      artists: getSongArtists(item),
       name: item.name,
       id: item.id
     }

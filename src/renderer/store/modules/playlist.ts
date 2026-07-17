@@ -11,7 +11,7 @@ import type { SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
 import { debouncedLocalStorage } from '@/utils/debouncedStorage';
 import { minifySongList } from '@/utils/persistedSong';
-import { performShuffle, preloadCoverImage } from '@/utils/playerUtils';
+import { performShuffle, preloadCoverImage, sameTrackId } from '@/utils/playerUtils';
 
 import { usePlayerCoreStore } from './playerCore';
 import { normalizePlayMode } from './playlistPlayMode';
@@ -550,7 +550,7 @@ export const usePlaylistStore = defineStore(
           playListIndex.value = nowPlayListIndex;
           console.log(`[prevPlay] 播放成功，索引: ${nowPlayListIndex}`);
           preloadNextSongs(nowPlayListIndex);
-        } else if (String(playerCore.playMusic?.id) === String(prevSong.id)) {
+        } else if (sameTrackId(playerCore.playMusic?.id, prevSong.id)) {
           // 上一首失败：索引已到 prev，沿下一首方向跳过，保持有声
           consecutiveFailCount.value++;
           playListIndex.value = nowPlayListIndex;
@@ -597,7 +597,7 @@ export const usePlaylistStore = defineStore(
         >
       >
     ) => {
-      const idx = playList.value.findIndex((s) => String(s.id) === String(id));
+      const idx = playList.value.findIndex((s) => sameTrackId(s.id, id));
       if (idx < 0) return;
       playList.value[idx] = { ...playList.value[idx], ...patch };
       triggerRef(playList);
@@ -653,7 +653,7 @@ export const usePlaylistStore = defineStore(
       }
 
       // 仍指向本曲且列表有多首 → 静默跳下一首
-      const stillTarget = String(playerCore.playMusic?.id ?? '') === String(song.id);
+      const stillTarget = sameTrackId(playerCore.playMusic?.id, song.id);
       if (stillTarget && playList.value.length > 1) {
         consecutiveFailCount.value++;
         console.log(
@@ -699,8 +699,7 @@ export const usePlaylistStore = defineStore(
         // 同曲：播放/暂停切换（含加载中）。
         // 旧逻辑要求两侧 URL 都齐才 toggle → 加载中点暂停会 re-enter playTrack，
         // 恢复时又清掉非 local URL → 再 resolve 一次，体感极差。
-        const sameSong =
-          !!playerCore.playMusic?.id && String(playerCore.playMusic.id) === String(song.id);
+        const sameSong = sameTrackId(playerCore.playMusic?.id, song.id);
         const coreUrl = playerCore.playMusic?.playMusicUrl;
         const songUrl = song.playMusicUrl;
         const urlsMatch = !!(coreUrl && songUrl && coreUrl === songUrl);

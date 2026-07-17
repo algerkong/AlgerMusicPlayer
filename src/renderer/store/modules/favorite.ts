@@ -1,23 +1,15 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
-import { getLocalStorageItem, isBilibiliIdMatch, setLocalStorageItem } from '@/utils/playerUtils';
+import {
+  getLocalStorageItem,
+  sameTrackId,
+  setLocalStorageItem,
+  trackIdKey
+} from '@/utils/playerUtils';
 
-/** 雪花 id 一律用 string，禁止 parseInt/Number 丢精度 */
-export function favoriteIdKey(id: number | string | null | undefined): string {
-  if (id == null) return '';
-  return String(id);
-}
-
-function idsEqual(a: number | string, b: number | string): boolean {
-  const sa = favoriteIdKey(a);
-  const sb = favoriteIdKey(b);
-  if (!sa || !sb) return false;
-  if (sa.includes('--') || sb.includes('--')) {
-    return isBilibiliIdMatch(sa, sb);
-  }
-  return sa === sb;
-}
+/** @deprecated 用 trackIdKey；保留别名以免外部引用断裂 */
+export const favoriteIdKey = trackIdKey;
 
 /**
  * 收藏管理 Store — 仅 localStorage，无云端同步
@@ -31,7 +23,7 @@ export const useFavoriteStore = defineStore('favorite', () => {
     const seen = new Set<string>();
     const out: string[] = [];
     for (const id of list) {
-      const k = favoriteIdKey(id);
+      const k = trackIdKey(id);
       if (!k || seen.has(k)) continue;
       seen.add(k);
       out.push(k);
@@ -40,28 +32,28 @@ export const useFavoriteStore = defineStore('favorite', () => {
   };
 
   const addToFavorite = async (id: number | string) => {
-    const key = favoriteIdKey(id);
+    const key = trackIdKey(id);
     if (!key) return;
-    if (favoriteList.value.some((existingId) => idsEqual(existingId, key))) return;
+    if (favoriteList.value.some((existingId) => sameTrackId(existingId, key))) return;
     favoriteList.value = [...normalizeList(favoriteList.value), key];
     setLocalStorageItem('favoriteList', favoriteList.value);
   };
 
   const removeFromFavorite = async (id: number | string) => {
-    favoriteList.value = favoriteList.value.filter((existingId) => !idsEqual(existingId, id));
+    favoriteList.value = favoriteList.value.filter((existingId) => !sameTrackId(existingId, id));
     setLocalStorageItem('favoriteList', favoriteList.value);
   };
 
   const addToDislikeList = (id: number | string) => {
-    const key = favoriteIdKey(id);
+    const key = trackIdKey(id);
     if (!key) return;
-    if (dislikeList.value.some((x) => idsEqual(x, key))) return;
+    if (dislikeList.value.some((x) => sameTrackId(x, key))) return;
     dislikeList.value = [...normalizeList(dislikeList.value as string[]), key];
     setLocalStorageItem('dislikeList', dislikeList.value);
   };
 
   const removeFromDislikeList = (id: number | string) => {
-    dislikeList.value = dislikeList.value.filter((existingId) => !idsEqual(existingId, id));
+    dislikeList.value = dislikeList.value.filter((existingId) => !sameTrackId(existingId, id));
     setLocalStorageItem('dislikeList', dislikeList.value);
   };
 
@@ -85,11 +77,11 @@ export const useFavoriteStore = defineStore('favorite', () => {
   };
 
   const isFavorite = (id: number | string): boolean => {
-    return favoriteList.value.some((existingId) => idsEqual(existingId, id));
+    return favoriteList.value.some((existingId) => sameTrackId(existingId, id));
   };
 
   const isDisliked = (id: number | string): boolean => {
-    return dislikeList.value.some((existingId) => idsEqual(existingId, id));
+    return dislikeList.value.some((existingId) => sameTrackId(existingId, id));
   };
 
   /**
@@ -100,7 +92,7 @@ export const useFavoriteStore = defineStore('favorite', () => {
     const set = new Set(normalizeList(favoriteList.value));
     let added = 0;
     for (const id of ids) {
-      const k = favoriteIdKey(id ?? '');
+      const k = trackIdKey(id ?? '');
       if (!k || set.has(k)) continue;
       set.add(k);
       added += 1;

@@ -286,6 +286,8 @@ import { getImgUrl } from '@/utils';
 import { getImageBackground, getImageLinearBackground } from '@/utils/linearColor';
 import { getActiveLineWordStyle } from '@/utils/lyricWordStyle';
 import { showBottomToast } from '@/utils/shortcutToast';
+import { sameTrackId } from '@/utils/playerUtils';
+import { getSongArtists, getSongCoverUrl } from '@/utils/songFields';
 
 defineOptions({ name: 'Discover' });
 
@@ -355,18 +357,15 @@ const dragStyle = computed(() => {
 });
 
 const coverUrl = computed(() => {
-  const pic = feed.current?.picUrl || feed.current?.al?.picUrl || '';
+  const pic = getSongCoverUrl(feed.current);
   return pic ? getImgUrl(pic, '500y500') : '';
 });
 
 const artistText = computed(() => {
-  const list = feed.current?.ar || feed.current?.artists || [];
-  return (
-    list
-      .map((a: any) => a.name)
-      .filter(Boolean)
-      .join(' / ') || '未知歌手'
-  );
+  const names = getSongArtists(feed.current)
+    .map((a) => a.name)
+    .filter(Boolean);
+  return names.join(' / ') || '未知歌手';
 });
 
 const isLiked = computed(() => {
@@ -459,14 +458,14 @@ const measureTitle = async () => {
 
 const applyPaletteToPlayer = (primary?: string, background?: string) => {
   if (!playerStore.playMusic) return;
-  if (String(playerStore.playMusic.id) !== String(feed.current?.id)) return;
+  if (!sameTrackId(playerStore.playMusic.id, feed.current?.id)) return;
   if (primary) playerStore.playMusic.primaryColor = primary;
   if (background) playerStore.playMusic.backgroundColor = background;
   playerStore.playMusic = { ...playerStore.playMusic };
   // 写回 feed，下次切到此曲直接有色
   const id = feed.current?.id;
   if (id != null) {
-    const i = feed.items.findIndex((s) => String(s.id) === String(id));
+    const i = feed.items.findIndex((s) => sameTrackId(s.id, id));
     if (i >= 0) {
       feed.items[i] = {
         ...feed.items[i],
@@ -490,14 +489,14 @@ const extractCoverColor = async () => {
     const el = coverImgEl.value;
     if (el && el.complete && el.naturalWidth > 0) {
       const c = await getImageBackground(el);
-      if (String(feed.current?.id) !== String(songId)) return;
+      if (!sameTrackId(feed.current?.id, songId)) return;
       if (c.primaryColor || c.backgroundColor) {
         applyPaletteToPlayer(c.primaryColor, c.backgroundColor);
         return;
       }
     }
     const c = await getImageLinearBackground(getImgUrl(url.split('?')[0], '200y200') || url);
-    if (String(feed.current?.id) !== String(songId)) return;
+    if (!sameTrackId(feed.current?.id, songId)) return;
     applyPaletteToPlayer(c.primaryColor, c.backgroundColor);
   } catch (e) {
     console.warn('[discover] cover color failed', e);
@@ -804,7 +803,7 @@ const enter = async () => {
   await nextTick();
   // 若当前正在播的就是 feed 曲，对齐 index + 缓存歌词
   feed.syncIndexToSongId(playerStore.playMusic?.id);
-  const same = feed.current && String(playerStore.playMusic?.id) === String(feed.current.id);
+  const same = feed.current && sameTrackId(playerStore.playMusic?.id, feed.current.id);
   if (same) {
     // HMR 后 lrcArray 常被清空：空则 force 重拉，避免一直「暂无歌词」
     await ensureLyricsLoaded(lrcArray.value.length === 0);

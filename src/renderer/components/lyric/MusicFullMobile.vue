@@ -426,7 +426,7 @@ const showPlaylist = () => {
 const isFavorite = computed(() => {
   const id = playMusic.value?.id;
   if (id == null) return false;
-  return playerStore.favoriteList.some((x) => String(x) === String(id));
+  return playerStore.isFavorite(id);
 });
 
 const toggleFavorite = () => {

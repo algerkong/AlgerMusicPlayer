@@ -1,4 +1,5 @@
 import type { SongResult } from '@/types/music';
+import { getSongDurationMs } from '@/utils/songFields';
 
 /**
  * 试听流缓存文件名带 `.preview.`（见 ly-music-source resolve）。
@@ -37,7 +38,7 @@ export function detectPreviewLyricBaseSec(
       : 0;
   }
 
-  const fullMs = Number(song.dt || song.duration || 0);
+  const fullMs = getSongDurationMs(song);
   const fullSec = fullMs > 10_000 ? fullMs / 1000 : fullMs > 0 ? fullMs : 0;
 
   // 明确标记或缓存路径

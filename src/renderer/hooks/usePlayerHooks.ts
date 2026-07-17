@@ -12,9 +12,15 @@ import { audioService } from '@/services/audioService';
 import { playbackRequestManager } from '@/services/playbackRequestManager';
 import { usePlayerCoreStore } from '@/store/modules/playerCore';
 import type { ILyric, ILyricText, IWordData, SongResult } from '@/types/music';
+import { pickBootQuality } from '@/services/streamPipeline';
 import { getSetData, isElectron } from '@/utils';
+import { sameTrackId } from '@/utils/playerUtils';
 import { isPreviewStreamUrl, restorePreviewStreamFlags } from '@/utils/previewStream';
+import { clampQualityToAvailable, normalizeQualityKey, qualityRank } from '@/utils/qualityClamp';
+import { getSongArtists, getSongDurationMs } from '@/utils/songFields';
 import { parseLyrics as parseYrcLyrics } from '@/utils/yrcParser';
+
+export { clampQualityToAvailable, normalizeQualityKey, qualityRank } from '@/utils/qualityClamp';
 
 type DiskCacheResolveResult = {
   url?: string;
@@ -23,21 +29,10 @@ type DiskCacheResolveResult = {
 };
 
 const getSongArtistText = (songData: SongResult): string => {
-  if (songData?.ar?.length) {
-    return songData.ar.map((artist) => artist.name).join(' / ');
-  }
-
-  if (songData?.song?.artists?.length) {
-    return songData.song.artists.map((artist) => artist.name).join(' / ');
-  }
-
-  return '';
+  const artists = getSongArtists(songData);
+  if (!artists.length) return '';
+  return artists.map((artist) => artist.name).join(' / ');
 };
-
-export { clampQualityToAvailable, normalizeQualityKey, qualityRank } from '@/utils/qualityClamp';
-
-import { pickBootQuality } from '@/services/streamPipeline';
-import { clampQualityToAvailable, normalizeQualityKey, qualityRank } from '@/utils/qualityClamp';
 
 /**
  * 当前流是否已达到「全局偏好 ∩ 本曲可用」目标。
@@ -262,7 +257,7 @@ export const getSongUrl = async (
       ids,
       title: songData.name,
       artists,
-      durationMs: songData.dt || songData.duration,
+      durationMs: getSongDurationMs(songData) || undefined,
       quality,
       vipLevel
     });
@@ -609,13 +604,13 @@ const warmAudioByUrl = (url?: string | null, song?: SongResult) => {
   if (!song?.id) return;
   try {
     const playing = audioService.getCurrentTrack();
-    if (playing && String(playing.id) === String(song.id)) {
+    if (playing && sameTrackId(playing.id, song.id)) {
       return;
     }
     // playMusic 已切到本曲但 audio 尚未换（resolve 中）也不要占 standby
     try {
       const core = usePlayerCoreStore();
-      if (core?.playMusic?.id != null && String(core.playMusic.id) === String(song.id)) {
+      if (core?.playMusic?.id != null && sameTrackId(core.playMusic.id, song.id)) {
         return;
       }
     } catch {

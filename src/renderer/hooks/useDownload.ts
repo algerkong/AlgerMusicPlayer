@@ -6,6 +6,7 @@ import { useDownloadStore } from '@/store/modules/download';
 import { getSongUrl } from '@/store/modules/player';
 import type { SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
+import { getSongAlbum, getSongArtists, getSongCoverUrl } from '@/utils/songFields';
 
 import type { DownloadSongInfo } from '../../shared/download';
 
@@ -13,14 +14,15 @@ import type { DownloadSongInfo } from '../../shared/download';
  * 将 SongResult 映射为 download store 所需的最小 DownloadSongInfo
  */
 function toDownloadSongInfo(song: SongResult): DownloadSongInfo {
+  const album = getSongAlbum(song);
   return {
     id: song.id,
     name: song.name,
-    picUrl: song.picUrl ?? song.al?.picUrl ?? '',
-    ar: (song.ar || song.song?.artists || []).map((a: { name: string }) => ({ name: a.name })),
+    picUrl: getSongCoverUrl(song),
+    ar: getSongArtists(song).map((a) => ({ name: a.name })),
     al: {
-      name: song.al?.name ?? '',
-      picUrl: song.al?.picUrl ?? ''
+      name: album?.name ?? '',
+      picUrl: album?.picUrl ?? ''
     }
   };
 }
@@ -159,9 +161,10 @@ export const useDownload = () => {
         (isElectron ? (window.api.getSettings()?.downloadNameFormat as string) : null) ||
         '{songName} - {artistName}';
       const artistNames =
-        (song.ar || song.song?.artists)?.map((a: { name: string }) => a.name).join('、') ||
-        '未知艺术家';
-      const albumName = song.al?.name || '未知专辑';
+        getSongArtists(song)
+          .map((a) => a.name)
+          .join('、') || '未知艺术家';
+      const albumName = getSongAlbum(song)?.name || '未知专辑';
       const filename = nameFormat
         .replace(/\{songName\}/g, song.name || '')
         .replace(/\{artistName\}/g, artistNames)

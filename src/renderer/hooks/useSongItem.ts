@@ -6,6 +6,8 @@ import { usePlayerStore } from '@/store';
 import type { SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
 import { getImageBackground } from '@/utils/linearColor';
+import { sameTrackId } from '@/utils/playerUtils';
+import { formatDurationMs, getSongArtists, getSongDurationMs } from '@/utils/songFields';
 
 import { useArtist } from './useArtist';
 import { useDownload } from './useDownload';
@@ -26,24 +28,21 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
   const play = computed(() => playerStore.isPlay);
   const playMusic = computed(() => playerStore.playMusic);
   const playLoading = computed(
-    () => playMusic.value.id === props.item.id && playMusic.value.playLoading
+    () => sameTrackId(playMusic.value?.id, props.item.id) && !!playMusic.value?.playLoading
   );
-  const isPlaying = computed(() => playMusic.value.id === props.item.id);
+  const isPlaying = computed(() => sameTrackId(playMusic.value?.id, props.item.id));
 
-  // 收藏与不喜欢：雪花 id 用 string 比较，禁止 parseInt 丢精度
   const isFavorite = computed(() => {
     if (props.item.id == null) return false;
-    return playerStore.favoriteList.some((id) => String(id) === String(props.item.id));
+    return playerStore.isFavorite(props.item.id);
   });
 
   const isDislike = computed(() => {
     if (props.item.id == null) return false;
-    return playerStore.dislikeList.some((id) => String(id) === String(props.item.id));
+    return playerStore.isDisliked(props.item.id);
   });
 
-  const artists = computed(() => {
-    return (props.item.ar || props.item.song?.artists)?.slice(0, 4) || [];
-  });
+  const artists = computed(() => getSongArtists(props.item).slice(0, 4));
 
   const handleImageLoad = async (imageElement: HTMLImageElement) => {
     if (!imageElement) return;
@@ -112,20 +111,8 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
     message.success(t('songItem.message.addedToNextPlay'));
   };
 
-  const getDuration = (item: SongResult): number => {
-    if (item.duration) return item.duration;
-    if (typeof item.dt === 'number') return item.dt;
-    return 0;
-  };
-
-  // 格式化时长
-  const formatDuration = (ms: number): string => {
-    if (!ms) return '--:--';
-    const totalSeconds = Math.floor(ms / 1000);
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  };
+  const getDuration = (item: SongResult): number => getSongDurationMs(item);
+  const formatDuration = formatDurationMs;
 
   const handleContextMenu = (e: MouseEvent) => {
     e.preventDefault();

@@ -110,6 +110,7 @@ import { computed, ref } from 'vue';
 
 import { usePlayerStore } from '@/store';
 import type { SongResult } from '@/types/music';
+import { formatDurationMs, getSongDurationMs } from '@/utils/songFields';
 
 import BaseSongItem from './BaseSongItem.vue';
 
@@ -161,20 +162,8 @@ const onPlayMusic = () => {
 };
 const onMenuClick = (event: MouseEvent) => baseItem.value?.handleMenuClick(event);
 
-// 从useSongItem.ts导入格式化时长和获取时长方法
-const getDuration = (item: SongResult): number => {
-  if (item.duration) return item.duration;
-  if (typeof item.dt === 'number') return item.dt;
-  return 0;
-};
-
-const formatDuration = (ms: number): string => {
-  if (!ms) return '--:--';
-  const totalSeconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-};
+const getDuration = getSongDurationMs;
+const formatDuration = formatDurationMs;
 </script>
 
 <style lang="scss" scoped>

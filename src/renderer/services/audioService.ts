@@ -6,6 +6,7 @@ import {
 } from '@/services/streamPipeline';
 import type { AudioOutputDevice } from '@/types/audio';
 import type { SongResult } from '@/types/music';
+import { sameTrackId } from '@/utils/playerUtils';
 import { getImgUrl, isElectron } from '@/utils';
 import { ttfaAudioReady } from '@/utils/ttfaMetrics';
 
@@ -558,7 +559,7 @@ class AudioService {
       standby.logicUrl &&
       !this.urlsMatch(standby.logicUrl, url) &&
       standby.track &&
-      String(standby.track.id) !== String(track.id) &&
+      !sameTrackId(standby.track.id, track.id) &&
       standby.audio.readyState >= 1
     ) {
       if (priority !== 'next') {
@@ -806,7 +807,7 @@ class AudioService {
 
     // hard-load 本曲：standby 若是「另一首」则清掉。
     // 否则发现页 warm 占满 ready=4 后，列表下一首永远 preload skip。
-    if (standby.track && String(standby.track.id) !== String(track.id)) {
+    if (standby.track && !sameTrackId(standby.track.id, track.id)) {
       this.clearStandby();
     }
 

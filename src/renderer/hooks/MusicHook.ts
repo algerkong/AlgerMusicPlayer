@@ -12,6 +12,8 @@ import {
   isPreviewStreamUrl,
   restorePreviewStreamFlags
 } from '@/utils/previewStream';
+import { sameTrackId } from '@/utils/playerUtils';
+import { getSongArtists } from '@/utils/songFields';
 import { parseLyrics } from '@/utils/yrcParser';
 
 // 全局 playerStore 引用，通过 initMusicHook 函数注入
@@ -72,8 +74,7 @@ export const playMusic: ComputedRef<SongResult> = computed(() => {
 export const artistList: ComputedRef<Artist[]> = computed(() => {
   const s = peekPlayerStore();
   if (!s?.playMusic) return [] as Artist[];
-  const m = s.playMusic;
-  return (m.ar || m?.song?.artists || []) as Artist[];
+  return getSongArtists(s.playMusic) as Artist[];
 });
 
 let lastIndex = -1;
@@ -411,7 +412,7 @@ const setupMusicWatchers = () => {
   watch(
     () => store.playMusic.id,
     async (newId, oldId) => {
-      const changed = oldId !== undefined && String(newId) !== String(oldId);
+      const changed = oldId !== undefined && !sameTrackId(newId, oldId);
       if (changed) {
         clearDisplayedLyrics();
         nowIndex.value = 0;
@@ -714,7 +715,7 @@ const setupAudioListeners = () => {
           }
           // 中途用户已切歌则放弃
           const cur = getPlayerStore().playMusic as SongResult | undefined;
-          if (!cur || String(cur.id) !== String(endedSong.id)) return;
+          if (!cur || !sameTrackId(cur.id, endedSong.id)) return;
         }
       } catch (e) {
         console.warn('[MusicHook] prefix→full on end failed', e);

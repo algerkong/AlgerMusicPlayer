@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia';
 
+import { sameTrackId } from '@/utils/playerUtils';
+
 interface MusicState {
   currentMusicList: any[] | null;
   currentMusicListName: string;
@@ -43,7 +45,7 @@ export const useMusicStore = defineStore('music', {
     removeSongFromList(id: string | number) {
       if (!this.currentMusicList) return;
 
-      const index = this.currentMusicList.findIndex((song) => String(song.id) === String(id));
+      const index = this.currentMusicList.findIndex((song) => sameTrackId(song.id, id));
       if (index !== -1) {
         this.currentMusicList.splice(index, 1);
       }

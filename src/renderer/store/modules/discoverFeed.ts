@@ -15,6 +15,7 @@ import { useFavoriteStore } from '@/store/modules/favorite';
 import { usePlayerStore } from '@/store/modules/player';
 import type { SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
+import { sameTrackId } from '@/utils/playerUtils';
 import { showBottomToast } from '@/utils/shortcutToast';
 
 const PREFETCH_BEFORE = 1;
@@ -118,7 +119,7 @@ export const useDiscoverFeedStore = defineStore('discoverFeed', () => {
     if (songId == null) return;
     const player = usePlayerStore();
     const cur = player.playMusic as SongResult | undefined;
-    if (!cur || String(cur.id) !== String(songId)) return;
+    if (!cur || !sameTrackId(cur.id, songId)) return;
     const id = String(songId);
     const patch: Partial<SongResult> = {
       playMusicUrl: cur.playMusicUrl,
@@ -242,7 +243,7 @@ export const useDiscoverFeedStore = defineStore('discoverFeed', () => {
     if (
       !force &&
       cur &&
-      String(cur.id) === String(song.id) &&
+      sameTrackId(cur.id, song.id) &&
       cur.playMusicUrl &&
       !(cur.expiredAt && cur.expiredAt < Date.now())
     ) {
@@ -668,7 +669,7 @@ export const useDiscoverFeedStore = defineStore('discoverFeed', () => {
     }
     if (nextIndex === index.value) {
       const player = usePlayerStore();
-      if (String(player.playMusic?.id) !== String(items.value[nextIndex]?.id)) {
+      if (!sameTrackId(player.playMusic?.id, items.value[nextIndex]?.id)) {
         void playAt(nextIndex);
       }
       return;

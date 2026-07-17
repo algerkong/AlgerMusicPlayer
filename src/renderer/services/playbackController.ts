@@ -19,6 +19,7 @@ import { playbackRequestManager } from '@/services/playbackRequestManager';
 import type { SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
 import { getImageLinearBackground } from '@/utils/linearColor';
+import { sameTrackId } from '@/utils/playerUtils';
 import { restorePreviewStreamFlags } from '@/utils/previewStream';
 import { ttfaBegin, ttfaMark } from '@/utils/ttfaMetrics';
 
@@ -118,7 +119,7 @@ const loadAndPlayAudio = async (song: SongResult, shouldPlay: boolean): Promise<
         progress?: number;
       };
       const data = parsed && typeof parsed === 'object' && 'data' in parsed ? parsed.data : parsed;
-      if (data && String(data.songId) === String(song.id) && typeof data.progress === 'number') {
+      if (data && sameTrackId(data.songId, song.id) && typeof data.progress === 'number') {
         initialPosition = data.progress;
       }
     }
@@ -147,7 +148,7 @@ const loadAndPlayAudio = async (song: SongResult, shouldPlay: boolean): Promise<
 const warmStandbyIfReady = (candidate: SongResult | undefined, currentId: string | number) => {
   if (
     !candidate ||
-    String(candidate.id) === String(currentId) ||
+    sameTrackId(candidate.id, currentId) ||
     !candidate.playMusicUrl ||
     (candidate.expiredAt != null && candidate.expiredAt < Date.now())
   ) {
@@ -166,7 +167,7 @@ const triggerPreload = async (song: SongResult): Promise<void> => {
     const list = playlistStore.playList;
     if (Array.isArray(list) && list.length > 0) {
       // 雪花 id 可能是 string/number 混用，必须 String 比较
-      const idx = list.findIndex((item: SongResult) => String(item.id) === String(song.id));
+      const idx = list.findIndex((item: SongResult) => sameTrackId(item.id, song.id));
       if (idx !== -1) {
         // 列表 resolve 预热（含 getSongDetail + standby；含上一首）
         playlistStore.preloadNextSongs(idx);
@@ -207,7 +208,7 @@ let qualitySwitchGen = 0;
 const getSeekSecondsForSong = (songId: string | number): number => {
   try {
     const track = audioService.getCurrentTrack();
-    if (!track || String(track.id) !== String(songId)) return 0;
+    if (!track || !sameTrackId(track.id, songId)) return 0;
     const sound = audioService.getCurrentSound();
     if (!sound || !Number.isFinite(sound.currentTime)) return 0;
     return Math.max(0, sound.currentTime);
@@ -242,7 +243,7 @@ export const seamlessSwitchQuality = async (
   const playerCore = await getPlayerCoreStore();
   const song = playerCore.playMusic as SongResult | undefined;
   if (!song?.id) return false;
-  if (opts?.songId != null && String(opts.songId) !== String(song.id)) return false;
+  if (opts?.songId != null && !sameTrackId(opts.songId, song.id)) return false;
 
   const { normalizeQualityKey, clampQualityToAvailable, getSongDetail } =
     await import('@/hooks/usePlayerHooks');
@@ -615,12 +616,12 @@ export const playTrack = async (
   // 换曲：立刻停掉上一首（含「standby 可 promote」——先静音旧 active，再 promote）
   const nextUrl = music.playMusicUrl;
   const prevTrack = audioService.getCurrentTrack();
-  const isSameTrack = !!(prevTrack && String(prevTrack.id) === String(music.id));
+  const isSameTrack = !!(prevTrack && sameTrackId(prevTrack.id, music.id));
   const canPromote = !!(nextUrl && audioService.hasPreloaded(nextUrl));
   if (!isSameTrack) {
     audioService.softPause();
     // 清掉上一首遗留的升质标记
-    if (playerCore.playMusic && String(playerCore.playMusic.id) !== String(music.id)) {
+    if (playerCore.playMusic && !sameTrackId(playerCore.playMusic.id, music.id)) {
       delete (playerCore.playMusic as any)._streamUpgradeTo;
     }
     playerCore.userPlayIntent = intendedPlay;
@@ -651,7 +652,7 @@ export const playTrack = async (
   } | null = null;
   const applyLoadedMetadata = () => {
     if (!loadedMetadata || gen !== generation) return;
-    if (String(playerCore.playMusic?.id) !== String(originalMusic.id)) return;
+    if (!sameTrackId(playerCore.playMusic?.id, originalMusic.id)) return;
     // 歌词可覆盖；颜色：若 UI 已为「本曲」取到色则不回退旧结果
     if (loadedMetadata.lyrics) {
       playerCore.playMusic.lyric = loadedMetadata.lyrics;
@@ -798,7 +799,7 @@ export const playTrack = async (
     }
     // 再确认当前出声槽仍是本曲（防极端竞态：新 gen 已 promote 其它曲）
     const playing = audioService.getCurrentTrack();
-    if (playing && String(playing.id) !== String(playerCore.playMusic?.id)) {
+    if (playing && !sameTrackId(playing.id, playerCore.playMusic?.id)) {
       console.log(`[playbackController] gen=${gen} 出声槽已是其它曲 id=${playing.id}，放弃收尾`);
       return false;
     }
@@ -1097,7 +1098,7 @@ export const initializePlayState = async (): Promise<void> => {
           const data = parsed?.data ?? parsed;
           if (
             data &&
-            String(data.songId) === String(playerCore.playMusic.id) &&
+            sameTrackId(data.songId, playerCore.playMusic.id) &&
             (data.progress || 0) > 0
           ) {
             void import('@/hooks/MusicHook').then(({ nowTime, allTime }) => {

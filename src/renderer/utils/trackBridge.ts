@@ -6,6 +6,7 @@
 import type { SongResult } from '@/types/music';
 
 import type { ArtistRef, PlayableTrack, PlaybackRuntime, Track } from '../../shared/domain/track';
+import { getSongAlbum, getSongArtists, getSongDurationMs } from './songFields';
 
 /** 仅 UI 兼容用：SAFE 整数才转 number，否则 0（真实 id 以 string 字段为准） */
 function toCompatNumberId(raw?: string | null, fallback = 0): number {
@@ -91,12 +92,12 @@ export function playableToSongResult(playable: PlayableTrack): SongResult {
 }
 
 export function songResultToTrack(song: SongResult): Track {
-  const artists: ArtistRef[] = (song.ar || song.artists || []).map((a: any, i: number) => ({
+  const artists: ArtistRef[] = getSongArtists(song).map((a: any, i: number) => ({
     id: a?.id != null ? String(a.id) : String(i),
     name: a?.name || '',
     avatarUrl: a?.picUrl || a?.avatarUrl
   }));
-  const al = song.al || song.album;
+  const al = getSongAlbum(song);
   return {
     platform: song.source || 'unknown',
     id: String(song.id),
@@ -106,7 +107,7 @@ export function songResultToTrack(song: SongResult): Track {
       ? { id: al.id != null ? String(al.id) : undefined, name: al.name || '', coverUrl: al.picUrl }
       : undefined,
     coverUrl: song.picUrl || al?.picUrl,
-    durationMs: song.duration ?? song.dt,
+    durationMs: getSongDurationMs(song) || undefined,
     isVip: song.isVip,
     isOriginal: song.isOriginal,
     isLimitedFree: song.isLimitedFree,
