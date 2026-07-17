@@ -36,11 +36,13 @@ export type SongLike = {
   } | null;
 };
 
-/** 艺人列表：ar → artists → song.artists */
+/** 艺人列表：非空 ar → artists → song.artists（空数组不算有值） */
 export function getSongArtists(song: SongLike | null | undefined): SongArtistLike[] {
   if (!song) return [];
-  const list = song.ar || song.artists || song.song?.artists;
-  return list ? [...list] : [];
+  if (song.ar?.length) return [...song.ar];
+  if (song.artists?.length) return [...song.artists];
+  if (song.song?.artists?.length) return [...song.song.artists];
+  return [];
 }
 
 /** 艺人名拼接 */
@@ -71,9 +73,12 @@ export function getSongCoverUrl(song: SongLike | null | undefined): string {
   return song.picUrl || song.al?.picUrl || song.album?.picUrl || song.song?.picUrl || '';
 }
 
-/** 专辑对象：al → album → song.album */
+/** 专辑对象：有 name 的 al → album → song.album */
 export function getSongAlbum(song: SongLike | null | undefined): SongAlbumLike | undefined {
   if (!song) return undefined;
+  if (song.al?.name) return song.al;
+  if (song.album?.name) return song.album;
+  if (song.song?.album?.name) return song.song.album;
   return song.al || song.album || song.song?.album || undefined;
 }
 

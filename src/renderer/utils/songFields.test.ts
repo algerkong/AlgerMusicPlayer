@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { formatDurationMs, getSongArtists, getSongDurationMs } from './songFields';
 
 describe('getSongArtists', () => {
-  it('prefers ar then artists then song.artists', () => {
+  it('prefers non-empty ar then artists then song.artists', () => {
     expect(getSongArtists({ ar: [{ name: 'A' } as any] } as any).map((a) => a.name)).toEqual(['A']);
     expect(getSongArtists({ artists: [{ name: 'B' } as any] } as any).map((a) => a.name)).toEqual([
       'B'
@@ -11,6 +11,10 @@ describe('getSongArtists', () => {
     expect(
       getSongArtists({ song: { artists: [{ name: 'C' }] } } as any).map((a) => a.name)
     ).toEqual(['C']);
+    // 空 ar 不挡 artists
+    expect(
+      getSongArtists({ ar: [], artists: [{ name: 'D' } as any] } as any).map((a) => a.name)
+    ).toEqual(['D']);
     expect(getSongArtists(null)).toEqual([]);
   });
 });

@@ -37,6 +37,10 @@ export interface ILyric {
  * 播放器兼容 DTO（历史包袱）。
  * 新代码优先：shared/domain Track + PlaybackRuntime；经 trackBridge 互转。
  * 运行态字段（playMusicUrl / lyric / colors 等）不应视为曲目元数据。
+ *
+ * 双字段半迁移（normalizeSongResult 保证镜像一致）：
+ * - 规范侧：artists / album / duration（读请用 songFields）
+ * - 兼容镜像：ar / al / dt（旧 UI 仍可能直接读）
  */
 export interface SongResult {
   id: string | number;
@@ -49,9 +53,13 @@ export interface SongResult {
   canDislike?: boolean;
   program?: any;
   alg?: string;
+  /** @deprecated 镜像 artists；写完请 normalizeSongResult */
   ar: Artist[];
+  /** 规范艺人列表 */
   artists?: Artist[];
+  /** @deprecated 镜像 album */
   al: Album;
+  /** 规范专辑 */
   album?: Album;
   /** 翻译名（外语歌曲的中文译名等，来自网易 API） */
   tns?: string[];
@@ -67,8 +75,9 @@ export interface SongResult {
   // 过期时间
   expiredAt?: number;
   createdAt?: number;
-  // 时长
+  /** 规范时长（毫秒） */
   duration?: number;
+  /** @deprecated 镜像 duration */
   dt?: number;
   isFirstPlay?: boolean;
   isPodcast?: boolean;

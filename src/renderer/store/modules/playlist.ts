@@ -12,6 +12,7 @@ import { getImgUrl } from '@/utils';
 import { debouncedLocalStorage } from '@/utils/debouncedStorage';
 import { minifySongList } from '@/utils/persistedSong';
 import { performShuffle, preloadCoverImage, sameTrackId } from '@/utils/playerUtils';
+import { normalizeSongResult } from '@/utils/trackBridge';
 
 import { usePlayerCoreStore } from './playerCore';
 import { normalizePlayMode } from './playlistPlayMode';
@@ -246,6 +247,9 @@ export const usePlaylistStore = defineStore(
         originalPlayList.value = [];
         return;
       }
+
+      // 入口归一：镜像字段 ar/artists、duration/dt 对齐
+      list = list.map((s) => normalizeSongResult(s));
 
       const playerCore = usePlayerCoreStore();
       const { playMusic } = storeToRefs(playerCore);
@@ -686,6 +690,7 @@ export const usePlaylistStore = defineStore(
     const setPlay = async (song: SongResult) => {
       try {
         const playerCore = usePlayerCoreStore();
+        song = normalizeSongResult(song);
 
         // 检查 URL 是否过期
         if (song.expiredAt && song.expiredAt < Date.now()) {

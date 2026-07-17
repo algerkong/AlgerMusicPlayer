@@ -138,7 +138,7 @@ import { useMusicStore, usePlayerStore, useRecommendStore, useUserPlaylistsStore
 import type { SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
 import { showBottomToast } from '@/utils/shortcutToast';
-import { getSongArtists, getSongCoverUrl } from '@/utils/songFields';
+import { normalizeSongResult } from '@/utils/trackBridge';
 
 defineOptions({ name: 'MusicList' });
 
@@ -212,16 +212,7 @@ const emptyDesc = computed(() => {
 
 const formatSong = (item: any): SongResult => {
   if (!item) return item;
-  const picUrl = getSongCoverUrl(item) || item.al?.picUrl || item.picUrl || '';
-  return {
-    ...item,
-    picUrl,
-    song: {
-      artists: getSongArtists(item),
-      name: item.name,
-      id: item.id
-    }
-  };
+  return normalizeSongResult(item as SongResult);
 };
 
 /** 汽水「我喜欢的音乐」歌单：曲目在服务端已喜欢，需同步到本地 favoriteList 才能亮爱心 */

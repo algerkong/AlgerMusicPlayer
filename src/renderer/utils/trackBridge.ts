@@ -1,12 +1,16 @@
 /**
  * Track ↔ SongResult 桥接（兼容层）。
  * 新代码优先持有 Track + PlaybackRuntime；UI/旧 store 仍吃 SongResult。
+ *
+ * SongResult 双字段策略（半迁移期）：
+ * - 读：只用 songFields（getSongArtists / getSongDurationMs …）
+ * - 写：adapter / 归一化保证 ar≡artists、al≡album、duration≡dt
  */
 
 import type { SongResult } from '@/types/music';
 
 import type { ArtistRef, PlayableTrack, PlaybackRuntime, Track } from '../../shared/domain/track';
-import { getSongAlbum, getSongArtists, getSongDurationMs } from './songFields';
+import { getSongAlbum, getSongArtists, getSongCoverUrl, getSongDurationMs } from './songFields';
 
 /** 仅 UI 兼容用：SAFE 整数才转 number，否则 0（真实 id 以 string 字段为准） */
 function toCompatNumberId(raw?: string | null, fallback = 0): number {
@@ -14,6 +18,55 @@ function toCompatNumberId(raw?: string | null, fallback = 0): number {
   if (!/^\d+$/.test(raw)) return fallback;
   const n = Number(raw);
   return Number.isSafeInteger(n) ? n : fallback;
+}
+
+/**
+ * 对齐 SongResult 镜像字段，使「只写了一边」的对象也能被旧代码读到。
+ * 幂等；入口（API map、列表恢复、formatSong）应调用。
+ */
+export function normalizeSongResult(song: SongResult): SongResult {
+  if (!song || typeof song !== 'object') return song;
+
+  const artists = getSongArtists(song) as SongResult['ar'];
+  const albumRef = getSongAlbum(song);
+  const durationMs = getSongDurationMs(song);
+  const cover = getSongCoverUrl(song) || song.picUrl || '';
+
+  const album = (
+    albumRef
+      ? {
+          ...albumRef,
+          picUrl: albumRef.picUrl || cover || ''
+        }
+      : song.al ||
+        song.album || {
+          id: 0,
+          name: '',
+          picUrl: cover,
+          pic: 0,
+          picId: 0
+        }
+  ) as SongResult['al'];
+
+  const duration = durationMs > 0 ? durationMs : (song.duration ?? song.dt);
+
+  return {
+    ...song,
+    picUrl: cover || song.picUrl,
+    ar: artists,
+    artists: artists as SongResult['artists'],
+    al: album,
+    album: album as SongResult['album'],
+    duration,
+    dt: duration,
+    song: {
+      ...song.song,
+      id: song.song?.id ?? song.id,
+      name: song.song?.name ?? song.name,
+      artists: artists as any,
+      album: album as any
+    }
+  };
 }
 
 export function trackToSongResult(track: Track): SongResult {
@@ -34,24 +87,17 @@ export function trackToSongResult(track: Track): SongResult {
     idStr: track.album?.id
   };
 
-  return {
-    // 曲目 id 保持 string，禁止 Number(track.id)
+  // 只写「规范侧」+ 必要字段；镜像由 normalize 填齐
+  return normalizeSongResult({
     id: track.id,
     name: track.title,
     picUrl: track.coverUrl || '',
-    // SongResult.ar/al 仍是网易形全量接口；这里只填 UI 用到的字段
-    ar: artists as unknown as SongResult['ar'],
     artists: artists as unknown as SongResult['artists'],
-    al: album as unknown as SongResult['al'],
     album: album as unknown as SongResult['album'],
-    song: {
-      id: track.id as any,
-      name: track.title,
-      artists: artists as any,
-      album: album as any
-    },
+    // ar/al 暂用空壳，normalize 会从 artists/album 回填
+    ar: [] as unknown as SongResult['ar'],
+    al: { id: 0, name: '', picUrl: '', pic: 0, picId: 0 } as unknown as SongResult['al'],
     duration: track.durationMs,
-    dt: track.durationMs,
     source: track.platform,
     count: 0,
     isVip: track.isVip,
@@ -68,12 +114,12 @@ export function trackToSongResult(track: Track): SongResult {
     likedCount: track.likeCount,
     commentCount: track.commentCount,
     shareCount: track.shareCount
-  };
+  } as SongResult);
 }
 
 export function attachRuntime(song: SongResult, runtime?: PlaybackRuntime): SongResult {
-  if (!runtime) return song;
-  return {
+  if (!runtime) return normalizeSongResult(song);
+  return normalizeSongResult({
     ...song,
     playMusicUrl: runtime.source?.url ?? song.playMusicUrl,
     playLoading: runtime.playLoading ?? song.playLoading,
@@ -84,7 +130,7 @@ export function attachRuntime(song: SongResult, runtime?: PlaybackRuntime): Song
     lyric: (runtime.lyric as SongResult['lyric']) ?? song.lyric,
     backgroundColor: runtime.backgroundColor ?? song.backgroundColor,
     primaryColor: runtime.primaryColor ?? song.primaryColor
-  };
+  });
 }
 
 export function playableToSongResult(playable: PlayableTrack): SongResult {

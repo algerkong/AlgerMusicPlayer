@@ -15,6 +15,8 @@
 
 import type { Artist, SongResult } from '@/types/music';
 import type { DjProgram } from '@/types/podcast';
+import { getSongAlbum, getSongArtists, getSongDurationMs } from '@/utils/songFields';
+import { normalizeSongResult } from '@/utils/trackBridge';
 
 /**
  * 播客 program 持久化保留的最小字段集合
@@ -94,11 +96,9 @@ const stripDataUrl = (url: string | undefined): string =>
  * JSON.stringify 自动丢 undefined，不需要条件 spread
  */
 export const minifySong = (s: SongResult): MinifiedSong => {
-  // 兼容老数据：早期 SongResult 可能只填了 artists 没填 ar（接口字段历史回退路径），
-  // 取一次合并后再精简，避免 minify 后丢失歌手名导致 heatmap/SongItem 显示 'Unknown Artist'
-  // 用 length 守卫而不是 ??：?? 只在 null/undefined 回退，ar:[] 是 truthy 会原样保留空数组,
-  // 旧数据里同时存在 ar:[] 和 artists:[填值] 时会丢歌手名
-  const artistList = s.ar?.length ? s.ar : s.artists;
+  const n = normalizeSongResult(s);
+  const artistList = getSongArtists(n);
+  const album = getSongAlbum(n);
   // program 透传可能塞接口冗余字段（评论列表、推荐位等），这里挑明保留 DjProgram 已知字段
   // id 守卫：缺 id 视作无效 program，避免序列化出空壳
   const minifyProgram = (p: any): MinifiedDjProgram | undefined => {
@@ -117,44 +117,51 @@ export const minifySong = (s: SongResult): MinifiedSong => {
       likedCount: p.likedCount
     };
   };
+  const durationMs = getSongDurationMs(n) || undefined;
   return {
-    id: s.id,
-    name: s.name,
-    picUrl: stripDataUrl(s.picUrl),
+    id: n.id,
+    name: n.name,
+    picUrl: stripDataUrl(n.picUrl),
     // 类型断言：只回填 id/name 的 Artist 不满足全字段约束，但下游消费 ar 全是 optional chain
-    ar: (artistList?.map((a) => ({ id: a.id, name: a.name })) ?? []) as Artist[],
+    ar: (artistList.map((a) => ({ id: a.id as any, name: a.name || '' })) ?? []) as Artist[],
     // 类型断言同 ar：Album 类型有几十个必填字段，这里只回填三个；下游用 optional chain 访问安全
-    // id 守卫：truthy 但字段全空的对象（如 `{}`）会被过滤为 undefined，避免序列化出
-    // `{name: undefined, picUrl: ''}` 这种无意义残骸（id undefined 被 JSON 丢弃，反而留下空串占位）
-    al: (s.al?.id
+    al: (album?.id != null || album?.name
       ? {
-          id: s.al.id,
-          name: s.al.name,
-          picUrl: stripDataUrl(s.al.picUrl)
+          id: (album as any).id,
+          name: album?.name,
+          picUrl: stripDataUrl(album?.picUrl)
         }
       : undefined) as MinifiedSong['al'],
-    source: s.source,
-    dt: s.dt,
-    playMusicUrl: s.playMusicUrl?.startsWith('local://') ? s.playMusicUrl : undefined,
+    source: n.source,
+    dt: durationMs,
+    playMusicUrl: n.playMusicUrl?.startsWith('local://') ? n.playMusicUrl : undefined,
     // 音质档位很小（字符串数组），热更/重启后菜单依赖它；丢掉会空菜单
-    availableQualities: Array.isArray(s.availableQualities)
-      ? s.availableQualities.map(String).slice(0, 12)
+    availableQualities: Array.isArray(n.availableQualities)
+      ? n.availableQualities.map(String).slice(0, 12)
       : undefined,
-    streamQuality: s.streamQuality ? String(s.streamQuality) : undefined,
-    streamBitrate: typeof s.streamBitrate === 'number' ? s.streamBitrate : undefined,
+    streamQuality: n.streamQuality ? String(n.streamQuality) : undefined,
+    streamBitrate: typeof n.streamBitrate === 'number' ? n.streamBitrate : undefined,
     likedCount:
-      typeof s.likedCount === 'number' && Number.isFinite(s.likedCount) ? s.likedCount : undefined,
+      typeof n.likedCount === 'number' && Number.isFinite(n.likedCount) ? n.likedCount : undefined,
     commentCount:
-      typeof s.commentCount === 'number' && Number.isFinite(s.commentCount)
-        ? s.commentCount
+      typeof n.commentCount === 'number' && Number.isFinite(n.commentCount)
+        ? n.commentCount
         : undefined,
     shareCount:
-      typeof s.shareCount === 'number' && Number.isFinite(s.shareCount) ? s.shareCount : undefined,
+      typeof n.shareCount === 'number' && Number.isFinite(n.shareCount) ? n.shareCount : undefined,
     // 必须保留 isPodcast/program：playbackController.playTrack 用 music.isPodcast 决定写
     // 普通歌历史还是播客历史；缺失会让重启恢复后的播客被误记进 musicHistory
-    isPodcast: s.isPodcast,
-    program: minifyProgram(s.program)
+    isPodcast: n.isPodcast,
+    program: minifyProgram(n.program)
   };
+};
+
+/** 从持久化/半残对象恢复为可播放的 SongResult（补齐双字段镜像） */
+export const inflateSong = (
+  s: Partial<SongResult> | MinifiedSong | null | undefined
+): SongResult => {
+  if (!s || (s as SongResult).id == null) return s as SongResult;
+  return normalizeSongResult(s as SongResult);
 };
 
 export const minifySongList = (list: SongResult[] | undefined): MinifiedSong[] =>
