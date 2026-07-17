@@ -72,12 +72,13 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
     const id = props.item.id;
     if (id == null) return;
 
+    const wasFav = isFavorite.value;
     // 同步汽水「我喜欢」；失败仍改本地，避免 UI 卡住
     try {
       const { isElectron } = await import('@/utils');
       if (isElectron) {
         const { msLikeTrack, msUnlikeTrack } = await import('@/api/musicSource');
-        if (isFavorite.value) {
+        if (wasFav) {
           await msUnlikeTrack(String(id));
         } else {
           await msLikeTrack(String(id));
@@ -87,10 +88,26 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
       console.warn('[toggleFavorite] 同步汽水喜欢失败', err);
     }
 
-    if (isFavorite.value) {
+    if (wasFav) {
       playerStore.removeFromFavorite(id);
     } else {
       playerStore.addToFavorite(id);
+    }
+
+    // 侧栏「我喜欢」封面：加赞立刻换；取消赞仅当封面是这首时 reload
+    try {
+      const { useUserPlaylistsStore } = await import('@/store/modules/userPlaylists');
+      const { getSongCoverUrl } = await import('@/utils/songFields');
+      const plStore = useUserPlaylistsStore();
+      const cover = getSongCoverUrl(props.item as any) || (props.item as any).picUrl || '';
+      if (wasFav) {
+        void plStore.refreshLikedCoverIfMatches(cover);
+      } else {
+        const liked = plStore.likedPlaylist;
+        if (liked && cover) plStore.patchCover(liked.id, cover);
+      }
+    } catch {
+      /* ignore */
     }
   };
 

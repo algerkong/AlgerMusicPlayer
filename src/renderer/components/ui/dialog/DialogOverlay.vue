@@ -17,7 +17,8 @@ const delegatedProps = reactiveOmit(props, 'class');
     v-bind="delegatedProps"
     :class="
       cn(
-        'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/55 backdrop-blur-[2px]',
+        /* 不用 backdrop-blur：会和侧栏 chrome 毛玻璃叠出边缘光 */
+        'dialog-overlay-anim fixed inset-0 z-50 bg-black/55',
         props.class
       )
     "
@@ -25,3 +26,28 @@ const delegatedProps = reactiveOmit(props, 'class');
     <slot />
   </dialog-overlay>
 </template>
+
+<style>
+@keyframes dialog-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes dialog-overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+.dialog-overlay-anim[data-state='open'] {
+  animation: dialog-overlay-in 0.22s ease both;
+}
+.dialog-overlay-anim[data-state='closed'] {
+  animation: dialog-overlay-out 0.16s ease both;
+}
+</style>

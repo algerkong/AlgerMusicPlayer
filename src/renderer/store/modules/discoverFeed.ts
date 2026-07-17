@@ -17,7 +17,7 @@ import type { SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
 import { sameTrackId } from '@/utils/playerUtils';
 import { showBottomToast } from '@/utils/shortcutToast';
-import { getSongArtists } from '@/utils/songFields';
+import { getSongArtists, getSongCoverUrl } from '@/utils/songFields';
 
 const PREFETCH_BEFORE = 1;
 const PREFETCH_AFTER = 3;
@@ -87,25 +87,32 @@ export const useDiscoverFeedStore = defineStore('discoverFeed', () => {
       name: extra.name || base.name,
       likedCount: pickCount(extra.likedCount, base.likedCount),
       commentCount: pickCount(extra.commentCount, base.commentCount),
-      shareCount: pickCount(extra.shareCount, base.shareCount)
+      shareCount: pickCount(extra.shareCount, base.shareCount),
+      // 作词/作曲：feed 元数据优先，避免 playMusic 精简壳冲掉
+      lyricists: extra.lyricists?.length ? extra.lyricists : base.lyricists,
+      composers: extra.composers?.length ? extra.composers : base.composers
     };
   };
 
-  /** 用推荐流里同 id 的 stats 盖回队列/播放器精简曲 */
+  /** 用推荐流里同 id 的 stats / 作词作曲 盖回队列/播放器精简曲 */
   const withFeedStats = (song: SongResult, feedById: Map<string, SongResult>): SongResult => {
     const fromFeed = feedById.get(String(song.id));
     if (!fromFeed) return song;
     const likedCount = pickCount(song.likedCount, fromFeed.likedCount);
     const commentCount = pickCount(song.commentCount, fromFeed.commentCount);
     const shareCount = pickCount(song.shareCount, fromFeed.shareCount);
+    const lyricists = song.lyricists?.length ? song.lyricists : fromFeed.lyricists;
+    const composers = song.composers?.length ? song.composers : fromFeed.composers;
     if (
       likedCount === song.likedCount &&
       commentCount === song.commentCount &&
-      shareCount === song.shareCount
+      shareCount === song.shareCount &&
+      lyricists === song.lyricists &&
+      composers === song.composers
     ) {
       return song;
     }
-    return { ...song, likedCount, commentCount, shareCount };
+    return { ...song, likedCount, commentCount, shareCount, lyricists, composers };
   };
 
   const patchSongRuntime = (list: SongResult[], songId: string, patch: Partial<SongResult>) => {
@@ -724,17 +731,24 @@ export const useDiscoverFeedStore = defineStore('discoverFeed', () => {
     if (!song) return;
     if (!(await requireAuth())) return;
     const fav = useFavoriteStore();
+    const { useUserPlaylistsStore } = await import('@/store/modules/userPlaylists');
+    const plStore = useUserPlaylistsStore();
+    const cover = getSongCoverUrl(song) || song.picUrl || '';
     try {
       if (fav.isFavorite(song.id)) {
         await msUnlikeTrack(String(song.id));
         await fav.removeFromFavorite(song.id);
         patchCurrentCount(-1);
         showBottomToast('已取消喜欢');
+        // 仅当「我喜欢」侧栏封面就是当前这首时才 reload，避免浪费
+        void plStore.refreshLikedCoverIfMatches(cover);
       } else {
         await msLikeTrack(String(song.id));
         await fav.addToFavorite(song.id);
         patchCurrentCount(1);
         showBottomToast('已喜欢');
+        const liked = plStore.likedPlaylist;
+        if (liked && cover) plStore.patchCover(liked.id, cover);
       }
     } catch (e: any) {
       showBottomToast(e?.message || '操作失败');

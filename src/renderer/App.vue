@@ -33,7 +33,13 @@ import {
 } from '@/utils/coverChrome';
 import { installWakeRecovery } from '@/utils/wakeRecovery';
 
-import { initAudioListeners, initMusicHook } from './hooks/MusicHook';
+import {
+  ensureLyricsLoaded,
+  initAudioListeners,
+  initMusicHook,
+  lrcArray,
+  lyricLinesHaveWords
+} from './hooks/MusicHook';
 import { audioService } from './services/audioService';
 import { isMobile } from './utils';
 import { useAppShortcuts } from './utils/appShortcuts';
@@ -147,17 +153,22 @@ onMounted(async () => {
   uninstallWakeRecovery = installWakeRecovery(recoverAfterWake);
 });
 
-// 热更新 MusicHook 后重新注入 store，并强制恢复当前曲歌词（模块级 lrcArray 会重置为空）
+// 热更新 MusicHook：只重绑 store/watch。歌词展示挂 globalThis，有逐字则保留不重拉。
 if (import.meta.hot) {
   import.meta.hot.accept('./hooks/MusicHook', (mod) => {
     try {
-      const init = mod?.initMusicHook || initMusicHook;
+      const init = mod?.initMusicHook ?? initMusicHook;
+      const ensure = mod?.ensureLyricsLoaded ?? ensureLyricsLoaded;
+      const hasWords = mod?.lyricLinesHaveWords ?? lyricLinesHaveWords;
+      const lines = mod?.lrcArray ?? lrcArray;
       init(playerStore);
-      // 先挂进度环（已在播时没有 play 事件），再拉歌词（含逐字升级）
-      void Promise.resolve(mod?.initAudioListeners?.() ?? initAudioListeners()).then(() =>
-        mod?.ensureLyricsLoaded?.(true)
-      );
-      console.info('[HMR] MusicHook re-inited + lyrics restored');
+      // 进度环：globalThis 上 audioListenersInitialized，跨 HMR 只绑一次
+      void (mod?.initAudioListeners ?? initAudioListeners)();
+      if (!hasWords(lines.value) && playerStore.playMusic?.id) {
+        void ensure(true);
+      } else {
+        console.info('[HMR] MusicHook rebind, keep word lyrics');
+      }
     } catch (e) {
       console.warn('[HMR] MusicHook re-init failed', e);
     }

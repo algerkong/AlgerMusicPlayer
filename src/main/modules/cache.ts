@@ -968,6 +968,29 @@ class DiskCacheManager {
     };
   }
 
+  /**
+   * 原子写歌词缓存：先写 .tmp 再 rename，避免进程中断留下半截 JSON
+   * （否则 getCachedLyric 会 JSON.parse 炸 "Unterminated string"）。
+   */
+  private async writeJsonAtomic(filePath: string, content: string): Promise<void> {
+    const dir = path.dirname(filePath);
+    const base = path.basename(filePath);
+    const tmpPath = path.join(dir, `.${base}.${process.pid}.${Date.now()}.tmp`);
+    try {
+      await fs.promises.writeFile(tmpPath, content, 'utf8');
+      try {
+        await fs.promises.rename(tmpPath, filePath);
+      } catch {
+        // Windows：目标已存在时 rename 可能失败 → 先删再 rename
+        await fs.promises.unlink(filePath).catch(() => undefined);
+        await fs.promises.rename(tmpPath, filePath);
+      }
+    } catch (error) {
+      await fs.promises.unlink(tmpPath).catch(() => undefined);
+      throw error;
+    }
+  }
+
   public async cacheLyric(songId: string | number, lyricData: unknown): Promise<boolean> {
     try {
       const config = this.getCacheConfig();
@@ -981,7 +1004,7 @@ class DiskCacheManager {
       const filePath = path.join(lyricDir, `${key}.json`);
       const content = JSON.stringify(lyricData);
 
-      await fs.promises.writeFile(filePath, content, 'utf8');
+      await this.writeJsonAtomic(filePath, content);
 
       const now = Date.now();
       const entries = this.getLyricEntries();
@@ -1024,8 +1047,27 @@ class DiskCacheManager {
       }
 
       const content = await fs.promises.readFile(entry.filePath, 'utf8');
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(content);
+      } catch (parseError) {
+        // 半截/损坏 JSON：删文件+元数据，下次走网络重拉，勿反复刷红
+        console.warn(
+          `[cache] corrupt lyric cache, drop key=${key}:`,
+          parseError instanceof Error ? parseError.message : parseError
+        );
+        try {
+          await fs.promises.unlink(entry.filePath);
+        } catch {
+          /* ignore */
+        }
+        delete entries[key];
+        this.setLyricEntries(entries);
+        return undefined;
+      }
+
       this.updateLyricAccess(key);
-      return JSON.parse(content);
+      return parsed;
     } catch (error) {
       console.error('读取缓存歌词失败:', error);
       return undefined;

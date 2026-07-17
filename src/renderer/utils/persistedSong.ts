@@ -69,6 +69,10 @@ export type MinifiedSong = {
   isOriginal?: boolean;
   isLimitedFree?: boolean;
   isDigital?: boolean;
+  /** 作词（song_maker_team） */
+  lyricists?: string[];
+  /** 作曲 */
+  composers?: string[];
 };
 
 /** v1 遗留形状（无 v 字段）——仅 inflate 用 */
@@ -178,7 +182,21 @@ export const minifySong = (s: SongResult): MinifiedSong => {
     isVip: n.isVip,
     isOriginal: n.isOriginal,
     isLimitedFree: n.isLimitedFree,
-    isDigital: n.isDigital
+    isDigital: n.isDigital,
+    lyricists: Array.isArray(n.lyricists)
+      ? n.lyricists
+          .map(String)
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .slice(0, 12)
+      : undefined,
+    composers: Array.isArray(n.composers)
+      ? n.composers
+          .map(String)
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .slice(0, 12)
+      : undefined
   };
 };
 
@@ -236,7 +254,9 @@ export const inflateSong = (
       isVip: v2.isVip,
       isOriginal: v2.isOriginal,
       isLimitedFree: v2.isLimitedFree,
-      isDigital: v2.isDigital
+      isDigital: v2.isDigital,
+      lyricists: v2.lyricists,
+      composers: v2.composers
     } as SongResult);
   }
 

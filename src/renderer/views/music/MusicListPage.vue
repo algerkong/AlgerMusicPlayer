@@ -79,36 +79,73 @@
       </div>
     </template>
 
-    <!-- 重命名 -->
-    <ui-dialog :open="renameOpen" @update:open="renameOpen = $event">
-      <dialog-content class="max-w-sm">
+    <!-- 重命名 / 删除：reka Dialog（库动画，不再自绘长大） -->
+    <ui-dialog :open="renameOpen" @update:open="onRenameOpenChange">
+      <dialog-content class="pl-dialog max-w-sm" :show-close-button="false">
         <dialog-header>
           <dialog-title>重命名歌单</dialog-title>
           <dialog-description>修改当前歌单名称</dialog-description>
         </dialog-header>
+        <div class="pl-dialog-song">
+          <div class="pl-dialog-cover" :class="{ 'is-empty-art': !playlistCover }">
+            <img v-if="playlistCover" :src="playlistCover" alt="" />
+            <img v-else :src="emptyArtSrc" class="pl-dialog-empty-art" alt="" />
+          </div>
+          <div class="pl-dialog-meta min-w-0">
+            <div class="truncate font-semibold text-sm">{{ name }}</div>
+            <div class="truncate text-xs opacity-65 mt-0.5">
+              {{
+                songList.length > 0
+                  ? `${songList.length} 首`
+                  : totalHint > 0
+                    ? `${totalHint} 首`
+                    : '这里面啥都没有'
+              }}
+            </div>
+          </div>
+        </div>
         <input
+          ref="renameInputRef"
           v-model="renameName"
-          class="field-input"
+          class="pl-dialog-input"
           type="text"
           maxlength="40"
+          placeholder="歌单名称"
           @keydown.enter.prevent="submitRename"
         />
         <dialog-footer>
-          <ui-button variant="outline" @click="renameOpen = false">取消</ui-button>
-          <ui-button :disabled="busy" @click="submitRename">保存</ui-button>
+          <ui-button variant="outline" @click="closeRename">取消</ui-button>
+          <ui-button :disabled="busy || !renameCanSave" @click="submitRename">保存</ui-button>
         </dialog-footer>
       </dialog-content>
     </ui-dialog>
 
-    <!-- 删除歌单 -->
-    <ui-dialog :open="deleteOpen" @update:open="deleteOpen = $event">
-      <dialog-content class="max-w-sm">
+    <ui-dialog :open="deleteOpen" @update:open="onDeleteOpenChange">
+      <dialog-content class="pl-dialog max-w-sm" :show-close-button="false">
         <dialog-header>
           <dialog-title>删除歌单</dialog-title>
           <dialog-description>确定删除「{{ name }}」？此操作不可恢复。</dialog-description>
         </dialog-header>
+        <div class="pl-dialog-song">
+          <div class="pl-dialog-cover" :class="{ 'is-empty-art': !playlistCover }">
+            <img v-if="playlistCover" :src="playlistCover" alt="" />
+            <img v-else :src="emptyArtSrc" class="pl-dialog-empty-art" alt="" />
+          </div>
+          <div class="pl-dialog-meta min-w-0">
+            <div class="truncate font-semibold text-sm">{{ name }}</div>
+            <div class="truncate text-xs opacity-65 mt-0.5">
+              {{
+                songList.length > 0
+                  ? `${songList.length} 首`
+                  : totalHint > 0
+                    ? `${totalHint} 首`
+                    : '这里面啥都没有'
+              }}
+            </div>
+          </div>
+        </div>
         <dialog-footer>
-          <ui-button variant="outline" @click="deleteOpen = false">取消</ui-button>
+          <ui-button variant="outline" @click="closeDelete">取消</ui-button>
           <ui-button variant="destructive" :disabled="busy" @click="submitDelete">删除</ui-button>
         </dialog-footer>
       </dialog-content>
@@ -117,7 +154,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 import { mapMsSongToSongResult, msGetPlaylist, msRemovePlaylistTracks } from '@/api/musicSource';
@@ -137,7 +174,9 @@ import { useVisibleSongPrefetch } from '@/hooks/useVisibleSongPrefetch';
 import { useMusicStore, usePlayerStore, useRecommendStore, useUserPlaylistsStore } from '@/store';
 import type { SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
+import { sameTrackId } from '@/utils/playerUtils';
 import { showBottomToast } from '@/utils/shortcutToast';
+import { getSongCoverUrl } from '@/utils/songFields';
 import { normalizeSongResult } from '@/utils/trackBridge';
 
 defineOptions({ name: 'MusicList' });
@@ -160,8 +199,22 @@ const busy = ref(false);
 const renameOpen = ref(false);
 const deleteOpen = ref(false);
 const renameName = ref('');
+const renameInputRef = ref<HTMLInputElement | null>(null);
 /** 加载失败 vs 真·空歌单 */
 const loadFailed = ref(false);
+
+const playlistCover = computed(
+  () =>
+    musicStore.currentListInfo?.picUrl ||
+    plStore.items.find((p) => String(p.id) === listId.value)?.coverUrl ||
+    ''
+);
+
+const renameCanSave = computed(() => {
+  const next = renameName.value.trim();
+  if (!next) return false;
+  return next !== (name.value || '').trim();
+});
 
 const isDailyRecommend = computed(() => route.query.type === 'dailyRecommend');
 const source = computed(() => String(route.query.source || ''));
@@ -283,6 +336,14 @@ const loadRemotePlaylist = async (reset = true) => {
     hasMore.value = !!detail.hasMore && !!detail.nextCursor;
     loadFailed.value = false;
 
+    // 列表接口常不带 count（抖音收藏/自建）→ 打开详情后写回侧栏 tip「N 首」
+    if (listId.value && detail.playlist.trackCount != null) {
+      plStore.setTrackCount(listId.value, Number(detail.playlist.trackCount));
+    } else if (listId.value && reset && !detail.hasMore) {
+      // 单页就拉完：用实际条数
+      plStore.setTrackCount(listId.value, songs.length);
+    }
+
     // 汽水端点的喜欢：打开本歌单时把已加载曲目 id 写入本地，爱心才能亮
     if (isLikedMusicPlaylist(detail.playlist)) {
       seedLikedFromSongs(songs);
@@ -361,33 +422,74 @@ const onScroll = (e: Event) => {
 /** 下拉菜单 emit 的是 id，不是整首歌对象 */
 const handleRemoveSong = async (songOrId: SongResult | string | number) => {
   if (!isUserPlaylist.value || !listId.value) return;
-  const id = songOrId && typeof songOrId === 'object' ? (songOrId as SongResult).id : songOrId;
+  const songObj =
+    songOrId && typeof songOrId === 'object'
+      ? (songOrId as SongResult)
+      : (musicStore.currentMusicList || []).find((s) => String(s.id) === String(songOrId));
+  const id = songObj?.id ?? (songOrId && typeof songOrId !== 'object' ? songOrId : null);
   if (id == null || id === '') return;
+  const cover =
+    (songObj && (getSongCoverUrl(songObj) || songObj.picUrl)) ||
+    (playerStore.playMusic && sameTrackId(playerStore.playMusic.id, id)
+      ? getSongCoverUrl(playerStore.playMusic) || playerStore.playMusic.picUrl
+      : '') ||
+    '';
   try {
     await msRemovePlaylistTracks(listId.value, [String(id)]);
     musicStore.removeSongFromList(id);
     if (totalHint.value > 0) totalHint.value -= 1;
-    void plStore.reload();
+    // 曲目数本地 -1；封面：是这首且空了→清占位，还有歌→reload 换下一张
+    plStore.patchTrackCount(listId.value, -1);
+    const left = musicStore.currentMusicList?.length ?? totalHint.value;
+    void plStore.onTrackRemovedFromPlaylist(listId.value, cover, left);
     showBottomToast('已从歌单移除');
   } catch (error: any) {
     showBottomToast(error?.message || '移除失败');
   }
 };
 
-const openRename = () => {
+const openRename = async () => {
+  deleteOpen.value = false;
   renameName.value = name.value;
   renameOpen.value = true;
+  await nextTick();
+  renameInputRef.value?.focus();
+  renameInputRef.value?.select();
+};
+
+const closeRename = () => {
+  renameOpen.value = false;
+};
+
+const onRenameOpenChange = (open: boolean) => {
+  renameOpen.value = open;
+  if (open) {
+    renameName.value = name.value;
+    void nextTick(() => {
+      renameInputRef.value?.focus();
+      renameInputRef.value?.select();
+    });
+  }
 };
 
 const openDelete = () => {
+  renameOpen.value = false;
   deleteOpen.value = true;
 };
 
+const closeDelete = () => {
+  deleteOpen.value = false;
+};
+
+const onDeleteOpenChange = (open: boolean) => {
+  deleteOpen.value = open;
+};
+
 const submitRename = async () => {
-  if (busy.value || !listId.value) return;
+  if (busy.value || !listId.value || !renameCanSave.value) return;
   busy.value = true;
   try {
-    await plStore.rename(listId.value, renameName.value);
+    await plStore.rename(listId.value, renameName.value.trim());
     musicStore.currentMusicListName = renameName.value.trim() || musicStore.currentMusicListName;
     if (musicStore.currentListInfo) {
       musicStore.currentListInfo = {
@@ -395,7 +497,7 @@ const submitRename = async () => {
         name: musicStore.currentMusicListName
       };
     }
-    renameOpen.value = false;
+    closeRename();
     showBottomToast('已重命名');
   } catch (error: any) {
     showBottomToast(error?.message || '重命名失败');
@@ -409,7 +511,7 @@ const submitDelete = async () => {
   busy.value = true;
   try {
     await plStore.remove(listId.value);
-    deleteOpen.value = false;
+    closeDelete();
     showBottomToast('已删除');
     router.push('/');
   } catch (error: any) {
@@ -436,23 +538,6 @@ watch([listId, listType, source], () => {
 
 .music-list-page--empty {
   background: transparent;
-}
-
-.field-input {
-  width: 100%;
-  box-sizing: border-box;
-  margin: 8px 0 4px;
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--chrome-border, rgba(255, 255, 255, 0.14));
-  background: var(--chrome-surface, rgba(255, 255, 255, 0.06));
-  color: var(--chrome-text, #f8fafc);
-  font-size: 14px;
-  outline: none;
-}
-.field-input:focus {
-  border-color: rgb(var(--chrome-accent, 34, 197, 94));
-  box-shadow: 0 0 0 2px rgba(var(--chrome-accent, 34, 197, 94), 0.2);
 }
 
 /* —— 空态：不套卡片，直接透封面取色底 —— */
@@ -584,5 +669,58 @@ watch([listId, listType, source], () => {
     filter: brightness(1.06);
     background: var(--primary-color, #22c55e);
   }
+}
+
+/* Dialog 内歌单摘要（动画走 reka Dialog） */
+.pl-dialog-song {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 12px;
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+}
+.pl-dialog-cover {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pl-dialog-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pl-dialog-cover.is-empty-art {
+  padding: 3px;
+  box-sizing: border-box;
+  background: color-mix(in srgb, var(--primary-color, #22c55e) 12%, rgba(0, 0, 0, 0.25));
+}
+.pl-dialog-empty-art {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+}
+.pl-dialog-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  font-size: 14px;
+  outline: none;
+  margin-bottom: 4px;
+}
+.pl-dialog-input:focus {
+  border-color: color-mix(in srgb, var(--primary-color, #22c55e) 55%, transparent);
 }
 </style>
