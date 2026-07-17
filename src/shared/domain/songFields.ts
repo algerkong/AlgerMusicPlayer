@@ -1,8 +1,6 @@
 /**
  * 曲目 DTO 字段读口（main / renderer 共用）。
- * ar/artists、duration/dt 双字段只在这里 fallback。
- *
- * 参数刻意用「窄可选字段」结构，避免 index signature 挡住 SongResult.Artist。
+ * 规范侧：artists / album / duration；仍可解析遗留 ar/al/dt（inflate v1）。
  */
 
 export type SongArtistLike = {
@@ -36,11 +34,11 @@ export type SongLike = {
   } | null;
 };
 
-/** 艺人列表：非空 ar → artists → song.artists（空数组不算有值） */
+/** 艺人列表：非空 artists → ar(遗留) → song.artists */
 export function getSongArtists(song: SongLike | null | undefined): SongArtistLike[] {
   if (!song) return [];
-  if (song.ar?.length) return [...song.ar];
   if (song.artists?.length) return [...song.artists];
+  if (song.ar?.length) return [...song.ar];
   if (song.song?.artists?.length) return [...song.song.artists];
   return [];
 }
@@ -57,7 +55,7 @@ export function getSongArtistNames(
   return names.length ? names.join(sep) : fallback;
 }
 
-/** 时长毫秒：duration → dt → song.duration */
+/** 时长毫秒：duration → dt(遗留) → song.duration */
 export function getSongDurationMs(song: SongLike | null | undefined): number {
   if (!song) return 0;
   if (typeof song.duration === 'number' && !Number.isNaN(song.duration)) return song.duration;
@@ -67,19 +65,19 @@ export function getSongDurationMs(song: SongLike | null | undefined): number {
   return 0;
 }
 
-/** 专辑封面：picUrl → al/album.picUrl → song.picUrl */
+/** 专辑封面：picUrl → album/al.picUrl → song.picUrl */
 export function getSongCoverUrl(song: SongLike | null | undefined): string {
   if (!song) return '';
-  return song.picUrl || song.al?.picUrl || song.album?.picUrl || song.song?.picUrl || '';
+  return song.picUrl || song.album?.picUrl || song.al?.picUrl || song.song?.picUrl || '';
 }
 
-/** 专辑对象：有 name 的 al → album → song.album */
+/** 专辑对象：有 name 的 album → al(遗留) → song.album */
 export function getSongAlbum(song: SongLike | null | undefined): SongAlbumLike | undefined {
   if (!song) return undefined;
-  if (song.al?.name) return song.al;
   if (song.album?.name) return song.album;
+  if (song.al?.name) return song.al;
   if (song.song?.album?.name) return song.song.album;
-  return song.al || song.album || song.song?.album || undefined;
+  return song.album || song.al || song.song?.album || undefined;
 }
 
 /** 专辑名 */

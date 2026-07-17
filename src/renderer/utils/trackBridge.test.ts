@@ -42,10 +42,8 @@ describe('trackBridge snowflake ids', () => {
       artists: [{ id: '42', name: 'A' }]
     };
     const song = trackToSongResult(track);
-    expect(song.ar[0].id).toBe(42);
-    // normalize mirrors both sides
     expect(song.artists?.[0].id).toBe(42);
-    expect(song.dt).toBe(song.duration);
+    expect(song.name).toBe('T');
   });
 });
 
@@ -78,7 +76,7 @@ describe('songResultToPlayable roundtrip', () => {
 });
 
 describe('normalizeSongResult', () => {
-  it('fills ar/dt from artists/duration only', () => {
+  it('keeps artists and duration as canonical', () => {
     const partial = {
       id: '1',
       name: 'X',
@@ -88,18 +86,18 @@ describe('normalizeSongResult', () => {
       count: 0
     } as unknown as SongResult;
     const n = normalizeSongResult(partial);
-    expect(n.ar[0].name).toBe('A');
-    expect(n.dt).toBe(12_000);
     expect(n.artists?.[0].name).toBe('A');
+    expect(n.duration).toBe(12_000);
+    expect((n as any).ar).toBeUndefined();
+    expect((n as any).dt).toBeUndefined();
   });
 
-  it('fills artists from ar when artists empty', () => {
+  it('lifts legacy ar/dt via songFields when only legacy present', () => {
     const partial = {
       id: '2',
       name: 'Y',
       picUrl: '',
       ar: [{ id: 1, name: 'B' }],
-      artists: [],
       dt: 3000,
       count: 0
     } as unknown as SongResult;

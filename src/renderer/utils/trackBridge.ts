@@ -1,10 +1,6 @@
 /**
  * Track ↔ SongResult 桥接（兼容层）。
- * 新代码优先持有 Track + PlaybackRuntime；UI/旧 store 仍吃 SongResult。
- *
- * SongResult 双字段策略（半迁移期）：
- * - 读：只用 songFields（getSongArtists / getSongDurationMs …）
- * - 写：adapter / 归一化保证 ar≡artists、al≡album、duration≡dt
+ * P6：SongResult 仅规范字段 artists / album / duration（无 ar/al/dt）。
  */
 
 import type { SongResult } from '@/types/music';
@@ -21,13 +17,13 @@ function toCompatNumberId(raw?: string | null, fallback = 0): number {
 }
 
 /**
- * 对齐 SongResult 镜像字段，使「只写了一边」的对象也能被旧代码读到。
- * 幂等；入口（API map、列表恢复、formatSong）应调用。
+ * 规整 SongResult：封面/艺人/专辑/时长只写规范字段。
+ * 幂等；入口（API map、列表恢复）应调用。
  */
 export function normalizeSongResult(song: SongResult): SongResult {
   if (!song || typeof song !== 'object') return song;
 
-  const artists = getSongArtists(song) as SongResult['ar'];
+  const artists = getSongArtists(song) as SongResult['artists'];
   const albumRef = getSongAlbum(song);
   const durationMs = getSongDurationMs(song);
   const cover = getSongCoverUrl(song) || song.picUrl || '';
@@ -38,27 +34,23 @@ export function normalizeSongResult(song: SongResult): SongResult {
           ...albumRef,
           picUrl: albumRef.picUrl || cover || ''
         }
-      : song.al ||
-        song.album || {
+      : song.album || {
           id: 0,
           name: '',
           picUrl: cover,
           pic: 0,
           picId: 0
         }
-  ) as SongResult['al'];
+  ) as SongResult['album'];
 
-  const duration = durationMs > 0 ? durationMs : (song.duration ?? song.dt);
+  const duration = durationMs > 0 ? durationMs : song.duration;
 
   return {
     ...song,
     picUrl: cover || song.picUrl,
-    ar: artists,
     artists: artists as SongResult['artists'],
-    al: album,
     album: album as SongResult['album'],
     duration,
-    dt: duration,
     song: {
       ...song.song,
       id: song.song?.id ?? song.id,
@@ -71,11 +63,9 @@ export function normalizeSongResult(song: SongResult): SongResult {
 
 export function trackToSongResult(track: Track): SongResult {
   const artists = track.artists.map((a, i) => ({
-    // 路由/展示仍吃 number 型 Artist.id；超大雪花勿 Number 以免精度崩
     id: toCompatNumberId(a.id, i),
     name: a.name,
     picUrl: a.avatarUrl || '',
-    /** 保留原始字符串 id，后续歌手页可改用 */
     idStr: a.id
   }));
   const album = {
@@ -87,16 +77,12 @@ export function trackToSongResult(track: Track): SongResult {
     idStr: track.album?.id
   };
 
-  // 只写「规范侧」+ 必要字段；镜像由 normalize 填齐
   return normalizeSongResult({
     id: track.id,
     name: track.title,
     picUrl: track.coverUrl || '',
     artists: artists as unknown as SongResult['artists'],
     album: album as unknown as SongResult['album'],
-    // ar/al 暂用空壳，normalize 会从 artists/album 回填
-    ar: [] as unknown as SongResult['ar'],
-    al: { id: 0, name: '', picUrl: '', pic: 0, picId: 0 } as unknown as SongResult['al'],
     duration: track.durationMs,
     source: track.platform,
     count: 0,
@@ -171,7 +157,10 @@ export function songResultToTrack(song: SongResult): Track {
     digital: song.digital,
     genreTags: song.genreTags,
     lyricists: song.lyricists,
-    composers: song.composers
+    composers: song.composers,
+    likeCount: song.likedCount,
+    commentCount: song.commentCount,
+    shareCount: song.shareCount
   };
 }
 
@@ -200,7 +189,7 @@ export function songResultToRuntime(song: SongResult): PlaybackRuntime {
   };
 }
 
-/** 从兼容壳拆出 PlayableTrack（P2 store 分层） */
+/** 从兼容壳拆出 PlayableTrack */
 export function songResultToPlayable(song: SongResult): PlayableTrack {
   return {
     track: songResultToTrack(song),

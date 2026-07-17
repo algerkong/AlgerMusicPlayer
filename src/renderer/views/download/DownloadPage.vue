@@ -690,7 +690,7 @@ const handlePlayMusic = async (item: any) => {
     const song: SongResult = {
       id: item.id,
       name: item.displayName || item.filename,
-      ar: names.map((name) => ({
+      artists: names.map((name) => ({
         id: 0,
         name,
         picId: 0,
@@ -703,8 +703,8 @@ const handlePlayMusic = async (item: any) => {
         trans: '',
         musicSize: 0,
         topicPerson: 0
-      })) as SongResult['ar'],
-      al: {
+      })) as SongResult['artists'],
+      album: {
         name: item.filename,
         id: 0,
         picUrl: item.picUrl,

@@ -30,7 +30,7 @@
 | P3 列表改结构       | ✅   | `playablePlayList` 镜像 + commit/replace API；壳仍 `SongResult[]`                            |
 | P4 UI 脱 SongResult | ✅   | 歌单项/播放条展示走 PlayableView；props 仍 SongResult（动作/raw）                            |
 | P5 持久化 v2        | ✅   | `MinifiedSong` v2（Track 字段）+ inflate v1/v2；playlist/playerCore/history deserialize 升级 |
-| P6 删 ar/al/dt      | 待做 | 类型与 normalize 镜像逻辑                                                                    |
+| P6 删 ar/al/dt      | ✅   | `SongResult` 仅 artists/album/duration；inflate 仍可吃 v1 落盘                               |
 
 ### P2 写口（playerCore / player store）
 

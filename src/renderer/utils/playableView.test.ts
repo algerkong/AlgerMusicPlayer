@@ -20,8 +20,8 @@ describe('toPlayableView', () => {
     expect(v.artistText).toBe('A');
     expect(v.durationText).toBe('01:05');
     expect(v.subtitle).toBe('');
-    expect(v.raw.ar[0].name).toBe('A');
-    expect(v.raw.dt).toBe(65_000);
+    expect(v.raw.artists?.[0].name).toBe('A');
+    expect(v.raw.duration).toBe(65_000);
   });
 
   it('maps subtitle and badges', () => {

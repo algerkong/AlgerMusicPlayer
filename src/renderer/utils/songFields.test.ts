@@ -3,17 +3,19 @@ import { describe, expect, it } from 'vitest';
 import { formatDurationMs, getSongArtists, getSongDurationMs } from './songFields';
 
 describe('getSongArtists', () => {
-  it('prefers non-empty ar then artists then song.artists', () => {
-    expect(getSongArtists({ ar: [{ name: 'A' } as any] } as any).map((a) => a.name)).toEqual(['A']);
+  it('prefers non-empty artists then legacy ar then song.artists', () => {
     expect(getSongArtists({ artists: [{ name: 'B' } as any] } as any).map((a) => a.name)).toEqual([
       'B'
     ]);
+    expect(getSongArtists({ ar: [{ name: 'A' } as any] } as any).map((a) => a.name)).toEqual(['A']);
     expect(
       getSongArtists({ song: { artists: [{ name: 'C' }] } } as any).map((a) => a.name)
     ).toEqual(['C']);
-    // 空 ar 不挡 artists
+    // artists 优先于 legacy ar
     expect(
-      getSongArtists({ ar: [], artists: [{ name: 'D' } as any] } as any).map((a) => a.name)
+      getSongArtists({ ar: [{ name: 'A' } as any], artists: [{ name: 'D' } as any] } as any).map(
+        (a) => a.name
+      )
     ).toEqual(['D']);
     expect(getSongArtists(null)).toEqual([]);
   });

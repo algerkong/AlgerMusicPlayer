@@ -43,11 +43,10 @@ describe('persistedSong v2', () => {
     const back = inflateSong(minifySong(sample));
     expect(back.id).toBe(sample.id);
     expect(back.name).toBe('Hello');
-    expect(back.ar[0].name).toBe('Artist');
     expect(back.artists?.[0].name).toBe('Artist');
-    expect(back.dt).toBe(120_000);
     expect(back.duration).toBe(120_000);
     expect(back.isVip).toBe(true);
+    expect((back as any).ar).toBeUndefined();
   });
 
   it('inflates legacy v1 shape', () => {

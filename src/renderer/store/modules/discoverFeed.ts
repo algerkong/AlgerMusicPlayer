@@ -66,7 +66,7 @@ export const useDiscoverFeedStore = defineStore('discoverFeed', () => {
   const mergeRuntime = (base: SongResult, extra?: SongResult | null): SongResult => {
     if (!extra) return { ...base };
     const extraAr = getSongArtists(extra);
-    const artists = (extraAr.length ? extraAr : getSongArtists(base)) as SongResult['ar'];
+    const artists = (extraAr.length ? extraAr : getSongArtists(base)) as SongResult['artists'];
     return {
       ...base,
       ...extra,
@@ -82,9 +82,8 @@ export const useDiscoverFeedStore = defineStore('discoverFeed', () => {
       isPreviewStream: extra.isPreviewStream ?? base.isPreviewStream,
       preview: extra.preview || base.preview,
       picUrl: extra.picUrl || base.picUrl,
-      al: extra.al || base.al,
-      ar: artists,
-      artists: artists as SongResult['artists'],
+      album: extra.album || base.album,
+      artists,
       name: extra.name || base.name,
       likedCount: pickCount(extra.likedCount, base.likedCount),
       commentCount: pickCount(extra.commentCount, base.commentCount),

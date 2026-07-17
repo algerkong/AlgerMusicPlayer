@@ -214,7 +214,6 @@ export const inflateSong = (
         id: a.id as any,
         name: a.name
       })) as SongResult['artists'],
-      ar: [] as unknown as SongResult['ar'],
       album: v2.album
         ? ({
             id: v2.album.id as any,
@@ -222,7 +221,6 @@ export const inflateSong = (
             picUrl: v2.album.coverUrl || ''
           } as SongResult['album'])
         : undefined,
-      al: { id: 0, name: '', picUrl: '', pic: 0, picId: 0 } as SongResult['al'],
       duration: v2.durationMs,
       source: v2.platform,
       count: 0,
@@ -242,18 +240,23 @@ export const inflateSong = (
     } as SongResult);
   }
 
-  // v1 / 运行时 SongResult 半残
+  // v1 / 运行时 SongResult 半残（ar/al/dt 仅在此处读入再转 artists/album/duration）
   const v1 = any as MinifiedSongV1 & Partial<SongResult>;
+  const legacyArtists = (v1.artists?.length ? v1.artists : v1.ar) || [];
+  const legacyAlbum = v1.album || v1.al;
   return normalizeSongResult({
     id: v1.id,
     name: v1.name || v1.title || '',
     picUrl: v1.picUrl || v1.coverUrl || '',
-    ar: (v1.ar || []) as SongResult['ar'],
-    artists: v1.artists as SongResult['artists'],
-    al: v1.al as SongResult['al'],
-    album: v1.album as SongResult['album'],
+    artists: legacyArtists as SongResult['artists'],
+    album: legacyAlbum
+      ? ({
+          id: (legacyAlbum as any).id,
+          name: (legacyAlbum as any).name || '',
+          picUrl: (legacyAlbum as any).picUrl || (legacyAlbum as any).coverUrl || ''
+        } as SongResult['album'])
+      : undefined,
     duration: v1.duration ?? v1.durationMs ?? v1.dt,
-    dt: v1.dt ?? v1.durationMs,
     source: v1.source || v1.platform,
     count: (v1 as any).count ?? 0,
     playMusicUrl: v1.playMusicUrl,
