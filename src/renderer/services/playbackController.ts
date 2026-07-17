@@ -1,9 +1,10 @@
 /**
- * 播放控制器
+ * 播放控制器（内部实现）。
  *
- * 核心播放流程管理，使用 generation-based 取消模式替代原 playerCore.ts 中的控制流。
- * 每次 playTrack() 调用递增 generation，所有异步操作在 await 后检查 generation 是否过期。
+ * ⚠️ 外部请经 `@/services/playbackCoordinator` 调用，勿直接 import 本文件的 playTrack。
+ * 例外：本文件内部互调；MusicHook 前缀升级应走 coordinator.tryUpgradePartialStreamNow。
  *
+ * generation 取消：每次 playTrack 递增 generation，await 后校验是否过期。
  * 导出：playTrack, seamlessSwitchQuality, tryUpgradePartialStreamNow,
  * initializePlayState, setupUrlExpiredHandler, getCurrentGeneration
  */
@@ -381,10 +382,10 @@ const maybeUpgradeStreamQuality = async (song: SongResult, gen: number) => {
     () => audioService.getCurrentSound(),
     UPGRADE_MIN_BUFFER_SEC,
     12000,
-    () => gen !== generation || String(audioService.getCurrentTrack()?.id) !== String(song.id)
+    () => gen !== generation || !sameTrackId(audioService.getCurrentTrack()?.id, song.id)
   );
   if (gen !== generation) return;
-  if (String(audioService.getCurrentTrack()?.id) !== String(song.id)) return;
+  if (!sameTrackId(audioService.getCurrentTrack()?.id, song.id)) return;
 
   // 水位不够也允许在「已播够」时尝试（canUpgradeNow）
   if (!ok && !canUpgradeNow(audioService.getCurrentSound())) {
@@ -397,7 +398,7 @@ const maybeUpgradeStreamQuality = async (song: SongResult, gen: number) => {
     );
   }
   if (gen !== generation) return;
-  if (String(audioService.getCurrentTrack()?.id) !== String(song.id)) return;
+  if (!sameTrackId(audioService.getCurrentTrack()?.id, song.id)) return;
 
   await seamlessSwitchQuality(upgradeTo, { songId: song.id, playGen: gen });
 };

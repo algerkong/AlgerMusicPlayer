@@ -112,17 +112,13 @@ export const usePlayerCoreStore = defineStore(
       }
     };
 
-    const setPlayMusic = async (value: boolean | SongResult) => {
-      if (typeof value === 'boolean') {
-        setIsPlay(value);
-        userPlayIntent.value = value;
-      } else {
-        const { playbackCoordinator } = await import('@/services/playbackCoordinator');
-        await playbackCoordinator.playTrack(value);
-        play.value = true;
-        isPlay.value = true;
-        userPlayIntent.value = true;
-      }
+    /**
+     * 仅切换播放/暂停意图与 isPlay 标志。
+     * 换曲请走 playlist.setPlay → playbackCoordinator.playTrack，勿在此塞 SongResult。
+     */
+    const setPlayMusic = (value: boolean) => {
+      setIsPlay(value);
+      userPlayIntent.value = value;
     };
 
     // ==================== 音频输出设备管理 ====================

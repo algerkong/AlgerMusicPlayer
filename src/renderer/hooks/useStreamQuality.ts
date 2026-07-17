@@ -139,8 +139,8 @@ export function useStreamQuality() {
 
     // 无感换档：当前流继续播，后台 resolve，就绪后再接（不 playTrack、不转圈）
     try {
-      const { seamlessSwitchQuality } = await import('@/services/playbackController');
-      void seamlessSwitchQuality(key, { songId: cur.id });
+      const { playbackCoordinator } = await import('@/services/playbackCoordinator');
+      void playbackCoordinator.seamlessSwitchQuality(key, { songId: cur.id });
     } catch (error) {
       console.warn('[quality] seamless switch failed', error);
     }

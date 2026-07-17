@@ -701,15 +701,15 @@ const setupAudioListeners = () => {
     const endedSong = getPlayerStore().playMusic as SongResult | undefined;
     if (endedSong && (endedSong.isPartialStream || endedSong.playMusicUrl?.includes('.prefix.'))) {
       try {
-        const { tryUpgradePartialStreamNow } = await import('@/services/playbackController');
-        if (await tryUpgradePartialStreamNow()) {
+        const { playbackCoordinator } = await import('@/services/playbackCoordinator');
+        if (await playbackCoordinator.tryUpgradePartialStreamNow()) {
           startProgressInterval();
           return;
         }
         // full 可能刚写完：再等最多 ~2.4s
         for (let i = 0; i < 6; i++) {
           await new Promise((r) => setTimeout(r, 400));
-          if (await tryUpgradePartialStreamNow()) {
+          if (await playbackCoordinator.tryUpgradePartialStreamNow()) {
             startProgressInterval();
             return;
           }
