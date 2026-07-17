@@ -86,6 +86,19 @@ if (loginInfo.isLoggedIn) {
 // 使用应用内快捷键
 useAppShortcuts();
 
+// 用户手势后预热 AudioContext / 双槽解码图（首播少卡一下）
+if (typeof window !== 'undefined') {
+  const warmOnce = () => {
+    void import('@/services/audioService').then(({ audioService }) => {
+      audioService.warmDecodePipeline();
+    });
+    window.removeEventListener('pointerdown', warmOnce);
+    window.removeEventListener('keydown', warmOnce);
+  };
+  window.addEventListener('pointerdown', warmOnce, { once: true, passive: true });
+  window.addEventListener('keydown', warmOnce, { once: true });
+}
+
 let uninstallWakeRecovery: (() => void) | undefined;
 
 /** 唤醒后重刷封面 chrome + 音频上下文，避免白屏/哑音 */

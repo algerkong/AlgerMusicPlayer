@@ -7,10 +7,12 @@
  * 导出：playTrack, seamlessSwitchQuality, initializePlayState, setupUrlExpiredHandler, getCurrentGeneration
  */
 
-import { createDiscreteApi } from 'naive-ui';
-
-import i18n from '@/../i18n/renderer';
-import { canReuseSongUrl, getSongDetail, loadLrc } from '@/hooks/usePlayerHooks';
+import {
+  canReuseSongUrl,
+  getSongDetail,
+  loadLrc,
+  preferCachedMusicUrl
+} from '@/hooks/usePlayerHooks';
 import { audioService } from '@/services/audioService';
 import { playbackRequestManager } from '@/services/playbackRequestManager';
 import type { SongResult } from '@/types/music';
@@ -18,8 +20,6 @@ import { getImgUrl } from '@/utils';
 import { getImageLinearBackground } from '@/utils/linearColor';
 import { restorePreviewStreamFlags } from '@/utils/previewStream';
 import { ttfaBegin, ttfaMark } from '@/utils/ttfaMetrics';
-
-const { message } = createDiscreteApi(['message']);
 
 // 代次计数，用于取消过期请求
 let generation = 0;
@@ -142,6 +142,23 @@ const loadAndPlayAudio = async (song: SongResult, shouldPlay: boolean): Promise<
 /**
  * 触发预加载下一首/下下首歌曲（立即触发）
  */
+/** 有新鲜 URL 则立刻灌 standby（下一首 / 上一首） */
+const warmStandbyIfReady = (candidate: SongResult | undefined, currentId: string | number) => {
+  if (
+    !candidate ||
+    String(candidate.id) === String(currentId) ||
+    !candidate.playMusicUrl ||
+    (candidate.expiredAt != null && candidate.expiredAt < Date.now())
+  ) {
+    return;
+  }
+  try {
+    audioService.preload(candidate.playMusicUrl, candidate);
+  } catch {
+    /* ignore */
+  }
+};
+
 const triggerPreload = async (song: SongResult): Promise<void> => {
   try {
     const playlistStore = await getPlaylistStore();
@@ -150,19 +167,19 @@ const triggerPreload = async (song: SongResult): Promise<void> => {
       // 雪花 id 可能是 string/number 混用，必须 String 比较
       const idx = list.findIndex((item: SongResult) => String(item.id) === String(song.id));
       if (idx !== -1) {
-        // 列表 resolve 预热（含 getSongDetail + standby）
+        // 列表 resolve 预热（含 getSongDetail + standby；含上一首）
         playlistStore.preloadNextSongs(idx);
 
-        // P1：下一首已有 URL 时立刻灌 standby（不必等 debounce 200ms）
-        const nextIdx = (idx + 1) % list.length;
+        const len = list.length;
+        const nextIdx = (idx + 1) % len;
+        const prevIdx = (idx - 1 + len) % len;
+        warmStandbyIfReady(list[nextIdx], song.id);
+        // 双槽仅一个 standby：优先 next；prev 仅在 next 无可用 URL 时灌
         const next = list[nextIdx];
-        if (
-          next &&
-          String(next.id) !== String(song.id) &&
-          next.playMusicUrl &&
-          !(next.expiredAt != null && next.expiredAt < Date.now())
-        ) {
-          audioService.preload(next.playMusicUrl, next);
+        const nextReady =
+          !!next?.playMusicUrl && !(next.expiredAt != null && next.expiredAt < Date.now());
+        if (!nextReady) {
+          warmStandbyIfReady(list[prevIdx], song.id);
         }
       } else {
         console.warn('[triggerPreload] 当前曲不在 playList，跳过预热 id=', song.id);
@@ -275,10 +292,19 @@ export const seamlessSwitchQuality = async (
       /* ignore */
     }
 
-    const deadline = Date.now() + 2500;
+    const deadline = Date.now() + 4000;
     while (Date.now() < deadline) {
       if (isQualitySwitchStale(switchGen, playGenAtStart, songId, playerCore)) return false;
       if (audioService.hasPreloaded(upgraded.playMusicUrl)) break;
+      // 高码率升质：等 standby 缓冲够再切，减少卡顿
+      if (
+        audioService.getStandbyBufferedAhead() >= 1.5 &&
+        (audioService.hasPreloaded(upgraded.playMusicUrl) ||
+          audioService.getStandbyBufferedAhead() > 0)
+      ) {
+        // hasPreloaded 已含 readyState；缓冲够则跳出
+        if (audioService.getStandbyBufferedAhead() >= 1.2) break;
+      }
       await new Promise((r) => setTimeout(r, 80));
     }
 
@@ -332,17 +358,49 @@ export const seamlessSwitchQuality = async (
 };
 
 /**
- * 先播后升质：首包 boot 后后台 resolve 无损等并 seek 接上。
+ * 先播后升质：boot 出声后等缓冲水位，再 resolve 无损等并 seek 接上。
+ * 避免起播瞬间抢带宽导致首包更慢。
  */
 const maybeUpgradeStreamQuality = async (song: SongResult, gen: number) => {
   const upgradeTo = (song as SongResult & { _streamUpgradeTo?: string })._streamUpgradeTo;
   if (!upgradeTo || !song.id) return;
   delete (song as any)._streamUpgradeTo;
-  // 仅升不降；且必须仍是本曲 playGen
+
+  const { canUpgradeNow, waitForBuffer, UPGRADE_MIN_BUFFER_SEC } =
+    await import('@/services/streamPipeline');
+
+  // 最多等 12s：缓冲够或已播够再升；中途切歌则放弃
+  const ok = await waitForBuffer(
+    () => audioService.getCurrentSound(),
+    UPGRADE_MIN_BUFFER_SEC,
+    12000,
+    () => gen !== generation || String(audioService.getCurrentTrack()?.id) !== String(song.id)
+  );
+  if (gen !== generation) return;
+  if (String(audioService.getCurrentTrack()?.id) !== String(song.id)) return;
+
+  // 水位不够也允许在「已播够」时尝试（canUpgradeNow）
+  if (!ok && !canUpgradeNow(audioService.getCurrentSound())) {
+    // 再宽限一小段
+    await waitForBuffer(
+      () => audioService.getCurrentSound(),
+      2,
+      4000,
+      () => gen !== generation
+    );
+  }
+  if (gen !== generation) return;
+  if (String(audioService.getCurrentTrack()?.id) !== String(song.id)) return;
+
   await seamlessSwitchQuality(upgradeTo, { songId: song.id, playGen: gen });
 };
 
 // ==================== 导出函数 ====================
+
+export type PlayTrackOptions = {
+  /** 同曲已清 URL 重试过，禁止无限递归 */
+  isRetry?: boolean;
+};
 
 /**
  * 核心播放函数（优化版）
@@ -353,15 +411,17 @@ const maybeUpgradeStreamQuality = async (song: SongResult, gen: number) => {
  */
 export const playTrack = async (
   music: SongResult,
-  shouldPlay: boolean = true
+  shouldPlay: boolean = true,
+  opts?: PlayTrackOptions
 ): Promise<boolean> => {
   // 1. 递增 generation，创建 requestId；作废进行中的无感换档（防上一首 45s 接到下一首）
   const gen = ++generation;
   qualitySwitchGen += 1;
   const requestId = playbackRequestManager.createRequest(music);
   const ttfaId = ttfaBegin(music.id, shouldPlay ? 'play' : 'load');
+  const isRetry = !!opts?.isRetry;
   console.log(
-    `[playbackController] playTrack gen=${gen}, 歌曲: ${music.name}, requestId: ${requestId}`
+    `[playbackController] playTrack gen=${gen}, 歌曲: ${music.name}, requestId: ${requestId}${isRetry ? ' retry' : ''}`
   );
 
   const playerCore = await getPlayerCoreStore();
@@ -382,6 +442,8 @@ export const playTrack = async (
   playerCore.play = intendedPlay;
   playerCore.isPlay = intendedPlay;
   playerCore.userPlayIntent = intendedPlay;
+  // 解码流水线预热（AudioContext + MediaElementSource）
+  audioService.warmDecodePipeline();
 
   // 换曲：立刻停掉上一首（含「standby 可 promote」——先静音旧 active，再 promote）
   const nextUrl = music.playMusicUrl;
@@ -476,11 +538,18 @@ export const playTrack = async (
         `[playbackController] URL 快路径 id=${originalMusic.id} stream=${originalMusic.streamQuality}`
       );
       restorePreviewStreamFlags(originalMusic);
+      // 听过的歌：短竞速磁盘缓存，命中 local:// 二次起播更快
+      const cachedUrl = await preferCachedMusicUrl(originalMusic.playMusicUrl, originalMusic);
+      if (gen !== generation) return false;
       updatedPlayMusic = {
         ...originalMusic,
+        playMusicUrl: cachedUrl || originalMusic.playMusicUrl,
         playLoading: true
       };
-      ttfaMark(ttfaId, 'resolve_cache');
+      ttfaMark(
+        ttfaId,
+        cachedUrl && cachedUrl !== originalMusic.playMusicUrl ? 'disk_cache' : 'resolve_cache'
+      );
     } else {
       updatedPlayMusic = await getSongDetail(originalMusic, requestId);
       restorePreviewStreamFlags(updatedPlayMusic);
@@ -516,12 +585,32 @@ export const playTrack = async (
       .catch(() => undefined);
   } catch (error) {
     if (gen !== generation) return false;
+    // 取消类错误：静默
+    const msg = error instanceof Error ? error.message : String(error);
+    if (msg.includes('Request cancelled') || msg.includes('cancelled')) {
+      playbackRequestManager.failRequest(requestId);
+      return false;
+    }
     console.error('[playbackController] 获取歌曲详情失败:', error);
-    message.error(i18n.global.t('player.playFailed'));
     if (playerCore.playMusic) {
       playerCore.playMusic.playLoading = false;
     }
     playbackRequestManager.failRequest(requestId);
+    // 同曲清链重试一次
+    if (!isRetry) {
+      console.info(`[playbackController] resolve 失败，清 URL 重试: ${originalMusic.name}`);
+      return playTrack(
+        {
+          ...originalMusic,
+          playMusicUrl: undefined,
+          forceQualityResolve: true,
+          isFirstPlay: false
+        },
+        intendedPlay,
+        { isRetry: true }
+      );
+    }
+    // 重试仍失败：不 toast，交由 setPlay/nextPlay 自动跳下一首
     return false;
   }
 
@@ -533,10 +622,17 @@ export const playTrack = async (
     const forceWant = intendedPlay && wantPlay;
     const success = await loadAndPlayAudio(playerCore.playMusic, forceWant || wantPlay);
 
-    // 检查 generation
+    // 检查 generation：过期则静默退出，禁止动 audio。
+    // 旧实现这里 audioService.stop() 会清掉双槽，把「更新的切歌」正在播/正在 load 的也杀掉，
+    // 连点切歌时表现为最后一首也不出声或偶发哑音。
     if (gen !== generation) {
       console.log(`[playbackController] gen=${gen} 已过期（播放音频后），当前 gen=${generation}`);
-      audioService.stop();
+      return false;
+    }
+    // 再确认当前出声槽仍是本曲（防极端竞态：新 gen 已 promote 其它曲）
+    const playing = audioService.getCurrentTrack();
+    if (playing && String(playing.id) !== String(playerCore.playMusic?.id)) {
+      console.log(`[playbackController] gen=${gen} 出声槽已是其它曲 id=${playing.id}，放弃收尾`);
       return false;
     }
 
@@ -584,15 +680,31 @@ export const playTrack = async (
       } catch {
         /* 忽略 */
       }
+      // 后台写入磁盘缓存，下次同曲走 local://
+      if (playerCore.playMusic.playMusicUrl?.startsWith('http')) {
+        void preferCachedMusicUrl(playerCore.playMusic.playMusicUrl, playerCore.playMusic, 0);
+      }
       playbackRequestManager.completeRequest(requestId);
       console.log(`[playbackController] gen=${gen} 就绪: ${music.name} play=${finalIntent}`);
 
-      // 10. 触发预加载下一首（立即触发，不等待）
+      // 10. 触发预加载下一首 / 上一首
       triggerPreload(playerCore.playMusic);
 
       return true;
     } else {
       playbackRequestManager.failRequest(requestId);
+      if (!isRetry && gen === generation) {
+        return playTrack(
+          {
+            ...originalMusic,
+            playMusicUrl: undefined,
+            forceQualityResolve: true,
+            isFirstPlay: false
+          },
+          intendedPlay,
+          { isRetry: true }
+        );
+      }
       return false;
     }
   } catch (error) {
@@ -620,12 +732,27 @@ export const playTrack = async (
       }
     }
 
-    message.error(i18n.global.t('player.playFailed'));
     if (playerCore.playMusic) {
       playerCore.playMusic.playLoading = false;
     }
-    playerCore.setIsPlay(false);
     playbackRequestManager.failRequest(requestId);
+
+    if (!isRetry) {
+      console.info(`[playbackController] load 失败，清 URL 重试: ${originalMusic.name}`);
+      return playTrack(
+        {
+          ...originalMusic,
+          playMusicUrl: undefined,
+          forceQualityResolve: true,
+          isFirstPlay: false
+        },
+        intendedPlay,
+        { isRetry: true }
+      );
+    }
+
+    // 重试仍失败：不 toast，交由列表层跳下一首
+    playerCore.setIsPlay(false);
     return false;
   }
 };

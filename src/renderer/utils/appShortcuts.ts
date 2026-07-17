@@ -129,8 +129,10 @@ export async function handleShortcutAction(action: ShortcutAction) {
           return;
         }
 
-        const currentSongId = Number(playerStore.playMusic.id);
-        const isFavorite = playerStore.favoriteList.includes(currentSongId);
+        const currentSongId = playerStore.playMusic.id;
+        const isFavorite = playerStore.favoriteList.some(
+          (id) => String(id) === String(currentSongId)
+        );
 
         if (isFavorite) {
           playerStore.removeFromFavorite(currentSongId);

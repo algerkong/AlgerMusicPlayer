@@ -103,6 +103,9 @@ type DiskCacheStats = DiskCacheConfig & {
   musicFiles: number;
   lyricFiles: number;
   maxSizeMB: number;
+  /** 音乐真实目录（ly-music-cache）；打开缓存时优先用这个 */
+  musicDirectory?: string;
+  lyricDirectory?: string;
 };
 
 const { t } = useI18n();
@@ -175,7 +178,13 @@ const selectCacheDirectory = async () => {
 };
 
 const openCacheDirectory = () => {
-  const dir = setData.value.diskCacheDir || diskCacheStats.value.directory || '';
+  // 音乐在 userData/ly-music-cache；lyrics 在 diskCacheDir/lyrics。
+  // 打开「有音乐的目录」，避免用户进 cache/music 看到空文件夹。
+  const dir =
+    diskCacheStats.value.musicDirectory ||
+    setData.value.diskCacheDir ||
+    diskCacheStats.value.directory ||
+    '';
   openDirectory(dir, message);
 };
 

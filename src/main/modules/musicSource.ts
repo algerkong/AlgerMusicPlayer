@@ -22,8 +22,8 @@ const SESSION_KEY_ENC = 'musicSourceSessionEnc';
 let client: MusicSourceClient | null = null;
 let initialized = false;
 
-/** resolve 短缓存：同 id+quality+vip 5 分钟内不重复打源 */
-const RESOLVE_CACHE_TTL_MS = 5 * 60 * 1000;
+/** resolve 短缓存：同 id+quality+vip 15 分钟内不重复打源（二次切歌更快） */
+const RESOLVE_CACHE_TTL_MS = 15 * 60 * 1000;
 const resolveResultCache = new Map<string, { at: number; payload: Record<string, unknown> }>();
 
 function resolveCacheKey(
@@ -38,23 +38,28 @@ function resolveCacheKey(
   return `${idPart}|q=${quality}|v=${query.vipLevel || 'none'}`;
 }
 
-/** 后台 Range 拉首包，预热 CDN/连接（不改返回 URL；整曲仍走原地址流式） */
-function primeFirstPacket(url: string | undefined): void {
-  if (!url || !/^https?:\/\//i.test(url)) return;
+/**
+ * 分段 Range 预热 CDN / 连接（非整曲下载）。
+ * 拉前两段（约 0–1MB）让边缘节点热起来，HTMLAudio 流式起播更快。
+ */
+function primeRange(url: string, start: number, end: number): void {
   try {
     const lib = url.startsWith('https') ? https : http;
     const req = lib.get(
       url,
       {
-        headers: { Range: 'bytes=0-524287', 'User-Agent': 'LYMusic/prime' },
-        timeout: 10000
+        headers: {
+          Range: `bytes=${start}-${end}`,
+          'User-Agent': 'LYMusic/prime-seg'
+        },
+        timeout: 12000
       },
       (res) => {
         res.resume();
       }
     );
     req.on('error', () => undefined);
-    req.setTimeout(10000, () => {
+    req.setTimeout(12000, () => {
       try {
         req.destroy();
       } catch {
@@ -64,6 +69,15 @@ function primeFirstPacket(url: string | undefined): void {
   } catch {
     /* ignore */
   }
+}
+
+/** 后台分段预热：0–512KB + 512KB–1MB */
+function primeFirstPacket(url: string | undefined): void {
+  if (!url || !/^https?:\/\//i.test(url)) return;
+  // 首段优先
+  primeRange(url, 0, 524287);
+  // 次段稍后，避免和首段抢同一连接窗口
+  setTimeout(() => primeRange(url, 524288, 1048575), 80);
 }
 
 /** 汽水 6 档 + standard≡medium；未知回落 higher */
@@ -545,6 +559,18 @@ export function initializeMusicSource(): void {
         let playMusicUrl: string | undefined = result.url;
         if (result.filePath) {
           playMusicUrl = filePathToLocalUrl(result.filePath);
+          // 登记进设置页音乐缓存统计（此前 ly-music-cache 有文件但 UI 显示 0）
+          try {
+            const { cacheManager } = await import('./cache');
+            cacheManager.registerLocalMusicFile({
+              songId: result.songId,
+              source: 'qishui',
+              filePath: result.filePath,
+              title: query.title
+            });
+          } catch (e) {
+            console.warn('[musicSource] register local music cache failed', e);
+          }
         }
 
         const payload = {

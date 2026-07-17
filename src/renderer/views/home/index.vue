@@ -105,6 +105,7 @@ import { useRouter } from 'vue-router';
 import { navigateToMusicList } from '@/components/common/MusicListNavigator';
 import { Button as UiButton } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useVisibleSongPrefetch } from '@/hooks/useVisibleSongPrefetch';
 import { usePlayerStore } from '@/store/modules/player';
 import { usePlayHistoryStore } from '@/store/modules/playHistory';
 import { type SidebarPlaylist, useUserPlaylistsStore } from '@/store/modules/userPlaylists';
@@ -118,7 +119,8 @@ const historyStore = usePlayHistoryStore();
 const playerStore = usePlayerStore();
 const plStore = useUserPlaylistsStore();
 
-const recentSongs = computed(() => (historyStore.musicHistory || []).slice(0, 8));
+const recentSongs = computed(() => (historyStore.musicHistory || []).slice(0, 8) as SongResult[]);
+useVisibleSongPrefetch(recentSongs, { maxConcurrent: 2, maxPrefetch: 8, auto: true });
 
 const recentArtist = (song: { ar?: { name?: string }[]; artists?: { name?: string }[] }) => {
   const list = song.ar || song.artists || [];

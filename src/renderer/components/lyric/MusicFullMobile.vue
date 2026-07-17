@@ -422,16 +422,20 @@ const showPlaylist = () => {
   playerStore.setPlayListDrawerVisible(true);
 };
 
-// 喜欢歌曲
+// 喜欢歌曲（雪花 id 用 string 比较）
 const isFavorite = computed(() => {
-  return playerStore.favoriteList.includes(playMusic.value.id as number);
+  const id = playMusic.value?.id;
+  if (id == null) return false;
+  return playerStore.favoriteList.some((x) => String(x) === String(id));
 });
 
 const toggleFavorite = () => {
+  const id = playMusic.value?.id;
+  if (id == null) return;
   if (isFavorite.value) {
-    playerStore.removeFromFavorite(playMusic.value.id as number);
+    playerStore.removeFromFavorite(id);
   } else {
-    playerStore.addToFavorite(playMusic.value.id as number);
+    playerStore.addToFavorite(id);
   }
 };
 

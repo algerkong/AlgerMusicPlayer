@@ -50,7 +50,7 @@ const playerStore = usePlayerStore();
 const playHistoryStore = usePlayHistoryStore();
 const favoriteSongs = ref<SongResult[]>([]);
 
-useVisibleSongPrefetch(favoriteSongs, { maxConcurrent: 2, maxPrefetch: 5, auto: true });
+useVisibleSongPrefetch(favoriteSongs, { maxConcurrent: 3, maxPrefetch: 12, auto: true });
 
 const favoriteList = computed(() => playerStore.favoriteList);
 

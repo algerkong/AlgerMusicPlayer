@@ -112,6 +112,7 @@ export const usePlayerStore = defineStore('player', () => {
     dislikeList,
 
     addToFavorite: favorite.addToFavorite,
+    seedFavorites: favorite.seedFavorites,
     removeFromFavorite: favorite.removeFromFavorite,
     addToDislikeList: favorite.addToDislikeList,
     removeFromDislikeList: favorite.removeFromDislikeList,

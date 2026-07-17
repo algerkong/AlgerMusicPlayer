@@ -112,7 +112,7 @@ const historySongs = computed(
       ? (playHistoryStore.musicHistory as SongResult[])
       : []) as SongResult[]
 );
-useVisibleSongPrefetch(historySongs, { maxConcurrent: 2, maxPrefetch: 5, auto: true });
+useVisibleSongPrefetch(historySongs, { maxConcurrent: 3, maxPrefetch: 12, auto: true });
 
 const handleDelSong = (item: any) => {
   playHistoryStore.delMusic(item);

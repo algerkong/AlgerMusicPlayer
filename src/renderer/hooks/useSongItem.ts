@@ -30,17 +30,15 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
   );
   const isPlaying = computed(() => playMusic.value.id === props.item.id);
 
-  // 收藏与不喜欢状态
+  // 收藏与不喜欢：雪花 id 用 string 比较，禁止 parseInt 丢精度
   const isFavorite = computed(() => {
-    const numericId =
-      typeof props.item.id === 'string' ? parseInt(props.item.id, 10) : props.item.id;
-    return playerStore.favoriteList.includes(numericId);
+    if (props.item.id == null) return false;
+    return playerStore.favoriteList.some((id) => String(id) === String(props.item.id));
   });
 
   const isDislike = computed(() => {
-    const numericId =
-      typeof props.item.id === 'string' ? parseInt(props.item.id, 10) : props.item.id;
-    return playerStore.dislikeList.includes(numericId);
+    if (props.item.id == null) return false;
+    return playerStore.dislikeList.some((id) => String(id) === String(props.item.id));
   });
 
   const artists = computed(() => {
@@ -72,13 +70,28 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
 
   const toggleFavorite = async (e: Event) => {
     e && e.stopPropagation();
-    const numericId =
-      typeof props.item.id === 'string' ? parseInt(props.item.id, 10) : props.item.id;
+    const id = props.item.id;
+    if (id == null) return;
+
+    // 同步汽水「我喜欢」；失败仍改本地，避免 UI 卡住
+    try {
+      const { isElectron } = await import('@/utils');
+      if (isElectron) {
+        const { msLikeTrack, msUnlikeTrack } = await import('@/api/musicSource');
+        if (isFavorite.value) {
+          await msUnlikeTrack(String(id));
+        } else {
+          await msLikeTrack(String(id));
+        }
+      }
+    } catch (err) {
+      console.warn('[toggleFavorite] 同步汽水喜欢失败', err);
+    }
 
     if (isFavorite.value) {
-      playerStore.removeFromFavorite(numericId);
+      playerStore.removeFromFavorite(id);
     } else {
-      playerStore.addToFavorite(numericId);
+      playerStore.addToFavorite(id);
     }
   };
 
