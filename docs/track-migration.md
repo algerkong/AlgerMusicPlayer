@@ -2,23 +2,23 @@
 
 ## 原则
 
-| 原则             | 内容                                                                 |
-| ---------------- | -------------------------------------------------------------------- |
-| 元数据           | `Track`（`src/shared/domain/track.ts`）                              |
-| 会话态           | `PlaybackRuntime`（URL / lyric / loading…）勿写回 Track              |
-| 换曲             | 只经 `playbackCoordinator`                                           |
-| id 比较          | 只经 `sameTrackId` / `trackIdKey`                                    |
-| 读艺人/时长/封面 | `songFields` 或 `toPlayableView`，**禁止**裸读 `song.ar` / `song.dt` |
+| 原则             | 内容                                                            |
+| ---------------- | --------------------------------------------------------------- |
+| 元数据           | `Track`（`src/shared/domain/track.ts`）                         |
+| 会话态           | `PlaybackRuntime`（URL / lyric / loading…）勿写回 Track         |
+| 换曲             | 只经 `playbackCoordinator`                                      |
+| id 比较          | 只经 `sameTrackId` / `trackIdKey`                               |
+| 读艺人/时长/封面 | `songFields` 或 `toPlayableView`（`ar`/`al`/`dt` 已从类型删除） |
 
-## SongResult 双字段（过渡）
+## SongResult 字段（P6）
 
-| 规范侧     | 镜像（@deprecated） |
-| ---------- | ------------------- |
-| `artists`  | `ar`                |
-| `album`    | `al`                |
-| `duration` | `dt`                |
+| 规范侧     | 说明    |
+| ---------- | ------- |
+| `artists`  | 艺人    |
+| `album`    | 专辑    |
+| `duration` | 时长 ms |
 
-入口写完后调用 `normalizeSongResult`（`trackBridge`），保证镜像一致。
+落盘 v1 仍可由 `inflateSong` 读入并转成规范字段。
 
 ## 阶段
 
