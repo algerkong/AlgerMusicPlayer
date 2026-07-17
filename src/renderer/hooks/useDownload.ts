@@ -14,7 +14,7 @@ import type { DownloadSongInfo } from '../../shared/download';
  */
 function toDownloadSongInfo(song: SongResult): DownloadSongInfo {
   return {
-    id: song.id as number,
+    id: song.id,
     name: song.name,
     picUrl: song.picUrl ?? song.al?.picUrl ?? '',
     ar: (song.ar || song.song?.artists || []).map((a: { name: string }) => ({ name: a.name })),
@@ -44,7 +44,7 @@ export const useDownload = () => {
     try {
       isDownloading.value = true;
 
-      const musicUrl = (await getSongUrl(song.id as number, song, true)) as any;
+      const musicUrl = (await getSongUrl(song.id, song, true)) as any;
       if (!musicUrl) {
         throw new Error(t('songItem.message.getUrlFailed'));
       }
@@ -96,7 +96,7 @@ export const useDownload = () => {
         const chunkResults = await Promise.all(
           chunk.map(async (song) => {
             try {
-              const data = (await getSongUrl(song.id as number, song, true)) as any;
+              const data = (await getSongUrl(song.id, song, true)) as any;
               const url = typeof data === 'string' ? data : (data?.url ?? '');
               const type = typeof data === 'string' ? '' : (data?.type ?? '');
               if (!url) return null;

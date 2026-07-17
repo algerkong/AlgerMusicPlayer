@@ -296,12 +296,14 @@ function applyProfile(p: {
   isVip: boolean;
   vipLevel: string;
 }) {
+  // 汽水用户 id 可能是超大雪花：主身份用 user_id 字符串；userId 仅兼容旧逻辑
   const idNum = Number(p.id);
+  const safeUserId = Number.isSafeInteger(idNum) ? idNum : 0;
   const level = String(p.vipLevel || 'none').toLowerCase();
   // vipType：0 无 / 1 VIP / 2 SVIP（兼容旧 isVip 布尔）
   const vipType = level.includes('svip') ? 2 : p.isVip || level.includes('vip') ? 1 : 0;
   userStore.setUser({
-    userId: Number.isFinite(idNum) ? idNum : 0,
+    userId: safeUserId,
     user_id: p.id,
     nickname: p.nickname,
     avatarUrl: p.avatarUrl || '',

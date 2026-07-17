@@ -239,7 +239,7 @@ const handleDeleteSong = (song: SongResult) => {
   if (song.id === playMusic.value.id) {
     playerStore.nextPlay();
   }
-  playerStore.removeFromPlayList(song.id as number);
+  playerStore.removeFromPlayList(song.id);
 };
 
 // 艺术家点击

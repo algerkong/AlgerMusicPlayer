@@ -174,7 +174,7 @@ const scrollToCurrentSong = () => {
 };
 
 const handleDeleteSong = (song: SongResult) => {
-  playerStore.removeFromPlayList(song.id as number);
+  playerStore.removeFromPlayList(song.id);
 };
 </script>
 

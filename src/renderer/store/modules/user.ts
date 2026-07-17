@@ -7,7 +7,10 @@ import { isElectron } from '@/utils';
 import { clearLoginStatus } from '@/utils/auth';
 
 interface UserData {
+  /** 兼容旧 UI；汽水雪花可能超出 safe integer，此时以 user_id 为准 */
   userId: number;
+  /** 权威用户 id（字符串，可表示雪花） */
+  user_id?: string;
   [key: string]: any;
 }
 

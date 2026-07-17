@@ -949,11 +949,16 @@ const resetUrlExpiredRetry = (): void => {
  * Format error），不清缓存的话重新解析会再次命中同一个坏 URL 形成死循环
  */
 const clearParsedUrlCache = async (songId: string | number): Promise<void> => {
-  // 本地歌曲 id 为 hex 字符串；官方链路无独立解析缓存表可清
-  if (!/^\d+$/.test(String(songId))) return;
+  // 本地歌曲 id 为 hex 字符串；汽水雪花 id 保持 string，禁止 Number() 丢精度
+  const key = String(songId);
+  if (!key || !/^\d+$/.test(key)) return;
   try {
     const { musicDB } = await import('@/hooks/MusicHook');
-    await musicDB.deleteData('music_url_cache', Number(songId));
+    // 兼容历史用 number 写入的 key
+    await musicDB.deleteData('music_url_cache', key);
+    if (Number.isSafeInteger(Number(key))) {
+      await musicDB.deleteData('music_url_cache', Number(key));
+    }
   } catch (error) {
     console.warn('[playbackController] 清除URL缓存失败:', error);
   }

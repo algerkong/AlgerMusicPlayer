@@ -15,7 +15,8 @@ export const DOWNLOAD_TASK_STATE = {
 export type DownloadTaskState = (typeof DOWNLOAD_TASK_STATE)[keyof typeof DOWNLOAD_TASK_STATE];
 
 export type DownloadSongInfo = {
-  id: number;
+  /** 汽水雪花 id 必须用 string，Number 会丢精度 */
+  id: string | number;
   name: string;
   picUrl: string;
   ar: { name: string }[];

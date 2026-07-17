@@ -7,6 +7,7 @@ import {
   nativeImage,
   Tray
 } from 'electron';
+import { existsSync } from 'fs';
 import { join } from 'path';
 
 import i18n from '../../i18n/main';
@@ -397,10 +398,12 @@ function initializeStatusBarTray(mainWindow: BrowserWindow) {
     mainWindow.webContents.send('global-shortcut', 'prevPlay');
   });
 
-  // 创建歌曲信息显示 - 需要使用特殊处理
-  const titleIcon = nativeImage
-    .createFromPath(join(app.getAppPath(), 'resources/icons', 'note.png'))
-    .resize({ width: 16, height: 16 });
+  // 歌曲信息 tray：note.png 可选，缺失时回落到托盘图标
+  const appResources = join(app.getAppPath(), 'resources');
+  const notePath = join(appResources, 'icons', 'note.png');
+  const trayFallback = join(appResources, 'icon-tray.png');
+  const titleSource = existsSync(notePath) ? notePath : trayFallback;
+  const titleIcon = nativeImage.createFromPath(titleSource).resize({ width: 16, height: 16 });
   titleIcon.setTemplateImage(true);
   songTitleTray = new Tray(titleIcon);
 

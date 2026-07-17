@@ -7,30 +7,44 @@ import type { SongResult } from '@/types/music';
 
 import type { ArtistRef, PlayableTrack, PlaybackRuntime, Track } from '../../shared/domain/track';
 
+/** 仅 UI 兼容用：SAFE 整数才转 number，否则 0（真实 id 以 string 字段为准） */
+function toCompatNumberId(raw?: string | null, fallback = 0): number {
+  if (raw == null || raw === '') return fallback;
+  if (!/^\d+$/.test(raw)) return fallback;
+  const n = Number(raw);
+  return Number.isSafeInteger(n) ? n : fallback;
+}
+
 export function trackToSongResult(track: Track): SongResult {
   const artists = track.artists.map((a, i) => ({
-    id: Number(a.id) || i,
+    // 路由/展示仍吃 number 型 Artist.id；超大雪花勿 Number 以免精度崩
+    id: toCompatNumberId(a.id, i),
     name: a.name,
-    picUrl: a.avatarUrl || ''
+    picUrl: a.avatarUrl || '',
+    /** 保留原始字符串 id，后续歌手页可改用 */
+    idStr: a.id
   }));
   const album = {
-    id: track.album?.id ? Number(track.album.id) || 0 : 0,
+    id: toCompatNumberId(track.album?.id, 0),
     name: track.album?.name || '',
     picUrl: track.album?.coverUrl || track.coverUrl || '',
     pic: 0,
-    picId: 0
+    picId: 0,
+    idStr: track.album?.id
   };
 
   return {
+    // 曲目 id 保持 string，禁止 Number(track.id)
     id: track.id,
     name: track.title,
     picUrl: track.coverUrl || '',
-    ar: artists as SongResult['ar'],
-    artists: artists as SongResult['artists'],
-    al: album as SongResult['al'],
-    album: album as SongResult['album'],
+    // SongResult.ar/al 仍是网易形全量接口；这里只填 UI 用到的字段
+    ar: artists as unknown as SongResult['ar'],
+    artists: artists as unknown as SongResult['artists'],
+    al: album as unknown as SongResult['al'],
+    album: album as unknown as SongResult['album'],
     song: {
-      id: track.id,
+      id: track.id as any,
       name: track.title,
       artists: artists as any,
       album: album as any

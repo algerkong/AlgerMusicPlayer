@@ -1,74 +1,123 @@
 <template>
-  <!-- 存储：下载目录 + 磁盘缓存 -->
-  <setting-section v-if="isElectron">
-    <setting-item :title="t('settings.application.downloadPath')">
-      <template #description>
-        <span class="break-all">{{
-          setData.downloadPath || t('settings.application.downloadPathDesc')
-        }}</span>
-      </template>
-      <template #action>
-        <div class="flex items-center gap-2">
-          <ui-button variant="outline" size="sm" @click="openDownloadPath">
-            {{ t('common.open') }}
-          </ui-button>
-          <ui-button variant="outline" size="sm" @click="selectDownloadPath">
-            {{ t('common.modify') }}
-          </ui-button>
-        </div>
-      </template>
-    </setting-item>
-
-    <setting-item
-      :title="t('settings.system.cacheDirectory')"
-      :description="
-        setData.diskCacheDir || diskCacheStats.directory || t('settings.system.cacheDirectoryDesc')
-      "
-    >
-      <template #action>
-        <div class="flex items-center gap-2 max-md:flex-wrap">
-          <ui-button variant="outline" size="sm" @click="selectCacheDirectory">
-            {{ t('settings.system.selectDirectory') }}
-          </ui-button>
-          <ui-button variant="outline" size="sm" @click="openCacheDirectory">
-            {{ t('settings.system.openDirectory') }}
-          </ui-button>
-        </div>
-      </template>
-    </setting-item>
-
-    <setting-item
-      :title="t('settings.system.cacheStatus')"
-      :description="
-        t('settings.system.cacheStatusDesc', {
-          used: formatBytes(diskCacheStats.totalSizeBytes),
-          limit: `${DEFAULT_CACHE_MB} MB`
-        })
-      "
-    >
-      <template #action>
-        <div class="flex items-center gap-3 max-md:flex-wrap">
-          <div class="w-40 max-md:w-32">
-            <ui-progress :value="diskCacheUsagePercent" />
+  <div v-if="isElectron" class="space-y-6">
+    <!-- 存储：下载目录 + 磁盘缓存 -->
+    <setting-section>
+      <setting-item :title="t('settings.application.downloadPath')">
+        <template #description>
+          <span class="break-all">{{
+            setData.downloadPath || t('settings.application.downloadPathDesc')
+          }}</span>
+        </template>
+        <template #action>
+          <div class="flex items-center gap-2">
+            <ui-button variant="outline" size="sm" @click="openDownloadPath">
+              {{ t('common.open') }}
+            </ui-button>
+            <ui-button variant="outline" size="sm" @click="selectDownloadPath">
+              {{ t('common.modify') }}
+            </ui-button>
           </div>
-          <span class="text-xs text-muted-foreground tabular-nums">
-            {{ diskCacheUsagePercent }}%
-          </span>
-          <span class="text-xs text-muted-foreground">
-            {{
-              t('settings.system.cacheStatusDetail', {
-                musicCount: diskCacheStats.musicFiles,
-                lyricCount: diskCacheStats.lyricFiles
-              })
-            }}
-          </span>
-          <ui-button variant="outline" size="sm" @click="refreshDiskCacheStats()">
-            {{ t('common.refresh') }}
-          </ui-button>
-        </div>
+        </template>
+      </setting-item>
+
+      <setting-item
+        :title="t('settings.system.cacheDirectory')"
+        :description="
+          setData.diskCacheDir ||
+          diskCacheStats.directory ||
+          t('settings.system.cacheDirectoryDesc')
+        "
+      >
+        <template #action>
+          <div class="flex items-center gap-2 max-md:flex-wrap">
+            <ui-button variant="outline" size="sm" @click="selectCacheDirectory">
+              {{ t('settings.system.selectDirectory') }}
+            </ui-button>
+            <ui-button variant="outline" size="sm" @click="openCacheDirectory">
+              {{ t('settings.system.openDirectory') }}
+            </ui-button>
+          </div>
+        </template>
+      </setting-item>
+
+      <setting-item
+        :title="t('settings.system.cacheStatus')"
+        :description="
+          t('settings.system.cacheStatusDesc', {
+            used: formatBytes(diskCacheStats.totalSizeBytes),
+            limit: `${DEFAULT_CACHE_MB} MB`
+          })
+        "
+      >
+        <template #action>
+          <div class="flex items-center gap-3 max-md:flex-wrap">
+            <div class="w-40 max-md:w-32">
+              <ui-progress :value="diskCacheUsagePercent" />
+            </div>
+            <span class="text-xs text-muted-foreground tabular-nums">
+              {{ diskCacheUsagePercent }}%
+            </span>
+            <span class="text-xs text-muted-foreground">
+              {{
+                t('settings.system.cacheStatusDetail', {
+                  musicCount: diskCacheStats.musicFiles,
+                  lyricCount: diskCacheStats.lyricFiles
+                })
+              }}
+            </span>
+            <ui-button variant="outline" size="sm" @click="refreshDiskCacheStats()">
+              {{ t('common.refresh') }}
+            </ui-button>
+          </div>
+        </template>
+      </setting-item>
+    </setting-section>
+
+    <!-- 网络代理：写回 set.proxyConfig，主进程 onDidChange 会应用 -->
+    <setting-section>
+      <setting-item
+        :title="t('settings.network.proxy')"
+        :description="t('settings.network.proxyDesc')"
+      >
+        <template #action>
+          <ui-switch :model-value="proxyEnabled" @update:model-value="setProxyEnabled" />
+        </template>
+      </setting-item>
+
+      <template v-if="proxyEnabled">
+        <setting-item :title="t('settings.network.proxyHost')">
+          <template #action>
+            <div class="flex flex-wrap items-center gap-2">
+              <select
+                class="proxy-select h-9 rounded-md border border-input bg-background px-2 text-sm"
+                :value="proxyConfig.protocol"
+                @change="onProtocolChange"
+              >
+                <option value="http">HTTP</option>
+                <option value="https">HTTPS</option>
+                <option value="socks5">SOCKS5</option>
+              </select>
+              <input
+                class="proxy-input h-9 w-40 max-md:w-full rounded-md border border-input bg-background px-2 text-sm"
+                :value="proxyConfig.host"
+                :placeholder="t('settings.network.proxyHostPlaceholder')"
+                @change="onHostChange"
+              />
+              <input
+                class="proxy-input h-9 w-24 rounded-md border border-input bg-background px-2 text-sm tabular-nums"
+                type="number"
+                min="1"
+                max="65535"
+                :value="proxyConfig.port"
+                :placeholder="t('settings.network.proxyPortPlaceholder')"
+                @change="onPortChange"
+              />
+            </div>
+          </template>
+        </setting-item>
       </template>
-    </setting-item>
-  </setting-section>
+    </setting-section>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -78,6 +127,7 @@ import { useI18n } from 'vue-i18n';
 
 import { Button as UiButton } from '@/components/ui/button';
 import { Progress as UiProgress } from '@/components/ui/progress';
+import { Switch as UiSwitch } from '@/components/ui/switch';
 import { isElectron } from '@/utils';
 import { openDirectory } from '@/utils/fileOperation';
 
@@ -111,6 +161,58 @@ type DiskCacheStats = DiskCacheConfig & {
 const { t } = useI18n();
 const setData = inject(SETTINGS_DATA_KEY)!;
 const message = inject(SETTINGS_MESSAGE_KEY)!;
+
+type ProxyConfig = {
+  enable: boolean;
+  protocol: string;
+  host: string;
+  port: number;
+};
+
+const defaultProxy: ProxyConfig = {
+  enable: false,
+  protocol: 'http',
+  host: '127.0.0.1',
+  port: 7890
+};
+
+const proxyConfig = computed<ProxyConfig>(() => {
+  const raw = (setData.value.proxyConfig || {}) as Partial<ProxyConfig>;
+  return {
+    enable: !!raw.enable,
+    protocol: raw.protocol || defaultProxy.protocol,
+    host: raw.host || defaultProxy.host,
+    port: Number(raw.port) > 0 ? Number(raw.port) : defaultProxy.port
+  };
+});
+
+const proxyEnabled = computed(() => proxyConfig.value.enable);
+
+const patchProxy = (partial: Partial<ProxyConfig>) => {
+  const next = { ...proxyConfig.value, ...partial };
+  setData.value = {
+    ...setData.value,
+    isProxy: next.enable,
+    proxyConfig: next
+  };
+};
+
+const setProxyEnabled = (enable: boolean) => patchProxy({ enable });
+
+const onProtocolChange = (e: Event) => {
+  const value = (e.target as HTMLSelectElement).value;
+  patchProxy({ protocol: value });
+};
+
+const onHostChange = (e: Event) => {
+  const value = (e.target as HTMLInputElement).value.trim();
+  if (value) patchProxy({ host: value });
+};
+
+const onPortChange = (e: Event) => {
+  const n = parseInt((e.target as HTMLInputElement).value, 10);
+  if (Number.isFinite(n) && n >= 1 && n <= 65535) patchProxy({ port: n });
+};
 
 const diskCacheStats = ref<DiskCacheStats>({
   enabled: true,

@@ -56,10 +56,11 @@ export const usePlaylistStore = defineStore(
         );
         const { getSongDetail } = useSongDetail();
 
+        // 只补缺 URL 的曲；不再按网易云 source 特例批量 resolve
         const detailedSongs = await Promise.all(
           songs.map(async (song: SongResult) => {
             try {
-              if (!song.playMusicUrl || (song.source === 'netease' && !song.backgroundColor)) {
+              if (!song.playMusicUrl) {
                 return await getSongDetail(song);
               }
               return song;

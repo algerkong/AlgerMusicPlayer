@@ -274,7 +274,7 @@ const setMusicFull = () => {
 
 const { navigateToArtist } = useArtist();
 
-const handleArtistClick = (id: number) => {
+const handleArtistClick = (id: number | string) => {
   musicFullVisible.value = false;
   navigateToArtist(id);
 };

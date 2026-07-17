@@ -49,7 +49,6 @@
     "flac-tagger": "^2.0.0",
     "font-list": "^2.1.0",
     "form-data": "^4.0.6",
-    "husky": "^9.1.7",
     "ly-music-source": "git+https://github.com/LuoYe17/ly-music-source.git#v0.1.23",
     "mpris-service": "^2.1.2",
     "music-metadata": "^11.14.0",
@@ -83,6 +82,7 @@
     "electron-vite": "^5.0.0",
     "happy-dom": "^20.10.6",
     "howler": "^2.2.4",
+    "husky": "^9.1.7",
     "lint-staged": "^17.0.8",
     "lodash": "^4.18.1",
     "marked": "^18.0.6",
@@ -116,15 +116,6 @@
         "provider": "github",
         "owner": "LuoYe17",
         "repo": "AlgerMusicPlayer"
-      }
-    ],
-    "extraResources": [
-      {
-        "from": "resources/html",
-        "to": "html",
-        "filter": [
-          "**/*"
-        ]
       }
     ],
     "win": {

@@ -141,7 +141,7 @@ export function useSongItem(props: { item: SongResult; canRemove?: boolean }) {
     dropdownY.value = e.clientY;
   };
 
-  const handleArtistClick = (id: number) => {
+  const handleArtistClick = (id: number | string) => {
     navigateToArtist(id);
   };
 

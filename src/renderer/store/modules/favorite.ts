@@ -100,7 +100,7 @@ export const useFavoriteStore = defineStore('favorite', () => {
     const set = new Set(normalizeList(favoriteList.value));
     let added = 0;
     for (const id of ids) {
-      const k = favoriteIdKey(id as number | string);
+      const k = favoriteIdKey(id ?? '');
       if (!k || set.has(k)) continue;
       set.add(k);
       added += 1;
