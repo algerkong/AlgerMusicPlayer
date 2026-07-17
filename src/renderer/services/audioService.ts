@@ -1,4 +1,9 @@
 import { persistenceService, volumeSchema } from '@/services/persistenceService';
+import {
+  canPromoteFromBuffer,
+  getBufferedAheadSeconds,
+  PROMOTE_MIN_BUFFER_SEC
+} from '@/services/streamPipeline';
 import type { AudioOutputDevice } from '@/types/audio';
 import type { SongResult } from '@/types/music';
 import { getImgUrl, isElectron } from '@/utils';
@@ -581,10 +586,39 @@ class AudioService {
   public hasPreloaded(url?: string | null): boolean {
     if (!url) return false;
     const s = this.standbySlot();
+    if (!(this.urlsMatch(s.logicUrl, url) || this.urlsMatch(s.audio.src, url))) {
+      return false;
+    }
+    // 就绪 + 有一小段缓冲，promote 更稳
     return (
-      (this.urlsMatch(s.logicUrl, url) || this.urlsMatch(s.audio.src, url)) &&
-      s.audio.readyState >= AudioService.READY_TO_START
+      s.audio.readyState >= AudioService.READY_TO_START &&
+      (canPromoteFromBuffer(s.audio) || s.audio.readyState >= 3)
     );
+  }
+
+  /** 当前出声点之后已缓冲秒数（升质 / 切歌决策用） */
+  public getBufferedAhead(): number {
+    return getBufferedAheadSeconds(this.audio);
+  }
+
+  /** standby 槽缓冲秒数 */
+  public getStandbyBufferedAhead(): number {
+    return getBufferedAheadSeconds(this.standbySlot().audio);
+  }
+
+  /**
+   * 解码流水线预热：尽早建 AudioContext + 双槽 MediaElementSource，
+   * 避免首播才 init EQ 造成卡顿。可在用户手势后调用。
+   */
+  public warmDecodePipeline(): void {
+    try {
+      this.setupEQ();
+      if (this.context?.state === 'suspended') {
+        void this.context.resume().catch(() => undefined);
+      }
+    } catch {
+      /* ignore */
+    }
   }
 
   /** 仅暂停当前出声，不卸 src（resolve 期间可先静音旧曲）；不改 store 播放意图 */
@@ -732,11 +766,14 @@ class AudioService {
       return Promise.resolve(this.audio);
     }
 
-    // standby 已预热到可起播：直接 promote（切歌空窗最小）
+    // standby 已预热且有缓冲水位：promote（切歌空窗最小）
     const standby = this.standbySlot();
     if (
       (this.urlsMatch(standby.logicUrl, url) || this.urlsMatch(standby.audio.src, url)) &&
-      standby.audio.readyState >= 1
+      standby.audio.readyState >= 1 &&
+      (canPromoteFromBuffer(standby.audio) ||
+        standby.audio.readyState >= AudioService.READY_TO_START ||
+        getBufferedAheadSeconds(standby.audio) >= PROMOTE_MIN_BUFFER_SEC * 0.5)
     ) {
       this.releaseOperationLock();
       return this.promoteStandby(track, isPlay, seekTime);

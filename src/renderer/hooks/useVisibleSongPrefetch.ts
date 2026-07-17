@@ -4,9 +4,9 @@ import { prefetchSongUrl } from '@/hooks/usePlayerHooks';
 import type { SongResult } from '@/types/music';
 
 type Options = {
-  /** 同时 resolve 上限，默认 2 */
+  /** 同时 resolve 上限，默认 3 */
   maxConcurrent?: number;
-  /** 每次调度最多入队几首，默认 5 */
+  /** 每次调度最多入队几首，默认 12 */
   maxPrefetch?: number;
   /** 是否在列表变化时自动调度，默认 true */
   auto?: boolean;
@@ -20,8 +20,8 @@ export function useVisibleSongPrefetch(
   songs: WatchSource<SongResult[] | undefined | null> | Ref<SongResult[] | undefined | null>,
   options: Options = {}
 ) {
-  const maxConcurrent = options.maxConcurrent ?? 2;
-  const maxPrefetch = options.maxPrefetch ?? 5;
+  const maxConcurrent = options.maxConcurrent ?? 3;
+  const maxPrefetch = options.maxPrefetch ?? 12;
   const auto = options.auto !== false;
 
   let running = 0;

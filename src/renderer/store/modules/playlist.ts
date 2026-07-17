@@ -142,34 +142,38 @@ export const usePlaylistStore = defineStore(
     const doPreloadNextSongs = (currentIndex: number) => {
       if (playList.value.length <= 1) return;
 
+      const len = playList.value.length;
+
+      // 上一首：双向切歌都预热 resolve
+      const prevIndex = (currentIndex - 1 + len) % len;
+      if (prevIndex !== currentIndex) {
+        void fetchSongs(prevIndex, prevIndex + 1);
+      }
+
       let nextIndex: number;
 
       if (playMode.value === 0) {
         // 顺序播放模式
-        if (currentIndex >= playList.value.length - 1) {
+        if (currentIndex >= len - 1) {
           return;
         }
         nextIndex = currentIndex + 1;
       } else {
         // 循环播放和随机播放模式
-        nextIndex = (currentIndex + 1) % playList.value.length;
+        nextIndex = (currentIndex + 1) % len;
       }
 
       // 预加载下一首和下下首（最多2首）
-      const endIndex = Math.min(nextIndex + 2, playList.value.length);
+      const endIndex = Math.min(nextIndex + 2, len);
 
-      if (nextIndex < playList.value.length) {
+      if (nextIndex < len) {
         // 立即执行预加载
-        fetchSongs(nextIndex, endIndex);
+        void fetchSongs(nextIndex, endIndex);
 
         // 循环模式且接近列表末尾，预加载列表开头
-        if (
-          (playMode.value === 1 || playMode.value === 2) &&
-          nextIndex + 1 >= playList.value.length &&
-          playList.value.length > 2
-        ) {
+        if ((playMode.value === 1 || playMode.value === 2) && nextIndex + 1 >= len && len > 2) {
           // 立即预加载，不等待
-          fetchSongs(0, 1);
+          void fetchSongs(0, 1);
         }
       }
     };
@@ -541,12 +545,24 @@ export const usePlaylistStore = defineStore(
         const success = await playbackCoordinator.playTrack(prevSong);
 
         if (success) {
+          consecutiveFailCount.value = 0;
           playListIndex.value = nowPlayListIndex;
           console.log(`[prevPlay] 播放成功，索引: ${nowPlayListIndex}`);
-        } else if (playerCore.playMusic.id === prevSong.id) {
-          // 仅在未被抢占时提示错误
-          playerCore.setIsPlay(false);
-          getMessage().error(i18n.global.t('player.playFailed'));
+          preloadNextSongs(nowPlayListIndex);
+        } else if (String(playerCore.playMusic?.id) === String(prevSong.id)) {
+          // 上一首失败：索引已到 prev，沿下一首方向跳过，保持有声
+          consecutiveFailCount.value++;
+          playListIndex.value = nowPlayListIndex;
+          if (playList.value.length > 1 && consecutiveFailCount.value < MAX_CONSECUTIVE_FAILS) {
+            nextPlayRetryTimer = setTimeout(() => {
+              nextPlayRetryTimer = null;
+              void _nextPlay(false, true);
+            }, 300);
+          } else {
+            consecutiveFailCount.value = 0;
+            playerCore.setIsPlay(false);
+            getMessage().error(i18n.global.t('player.playFailed'));
+          }
         }
       } catch (error) {
         console.error('切换上一首出错:', error);
@@ -606,6 +622,60 @@ export const usePlaylistStore = defineStore(
       }
     };
 
+    /** 连点切歌：只跟最后目标；短间隔合并，空闲时几乎立即播 */
+    let setPlayCoalesceTimer: ReturnType<typeof setTimeout> | null = null;
+    let setPlayCoalesceSeq = 0;
+    let setPlayLastAt = 0;
+    let setPlayPending: {
+      song: SongResult;
+      resolve: (v: boolean) => void;
+      seq: number;
+    } | null = null;
+
+    const flushSetPlay = async (song: SongResult, seq: number): Promise<boolean> => {
+      const playerCore = usePlayerCoreStore();
+      const { playbackCoordinator } = await import('@/services/playbackCoordinator');
+      const success = await playbackCoordinator.playTrack(song);
+      // 已被更新的点选取代
+      if (seq !== setPlayCoalesceSeq) return false;
+
+      if (success) {
+        cancelRetryTimer();
+        consecutiveFailCount.value = 0;
+        if (playerCore.userPlayIntent) {
+          playerCore.isPlay = true;
+        }
+        preloadNextSongs(playListIndex.value);
+        return true;
+      }
+
+      // 仍指向本曲且列表有多首 → 静默跳下一首
+      const stillTarget = String(playerCore.playMusic?.id ?? '') === String(song.id);
+      if (stillTarget && playList.value.length > 1) {
+        consecutiveFailCount.value++;
+        console.log(
+          `[setPlay] 播放失败，自动跳下一首 (${consecutiveFailCount.value}/${MAX_CONSECUTIVE_FAILS})`
+        );
+        if (consecutiveFailCount.value >= MAX_CONSECUTIVE_FAILS) {
+          consecutiveFailCount.value = 0;
+          playerCore.setIsPlay(false);
+          getMessage().warning(i18n.global.t('player.consecutiveFailsError'));
+          return false;
+        }
+        nextPlayRetryTimer = setTimeout(() => {
+          nextPlayRetryTimer = null;
+          void _nextPlay(false, true);
+        }, 300);
+        return false;
+      }
+
+      if (stillTarget) {
+        playerCore.setIsPlay(false);
+        getMessage().error(i18n.global.t('player.playFailed'));
+      }
+      return false;
+    };
+
     const setPlay = async (song: SongResult) => {
       try {
         const playerCore = usePlayerCoreStore();
@@ -637,6 +707,17 @@ export const usePlaylistStore = defineStore(
           sameSong && !forceResolve && (urlsMatch || loadingSame || (!!coreUrl && !songUrl));
 
         if (canToggle) {
+          // 取消排队中的换曲
+          setPlayCoalesceSeq += 1;
+          if (setPlayCoalesceTimer) {
+            clearTimeout(setPlayCoalesceTimer);
+            setPlayCoalesceTimer = null;
+          }
+          if (setPlayPending) {
+            setPlayPending.resolve(false);
+            setPlayPending = null;
+          }
+
           const { audioService } = await import('@/services/audioService');
 
           // 正在播或仍想播（含加载中）→ 只切暂停意图，不打断 resolve
@@ -694,28 +775,43 @@ export const usePlaylistStore = defineStore(
 
         if (song.isFirstPlay) song.isFirstPlay = false;
 
+        // UI 索引立刻跟上（连点时界面先变）
         const songIndex = playList.value.findIndex(
           (item: SongResult) => item.id === song.id && item.source === song.source
         );
         if (songIndex !== -1 && songIndex !== playListIndex.value) {
-          console.log('歌曲索引不匹配，更新为:', songIndex);
           playListIndex.value = songIndex;
         }
 
-        const { playbackCoordinator } = await import('@/services/playbackCoordinator');
-        const success = await playbackCoordinator.playTrack(song);
-
-        if (success) {
-          // 尊重加载过程中用户改过的意图（可能已点暂停）
-          if (playerCore.userPlayIntent) {
-            playerCore.isPlay = true;
-          }
-          if (songIndex !== -1) {
-            // 立即预加载，不等待
-            preloadNextSongs(playListIndex.value);
-          }
+        // 连点合并：只播最后一首；空闲几乎 0 延迟，连点 70ms 收尾
+        const seq = ++setPlayCoalesceSeq;
+        if (setPlayPending) {
+          setPlayPending.resolve(false);
+          setPlayPending = null;
         }
-        return success;
+        const now = Date.now();
+        const delay = now - setPlayLastAt < 200 ? 70 : 0;
+        setPlayLastAt = now;
+
+        return await new Promise<boolean>((resolve) => {
+          setPlayPending = { song, resolve, seq };
+          if (setPlayCoalesceTimer) clearTimeout(setPlayCoalesceTimer);
+          setPlayCoalesceTimer = setTimeout(() => {
+            setPlayCoalesceTimer = null;
+            const job = setPlayPending;
+            setPlayPending = null;
+            if (!job || job.seq !== setPlayCoalesceSeq) {
+              job?.resolve(false);
+              return;
+            }
+            void flushSetPlay(job.song, job.seq)
+              .then(job.resolve)
+              .catch((err) => {
+                console.error('设置播放失败:', err);
+                job.resolve(false);
+              });
+          }, delay);
+        });
       } catch (error) {
         console.error('设置播放失败:', error);
         return false;

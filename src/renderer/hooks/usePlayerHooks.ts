@@ -36,10 +36,8 @@ const getSongArtistText = (songData: SongResult): string => {
 
 export { clampQualityToAvailable, normalizeQualityKey, qualityRank } from '@/utils/qualityClamp';
 
+import { pickBootQuality } from '@/services/streamPipeline';
 import { clampQualityToAvailable, normalizeQualityKey, qualityRank } from '@/utils/qualityClamp';
-
-/** 起播可先极高再升：无损 / 用户手选的录音室·全景 */
-const HI_TIERS = new Set(['lossless', 'hi_res', 'spatial']);
 
 /**
  * 当前流是否已达到「全局偏好 ∩ 本曲可用」目标。
@@ -61,16 +59,22 @@ export const streamMatchesPreference = (song?: SongResult | null): boolean => {
  * - 短超时内命中 local 缓存 → 用缓存
  * - 超时/未命中 → 立刻用远端 URL 出声，后台继续写缓存
  */
-const resolveCachedPlaybackUrl = async (
+/**
+ * http(s) URL → 短超时竞速磁盘缓存（local://）。
+ * 命中则二次播放更快；超时仍用原 URL 出声，后台继续写缓存。
+ */
+export const preferCachedMusicUrl = async (
   url: string | null | undefined,
-  songData: SongResult
+  songData: SongResult,
+  timeoutMs = 120
 ): Promise<string | null | undefined> => {
   if (!url || !isElectron || !/^https?:\/\//i.test(url)) {
     return url;
   }
 
   const payload = {
-    songId: Number(songData.id),
+    // 雪花 id 保持 string，禁止 Number() 丢精度导致缓存 key 撞车/永不命中
+    songId: String(songData.id),
     source: songData.source,
     url,
     title: songData.name,
@@ -85,7 +89,6 @@ const resolveCachedPlaybackUrl = async (
       return null;
     });
 
-  const timeoutMs = 120;
   try {
     const raced = await Promise.race([
       cacheWork,
@@ -107,6 +110,8 @@ const resolveCachedPlaybackUrl = async (
 
   return url;
 };
+
+const resolveCachedPlaybackUrl = preferCachedMusicUrl;
 
 /**
  * 解析并返回可播放的歌曲 URL。
@@ -202,18 +207,24 @@ export const getSongUrl = async (
     let upgradeTo: string | undefined;
 
     if (forceResolve) {
-      // 用户点选 / 后台升质：直接打目标档
+      // 用户点选 / 后台升质：直接打目标档（不降 boot）
       quality = clampQualityToAvailable(globalPref, songData.availableQualities);
-    } else if (availKnown) {
-      // 已知本曲能力：直接 resolve 正确目标（有无损→无损；无→极高/较高…）
-      quality = clampQualityToAvailable(globalPref, songData.availableQualities);
-    } else if (HI_TIERS.has(globalPref)) {
-      // 未知能力且偏好会员档：先极高出声，返回 available 后再决定是否升无损
-      quality = 'highest';
-      upgradeTo = globalPref;
-      console.info(`[getSongUrl] boot quality=highest, maybe upgrade→${upgradeTo}`);
     } else {
-      quality = globalPref;
+      // 低码率起播：目标高时先 boot 出声，_streamUpgradeTo 后台升到偏好
+      const target = availKnown
+        ? clampQualityToAvailable(globalPref, songData.availableQualities)
+        : globalPref;
+      const { boot, upgradeTo: up } = pickBootQuality(
+        target,
+        availKnown ? songData.availableQualities : undefined
+      );
+      quality = boot;
+      upgradeTo = up;
+      if (upgradeTo) {
+        console.info(
+          `[getSongUrl] boot=${quality} → upgrade ${upgradeTo} (pref=${globalPref} net-aware)`
+        );
+      }
     }
     songData.preferredQuality = undefined;
     (songData as SongResult & { _streamUpgradeTo?: string })._streamUpgradeTo = upgradeTo;

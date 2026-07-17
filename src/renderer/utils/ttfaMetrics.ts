@@ -1,7 +1,10 @@
 /**
  * Time-To-First-Audio 轻量打点。
  * 仅 console，不落盘；用于对照 resolve / 首包 / promote 哪段最慢。
+ * 成功起播后写入 streamPipeline 样本，供弱网降 boot 档。
  */
+
+import { recordTtfaSample } from '../services/streamPipeline';
 
 let seq = 0;
 let activeId = 0;
@@ -36,6 +39,10 @@ export function ttfaAudioReady(how: 'promote' | 'load' | 'same' | 'resume'): voi
       (resolveMs != null ? ` resolve=${resolveMs.toFixed(0)}ms` : '') +
       (songKey ? ` id=${songKey}` : '')
   );
+  // 样本供 boot 档自适应（same 不计入，避免同曲 resume 污染）
+  if (how === 'promote' || how === 'load') {
+    recordTtfaSample(total);
+  }
   // 一轮结束，避免旧 mark 污染
   activeId = 0;
   t0 = 0;

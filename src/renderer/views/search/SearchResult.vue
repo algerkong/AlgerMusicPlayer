@@ -110,10 +110,10 @@ const albums = ref<any[]>([]);
 /** 各类型对应的关键词，用来判断缓存是否还属于这次搜索 */
 const loadedKeywordByType = ref<Record<number, string>>({});
 
-// P2：搜索结果前 5 首并发预取 URL + standby（上限 2）
+// 搜索结果可见区预取 URL + standby
 useVisibleSongPrefetch(songs, {
-  maxConcurrent: 2,
-  maxPrefetch: 5,
+  maxConcurrent: 3,
+  maxPrefetch: 12,
   auto: true
 });
 

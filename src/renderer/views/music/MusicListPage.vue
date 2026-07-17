@@ -182,10 +182,10 @@ const songList = computed(() => {
   return musicStore.currentMusicList || [];
 });
 
-// P2：歌单/日推前 5 首可见预取
+// 歌单/日推可见区预取
 useVisibleSongPrefetch(songList, {
-  maxConcurrent: 2,
-  maxPrefetch: 5,
+  maxConcurrent: 3,
+  maxPrefetch: 12,
   auto: true
 });
 
@@ -223,6 +223,21 @@ const formatSong = (item: any): SongResult => {
   };
 };
 
+/** 汽水「我喜欢的音乐」歌单：曲目在服务端已喜欢，需同步到本地 favoriteList 才能亮爱心 */
+const isLikedMusicPlaylist = (pl?: { name?: string; kind?: string } | null) => {
+  if (!pl) return false;
+  const name = String(pl.name || '');
+  if (/我喜欢/.test(name)) return true;
+  const kind = String(pl.kind || '').toLowerCase();
+  return kind === 'liked' || kind.includes('like') || kind === 'favorite';
+};
+
+const seedLikedFromSongs = (songs: SongResult[]) => {
+  if (!songs?.length) return;
+  const ids = songs.map((s) => s?.id).filter((id) => id != null) as Array<string | number>;
+  if (ids.length) playerStore.seedFavorites(ids);
+};
+
 const handlePlayAll = () => {
   if (!songList.value.length) return;
   const list = songList.value.map(formatSong);
@@ -244,6 +259,15 @@ const loadRemotePlaylist = async (reset = true) => {
       // 仍允许显示，并确保 canRemove
       musicStore.canRemoveSong = true;
       loadFailed.value = false;
+      // 缓存列表也要同步爱心（从汽水点过的喜欢）
+      if (
+        isLikedMusicPlaylist({
+          name: musicStore.currentMusicListName || musicStore.currentListInfo?.name,
+          kind: (musicStore.currentListInfo as { kind?: string } | undefined)?.kind
+        })
+      ) {
+        seedLikedFromSongs(musicStore.currentMusicList as SongResult[]);
+      }
       return;
     }
     loading.value = true;
@@ -267,6 +291,11 @@ const loadRemotePlaylist = async (reset = true) => {
     hasMore.value = !!detail.hasMore && !!detail.nextCursor;
     loadFailed.value = false;
 
+    // 汽水端点的喜欢：打开本歌单时把已加载曲目 id 写入本地，爱心才能亮
+    if (isLikedMusicPlaylist(detail.playlist)) {
+      seedLikedFromSongs(songs);
+    }
+
     if (reset) {
       musicStore.setCurrentMusicList(
         songs,
@@ -276,7 +305,8 @@ const loadRemotePlaylist = async (reset = true) => {
           name: detail.playlist.name,
           picUrl: detail.playlist.coverUrl,
           source: 'qishui',
-          trackCount: detail.playlist.trackCount
+          trackCount: detail.playlist.trackCount,
+          kind: detail.playlist.kind
         },
         true
       );
@@ -298,7 +328,8 @@ const loadRemotePlaylist = async (reset = true) => {
           name: detail.playlist.name || musicStore.currentMusicListName,
           picUrl: detail.playlist.coverUrl || musicStore.currentListInfo?.picUrl,
           source: 'qishui',
-          trackCount: detail.playlist.trackCount
+          trackCount: detail.playlist.trackCount,
+          kind: detail.playlist.kind
         },
         true
       );
