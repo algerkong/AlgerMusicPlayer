@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { cloneDeep } from 'lodash';
 
 import { musicDB } from '@/hooks/MusicHook';
@@ -499,6 +500,119 @@ const buildFailedResult = (message: string, code = 404): MusicParseResult => ({
   }
 });
 
+interface ContainerMusicRequest {
+  id: number;
+  song: {
+    name: string;
+    alias: string[];
+    duration: number;
+    album: {
+      id: number;
+      name: string;
+    };
+    artists: Array<{
+      id: number;
+      name: string;
+    }>;
+  };
+}
+
+type ContainerCompatibleSong = SongResult & {
+  alias?: unknown;
+};
+
+const normalizePositiveInteger = (value: unknown): number => {
+  const normalized = Number(value);
+  return Number.isSafeInteger(normalized) && normalized > 0 ? normalized : 0;
+};
+
+const normalizeDuration = (value: unknown): number => {
+  const normalized = Number(value);
+  return Number.isFinite(normalized) && normalized >= 0 ? Math.round(normalized) : 0;
+};
+
+const normalizeText = (value: unknown): string => (typeof value === 'string' ? value.trim() : '');
+
+const buildContainerMusicRequest = (id: number, data: SongResult): ContainerMusicRequest => {
+  const compatibleSong = data as ContainerCompatibleSong;
+  const album = data.al ?? data.album;
+  const artists = data.ar?.length ? data.ar : (data.artists ?? []);
+  const aliases = data.alia?.length
+    ? data.alia
+    : Array.isArray(compatibleSong.alias)
+      ? compatibleSong.alias
+      : [];
+
+  return {
+    id: normalizePositiveInteger(id),
+    song: {
+      name: normalizeText(data.name),
+      alias: aliases.map(normalizeText).filter(Boolean),
+      duration: normalizeDuration(data.dt ?? data.duration),
+      album: {
+        id: normalizePositiveInteger(album?.id),
+        name: normalizeText(album?.name)
+      },
+      artists: artists.map((artist) => ({
+        id: normalizePositiveInteger(artist?.id),
+        name: normalizeText(artist?.name)
+      }))
+    }
+  };
+};
+
+const isContainerMusicResponse = (value: unknown): value is MusicParseResult['data'] => {
+  if (!value || typeof value !== 'object') return false;
+
+  const response = value as Record<string, unknown>;
+  const responseData = response.data;
+  return (
+    response.code === 200 &&
+    typeof response.message === 'string' &&
+    Boolean(
+      responseData &&
+      typeof responseData === 'object' &&
+      typeof (responseData as Record<string, unknown>).url === 'string'
+    )
+  );
+};
+
+const parseFromContainerApi = async (
+  apiUrl: string,
+  id: number,
+  data: SongResult
+): Promise<MusicParseResult> => {
+  try {
+    const response = await axios.post<MusicParseResult['data']>(
+      apiUrl,
+      buildContainerMusicRequest(id, data),
+      { timeout: 17000 }
+    );
+
+    if (!isContainerMusicResponse(response.data)) {
+      return buildFailedResult('音乐解析服务返回了无效结果', 502);
+    }
+
+    return { data: response.data };
+  } catch (error) {
+    const timedOut =
+      axios.isAxiosError(error) && ['ECONNABORTED', 'ETIMEDOUT'].includes(error.code ?? '');
+    const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+    const code = timedOut ? 504 : status && status >= 400 && status <= 599 ? status : 503;
+    const message =
+      code === 400
+        ? '歌曲信息无效'
+        : code === 404
+          ? '未找到可用音源'
+          : code === 504
+            ? '音乐解析超时'
+            : '音乐解析服务暂不可用';
+
+    console.warn('容器音乐解析请求失败', { code });
+    return buildFailedResult(message, code);
+  }
+};
+
 /**
  * 音乐解析器主类
  */
@@ -515,6 +629,11 @@ export class MusicParser {
     try {
       // 非Electron环境不支持本地解析
       if (!isElectron) {
+        const containerMusicApi = import.meta.env.VITE_CONTAINER_MUSIC_API?.trim();
+        if (containerMusicApi) {
+          return parseFromContainerApi(containerMusicApi, id, data);
+        }
+
         console.log('非Electron环境，不支持音乐解析');
         return buildFailedResult('当前环境不支持音乐解析');
       }

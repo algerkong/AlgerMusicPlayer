@@ -45,7 +45,9 @@ class AudioService {
   constructor() {
     // Create persistent audio element
     this.audio = new Audio();
-    this.audio.crossOrigin = 'anonymous';
+    if (isElectron || !import.meta.env.VITE_CONTAINER_MUSIC_API?.trim()) {
+      this.audio.crossOrigin = 'anonymous';
+    }
     this.audio.preload = 'auto';
 
     // Bind native DOM events

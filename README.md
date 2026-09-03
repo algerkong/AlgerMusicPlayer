@@ -77,6 +77,73 @@ npm install
 npm run dev
 ```
 
+## Docker 部署
+
+容器会同时提供 Web 页面、内置 Netease API 和音乐解析服务。默认只对外开放 Web 端口 `4488`；内部 API 端口 `30488` 无需也不应映射到宿主机。
+
+### 快速启动
+
+Docker Engine 或 Docker Desktop 启动后，直接运行：
+
+```bash
+docker run -d \
+  --name alger-music-player \
+  --restart unless-stopped \
+  -p 4488:4488 \
+  ghcr.io/algerkong/alger-music-player:latest
+```
+
+浏览器访问 <http://localhost:4488>。使用仓库内的 Compose 配置时运行：
+
+```bash
+docker compose up -d
+```
+
+需要从当前源码构建时运行：
+
+```bash
+docker compose build --pull
+docker compose up -d
+```
+
+首次通过工作流发布镜像后，仓库维护者需要在 GitHub Packages 中确认 `ghcr.io/algerkong/alger-music-player` 已关联本仓库并设为 **Public**，否则匿名用户无法拉取。
+
+### 配置
+
+| 配置 | 默认值 | 说明 |
+| --- | --- | --- |
+| 宿主机端口 | `4488` | 修改 `-p 4488:4488` 左侧的数字即可更换，例如 `-p 8080:4488`。 |
+| `PORT` | `4488` | 容器内 Web 服务端口，通常无需修改。 |
+| `NCM_API_PORT` | `30488` | 容器内部 Netease API 端口，不要映射到宿主机。 |
+| `MUSIC_SOURCES` | `migu,kugou,kuwo,pyncmd` | 逗号分隔的音乐解析音源。 |
+
+### 验证与更新
+
+```bash
+docker ps --filter name=alger-music-player
+docker logs alger-music-player
+curl http://localhost:4488/healthz
+```
+
+健康检查正常时会返回 `{"status":"ok","ncmApi":"ok"}`。更新 Compose 部署：
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+`docker run` 部署需先 `docker pull ghcr.io/algerkong/alger-music-player:latest`，再删除并使用相同参数重建容器。发布工作流同时提供 `latest`、`main` 和 `sha-*` 标签；生产环境可使用 `sha-*` 固定具体版本。
+
+### 常见问题与公网部署
+
+- Docker 命令无响应：确认 Docker Desktop 或 Docker Engine 已启动。
+- 端口被占用：将宿主机端口改为其他值，例如 `-p 8080:4488`。
+- 容器启动后无法访问：先检查 `docker ps` 和 `docker logs alger-music-player`，并确认防火墙或云安全组已放行宿主机端口。
+- `/healthz` 返回错误：检查容器日志与内部服务启动状态；搜索、登录和音乐解析还要求容器能够访问外网。
+- GHCR 拉取失败：确认镜像已发布且包可见性为 Public；私有包需要先执行 `docker login ghcr.io`。
+
+公网部署时请在容器前配置支持 TLS、保留原始 `Host` 且传递 `X-Forwarded-Proto` 的反向代理，并按访问规模增加鉴权或限流；不要直接暴露内部端口 `30488`。
+
 ## 开发文档
 
 点击这里[开发文档](./DEV.md)

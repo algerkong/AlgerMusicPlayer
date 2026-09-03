@@ -1,0 +1,151 @@
+name: Docker Image
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/alger-music-player
+  TEST_IMAGE: alger-music-player:smoke-test
+  TEST_CONTAINER: alger-music-player-smoke-test
+
+jobs:
+  validate:
+    name: Build and smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build test image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: ${{ env.TEST_IMAGE }}
+          platforms: linux/amd64
+          build-args: |
+            VITE_API=/api
+            VITE_CONTAINER_MUSIC_API=/music
+
+      - name: Start test container
+        run: >-
+          docker run --detach
+          --name "${TEST_CONTAINER}"
+          --publish 4488:4488
+          "${TEST_IMAGE}"
+
+      - name: Smoke test container
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+
+          for attempt in {1..60}; do
+            if curl --fail --silent --max-time 5 \
+              http://127.0.0.1:4488/healthz > /tmp/alger-health.json; then
+              break
+            fi
+
+            if [[ "$(docker inspect --format '{{.State.Running}}' "${TEST_CONTAINER}" 2>/dev/null || true)" != "true" ]]; then
+              echo "Container exited before becoming healthy"
+              docker logs "${TEST_CONTAINER}" || true
+              exit 1
+            fi
+
+            if [[ "${attempt}" == "60" ]]; then
+              echo "Timed out waiting for /healthz"
+              docker logs "${TEST_CONTAINER}" || true
+              exit 1
+            fi
+
+            sleep 2
+          done
+
+          cat /tmp/alger-health.json
+          curl --fail --silent --show-error --max-time 10 \
+            http://127.0.0.1:4488/ > /dev/null
+          curl --fail --silent --show-error --max-time 10 \
+            http://127.0.0.1:4488/music-list/1 > /tmp/alger-deep-link.html
+
+          asset_path="$(grep --only-matching --extended-regexp 'src="/[^"]+\.js"' \
+            /tmp/alger-deep-link.html | head --lines 1 | cut --delimiter '"' --fields 2)"
+          test -n "${asset_path}"
+          asset_type="$(curl --fail --silent --show-error --max-time 10 \
+            --output /dev/null --write-out '%{content_type}' \
+            "http://127.0.0.1:4488${asset_path}")"
+          [[ "${asset_type}" == *javascript* ]]
+
+          docker ps \
+            --filter "name=^/${TEST_CONTAINER}$" \
+            --filter status=running \
+            --format '{{.Names}}' | grep --fixed-strings --line-regexp "${TEST_CONTAINER}"
+
+          if [[ -n "$(docker port "${TEST_CONTAINER}" 30488/tcp 2>/dev/null || true)" ]]; then
+            echo "Internal Netease API port 30488 must not be published"
+            exit 1
+          fi
+
+      - name: Show container logs on failure
+        if: failure()
+        run: docker logs "${TEST_CONTAINER}" || true
+
+      - name: Remove test container
+        if: always()
+        run: docker rm --force "${TEST_CONTAINER}" 2>/dev/null || true
+
+  publish:
+    name: Publish to GHCR
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=raw,value=main
+            type=sha,prefix=sha-
+
+      - name: Build and publish image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VITE_API=/api
+            VITE_CONTAINER_MUSIC_API=/music
