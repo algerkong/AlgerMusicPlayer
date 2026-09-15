@@ -247,7 +247,7 @@ class DownloadManager {
     return true;
   }
 
-  private cancelTask(taskId: string): boolean {
+  private async cancelTask(taskId: string): Promise<boolean> {
     const task = this.tasks.get(taskId);
     if (!task) return false;
 
@@ -258,12 +258,14 @@ class DownloadManager {
       this.abortControllers.delete(taskId);
     }
 
-    // Delete temp file
-    if (task.tempFilePath && fs.existsSync(task.tempFilePath)) {
+    // Delete temp file（异步，避免阻塞主进程）
+    if (task.tempFilePath) {
       try {
-        fs.unlinkSync(task.tempFilePath);
-      } catch (e) {
-        console.error('Failed to delete temp file:', e);
+        await fs.promises.unlink(task.tempFilePath);
+      } catch (e: any) {
+        if (e?.code !== 'ENOENT') {
+          console.error('Failed to delete temp file:', e);
+        }
       }
     }
 
@@ -274,10 +276,10 @@ class DownloadManager {
     return true;
   }
 
-  private cancelAll(): void {
+  private async cancelAll(): Promise<void> {
     const taskIds = [...this.tasks.keys()];
     for (const taskId of taskIds) {
-      this.cancelTask(taskId);
+      await this.cancelTask(taskId);
     }
   }
 
@@ -343,21 +345,24 @@ class DownloadManager {
 
   private async deleteCompleted(filePath: string): Promise<boolean> {
     try {
-      if (fs.existsSync(filePath)) {
-        try {
-          await fs.promises.unlink(filePath);
-        } catch (error) {
-          console.error('Error deleting file:', error);
+      // 直接 unlink：既省掉一次同步 stat（下载目录可能在慢速磁盘或网络挂载盘上，
+      // 同步调用会阻塞主进程），也避免 exists 之后文件被别处删除的竞态。
+      try {
+        await fs.promises.unlink(filePath);
+      } catch (error: any) {
+        // 文件本就不存在，保留记录交给 getCompleted 清理
+        if (error?.code === 'ENOENT') {
+          return false;
         }
-
-        const configStore = getStore();
-        const songInfos = (configStore.get('downloadedSongs') || {}) as Record<string, any>;
-        delete songInfos[filePath];
-        configStore.set('downloadedSongs', songInfos);
-
-        return true;
+        console.error('Error deleting file:', error);
       }
-      return false;
+
+      const configStore = getStore();
+      const songInfos = (configStore.get('downloadedSongs') || {}) as Record<string, any>;
+      delete songInfos[filePath];
+      configStore.set('downloadedSongs', songInfos);
+
+      return true;
     } catch (error) {
       console.error('Error deleting file:', error);
       return false;
@@ -374,12 +379,13 @@ class DownloadManager {
 
   private async getEmbeddedLyrics(filePath: string): Promise<string | null> {
     try {
-      if (!fs.existsSync(filePath)) return null;
-
+      // 不做 access 预检：直接读，缺文件时靠 ENOENT 返回 null，
+      // 省掉慢盘上的一轮 stat。
       const ext = path.extname(filePath).toLowerCase();
 
       if (ext === '.mp3') {
-        const tags = NodeID3.read(filePath);
+        // Promise API 走异步 IO：读标签需要读入整个文件，同步读会阻塞主进程
+        const tags = await NodeID3.Promise.read(filePath);
         if (tags && tags.unsynchronisedLyrics) {
           const uslt = tags.unsynchronisedLyrics as any;
           return uslt.text || (typeof uslt === 'string' ? uslt : null);
@@ -402,7 +408,9 @@ class DownloadManager {
       }
 
       return null;
-    } catch (error) {
+    } catch (error: any) {
+      // 文件已被外部删除是预期情况，静默返回 null
+      if (error?.code === 'ENOENT') return null;
       console.error('Error reading embedded lyrics:', error);
       return null;
     }
@@ -586,15 +594,17 @@ class DownloadManager {
       // Track batch error
       this.handleBatchError(task);
 
-      // Cleanup temp file on error
-      if (task.tempFilePath && fs.existsSync(task.tempFilePath)) {
+      // Cleanup temp file on error（异步：临时目录虽在本地盘，也避免阻塞）
+      if (task.tempFilePath) {
         try {
-          fs.unlinkSync(task.tempFilePath);
-          task.tempFilePath = '';
-          task.loaded = 0;
-        } catch (e) {
-          console.error('Failed to delete temp file:', e);
+          await fs.promises.unlink(task.tempFilePath);
+        } catch (e: any) {
+          if (e?.code !== 'ENOENT') {
+            console.error('Failed to delete temp file:', e);
+          }
         }
+        task.tempFilePath = '';
+        task.loaded = 0;
       }
 
       this.persistQueue();
@@ -653,21 +663,6 @@ class DownloadManager {
     } catch {
       fileExtension = `.${task.type || 'mp3'}`;
     }
-
-    // Build final file path with dedup
-    let finalFilePath = path.join(downloadPath, `${sanitizedFilename}${fileExtension}`);
-    let counter = 1;
-    while (fs.existsSync(finalFilePath)) {
-      const ext = path.extname(finalFilePath);
-      const base = path.join(downloadPath, sanitizedFilename);
-      finalFilePath = `${base} (${counter})${ext}`;
-      counter++;
-    }
-
-    // Move temp to final
-    fs.copyFileSync(task.tempFilePath, finalFilePath);
-    fs.unlinkSync(task.tempFilePath);
-    task.finalFilePath = finalFilePath;
 
     // Download lyrics
     let lyricsContent = '';
@@ -749,6 +744,10 @@ class DownloadManager {
     }
 
     // Write metadata
+    // 标签写入在临时文件（本地临时目录）上完成，之后再拷贝到下载目录：
+    // 1. 写标签需要整文件读 + 整文件写，在慢速磁盘或网络挂载盘（如 SMB / NFS）上代价很高，
+    //    放在本地临时文件上做可以把下载目录的写入压缩成一次拷贝；
+    // 2. 下载目录里的文件一出现就是带完整标签的，不会出现「先无标签、稍后被改写」的中间态。
     // songInfo may carry extra fields (song, no, publishTime) beyond DownloadSongInfo
     const info: any = task.songInfo;
     const fileFormat = fileExtension.toLowerCase();
@@ -757,8 +756,6 @@ class DownloadManager {
 
     if (['.mp3'].includes(fileFormat)) {
       try {
-        NodeID3.removeTags(finalFilePath);
-
         const tags = {
           title: info?.name,
           artist: artistNames,
@@ -780,10 +777,10 @@ class DownloadManager {
           year: info?.publishTime ? new Date(info.publishTime).getFullYear().toString() : undefined
         };
 
-        const success = NodeID3.write(tags, finalFilePath);
-        if (!success) {
-          console.error('Failed to write ID3 tags');
-        }
+        // 用 Promise API 走异步 IO，避免同步读写阻塞主进程。
+        // write 内部已经会剔除文件里原有的 ID3 帧，不需要额外调用 removeTags，
+        // 少一轮整文件读写。写入失败会 reject，由下面的 catch 统一处理。
+        await NodeID3.Promise.write(tags, task.tempFilePath);
       } catch (err) {
         console.error('Error writing ID3 tags:', err);
       }
@@ -803,12 +800,21 @@ class DownloadManager {
             tagMap,
             picture: coverImageBuffer ? { buffer: coverImageBuffer, mime: 'image/jpeg' } : undefined
           },
-          finalFilePath
+          task.tempFilePath
         );
       } catch (err) {
         console.error('Error writing FLAC tags:', err);
       }
     }
+
+    // Move temp to final
+    const finalFilePath = await this.moveToDownloadPath(
+      task.tempFilePath,
+      downloadPath,
+      sanitizedFilename,
+      fileExtension
+    );
+    task.finalFilePath = finalFilePath;
 
     // Save .lrc file if setting enabled
     if (lyricsContent && configStore.get('set.downloadSaveLyric')) {
@@ -896,6 +902,53 @@ class DownloadManager {
     // Remove completed task from active tasks and persist
     this.tasks.delete(task.taskId);
     this.persistQueue();
+  }
+
+  /**
+   * 把临时文件拷贝到下载目录并删除临时文件，返回最终文件路径。
+   *
+   * - 全程使用异步 IO：同步拷贝会在整个拷贝期间阻塞主进程（渲染进程 IPC、
+   *   托盘、快捷键全部卡住），文件越大、目标磁盘越慢越明显，
+   *   下载目录指向网络挂载盘（如 SMB / NFS）时尤其严重。
+   * - 同名文件依次尝试 " (1)"、" (2)" 后缀。这里靠 COPYFILE_EXCL 而不是先
+   *   existsSync 再拷贝：目标已存在时内核直接返回 EEXIST，「判断 + 写入」是
+   *   一次原子操作，既避免并发下载同名歌曲时互相覆盖，也少一轮文件系统往返。
+   */
+  private async moveToDownloadPath(
+    tempFilePath: string,
+    downloadPath: string,
+    sanitizedFilename: string,
+    fileExtension: string
+  ): Promise<string> {
+    const MAX_DEDUP_ATTEMPTS = 1000;
+    let finalFilePath = path.join(downloadPath, `${sanitizedFilename}${fileExtension}`);
+
+    for (let counter = 1; ; counter++) {
+      try {
+        await fs.promises.copyFile(tempFilePath, finalFilePath, fs.constants.COPYFILE_EXCL);
+        break;
+      } catch (error: any) {
+        // 非「目标已存在」的错误直接抛出；重名次数兜底，避免异常文件系统语义下无限重试
+        if (error?.code !== 'EEXIST' || counter > MAX_DEDUP_ATTEMPTS) {
+          throw error;
+        }
+        finalFilePath = path.join(
+          downloadPath,
+          `${sanitizedFilename} (${counter})${fileExtension}`
+        );
+      }
+    }
+
+    // 临时文件删除失败不应让整单失败：目标文件已经落盘，
+    // 这里删不掉最多留一个 .tmp 由启动时的 cleanOrphanedTempFiles 回收。
+    try {
+      await fs.promises.unlink(tempFilePath);
+    } catch (error: any) {
+      if (error?.code !== 'ENOENT') {
+        console.error('Failed to delete temp file after copy:', error);
+      }
+    }
+    return finalFilePath;
   }
 
   // ─── Batch error tracking ──────────────────────────────────────
