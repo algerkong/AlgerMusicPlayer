@@ -243,7 +243,7 @@ class DownloadManager {
     return true;
   }
 
-  private cancelTask(taskId: string): boolean {
+  private async cancelTask(taskId: string): Promise<boolean> {
     const task = this.tasks.get(taskId);
     if (!task) return false;
 
@@ -254,12 +254,14 @@ class DownloadManager {
       this.abortControllers.delete(taskId);
     }
 
-    // Delete temp file
-    if (task.tempFilePath && fs.existsSync(task.tempFilePath)) {
+    // Delete temp file（异步，避免阻塞主进程）
+    if (task.tempFilePath) {
       try {
-        fs.unlinkSync(task.tempFilePath);
-      } catch (e) {
-        console.error('Failed to delete temp file:', e);
+        await fs.promises.unlink(task.tempFilePath);
+      } catch (e: any) {
+        if (e?.code !== 'ENOENT') {
+          console.error('Failed to delete temp file:', e);
+        }
       }
     }
 
@@ -270,10 +272,10 @@ class DownloadManager {
     return true;
   }
 
-  private cancelAll(): void {
+  private async cancelAll(): Promise<void> {
     const taskIds = [...this.tasks.keys()];
     for (const taskId of taskIds) {
-      this.cancelTask(taskId);
+      await this.cancelTask(taskId);
     }
   }
 
@@ -373,12 +375,8 @@ class DownloadManager {
 
   private async getEmbeddedLyrics(filePath: string): Promise<string | null> {
     try {
-      const exists = await fs.promises
-        .access(filePath)
-        .then(() => true)
-        .catch(() => false);
-      if (!exists) return null;
-
+      // 不做 access 预检：直接读，缺文件时靠 ENOENT 返回 null，
+      // 省掉慢盘上的一轮 stat。
       const ext = path.extname(filePath).toLowerCase();
 
       if (ext === '.mp3') {
@@ -406,7 +404,9 @@ class DownloadManager {
       }
 
       return null;
-    } catch (error) {
+    } catch (error: any) {
+      // 文件已被外部删除是预期情况，静默返回 null
+      if (error?.code === 'ENOENT') return null;
       console.error('Error reading embedded lyrics:', error);
       return null;
     }
@@ -590,15 +590,17 @@ class DownloadManager {
       // Track batch error
       this.handleBatchError(task);
 
-      // Cleanup temp file on error
-      if (task.tempFilePath && fs.existsSync(task.tempFilePath)) {
+      // Cleanup temp file on error（异步：临时目录虽在本地盘，也避免阻塞）
+      if (task.tempFilePath) {
         try {
-          fs.unlinkSync(task.tempFilePath);
-          task.tempFilePath = '';
-          task.loaded = 0;
-        } catch (e) {
-          console.error('Failed to delete temp file:', e);
+          await fs.promises.unlink(task.tempFilePath);
+        } catch (e: any) {
+          if (e?.code !== 'ENOENT') {
+            console.error('Failed to delete temp file:', e);
+          }
         }
+        task.tempFilePath = '';
+        task.loaded = 0;
       }
 
       this.persistQueue();
@@ -942,7 +944,15 @@ class DownloadManager {
       }
     }
 
-    await fs.promises.unlink(tempFilePath);
+    // 临时文件删除失败不应让整单失败：目标文件已经落盘，
+    // 这里删不掉最多留一个 .tmp 由启动时的 cleanOrphanedTempFiles 回收。
+    try {
+      await fs.promises.unlink(tempFilePath);
+    } catch (error: any) {
+      if (error?.code !== 'ENOENT') {
+        console.error('Failed to delete temp file after copy:', error);
+      }
+    }
     return finalFilePath;
   }
 
