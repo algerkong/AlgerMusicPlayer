@@ -313,6 +313,7 @@ export default {
     centerDisplay: '중앙 표시',
     showTranslation: '번역 표시',
     hideLyrics: '가사 숨기기',
+    focusCurrentLyric: '현재 가사 포커스',
     hidePlayBar: '재생바 숨기기',
     hideMiniPlayBar: '미니 재생바 숨기기',
     showMiniPlayBar: '미니 재생바 표시',

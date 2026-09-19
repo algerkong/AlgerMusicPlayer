@@ -303,6 +303,7 @@ export default {
     centerDisplay: '置中顯示',
     showTranslation: '顯示翻譯',
     hideLyrics: '隱藏歌詞',
+    focusCurrentLyric: '聚焦當首歌詞',
     hidePlayBar: '隱藏播放列',
     hideMiniPlayBar: '隱藏迷你播放列',
     showMiniPlayBar: '顯示迷你播放列',

@@ -312,6 +312,7 @@ export default {
     centerDisplay: '中央表示',
     showTranslation: '翻訳を表示',
     hideLyrics: '歌詞を非表示',
+    focusCurrentLyric: '現在歌詞フォーカス',
     hidePlayBar: '再生バーを非表示',
     hideMiniPlayBar: 'ミニ再生バーを非表示',
     showMiniPlayBar: 'ミニ再生バーを表示',

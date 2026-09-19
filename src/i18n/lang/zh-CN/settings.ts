@@ -307,6 +307,7 @@ export default {
     centerDisplay: '居中显示',
     showTranslation: '显示翻译',
     hideLyrics: '隐藏歌词',
+    focusCurrentLyric: '聚焦当前歌词',
     hidePlayBar: '隐藏播放栏',
     hideMiniPlayBar: '隐藏迷你播放栏',
     showMiniPlayBar: '显示迷你播放栏',

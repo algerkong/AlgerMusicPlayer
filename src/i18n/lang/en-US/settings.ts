@@ -313,6 +313,7 @@ export default {
     centerDisplay: 'Center Display',
     showTranslation: 'Show Translation',
     hideLyrics: 'Hide Lyrics',
+    focusCurrentLyric: 'Focus Current Lyric',
     hidePlayBar: 'Hide Play Bar',
     hideMiniPlayBar: 'Hide Mini Play Bar',
     showMiniPlayBar: 'Show Mini Play Bar',

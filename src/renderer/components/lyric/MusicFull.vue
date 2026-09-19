@@ -193,6 +193,7 @@
                 :id="`music-lrc-text-${index}`"
                 :key="index"
                 class="music-lrc-text"
+                :style="getFocusStyle(index)"
                 :class="{
                   'now-text': index === nowIndex,
                   'hover-text': item.text && item.startTime !== -1
@@ -541,6 +542,7 @@ const { getLrcStyle: originalLrcStyle } = useLyricProgress();
 const getLrcStyle = (index: number) => {
   const colors = textColors.value || getTextColors();
   const originalStyle = originalLrcStyle(index);
+  const focusOn = config.value.focusCurrentLyric;
 
   if (index === nowIndex.value) {
     // 当前播放的歌词
@@ -557,7 +559,8 @@ const getLrcStyle = (index: number) => {
       };
     } else {
       return {
-        color: colors.primary
+        // 聚焦模式下当前行使用全亮文字色（Apple Music 观感），其余行维持半透明
+        color: focusOn ? colors.active : colors.primary
       };
     }
   }
@@ -565,6 +568,35 @@ const getLrcStyle = (index: number) => {
   // 非当前播放的歌词，使用普通颜色
   return {
     color: colors.primary
+  };
+};
+
+// Apple Music 风格聚焦效果（#750）：
+// 当前播放行清晰、放大、明亮并带柔和光晕；其余行随距离渐远而更模糊、更淡。
+// 光晕用父元素 drop-shadow 而非 text-shadow：background-clip: text 下 text-shadow
+// 会绘制在渐变填充之上，糊掉卡拉OK进度；drop-shadow 还能同时覆盖逐字歌词行。
+const FOCUS_LINE_LEVELS = [
+  { opacity: 1, blur: 0 }, // 当前行
+  { opacity: 0.5, blur: 1 },
+  { opacity: 0.32, blur: 1.9 },
+  { opacity: 0.22, blur: 2.8 } // 距离 >= 3 的行
+];
+
+const getFocusStyle = (index: number) => {
+  if (!config.value.focusCurrentLyric) return {};
+
+  const colors = textColors.value || getTextColors();
+  const distance = Math.abs(index - nowIndex.value);
+  const level = FOCUS_LINE_LEVELS[Math.min(distance, FOCUS_LINE_LEVELS.length - 1)];
+
+  return {
+    opacity: level.opacity,
+    // 当前行不模糊、带柔和光晕；其余行按距离模糊
+    filter: distance === 0 ? `drop-shadow(0 0 12px ${colors.active}4d)` : `blur(${level.blur}px)`,
+    transform: `scale(${distance === 0 ? 1.06 : 1})`,
+    // 平滑缓动过渡，仅过渡聚焦相关属性，避免干扰 hover 背景色的原有节奏
+    transition:
+      'opacity 0.55s cubic-bezier(0.4, 0, 0.2, 1), filter 0.55s cubic-bezier(0.4, 0, 0.2, 1), transform 0.55s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease'
   };
 };
 
@@ -1015,7 +1047,10 @@ defineExpose({
 
     .hover-text {
       &:hover {
-        @apply font-bold opacity-100 rounded-xl;
+        @apply font-bold rounded-xl;
+        // 聚焦模式下模糊/变淡是内联样式，优先级高于类，需 !important 取消，便于阅读与点击定位
+        opacity: 1 !important;
+        filter: none !important;
         background-color: var(--hover-bg-color);
 
         span {

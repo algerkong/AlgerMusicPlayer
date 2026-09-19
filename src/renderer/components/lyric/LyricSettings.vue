@@ -60,6 +60,10 @@
           <span>{{ t('settings.lyricSettings.hideLyrics') }}</span>
           <input type="checkbox" v-model="config.hideLyrics" class="toggle-switch" />
         </div>
+        <div class="setting-item">
+          <span>{{ t('settings.lyricSettings.focusCurrentLyric') }}</span>
+          <input type="checkbox" v-model="config.focusCurrentLyric" class="toggle-switch" />
+        </div>
       </div>
 
       <!-- 界面设置 -->
