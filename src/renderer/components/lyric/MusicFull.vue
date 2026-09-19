@@ -992,6 +992,9 @@ defineExpose({
       line-height: var(--lyric-line-height, 2) !important;
       opacity: 0.6;
       transform-origin: left center;
+      // 当前行会被 scale 放大（常规 1.05 / 聚焦 1.06），预留宽度避免长歌词右端被容器裁切；
+      // transform 不影响布局换行，各行换行宽度保持一致，行切换时不会重新折行
+      max-width: 94.3%;
 
       &.now-text {
         opacity: 1;
