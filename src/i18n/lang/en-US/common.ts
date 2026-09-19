@@ -31,6 +31,9 @@ export default {
   loadFailed: 'Load Failed',
   noData: 'No data',
   back: 'Back',
+  prevStep: 'Previous',
+  nextStep: 'Next',
+  done: 'Done',
   copySuccess: 'Copied to clipboard',
   copyFailed: 'Copy failed',
   validation: {

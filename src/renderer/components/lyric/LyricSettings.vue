@@ -35,10 +35,15 @@
     >
       <!-- 显示设置 -->
       <div v-show="activeTab === 'display'" class="space-y-2 pt-2">
-        <div class="setting-item">
-          <span>{{ t('settings.lyricSettings.pureMode') }}</span>
-          <input type="checkbox" v-model="config.pureModeEnabled" class="toggle-switch" />
-        </div>
+        <n-tooltip trigger="hover" placement="top" :style="{ maxWidth: '280px' }">
+          <template #trigger>
+            <div class="setting-item cursor-help">
+              <span>{{ t('settings.lyricSettings.pureMode') }}</span>
+              <input type="checkbox" v-model="config.pureModeEnabled" class="toggle-switch" />
+            </div>
+          </template>
+          {{ t('settings.lyricSettings.pureModeTip') }}
+        </n-tooltip>
         <div class="setting-item">
           <span>{{ t('settings.lyricSettings.hideCover') }}</span>
           <input type="checkbox" v-model="config.hideCover" class="toggle-switch" />
@@ -383,6 +388,7 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { DEFAULT_LYRIC_CONFIG, LyricConfig } from '@/types/lyric';
+import { readLyricConfig, writeLyricConfig } from '@/utils/lyricConfig';
 
 const { t } = useI18n();
 const config = ref<LyricConfig>({ ...DEFAULT_LYRIC_CONFIG });
@@ -462,7 +468,7 @@ const clearBackgroundImage = () => {
 watch(
   () => config.value,
   (newConfig) => {
-    localStorage.setItem('music-full-config', JSON.stringify(newConfig));
+    writeLyricConfig(newConfig);
     updateCSSVariables(newConfig);
   },
   { deep: true }
@@ -488,7 +494,7 @@ const updateCSSVariables = (config: LyricConfig) => {
 onMounted(() => {
   const savedConfig = localStorage.getItem('music-full-config');
   if (savedConfig) {
-    config.value = { ...config.value, ...JSON.parse(savedConfig) };
+    config.value = readLyricConfig();
     updateCSSVariables(config.value);
   }
 });

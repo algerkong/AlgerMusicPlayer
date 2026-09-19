@@ -31,6 +31,9 @@ export default {
   loadFailed: '로드 실패',
   noData: '데이터 없음',
   back: '뒤로',
+  prevStep: '이전',
+  nextStep: '다음',
+  done: '완료',
   copySuccess: '클립보드에 복사됨',
   copyFailed: '복사 실패',
   validation: {

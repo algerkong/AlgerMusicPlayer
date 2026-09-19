@@ -31,6 +31,9 @@ export default {
   loadFailed: '読み込みに失敗しました',
   noData: 'データがありません',
   back: '戻る',
+  prevStep: '前へ',
+  nextStep: '次へ',
+  done: '完了',
   copySuccess: 'クリップボードにコピーしました',
   copyFailed: 'コピーに失敗しました',
   validation: {

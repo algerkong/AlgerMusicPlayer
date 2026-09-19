@@ -84,6 +84,8 @@ export default {
     gdmusicInfo: 'GD音乐台可自动解析多个平台音源，自动选择最佳结果',
     autoPlay: '自动播放',
     autoPlayDesc: '重新打开应用时是否自动继续播放',
+    pureMode: '纯净模式',
+    pureModeDesc: '播放页仅保留封面与歌词，隐藏角落控制按钮；可随时在此关闭',
     audioDevice: '音频输出设备',
     audioDeviceDesc: '选择音频输出设备，如扬声器、耳机或蓝牙设备',
     testAudio: '测试',
@@ -296,6 +298,11 @@ export default {
       mobile: '移动端'
     },
     pureMode: '纯净模式',
+    pureModeTip:
+      '开启后隐藏播放页左上角与右上角的控制按钮，鼠标悬停原位置可重新显示；也可在「设置 → 播放设置」中关闭',
+    pureModeOnboarding:
+      '控制按钮就藏在这里，将鼠标移入即可唤出；也可在「设置 → 播放设置」中随时关闭',
+    pureModeOnboardingStep2: '收起按钮藏在这里，鼠标移入即可唤出，点击可返回',
     hideCover: '隐藏封面',
     centerDisplay: '居中显示',
     showTranslation: '显示翻译',

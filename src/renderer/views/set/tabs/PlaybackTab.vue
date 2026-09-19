@@ -57,6 +57,17 @@
         </n-switch>
       </setting-item>
 
+      <!-- 纯净模式常驻开关：为播放页的隐式悬停唤出提供显式退出入口（#758） -->
+      <setting-item
+        :title="t('settings.playback.pureMode')"
+        :description="t('settings.playback.pureModeDesc')"
+      >
+        <n-switch v-model:value="pureModeEnabled">
+          <template #checked>{{ t('common.on') }}</template>
+          <template #unchecked>{{ t('common.off') }}</template>
+        </n-switch>
+      </setting-item>
+
       <setting-item
         v-if="isElectron"
         :title="t('settings.playback.audioDevice')"
@@ -95,13 +106,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, inject, ref } from 'vue';
+import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import AudioDeviceSettings from '@/components/settings/AudioDeviceSettings.vue';
 import MusicSourceSettings from '@/components/settings/MusicSourceSettings.vue';
 import { type Platform } from '@/types/music';
 import { isElectron } from '@/utils';
+import { LYRIC_CONFIG_CHANGE_EVENT, readLyricConfig, writeLyricConfig } from '@/utils/lyricConfig';
 
 import { SETTINGS_DATA_KEY } from '../keys';
 import SBtn from '../SBtn.vue';
@@ -122,6 +134,25 @@ const setData = inject(SETTINGS_DATA_KEY)!;
 const platform = window.electron ? window.electron.ipcRenderer.sendSync('get-platform') : 'web';
 
 const showMusicSourcesModal = ref(false);
+
+// 纯净模式开关：与播放页共享 localStorage 配置，通过自定义事件双向实时同步
+const pureModeEnabled = ref(readLyricConfig().pureModeEnabled);
+
+const handleLyricConfigChange = () => {
+  pureModeEnabled.value = readLyricConfig().pureModeEnabled;
+};
+
+onMounted(() => {
+  window.addEventListener(LYRIC_CONFIG_CHANGE_EVENT, handleLyricConfigChange);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener(LYRIC_CONFIG_CHANGE_EVENT, handleLyricConfigChange);
+});
+
+watch(pureModeEnabled, (value) => {
+  writeLyricConfig({ ...readLyricConfig(), pureModeEnabled: value });
+});
 
 const qualityOptions = computed(() => [
   { label: t('settings.playback.qualityOptions.standard'), value: 'standard' },

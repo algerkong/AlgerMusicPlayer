@@ -31,7 +31,7 @@
         class="control-right absolute top-8 right-8 z-[9999]"
         :class="{ 'pure-mode': config.pureModeEnabled }"
       >
-        <n-popover trigger="click" placement="bottom" raw>
+        <n-popover v-model:show="settingsPopoverVisible" trigger="click" placement="bottom" raw>
           <template #trigger>
             <div class="control-btn">
               <i class="ri-settings-3-line"></i>
@@ -44,6 +44,61 @@
           <i :class="isFullScreen ? 'ri-fullscreen-exit-line' : 'ri-fullscreen-line'"></i>
         </div>
       </div>
+
+      <!-- 纯净模式首次开启引导：两步指向式引导，① 右上角功能按钮 → ② 左上角收起按钮，手动切换（上一步/下一步/完成） -->
+      <transition name="fade">
+        <div v-if="showPureModeTip" class="pure-mode-tip-layer">
+          <transition name="fade" mode="out-in">
+            <div v-if="pureModeTipStep === 1" key="right" class="absolute inset-0">
+              <div class="pure-mode-tip-highlight"></div>
+              <div class="pure-mode-tip-bubble">
+                <div class="pure-mode-tip-content">
+                  <i class="ri-cursor-line"></i>
+                  <span>{{ t('settings.lyricSettings.pureModeOnboarding') }}</span>
+                  <div class="pure-mode-tip-dots">
+                    <span class="is-active"></span>
+                    <span></span>
+                  </div>
+                </div>
+                <div class="pure-mode-tip-actions">
+                  <button
+                    type="button"
+                    class="pure-mode-tip-btn pure-mode-tip-btn--primary"
+                    @click="nextPureModeTipStep"
+                  >
+                    {{ t('common.nextStep') }}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div v-else key="left" class="absolute inset-0">
+              <div class="pure-mode-tip-highlight pure-mode-tip-highlight--left"></div>
+              <div class="pure-mode-tip-bubble pure-mode-tip-bubble--left">
+                <div class="pure-mode-tip-content">
+                  <i class="ri-cursor-line"></i>
+                  <span>{{ t('settings.lyricSettings.pureModeOnboardingStep2') }}</span>
+                  <div class="pure-mode-tip-dots">
+                    <span></span>
+                    <span class="is-active"></span>
+                  </div>
+                </div>
+                <div class="pure-mode-tip-actions">
+                  <button type="button" class="pure-mode-tip-btn" @click="prevPureModeTipStep">
+                    {{ t('common.prevStep') }}
+                  </button>
+                  <button
+                    type="button"
+                    class="pure-mode-tip-btn pure-mode-tip-btn--primary"
+                    @click="finishPureModeTip"
+                  >
+                    {{ t('common.done') }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </transition>
+        </div>
+      </transition>
 
       <div class="content-wrapper" :style="{ width: `${config.contentWidth}%` }">
         <!-- 左侧：封面区域 -->
@@ -208,6 +263,7 @@ import { useSettingsStore } from '@/store/modules/settings';
 import { DEFAULT_LYRIC_CONFIG, LyricConfig } from '@/types/lyric';
 import { getImgUrl, isMobile } from '@/utils';
 import { getTextColors } from '@/utils/linearColor';
+import { LYRIC_CONFIG_CHANGE_EVENT, readLyricConfig, writeLyricConfig } from '@/utils/lyricConfig';
 
 const { t } = useI18n();
 // 定义 refs
@@ -278,16 +334,86 @@ watch(
   { deep: true, immediate: true }
 );
 
-// 监听本地配置变化，保存到 localStorage
+// 监听本地配置变化，保存到 localStorage 并广播给设置页等外部组件
 watch(
   () => config.value,
   (newConfig) => {
-    localStorage.setItem('music-full-config', JSON.stringify(newConfig));
+    writeLyricConfig(newConfig);
     if (lyricSettingsRef.value) {
       lyricSettingsRef.value.config = newConfig;
     }
   },
   { deep: true }
+);
+
+// 监听设置页等外部来源的配置变更；内容一致时跳过，避免互相触发造成死循环
+const handleLyricConfigChange = () => {
+  const nextConfig = readLyricConfig();
+  if (JSON.stringify(nextConfig) !== JSON.stringify(config.value)) {
+    config.value = nextConfig;
+  }
+};
+
+// 纯净模式首次开启引导（#758）：两步指向式引导（右上角功能按钮 → 左上角收起按钮），
+// 手动切换（上一步/下一步/完成）、每位用户仅展示一次
+const PURE_MODE_ONBOARDED_KEY = 'pureModeOnboarded';
+const settingsPopoverVisible = ref(false);
+const showPureModeTip = ref(false);
+const pureModeTipStep = ref(1);
+const pendingPureModeTip = ref(false);
+
+const showPureModeTipStep = (step: number) => {
+  pureModeTipStep.value = step;
+  showPureModeTip.value = true;
+};
+
+const displayPureModeTip = () => {
+  pendingPureModeTip.value = false;
+  localStorage.setItem(PURE_MODE_ONBOARDED_KEY, 'true');
+  showPureModeTipStep(1);
+};
+
+const prevPureModeTipStep = () => {
+  if (pureModeTipStep.value > 1) {
+    showPureModeTipStep(1);
+  }
+};
+
+const nextPureModeTipStep = () => {
+  if (pureModeTipStep.value < 2) {
+    showPureModeTipStep(2);
+  }
+};
+
+const finishPureModeTip = () => {
+  showPureModeTip.value = false;
+};
+
+const showPureModeOnboarding = () => {
+  if (!isVisible.value || localStorage.getItem(PURE_MODE_ONBOARDED_KEY)) return;
+  // 从设置弹层内开启时先挂起，等弹层关闭后再展示，避免引导被弹层遮挡
+  if (settingsPopoverVisible.value) {
+    pendingPureModeTip.value = true;
+    return;
+  }
+  displayPureModeTip();
+};
+
+// 设置弹层关闭后，若仍有待展示的引导则浮现
+watch(settingsPopoverVisible, (visible) => {
+  if (!visible && pendingPureModeTip.value && isVisible.value) {
+    displayPureModeTip();
+  }
+});
+
+// 开启纯净模式时展示一次引导
+watch(
+  () => config.value.pureModeEnabled,
+  (newValue, oldValue) => {
+    if (newValue && !oldValue) {
+      showPureModeOnboarding();
+    }
+  }
 );
 
 const supportAutoScroll = computed(() => {
@@ -373,9 +499,16 @@ watch(
   () => isVisible.value,
   () => {
     if (isVisible.value) {
+      // 已处于纯净模式但从未见过引导的用户（如从设置页开启），打开播放页时补一次引导
+      if (config.value.pureModeEnabled) {
+        showPureModeOnboarding();
+      }
       nextTick(() => {
         lrcScroll('instant');
       });
+    } else {
+      // 关闭播放页时结束未完成的引导，避免后台残留
+      showPureModeTip.value = false;
     }
   }
 );
@@ -578,6 +711,7 @@ onMounted(() => {
     lrcSider.value.$el.addEventListener('scroll', handleScroll);
   }
   document.addEventListener('fullscreenchange', handleFullScreenChange);
+  window.addEventListener(LYRIC_CONFIG_CHANGE_EVENT, handleLyricConfigChange);
 });
 
 // 移除滚动监听和全屏状态监听
@@ -586,6 +720,7 @@ onBeforeUnmount(() => {
     lrcSider.value.$el.removeEventListener('scroll', handleScroll);
   }
   document.removeEventListener('fullscreenchange', handleFullScreenChange);
+  window.removeEventListener(LYRIC_CONFIG_CHANGE_EVENT, handleLyricConfigChange);
   // 退出全屏模式
   if (document.fullscreenElement) {
     document.exitFullscreen();
@@ -628,7 +763,7 @@ watch(
 onMounted(() => {
   const savedConfig = localStorage.getItem('music-full-config');
   if (savedConfig) {
-    config.value = { ...config.value, ...JSON.parse(savedConfig) };
+    config.value = readLyricConfig();
   }
   if (lrcSider.value?.$el) {
     lrcSider.value.$el.addEventListener('scroll', handleScroll);
@@ -973,6 +1108,117 @@ defineExpose({
 
 .control-right {
   @apply flex items-center gap-2;
+}
+
+// 纯净模式首次开启引导层：虚线高亮控件原位置 + 箭头气泡指向对应角落，不拦截任何点击
+.pure-mode-tip-layer {
+  @apply absolute inset-0 z-[9999] pointer-events-none;
+}
+
+.pure-mode-tip-highlight {
+  @apply absolute top-8 right-8 w-20 h-9 rounded-lg;
+  border: 1.5px dashed rgba(255, 255, 255, 0.75);
+  animation: pure-tip-pulse 1.8s ease-out infinite;
+
+  // 第二步：左上角收起按钮（单个 36px 按钮位）
+  &--left {
+    @apply right-auto left-8 w-9;
+  }
+}
+
+.pure-mode-tip-bubble {
+  @apply absolute top-[4.75rem] right-8 flex w-fit max-w-[320px] flex-col gap-2 rounded-xl px-4 py-3 text-sm pointer-events-auto;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+
+  // 第二步：气泡移到左上角下方
+  &--left {
+    @apply right-auto left-8;
+  }
+}
+
+.pure-mode-tip-content {
+  @apply flex items-start gap-2;
+
+  i {
+    @apply mt-0.5 shrink-0 text-base;
+    color: #10b981;
+  }
+}
+
+.pure-mode-tip-actions {
+  @apply flex items-center justify-end gap-2;
+}
+
+.pure-mode-tip-btn {
+  @apply cursor-pointer rounded-lg border px-3 py-1 text-xs transition-colors;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.75);
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.14);
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  &:disabled {
+    @apply cursor-not-allowed opacity-40;
+  }
+
+  &--primary {
+    background: #10b981;
+    border-color: #10b981;
+    color: #fff;
+
+    &:hover:not(:disabled) {
+      background: #059669;
+      border-color: #059669;
+      color: #fff;
+    }
+  }
+}
+
+// 步骤指示圆点（当前步高亮）
+.pure-mode-tip-dots {
+  @apply ml-0.5 flex items-center gap-1 self-center;
+
+  span {
+    @apply h-1.5 w-1.5 rounded-full bg-white/25 transition-colors;
+  }
+
+  span.is-active {
+    @apply bg-emerald-400;
+  }
+}
+
+@keyframes pure-tip-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+
+  70%,
+  100% {
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+  }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease;
+}
+
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.fade-leave-to {
+  opacity: 0;
 }
 
 .control-btn {
