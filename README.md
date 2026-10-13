@@ -90,8 +90,7 @@ npm run dev
 
 ## 项目统计
 
-[![Stargazers over time](https://starchart.cc/algerkong/AlgerMusicPlayer.svg?variant=adaptive)](https://starchart.cc/algerkong/AlgerMusicPlayer)
-![Alt](https://repobeats.axiom.co/api/embed/c4d01b3632e241c90cdec9508dfde86a7f54c9f5.svg 'Repobeats analytics image')
+[![Star History Chart](https://api.star-history.com/chart?repos=algerkong%2FAlgerMusicPlayer&type=date&legend=top-left)](https://www.star-history.com/?repos=algerkong%2FAlgerMusicPlayer&type=date&legend=top-left)
 
 ## 欢迎提Issues
 
