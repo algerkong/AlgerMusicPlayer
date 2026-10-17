@@ -376,13 +376,22 @@ const LOCKED_CONTROLS_HIDE_DELAY = 2500;
 
 const scheduleLockedControlsHide = () => {
   clearHideTimer();
+  // 主题色面板展开期间不淡出，否则面板可见却不可点（#591）
+  if (showThemeColorPanel.value) return;
   hideControlsTimer = window.setTimeout(() => {
     hideControlsTimer = null;
-    if (lyricSetting.value.isLock) {
+    if (lyricSetting.value.isLock && !showThemeColorPanel.value) {
       isHovering.value = false;
       windowData.electron.ipcRenderer.send('set-ignore-mouse', true);
     }
   }, LOCKED_CONTROLS_HIDE_DELAY);
+};
+
+// 主题色面板收起后，锁定态重新开始空闲淡出计时（#591）
+const resumeLockedControlsHide = () => {
+  if (lyricSetting.value.isLock) {
+    scheduleLockedControlsHide();
+  }
 };
 
 const showLockedControls = () => {
@@ -419,8 +428,11 @@ const updateControlBarPosition = () => {
 const handleMouseEnter = () => {
   updateControlBarPosition();
   if (lyricSetting.value.isLock) {
+    // 保持锁定态原有的穿透语义，仅补上"进入即开始空闲计时"，
+    // 避免鼠标进入后静止时图标常驻（#606）
     isHovering.value = true;
     windowData.electron.ipcRenderer.send('set-ignore-mouse', true);
+    scheduleLockedControlsHide();
   } else {
     windowData.electron.ipcRenderer.send('set-ignore-mouse', false);
   }
@@ -429,7 +441,10 @@ const handleMouseEnter = () => {
 // 处理鼠标离开窗口
 const handleMouseLeave = () => {
   if (!lyricSetting.value.isLock) return;
+  // 移出窗口：隐藏控件并收起主题色面板（#606/#591），穿透开关沿用原取值
+  clearHideTimer();
   isHovering.value = false;
+  showThemeColorPanel.value = false;
   windowData.electron.ipcRenderer.send('set-ignore-mouse', false);
 
   // 强制重置背景色
@@ -853,9 +868,10 @@ onMounted(() => {
           // 进入窗口：显示锁图标并启动空闲淡出定时器（#606）
           showLockedControls();
         } else {
-          // 离开窗口：立即隐藏并恢复点击穿透
+          // 离开窗口：立即隐藏、收起主题色面板并恢复点击穿透
           clearHideTimer();
           isHovering.value = false;
+          showThemeColorPanel.value = false;
           windowData.electron.ipcRenderer.send('set-ignore-mouse', true);
         }
       } else {
@@ -890,6 +906,15 @@ const checkTheme = () => {
 // 主题色相关函数
 const toggleThemeColorPanel = () => {
   showThemeColorPanel.value = !showThemeColorPanel.value;
+  if (showThemeColorPanel.value) {
+    // 展开期间暂停空闲淡出并保持窗口可交互，否则面板可见却点不动（#591）
+    clearHideTimer();
+    if (lyricSetting.value.isLock) {
+      windowData.electron.ipcRenderer.send('set-ignore-mouse', false);
+    }
+  } else {
+    resumeLockedControlsHide();
+  }
 };
 
 const handleColorChange = (color: string) => {
@@ -919,12 +944,14 @@ const handleColorChange = (color: string) => {
 
 const handleThemeColorPanelClose = () => {
   showThemeColorPanel.value = false;
+  resumeLockedControlsHide();
 };
 
 // 面板"恢复默认"：关闭自定义主题色并收起面板（#591）
 const handleThemeColorReset = () => {
   resetThemeColor();
   showThemeColorPanel.value = false;
+  resumeLockedControlsHide();
 };
 
 // 重置主题色到默认（主题色面板"恢复默认"按钮调用）
@@ -1176,8 +1203,19 @@ onMounted(() => {
       }
     };
     lyricLock.onmouseleave = () => {
-      if (lyricSetting.value.isLock) {
+      // 主题色面板展开时不恢复穿透，否则面板可见却点不动（#591）
+      if (lyricSetting.value.isLock && !showThemeColorPanel.value) {
         windowData.electron.ipcRenderer.send('set-ignore-mouse', true);
+      }
+    };
+  }
+
+  // 锁定态下主题色按钮与锁图标一样需要"悬停即可点"（#591）
+  const themeColorButton = document.querySelector<HTMLElement>('.theme-color-button');
+  if (themeColorButton) {
+    themeColorButton.onmouseenter = () => {
+      if (lyricSetting.value.isLock) {
+        windowData.electron.ipcRenderer.send('set-ignore-mouse', false);
       }
     };
   }
@@ -1237,13 +1275,21 @@ body,
     }
   }
 
-  &:hover {
+  // 非锁定态：悬停窗口即显示控制栏
+  &:hover:not(.lyric_lock) {
     .control-bar {
       &-show {
         opacity: 1;
         visibility: visible;
       }
     }
+  }
+
+  // 锁定态：显隐完全由 isHovering 决定（空闲后淡出，见 #606）；
+  // 若仍跟随 :hover，鼠标停在窗口上时锁图标永远不会隐藏
+  &.lyric_lock .control-bar-show {
+    opacity: 1;
+    visibility: visible;
   }
 
   &:active {
@@ -1569,7 +1615,8 @@ body {
 .control-bar {
   .control-buttons {
     .control-button {
-      &:not(:has(.ri-lock-line)):not(:has(.ri-lock-unlock-line)) {
+      // 锁定时仅保留锁图标与主题色按钮：锁定后仍需有入口关闭歌词主题色（#591）
+      &:not(:has(.ri-lock-line)):not(:has(.ri-lock-unlock-line)):not(.theme-color-button) {
         .lyric_lock & {
           display: none;
         }
@@ -1596,6 +1643,11 @@ body {
     position: absolute;
     top: 0;
     right: 72px;
+    background: var(--control-bg);
+  }
+
+  /* 锁定态下主题色按钮同样常显底色，避免叠在歌词上看不清（#591） */
+  .theme-color-button {
     background: var(--control-bg);
   }
 
