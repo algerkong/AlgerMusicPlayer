@@ -63,6 +63,11 @@ export default {
       'タブレットモードを有効にすると、モバイルデバイスでPCスタイルのインターフェースを使用できます'
   },
   playback: {
+    singleSongPlayMode: '曲の再生時の動作',
+    singleSongPlayModeOptions: {
+      replace: '曲のリストに置き換える',
+      add: '選択した曲のみ追加する'
+    },
     quality: '音質設定',
     qualityDesc: '音楽再生の音質を選択（NetEase Cloud VIP）',
     qualityOptions: {

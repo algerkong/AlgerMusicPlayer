@@ -88,7 +88,7 @@ const fetchSongs = async () => {
 };
 
 const playSong = (song: SongResult) => {
-  playerStore.setPlay(song);
+  playerStore.prepareSongPlayback(song, songs.value);
 };
 
 const playAll = () => {

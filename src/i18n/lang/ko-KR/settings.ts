@@ -63,6 +63,11 @@ export default {
       '태블릿 모드를 사용하면 모바일 기기에서 PC 스타일의 인터페이스를 사용할 수 있습니다'
   },
   playback: {
+    singleSongPlayMode: '곡 재생 방식',
+    singleSongPlayModeOptions: {
+      replace: '곡이 속한 목록으로 교체',
+      add: '선택한 곡만 추가'
+    },
     quality: '음질 설정',
     qualityDesc: '음악 재생 음질 선택 (넷이즈 클라우드 VIP)',
     qualityOptions: {

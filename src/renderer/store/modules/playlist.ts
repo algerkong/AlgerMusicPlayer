@@ -1,10 +1,11 @@
-import { useThrottleFn } from '@vueuse/core';
 import { createDiscreteApi } from 'naive-ui';
 import { defineStore, storeToRefs } from 'pinia';
 import { computed, ref, shallowRef, triggerRef } from 'vue';
 
 import i18n from '@/../i18n/renderer';
 import { useSongDetail } from '@/hooks/usePlayerHooks';
+import { audioService } from '@/services/audioService';
+import { playbackRequestManager } from '@/services/playbackRequestManager';
 import { preloadService } from '@/services/preloadService';
 import type { SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
@@ -14,6 +15,7 @@ import { performShuffle, preloadCoverImage } from '@/utils/playerUtils';
 
 import { useIntelligenceModeStore } from './intelligenceMode';
 import { usePlayerCoreStore } from './playerCore';
+import { useSettingsStore } from './settings';
 import { useSleepTimerStore } from './sleepTimer';
 
 // 延迟初始化 message，避免 chunk 循环依赖导致 TDZ 错误
@@ -41,6 +43,13 @@ export const usePlaylistStore = defineStore(
     // 连续失败计数器（用于防止无限循环）
     const consecutiveFailCount = ref(0);
     const MAX_CONSECUTIVE_FAILS = 5; // 最大连续失败次数
+    let navigationGeneration = 0;
+    let nextPlayRetryTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const cancelRetryTimer = (): void => {
+      if (nextPlayRetryTimer) clearTimeout(nextPlayRetryTimer);
+      nextPlayRetryTimer = null;
+    };
 
     // ==================== Computed ====================
     const currentPlayList = computed(() => playList.value);
@@ -53,17 +62,16 @@ export const usePlaylistStore = defineStore(
      */
     const fetchSongs = async (startIndex: number, endIndex: number) => {
       try {
-        const songs = playList.value.slice(
-          Math.max(0, startIndex),
-          Math.min(endIndex, playList.value.length)
-        );
+        const targetList = playList.value;
+        const firstIndex = Math.max(0, startIndex);
+        const songs = targetList.slice(firstIndex, Math.min(endIndex, targetList.length));
         const { getSongDetail } = useSongDetail();
 
         const detailedSongs = await Promise.all(
           songs.map(async (song: SongResult) => {
             try {
               if (!song.playMusicUrl || (song.source === 'netease' && !song.backgroundColor)) {
-                return await getSongDetail(song);
+                return await getSongDetail({ ...song });
               }
               return song;
             } catch (error) {
@@ -72,6 +80,7 @@ export const usePlaylistStore = defineStore(
             }
           })
         );
+        if (playList.value !== targetList) return;
 
         const nextSong = detailedSongs[0];
         if (nextSong && !(nextSong.lyric && nextSong.lyric.lrcTimeArray.length > 0)) {
@@ -99,9 +108,11 @@ export const usePlaylistStore = defineStore(
           }
         }
 
+        // 等待详情/歌词期间可能已换了队列，旧结果不能按下标覆盖新队列。
+        if (playList.value !== targetList) return;
         detailedSongs.forEach((song, index) => {
-          if (song && startIndex + index < playList.value.length) {
-            playList.value[startIndex + index] = song;
+          if (song && targetList[firstIndex + index] === songs[index]) {
+            targetList[firstIndex + index] = song;
           }
         });
         // 触发 shallowRef 响应式更新（直接修改元素不会自动触发）
@@ -131,8 +142,10 @@ export const usePlaylistStore = defineStore(
     let preloadDebounceTimer: ReturnType<typeof setTimeout> | null = null;
     const preloadNextSongs = (currentIndex: number) => {
       if (preloadDebounceTimer) clearTimeout(preloadDebounceTimer);
+      const list = playList.value;
       preloadDebounceTimer = setTimeout(() => {
         preloadDebounceTimer = null;
+        if (list !== playList.value || currentIndex !== playListIndex.value) return;
         doPreloadNextSongs(currentIndex);
       }, 800);
     };
@@ -232,6 +245,10 @@ export const usePlaylistStore = defineStore(
       // 此时即使处于随机模式也不应重新洗牌，保持调用方给定的顺序。
       preserveOrder: boolean = false
     ) => {
+      navigationGeneration++;
+      cancelRetryTimer();
+      if (preloadDebounceTimer) clearTimeout(preloadDebounceTimer);
+      preloadDebounceTimer = null;
       // 如果不是从心动模式调用，清除心动模式状态并切换播放模式
       if (!fromIntelligenceMode) {
         const intelligenceStore = useIntelligenceModeStore();
@@ -250,11 +267,8 @@ export const usePlaylistStore = defineStore(
         }
       }
 
-      // 当新播放列表长度>1时，清除FM模式标志（FM播放列表只有1首）
-      if (list.length > 1) {
-        const playerCore = usePlayerCoreStore();
-        playerCore.isFmPlaying = false;
-      }
+      // FM 入口会在设置完单曲队列后显式重新开启，普通单曲队列也应退出 FM。
+      usePlayerCoreStore().isFmPlaying = false;
 
       if (list.length === 0) {
         playList.value = [];
@@ -294,7 +308,7 @@ export const usePlaylistStore = defineStore(
             ? currentIndex
             : Math.min(Math.max(0, playListIndex.value), list.length - 1);
 
-        playList.value = list;
+        playList.value = [...list];
       } else if (playMode.value === 2) {
         // 随机模式：全新列表，保存原始顺序并洗牌
         console.log('随机模式下设置新播放列表，保存原始顺序并洗牌');
@@ -324,8 +338,9 @@ export const usePlaylistStore = defineStore(
           playListIndex.value = foundIndex !== -1 ? foundIndex : 0;
         }
 
-        playList.value = list;
+        playList.value = [...list];
       }
+      playListIndex.value = Math.min(Math.max(0, playListIndex.value), playList.value.length - 1);
       // pinia-plugin-persistedstate 会自动保存状态
     };
 
@@ -335,6 +350,7 @@ export const usePlaylistStore = defineStore(
     const addToNextPlay = (song: SongResult) => {
       const list = [...playList.value];
       const currentIndex = playListIndex.value;
+      if (list[currentIndex]?.id === song.id) return;
 
       // 如果歌曲已在播放列表中，先移除
       const existingIndex = list.findIndex((item) => item.id === song.id);
@@ -354,6 +370,41 @@ export const usePlaylistStore = defineStore(
     };
 
     /**
+     * 单曲播放前准备队列，返回是否替换了列表；实际播放仍由歌曲组件统一触发。
+     */
+    const prepareSongPlayback = (song: SongResult, context: SongResult[] = []): boolean => {
+      const playerCore = usePlayerCoreStore();
+      const matchesSong = (item: SongResult): boolean =>
+        item.id === song.id && (item.source ?? 'netease') === (song.source ?? 'netease');
+      const existingIndex = playList.value.findIndex(matchesSong);
+
+      // 当前歌曲的播放/暂停不应丢弃用户已经编辑过的队列。
+      if (
+        existingIndex !== -1 &&
+        !playerCore.isFmPlaying &&
+        matchesSong(playerCore.playMusic) &&
+        (!song.playMusicUrl || song.playMusicUrl === playerCore.playMusic.playMusicUrl)
+      ) {
+        return false;
+      }
+
+      const settingsStore = useSettingsStore();
+      playerCore.isFmPlaying = false;
+      const replaceContext =
+        settingsStore.setData.singleSongPlayMode !== 'add' && context.some(matchesSong);
+      if (replaceContext) {
+        setPlayList([...context]);
+      } else if (existingIndex === -1) {
+        addToNextPlay(song);
+      } else {
+        setPlayList([...playList.value], true, false, true);
+      }
+
+      playListIndex.value = Math.max(0, playList.value.findIndex(matchesSong));
+      return replaceContext;
+    };
+
+    /**
      * 从播放列表移除歌曲
      */
     const removeFromPlayList = (id: number | string) => {
@@ -363,36 +414,42 @@ export const usePlaylistStore = defineStore(
       const playerCore = usePlayerCoreStore();
       const { playMusic } = storeToRefs(playerCore);
 
-      // 如果删除的是当前播放的歌曲，先切换到下一首
-      if (id === playMusic.value.id) {
-        nextPlay();
-      }
-
+      const isCurrent = id === playMusic.value.id;
+      const shouldPlay = playerCore.userPlayIntent || playerCore.play;
       const newPlayList = [...playList.value];
       newPlayList.splice(index, 1);
+      if (isCurrent && newPlayList.length === 0) {
+        clearPlayAll();
+        return;
+      }
       // preserveOrder=true：随机模式下移除单曲不重新洗牌，仅从队列中删除
       setPlayList(newPlayList, false, false, true);
+      if (isCurrent) {
+        playerCore.handlePause();
+        playListIndex.value = Math.min(index, newPlayList.length - 1);
+        void playAtIndex(playListIndex.value, shouldPlay, false);
+      }
     };
 
     /**
      * 清空播放列表
      */
-    const clearPlayAll = async () => {
-      const { audioService } = await import('@/services/audioService');
+    const clearPlayAll = (): void => {
       const playerCore = usePlayerCoreStore();
-
-      audioService.pause();
-      setTimeout(() => {
-        playerCore.playMusic = {} as SongResult;
-        playerCore.playMusicUrl = '';
-        playList.value = [];
-        playListIndex.value = 0;
-        originalPlayList.value = [];
-        // 只清除 playerCore 的 localStorage（这些由 playerCore store 管理）
+      playerCore.handlePause();
+      audioService.stop();
+      playerCore.playMusic = {} as SongResult;
+      playerCore.playMusicUrl = '';
+      setPlayList([]);
+      consecutiveFailCount.value = 0;
+      preloadService.clearAll();
+      try {
         localStorage.removeItem('currentPlayMusic');
         localStorage.removeItem('currentPlayMusicUrl');
-        // playlist 状态由 pinia-plugin-persistedstate 自动管理
-      }, 500);
+        localStorage.removeItem('playProgress');
+      } catch (error) {
+        console.warn('清理播放进度失败:', error);
+      }
     };
 
     /**
@@ -431,23 +488,21 @@ export const usePlaylistStore = defineStore(
       }
     };
 
-    let nextPlayRetryTimer: ReturnType<typeof setTimeout> | null = null;
-
-    const cancelRetryTimer = () => {
-      if (nextPlayRetryTimer) {
-        clearTimeout(nextPlayRetryTimer);
-        nextPlayRetryTimer = null;
-      }
-    };
-
     /**
      * 私人FM：拉取下一首并播放（FM 列表始终只保留当前一首）
      */
     const _nextFmPlay = async () => {
       const playerCore = usePlayerCoreStore();
+      const operation = ++navigationGeneration;
+      playerCore.handlePause();
+      const gen = playbackRequestManager.getGeneration();
+      const isCurrent = () =>
+        operation === navigationGeneration && gen === playbackRequestManager.getGeneration();
       try {
         const { getPersonalFM } = await import('@/api/home');
+        if (!isCurrent()) return;
         const res = await getPersonalFM();
+        if (!isCurrent()) return;
         const songs = res.data?.data;
         if (!Array.isArray(songs) || songs.length === 0) {
           playerCore.setIsPlay(false);
@@ -465,13 +520,63 @@ export const usePlaylistStore = defineStore(
           ...song,
           playLoading: false
         } as any;
-        await setPlayList([fmSong], false, false);
+        setPlayList([fmSong], false, false);
         playerCore.isFmPlaying = true;
-        const { playTrack } = await import('@/services/playbackController');
-        await playTrack(fmSong, true);
+        await playAtIndex(0, true, false);
       } catch (error) {
         console.error('FM切换下一首失败:', error);
-        playerCore.setIsPlay(false);
+        if (isCurrent()) playerCore.handlePause();
+      }
+    };
+
+    const playAtIndex = async (
+      index: number,
+      shouldPlay: boolean = true,
+      skipOnFailure: boolean = true
+    ): Promise<boolean> => {
+      const song = playList.value[index];
+      if (!song?.id) return false;
+      playListIndex.value = index;
+      const operation = ++navigationGeneration;
+      playbackRequestManager.cancelCurrentRequest();
+      const initialGeneration = playbackRequestManager.getGeneration();
+      try {
+        const { playTrack, getCurrentGeneration } = await import('@/services/playbackController');
+        if (operation !== navigationGeneration || initialGeneration !== getCurrentGeneration())
+          return false;
+        const playback = playTrack({ ...song }, shouldPlay);
+        const generation = getCurrentGeneration();
+        const success = await playback;
+        if (operation !== navigationGeneration || generation !== getCurrentGeneration())
+          return false;
+        if (success) {
+          consecutiveFailCount.value = 0;
+          return true;
+        }
+        const core = usePlayerCoreStore();
+        consecutiveFailCount.value++;
+        if (!skipOnFailure || consecutiveFailCount.value >= MAX_CONSECUTIVE_FAILS) {
+          if (consecutiveFailCount.value >= MAX_CONSECUTIVE_FAILS) {
+            getMessage().warning(i18n.global.t('player.consecutiveFailsError'));
+          }
+          core.handlePause();
+          return false;
+        }
+        if (playList.value.length > 1) {
+          cancelRetryTimer();
+          nextPlayRetryTimer = setTimeout(() => {
+            nextPlayRetryTimer = null;
+            if (operation !== navigationGeneration || generation !== getCurrentGeneration()) return;
+            void _nextPlay(false, true);
+          }, 500);
+        } else {
+          core.handlePause();
+        }
+        return false;
+      } catch (error) {
+        console.error('切歌失败:', error);
+        if (operation === navigationGeneration) usePlayerCoreStore().handlePause();
+        return false;
       }
     };
 
@@ -484,6 +589,9 @@ export const usePlaylistStore = defineStore(
     const _nextPlay = async (autoEnd: boolean = false, fromFailover: boolean = false) => {
       try {
         const playerCore = usePlayerCoreStore();
+        const sleepTimerStore = useSleepTimerStore();
+        const isLast = playListIndex.value >= playList.value.length - 1;
+        if (autoEnd && sleepTimerStore.handleSongEnd(isLast)) return false;
 
         // 私人FM模式：忽略 playMode 与列表长度，直接拉取新的 FM 歌曲
         if (playerCore.isFmPlaying) {
@@ -492,10 +600,10 @@ export const usePlaylistStore = defineStore(
             consecutiveFailCount.value = 0;
           }
           await _nextFmPlay();
-          return;
+          return false;
         }
 
-        if (playList.value.length === 0) return;
+        if (playList.value.length === 0) return false;
 
         // 用户主动切歌：重置失败状态
         if (!fromFailover) {
@@ -503,85 +611,45 @@ export const usePlaylistStore = defineStore(
           consecutiveFailCount.value = 0;
         }
 
-        const sleepTimerStore = useSleepTimerStore();
-
         if (consecutiveFailCount.value >= MAX_CONSECUTIVE_FAILS) {
           console.error(`[nextPlay] 连续${MAX_CONSECUTIVE_FAILS}首播放失败，停止`);
           getMessage().warning(i18n.global.t('player.consecutiveFailsError'));
           consecutiveFailCount.value = 0;
-          playerCore.setIsPlay(false);
-          return;
+          playerCore.handlePause();
+          return false;
         }
 
         // Sequential mode: at the last song
         if (playMode.value === 0 && playListIndex.value >= playList.value.length - 1) {
-          if (autoEnd) {
+          if (autoEnd || fromFailover) {
             // 歌曲自然播放结束：停止播放
             console.log('[nextPlay] 顺序播放：最后一首播放完毕，停止');
-            if (sleepTimerStore.sleepTimer.type === 'end') {
-              sleepTimerStore.stopPlayback();
-            }
             getMessage().info(i18n.global.t('player.playListEnded'));
-            playerCore.setIsPlay(false);
-            const { audioService } = await import('@/services/audioService');
-            audioService.pause();
+            playerCore.handlePause();
           } else {
             // 用户手动点击下一首：保持当前播放，只提示
             console.log('[nextPlay] 顺序播放：已是最后一首，保持当前播放');
             getMessage().info(i18n.global.t('player.playListEnded'));
           }
-          return;
+          return false;
         }
 
-        const nowPlayListIndex = (playListIndex.value + 1) % playList.value.length;
-        const nextSong = { ...playList.value[nowPlayListIndex] };
-
-        console.log(
-          `[nextPlay] ${nextSong.name}, 索引: ${playListIndex.value} -> ${nowPlayListIndex}`
-        );
-
-        const { playTrack } = await import('@/services/playbackController');
-        const success = await playTrack(nextSong, true);
-
-        // Check if we were superseded by a newer operation
-        if (playerCore.playMusic.id !== nextSong.id) {
-          console.log('[nextPlay] 被新操作取代，静默退出');
-          return;
-        }
-
-        if (success) {
-          consecutiveFailCount.value = 0;
-          playListIndex.value = nowPlayListIndex;
-          console.log(`[nextPlay] 播放成功，索引: ${nowPlayListIndex}`);
-          sleepTimerStore.handleSongChange();
-        } else {
-          // 播放失败直接静默跳过到下一首（不原地重试——同曲的一次静默重试
-          // 由 url_expired 恢复处理器负责：清坏缓存后换新 URL）
-          consecutiveFailCount.value++;
-          console.log(
-            `[nextPlay] 播放失败，直接跳过，连续失败: ${consecutiveFailCount.value}/${MAX_CONSECUTIVE_FAILS}`
-          );
-          if (playList.value.length > 1) {
-            playListIndex.value = nowPlayListIndex;
-            nextPlayRetryTimer = setTimeout(() => {
-              nextPlayRetryTimer = null;
-              _nextPlay(false, true);
-            }, 500);
-          } else {
-            getMessage().error(i18n.global.t('player.playFailed'));
-            playerCore.setIsPlay(false);
-          }
-        }
+        const index =
+          autoEnd && playMode.value === 1
+            ? playListIndex.value
+            : (playListIndex.value + 1) % playList.value.length;
+        return await playAtIndex(index);
       } catch (error) {
         console.error('切换下一首出错:', error);
+        return false;
       }
     };
 
-    const nextPlay = useThrottleFn(_nextPlay, 500);
+    const nextPlay = _nextPlay;
 
     /** 歌曲自然播放结束时调用，顺序模式最后一首会停止 */
     const nextPlayOnEnd = () => {
-      _nextPlay(true);
+      return _nextPlay(true);
     };
 
     const _prevPlay = async () => {
@@ -593,37 +661,23 @@ export const usePlaylistStore = defineStore(
           cancelRetryTimer();
           consecutiveFailCount.value = 0;
           await _nextFmPlay();
-          return;
+          return false;
         }
 
-        if (playList.value.length === 0) return;
+        if (playList.value.length === 0) return false;
 
         cancelRetryTimer();
         const nowPlayListIndex =
           (playListIndex.value - 1 + playList.value.length) % playList.value.length;
-        const prevSong = { ...playList.value[nowPlayListIndex] };
-
-        console.log(
-          `[prevPlay] ${prevSong.name}, 索引: ${playListIndex.value} -> ${nowPlayListIndex}`
-        );
-
-        const { playTrack } = await import('@/services/playbackController');
-        const success = await playTrack(prevSong);
-
-        if (success) {
-          playListIndex.value = nowPlayListIndex;
-          console.log(`[prevPlay] 播放成功，索引: ${nowPlayListIndex}`);
-        } else if (playerCore.playMusic.id === prevSong.id) {
-          // Only show error if not superseded
-          playerCore.setIsPlay(false);
-          getMessage().error(i18n.global.t('player.playFailed'));
-        }
+        consecutiveFailCount.value = 0;
+        return await playAtIndex(nowPlayListIndex, true, false);
       } catch (error) {
         console.error('切换上一首出错:', error);
+        return false;
       }
     };
 
-    const prevPlay = useThrottleFn(_prevPlay, 500);
+    const prevPlay = _prevPlay;
 
     /**
      * 设置播放列表抽屉显示状态
@@ -632,78 +686,34 @@ export const usePlaylistStore = defineStore(
       playListDrawerVisible.value = value;
     };
 
-    const setPlay = async (song: SongResult) => {
+    const setPlay = async (song: SongResult): Promise<boolean> => {
+      if (!song?.id) return false;
+      navigationGeneration++;
+      cancelRetryTimer();
+      consecutiveFailCount.value = 0;
       try {
         const playerCore = usePlayerCoreStore();
-
-        // Check URL expiration
-        if (song.expiredAt && song.expiredAt < Date.now()) {
-          if (!song.playMusicUrl?.startsWith('local://')) {
-            console.info(`歌曲URL已过期，重新获取: ${song.name}`);
-            song.playMusicUrl = undefined;
-            song.expiredAt = undefined;
-          }
-        }
 
         // Toggle play/pause for current song
         if (
           playerCore.playMusic.id === song.id &&
-          playerCore.playMusic.playMusicUrl === song.playMusicUrl
+          (!song.playMusicUrl || playerCore.playMusic.playMusicUrl === song.playMusicUrl)
         ) {
-          if (playerCore.play) {
-            playerCore.setPlayMusic(false);
-            const { audioService } = await import('@/services/audioService');
-            audioService.getCurrentSound()?.pause();
-            playerCore.userPlayIntent = false;
-          } else {
-            playerCore.setPlayMusic(true);
-            playerCore.userPlayIntent = true;
-            const { audioService } = await import('@/services/audioService');
-            const sound = audioService.getCurrentSound();
-            if (sound) {
-              sound.play();
-            } else {
-              // No audio instance, rebuild via playTrack
-              const { playTrack } = await import('@/services/playbackController');
-              const recoverSong = {
-                ...playerCore.playMusic,
-                isFirstPlay: true,
-                playMusicUrl: playerCore.playMusic.playMusicUrl?.startsWith('local://')
-                  ? playerCore.playMusic.playMusicUrl
-                  : undefined
-              };
-              const recovered = await playTrack(recoverSong, true);
-              if (!recovered) {
-                playerCore.setIsPlay(false);
-                getMessage().error(i18n.global.t('player.playFailed'));
-              }
-            }
+          if (playerCore.userPlayIntent || playerCore.play) {
+            playerCore.handlePause();
+            return true;
           }
-          return;
+          return await playerCore.setPlayMusic(true);
         }
 
-        if (song.isFirstPlay) song.isFirstPlay = false;
-
         // Update playlist index
-        const songIndex = playList.value.findIndex(
-          (item: SongResult) => item.id === song.id && item.source === song.source
-        );
+        const songIndex = playList.value.findIndex((item: SongResult) => item.id === song.id);
         if (songIndex !== -1 && songIndex !== playListIndex.value) {
           console.log('歌曲索引不匹配，更新为:', songIndex);
           playListIndex.value = songIndex;
         }
 
-        const { playTrack } = await import('@/services/playbackController');
-        const success = await playTrack(song);
-
-        if (success) {
-          playerCore.isPlay = true;
-          if (songIndex !== -1) {
-            // 立即预加载，不等待
-            preloadNextSongs(playListIndex.value);
-          }
-        }
-        return success;
+        return await playerCore.setPlayMusic({ ...song });
       } catch (error) {
         console.error('设置播放失败:', error);
         return false;
@@ -741,6 +751,7 @@ export const usePlaylistStore = defineStore(
 
       // Actions
       setPlayList,
+      prepareSongPlayback,
       addToNextPlay,
       removeFromPlayList,
       clearPlayAll,
@@ -748,9 +759,9 @@ export const usePlaylistStore = defineStore(
       shufflePlayList,
       restoreOriginalOrder,
       preloadNextSongs,
-      nextPlay: nextPlay as unknown as typeof _nextPlay,
+      nextPlay,
       nextPlayOnEnd,
-      prevPlay: prevPlay as unknown as typeof _prevPlay,
+      prevPlay,
       setPlayListDrawerVisible,
       setPlay,
       initializePlaylist,

@@ -252,9 +252,9 @@ const addToPlaylist = () => {
 };
 
 // 播放单首歌曲
-const handlePlay = () => {
+const handlePlay = (song: SongResult) => {
   if (songs.value.length === 0) return;
-  playerStore.setPlayList(songs.value.map(formatSong));
+  playerStore.prepareSongPlayback(song, songs.value.map(formatSong));
 };
 
 // 播放全部

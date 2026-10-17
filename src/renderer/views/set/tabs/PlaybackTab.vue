@@ -57,6 +57,14 @@
         </n-switch>
       </setting-item>
 
+      <setting-item :title="t('settings.playback.singleSongPlayMode')">
+        <s-select
+          v-model="setData.singleSongPlayMode"
+          :options="singleSongPlayModeOptions"
+          width="w-64 max-md:w-full"
+        />
+      </setting-item>
+
       <!-- 纯净模式常驻开关：为播放页的隐式悬停唤出提供显式退出入口（#758） -->
       <setting-item
         :title="t('settings.playback.pureMode')"
@@ -164,6 +172,11 @@ const qualityOptions = computed(() => [
   { label: t('settings.playback.qualityOptions.sky'), value: 'sky' },
   { label: t('settings.playback.qualityOptions.dolby'), value: 'dolby' },
   { label: t('settings.playback.qualityOptions.jymaster'), value: 'jymaster' }
+]);
+
+const singleSongPlayModeOptions = computed(() => [
+  { label: t('settings.playback.singleSongPlayModeOptions.replace'), value: 'replace' },
+  { label: t('settings.playback.singleSongPlayModeOptions.add'), value: 'add' }
 ]);
 
 const musicSources = computed({

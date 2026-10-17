@@ -60,6 +60,11 @@ export default {
     tabletModeDesc: '啟用後將在移動設備上使用PC樣式界面，適合平板等大屏設備'
   },
   playback: {
+    singleSongPlayMode: '單曲播放策略',
+    singleSongPlayModeOptions: {
+      replace: '以歌曲所在清單取代播放清單',
+      add: '僅將目前歌曲加入播放清單'
+    },
     quality: '音質設定',
     qualityDesc: '選擇音樂播放音質（網易云VIP）',
     qualityOptions: {

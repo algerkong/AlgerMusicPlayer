@@ -126,7 +126,7 @@ const props = withDefaults(
   }
 );
 
-const emit = defineEmits(['play', 'select', 'remove-song']);
+defineEmits(['play', 'select', 'remove-song']);
 const baseItem = ref<InstanceType<typeof BaseSongItem>>();
 
 // 从playerStore和baseItem获取响应式状态
@@ -146,8 +146,7 @@ const onToggleFavorite = (event: Event) => {
   baseItem.value?.toggleFavorite(event);
 };
 const onPlayMusic = () => {
-  baseItem.value?.playMusicEvent(props.item);
-  emit('play', props.item);
+  baseItem.value?.handlePlay(props.item);
 };
 const onPlayNext = () => {
   baseItem.value?.handlePlayNext();

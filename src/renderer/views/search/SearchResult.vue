@@ -466,8 +466,8 @@ const handleScroll = (e: any) => {
 
 const dateFormat = (time: any) => useDateFormat(time, 'YYYY.MM.DD').value;
 
-const handlePlay = (item: any) => {
-  playerStore.addToNextPlay(item);
+const handlePlay = (item: SongResult) => {
+  playerStore.prepareSongPlayback(item, (searchDetail.value?.songs || []).map(formatSong));
 };
 
 const handlePlayAll = () => {

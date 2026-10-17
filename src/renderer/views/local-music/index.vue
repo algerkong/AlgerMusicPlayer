@@ -277,10 +277,10 @@ async function handleScan(): Promise<void> {
  * 此处只需设置播放列表上下文，确保上下一首切换正常
  * @param song SongItem 组件 emit 的 SongResult 对象
  */
-async function handlePlaySong(_song: SongResult): Promise<void> {
+async function handlePlaySong(song: SongResult): Promise<void> {
   try {
     // 设置播放列表上下文，确保上下一首切换正常
-    playerStore.setPlayList(filteredSongResults.value);
+    playerStore.prepareSongPlayback(song, filteredSongResults.value);
   } catch (error) {
     console.error('播放本地音乐失败:', error);
   }

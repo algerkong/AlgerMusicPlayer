@@ -268,7 +268,7 @@ const handleScroll = (e: Event) => {
 
 // 播放音乐
 const handlePlay = (item: any) => {
-  playerStore.addToNextPlay(item);
+  playerStore.prepareSongPlayback(item, results.value);
 };
 
 // 返回

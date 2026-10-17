@@ -60,6 +60,11 @@ export default {
     tabletModeDesc: '启用后将在移动设备上使用PC样式界面，适合平板等大屏设备'
   },
   playback: {
+    singleSongPlayMode: '单曲播放策略',
+    singleSongPlayModeOptions: {
+      replace: '用歌曲所在列表替换播放列表',
+      add: '仅将当前歌曲加入播放列表'
+    },
     quality: '音质设置',
     qualityDesc: '选择音乐播放音质（不确保有效）',
     qualityOptions: {

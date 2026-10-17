@@ -785,36 +785,14 @@ const addToPlaylist = () => {
   message.success(t('comp.musicList.addToPlaylistSuccess', { count: newSongs.length }));
 };
 
-const handlePlay = (song?: any) => {
-  // 如果传入了特定歌曲（点击单曲播放），则将其作为播放列表的第一首
-  if (song) {
-    const songList = [...filteredSongs.value];
-    const index = songList.findIndex((item) => item.id === song.id);
-
-    if (index !== -1) {
-      // 将点击的歌曲移到第一位
-      const clickedSong = songList.splice(index, 1)[0];
-      songList.unshift(clickedSong);
-    }
-
-    playerStore.setPlayList(
-      songList.map((item) => ({
-        ...item,
-        picUrl: item.al?.picUrl || item.picUrl
-      }))
-    );
-
-    // 设置当前播放歌曲
-    playerStore.setPlay(song);
-  } else {
-    // 默认行为：播放整个过滤后的列表
-    playerStore.setPlayList(
-      filteredSongs.value.map((item) => ({
-        ...item,
-        picUrl: item.al?.picUrl || item.picUrl
-      }))
-    );
-  }
+const handlePlay = (song: any) => {
+  playerStore.prepareSongPlayback(
+    song,
+    filteredSongs.value.map((item) => ({
+      ...item,
+      picUrl: item.al?.picUrl || item.picUrl
+    }))
+  );
 };
 
 // 简化观察器设置

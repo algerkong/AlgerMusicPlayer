@@ -161,7 +161,7 @@ const handleSongClick = async (_song: any, index: number) => {
     playLoading: false
   }));
 
-  playlistStore.setPlayList(playlist, false, false);
+  playlistStore.prepareSongPlayback(playlist[index], playlist);
   await playTrack(playlist[index], true);
 };
 

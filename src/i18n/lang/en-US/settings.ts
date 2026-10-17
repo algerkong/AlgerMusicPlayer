@@ -63,6 +63,11 @@ export default {
     tabletModeDesc: 'Enabling tablet mode allows using PC-style interface on mobile devices'
   },
   playback: {
+    singleSongPlayMode: 'Single-Song Playback',
+    singleSongPlayModeOptions: {
+      replace: 'Replace with song list',
+      add: 'Add only this song'
+    },
     quality: 'Audio Quality',
     qualityDesc: 'Select music playback quality (VIP)',
     qualityOptions: {
