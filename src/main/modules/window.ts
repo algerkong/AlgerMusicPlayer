@@ -197,7 +197,8 @@ export function initializeWindowManager() {
   // 恢复窗口
   ipcMain.on('restore-window', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
-    if (win) {
+    // 窗口可能已在关闭/退出的过程中被销毁，此时调用窗口方法会抛异常
+    if (win && !win.isDestroyed()) {
       // 恢复窗口的大小调整功能
       win.setResizable(true);
       win.setMaximumSize(0, 0); // 取消最大尺寸限制
@@ -220,6 +221,10 @@ export function initializeWindowManager() {
 
       // 应用保存的状态
       setTimeout(() => {
+        if (win.isDestroyed()) {
+          return;
+        }
+
         // 如果有保存的位置，则应用
         if (preMiniModeState.x !== undefined && preMiniModeState.y !== undefined) {
           win.setPosition(preMiniModeState.x, preMiniModeState.y, false);

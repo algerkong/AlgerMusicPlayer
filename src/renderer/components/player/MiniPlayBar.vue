@@ -125,7 +125,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, provide, ref, useTemplateRef } from 'vue';
+import { computed, onBeforeUnmount, provide, ref, useTemplateRef } from 'vue';
 
 import SongItem from '@/components/common/SongItem.vue';
 import { allTime, artistList, nowTime, playMusic } from '@/hooks/MusicHook';
@@ -167,9 +167,22 @@ withDefaults(
   }
 );
 
+// togglePlaylist 会为撑开歌单临时改写 body 的内联样式。若退出迷你模式时未清理，
+// 残留的 body{height:64px;overflow:hidden} 会把整个主界面裁成一条 64px 高的横条，
+// 看起来就像 UI 崩溃（#763）。这里统一做一次清理，保证任何退出路径都不会残留。
+const clearMiniModeBodyStyles = () => {
+  document.body.style.height = '';
+  document.body.style.overflow = '';
+};
+
+// 迷你布局被移除（切回主界面）时兜底清理，不依赖 mini-mode 事件是否到达
+onBeforeUnmount(clearMiniModeBodyStyles);
+
 // 处理关闭按钮点击
 const handleClose = () => {
   if (settingsStore.isMiniMode) {
+    // 先清理临时样式再恢复窗口，避免窗口放大后主界面仍被裁切
+    clearMiniModeBodyStyles();
     window.api.restore();
   }
 };
