@@ -149,6 +149,92 @@
                   </button>
                 </div>
               </div>
+
+              <!-- 文件导入内容 -->
+              <div v-if="currentTab === 'file'" class="p-6 space-y-6 animate-fade-in">
+                <!-- 隐藏的文件选择框（Web / Electron 通用） -->
+                <input
+                  ref="fileInputRef"
+                  type="file"
+                  accept=".txt,.csv"
+                  class="hidden"
+                  @change="handleFileSelect"
+                />
+                <!-- 拖拽 / 点击选择区 -->
+                <div
+                  class="w-full rounded-2xl border-2 border-dashed px-5 py-8 text-center cursor-pointer transition-all duration-300"
+                  :class="
+                    isDragging
+                      ? 'border-primary/60 bg-primary/5'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-primary/50 hover:bg-primary/5'
+                  "
+                  @click="triggerFileSelect"
+                  @dragover.prevent="isDragging = true"
+                  @dragleave.prevent="isDragging = false"
+                  @drop.prevent="handleFileDrop"
+                >
+                  <i class="ri-file-upload-line text-3xl text-gray-400"></i>
+                  <div class="mt-2 text-sm font-medium text-gray-900 dark:text-white">
+                    {{ t('comp.playlist.import.selectFileButton') }}
+                  </div>
+                  <div class="mt-1 text-xs text-gray-400">
+                    {{ t('comp.playlist.import.dragDropHint') }}
+                  </div>
+                </div>
+                <!-- 解析结果提示 -->
+                <div
+                  v-if="importedFileName"
+                  class="flex items-center justify-between gap-2 rounded-xl bg-gray-50 dark:bg-white/5 px-4 py-2.5 text-xs text-gray-500 dark:text-gray-400"
+                >
+                  <span class="truncate font-mono">{{ importedFileName }}</span>
+                  <span class="flex-shrink-0">{{
+                    t('comp.playlist.import.parseResult', {
+                      count: parsedCount,
+                      skipped: parsedSkipped
+                    })
+                  }}</span>
+                  <button
+                    class="flex-shrink-0 text-gray-400 hover:text-red-500 transition-colors"
+                    @click="clearImportedFile"
+                  >
+                    <i class="ri-delete-bin-line"></i>
+                  </button>
+                </div>
+                <!-- 解析后回填的可编辑表格（复用元数据行） -->
+                <div v-if="importedFileName" class="space-y-3">
+                  <div
+                    v-for="(item, index) in localMetadata"
+                    :key="index"
+                    class="flex gap-3 items-center group"
+                  >
+                    <div class="w-6 text-center text-xs text-gray-300 font-mono">
+                      {{ index + 1 }}
+                    </div>
+                    <input
+                      v-model="item.name"
+                      :placeholder="t('comp.playlist.import.songNamePlaceholder')"
+                      class="flex-1 bg-gray-50 dark:bg-white/5 border-transparent focus:border-primary/50 rounded-xl px-4 py-2.5 outline-none text-sm transition-all border-2"
+                    />
+                    <input
+                      v-model="item.artist"
+                      :placeholder="t('comp.playlist.import.artistNamePlaceholder')"
+                      class="flex-1 bg-gray-50 dark:bg-white/5 border-transparent focus:border-primary/50 rounded-xl px-4 py-2.5 outline-none text-sm transition-all border-2"
+                    />
+                    <input
+                      v-model="item.album"
+                      :placeholder="t('comp.playlist.import.albumNamePlaceholder')"
+                      class="flex-1 bg-gray-50 dark:bg-white/5 border-transparent focus:border-primary/50 rounded-xl px-4 py-2.5 outline-none text-sm transition-all border-2"
+                    />
+                    <button
+                      v-if="localMetadata.length > 1"
+                      class="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all opacity-0 group-hover:opacity-100"
+                      @click="removeMetadataRow(index)"
+                    >
+                      <i class="ri-delete-bin-line"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <!-- 帮助提示 (根据 Tab 变化) -->
@@ -169,6 +255,8 @@
                     <li v-if="currentTab === 'link'">{{ t('comp.playlist.import.linkTip3') }}</li>
                     <li v-if="currentTab === 'text'">{{ t('comp.playlist.import.textTips') }}</li>
                     <li v-if="currentTab === 'local'">{{ t('comp.playlist.import.localTips') }}</li>
+                    <li v-if="currentTab === 'file'">{{ t('comp.playlist.import.fileTips') }}</li>
+                    <li v-if="currentTab === 'file'">{{ t('comp.playlist.import.fileFormat') }}</li>
                   </ul>
                 </div>
               </div>
@@ -323,6 +411,7 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { getImportTaskStatus, importPlaylist } from '@/api/playlist';
+import { isSupportedListFile, LX_LIST_MAX_FILE_SIZE, parseLxListFile } from '@/utils/lxListParser';
 
 const { t } = useI18n();
 const message = useMessage();
@@ -332,17 +421,19 @@ const currentTab = ref('link');
 const tabs = computed(() => [
   { id: 'link', label: t('comp.playlist.import.linkTab'), icon: 'ri-link' },
   { id: 'text', label: t('comp.playlist.import.textTab'), icon: 'ri-text' },
-  { id: 'local', label: t('comp.playlist.import.localTab'), icon: 'ri-file-list-3-line' }
+  { id: 'local', label: t('comp.playlist.import.localTab'), icon: 'ri-file-list-3-line' },
+  { id: 'file', label: t('comp.playlist.import.fileTab'), icon: 'ri-file-upload-line' }
 ]);
 
 // 计算 Tab 指示器位置
 const tabIndicatorStyle = computed(() => {
   const index = tabs.value.findIndex((tab) => tab.id === currentTab.value);
+  const count = tabs.value.length;
   // 假设每个 tab 宽度大概一致，这里简单计算百分比
   // 在真实项目中可能需要获取 DOM 元素宽度
   return {
-    left: `calc(${(100 / 3) * index}% + 6px)`,
-    width: `calc(${100 / 3}% - 12px)`
+    left: `calc(${(100 / count) * index}% + 6px)`,
+    width: `calc(${100 / count}% - 12px)`
   };
 });
 
@@ -371,6 +462,72 @@ const removeMetadataRow = (index: number) => {
   localMetadata.value.splice(index, 1);
 };
 
+// 文件导入相关状态与函数（洛雪 txt/csv，Web / Electron 通用）
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const importedFileName = ref('');
+const parsedCount = ref(0);
+const parsedSkipped = ref(0);
+const isDragging = ref(false);
+
+const triggerFileSelect = () => {
+  fileInputRef.value?.click();
+};
+
+const clearImportedFile = () => {
+  importedFileName.value = '';
+  parsedCount.value = 0;
+  parsedSkipped.value = 0;
+  localMetadata.value = [{ name: '', artist: '', album: '' }];
+  if (fileInputRef.value) fileInputRef.value.value = '';
+};
+
+const readAndParseFile = async (file: File) => {
+  if (!isSupportedListFile(file.name)) {
+    message.error(t('comp.playlist.import.fileTypeError'));
+    return;
+  }
+  if (file.size > LX_LIST_MAX_FILE_SIZE) {
+    message.error(t('comp.playlist.import.fileTooLarge'));
+    return;
+  }
+  try {
+    const content = await file.text();
+    const result = parseLxListFile(file.name, content);
+    if (result.songs.length === 0) {
+      message.warning(t('comp.playlist.import.fileEmpty'));
+      return;
+    }
+    localMetadata.value = result.songs.map((song) => ({ ...song }));
+    importedFileName.value = file.name;
+    parsedCount.value = result.songs.length;
+    parsedSkipped.value = result.skipped;
+    message.success(
+      t('comp.playlist.import.parseResult', {
+        count: result.songs.length,
+        skipped: result.skipped
+      })
+    );
+  } catch (error) {
+    console.error('解析歌单文件失败:', error);
+    message.error(t('comp.playlist.import.importFailed'));
+  } finally {
+    // 允许重复选择同一文件
+    if (fileInputRef.value) fileInputRef.value.value = '';
+  }
+};
+
+const handleFileSelect = async (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (file) await readAndParseFile(file);
+};
+
+const handleFileDrop = async (event: DragEvent) => {
+  isDragging.value = false;
+  const file = event.dataTransfer?.files?.[0];
+  if (file) await readAndParseFile(file);
+};
+
 // 验证逻辑
 const isLinkInputValid = computed(() => linkInputs.value.some((item) => item.value.trim() !== ''));
 const isLocalMetadataValid = computed(() =>
@@ -382,6 +539,7 @@ const isImportDisabled = computed(() => {
   if (currentTab.value === 'link') return !isLinkInputValid.value;
   if (currentTab.value === 'text') return !textInput.value.trim();
   if (currentTab.value === 'local') return !isLocalMetadataValid.value;
+  if (currentTab.value === 'file') return !isLocalMetadataValid.value;
   return true;
 });
 
@@ -409,6 +567,9 @@ const handleImport = async () => {
     } else if (currentTab.value === 'text') {
       params.text = encodeURIComponent(textInput.value);
     } else if (currentTab.value === 'local') {
+      const filteredData = localMetadata.value.filter((item) => item.name.trim() !== '');
+      params.local = JSON.stringify(filteredData);
+    } else if (currentTab.value === 'file') {
       const filteredData = localMetadata.value.filter((item) => item.name.trim() !== '');
       params.local = JSON.stringify(filteredData);
     }

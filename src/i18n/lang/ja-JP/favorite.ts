@@ -4,6 +4,7 @@ export default {
   batchDownload: '一括ダウンロード',
   download: 'ダウンロード ({count})',
   emptyTip: 'まだお気に入りの楽曲がありません',
+  importSongs: 'プレイリストをインポート',
   downloadSuccess: 'ダウンロード完了',
   downloadFailed: 'ダウンロード失敗',
   downloading: 'ダウンロード中です。しばらくお待ちください...',

@@ -4,6 +4,7 @@ export default {
   batchDownload: '批量下载',
   download: '下载 ({count})',
   emptyTip: '还没有收藏歌曲',
+  importSongs: '导入歌单',
   downloadSuccess: '下载完成',
   downloadFailed: '下载失败',
   downloading: '正在下载中，请稍候...',
