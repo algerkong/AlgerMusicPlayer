@@ -538,7 +538,9 @@ class AudioService {
           this.emit('loaderror', { track, error });
 
           // MEDIA_ERR_SRC_NOT_SUPPORTED(4)：源本身无效（URL 已失效/返回了
-          // 非音频内容），用同一 URL 重试毫无意义，直接走 url_expired 换新 URL
+          // 非音频内容），用同一 URL 重试毫无意义。此处只跳过重试并把失败抛给
+          // 调用方，由 playTrack 清解析缓存后重新取 URL；加载期间不发 url_expired，
+          // 避免与调用方的失败恢复同时抢占播放。播放中才失效的源由 bindAudioEvents 发事件。
           const isSrcNotSupported = error?.code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED;
 
           if (!isSrcNotSupported && retryCount < maxRetries) {

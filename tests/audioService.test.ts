@@ -153,7 +153,7 @@ describe('audio loading ownership (#769)', () => {
     expect(audio.play).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps URL refresh available for an invalid online source', async () => {
+  it('hands an invalid online source back to the caller without an in-band refresh', async () => {
     const song = makeSong(1, 'https://example.com/expired.mp3');
     const expired = vi.fn();
     service.on('url_expired', expired);
@@ -161,6 +161,22 @@ describe('audio loading ownership (#769)', () => {
     audio.fail(4);
 
     expect(await playback).toBeInstanceOf(Error);
+    // code 4 的源本身无效，用同一 URL 重试没有意义，加载只应发生一次
+    expect(audio.load).toHaveBeenCalledTimes(1);
+    // 加载期间的失败由 playTrack 清缓存后重解析，此处不发 url_expired 抢占播放
+    expect(expired).not.toHaveBeenCalled();
+  });
+
+  it('refreshes the URL when an online source goes invalid after loading', async () => {
+    const song = makeSong(1, 'https://example.com/live.mp3');
+    const expired = vi.fn();
+    service.on('url_expired', expired);
+    const playback = service.play(song.playMusicUrl!, song);
+    audio.ready();
+    await playback;
+
+    audio.fail(4);
+
     expect(expired).toHaveBeenCalledExactlyOnceWith(song);
   });
 

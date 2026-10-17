@@ -11,9 +11,13 @@ const mocks = vi.hoisted(() => ({
   audio: {
     on: vi.fn(),
     play: vi.fn(),
+    pause: vi.fn(),
     stop: vi.fn(),
     seek: vi.fn(),
+    setVolume: vi.fn(),
+    setPlaybackRate: vi.fn(),
     getCurrentSound: vi.fn(),
+    getCurrentTrack: vi.fn(() => null),
     forceResetOperationLock: vi.fn()
   },
   parse: vi.fn(),
@@ -86,7 +90,12 @@ describe('playback recovery ownership (#769)', () => {
     vi.stubGlobal('document', { title: '', createElement: () => ({}) });
     vi.stubGlobal('window', { dispatchEvent: mocks.dispatchEvent, addEventListener: vi.fn() });
     setActivePinia(createPinia());
-    mocks.core = usePlayerCoreStore();
+    // 必须在 resetModules 之后取 store：playbackController 与其 store 依赖的
+    // playbackRequestManager 属于重置后的模块图，用静态 import 的实例取消请求
+    // 只会 bump 另一个单例的 generation，取消不到正在进行的播放。
+    const { usePlayerCoreStore: useFreshPlayerCoreStore } =
+      await import('@/store/modules/playerCore');
+    mocks.core = useFreshPlayerCoreStore();
     mocks.core.playMusic = makeSong(1);
     mocks.core.play = true;
     mocks.core.isPlay = true;
@@ -226,7 +235,9 @@ describe('playback recovery ownership (#769)', () => {
   });
 
   it('reports a failed reparse playback as a failure', async () => {
-    mocks.audio.play.mockRejectedValueOnce(new Error('Cannot decode audio'));
+    // playTrack 内部会清缓存并重解析重试一次，所以要否掉所有播放尝试，
+    // 只 stub 第一次失败的话第二次会成功，测不到失败传播。
+    mocks.audio.play.mockRejectedValue(new Error('Cannot decode audio'));
 
     expect(await controller.reparseCurrentSong('migu')).toBe(false);
     expect(mocks.updateSong).not.toHaveBeenCalled();
