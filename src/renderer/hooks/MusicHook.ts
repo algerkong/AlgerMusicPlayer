@@ -3,10 +3,13 @@ import { computed, type ComputedRef, nextTick, onUnmounted, ref, watch } from 'v
 
 import useIndexedDB from '@/hooks/IndexDBHook';
 import { audioService } from '@/services/audioService';
+import { playbackRequestManager } from '@/services/playbackRequestManager';
 import type { usePlayerStore } from '@/store';
 import type { Artist, ILyricText, SongResult } from '@/types/music';
 import { isElectron } from '@/utils';
 import { getTextColors } from '@/utils/linearColor';
+import { savePlaybackProgress } from '@/utils/playerUtils';
+import { isEditableTarget } from '@/utils/shortcutKeyboard';
 import { parseLyrics } from '@/utils/yrcParser';
 
 const windowData = window as any;
@@ -15,7 +18,8 @@ const windowData = window as any;
 let playerStore: ReturnType<typeof usePlayerStore> | null = null;
 
 // 初始化函数，接受 store 实例
-export const initMusicHook = (store: ReturnType<typeof usePlayerStore>) => {
+export const initMusicHook = (store: ReturnType<typeof usePlayerStore>): void => {
+  if (playerStore === store) return;
   playerStore = store;
 
   // 创建 computed 属性
@@ -29,6 +33,7 @@ export const initMusicHook = (store: ReturnType<typeof usePlayerStore>) => {
   setupMusicWatchers();
   setupCorrectionTimeWatcher();
   setupPlayStateWatcher();
+  setupAudioListeners();
 };
 
 // 获取 playerStore 的辅助函数
@@ -71,8 +76,15 @@ export const musicDB = await useIndexedDB(
 
 // 键盘事件处理器（提取为命名函数，防止重复注册）
 const handleKeyUp = (e: KeyboardEvent) => {
-  const target = e.target as HTMLElement;
-  if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+  if (
+    e.defaultPrevented ||
+    e.ctrlKey ||
+    e.metaKey ||
+    e.altKey ||
+    e.shiftKey ||
+    isEditableTarget(e.target) ||
+    (e.target instanceof HTMLElement && e.target.closest('button, [role="button"]'))
+  ) {
     return;
   }
 
@@ -152,100 +164,66 @@ const parseLyricsString = async (
   }
 };
 
-// 解析当前 playMusic.lyric 写入 lrcArray, 供 watcher / openLyric / onLyricWindowReady 共用
+let lyricGeneration = 0;
+
 const ensureLyricsLoaded = async (force = false) => {
   const songId = playMusic.value?.id;
+  if (!force && songId && lrcArray.value.length > 0) return;
+  const gen = ++lyricGeneration;
+  const isCurrent = () => gen === lyricGeneration && playMusic.value?.id === songId;
   if (!songId) {
     lrcArray.value = [];
     lrcTimeArray.value = [];
     nowIndex.value = 0;
     return;
   }
-  if (!force && lrcArray.value.length > 0) return;
-
   await nextTick();
-
+  if (!isCurrent()) return;
   const lyricData = playMusic.value.lyric;
+  let result: { lrcArray: ILyricText[]; lrcTimeArray: number[] } = {
+    lrcArray: [],
+    lrcTimeArray: []
+  };
   if (lyricData && typeof lyricData === 'string') {
-    const {
-      lrcArray: parsedLrcArray,
-      lrcTimeArray: parsedTimeArray,
-      hasWordByWord
-    } = await parseLyricsString(lyricData);
-    lrcArray.value = parsedLrcArray;
-    lrcTimeArray.value = parsedTimeArray;
-
-    if (playMusic.value.lyric && typeof playMusic.value.lyric === 'object') {
-      playMusic.value.lyric.hasWordByWord = hasWordByWord;
-    }
+    result = await parseLyricsString(lyricData);
   } else if (lyricData && typeof lyricData === 'object' && lyricData.lrcArray?.length > 0) {
     const rawLrc = lyricData.lrcArray || [];
-    lrcTimeArray.value = lyricData.lrcTimeArray || [];
-
+    result = { lrcArray: rawLrc, lrcTimeArray: lyricData.lrcTimeArray || [] };
     try {
       const { translateLyrics } = await import('@/services/lyricTranslation');
-      lrcArray.value = await translateLyrics(rawLrc as any);
+      if (!isCurrent()) return;
+      result.lrcArray = await translateLyrics(rawLrc as any);
     } catch (e) {
       console.error('翻译歌词失败，使用原始歌词：', e);
-      lrcArray.value = rawLrc as any;
     }
-  } else if (isElectron && playMusic.value.playMusicUrl?.startsWith('local:///')) {
+  } else {
+    const url = playMusic.value.playMusicUrl;
     try {
-      let filePath = decodeURIComponent(playMusic.value.playMusicUrl.replace('local:///', ''));
-      // 处理 Windows 路径：/C:/... → C:/...
-      if (/^\/[a-zA-Z]:\//.test(filePath)) {
-        filePath = filePath.slice(1);
-      }
-      const embeddedLyrics = await window.api.getEmbeddedLyrics(filePath);
-      if (embeddedLyrics) {
-        const {
-          lrcArray: parsedLrcArray,
-          lrcTimeArray: parsedTimeArray,
-          hasWordByWord
-        } = await parseLyricsString(embeddedLyrics);
-        lrcArray.value = parsedLrcArray;
-        lrcTimeArray.value = parsedTimeArray;
-        if (playMusic.value.lyric && typeof playMusic.value.lyric === 'object') {
-          (playMusic.value.lyric as any).hasWordByWord = hasWordByWord;
-        }
-      } else if (typeof songId === 'number') {
-        try {
-          const { getMusicLrc } = await import('@/api/music');
-          const res = await getMusicLrc(songId);
-          if (res?.data?.lrc?.lyric) {
-            const { lrcArray: apiLrcArray, lrcTimeArray: apiTimeArray } = await parseLyricsString(
-              res.data.lrc.lyric
-            );
-            lrcArray.value = apiLrcArray;
-            lrcTimeArray.value = apiTimeArray;
-          }
-        } catch (apiErr) {
-          console.error('API lyrics fallback failed:', apiErr);
+      if (isElectron && url?.startsWith('local:///')) {
+        let filePath = decodeURIComponent(url.replace('local:///', ''));
+        if (/^\/[a-zA-Z]:\//.test(filePath)) filePath = filePath.slice(1);
+        const embeddedLyrics = await window.api.getEmbeddedLyrics(filePath);
+        if (!isCurrent()) return;
+        if (embeddedLyrics) {
+          result = await parseLyricsString(embeddedLyrics);
         }
       }
-    } catch (err) {
-      console.error('Failed to extract embedded lyrics:', err);
-    }
-  } else if (typeof songId === 'number') {
-    // 在线歌曲但 lyric 字段尚未加载, 主动调 API 兜底
-    try {
-      const { getMusicLrc } = await import('@/api/music');
-      const res = await getMusicLrc(songId);
-      if (res?.data?.lrc?.lyric) {
-        const { lrcArray: apiLrcArray, lrcTimeArray: apiTimeArray } = await parseLyricsString(
-          res.data.lrc.lyric
-        );
-        lrcArray.value = apiLrcArray;
-        lrcTimeArray.value = apiTimeArray;
+      if (!isCurrent()) return;
+      if (!result.lrcArray.length) {
+        const { loadLrc } = await import('@/hooks/usePlayerHooks');
+        if (!isCurrent()) return;
+        result = await loadLrc(songId);
       }
-    } catch (apiErr) {
-      console.error('API lyrics fallback failed:', apiErr);
+    } catch (error) {
+      console.error('加载歌词失败:', error);
     }
   }
-
+  if (!isCurrent()) return;
+  lrcArray.value = result.lrcArray;
+  lrcTimeArray.value = result.lrcTimeArray;
+  nowIndex.value = getLrcIndex(nowTime.value);
   if (isElectron && isLyricWindowOpen.value) {
     sendLyricToWin();
-    setTimeout(() => sendLyricToWin(), 500);
   }
 };
 
@@ -256,7 +234,15 @@ const setupMusicWatchers = () => {
   watch(
     () => store.playMusic.id,
     async (newId, oldId) => {
-      if (newId !== oldId) nowIndex.value = 0;
+      if (newId !== oldId) {
+        nowIndex.value = 0;
+        lastIndex = -1;
+        nowTime.value = 0;
+        allTime.value = (store.playMusic.dt || 0) / 1000;
+        currentLrcProgress.value = 0;
+        lrcArray.value = [];
+        lrcTimeArray.value = [];
+      }
       await ensureLyricsLoaded(true);
     },
     { immediate: true }
@@ -315,7 +301,7 @@ const setupAudioListeners = () => {
       try {
         // 每次从 audioService 获取最新的 sound 引用，而不是依赖闭包中的 sound.value
         const currentSound = audioService.getCurrentSound();
-        if (!currentSound) {
+        if (!currentSound || audioService.getCurrentTrack()?.id !== getPlayerStore().playMusic.id) {
           // sound 暂时为空（可能在切歌/重建中），不清除 interval，等待恢复
           return;
         }
@@ -332,7 +318,7 @@ const setupAudioListeners = () => {
         }
 
         nowTime.value = currentTime;
-        allTime.value = currentSound.duration;
+        if (Number.isFinite(currentSound.duration)) allTime.value = currentSound.duration;
 
         // === 歌词索引更新 ===
         const newIndex = getLrcIndex(nowTime.value);
@@ -353,7 +339,7 @@ const setupAudioListeners = () => {
         // === 逐字歌词行内进度 ===
         const { start, end } = currentLrcTiming.value;
         if (typeof start === 'number' && typeof end === 'number' && start !== end) {
-          const elapsed = currentTime - start;
+          const elapsed = currentTime + correctionTime.value - start;
           const duration = end - start;
           const progress = (elapsed / duration) * 100;
           currentLrcProgress.value = Math.min(Math.max(progress, 0), 100);
@@ -383,13 +369,7 @@ const setupAudioListeners = () => {
         ) {
           lastSavedProgress = currentTime;
           if (getPlayerStore().playMusic?.id) {
-            localStorage.setItem(
-              'playProgress',
-              JSON.stringify({
-                songId: getPlayerStore().playMusic.id,
-                progress: currentTime
-              })
-            );
+            savePlaybackProgress(getPlayerStore().playMusic.id, currentTime);
           }
         }
 
@@ -491,7 +471,7 @@ const setupAudioListeners = () => {
 
   // 监听播放
   audioService.on('play', () => {
-    getPlayerStore().setPlayMusic(true);
+    getPlayerStore().setIsPlay(true);
     if (isElectron) {
       window.api.sendSong(cloneDeep(getPlayerStore().playMusic));
     }
@@ -505,50 +485,23 @@ const setupAudioListeners = () => {
   // 监听暂停
   audioService.on('pause', () => {
     console.log('音频暂停事件触发');
-    getPlayerStore().setPlayMusic(false);
+    getPlayerStore().setIsPlay(false);
     clearInterval();
     if (isElectron && isLyricWindowOpen.value) {
       sendLyricToWin();
     }
   });
 
-  const replayMusic = async (retryCount = 0) => {
-    const MAX_REPLAY_RETRIES = 3;
-    try {
-      if (getPlayerStore().playMusicUrl && playMusic.value) {
-        await audioService.play(getPlayerStore().playMusicUrl, playMusic.value);
-        sound.value = audioService.getCurrentSound();
-        setupAudioListeners();
-      } else {
-        console.error('单曲循环：无可用 URL 或歌曲数据');
-        const { usePlaylistStore } = await import('@/store/modules/playlist');
-        usePlaylistStore().nextPlayOnEnd();
-      }
-    } catch (error) {
-      console.error('单曲循环重播失败:', error);
-      if (retryCount < MAX_REPLAY_RETRIES) {
-        setTimeout(() => replayMusic(retryCount + 1), 1000 * (retryCount + 1));
-      } else {
-        const { usePlaylistStore } = await import('@/store/modules/playlist');
-        usePlaylistStore().nextPlayOnEnd();
-      }
-    }
-  };
-
   // 监听结束
-  audioService.on('end', async () => {
+  audioService.on('end', async (track: SongResult) => {
     console.log('音频播放结束事件触发');
     clearInterval();
 
-    if (getPlayerStore().playMode === 1) {
-      // 单曲循环模式
-      replayMusic();
-      return;
-    }
-
-    // 其他模式（FM/顺序/列表循环/随机）：交给 playlist store 路由
+    const gen = playbackRequestManager.getGeneration();
+    if (track?.id !== getPlayerStore().playMusic.id || !getPlayerStore().userPlayIntent) return;
     const { usePlaylistStore } = await import('@/store/modules/playlist');
-    usePlaylistStore().nextPlayOnEnd();
+    if (gen !== playbackRequestManager.getGeneration()) return;
+    await usePlaylistStore().nextPlayOnEnd();
   });
 
   audioService.on('previoustrack', () => {
@@ -565,34 +518,12 @@ const setupAudioListeners = () => {
   };
 };
 
-export const play = () => {
-  const currentSound = audioService.getCurrentSound();
-  if (currentSound) {
-    currentSound.play();
-  }
+export const play = async (): Promise<boolean> => {
+  return getPlayerStore().setPlayMusic(true);
 };
 
-export const pause = () => {
-  const currentSound = audioService.getCurrentSound();
-  if (currentSound) {
-    try {
-      // 保存当前播放进度
-      const currentTime = currentSound.currentTime;
-      if (getPlayerStore().playMusic && getPlayerStore().playMusic.id) {
-        localStorage.setItem(
-          'playProgress',
-          JSON.stringify({
-            songId: getPlayerStore().playMusic.id,
-            progress: currentTime
-          })
-        );
-      }
-
-      audioService.pause();
-    } catch (error) {
-      console.error('暂停播放出错:', error);
-    }
-  }
+export const pause = (): void => {
+  getPlayerStore().handlePause();
 };
 
 // 歌词矫正时间映射（每首歌独立）
@@ -665,13 +596,12 @@ export const getLrcIndex = (time: number): number => {
 
   // 如果歌词数组为空，返回当前索引
   if (lrcTimeArray.value.length === 0) {
-    return nowIndex.value;
+    return 0;
   }
 
   // 处理最后一句歌词的情况
   const lastIndex = lrcTimeArray.value.length - 1;
   if (correctedTime >= lrcTimeArray.value[lastIndex]) {
-    nowIndex.value = lastIndex;
     return lastIndex;
   }
 
@@ -681,12 +611,11 @@ export const getLrcIndex = (time: number): number => {
     const nextTime = lrcTimeArray.value[i + 1];
 
     if (correctedTime >= currentTime && correctedTime < nextTime) {
-      nowIndex.value = i;
       return i;
     }
   }
 
-  return nowIndex.value;
+  return 0;
 };
 
 // 获取当前播放歌词进度
@@ -726,12 +655,13 @@ export const useLyricProgress = () => {
 };
 
 // 设置当前播放时间
-export const setAudioTime = (index: number) => {
-  const currentSound = sound.value;
+export const setAudioTime = (index: number): void => {
+  const currentSound = audioService.getCurrentSound();
   if (!currentSound) return;
-
-  audioService.seek(lrcTimeArray.value[index]);
-  currentSound.play();
+  const time = lrcTimeArray.value[index];
+  if (!Number.isFinite(time)) return;
+  audioService.seek(time - correctionTime.value);
+  void play();
 };
 
 // 获取当前播放的歌词

@@ -23,6 +23,21 @@ export function setLocalStorageItem<T>(key: string, value: T): void {
   }
 }
 
+export function readPlaybackProgress(songId: SongResult['id']): number {
+  const saved = getLocalStorageItem<{ songId?: SongResult['id']; progress?: number }>(
+    'playProgress',
+    {}
+  );
+  return saved?.songId === songId && Number.isFinite(saved.progress) && saved.progress! >= 0
+    ? saved.progress!
+    : 0;
+}
+
+export function savePlaybackProgress(songId: SongResult['id'], progress: number): void {
+  if (!songId || !Number.isFinite(progress) || progress < 0) return;
+  setLocalStorageItem('playProgress', { songId, progress });
+}
+
 /**
  * 比较B站视频ID的辅助函数
  */

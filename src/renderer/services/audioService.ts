@@ -13,15 +13,14 @@ class AudioService {
   private bypass = false;
 
   private playbackRate = 1.0;
+  private volume = 1;
   private currentSinkId: string = 'default';
   private _isLoading = false;
 
   private operationLock = false;
   private operationLockTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // 当前一次加载（play）挂载在共享 audio 元素上的 canplay/error 监听器的清理函数。
-  // 快速切歌时，上一首尚未结算的监听器必须在新一轮加载或 stop() 时移除，
-  // 否则新歌 canplay 会同时触发旧歌的回调，导致"过期回调 stop 掉正在播放的新歌"卡死。
+  // 取消整轮加载（包括重试等待），并结算旧 Promise，防止旧歌曲抢回共享 audio。
   private pendingLoadCleanup: (() => void) | null = null;
 
   private readonly frequencies = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000, 16000];
@@ -56,8 +55,13 @@ class AudioService {
     }
 
     // Restore EQ bypass state
-    const bypassState = localStorage.getItem('eqBypass');
-    this.bypass = bypassState ? JSON.parse(bypassState) : false;
+    try {
+      this.bypass = JSON.parse(localStorage.getItem('eqBypass') || 'false') === true;
+    } catch {
+      this.bypass = false;
+    }
+    const volume = Number(localStorage.getItem('volume') ?? 1);
+    this.volume = Number.isFinite(volume) ? Math.max(0, Math.min(1, volume)) : 1;
 
     this.forceResetOperationLock();
     window.addEventListener('beforeunload', () => this.forceResetOperationLock());
@@ -67,17 +71,21 @@ class AudioService {
 
   private bindAudioEvents() {
     this.audio.addEventListener('play', () => {
+      if (this.audio.paused || !this.currentTrack) return;
       this.updateMediaSessionState(true);
       this.emit('play');
     });
 
     this.audio.addEventListener('pause', () => {
+      if (!this.audio.paused) return;
       this.updateMediaSessionState(false);
       this.emit('pause');
     });
 
     this.audio.addEventListener('ended', () => {
-      this.emit('end');
+      if (!this.audio.ended || !this.currentTrack) return;
+      this.updateMediaSessionState(false);
+      this.emit('end', this.currentTrack);
     });
 
     this.audio.addEventListener('seeked', () => {
@@ -101,6 +109,14 @@ class AudioService {
       const error = this.audio.error;
       console.error('Audio element error:', error?.code, error?.message);
       this.emit('audio_error', { type: 'media_error', error });
+      if (!this.pendingLoadCleanup && this.currentTrack) {
+        this._isLoading = false;
+        this.updateMediaSessionState(false);
+        this.emit(
+          this.currentTrack.playMusicUrl?.startsWith('local://') ? 'playback_error' : 'url_expired',
+          this.currentTrack
+        );
+      }
     });
   }
 
@@ -108,15 +124,15 @@ class AudioService {
 
   private initMediaSession() {
     navigator.mediaSession.setActionHandler('play', () => {
-      this.audio.play();
+      this.emit('play_request');
     });
 
     navigator.mediaSession.setActionHandler('pause', () => {
-      this.audio.pause();
+      this.emit('pause_request');
     });
 
     navigator.mediaSession.setActionHandler('stop', () => {
-      this.stop();
+      this.emit('stop_request');
     });
 
     navigator.mediaSession.setActionHandler('seekto', (event) => {
@@ -148,8 +164,8 @@ class AudioService {
 
       const artists = track.ar
         ? track.ar.map((a) => a.name)
-        : track.song.artists?.map((a) => a.name);
-      const album = track.al ? track.al.name : track.song.album.name;
+        : track.song?.artists?.map((a) => a.name);
+      const album = track.al ? track.al.name : track.song?.album?.name;
       // 上限提到 1024 提升 SMTC/AMLL 等系统媒体控件的封面清晰度（#595）；
       // 走 getImgUrl 以正确处理 data:/local:// 封面与已带参数的 URL
       const artwork = ['96', '128', '192', '256', '384', '512', '1024'].map((size) => ({
@@ -197,7 +213,15 @@ class AudioService {
   private emit(event: string, ...args: any[]) {
     const eventCallbacks = this.callbacks[event];
     if (eventCallbacks) {
-      eventCallbacks.forEach((callback) => callback(...args));
+      eventCallbacks.forEach((callback) => {
+        try {
+          Promise.resolve(callback(...args)).catch((error) =>
+            console.error(`Audio event ${event} failed:`, error)
+          );
+        } catch (error) {
+          console.error(`Audio event ${event} failed:`, error);
+        }
+      });
     }
   }
 
@@ -250,8 +274,7 @@ class AudioService {
       this.applyBypassState();
 
       // Apply saved volume
-      const savedVolume = localStorage.getItem('volume');
-      this.applyVolume(savedVolume ? parseFloat(savedVolume) : 1);
+      this.applyVolume(this.volume);
 
       // Monitor context state
       this.setupContextStateMonitoring();
@@ -366,8 +389,14 @@ class AudioService {
   }
 
   private loadEQSettings(): { [key: string]: number } {
-    const savedSettings = localStorage.getItem('eqSettings');
-    return savedSettings ? JSON.parse(savedSettings) : { ...this.defaultEQSettings };
+    try {
+      return {
+        ...this.defaultEQSettings,
+        ...JSON.parse(localStorage.getItem('eqSettings') || '{}')
+      };
+    } catch {
+      return { ...this.defaultEQSettings };
+    }
   }
 
   // ==================== Operation Lock ====================
@@ -409,87 +438,100 @@ class AudioService {
     url: string,
     track: SongResult,
     isPlay: boolean = true,
-    seekTime: number = 0,
+    seekTime?: number,
     _existingSound?: HTMLAudioElement
   ): Promise<HTMLAudioElement> {
-    // Resume current playback if no new URL/track provided
-    if (this.audio.src && !url && !track) {
-      this.audio.play();
-      return Promise.resolve(this.audio);
-    }
-
-    this.forceResetOperationLock();
-    this.setOperationLock();
-
     if (!url || !track) {
-      this.releaseOperationLock();
       return Promise.reject(new Error('缺少必要参数: url和track'));
     }
 
-    // Check if same URL — just resume/seek
     const currentSrc = this.audio.src;
-    const isSameUrl = currentSrc && currentSrc === url;
+    const isSameUrl =
+      currentSrc && currentSrc === url && !this.pendingLoadCleanup && !this.audio.error;
 
-    if (isSameUrl) {
-      this.currentTrack = track;
-      if (seekTime > 0) this.audio.currentTime = seekTime;
-      if (isPlay) this.audio.play();
-      this.updateMediaSessionMetadata(track);
-      this.releaseOperationLock();
-      return Promise.resolve(this.audio);
-    }
-
-    // 开始新一轮加载前，先移除上一轮尚未结算的加载监听器，避免污染新歌
-    if (this.pendingLoadCleanup) {
-      this.pendingLoadCleanup();
-      this.pendingLoadCleanup = null;
-    }
+    this.pendingLoadCleanup?.();
+    this.forceResetOperationLock();
+    this.setOperationLock();
 
     return new Promise<HTMLAudioElement>((resolve, reject) => {
       let retryCount = 0;
       const maxRetries = 1;
+      let settled = false;
+      let retryTimer: ReturnType<typeof setTimeout> | null = null;
+      let loadTimer: ReturnType<typeof setTimeout> | null = null;
+      let removeListeners = () => {};
 
-      const tryPlay = () => {
-        this._isLoading = true;
-        this.currentTrack = track;
-
-        // Ensure EQ/AudioContext is set up (only runs once)
-        this.setupEQ();
-
-        // Resume AudioContext if suspended (user gesture requirement)
-        if (this.context && this.context.state === 'suspended') {
-          this.context.resume().catch((e) => console.warn('Failed to resume AudioContext:', e));
+      const cleanup = () => {
+        if (retryTimer) {
+          clearTimeout(retryTimer);
+          retryTimer = null;
         }
+        if (loadTimer) {
+          clearTimeout(loadTimer);
+          loadTimer = null;
+        }
+        removeListeners();
+        if (this.pendingLoadCleanup === cancelLoad) {
+          this.pendingLoadCleanup = null;
+        }
+      };
 
-        const onCanPlay = () => {
-          cleanup();
+      const failLoad = (error: Error) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        this._isLoading = false;
+        this.releaseOperationLock();
+        reject(error);
+      };
+
+      const cancelLoad = () => failLoad(new DOMException('Playback cancelled', 'AbortError'));
+      this.pendingLoadCleanup = cancelLoad;
+
+      const startAudio = async () => {
+        if (settled) return;
+        removeListeners();
+        try {
           this._isLoading = false;
-
-          if (seekTime > 0) {
-            this.audio.currentTime = seekTime;
-          }
-
-          if (isPlay) {
-            this.audio.play().catch((err) => {
-              console.error('Audio play failed:', err);
-              this.emit('playerror', { track, error: err });
-            });
-          }
-
-          // Apply volume (use GainNode if available, else direct)
-          const savedVolume = localStorage.getItem('volume');
-          this.applyVolume(savedVolume ? parseFloat(savedVolume) : 1);
-
+          this.applyVolume(this.volume);
           this.audio.playbackRate = this.playbackRate;
+          if (seekTime !== undefined) {
+            this.seek(seekTime);
+          }
+
+          if (isPlay && this.context?.state === 'suspended') {
+            await this.context.resume();
+          }
+          if (settled) return;
+          if (isPlay) await this.audio.play();
+          else this.audio.pause();
+          if (settled) return;
+
+          settled = true;
+          cleanup();
           this.updateMediaSessionMetadata(track);
           this.updateMediaSessionPositionState();
           this.emit('load');
           this.releaseOperationLock();
           resolve(this.audio);
-        };
+        } catch (error) {
+          if (settled) return;
+          this.emit('playerror', { track, error });
+          failLoad(error as Error);
+        }
+      };
 
+      const tryPlay = () => {
+        if (settled) return;
+        this._isLoading = true;
+        this.currentTrack = track;
+        this.setupEQ();
+        loadTimer = setTimeout(() => failLoad(new Error('Audio loading timed out')), 20000);
         const onError = () => {
-          cleanup();
+          if (settled) return;
+          removeListeners();
+          if (loadTimer) clearTimeout(loadTimer);
+          loadTimer = null;
           this._isLoading = false;
           const error = this.audio.error;
           console.error('Audio load error:', error?.code, error?.message);
@@ -502,41 +544,46 @@ class AudioService {
           if (!isSrcNotSupported && retryCount < maxRetries) {
             retryCount++;
             console.log(`Retrying playback (${retryCount}/${maxRetries})...`);
-            setTimeout(tryPlay, 1000 * retryCount);
+            retryTimer = setTimeout(() => {
+              retryTimer = null;
+              tryPlay();
+            }, 1000 * retryCount);
           } else {
-            this.emit('url_expired', track);
-            this.releaseOperationLock();
-            reject(new Error('音频加载失败，请尝试切换其他歌曲'));
+            // 初次加载失败交给调用方恢复，避免与切歌失败处理同时抢占播放。
+            failLoad(new Error('音频加载失败，请尝试切换其他歌曲'));
           }
         };
 
-        const cleanup = () => {
-          this.audio.removeEventListener('canplay', onCanPlay);
+        removeListeners = () => {
+          this.audio.removeEventListener('canplay', startAudio);
           this.audio.removeEventListener('error', onError);
-          if (this.pendingLoadCleanup === cleanup) {
-            this.pendingLoadCleanup = null;
-          }
         };
 
-        // 记录本轮清理函数，供下一次 play()/stop() 在结算前主动移除
-        this.pendingLoadCleanup = cleanup;
+        if (isSameUrl) {
+          void startAudio();
+          return;
+        }
 
-        this.audio.addEventListener('canplay', onCanPlay, { once: true });
+        this.audio.addEventListener('canplay', startAudio, { once: true });
         this.audio.addEventListener('error', onError, { once: true });
 
         // Change source and load
-        this.audio.src = url;
-        this.audio.load();
+        try {
+          this.audio.src = url;
+          this.audio.load();
+        } catch (error) {
+          failLoad(error as Error);
+        }
       };
 
       tryPlay();
-    }).finally(() => {
-      this.releaseOperationLock();
     });
   }
 
   public pause() {
+    this.pendingLoadCleanup?.();
     this.forceResetOperationLock();
+    this._isLoading = false;
     try {
       this.audio.pause();
     } catch (error) {
@@ -551,6 +598,7 @@ class AudioService {
       this.pendingLoadCleanup();
       this.pendingLoadCleanup = null;
     }
+    this._isLoading = false;
     try {
       this.audio.pause();
       this.audio.removeAttribute('src');
@@ -565,10 +613,16 @@ class AudioService {
   }
 
   public seek(time: number) {
+    if (!Number.isFinite(time) || !this.audio.src) return;
     this.forceResetOperationLock();
     try {
-      this.emit('seek_start', time);
-      this.audio.currentTime = Math.max(0, time);
+      const duration = this.audio.duration;
+      const target = Math.max(
+        0,
+        Number.isFinite(duration) && duration > 0 ? Math.min(time, duration) : time
+      );
+      this.audio.currentTime = target;
+      this.emit('seek_start', target);
       this.updateMediaSessionPositionState();
     } catch (error) {
       console.error('Seek操作失败:', error);
@@ -580,7 +634,9 @@ class AudioService {
   }
 
   private applyVolume(volume: number) {
+    if (!Number.isFinite(volume)) return;
     const normalizedVolume = Math.max(0, Math.min(1, volume));
+    this.volume = normalizedVolume;
 
     if (this.gainNode && this.context) {
       this.gainNode.gain.cancelScheduledValues(this.context.currentTime);
@@ -590,10 +646,15 @@ class AudioService {
       this.audio.volume = normalizedVolume;
     }
 
-    localStorage.setItem('volume', normalizedVolume.toString());
+    try {
+      localStorage.setItem('volume', normalizedVolume.toString());
+    } catch (error) {
+      console.warn('保存音量失败:', error);
+    }
   }
 
   public setPlaybackRate(rate: number) {
+    if (!Number.isFinite(rate) || rate <= 0) return;
     this.playbackRate = rate;
     this.audio.playbackRate = rate;
     this.updateMediaSessionPositionState();
