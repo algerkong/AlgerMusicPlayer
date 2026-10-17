@@ -45,6 +45,17 @@ export const useDownloadStore = defineStore(
 
     const downloadingCount = computed(() => downloadingList.value.length);
 
+    /**
+     * 失败任务列表。
+     * downloadingList 只含排队/下载/暂停三种状态，失败任务不在其中，
+     * 下载页因此完全不显示失败任务（"点了没反应、也没进度"，#757）。
+     */
+    const failedList = computed(() =>
+      [...tasks.value.values()]
+        .filter((t) => t.state === DOWNLOAD_TASK_STATE.error)
+        .sort((a, b) => b.createdAt - a.createdAt)
+    );
+
     const totalProgress = computed(() => {
       const list = downloadingList.value;
       if (list.length === 0) return 0;
@@ -86,6 +97,12 @@ export const useDownloadStore = defineStore(
     };
 
     const resumeTask = async (taskId: string) => {
+      if (!isElectron) return;
+      await window.api.downloadResume(taskId);
+    };
+
+    /** 重试失败的任务：主进程 resumeTask 同时接受 paused / error，会重新排队下载 */
+    const retryTask = async (taskId: string) => {
       if (!isElectron) return;
       await window.api.downloadResume(taskId);
     };
@@ -205,12 +222,14 @@ export const useDownloadStore = defineStore(
       // computed
       downloadingList,
       downloadingCount,
+      failedList,
       totalProgress,
       // actions
       addDownload,
       batchDownload,
       pauseTask,
       resumeTask,
+      retryTask,
       cancelTask,
       cancelAll,
       updateConcurrency,

@@ -149,12 +149,18 @@ class DownloadManager {
 
   // ─── Task creation ──────────────────────────────────────────────
 
-  private addTask(payload: {
+  private async addTask(payload: {
     url: string;
     filename: string;
     songInfo: any;
     type?: string;
-  }): string {
+  }): Promise<string> {
+    // 重新下载同一首歌前先清掉指向已删除文件的旧记录：
+    // 手动删除文件后再下载，记录与磁盘立即一致，不会残留僵尸条目（#757）
+    if (typeof payload.songInfo?.id === 'number') {
+      await this.pruneMissingCompletedRecords(payload.songInfo.id);
+    }
+
     const taskId = crypto.randomUUID();
     const task: DownloadTask = {
       taskId,
@@ -178,9 +184,12 @@ class DownloadManager {
     return taskId;
   }
 
-  private addBatch(payload: {
+  private async addBatch(payload: {
     items: { url: string; filename: string; songInfo: any; type?: string }[];
-  }): { batchId: string; taskIds: string[] } {
+  }): Promise<{ batchId: string; taskIds: string[] }> {
+    // 批量下载同样先对齐一次记录与磁盘状态（只读一次配置，避免并发写放大）
+    await this.pruneMissingCompletedRecords();
+
     const batchId = crypto.randomUUID();
     const taskIds: string[] = [];
 
@@ -300,43 +309,67 @@ class DownloadManager {
 
   // ─── Completed songs (same logic as old fileManager) ────────────
 
+  /**
+   * 判断文件是否确定已从磁盘上消失。
+   * 只有 ENOENT / ENOTDIR 才算"已删除"：权限不足、磁盘/网络盘暂时不可用等错误
+   * 一律按"仍然存在"处理，避免临时故障误清下载记录（与本地音乐 #713 的处理保持一致）。
+   */
+  private async isFileMissing(filePath: string): Promise<boolean> {
+    try {
+      await fs.promises.access(filePath);
+      return false;
+    } catch (error: any) {
+      return error?.code === 'ENOENT' || error?.code === 'ENOTDIR';
+    }
+  }
+
+  /**
+   * 剔除 downloadedSongs 中指向已删除文件的记录并回写存储。
+   * 用户手动删除下载目录里的文件后，让"已下载"记录与磁盘保持一致（#757）。
+   * @param songId 只检查该歌曲 ID 的记录；省略时检查全部记录
+   * @returns 仍然有效的记录列表
+   */
+  private async pruneMissingCompletedRecords(songId?: number): Promise<any[]> {
+    const configStore = getStore();
+    const songInfos = (configStore.get('downloadedSongs') || {}) as Record<string, any>;
+
+    const entries = Object.entries(songInfos).filter(
+      ([, info]) => songId === undefined || info?.id === songId
+    );
+    if (entries.length === 0) {
+      return Object.values(songInfos);
+    }
+
+    const checked = await Promise.all(
+      entries.map(async ([filePath, info]) => ({
+        filePath,
+        missing: await this.isFileMissing(filePath),
+        info
+      }))
+    );
+
+    const missingPaths = checked.filter((entry) => entry.missing).map((entry) => entry.filePath);
+    if (missingPaths.length === 0) {
+      return Object.values(songInfos);
+    }
+
+    for (const filePath of missingPaths) {
+      delete songInfos[filePath];
+    }
+
+    // 记录以文件路径为键；历史数据里键与 info.path 可能不一致，统一以 info.path 为准
+    const rebuilt: Record<string, any> = {};
+    for (const [filePath, info] of Object.entries(songInfos)) {
+      rebuilt[(info as any)?.path || filePath] = info;
+    }
+    configStore.set('downloadedSongs', rebuilt);
+    return Object.values(rebuilt);
+  }
+
   private async getCompleted(): Promise<any[]> {
     try {
-      const configStore = getStore();
-      const songInfos = (configStore.get('downloadedSongs') || {}) as Record<string, any>;
-
-      const entriesArray = Object.entries(songInfos);
-      const validEntriesPromises = await Promise.all(
-        entriesArray.map(async ([filePath, info]) => {
-          try {
-            const exists = await fs.promises
-              .access(filePath)
-              .then(() => true)
-              .catch(() => false);
-            return exists ? info : null;
-          } catch {
-            return null;
-          }
-        })
-      );
-
-      const validSongs = validEntriesPromises
-        .filter((song) => song !== null)
-        .sort((a: any, b: any) => (b.downloadTime || 0) - (a.downloadTime || 0));
-
-      // Update store to remove stale entries
-      const newSongInfos = validSongs.reduce(
-        (acc: Record<string, any>, song: any) => {
-          if (song && song.path) {
-            acc[song.path] = song;
-          }
-          return acc;
-        },
-        {} as Record<string, any>
-      );
-      configStore.set('downloadedSongs', newSongInfos);
-
-      return validSongs;
+      const validSongs = await this.pruneMissingCompletedRecords();
+      return validSongs.sort((a: any, b: any) => (b.downloadTime || 0) - (a.downloadTime || 0));
     } catch (error) {
       console.error('Error getting downloaded music:', error);
       return [];
@@ -854,6 +887,12 @@ class DownloadManager {
 
     songInfos[finalFilePath] = newSongInfo;
     configStore.set('downloadedSongs', songInfos);
+
+    // 落盘成功后清掉同一首歌残留的失效记录（文件被手工删除过）：
+    // 否则"已下载"列表会出现两条同名条目，其中一条指向不存在的文件（#757）
+    if (typeof task.songInfo?.id === 'number') {
+      await this.pruneMissingCompletedRecords(task.songInfo.id);
+    }
 
     // Update task state
     task.state = 'completed';

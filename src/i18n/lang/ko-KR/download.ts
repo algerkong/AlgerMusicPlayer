@@ -30,7 +30,12 @@ export default {
     resume: '재개',
     cancel: '취소',
     cancelAll: '모두 취소',
+    retry: '다시 시도',
     retrying: 'URL 재획득 중...'
+  },
+  failed: {
+    title: '다운로드 실패',
+    hint: '다운로드가 완료되지 않았습니다. 다시 시도하거나 작업을 제거하세요.'
   },
   batch: {
     complete: '다운로드 완료: {success}/{total}곡 성공',

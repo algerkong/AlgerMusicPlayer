@@ -30,7 +30,12 @@ export default {
     resume: '再開',
     cancel: 'キャンセル',
     cancelAll: 'すべてキャンセル',
+    retry: '再試行',
     retrying: 'URL再取得中...'
+  },
+  failed: {
+    title: 'ダウンロード失敗',
+    hint: 'ダウンロードが完了しませんでした。再試行するかタスクを削除してください。'
   },
   batch: {
     complete: 'ダウンロード完了：{success}/{total}曲成功',
