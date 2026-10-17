@@ -18,12 +18,21 @@
     <div id="drawer-target" :class="[config.theme]" class="relative z-10">
       <!-- 左侧关闭按钮 -->
       <div
-        class="control-left absolute top-8 left-8 z-[9999]"
+        class="control-left absolute top-8 left-8 z-[9999] flex items-center gap-2"
         :class="{ 'pure-mode': config.pureModeEnabled }"
       >
         <div class="control-btn" @click="closeMusicFull">
           <i class="ri-arrow-down-s-line"></i>
         </div>
+        <!-- 窗口控制（#492）：抽屉铺满 layout-main 会遮住标题栏，这里补上等价的最小化/关闭入口 -->
+        <template v-if="isElectron && !isMobile">
+          <div class="control-btn" @click="minimizeWindow">
+            <i class="iconfont icon-minisize"></i>
+          </div>
+          <div class="control-btn" @click="requestClose">
+            <i class="iconfont icon-close"></i>
+          </div>
+        </template>
       </div>
 
       <!-- 右侧功能按钮组 -->
@@ -232,6 +241,13 @@
           </n-layout>
         </div>
       </div>
+
+      <!-- 关闭确认弹窗：与标题栏共用同一组件与逻辑（#492） -->
+      <close-app-confirm-modal
+        v-model:show="showCloseModal"
+        v-model:remember-choice="rememberChoice"
+        @action="confirmCloseAction"
+      />
     </div>
   </n-drawer>
 </template>
@@ -241,6 +257,7 @@ import { useDebounceFn } from '@vueuse/core';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
+import CloseAppConfirmModal from '@/components/common/CloseAppConfirmModal.vue';
 import Cover3D from '@/components/cover/Cover3D.vue';
 import LyricCorrectionControl from '@/components/lyric/LyricCorrectionControl.vue';
 import LyricSettings from '@/components/lyric/LyricSettings.vue';
@@ -259,10 +276,11 @@ import {
 } from '@/hooks/MusicHook';
 import { useArtist } from '@/hooks/useArtist';
 import { useLyricBackground } from '@/hooks/useLyricBackground';
+import { useWindowControls } from '@/hooks/useWindowControls';
 import { usePlayerStore } from '@/store/modules/player';
 import { useSettingsStore } from '@/store/modules/settings';
 import { DEFAULT_LYRIC_CONFIG, LyricConfig } from '@/types/lyric';
-import { getImgUrl, isMobile } from '@/utils';
+import { getImgUrl, isElectron, isMobile } from '@/utils';
 import { getTextColors } from '@/utils/linearColor';
 import { LYRIC_CONFIG_CHANGE_EVENT, readLyricConfig, writeLyricConfig } from '@/utils/lyricConfig';
 
@@ -714,6 +732,10 @@ const closeMusicFull = () => {
   isVisible.value = false;
   playerStore.setMusicFull(false);
 };
+
+// 窗口控制（#492）：展开歌词时标题栏被抽屉遮挡，这里复用标题栏同一套关闭逻辑与确认弹窗
+const { showCloseModal, rememberChoice, minimizeWindow, requestClose, confirmCloseAction } =
+  useWindowControls();
 
 // 全屏切换方法
 const toggleFullScreen = async () => {
