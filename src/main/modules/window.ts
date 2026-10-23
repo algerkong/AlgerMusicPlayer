@@ -41,6 +41,85 @@ let preMiniModeState: WindowState = {
   y: undefined,
   isMaximized: false
 };
+// 保存 macOS 下最大化（铺满工作区）前的正常窗口位置与大小
+let macPreMaximizedBounds: Electron.Rectangle | null = null;
+let isMacWorkAreaMaximized = false;
+
+export function isWindowMaximized(win: BrowserWindow): boolean {
+  if (!win || win.isDestroyed()) return false;
+  if (win.isFullScreen()) return true;
+
+  if (process.platform === 'darwin') {
+    if (isMacWorkAreaMaximized) return true;
+    try {
+      const currentBounds = win.getBounds();
+      const display = screen.getDisplayMatching(currentBounds);
+      const { workArea } = display;
+      const isMatchingWorkArea =
+        Math.abs(currentBounds.x - workArea.x) <= 2 &&
+        Math.abs(currentBounds.y - workArea.y) <= 2 &&
+        Math.abs(currentBounds.width - workArea.width) <= 2 &&
+        Math.abs(currentBounds.height - workArea.height) <= 2;
+      return isMatchingWorkArea;
+    } catch {
+      return false;
+    }
+  }
+
+  return win.isMaximized();
+}
+
+export function toggleWindowMaximize(win: BrowserWindow): void {
+  if (!win || win.isDestroyed()) return;
+
+  if (process.platform === 'darwin') {
+    // 若当前处于全屏，先退出全屏
+    if (win.isFullScreen()) {
+      win.setFullScreen(false);
+      return;
+    }
+
+    const currentBounds = win.getBounds();
+    const display = screen.getDisplayMatching(currentBounds);
+    const { workArea } = display;
+
+    const isMatchingWorkArea =
+      Math.abs(currentBounds.x - workArea.x) <= 2 &&
+      Math.abs(currentBounds.y - workArea.y) <= 2 &&
+      Math.abs(currentBounds.width - workArea.width) <= 2 &&
+      Math.abs(currentBounds.height - workArea.height) <= 2;
+
+    if (isMacWorkAreaMaximized || isMatchingWorkArea) {
+      // 还原窗口
+      isMacWorkAreaMaximized = false;
+      if (
+        macPreMaximizedBounds &&
+        macPreMaximizedBounds.width >= 900 &&
+        macPreMaximizedBounds.height >= 640
+      ) {
+        win.setBounds(macPreMaximizedBounds, true);
+      } else {
+        win.setSize(DEFAULT_MAIN_WIDTH, DEFAULT_MAIN_HEIGHT, true);
+        win.center();
+      }
+      win.webContents.send('window-maximized-state', false);
+    } else {
+      // 铺满屏幕
+      macPreMaximizedBounds = currentBounds;
+      isMacWorkAreaMaximized = true;
+      win.setBounds(workArea, true);
+      win.webContents.send('window-maximized-state', true);
+    }
+    return;
+  }
+
+  // Windows / Linux: 原生 API
+  if (win.isMaximized()) {
+    win.unmaximize();
+  } else {
+    win.maximize();
+  }
+}
 
 /**
  * 设置应用退出状态
@@ -119,15 +198,27 @@ export function initializeWindowManager() {
     }
   });
 
+  ipcMain.handle('is-window-maximized', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    return Boolean(win && isWindowMaximized(win));
+  });
+
   ipcMain.on('maximize-window', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender);
     if (win) {
-      if (win.isMaximized()) {
-        win.unmaximize();
-      } else {
-        win.maximize();
-      }
-      // 状态保存在事件监听器中处理
+      toggleWindowMaximize(win);
+    }
+  });
+
+  ipcMain.handle('is-fullscreen', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    return Boolean(win && !win.isDestroyed() && win.isFullScreen());
+  });
+
+  ipcMain.on('toggle-fullscreen', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win && !win.isDestroyed()) {
+      win.setFullScreen(!win.isFullScreen());
     }
   });
 
@@ -320,6 +411,41 @@ export function createMainWindow(icon: Electron.NativeImage): BrowserWindow {
 
   // 创建窗口
   const mainWindow = new BrowserWindow(options);
+  const syncMaximizedState = () => {
+    if (!mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('window-maximized-state', isWindowMaximized(mainWindow));
+    }
+  };
+
+  const syncFullScreenState = () => {
+    if (!mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('window-fullscreen-state', mainWindow.isFullScreen());
+      mainWindow.webContents.send('window-maximized-state', isWindowMaximized(mainWindow));
+    }
+  };
+
+  mainWindow.on('maximize', syncMaximizedState);
+  mainWindow.on('unmaximize', syncMaximizedState);
+  mainWindow.on('enter-full-screen', syncFullScreenState);
+  mainWindow.on('leave-full-screen', syncFullScreenState);
+
+  // 监听 macOS 下用户拖动/改变窗口尺寸，若脱离了全屏工作区则自动重置最大化状态
+  mainWindow.on('resize', () => {
+    if (process.platform === 'darwin' && isMacWorkAreaMaximized && !mainWindow.isFullScreen()) {
+      const bounds = mainWindow.getBounds();
+      const display = screen.getDisplayMatching(bounds);
+      const { workArea } = display;
+      const isMatching =
+        Math.abs(bounds.x - workArea.x) <= 2 &&
+        Math.abs(bounds.y - workArea.y) <= 2 &&
+        Math.abs(bounds.width - workArea.width) <= 2 &&
+        Math.abs(bounds.height - workArea.height) <= 2;
+      if (!isMatching) {
+        isMacWorkAreaMaximized = false;
+        syncMaximizedState();
+      }
+    }
+  });
 
   const appOrigin = (() => {
     if (!is.dev || !process.env.ELECTRON_RENDERER_URL) return null;
@@ -398,6 +524,7 @@ export function createMainWindow(icon: Electron.NativeImage): BrowserWindow {
 
     // 显示窗口
     mainWindow.show();
+    syncMaximizedState();
     // 应用页面内容缩放
     applyContentZoom(mainWindow);
 

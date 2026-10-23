@@ -200,6 +200,12 @@ export default {
   },
   titleBar: {
     closeTitle: '閉じる方法を選択してください',
+    close: '閉じる',
+    minimize: '最小化',
+    maximize: '最大化',
+    restore: '元に戻す',
+    miniPlayer: 'ミニプレーヤー',
+    download: 'デスクトップ版をダウンロード',
     minimizeToTray: 'トレイに最小化',
     exitApp: 'アプリを終了',
     rememberChoice: '選択を記憶する',

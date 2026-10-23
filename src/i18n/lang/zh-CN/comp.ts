@@ -193,6 +193,12 @@ export default {
   },
   titleBar: {
     closeTitle: '请选择关闭方式',
+    close: '关闭',
+    minimize: '最小化',
+    maximize: '最大化',
+    restore: '还原',
+    miniPlayer: '迷你播放器',
+    download: '下载桌面版',
     minimizeToTray: '最小化到托盘',
     exitApp: '退出应用',
     rememberChoice: '记住我的选择',

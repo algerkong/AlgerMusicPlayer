@@ -199,6 +199,12 @@ export default {
   },
   titleBar: {
     closeTitle: '닫기 방법을 선택해주세요',
+    close: '닫기',
+    minimize: '최소화',
+    maximize: '최대화',
+    restore: '복원',
+    miniPlayer: '미니 플레이어',
+    download: '데스크톱 앱 다운로드',
     minimizeToTray: '트레이로 최소화',
     exitApp: '앱 종료',
     rememberChoice: '선택 기억하기',

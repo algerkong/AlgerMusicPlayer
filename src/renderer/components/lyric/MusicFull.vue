@@ -726,7 +726,13 @@ const playerStore = usePlayerStore();
 
 const closeMusicFull = () => {
   // 退出全屏模式
-  if (isFullScreen.value && document.fullscreenElement) {
+  if (isElectron) {
+    window.api.isFullScreen().then((fs) => {
+      if (fs) {
+        window.api.toggleFullScreen();
+      }
+    });
+  } else if (isFullScreen.value && document.fullscreenElement) {
     document.exitFullscreen();
   }
   isVisible.value = false;
@@ -737,9 +743,15 @@ const closeMusicFull = () => {
 const { showCloseModal, rememberChoice, minimizeWindow, requestClose, confirmCloseAction } =
   useWindowControls();
 
+let removeFullScreenListener: (() => void) | undefined;
+
 // 全屏切换方法
 const toggleFullScreen = async () => {
   try {
+    if (isElectron) {
+      window.api.toggleFullScreen();
+      return;
+    }
     if (!document.fullscreenElement) {
       // 进入全屏
       await document.documentElement.requestFullscreen();
@@ -766,10 +778,20 @@ onMounted(() => {
   }
   document.addEventListener('fullscreenchange', handleFullScreenChange);
   window.addEventListener(LYRIC_CONFIG_CHANGE_EVENT, handleLyricConfigChange);
+
+  if (isElectron) {
+    window.api.isFullScreen().then((fs) => {
+      isFullScreen.value = fs;
+    });
+    removeFullScreenListener = window.api.onWindowFullScreenState((fullscreen) => {
+      isFullScreen.value = fullscreen;
+    });
+  }
 });
 
 // 移除滚动监听和全屏状态监听
 onBeforeUnmount(() => {
+  removeFullScreenListener?.();
   if (lrcSider.value?.$el) {
     lrcSider.value.$el.removeEventListener('scroll', handleScroll);
   }

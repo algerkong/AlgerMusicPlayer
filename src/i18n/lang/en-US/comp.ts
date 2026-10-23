@@ -200,6 +200,12 @@ export default {
   },
   titleBar: {
     closeTitle: 'Choose how to close',
+    close: 'Close',
+    minimize: 'Minimize',
+    maximize: 'Maximize',
+    restore: 'Restore',
+    miniPlayer: 'Mini player',
+    download: 'Download desktop app',
     minimizeToTray: 'Minimize to Tray',
     exitApp: 'Exit App',
     rememberChoice: 'Remember my choice',

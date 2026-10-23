@@ -1,4 +1,4 @@
-import { type Ref,ref } from 'vue';
+import { type Ref, ref } from 'vue';
 
 import { useSettingsStore } from '@/store/modules/settings';
 import { isElectron } from '@/utils';
@@ -9,6 +9,8 @@ type WindowControls = {
   showCloseModal: Ref<boolean>;
   rememberChoice: Ref<boolean>;
   minimizeWindow: () => void;
+  toggleMaximizeWindow: () => void;
+  toggleFullScreen: () => void;
   miniWindow: () => void;
   requestClose: () => void;
   confirmCloseAction: (action: CloseAction) => void;
@@ -26,6 +28,16 @@ export const useWindowControls = (): WindowControls => {
   const minimizeWindow = () => {
     if (!isElectron) return;
     window.api.minimize();
+  };
+
+  const toggleMaximizeWindow = () => {
+    if (!isElectron) return;
+    window.api.maximize();
+  };
+
+  const toggleFullScreen = () => {
+    if (!isElectron) return;
+    window.api.toggleFullScreen();
   };
 
   const miniWindow = () => {
@@ -78,6 +90,8 @@ export const useWindowControls = (): WindowControls => {
     showCloseModal,
     rememberChoice,
     minimizeWindow,
+    toggleMaximizeWindow,
+    toggleFullScreen,
     miniWindow,
     requestClose,
     confirmCloseAction
