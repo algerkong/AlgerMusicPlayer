@@ -63,6 +63,11 @@ export default {
       '태블릿 모드를 사용하면 모바일 기기에서 PC 스타일의 인터페이스를 사용할 수 있습니다'
   },
   playback: {
+    singleSongPlayMode: '곡 재생 방식',
+    singleSongPlayModeOptions: {
+      replace: '곡이 속한 목록으로 교체',
+      add: '선택한 곡만 추가'
+    },
     quality: '음질 설정',
     qualityDesc: '음악 재생 음질 선택 (넷이즈 클라우드 VIP)',
     qualityOptions: {
@@ -87,6 +92,9 @@ export default {
     gdmusicInfo: 'GD 뮤직은 여러 플랫폼 음원을 자동으로 해석하고 최적의 결과를 자동 선택합니다',
     autoPlay: '자동 재생',
     autoPlayDesc: '앱을 다시 열 때 자동으로 재생을 계속할지 여부',
+    pureMode: '순수 모드',
+    pureModeDesc:
+      '재생 페이지에서 커버와 가사만 표시하고 모서리의 컨트롤을 숨깁니다. 언제든지 여기서 끌 수 있습니다',
     audioDevice: '오디오 출력 장치',
     audioDeviceDesc: '스피커, 헤드폰 또는 블루투스 장치와 같은 오디오 출력 장치 선택',
     testAudio: '테스트',
@@ -300,10 +308,17 @@ export default {
       mobile: '모바일'
     },
     pureMode: '순수 모드',
+    pureModeTip:
+      '재생 페이지 모서리의 컨트롤 버튼을 숨깁니다. 원래 위치에 마우스를 올리면 다시 표시되며, 설정 → 재생 설정에서도 끌 수 있습니다',
+    pureModeOnboarding:
+      '컨트롤이 바로 여기에 숨겨져 있습니다. 마우스를 올리면 다시 나타나며, 설정 → 재생 설정에서 언제든지 끌 수 있습니다',
+    pureModeOnboardingStep2:
+      '닫기 버튼이 여기에 숨겨져 있습니다. 마우스를 올리면 나타나며, 클릭하면 돌아갑니다',
     hideCover: '커버 숨기기',
     centerDisplay: '중앙 표시',
     showTranslation: '번역 표시',
     hideLyrics: '가사 숨기기',
+    focusCurrentLyric: '현재 가사 포커스',
     hidePlayBar: '재생바 숨기기',
     hideMiniPlayBar: '미니 재생바 숨기기',
     showMiniPlayBar: '미니 재생바 표시',

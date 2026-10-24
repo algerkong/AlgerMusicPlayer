@@ -200,6 +200,12 @@ export default {
   },
   titleBar: {
     closeTitle: '閉じる方法を選択してください',
+    close: '閉じる',
+    minimize: '最小化',
+    maximize: '最大化',
+    restore: '元に戻す',
+    miniPlayer: 'ミニプレーヤー',
+    download: 'デスクトップ版をダウンロード',
     minimizeToTray: 'トレイに最小化',
     exitApp: 'アプリを終了',
     rememberChoice: '選択を記憶する',
@@ -235,10 +241,12 @@ export default {
     import: {
       button: 'プレイリストインポート',
       title: 'プレイリストインポート',
-      description: 'メタデータ/テキスト/リンクの3つの方法でプレイリストをインポートできます',
+      description:
+        'メタデータ/テキスト/リンク/ファイルの4つの方法でプレイリストをインポートできます',
       linkTab: 'リンクインポート',
       textTab: 'テキストインポート',
       localTab: 'メタデータインポート',
+      fileTab: 'ファイルインポート',
       linkPlaceholder: 'プレイリストのリンクを入力してください（1行に1つ）',
       textPlaceholder: '楽曲情報を入力してください。形式：楽曲名 アーティスト名',
       localPlaceholder: 'JSON形式の楽曲メタデータを入力してください',
@@ -250,6 +258,16 @@ export default {
       textFormat: '形式：楽曲名 アーティスト名',
       localTips: '楽曲メタデータを追加してください',
       localFormat: '形式例：',
+      fileTips: '洛雪音楽からエクスポートしたプレイリストファイル（.txt / .csv）に対応',
+      fileFormat:
+        'TXT形式：楽曲名  アーティスト名  アルバム名（ダブルスペース区切り）；CSVは楽曲名・アーティスト・アルバムの3列',
+      selectFileButton: 'クリックしてファイルを選択',
+      dragDropHint:
+        '.txt / .csv ファイルをここにドラッグ＆ドロップも可能。解析後に下で編集できます',
+      parseResult: '{count} 曲を解析、{skipped} 行をスキップ',
+      fileTypeError: '.txt / .csv 形式のファイルのみ対応しています',
+      fileTooLarge: 'ファイルが大きすぎます。5MB以内のファイルを選択してください',
+      fileEmpty: 'ファイルから有効な楽曲が見つかりませんでした',
       songNamePlaceholder: '楽曲名',
       artistNamePlaceholder: 'アーティスト名',
       albumNamePlaceholder: 'アルバム名',

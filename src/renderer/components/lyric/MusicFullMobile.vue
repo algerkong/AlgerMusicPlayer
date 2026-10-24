@@ -415,6 +415,7 @@ import { usePlayerStore } from '@/store/modules/player';
 import { DEFAULT_LYRIC_CONFIG, LyricConfig } from '@/types/lyric';
 import { getImgUrl, secondToMinute } from '@/utils';
 import { getTextColors } from '@/utils/linearColor';
+import { LYRIC_CONFIG_CHANGE_EVENT, readLyricConfig } from '@/utils/lyricConfig';
 import { showBottomToast } from '@/utils/shortcutToast';
 
 const { t } = useI18n();
@@ -883,6 +884,11 @@ const { isDark, applyBackground } = useLyricBackground({
 });
 const config = ref<LyricConfig>({ ...DEFAULT_LYRIC_CONFIG });
 
+// 监听设置页等外部来源的配置变更，保持移动端播放页与设置页状态同步（#758）
+const handleLyricConfigChange = () => {
+  config.value = readLyricConfig();
+};
+
 // 可见歌词计算
 const visibleLyrics = computed(() => {
   const centerIndex = nowIndex.value;
@@ -958,6 +964,8 @@ watch(
 
 // 组件卸载清理
 onBeforeUnmount(() => {
+  window.removeEventListener(LYRIC_CONFIG_CHANGE_EVENT, handleLyricConfigChange);
+
   if (autoScrollTimer.value) {
     clearTimeout(autoScrollTimer.value);
   }
@@ -1045,6 +1053,7 @@ onMounted(() => {
   if (savedConfig) {
     config.value = { ...config.value, ...JSON.parse(savedConfig) };
   }
+  window.addEventListener(LYRIC_CONFIG_CHANGE_EVENT, handleLyricConfigChange);
 
   // 初始化自动滚动状态
   isAutoScrollEnabled.value = true;

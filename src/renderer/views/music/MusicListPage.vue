@@ -562,8 +562,9 @@ const loadSongs = async (ids: number[], appendToList = true, updateComplete = fa
   return [];
 };
 
-const loadFullPlaylist = async () => {
-  if (isPlaylistLoading.value || isFullPlaylistLoaded.value) return;
+let fullPlaylistLoad: Promise<void> | null = null;
+
+const fetchFullPlaylist = async (): Promise<void> => {
   isPlaylistLoading.value = true;
   try {
     if (!listInfo.value?.trackIds) {
@@ -598,6 +599,31 @@ const loadFullPlaylist = async () => {
   }
 };
 
+const loadFullPlaylist = (): Promise<void> => {
+  if (isFullPlaylistLoaded.value) return Promise.resolve();
+  if (!fullPlaylistLoad) {
+    fullPlaylistLoad = fetchFullPlaylist().finally(() => {
+      fullPlaylistLoad = null;
+    });
+  }
+  return fullPlaylistLoad;
+};
+
+const completePlaybackQueue = async (): Promise<void> => {
+  if (isFullPlaylistLoaded.value || searchKeyword.value) return;
+  const queue = playerStore.playList;
+  const playlistId = listInfo.value?.id;
+  await loadFullPlaylist();
+  // 用户换列表或编辑队列后，不用迟到的完整歌单覆盖其操作。
+  if (playerStore.playList !== queue || listInfo.value?.id !== playlistId) return;
+  const selectedSong = queue[playerStore.playListIndex];
+  playerStore.setPlayList(allFilteredSongs.value.map(formatSong));
+  if (selectedSong) {
+    const index = playerStore.playList.findIndex((song) => song.id === selectedSong.id);
+    if (index !== -1) playerStore.playListIndex = index;
+  }
+};
+
 const handlePlayAll = () => {
   if (displayedSongs.value.length === 0) return;
   saveHistory();
@@ -608,14 +634,13 @@ const handlePlayAll = () => {
       : allFilteredSongs.value;
   playerStore.setPlayList(list.map(formatSong));
   playerStore.setPlay(formatSong(list[0]));
-  if (!isFullPlaylistLoaded.value) loadFullPlaylist();
+  void completePlaybackQueue();
 };
 
 const handlePlayItem = (item: any) => {
-  playerStore.setPlay(formatSong(item));
-  if (!playerStore.playList.some((s) => s.id === item.id)) {
-    playerStore.addToNextPlay(formatSong(item));
-  }
+  const list = searchKeyword.value ? filteredSongs.value : allFilteredSongs.value;
+  const replaced = playerStore.prepareSongPlayback(formatSong(item), list.map(formatSong));
+  if (replaced) void completePlaybackQueue();
 };
 
 const handleRemoveSong = async (songId: number) => {

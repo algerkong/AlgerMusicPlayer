@@ -159,7 +159,7 @@ test('rewriteContainerIndex roots entry assets for SPA fallback routes', () => {
   }
 });
 
-test('sanitizeNcmDependency removes bundled cookies and sensitive request logging', () => {
+test('sanitizeNcmDependency secures NCM with and without legacy Bilibili files', () => {
   const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'alger-dependency-test-'));
   const utilityDirectory = path.join(temporaryDirectory, 'util');
   const configDirectory = path.join(temporaryDirectory, 'config');
@@ -167,6 +167,18 @@ test('sanitizeNcmDependency removes bundled cookies and sensitive request loggin
   const optionPath = path.join(utilityDirectory, 'option.js');
   const serverPath = path.join(temporaryDirectory, 'server.js');
   const cookiePath = path.join(configDirectory, 'bilibili_cookie.txt');
+  const serverSource =
+    "console.log('[OK]', decode(req.originalUrl))\nconsole.log('[ERR]', decode(req.originalUrl))\n";
+  const optionSource = [
+    "const createOption = (query, crypto = '') => ({",
+    "  crypto: query.crypto || crypto || '',",
+    '  cookie: query.cookie,',
+    "  ua: query.ua || '',",
+    '  proxy: query.proxy,',
+    '  realIP: query.realIP,',
+    "  domain: query.domain || '',",
+    '})'
+  ].join('\n');
 
   try {
     fs.mkdirSync(utilityDirectory, { recursive: true });
@@ -175,23 +187,8 @@ test('sanitizeNcmDependency removes bundled cookies and sensitive request loggin
       handlerPath,
       "console.log('before')\n  console.log('defaultCookieString', defaultCookieString)\nconsole.log('after')\n"
     );
-    fs.writeFileSync(
-      serverPath,
-      "console.log('[OK]', decode(req.originalUrl))\nconsole.log('[ERR]', decode(req.originalUrl))\n"
-    );
-    fs.writeFileSync(
-      optionPath,
-      [
-        "const createOption = (query, crypto = '') => ({",
-        "  crypto: query.crypto || crypto || '',",
-        '  cookie: query.cookie,',
-        "  ua: query.ua || '',",
-        '  proxy: query.proxy,',
-        '  realIP: query.realIP,',
-        "  domain: query.domain || '',",
-        '})'
-      ].join('\n')
-    );
+    fs.writeFileSync(serverPath, serverSource);
+    fs.writeFileSync(optionPath, optionSource);
     fs.writeFileSync(cookiePath, 'sensitive-cookie');
 
     sanitizeNcmDependency(temporaryDirectory);
@@ -200,11 +197,26 @@ test('sanitizeNcmDependency removes bundled cookies and sensitive request loggin
     assert.match(fs.readFileSync(handlerPath, 'utf8'), /before[\s\S]*after/);
     assert.equal((fs.readFileSync(serverPath, 'utf8').match(/req\.path/g) || []).length, 2);
     assert.doesNotMatch(fs.readFileSync(serverPath, 'utf8'), /originalUrl/);
-    const optionSource = fs.readFileSync(optionPath, 'utf8');
-    assert.doesNotMatch(optionSource, /query\.(?:crypto|ua|proxy|realIP|domain)/);
-    assert.match(optionSource, /cookie: query\.cookie/);
-    assert.match(optionSource, /crypto: crypto \|\| ''/);
+    const sanitizedOptions = fs.readFileSync(optionPath, 'utf8');
+    assert.doesNotMatch(sanitizedOptions, /query\.(?:crypto|ua|proxy|realIP|domain)/);
+    assert.match(sanitizedOptions, /cookie: query\.cookie/);
+    assert.match(sanitizedOptions, /crypto: crypto \|\| ''/);
     assert.equal(fs.existsSync(cookiePath), false);
+
+    // NCM 4.32.0 no longer ships either Bilibili file.
+    fs.rmSync(handlerPath);
+    fs.writeFileSync(serverPath, serverSource);
+    fs.writeFileSync(optionPath, optionSource);
+
+    sanitizeNcmDependency(temporaryDirectory);
+
+    assert.equal(fs.existsSync(handlerPath), false);
+    assert.equal(fs.existsSync(cookiePath), false);
+    assert.doesNotMatch(fs.readFileSync(serverPath, 'utf8'), /originalUrl/);
+    assert.doesNotMatch(
+      fs.readFileSync(optionPath, 'utf8'),
+      /query\.(?:crypto|ua|proxy|realIP|domain)/
+    );
   } finally {
     fs.rmSync(temporaryDirectory, { recursive: true, force: true });
   }

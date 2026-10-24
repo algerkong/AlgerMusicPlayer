@@ -5,6 +5,11 @@ import type { AppUpdateState } from '../shared/appUpdate';
 interface API {
   minimize: () => void;
   maximize: () => void;
+  isMaximized: () => Promise<boolean>;
+  onWindowMaximizedState: (callback: (maximized: boolean) => void) => () => void;
+  toggleFullScreen: () => void;
+  isFullScreen: () => Promise<boolean>;
+  onWindowFullScreenState: (callback: (fullscreen: boolean) => void) => () => void;
   close: () => void;
   quitApp: () => void;
   dragStart: (data: any) => void;

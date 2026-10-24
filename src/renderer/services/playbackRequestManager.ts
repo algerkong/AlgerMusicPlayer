@@ -20,6 +20,15 @@ class PlaybackRequestManager {
     return requestId;
   }
 
+  getGeneration(): number {
+    return this.counter;
+  }
+
+  cancelCurrentRequest(): void {
+    this.counter++;
+    this.currentRequestId = null;
+  }
+
   /**
    * 检查请求是否仍为当前请求
    */

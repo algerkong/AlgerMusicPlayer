@@ -19,6 +19,7 @@
   "fontFamily": "system-ui",
   "fontScope": "global",
   "autoPlay": false,
+  "singleSongPlayMode": "replace",
   "downloadPath": "",
   "language": "zh-CN",
   "alwaysShowDownloadButton": false,

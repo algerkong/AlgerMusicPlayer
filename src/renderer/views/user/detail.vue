@@ -391,9 +391,9 @@ const openPlaylist = (item: any) => {
   });
 };
 
-const handlePlay = () => {
+const handlePlay = (song: any) => {
   if (!recordList.value || recordList.value.length === 0) return;
-  playerStore.setPlayList(recordList.value);
+  playerStore.prepareSongPlayback(song, recordList.value);
 };
 
 const showFollowList = () => {

@@ -63,6 +63,11 @@ export default {
       'タブレットモードを有効にすると、モバイルデバイスでPCスタイルのインターフェースを使用できます'
   },
   playback: {
+    singleSongPlayMode: '曲の再生時の動作',
+    singleSongPlayModeOptions: {
+      replace: '曲のリストに置き換える',
+      add: '選択した曲のみ追加する'
+    },
     quality: '音質設定',
     qualityDesc: '音楽再生の音質を選択（NetEase Cloud VIP）',
     qualityOptions: {
@@ -87,6 +92,9 @@ export default {
     gdmusicInfo: 'GD音楽台は複数のプラットフォーム音源を自動解析し、最適な結果を自動選択できます',
     autoPlay: '自動再生',
     autoPlayDesc: 'アプリを再起動した際に自動的に再生を継続するかどうか',
+    pureMode: 'ピュアモード',
+    pureModeDesc:
+      '再生ページでカバーと歌詞のみを表示し、隅のコントロールを非表示にします。いつでもここでオフにできます',
     audioDevice: 'オーディオ出力デバイス',
     audioDeviceDesc: 'スピーカー、ヘッドホン、Bluetoothデバイスなどの出力先を選択',
     testAudio: 'テスト',
@@ -299,10 +307,17 @@ export default {
       mobile: 'モバイル'
     },
     pureMode: 'ピュアモード',
+    pureModeTip:
+      '再生ページの隅にあるコントロールボタンを非表示にします。元の位置にカーソルを合わせると再表示できます。「設定 → 再生設定」でもオフにできます',
+    pureModeOnboarding:
+      'コントロールはここに隠れています。カーソルを合わせると再表示できます。「設定 → 再生設定」でいつでもオフにできます',
+    pureModeOnboardingStep2:
+      '閉じるボタンはここに隠れています。カーソルを合わせると表示され、クリックで戻れます',
     hideCover: 'カバーを非表示',
     centerDisplay: '中央表示',
     showTranslation: '翻訳を表示',
     hideLyrics: '歌詞を非表示',
+    focusCurrentLyric: '現在歌詞フォーカス',
     hidePlayBar: '再生バーを非表示',
     hideMiniPlayBar: 'ミニ再生バーを非表示',
     showMiniPlayBar: 'ミニ再生バーを表示',

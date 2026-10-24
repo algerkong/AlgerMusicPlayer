@@ -6,7 +6,7 @@ import request from '@/utils/request';
 
 import { MusicParser, type MusicParseResult } from './musicParser';
 
-const { addData, getData, deleteData } = musicDB;
+const { saveData, getData } = musicDB;
 
 // 将 FM 歌曲移至垃圾桶（不喜欢）
 export const fmTrash = (id: number) => {
@@ -60,25 +60,26 @@ export const getMusicDetail = (ids: Array<number>) => {
 };
 
 // 根据音乐Id获取音乐歌词
-export const getMusicLrc = async (id: number) => {
+export const getMusicLrc = async (id: number): Promise<{ data: ILyric }> => {
   const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000; // 10天的毫秒数
 
   try {
     // 尝试获取缓存的歌词
     const cachedLyric = await getData('music_lyric', id);
     if (cachedLyric?.createTime && Date.now() - cachedLyric.createTime < TEN_DAYS_MS) {
-      return { ...cachedLyric };
+      return { ...cachedLyric, data: cachedLyric.data };
     }
 
     // 获取新的歌词数据
     const res = await request.get<ILyric>('/lyric/new', { params: { id } });
 
-    // 只有在成功获取新数据后才删除旧缓存并添加新缓存
     if (res?.data) {
-      if (cachedLyric) {
-        await deleteData('music_lyric', id);
+      try {
+        // 歌词面板和预加载可能并发请求同一首歌，使用 put 避免重复主键。
+        await saveData('music_lyric', { id, data: res.data, createTime: Date.now() });
+      } catch (error) {
+        console.warn('保存歌词缓存失败:', error);
       }
-      addData('music_lyric', { id, data: res.data, createTime: Date.now() });
     }
 
     return res;

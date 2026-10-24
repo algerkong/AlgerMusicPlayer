@@ -1,7 +1,10 @@
 <template>
   <div
     class="lyric-window"
-    :class="[lyricSetting.theme, { lyric_lock: lyricSetting.isLock }]"
+    :class="[
+      lyricSetting.theme,
+      { lyric_lock: lyricSetting.isLock, 'bar-bottom': controlBarAtBottom }
+    ]"
     @mousedown="handleMouseDown"
     @mouseenter="handleMouseEnter"
     @mouseleave="handleMouseLeave"
@@ -373,13 +376,22 @@ const LOCKED_CONTROLS_HIDE_DELAY = 2500;
 
 const scheduleLockedControlsHide = () => {
   clearHideTimer();
+  // 主题色面板展开期间不淡出，否则面板可见却不可点（#591）
+  if (showThemeColorPanel.value) return;
   hideControlsTimer = window.setTimeout(() => {
     hideControlsTimer = null;
-    if (lyricSetting.value.isLock) {
+    if (lyricSetting.value.isLock && !showThemeColorPanel.value) {
       isHovering.value = false;
       windowData.electron.ipcRenderer.send('set-ignore-mouse', true);
     }
   }, LOCKED_CONTROLS_HIDE_DELAY);
+};
+
+// 主题色面板收起后，锁定态重新开始空闲淡出计时（#591）
+const resumeLockedControlsHide = () => {
+  if (lyricSetting.value.isLock) {
+    scheduleLockedControlsHide();
+  }
 };
 
 const showLockedControls = () => {
@@ -397,11 +409,30 @@ const handleLockedMouseMove = () => {
   showLockedControls();
 };
 
+// 控制栏位置：歌词窗口贴近屏幕顶部时，功能栏翻转到歌词下方，
+// 避免锁定等功能键被挤在屏幕最上沿难以点击（#719）
+const controlBarAtBottom = ref(false);
+/** 窗口顶边距屏幕可用区顶部小于该值时，认为歌词位于桌面顶部 */
+const CONTROL_BAR_FLIP_THRESHOLD = 90;
+
+const updateControlBarPosition = () => {
+  try {
+    const availTop = (window.screen as any).availTop ?? 0;
+    controlBarAtBottom.value = window.screenY - availTop < CONTROL_BAR_FLIP_THRESHOLD;
+  } catch (error) {
+    console.error('计算控制栏位置失败:', error);
+  }
+};
+
 // 处理鼠标进入窗口
 const handleMouseEnter = () => {
+  updateControlBarPosition();
   if (lyricSetting.value.isLock) {
+    // 保持锁定态原有的穿透语义，仅补上"进入即开始空闲计时"，
+    // 避免鼠标进入后静止时图标常驻（#606）
     isHovering.value = true;
     windowData.electron.ipcRenderer.send('set-ignore-mouse', true);
+    scheduleLockedControlsHide();
   } else {
     windowData.electron.ipcRenderer.send('set-ignore-mouse', false);
   }
@@ -410,7 +441,10 @@ const handleMouseEnter = () => {
 // 处理鼠标离开窗口
 const handleMouseLeave = () => {
   if (!lyricSetting.value.isLock) return;
+  // 移出窗口：隐藏控件并收起主题色面板（#606/#591），穿透开关沿用原取值
+  clearHideTimer();
   isHovering.value = false;
+  showThemeColorPanel.value = false;
   windowData.electron.ipcRenderer.send('set-ignore-mouse', false);
 
   // 强制重置背景色
@@ -443,12 +477,15 @@ onMounted(() => {
   if (lyricSetting.value.isLock) {
     isHovering.value = false;
   }
+  updateControlBarPosition();
   document.addEventListener('mousemove', handleLockedMouseMove);
+  window.addEventListener('resize', updateControlBarPosition);
 });
 
 onUnmounted(() => {
   clearHideTimer();
   document.removeEventListener('mousemove', handleLockedMouseMove);
+  window.removeEventListener('resize', updateControlBarPosition);
 });
 
 // 计算歌词滚动位置
@@ -831,9 +868,10 @@ onMounted(() => {
           // 进入窗口：显示锁图标并启动空闲淡出定时器（#606）
           showLockedControls();
         } else {
-          // 离开窗口：立即隐藏并恢复点击穿透
+          // 离开窗口：立即隐藏、收起主题色面板并恢复点击穿透
           clearHideTimer();
           isHovering.value = false;
+          showThemeColorPanel.value = false;
           windowData.electron.ipcRenderer.send('set-ignore-mouse', true);
         }
       } else {
@@ -868,6 +906,15 @@ const checkTheme = () => {
 // 主题色相关函数
 const toggleThemeColorPanel = () => {
   showThemeColorPanel.value = !showThemeColorPanel.value;
+  if (showThemeColorPanel.value) {
+    // 展开期间暂停空闲淡出并保持窗口可交互，否则面板可见却点不动（#591）
+    clearHideTimer();
+    if (lyricSetting.value.isLock) {
+      windowData.electron.ipcRenderer.send('set-ignore-mouse', false);
+    }
+  } else {
+    resumeLockedControlsHide();
+  }
 };
 
 const handleColorChange = (color: string) => {
@@ -897,12 +944,14 @@ const handleColorChange = (color: string) => {
 
 const handleThemeColorPanelClose = () => {
   showThemeColorPanel.value = false;
+  resumeLockedControlsHide();
 };
 
 // 面板"恢复默认"：关闭自定义主题色并收起面板（#591）
 const handleThemeColorReset = () => {
   resetThemeColor();
   showThemeColorPanel.value = false;
+  resumeLockedControlsHide();
 };
 
 // 重置主题色到默认（主题色面板"恢复默认"按钮调用）
@@ -1113,6 +1162,8 @@ const handleMouseDown = (e: MouseEvent) => {
       // 发送移动事件到主进程
       windowData.electron.ipcRenderer.send('lyric-drag-move', { deltaX, deltaY });
       startPosition.value = { x: e.screenX, y: e.screenY };
+      // 拖动过程中实时判断是否需要把控制栏翻到歌词下方（#719）
+      updateControlBarPosition();
     }
   };
 
@@ -1122,6 +1173,7 @@ const handleMouseDown = (e: MouseEvent) => {
 
     // 发送拖动结束信号到主进程
     windowData.electron.ipcRenderer.send('lyric-drag-end');
+    updateControlBarPosition();
 
     // 移除事件监听
     document.removeEventListener('mousemove', handleMouseMove);
@@ -1151,8 +1203,19 @@ onMounted(() => {
       }
     };
     lyricLock.onmouseleave = () => {
-      if (lyricSetting.value.isLock) {
+      // 主题色面板展开时不恢复穿透，否则面板可见却点不动（#591）
+      if (lyricSetting.value.isLock && !showThemeColorPanel.value) {
         windowData.electron.ipcRenderer.send('set-ignore-mouse', true);
+      }
+    };
+  }
+
+  // 锁定态下主题色按钮与锁图标一样需要"悬停即可点"（#591）
+  const themeColorButton = document.querySelector<HTMLElement>('.theme-color-button');
+  if (themeColorButton) {
+    themeColorButton.onmouseenter = () => {
+      if (lyricSetting.value.isLock) {
+        windowData.electron.ipcRenderer.send('set-ignore-mouse', false);
       }
     };
   }
@@ -1212,13 +1275,21 @@ body,
     }
   }
 
-  &:hover {
+  // 非锁定态：悬停窗口即显示控制栏
+  &:hover:not(.lyric_lock) {
     .control-bar {
       &-show {
         opacity: 1;
         visibility: visible;
       }
     }
+  }
+
+  // 锁定态：显隐完全由 isHovering 决定（空闲后淡出，见 #606）；
+  // 若仍跟随 :hover，鼠标停在窗口上时锁图标永远不会隐藏
+  &.lyric_lock .control-bar-show {
+    opacity: 1;
+    visibility: visible;
   }
 
   &:active {
@@ -1292,6 +1363,25 @@ body,
 
   .control-buttons {
     -webkit-app-region: no-drag;
+  }
+}
+
+/* 歌词窗口贴近屏幕顶部时，功能栏整体翻转到歌词下方（#719） */
+.lyric-window.bar-bottom {
+  .control-bar {
+    top: auto;
+    bottom: 10px;
+    align-items: end;
+
+    .play-controls {
+      top: auto;
+      bottom: 0;
+    }
+  }
+
+  :deep(.theme-color-panel) {
+    top: auto;
+    bottom: 50px;
   }
 }
 
@@ -1525,7 +1615,8 @@ body {
 .control-bar {
   .control-buttons {
     .control-button {
-      &:not(:has(.ri-lock-line)):not(:has(.ri-lock-unlock-line)) {
+      // 锁定时仅保留锁图标与主题色按钮：锁定后仍需有入口关闭歌词主题色（#591）
+      &:not(:has(.ri-lock-line)):not(:has(.ri-lock-unlock-line)):not(.theme-color-button) {
         .lyric_lock & {
           display: none;
         }
@@ -1553,6 +1644,17 @@ body {
     top: 0;
     right: 72px;
     background: var(--control-bg);
+  }
+
+  /* 锁定态下主题色按钮同样常显底色，避免叠在歌词上看不清（#591） */
+  .theme-color-button {
+    background: var(--control-bg);
+  }
+
+  /* 控制栏翻转到下方时，锁定按钮同步贴到控制栏底部（#719） */
+  &.bar-bottom #lyric-lock {
+    top: auto;
+    bottom: 0;
   }
 }
 </style>

@@ -4,6 +4,7 @@ export default {
   batchDownload: '일괄 다운로드',
   download: '다운로드 ({count})',
   emptyTip: '아직 수집한 곡이 없습니다',
+  importSongs: '플레이리스트 가져오기',
   downloadSuccess: '다운로드 완료',
   downloadFailed: '다운로드 실패',
   downloading: '다운로드 중입니다. 잠시만 기다려주세요...',

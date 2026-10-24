@@ -63,6 +63,11 @@ export default {
     tabletModeDesc: 'Enabling tablet mode allows using PC-style interface on mobile devices'
   },
   playback: {
+    singleSongPlayMode: 'Single-Song Playback',
+    singleSongPlayModeOptions: {
+      replace: 'Replace with song list',
+      add: 'Add only this song'
+    },
     quality: 'Audio Quality',
     qualityDesc: 'Select music playback quality (VIP)',
     qualityOptions: {
@@ -88,6 +93,9 @@ export default {
       'GD Music Station intelligently resolves music from multiple platforms automatically',
     autoPlay: 'Auto Play',
     autoPlayDesc: 'Auto resume playback when reopening the app',
+    pureMode: 'Pure Mode',
+    pureModeDesc:
+      'Show only the cover and lyrics on the play page and hide the corner controls; you can turn it off here anytime',
     audioDevice: 'Audio Output Device',
     audioDeviceDesc: 'Select audio output device such as speakers, headphones or Bluetooth devices',
     testAudio: 'Test',
@@ -300,10 +308,17 @@ export default {
       mobile: 'Mobile'
     },
     pureMode: 'Pure Mode',
+    pureModeTip:
+      'Hides the control buttons at the corners of the play page. Hover over their original position to bring them back, or turn it off in Settings → Playback',
+    pureModeOnboarding:
+      'The controls are tucked away here — hover over this spot to bring them back, or turn them off anytime in Settings → Playback',
+    pureModeOnboardingStep2:
+      'The collapse button hides here — hover to reveal it, click to go back',
     hideCover: 'Hide Cover',
     centerDisplay: 'Center Display',
     showTranslation: 'Show Translation',
     hideLyrics: 'Hide Lyrics',
+    focusCurrentLyric: 'Focus Current Lyric',
     hidePlayBar: 'Hide Play Bar',
     hideMiniPlayBar: 'Hide Mini Play Bar',
     showMiniPlayBar: 'Show Mini Play Bar',

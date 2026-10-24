@@ -268,8 +268,9 @@ const formatPublishTime = (time: number) => {
   return useDateFormat(time, 'YYYY-MM-DD').value;
 };
 
-const handlePlay = () => {
-  playerStore.setPlayList(
+const handlePlay = (song: any) => {
+  playerStore.prepareSongPlayback(
+    song,
     songs.value.map((item) => ({
       ...item,
       picUrl: item.al.picUrl

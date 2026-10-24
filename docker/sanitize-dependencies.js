@@ -22,13 +22,14 @@ function sanitizeNcmDependency(dependencyDirectory = DEFAULT_DEPENDENCY_DIRECTOR
   const serverPath = path.join(dependencyDirectory, 'server.js');
   const optionPath = path.join(dependencyDirectory, 'util/option.js');
   const cookiePath = path.join(dependencyDirectory, 'config/bilibili_cookie.txt');
-  const handlerSource = fs.readFileSync(handlerPath, 'utf8');
+  // NCM 4.32.0 removed the Bilibili handler and its bundled cookie.
+  const handlerSource = fs.existsSync(handlerPath) ? fs.readFileSync(handlerPath, 'utf8') : null;
   const serverSource = fs.readFileSync(serverPath, 'utf8');
   let optionSource = fs.readFileSync(optionPath, 'utf8');
-  const cookieLogMatches = handlerSource.match(RAW_COOKIE_LOG) || [];
+  const cookieLogMatches = handlerSource?.match(RAW_COOKIE_LOG) || [];
   const requestUrlLogMatches = serverSource.match(REQUEST_URL_LOG) || [];
 
-  if (cookieLogMatches.length !== 1) {
+  if (handlerSource !== null && cookieLogMatches.length !== 1) {
     throw new Error(
       `Expected exactly one raw Bilibili cookie log statement, found ${cookieLogMatches.length}`
     );
@@ -50,7 +51,9 @@ function sanitizeNcmDependency(dependencyDirectory = DEFAULT_DEPENDENCY_DIRECTOR
     optionSource = optionSource.replace(unsafeExpression, safeExpression);
   }
 
-  fs.writeFileSync(handlerPath, handlerSource.replace(RAW_COOKIE_LOG, ''));
+  if (handlerSource !== null) {
+    fs.writeFileSync(handlerPath, handlerSource.replace(RAW_COOKIE_LOG, ''));
+  }
   fs.writeFileSync(serverPath, serverSource.replace(REQUEST_URL_LOG, 'req.path'));
   fs.writeFileSync(optionPath, optionSource);
   fs.rmSync(cookiePath, { force: true });

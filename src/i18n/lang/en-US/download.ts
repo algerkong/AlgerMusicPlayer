@@ -30,7 +30,12 @@ export default {
     resume: 'Resume',
     cancel: 'Cancel',
     cancelAll: 'Cancel All',
+    retry: 'Retry',
     retrying: 'Re-resolving URL...'
+  },
+  failed: {
+    title: 'Download failed',
+    hint: 'The download did not finish. Retry or remove this task.'
   },
   batch: {
     complete: 'Download complete: {success}/{total} songs succeeded',

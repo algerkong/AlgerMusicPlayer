@@ -132,8 +132,8 @@ const {
 } = useSongItem(props);
 
 const onPlayMusic = () => {
-  playMusicEvent(props.item);
   emit('play', props.item);
+  playMusicEvent(props.item);
 };
 
 const onArtistClick = (id: number) => handleArtistClick(id);

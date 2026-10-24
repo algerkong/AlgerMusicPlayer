@@ -31,6 +31,9 @@ export default {
   loadFailed: '加载失败',
   noData: '暂无数据',
   back: '返回',
+  prevStep: '上一步',
+  nextStep: '下一步',
+  done: '完成',
   copySuccess: '已复制到剪贴板',
   copyFailed: '复制失败',
   validation: {

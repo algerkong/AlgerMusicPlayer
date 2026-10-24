@@ -12,6 +12,7 @@ export interface LyricConfig {
   pureModeEnabled: boolean;
   hideMiniPlayBar: boolean;
   hideLyrics: boolean;
+  focusCurrentLyric: boolean; // 聚焦当前歌词：当前行清晰放大，其余行模糊/变淡（Apple Music 风格）
   contentWidth: number; // 内容区域宽度百分比
   // 移动端配置
   mobileLayout: 'default' | 'ios' | 'android';
@@ -44,6 +45,7 @@ export const DEFAULT_LYRIC_CONFIG: LyricConfig = {
   hideMiniPlayBar: false,
   pureModeEnabled: false,
   hideLyrics: false,
+  focusCurrentLyric: false, // 默认关闭聚焦当前歌词效果
   contentWidth: 75, // 默认100%宽度
   // 移动端默认配置
   mobileLayout: 'ios',

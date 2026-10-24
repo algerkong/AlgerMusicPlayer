@@ -2,10 +2,12 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
 import { audioService } from '@/services/audioService';
+import { playbackRequestManager } from '@/services/playbackRequestManager';
 import type { AudioOutputDevice } from '@/types/audio';
 import type { SongResult } from '@/types/music';
 import { debouncedLocalStorage } from '@/utils/debouncedStorage';
 import { minifySong } from '@/utils/persistedSong';
+import { savePlaybackProgress } from '@/utils/playerUtils';
 
 /**
  * 核心播放控制 Store
@@ -58,6 +60,7 @@ export const usePlayerCoreStore = defineStore(
      * 设置播放速度
      */
     const setPlaybackRate = (rate: number) => {
+      if (!Number.isFinite(rate) || rate <= 0) return;
       playbackRate.value = rate;
       audioService.setPlaybackRate(rate);
     };
@@ -66,6 +69,7 @@ export const usePlayerCoreStore = defineStore(
      * 设置音量
      */
     const setVolume = (newVolume: number) => {
+      if (!Number.isFinite(newVolume)) return;
       const normalizedVolume = Math.max(0, Math.min(1, newVolume));
       volume.value = normalizedVolume;
       // 用户调高音量时自动解除静音
@@ -117,14 +121,17 @@ export const usePlayerCoreStore = defineStore(
     /**
      * 暂停播放
      */
-    const handlePause = async () => {
+    const handlePause = (): void => {
+      playbackRequestManager.cancelCurrentRequest();
+      userPlayIntent.value = false;
+      setIsPlay(false);
+      playMusic.value.playLoading = false;
       try {
         const currentSound = audioService.getCurrentSound();
-        if (currentSound) {
-          currentSound.pause();
+        if (currentSound && audioService.getCurrentTrack()?.id === playMusic.value.id) {
+          savePlaybackProgress(playMusic.value.id, currentSound.currentTime);
         }
-        setPlayMusic(false);
-        userPlayIntent.value = false;
+        audioService.pause();
       } catch (error) {
         console.error('暂停播放失败:', error);
       }
@@ -133,17 +140,16 @@ export const usePlayerCoreStore = defineStore(
     /**
      * 设置播放/暂停
      */
-    const setPlayMusic = async (value: boolean | SongResult) => {
-      if (typeof value === 'boolean') {
-        setIsPlay(value);
-        userPlayIntent.value = value;
-      } else {
-        const { playTrack } = await import('@/services/playbackController');
-        await playTrack(value);
-        play.value = true;
-        isPlay.value = true;
-        userPlayIntent.value = true;
+    const setPlayMusic = async (value: boolean | SongResult): Promise<boolean> => {
+      if (value === false) {
+        handlePause();
+        return true;
       }
+      playbackRequestManager.cancelCurrentRequest();
+      const generation = playbackRequestManager.getGeneration();
+      const { playTrack, resumeCurrentSong } = await import('@/services/playbackController');
+      if (generation !== playbackRequestManager.getGeneration()) return false;
+      return value === true ? resumeCurrentSong() : playTrack(value);
     };
 
     // ==================== 音频输出设备管理 ====================

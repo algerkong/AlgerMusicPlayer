@@ -184,6 +184,17 @@ onMounted(async () => {
   }
 
   audioService.releaseOperationLock();
+
+  // 启动后自动刷新本地音乐库：先用缓存立即出内容，再在后台增量扫描，
+  // 使新增/已删除的本地歌曲不必手动点刷新就能同步
+  if (isElectron) {
+    const { useLocalMusicStore } = await import('@/store/modules/localMusic');
+    const localMusicStore = useLocalMusicStore();
+    await localMusicStore.loadFromCache();
+    localMusicStore.scanFolders().catch((error) => {
+      console.error('[App] 启动时自动扫描本地音乐失败:', error);
+    });
+  }
 });
 </script>
 

@@ -251,11 +251,11 @@ async function handleAddFolder(): Promise<void> {
 }
 
 /**
- * 移除文件夹
+ * 移除文件夹（同时清理该文件夹下的缓存条目，歌曲总数立即更新）
  * @param folder 要移除的文件夹路径
  */
-function handleRemoveFolder(folder: string): void {
-  localMusicStore.removeFolder(folder);
+async function handleRemoveFolder(folder: string): Promise<void> {
+  await localMusicStore.removeFolder(folder);
 }
 
 /**
@@ -263,7 +263,8 @@ function handleRemoveFolder(folder: string): void {
  */
 async function handleScan(): Promise<void> {
   if (localMusicStore.folderPaths.length === 0) {
-    // 没有配置文件夹时，引导用户先添加文件夹
+    // 没有配置文件夹：先清掉可能残留的历史条目（#742），再引导用户添加文件夹
+    await localMusicStore.scanFolders();
     await handleAddFolder();
     return;
   }
@@ -276,10 +277,10 @@ async function handleScan(): Promise<void> {
  * 此处只需设置播放列表上下文，确保上下一首切换正常
  * @param song SongItem 组件 emit 的 SongResult 对象
  */
-async function handlePlaySong(_song: SongResult): Promise<void> {
+async function handlePlaySong(song: SongResult): Promise<void> {
   try {
     // 设置播放列表上下文，确保上下一首切换正常
-    playerStore.setPlayList(filteredSongResults.value);
+    playerStore.prepareSongPlayback(song, filteredSongResults.value);
   } catch (error) {
     console.error('播放本地音乐失败:', error);
   }
@@ -327,6 +328,10 @@ async function handlePlayAll(): Promise<void> {
 
 // ==================== Lifecycle ====================
 onMounted(async () => {
+  // 启动时的自动扫描可能仍在进行，此时不要用缓存快照覆盖扫描结果
+  if (localMusicStore.scanning) {
+    return;
+  }
   // 进入页面时从 IndexedDB 缓存加载音乐列表
   await localMusicStore.loadFromCache();
 });

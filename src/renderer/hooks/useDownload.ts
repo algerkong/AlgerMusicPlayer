@@ -28,6 +28,16 @@ function toDownloadSongInfo(song: SongResult): DownloadSongInfo {
   };
 }
 
+/**
+ * 取出主进程能直接拉取的 http(s) 直链。
+ * getSongUrl 可能返回字符串、带 url 的对象，或解析失败的包装对象（url 缺失/空串）；
+ * 这类结果若照常入队，主进程 axios 会立即抛错，任务静默失败（#757）。
+ */
+function extractDownloadUrl(result: any): string {
+  const raw = typeof result === 'string' ? result : (result?.url ?? '');
+  return typeof raw === 'string' && /^https?:\/\//i.test(raw) ? raw : '';
+}
+
 export const useDownload = () => {
   const { t } = useI18n();
   const message = useMessage();
@@ -48,11 +58,12 @@ export const useDownload = () => {
       isDownloading.value = true;
 
       const musicUrl = (await getSongUrl(song.id as number, song, true)) as any;
-      if (!musicUrl) {
+      const url = extractDownloadUrl(musicUrl);
+      // 拿不到可下载的直链时报错，不能提示"已加入下载队列"：
+      // 否则任务入队后立刻在主进程失败，用户看到的是"有提示、无文件、无进度"（#757）
+      if (!url) {
         throw new Error(t('songItem.message.getUrlFailed'));
       }
-
-      const url = typeof musicUrl === 'string' ? musicUrl : musicUrl.url;
       const type = typeof musicUrl === 'string' ? '' : (musicUrl.type ?? '');
       const songInfo = toDownloadSongInfo(song);
 
@@ -100,7 +111,7 @@ export const useDownload = () => {
           chunk.map(async (song) => {
             try {
               const data = (await getSongUrl(song.id as number, song, true)) as any;
-              const url = typeof data === 'string' ? data : (data?.url ?? '');
+              const url = extractDownloadUrl(data);
               const type = typeof data === 'string' ? '' : (data?.type ?? '');
               if (!url) return null;
               return { songInfo: toDownloadSongInfo(song), url, type };

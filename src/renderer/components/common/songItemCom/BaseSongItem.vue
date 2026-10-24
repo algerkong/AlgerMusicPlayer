@@ -96,6 +96,7 @@ const toggleSelect = () => {
 
 // 把图片处理、艺术家处理等公共方法暴露给子组件
 defineExpose({
+  handlePlay,
   imageLoad,
   toggleSelect,
   handleArtistClick,

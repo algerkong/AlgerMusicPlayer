@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
 import i18n from '@/../i18n/renderer';
+import { usePlayerCoreStore } from '@/store/modules/playerCore';
 import { getLocalStorageItem, setLocalStorageItem } from '@/utils/playerUtils';
 
 // 定时关闭类型
@@ -166,17 +167,12 @@ export const useSleepTimerStore = defineStore('sleepTimer', () => {
   /**
    * 停止播放并清除定时器
    */
-  const stopPlayback = async () => {
+  const stopPlayback = (): void => {
+    if (sleepTimer.value.type === SleepTimerType.NONE) return;
     console.log('定时器触发：停止播放');
-
-    const { usePlayerCoreStore } = await import('./playerCore');
     const playerCore = usePlayerCoreStore();
-    const { audioService } = await import('@/services/audioService');
-
-    if (playerCore.isPlaying) {
-      playerCore.setIsPlay(false);
-      audioService.pause();
-    }
+    playerCore.handlePause();
+    clearSleepTimer();
 
     // 发送通知
     if (window.electron?.ipcRenderer) {
@@ -185,17 +181,20 @@ export const useSleepTimerStore = defineStore('sleepTimer', () => {
         body: i18n.global.t('player.sleepTimer.playbackStopped')
       });
     }
-
-    clearSleepTimer();
   };
 
   /**
-   * 监听歌曲变化，处理按歌曲数定时和播放列表结束定时
+   * 在自然结束、开始下一首之前计数，单曲循环和 FM 同样经过这里。
    */
-  const handleSongChange = async () => {
-    console.log('歌曲已切换，检查定时器状态:', sleepTimer.value);
-
-    // 处理按歌曲数定时
+  const handleSongEnd = (isLastSong: boolean): boolean => {
+    if (
+      sleepTimer.value.type === SleepTimerType.TIME &&
+      sleepTimer.value.endTime &&
+      Date.now() >= sleepTimer.value.endTime
+    ) {
+      stopPlayback();
+      return true;
+    }
     if (
       sleepTimer.value.type === SleepTimerType.SONGS &&
       sleepTimer.value.remainingSongs !== undefined
@@ -206,31 +205,16 @@ export const useSleepTimerStore = defineStore('sleepTimer', () => {
       setLocalStorageItem('sleepTimer', sleepTimer.value);
 
       if (sleepTimer.value.remainingSongs <= 0) {
-        console.log('已播放完设定的歌曲数，停止播放');
         stopPlayback();
-        setTimeout(() => {
-          stopPlayback();
-        }, 1000);
+        return true;
       }
     }
 
-    // 处理播放列表结束定时
-    if (sleepTimer.value.type === SleepTimerType.PLAYLIST_END) {
-      const { usePlaylistStore } = await import('./playlist');
-      const playlistStore = usePlaylistStore();
-
-      const isLastSong = playlistStore.playListIndex === playlistStore.playList.length - 1;
-
-      if (isLastSong && playlistStore.playMode !== 1) {
-        console.log('已到达播放列表末尾，将在当前歌曲结束后停止播放');
-        sleepTimer.value = {
-          type: SleepTimerType.SONGS,
-          value: 1,
-          remainingSongs: 1
-        };
-        setLocalStorageItem('sleepTimer', sleepTimer.value);
-      }
+    if (sleepTimer.value.type === SleepTimerType.PLAYLIST_END && isLastSong) {
+      stopPlayback();
+      return true;
     }
+    return false;
   };
 
   /**
@@ -282,7 +266,7 @@ export const useSleepTimerStore = defineStore('sleepTimer', () => {
     clearSleepTimer,
     checkSleepTimer,
     stopPlayback,
-    handleSongChange,
+    handleSongEnd,
     setShowSleepTimer
   };
 });

@@ -15,21 +15,20 @@ import { getParsingMusicUrl } from '@/api/music';
 import { loadLrc, useSongDetail } from '@/hooks/usePlayerHooks';
 import { audioService } from '@/services/audioService';
 import { playbackRequestManager } from '@/services/playbackRequestManager';
-// preloadService 用于预加载下一首的 URL 验证（triggerPreload 中使用）
 import { SongSourceConfigManager } from '@/services/SongSourceConfigManager';
 import type { Platform, SongResult } from '@/types/music';
 import { getImgUrl } from '@/utils';
 import { getImageLinearBackground } from '@/utils/linearColor';
+import { readPlaybackProgress } from '@/utils/playerUtils';
 
 const { message } = createDiscreteApi(['message']);
 
-// Generation counter for cancellation
-let generation = 0;
+let reparseGeneration = 0;
 
 /**
  * 获取当前 generation（用于外部检查）
  */
-export const getCurrentGeneration = (): number => generation;
+export const getCurrentGeneration = (): number => playbackRequestManager.getGeneration();
 
 // ==================== 懒加载 Store（避免循环依赖） ====================
 
@@ -67,7 +66,7 @@ const loadMetadata = async (
 }> => {
   const [lyrics, { backgroundColor, primaryColor }] = await Promise.all([
     (async () => {
-      if (music.lyric && music.lyric.lrcTimeArray.length > 0) {
+      if (music.lyric?.lrcTimeArray?.length) {
         return music.lyric;
       }
       return await loadLrc(music.id);
@@ -86,39 +85,27 @@ const loadMetadata = async (
 /**
  * 加载并播放音频
  */
-const loadAndPlayAudio = async (song: SongResult, shouldPlay: boolean): Promise<boolean> => {
+const loadAndPlayAudio = async (
+  song: SongResult,
+  shouldPlay: boolean,
+  startTime: number
+): Promise<void> => {
   if (!song.playMusicUrl) {
     throw new Error('歌曲没有播放URL');
   }
 
-  // 检查保存的进度
-  let initialPosition = 0;
-  const savedProgress = JSON.parse(localStorage.getItem('playProgress') || '{}');
-  if (savedProgress.songId === song.id) {
-    initialPosition = savedProgress.progress;
-    console.log('[playbackController] 恢复播放进度:', initialPosition);
-  }
-
   // 直接通过 audioService 播放（单一 audio 元素，换 src 即可）
   console.log(`[playbackController] 开始播放: ${song.name}`);
-  await audioService.play(song.playMusicUrl, song, shouldPlay, initialPosition || 0);
-
-  // 发布音频就绪事件
-  window.dispatchEvent(
-    new CustomEvent('audio-ready', {
-      detail: { sound: audioService.getCurrentSound(), shouldPlay }
-    })
-  );
-
-  return true;
+  await audioService.play(song.playMusicUrl, song, shouldPlay, startTime);
 };
 
 /**
  * 触发预加载下一首/下下首歌曲（立即触发）
  */
-const triggerPreload = async (song: SongResult): Promise<void> => {
+const triggerPreload = async (song: SongResult, gen: number): Promise<void> => {
   try {
     const playlistStore = await getPlaylistStore();
+    if (gen !== getCurrentGeneration()) return;
     const list = playlistStore.playList;
     if (Array.isArray(list) && list.length > 0) {
       const idx = list.findIndex(
@@ -157,59 +144,38 @@ const updateDocumentTitle = (music: SongResult): void => {
  * @param shouldPlay 是否立即播放（默认 true）
  * @returns 是否成功
  */
+type PlaybackOptions = {
+  startTime?: number;
+  recovery?: boolean;
+  recordHistory?: boolean;
+};
+
 export const playTrack = async (
   music: SongResult,
-  shouldPlay: boolean = true
+  shouldPlay: boolean = true,
+  options: PlaybackOptions = {}
 ): Promise<boolean> => {
-  // 1. 递增 generation，创建 requestId
-  const gen = ++generation;
+  if (!music?.id) return false;
   const requestId = playbackRequestManager.createRequest(music);
-  console.log(
-    `[playbackController] playTrack gen=${gen}, 歌曲: ${music.name}, requestId: ${requestId}`
-  );
-
-  // 如果是新歌曲，重置已尝试的音源
+  const gen = getCurrentGeneration();
   const playerCore = await getPlayerCoreStore();
+  if (gen !== getCurrentGeneration()) return false;
   if (music.id !== playerCore.playMusic.id) {
     SongSourceConfigManager.clearTriedSources(music.id);
   }
+  if (!options.recovery) resetUrlExpiredRetry();
 
-  // 2. 停止当前音频
   audioService.stop();
-
-  // 验证 & 激活请求
-  if (!playbackRequestManager.isRequestValid(requestId)) {
-    console.log(`[playbackController] 请求创建后即失效: ${requestId}`);
-    return false;
-  }
-  if (!playbackRequestManager.activateRequest(requestId)) {
-    console.log(`[playbackController] 无法激活请求: ${requestId}`);
-    return false;
-  }
-
-  // 3. 更新播放意图状态（不设置 playMusic，等歌词加载完再设置以触发 watcher）
-  playerCore.play = shouldPlay;
-  playerCore.isPlay = shouldPlay;
+  playerCore.setIsPlay(false);
   playerCore.userPlayIntent = shouldPlay;
-
-  // 4. 先设置基本歌曲信息（立即显示UI）
-  music.playLoading = true;
-  playerCore.playMusic = music;
+  playerCore.playMusic = { ...music, playLoading: true };
+  playerCore.playMusicUrl = '';
   updateDocumentTitle(music);
 
-  // 保存原始歌曲数据
   const originalMusic = { ...music };
-
-  // 4.5 立即并行加载元数据（歌词 + 背景色），与取 URL/加载音频同时进行：
-  // 不阻塞出声，但让全屏页的封面/歌词/背景色尽量在音频起播前就绪，
-  // 避免"先响歌、后换脸"的割裂感。预加载过的歌曲两者都是缓存命中，立即应用
-  let loadedMetadata: {
-    lyrics: SongResult['lyric'];
-    backgroundColor: string;
-    primaryColor: string;
-  } | null = null;
+  let loadedMetadata: Awaited<ReturnType<typeof loadMetadata>> | null = null;
   const applyLoadedMetadata = () => {
-    if (!loadedMetadata || gen !== generation) return;
+    if (!loadedMetadata || gen !== getCurrentGeneration()) return;
     playerCore.playMusic.lyric = loadedMetadata.lyrics;
     playerCore.playMusic.backgroundColor = loadedMetadata.backgroundColor;
     playerCore.playMusic.primaryColor = loadedMetadata.primaryColor;
@@ -226,103 +192,122 @@ export const playTrack = async (
       console.warn('[playbackController] 元数据加载失败:', error);
     });
 
-  // 5. 添加到播放历史
-  try {
-    const playHistoryStore = await getPlayHistoryStore();
-    if (music.isPodcast) {
-      if (music.program) {
-        playHistoryStore.addPodcast(music.program);
-      }
-    } else {
-      playHistoryStore.addMusic(music);
-    }
-  } catch (e) {
-    console.warn('[playbackController] 添加播放历史失败:', e);
-  }
+  const { getSongDetail } = useSongDetail();
+  const startTime =
+    Number.isFinite(options.startTime) && options.startTime! >= 0 ? options.startTime! : 0;
+  let candidate = originalMusic;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    let audioUrl: string | undefined;
+    try {
+      const song = await getSongDetail(candidate, requestId);
+      if (gen !== getCurrentGeneration()) return false;
+      if (!song.playMusicUrl) throw new Error('歌曲没有播放URL');
+      audioUrl = song.playMusicUrl;
+      playerCore.playMusic = { ...song, playLoading: true };
+      playerCore.playMusicUrl = audioUrl;
+      applyLoadedMetadata();
+      audioService.setVolume(playerCore.isMuted ? 0 : playerCore.volume);
+      audioService.setPlaybackRate(playerCore.playbackRate);
+      await loadAndPlayAudio(playerCore.playMusic, shouldPlay, startTime);
+      if (gen !== getCurrentGeneration()) return false;
 
-  // 6. 获取歌曲详情（解析 URL）- 这是必须的，不能跳过
-  try {
-    const { getSongDetail } = useSongDetail();
-    const updatedPlayMusic = await getSongDetail(originalMusic, requestId);
-
-    // 检查 generation
-    if (gen !== generation) {
-      console.log(`[playbackController] gen=${gen} 已过期（获取详情后），当前 gen=${generation}`);
-      return false;
-    }
-
-    playerCore.playMusic = updatedPlayMusic;
-    playerCore.playMusicUrl = updatedPlayMusic.playMusicUrl as string;
-    music.playMusicUrl = updatedPlayMusic.playMusicUrl as string;
-    // playMusic 被替换为新对象，若元数据已先行到达则重新应用，避免歌词/背景色丢失
-    applyLoadedMetadata();
-  } catch (error) {
-    if (gen !== generation) return false;
-    console.error('[playbackController] 获取歌曲详情失败:', error);
-    message.error(i18n.global.t('player.playFailed'));
-    if (playerCore.playMusic) {
-      playerCore.playMusic.playLoading = false;
-    }
-    playbackRequestManager.failRequest(requestId);
-    return false;
-  }
-
-  // 7. 加载并播放音频（优先播放）
-  try {
-    const success = await loadAndPlayAudio(playerCore.playMusic, shouldPlay);
-
-    // 检查 generation
-    if (gen !== generation) {
-      console.log(`[playbackController] gen=${gen} 已过期（播放音频后），当前 gen=${generation}`);
-      audioService.stop();
-      return false;
-    }
-
-    if (success) {
-      // 8. 元数据已在 4.5 步与播放并行加载，此处无需再处理
-
-      // 9. 播放成功，重置 URL 过期恢复计数
-      resetUrlExpiredRetry();
+      playerCore.setIsPlay(shouldPlay);
       playerCore.playMusic.playLoading = false;
       playerCore.playMusic.isFirstPlay = false;
       playbackRequestManager.completeRequest(requestId);
-      console.log(`[playbackController] gen=${gen} 播放成功: ${music.name}`);
-
-      // 10. 触发预加载下一首（立即触发，不等待）
-      triggerPreload(playerCore.playMusic);
-
+      window.dispatchEvent(
+        new CustomEvent('audio-ready', {
+          detail: { sound: audioService.getCurrentSound(), shouldPlay }
+        })
+      );
+      void triggerPreload(playerCore.playMusic, gen);
+      if (shouldPlay && options.recordHistory !== false) {
+        try {
+          const history = await getPlayHistoryStore();
+          if (gen !== getCurrentGeneration()) return false;
+          if (music.isPodcast) {
+            if (music.program) history.addPodcast(music.program);
+          } else {
+            history.addMusic(playerCore.playMusic);
+          }
+        } catch (error) {
+          console.warn('[playbackController] 添加播放历史失败:', error);
+        }
+      }
       return true;
-    } else {
+    } catch (error) {
+      if (gen !== getCurrentGeneration()) return false;
+      const name = (error as Error)?.name;
+      if (
+        attempt === 0 &&
+        !options.recovery &&
+        audioUrl &&
+        /^https?:\/\//i.test(audioUrl) &&
+        name !== 'AbortError' &&
+        name !== 'NotAllowedError'
+      ) {
+        await clearParsedUrlCache(music.id);
+        if (gen !== getCurrentGeneration()) return false;
+        candidate = { ...originalMusic, playMusicUrl: undefined, expiredAt: undefined };
+        continue;
+      }
+
+      console.error('[playbackController] 播放失败:', error);
+      playerCore.setIsPlay(false);
+      playerCore.userPlayIntent = false;
+      playerCore.playMusic.playLoading = false;
+      audioService.pause();
+      if (name !== 'AbortError') {
+        message.error(
+          i18n.global.t(name === 'NotAllowedError' ? 'player.resumeFailed' : 'player.playFailed')
+        );
+      }
       playbackRequestManager.failRequest(requestId);
       return false;
     }
+  }
+  return false;
+};
+
+export const resumeCurrentSong = async (): Promise<boolean> => {
+  const initialGeneration = getCurrentGeneration();
+  const core = await getPlayerCoreStore();
+  if (initialGeneration !== getCurrentGeneration() || !core.playMusic?.id) return false;
+  const song = { ...core.playMusic };
+  const sound = audioService.getCurrentSound();
+  if (
+    !sound ||
+    sound.error ||
+    sound.readyState < 2 ||
+    audioService.getCurrentTrack()?.id !== song.id
+  ) {
+    return playTrack(song, true, {
+      startTime: readPlaybackProgress(song.id),
+      recordHistory: false
+    });
+  }
+
+  const requestId = playbackRequestManager.createRequest(song);
+  const gen = getCurrentGeneration();
+  core.userPlayIntent = true;
+  core.playMusic.playLoading = true;
+  try {
+    audioService.setVolume(core.isMuted ? 0 : core.volume);
+    audioService.setPlaybackRate(core.playbackRate);
+    await loadAndPlayAudio(song, true, sound.ended ? 0 : sound.currentTime);
+    if (gen !== getCurrentGeneration()) return false;
+    core.setIsPlay(true);
+    core.playMusic.playLoading = false;
+    playbackRequestManager.completeRequest(requestId);
+    window.dispatchEvent(new CustomEvent('audio-ready', { detail: { sound, shouldPlay: true } }));
+    return true;
   } catch (error) {
-    // 11. 播放失败
-    if (gen !== generation) {
-      console.log(`[playbackController] gen=${gen} 已过期（播放异常），静默返回`);
-      return false;
-    }
-
-    console.error('[playbackController] 播放音频失败:', error);
-
-    const errorMsg = error instanceof Error ? error.message : String(error);
-
-    // 操作锁错误：强制重置后重试一次
-    if (errorMsg.includes('操作锁激活')) {
-      try {
-        audioService.forceResetOperationLock();
-        console.log('[playbackController] 已强制重置操作锁');
-      } catch (e) {
-        console.error('[playbackController] 重置操作锁失败:', e);
-      }
-    }
-
-    message.error(i18n.global.t('player.playFailed'));
-    if (playerCore.playMusic) {
-      playerCore.playMusic.playLoading = false;
-    }
-    playerCore.setIsPlay(false);
-    playbackRequestManager.failRequest(requestId);
+    if (gen !== getCurrentGeneration()) return false;
+    core.setIsPlay(false);
+    core.userPlayIntent = false;
+    core.playMusic.playLoading = false;
+    console.error('[playbackController] 恢复播放失败:', error);
+    message.error(i18n.global.t('player.resumeFailed'));
     return false;
   }
 };
@@ -338,8 +323,11 @@ export const reparseCurrentSong = async (
   sourcePlatform: Platform,
   isAuto: boolean = false
 ): Promise<boolean> => {
+  const gen = getCurrentGeneration();
+  const reparseGen = ++reparseGeneration;
   try {
     const playerCore = await getPlayerCoreStore();
+    if (gen !== getCurrentGeneration() || reparseGen !== reparseGeneration) return false;
     const currentSong = playerCore.playMusic;
 
     if (!currentSong || !currentSong.id) {
@@ -347,21 +335,24 @@ export const reparseCurrentSong = async (
       return false;
     }
 
+    // 本地库使用路径哈希作为 ID，不能用 parseInt 将其截断为另一首在线歌曲。
+    const numericId = Number(currentSong.id);
+    if (!Number.isSafeInteger(numericId) || numericId <= 0) return false;
+
     // 使用 SongSourceConfigManager 保存配置
     SongSourceConfigManager.setConfig(currentSong.id, [sourcePlatform], isAuto ? 'auto' : 'manual');
 
     const currentSound = audioService.getCurrentSound();
+    const startTime = currentSound?.currentTime ?? 0;
     if (currentSound) {
-      currentSound.pause();
+      audioService.pause();
     }
-
-    const numericId =
-      typeof currentSong.id === 'string' ? parseInt(currentSong.id, 10) : currentSong.id;
 
     console.log(`[playbackController] 使用音源 ${sourcePlatform} 重新解析歌曲 ${numericId}`);
 
     const songData = cloneDeep(currentSong);
     const res = await getParsingMusicUrl(numericId, songData);
+    if (gen !== getCurrentGeneration() || reparseGen !== reparseGeneration) return false;
 
     if (res && res.data && res.data.data && res.data.data.url) {
       const newUrl = res.data.data.url;
@@ -373,10 +364,14 @@ export const reparseCurrentSong = async (
         expiredAt: Date.now() + 1800000
       };
 
-      await playTrack(updatedMusic, true);
+      const playback = playTrack(updatedMusic, true, { startTime, recordHistory: false });
+      const playbackGeneration = getCurrentGeneration();
+      const success = await playback;
+      if (!success || playbackGeneration !== getCurrentGeneration()) return false;
 
       // 更新播放列表中的歌曲信息
       const playlistStore = await getPlaylistStore();
+      if (playbackGeneration !== getCurrentGeneration()) return false;
       playlistStore.updateSong(updatedMusic);
 
       return true;
@@ -399,7 +394,7 @@ const MAX_URL_EXPIRED_RETRIES = 1;
 let urlExpiredRetrySongId: string | number | null = null;
 let urlExpiredRetryCount = 0;
 
-/** playTrack 成功后重置恢复计数（导出给 playTrack 内部使用） */
+/** 只有新的主动播放才重置，恢复出声后立即再次失败不能无限重试。 */
 const resetUrlExpiredRetry = (): void => {
   urlExpiredRetrySongId = null;
   urlExpiredRetryCount = 0;
@@ -426,96 +421,77 @@ const clearParsedUrlCache = async (songId: string | number): Promise<void> => {
  * 监听 audioService 的 url_expired 事件，自动重新获取 URL 并恢复播放。
  * 恢复策略：清坏缓存 → 有限次重试 → 仍失败则自动切下一首
  */
-export const setupUrlExpiredHandler = (): void => {
-  audioService.on('url_expired', async (expiredTrack: SongResult) => {
-    if (!expiredTrack) return;
+let playbackHandlersInitialized = false;
+let recoveryInFlight: number | null = null;
 
-    console.log('[playbackController] 检测到URL过期事件，准备重新获取URL', expiredTrack.name);
-
-    const playerCore = await getPlayerCoreStore();
-
-    // 只在用户有播放意图或正在播放时处理
-    if (!playerCore.userPlayIntent && !playerCore.play) {
-      console.log('[playbackController] 用户无播放意图，跳过URL过期处理');
+const handleUrlExpired = async (expiredTrack: SongResult): Promise<void> => {
+  if (!expiredTrack || expiredTrack.playMusicUrl?.startsWith('local://')) return;
+  const gen = getCurrentGeneration();
+  if (recoveryInFlight === gen) return;
+  recoveryInFlight = gen;
+  try {
+    const core = await getPlayerCoreStore();
+    if (
+      gen !== getCurrentGeneration() ||
+      !core.userPlayIntent ||
+      core.playMusic?.id !== expiredTrack.id ||
+      core.playMusic.playMusicUrl !== expiredTrack.playMusicUrl
+    )
       return;
-    }
 
-    // 当前歌曲已变更（例如 nextPlay 的失败跳歌已接管），不再恢复旧歌，
-    // 避免两个恢复驱动并发争抢 generation
-    if (playerCore.playMusic?.id !== expiredTrack.id) {
-      console.log('[playbackController] 当前歌曲已变更，跳过URL过期处理');
-      return;
-    }
-
-    // 统计同一首歌的连续恢复次数
-    if (urlExpiredRetrySongId === expiredTrack.id) {
-      urlExpiredRetryCount++;
-    } else {
+    if (urlExpiredRetrySongId !== expiredTrack.id) {
       urlExpiredRetrySongId = expiredTrack.id;
-      urlExpiredRetryCount = 1;
+      urlExpiredRetryCount = 0;
     }
-
-    // 先清掉可能已损坏的解析 URL 缓存，让重试真正拿到新 URL
-    await clearParsedUrlCache(expiredTrack.id);
-
-    // 超过重试上限：不再原地循环，静默切下一首
-    if (urlExpiredRetryCount > MAX_URL_EXPIRED_RETRIES) {
-      console.warn(`[playbackController] ${expiredTrack.name} 恢复重试失败，切换下一首`);
-      resetUrlExpiredRetry();
-      try {
-        const playlistStore = await getPlaylistStore();
-        if (playlistStore.playList.length > 1 || playerCore.isFmPlaying) {
-          playlistStore.nextPlay();
-        } else {
-          playerCore.setIsPlay(false);
-        }
-      } catch (error) {
-        console.error('[playbackController] 切换下一首失败:', error);
-        playerCore.setIsPlay(false);
-      }
-      return;
+    let activeGeneration = gen;
+    if (urlExpiredRetryCount < MAX_URL_EXPIRED_RETRIES) {
+      urlExpiredRetryCount++;
+      const startTime = audioService.getCurrentSound()?.currentTime ?? 0;
+      await clearParsedUrlCache(expiredTrack.id);
+      if (gen !== getCurrentGeneration()) return;
+      const playback = playTrack(
+        { ...expiredTrack, playMusicUrl: undefined, expiredAt: undefined },
+        true,
+        { startTime, recovery: true, recordHistory: false }
+      );
+      activeGeneration = getCurrentGeneration();
+      if (await playback) return;
     }
-
-    // 保存当前播放位置
-    const currentSound = audioService.getCurrentSound();
-    let seekPosition = 0;
-    if (currentSound) {
-      try {
-        seekPosition = currentSound.currentTime;
-        const duration = currentSound.duration;
-        if (duration > 0 && seekPosition > 0 && duration - seekPosition < 5) {
-          console.log('[playbackController] 歌曲接近末尾，跳过URL过期处理');
-          return;
-        }
-      } catch {
-        // 静默忽略
-      }
+    if (activeGeneration !== getCurrentGeneration()) return;
+    const playlist = await getPlaylistStore();
+    if (activeGeneration !== getCurrentGeneration()) return;
+    core.setIsPlay(false);
+    if (playlist.playList.length > 1 || core.isFmPlaying) {
+      await playlist.nextPlay(false, true);
+    } else {
+      core.handlePause();
     }
+  } catch (error) {
+    console.error('[playbackController] 处理URL过期事件失败:', error);
+  } finally {
+    if (recoveryInFlight === gen) recoveryInFlight = null;
+  }
+};
 
-    try {
-      const trackToPlay: SongResult = {
-        ...expiredTrack,
-        isFirstPlay: true,
-        playMusicUrl: undefined
-      };
-
-      // 静默重试：成功恢复位置，失败交由下一次 url_expired 事件按上限切歌
-      const success = await playTrack(trackToPlay, true);
-
-      if (success && seekPosition > 0) {
-        // 延迟一小段时间确保音频已就绪
-        setTimeout(() => {
-          try {
-            audioService.seek(seekPosition);
-          } catch {
-            console.warn('[playbackController] 恢复播放位置失败');
-          }
-        }, 300);
-      }
-    } catch (error) {
-      console.error('[playbackController] 处理URL过期事件失败:', error);
-    }
+export const setupUrlExpiredHandler = (): void => {
+  if (playbackHandlersInitialized) return;
+  playbackHandlersInitialized = true;
+  audioService.on('url_expired', handleUrlExpired);
+  audioService.on('playback_error', async (track: SongResult) => {
+    const gen = getCurrentGeneration();
+    const core = await getPlayerCoreStore();
+    if (gen !== getCurrentGeneration() || core.playMusic.id !== track.id) return;
+    core.handlePause();
+    message.error(i18n.global.t('player.playFailed'));
   });
+  audioService.on('play_request', resumeCurrentSong);
+  const pauseCurrent = async () => {
+    const gen = getCurrentGeneration();
+    const core = await getPlayerCoreStore();
+    if (gen === getCurrentGeneration()) core.handlePause();
+  };
+  audioService.on('pause_request', pauseCurrent);
+  audioService.on('stop_request', pauseCurrent);
 };
 
 /**
@@ -523,18 +499,19 @@ export const setupUrlExpiredHandler = (): void => {
  * 应用启动时恢复上次的播放状态
  */
 export const initializePlayState = async (): Promise<void> => {
+  const gen = getCurrentGeneration();
   const playerCore = await getPlayerCoreStore();
   const settingsStore = await getSettingsStore();
+  if (gen !== 0 || gen !== getCurrentGeneration()) return;
+  audioService.setPlaybackRate(playerCore.playbackRate);
+  audioService.setVolume(playerCore.isMuted ? 0 : playerCore.volume);
 
-  if (!playerCore.playMusic || Object.keys(playerCore.playMusic).length === 0) {
+  if (!playerCore.playMusic?.id) {
     console.log('[playbackController] 没有保存的播放状态，跳过初始化');
-    // 设置播放速率
-    setTimeout(() => {
-      audioService.setPlaybackRate(playerCore.playbackRate);
-    }, 2000);
     return;
   }
 
+  const savedSong = { ...playerCore.playMusic };
   try {
     console.log('[playbackController] 恢复上次播放的音乐:', playerCore.playMusic.name);
     const isPlaying = settingsStore.setData.autoPlay;
@@ -544,13 +521,15 @@ export const initializePlayState = async (): Promise<void> => {
       console.log('[playbackController] 自动播放已禁用，仅加载元数据');
 
       try {
-        const { lyrics, backgroundColor, primaryColor } = await loadMetadata(playerCore.playMusic);
+        const { lyrics, backgroundColor, primaryColor } = await loadMetadata(savedSong);
+        if (gen !== getCurrentGeneration()) return;
         playerCore.playMusic.lyric = lyrics;
         playerCore.playMusic.backgroundColor = backgroundColor;
         playerCore.playMusic.primaryColor = primaryColor;
       } catch (e) {
         console.warn('[playbackController] 加载元数据失败:', e);
       }
+      if (gen !== getCurrentGeneration()) return;
 
       playerCore.play = false;
       playerCore.isPlay = false;
@@ -560,10 +539,11 @@ export const initializePlayState = async (): Promise<void> => {
 
       // 恢复上次保存的播放进度（仅UI显示）
       try {
-        const savedProgress = JSON.parse(localStorage.getItem('playProgress') || '{}');
-        if (savedProgress.songId === playerCore.playMusic.id && savedProgress.progress > 0) {
+        const savedProgress = readPlaybackProgress(savedSong.id);
+        if (savedProgress > 0) {
           const { nowTime, allTime } = await import('@/hooks/MusicHook');
-          nowTime.value = savedProgress.progress;
+          if (gen !== getCurrentGeneration()) return;
+          nowTime.value = savedProgress;
           // 用歌曲时长设置 allTime（dt 单位是毫秒）
           if (playerCore.playMusic.dt) {
             allTime.value = playerCore.playMusic.dt / 1000;
@@ -583,19 +563,16 @@ export const initializePlayState = async (): Promise<void> => {
           isFirstPlay: true,
           playMusicUrl: isLocalMusic ? playerCore.playMusic.playMusicUrl : undefined
         },
-        true
+        true,
+        { startTime: readPlaybackProgress(savedSong.id), recordHistory: false }
       );
     }
   } catch (error) {
+    if (gen !== getCurrentGeneration()) return;
     console.error('[playbackController] 恢复播放状态失败:', error);
     playerCore.play = false;
     playerCore.isPlay = false;
     playerCore.playMusic = {} as SongResult;
     playerCore.playMusicUrl = '';
   }
-
-  // 延迟设置播放速率
-  setTimeout(() => {
-    audioService.setPlaybackRate(playerCore.playbackRate);
-  }, 2000);
 };

@@ -4,6 +4,7 @@ export default {
   batchDownload: 'Batch Download',
   download: 'Download ({count})',
   emptyTip: 'No favorite songs yet',
+  importSongs: 'Import Playlist',
   downloadSuccess: 'Download completed',
   downloadFailed: 'Download failed',
   downloading: 'Downloading, please wait...',

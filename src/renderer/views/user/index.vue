@@ -436,9 +436,9 @@ const openAlbum = async (item: any) => {
   });
 };
 
-const handlePlay = () => {
+const handlePlay = (song: any) => {
   const tracks = recordList.value || [];
-  playerStore.setPlayList(tracks);
+  playerStore.prepareSongPlayback(song, tracks);
 };
 
 // 显示关注列表

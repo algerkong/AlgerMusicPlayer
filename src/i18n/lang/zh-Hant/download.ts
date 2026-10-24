@@ -30,7 +30,12 @@ export default {
     resume: '恢復',
     cancel: '取消',
     cancelAll: '取消全部',
+    retry: '重試',
     retrying: '重新獲取連結...'
+  },
+  failed: {
+    title: '下載失敗',
+    hint: '下載未能完成，可重試或移除該任務'
   },
   batch: {
     complete: '下載完成：成功 {success}/{total} 首',

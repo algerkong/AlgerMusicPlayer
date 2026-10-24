@@ -139,7 +139,7 @@ const props = withDefaults(
   }
 );
 
-const emit = defineEmits(['play', 'select', 'remove-song']);
+defineEmits(['play', 'select', 'remove-song']);
 const baseItem = ref<InstanceType<typeof BaseSongItem>>();
 
 // 从基础组件获取响应式状态
@@ -160,8 +160,7 @@ const onToggleFavorite = (event: Event) => {
   // 可选：emit 收藏事件
 };
 const onPlayMusic = () => {
-  baseItem.value?.playMusicEvent(props.item);
-  emit('play', props.item);
+  baseItem.value?.handlePlay(props.item);
 };
 const onMenuClick = (event: MouseEvent) => baseItem.value?.handleMenuClick(event);
 

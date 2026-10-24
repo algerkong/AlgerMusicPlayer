@@ -38,6 +38,14 @@
 
           <button
             class="h-9 px-4 rounded-full bg-primary/10 hover:bg-primary text-primary hover:text-white text-xs font-medium transition-all duration-300 flex items-center gap-1.5"
+            @click="goToImport"
+          >
+            <i class="ri-import-line text-sm"></i>
+            {{ t('favorite.importSongs') }}
+          </button>
+
+          <button
+            class="h-9 px-4 rounded-full bg-primary/10 hover:bg-primary text-primary hover:text-white text-xs font-medium transition-all duration-300 flex items-center gap-1.5"
             @click="startSelect"
           >
             <i class="ri-checkbox-multiple-line text-sm"></i>
@@ -344,8 +352,8 @@ watch(
   { deep: true }
 );
 
-const handlePlay = () => {
-  playerStore.setPlayList(favoriteSongs.value);
+const handlePlay = (song: SongResult) => {
+  playerStore.prepareSongPlayback(song, favoriteSongs.value);
 };
 
 const getItemAnimationDelay = (index: number) => {
@@ -355,6 +363,10 @@ const getItemAnimationDelay = (index: number) => {
 const router = useRouter();
 const handleMore = () => {
   router.push('/history');
+};
+
+const goToImport = () => {
+  router.push('/playlist/import');
 };
 
 // 全选相关

@@ -8,6 +8,19 @@ import type { AppUpdateState } from '../shared/appUpdate';
 const api = {
   minimize: () => ipcRenderer.send('minimize-window'),
   maximize: () => ipcRenderer.send('maximize-window'),
+  isMaximized: () => ipcRenderer.invoke('is-window-maximized') as Promise<boolean>,
+  onWindowMaximizedState: (callback: (maximized: boolean) => void) => {
+    const listener = (_event: IpcRendererEvent, maximized: boolean) => callback(maximized);
+    ipcRenderer.on('window-maximized-state', listener);
+    return () => ipcRenderer.removeListener('window-maximized-state', listener);
+  },
+  toggleFullScreen: () => ipcRenderer.send('toggle-fullscreen'),
+  isFullScreen: () => ipcRenderer.invoke('is-fullscreen') as Promise<boolean>,
+  onWindowFullScreenState: (callback: (fullscreen: boolean) => void) => {
+    const listener = (_event: IpcRendererEvent, fullscreen: boolean) => callback(fullscreen);
+    ipcRenderer.on('window-fullscreen-state', listener);
+    return () => ipcRenderer.removeListener('window-fullscreen-state', listener);
+  },
   close: () => ipcRenderer.send('close-window'),
   quitApp: () => ipcRenderer.send('quit-app'),
   dragStart: (data) => ipcRenderer.send('drag-start', data),

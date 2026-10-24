@@ -111,7 +111,9 @@
           <!-- Downloading List -->
           <div v-if="tabName === 'downloading'" class="downloading-container">
             <div
-              v-if="downloadStore.downloadingList.length === 0"
+              v-if="
+                downloadStore.downloadingList.length === 0 && downloadStore.failedList.length === 0
+              "
               class="empty-state py-20 text-center"
             >
               <i
@@ -119,7 +121,10 @@
               />
               <p class="text-neutral-400">{{ t('download.empty.noTasks') }}</p>
             </div>
-            <div v-else class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <div
+              v-if="downloadStore.downloadingList.length > 0"
+              class="grid grid-cols-1 xl:grid-cols-2 gap-4"
+            >
               <div
                 v-for="item in downloadStore.downloadingList"
                 :key="item.taskId"
@@ -186,6 +191,59 @@
                         <span class="text-[10px] text-neutral-400 ml-1"
                           >{{ item.progress.toFixed(1) }}%</span
                         >
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 失败任务：显示失败原因，可重试或移除（#757） -->
+            <div v-if="downloadStore.failedList.length > 0" class="failed-container mt-6">
+              <h3 class="text-sm font-bold text-red-500 mb-3">{{ t('download.failed.title') }}</h3>
+              <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                <div
+                  v-for="item in downloadStore.failedList"
+                  :key="item.taskId"
+                  class="downloading-item group p-4 rounded-2xl bg-neutral-50 dark:bg-neutral-900/50 border border-red-100 dark:border-red-900/30"
+                >
+                  <div class="flex items-center gap-4">
+                    <img
+                      :src="getImgUrl(item.songInfo?.picUrl, '100y100')"
+                      class="w-12 h-12 rounded-xl flex-shrink-0 object-cover"
+                      @error="handleCoverError"
+                    />
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center justify-between mb-2">
+                        <div class="truncate pr-4">
+                          <span class="text-sm font-bold text-neutral-900 dark:text-white">{{
+                            item.filename
+                          }}</span>
+                          <span class="ml-2 text-xs text-neutral-400">{{
+                            item.songInfo?.ar?.map((a) => a.name).join(', ')
+                          }}</span>
+                        </div>
+                        <span class="text-xs font-medium text-red-500">{{
+                          t('download.status.failed')
+                        }}</span>
+                      </div>
+                      <p class="text-xs text-neutral-400 truncate">
+                        {{ item.error || t('download.failed.hint') }}
+                      </p>
+                      <div class="flex items-center justify-end gap-2 mt-2">
+                        <button
+                          class="px-3 h-6 rounded-full flex items-center gap-1 text-xs text-primary bg-primary/10 hover:bg-primary/20 transition-all"
+                          @click="handleRetry(item.taskId)"
+                        >
+                          <i class="ri-refresh-line text-sm" />
+                          {{ t('download.action.retry') }}
+                        </button>
+                        <button
+                          class="w-6 h-6 rounded-full flex items-center justify-center text-neutral-400 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                          @click="handleCancel(item.taskId)"
+                        >
+                          <i class="ri-close-circle-line text-sm" />
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -617,6 +675,8 @@ const getProgressClass = (item: DownloadTask) => {
 const handlePause = (taskId: string) => downloadStore.pauseTask(taskId);
 const handleResume = (taskId: string) => downloadStore.resumeTask(taskId);
 const handleCancel = (taskId: string) => downloadStore.cancelTask(taskId);
+// 失败任务重试：主进程 resumeTask 接受 error 态，重新排队下载（#757）
+const handleRetry = (taskId: string) => downloadStore.retryTask(taskId);
 
 const handleCoverError = (e: Event) => {
   (e.target as HTMLImageElement).src = '/images/default_cover.png';
