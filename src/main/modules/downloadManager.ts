@@ -17,6 +17,7 @@ import type {
   DownloadTask,
   DownloadTaskState
 } from '../../shared/download';
+import { parsePluginMediaUrl } from '../../shared/musicSourcePlugin';
 import { getStore } from './config';
 
 // ─── Helpers ─────────────────────────────────────────────────────────
@@ -528,11 +529,19 @@ class DownloadManager {
         headers['Range'] = `bytes=${task.loaded}-`;
       }
 
+      // 本地音源插件直链：pluginmedia:// 携带的请求头由主进程代理附加
+      let requestUrl = task.url;
+      const pluginMedia = parsePluginMediaUrl(task.url);
+      if (pluginMedia) {
+        requestUrl = pluginMedia.url;
+        Object.assign(headers, pluginMedia.headers);
+      }
+
       // Start download
       // 注意：axios 默认只接受 2xx，403/410 会直接抛错进入 catch，导致下方"直链过期重新解析"
       // 分支永远走不到。这里放行 403/410，让过期直链能触发重新解析（尤其是重启后恢复队列时）。
       const response = await axios({
-        url: task.url,
+        url: requestUrl,
         method: 'GET',
         responseType: 'stream',
         timeout: 30000,

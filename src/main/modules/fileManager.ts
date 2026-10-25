@@ -1,6 +1,7 @@
 import { app, dialog, ipcMain, protocol, shell } from 'electron';
 import Store from 'electron-store';
 import * as fs from 'fs';
+import fetch from 'node-fetch';
 import * as path from 'path';
 import { Readable } from 'stream';
 
@@ -280,4 +281,85 @@ export function initializeFileManager() {
       throw new Error(`脚本读取失败: ${error.message}`);
     }
   });
+
+  // 处理通用本地音源插件导入。这里只读取源码，不在主进程执行第三方脚本。
+  ipcMain.handle('import-music-source-plugin', async () => {
+    const result = await dialog.showOpenDialog({
+      title: '选择音乐音源脚本',
+      filters: [{ name: 'JavaScript Files', extensions: ['js', 'mjs', 'cjs'] }],
+      properties: ['openFile']
+    });
+
+    if (result.canceled || result.filePaths.length === 0) return null;
+
+    const filePath = result.filePaths[0];
+    try {
+      const stat = await fs.promises.stat(filePath);
+      if (stat.size > 2 * 1024 * 1024) {
+        throw new Error('音源脚本不能超过 2 MB。');
+      }
+      const content = await fs.promises.readFile(filePath, 'utf-8');
+      if (!content.trim()) throw new Error('音源脚本为空。');
+      return {
+        name: path.basename(filePath).replace(/\.(m?js|cjs)$/i, ''),
+        content,
+        path: filePath
+      };
+    } catch (error: any) {
+      console.error('读取音乐音源脚本失败:', error);
+      throw new Error(`脚本读取失败: ${error.message}`);
+    }
+  });
+
+  // URL 导入走主进程，避免渲染进程 CORS 和任意第三方脚本读取凭证的问题。
+  ipcMain.handle(
+    'fetch-music-source-plugin',
+    async (_, sourceUrl: string): Promise<{ name: string; content: string; url: string }> => {
+      let url: URL;
+      try {
+        url = new URL(sourceUrl);
+      } catch {
+        throw new Error('无效的音源脚本 URL。');
+      }
+      if (!/^https?:$/.test(url.protocol)) {
+        throw new Error('音源脚本 URL 只支持 HTTP 或 HTTPS。');
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
+      try {
+        const response = await fetch(url.toString(), {
+          method: 'GET',
+          headers: { 'User-Agent': 'AlgerMusicPlayer/5.1' },
+          signal: controller.signal
+        });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status} ${response.statusText}`);
+        }
+        const content = await response.text();
+        if (content.length > 2 * 1024 * 1024) {
+          throw new Error('音源脚本不能超过 2 MB。');
+        }
+        if (!content.trim()) throw new Error('音源脚本为空。');
+        // URL 路径里的中文是 percent-encoding（%E9%85%B7...），不解码就是乱码名
+        const rawName = path.basename(url.pathname) || 'online-source';
+        let fileName = rawName;
+        try {
+          fileName = decodeURIComponent(rawName);
+        } catch {
+          // 含非法转义序列时保留原样
+        }
+        return {
+          name: fileName.replace(/\.(m?js|cjs)$/i, ''),
+          content,
+          url: url.toString()
+        };
+      } catch (error: any) {
+        console.error('下载音乐音源脚本失败:', error);
+        throw new Error(`脚本下载失败: ${error.message}`);
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+  );
 }

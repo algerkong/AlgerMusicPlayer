@@ -32,10 +32,11 @@ function toDownloadSongInfo(song: SongResult): DownloadSongInfo {
  * 取出主进程能直接拉取的 http(s) 直链。
  * getSongUrl 可能返回字符串、带 url 的对象，或解析失败的包装对象（url 缺失/空串）；
  * 这类结果若照常入队，主进程 axios 会立即抛错，任务静默失败（#757）。
+ * pluginmedia:// 为本地音源插件的代理直链（主进程携带请求头拉取），同样放行。
  */
 function extractDownloadUrl(result: any): string {
   const raw = typeof result === 'string' ? result : (result?.url ?? '');
-  return typeof raw === 'string' && /^https?:\/\//i.test(raw) ? raw : '';
+  return typeof raw === 'string' && /^(https?:|pluginmedia:)\//i.test(raw) ? raw : '';
 }
 
 export const useDownload = () => {

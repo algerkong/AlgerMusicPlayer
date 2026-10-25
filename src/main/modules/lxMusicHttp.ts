@@ -12,6 +12,8 @@ interface LxHttpRequest {
     method?: string;
     headers?: Record<string, string>;
     body?: string;
+    data?: unknown;
+    params?: Record<string, unknown>;
     form?: Record<string, string>;
     formData?: Record<string, string>;
     timeout?: number;
@@ -28,6 +30,27 @@ interface LxHttpResponse {
 // 取消控制器映射
 const abortControllers = new Map<string, AbortController>();
 
+const appendQueryParams = (url: string, params?: Record<string, unknown>): string => {
+  if (!params || typeof params !== 'object') return url;
+
+  try {
+    const target = new URL(url);
+    for (const [key, value] of Object.entries(params)) {
+      if (value === undefined || value === null) continue;
+      if (Array.isArray(value)) {
+        value.forEach((item) => target.searchParams.append(key, String(item)));
+      } else if (typeof value === 'object') {
+        target.searchParams.set(key, JSON.stringify(value));
+      } else {
+        target.searchParams.set(key, String(value));
+      }
+    }
+    return target.toString();
+  } catch {
+    return url;
+  }
+};
+
 /**
  * 初始化 HTTP 请求处理
  */
@@ -36,7 +59,8 @@ export const initLxMusicHttp = () => {
   ipcMain.handle(
     'lx-music-http-request',
     async (_, request: LxHttpRequest): Promise<LxHttpResponse> => {
-      const { url, options, requestId } = request;
+      const { options, requestId } = request;
+      const url = appendQueryParams(request.url, options.params);
       const controller = new AbortController();
 
       // 保存取消控制器
@@ -47,8 +71,9 @@ export const initLxMusicHttp = () => {
       try {
         console.log(`[LxMusicHttp] 请求: ${options.method || 'GET'} ${url}`);
 
+        const method = String(options.method || 'GET').toUpperCase();
         const fetchOptions: RequestInit = {
-          method: options.method || 'GET',
+          method,
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             ...(options.headers || {})
@@ -57,8 +82,18 @@ export const initLxMusicHttp = () => {
         };
 
         // 处理请求体
-        if (options.body) {
+        if (options.body !== undefined) {
           fetchOptions.body = options.body;
+        } else if (options.data !== undefined && method !== 'GET' && method !== 'HEAD') {
+          if (typeof options.data === 'string') {
+            fetchOptions.body = options.data;
+          } else {
+            fetchOptions.body = JSON.stringify(options.data);
+            fetchOptions.headers = {
+              ...fetchOptions.headers,
+              'Content-Type': 'application/json'
+            };
+          }
         } else if (options.form) {
           const formData = new URLSearchParams(options.form);
           fetchOptions.body = formData.toString();

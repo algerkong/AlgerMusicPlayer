@@ -35,6 +35,7 @@ android/app/release
 .agents
 .claude
 .kiro
+.zcode
 CLAUDE.md
 AGENTS.md
 .sisyphus
@@ -48,6 +49,14 @@ AGENTS.md
 
 # TypeScript 增量编译缓存
 *.tsbuildinfo
+
+# E2E 测试运行产物（截图、报告）
+tests/e2e-artifacts/
+
+# 本地 E2E / 集成测试，暂不入库
+scripts/e2e/
+tests/integration/
+tests/fixtures/
 
 src/renderer/auto-imports.d.ts
 src/renderer/components.d.ts

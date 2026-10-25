@@ -409,8 +409,8 @@ const clearParsedUrlCache = async (songId: string | number): Promise<void> => {
   // 本地歌曲 id 为 hex 字符串，无解析缓存可清
   if (!/^\d+$/.test(String(songId))) return;
   try {
-    const { CacheManager } = await import('@/api/musicParser');
-    await CacheManager.clearMusicCache(Number(songId));
+    const { MusicResolveCache } = await import('@/services/musicSource/cache');
+    await MusicResolveCache.clearMusicCache(Number(songId));
   } catch (error) {
     console.warn('[playbackController] 清除URL缓存失败:', error);
   }

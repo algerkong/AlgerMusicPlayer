@@ -32,6 +32,7 @@ type SetConfig = {
   diskCacheDir: string;
   diskCacheMaxSizeMB: number;
   diskCacheCleanupPolicy: 'lru' | 'fifo';
+  musicSourcePlugins?: unknown[];
 };
 interface StoreType {
   set: SetConfig;

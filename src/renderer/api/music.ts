@@ -1,10 +1,17 @@
 import { musicDB } from '@/hooks/MusicHook';
+import { resolveSong } from '@/services/musicSource/resolver';
 import { useSettingsStore, useUserStore } from '@/store';
 import type { ILyric } from '@/types/lyric';
 import type { SongResult } from '@/types/music';
 import request from '@/utils/request';
 
-import { MusicParser, type MusicParseResult } from './musicParser';
+type MusicParseResult = {
+  data: {
+    code: number;
+    message: string;
+    data?: { url: string; type?: string; br?: number; [key: string]: any };
+  };
+};
 
 const { saveData, getData } = musicDB;
 
@@ -90,16 +97,31 @@ export const getMusicLrc = async (id: number): Promise<{ data: ILyric }> => {
 };
 
 /**
- * 获取解析后的音乐URL
+ * 获取解析后的音乐URL（兼容薄包装：内部走统一解析器）
  * @param id 歌曲ID
  * @param data 歌曲数据
- * @returns 解析结果
+ * @returns 解析结果（旧 MusicParseResult 形状）
  */
 export const getParsingMusicUrl = async (
-  id: number,
+  _id: number,
   data: SongResult
 ): Promise<MusicParseResult> => {
-  return await MusicParser.parseMusic(id, data);
+  const result = await resolveSong(data);
+  if (!result) {
+    return { data: { code: 404, message: '所有解析方式都失败了', data: undefined } };
+  }
+  return {
+    data: {
+      code: 200,
+      message: 'success',
+      data: {
+        url: result.media.url,
+        type: result.media.format,
+        br: result.media.br,
+        pluginName: result.providerName
+      }
+    }
+  };
 };
 
 // 收藏歌曲

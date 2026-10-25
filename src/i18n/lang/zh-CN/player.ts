@@ -47,6 +47,8 @@ export default {
     processing: '解析中...',
     clear: '清除自定义音源',
     customApiFailed: '自定义API解析失败，正在尝试使用内置音源...',
+    noSourceConfigured:
+      '该歌曲需要解析音源，但你还没有配置任何可用音源。请到 设置 → 播放 → 配置音源 里启用音源或导入音源插件',
     customApiError: '自定义API请求出错，正在尝试使用内置音源...'
   },
   playBar: {

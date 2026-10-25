@@ -25,7 +25,11 @@
     "build:mac": "npm run build && electron-builder --mac --x64 --publish never && cp dist/latest-mac.yml dist/latest-mac-x64.yml && electron-builder --mac --arm64 --publish never && cp dist/latest-mac.yml dist/latest-mac-arm64.yml && node scripts/merge_latest_mac_yml.mjs dist/latest-mac-x64.yml dist/latest-mac-arm64.yml dist/latest-mac.yml",
     "build:mac:x64": "npm run build && electron-builder --mac --x64 --publish never && cp dist/latest-mac.yml dist/latest-mac-x64.yml",
     "build:mac:arm64": "npm run build && electron-builder --mac --arm64 --publish never && cp dist/latest-mac.yml dist/latest-mac-arm64.yml",
-    "build:linux": "npm run build && electron-builder --linux --publish never"
+    "build:linux": "npm run build && electron-builder --linux --publish never",
+    "test:e2e": "node scripts/e2e/playback-e2e.mjs",
+    "test:all": "npm run typecheck && npm test && ALGER_PLUGIN_NETWORK_E2E=1 npm test && npm run test:e2e && npm run test:e2e:vip",
+    "test:e2e:vip": "node scripts/e2e/vip-resolve-e2e.mjs",
+    "test:e2e:bulk": "node scripts/e2e/plugins-bulk-e2e.mjs"
   },
   "lint-staged": {
     "*.{ts,tsx,vue,js}": [
@@ -40,12 +44,16 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@httptoolkit/dbus-native": "^0.1.5",
     "@unblockneteasemusic/server": "^0.27.10",
+    "big-integer": "^1.6.52",
+    "cheerio": "^1.2.0",
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
+    "dayjs": "^1.11.23",
     "electron-store": "^8.2.0",
     "electron-updater": "^6.6.2",
     "electron-window-state": "^5.0.3",
     "express": "^4.22.1",
+    "fflate": "^0.8.3",
     "file-type": "^21.1.1",
     "flac-tagger": "^1.0.7",
     "font-list": "^1.6.0",

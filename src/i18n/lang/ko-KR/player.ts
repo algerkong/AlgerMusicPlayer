@@ -48,6 +48,8 @@ export default {
     processing: '분석 중...',
     clear: '사용자 정의 음원 지우기',
     customApiFailed: '사용자 정의 API 분석 실패, 기본 음원을 시도합니다...',
+    noSourceConfigured:
+      '이 곡은 음원이 필요하지만 사용 가능한 음원이 설정되지 않았습니다. 설정 → 재생 → 음원 설정에서 활성화하거나 가져오세요',
     customApiError: '사용자 정의 API 요청 오류, 기본 음원을 시도합니다...'
   },
   playBar: {
