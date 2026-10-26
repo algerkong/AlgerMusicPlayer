@@ -1,6 +1,7 @@
 import { type BrowserWindow, globalShortcut, ipcMain } from 'electron';
 
 import {
+  builtInMediaKeyBindings,
   defaultShortcuts,
   getReservedAccelerators,
   getShortcutConflicts,
@@ -8,6 +9,7 @@ import {
   isModifierOnlyShortcut,
   normalizeShortcutAccelerator,
   normalizeShortcutsConfig,
+  resolveBuiltInMediaKeyAccelerators,
   type ShortcutAction,
   shortcutActionOrder,
   type ShortcutPlatform,
@@ -56,6 +58,9 @@ let shortcutsEnabled = true;
 let shortcutIpcReady = false;
 
 const managedGlobalShortcuts = new Map<ShortcutAction, string>();
+
+// 内置多媒体键（播放/暂停、上一首、下一首）的独立注册集，与用户自定义快捷键分开管理
+const managedMediaKeys = new Set<string>();
 
 function currentPlatform(): ShortcutPlatform {
   if (
@@ -129,6 +134,22 @@ function unregisterManagedGlobalShortcuts() {
     }
   });
   managedGlobalShortcuts.clear();
+}
+
+function unregisterManagedMediaKeys() {
+  managedMediaKeys.forEach((accelerator) => {
+    try {
+      globalShortcut.unregister(accelerator);
+    } catch (error) {
+      console.error(`[Shortcuts] 注销多媒体键失败: ${accelerator}`, error);
+    }
+  });
+  managedMediaKeys.clear();
+}
+
+function unregisterAllManagedShortcuts() {
+  unregisterManagedGlobalShortcuts();
+  unregisterManagedMediaKeys();
 }
 
 function handleShortcutAction(action: ShortcutAction) {
@@ -212,6 +233,49 @@ function registerManagedGlobalShortcuts(shortcuts: ShortcutsConfig): ShortcutReg
     success: failed.length === 0,
     failed
   };
+}
+
+/**
+ * 注册内置多媒体键（播放/暂停、上一首、下一首），让键盘多媒体硬件键
+ * 在应用处于后台/托盘时也能全局响应。
+ *
+ * - 用户快捷键配置中已占用（任意作用域）的键名跳过，避免双重绑定；
+ * - 被其他程序占用时注册失败仅记录日志，不影响其余快捷键；
+ * - Linux 下系统媒体键由 MPRIS 服务接管，跳过注册避免重复触发。
+ */
+function registerBuiltInMediaKeys(shortcuts: ShortcutsConfig): void {
+  unregisterManagedMediaKeys();
+
+  if (!shortcutsEnabled || process.platform === 'linux') {
+    return;
+  }
+
+  const registeredMediaKeys: string[] = [];
+
+  resolveBuiltInMediaKeyAccelerators(shortcuts).forEach((accelerator) => {
+    try {
+      const registered = globalShortcut.register(accelerator, () => {
+        const binding = builtInMediaKeyBindings.find((item) => item.accelerator === accelerator);
+        if (binding) {
+          handleShortcutAction(binding.action);
+        }
+      });
+
+      if (!registered) {
+        console.warn(`[Shortcuts] 多媒体键注册失败（可能被其他程序占用）: ${accelerator}`);
+        return;
+      }
+
+      managedMediaKeys.add(accelerator);
+      registeredMediaKeys.push(accelerator);
+    } catch (error) {
+      console.error(`[Shortcuts] 注册多媒体键失败: ${accelerator}`, error);
+    }
+  });
+
+  if (registeredMediaKeys.length > 0) {
+    console.log(`[Shortcuts] 已注册内置多媒体键: ${registeredMediaKeys.join(', ')}`);
+  }
 }
 
 function validateShortcuts(rawShortcuts: unknown): ShortcutValidationResult {
@@ -302,6 +366,7 @@ function validateShortcuts(rawShortcuts: unknown): ShortcutValidationResult {
 
 function applyShortcuts(shortcuts: ShortcutsConfig): ShortcutRegistrationResult {
   const registration = registerManagedGlobalShortcuts(shortcuts);
+  registerBuiltInMediaKeys(shortcuts);
   emitShortcutsChanged(shortcuts, registration);
   return registration;
 }
@@ -343,7 +408,7 @@ function setupShortcutIpcHandlers() {
 
   ipcMain.on('disable-shortcuts', () => {
     shortcutsEnabled = false;
-    unregisterManagedGlobalShortcuts();
+    unregisterAllManagedShortcuts();
   });
 
   ipcMain.on('enable-shortcuts', () => {
