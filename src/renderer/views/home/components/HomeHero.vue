@@ -483,7 +483,7 @@ const quickNavItems = computed(() => {
       icon: 'ri-heart-pulse-fill',
       active: isIntelligenceMode.value,
       action: toggleIntelligenceMode,
-      show: isLoggedIn.value
+      show: userStore.hasRealAuth
     },
     {
       key: 'toplist',

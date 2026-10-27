@@ -256,7 +256,7 @@ const { zoomFactor, initZoomFactor, increaseZoom, decreaseZoom, resetZoom, isZoo
 
 // ── 心动模式 ─────────────────────────────────────────
 const isIntelligenceMode = computed(() => intelligenceModeStore.isIntelligenceMode);
-const showIntelligenceBtn = computed(() => userStore.user && userStore.loginType === 'cookie');
+const showIntelligenceBtn = computed(() => userStore.hasRealAuth);
 const toggleIntelligenceMode = async () => {
   if (isIntelligenceMode.value) {
     intelligenceModeStore.clearIntelligenceMode();

@@ -79,7 +79,8 @@ export default {
     advancedControls: 'Advanced Controls',
     intelligenceMode: {
       title: 'Intelligence Mode',
-      needCookieLogin: 'Please login with Cookie method to use Intelligence Mode',
+      needRealLogin:
+        'Please log in with Cookie or by scanning the QR code; UID login cannot use Intelligence Mode',
       noFavoritePlaylist: 'Favorite playlist not found',
       noLikedSongs: 'You have no liked songs yet',
       loading: 'Loading Intelligence Mode',

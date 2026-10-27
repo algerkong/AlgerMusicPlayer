@@ -54,11 +54,6 @@ const openPlaylistDrawer = inject<(songId: number | string) => void>('openPlayli
 
 const userStore = useUserStore();
 
-// 是否具有真实登录权限（Cookie/扫码登录）。
-// 用 userStore 的响应式状态而非直接读 localStorage：
-// 后者不具备响应性，登录/登出后菜单禁用状态不会刷新（#706）
-const hasRealAuth = computed(() => !!userStore.user && userStore.loginType !== 'uid');
-
 // 本地歌曲：移除菜单项显示"从本地列表移除"而非"从歌单中删除"（#713）
 const isLocalSong = computed(
   () =>
@@ -231,7 +226,7 @@ const handleSelect = (key: string | number) => {
       emits('play-next');
       break;
     case 'addToPlaylist':
-      if (!hasRealAuth.value) {
+      if (!userStore.hasRealAuth) {
         message.warning(t('songItem.message.addToPlaylistNeedLogin'));
         break;
       }

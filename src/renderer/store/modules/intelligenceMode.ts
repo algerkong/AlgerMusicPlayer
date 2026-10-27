@@ -34,9 +34,10 @@ export const useIntelligenceModeStore = defineStore('intelligenceMode', () => {
     const playlistStore = usePlaylistStore();
     const { t } = i18n.global;
 
-    // 检查是否使用cookie登录
-    if (!userStore.user || userStore.loginType !== 'cookie') {
-      message.warning(t('player.playBar.intelligenceMode.needCookieLogin'));
+    // 心动模式接口需要真实 cookie，UID 登录不可用
+    const userId = userStore.user?.userId;
+    if (!userId || !userStore.hasRealAuth) {
+      message.warning(t('player.playBar.intelligenceMode.needRealLogin'));
       return;
     }
 
@@ -48,7 +49,7 @@ export const useIntelligenceModeStore = defineStore('intelligenceMode', () => {
 
       // 找到"我喜欢的音乐"歌单
       const favoritePlaylist = userStore.playList.find(
-        (pl: any) => pl.userId === userStore.user?.userId && pl.specialType === 5
+        (pl: any) => pl.userId === userId && pl.specialType === 5
       );
 
       if (!favoritePlaylist) {
@@ -57,7 +58,7 @@ export const useIntelligenceModeStore = defineStore('intelligenceMode', () => {
       }
 
       // 获取喜欢的歌曲列表
-      const likedListRes = await getLikedList(userStore.user.userId);
+      const likedListRes = await getLikedList(userId);
       const likedIds = likedListRes.data?.ids || [];
 
       if (likedIds.length === 0) {

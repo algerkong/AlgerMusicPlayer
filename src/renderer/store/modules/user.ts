@@ -38,6 +38,11 @@ export const useUserStore = defineStore('user', () => {
   // 用户的专辑列表
   const albumList = ref<any[]>([]);
 
+  // 是否具有真实登录权限（Cookie/扫码/Token）。UID 登录只填了 uid，没有真实 cookie。
+  // 用 store 的响应式状态而非直接读 localStorage：后者不具备响应性，
+  // 登录/登出后入口和菜单禁用状态不会刷新（#706）
+  const hasRealAuth = computed(() => !!user.value && loginType.value !== 'uid');
+
   // 方法
   const setUser = (userData: UserData) => {
     user.value = userData;
@@ -195,6 +200,7 @@ export const useUserStore = defineStore('user', () => {
     playList,
     albumList,
     isVip,
+    hasRealAuth,
 
     // 方法
     setUser,

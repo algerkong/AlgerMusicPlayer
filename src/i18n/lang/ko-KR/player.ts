@@ -79,7 +79,8 @@ export default {
     advancedControls: '고급 설정',
     intelligenceMode: {
       title: '인텔리전스 모드',
-      needCookieLogin: '쿠키 방식으로 로그인한 후 인텔리전스 모드를 사용할 수 있습니다',
+      needRealLogin:
+        '쿠키 또는 QR 코드 로그인 후 사용 가능합니다. UID 로그인에서는 인텔리전스 모드를 사용할 수 없습니다',
       noFavoritePlaylist: '내가 좋아하는 음악 재생목록을 찾을 수 없습니다',
       noLikedSongs: '아직 좋아한 노래가 없습니다',
       loading: '인텔리전스 모드를 불러오는 중',
