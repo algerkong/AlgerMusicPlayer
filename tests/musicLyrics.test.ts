@@ -13,7 +13,7 @@ vi.mock('@/hooks/MusicHook', () => ({
 }));
 vi.mock('@/store', () => ({ useSettingsStore: vi.fn(), useUserStore: vi.fn() }));
 vi.mock('@/utils/request', () => ({ default: { get: mocks.request } }));
-vi.mock('@/api/musicParser', () => ({ MusicParser: {} }));
+vi.mock('@/services/musicSource/resolver', () => ({ resolveSong: vi.fn() }));
 
 describe('lyrics caching during playback', () => {
   const response = { data: { lrc: { lyric: '[00:00.00]Test lyrics' } } };

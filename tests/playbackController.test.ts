@@ -33,8 +33,8 @@ vi.mock('naive-ui', () => ({
   createDiscreteApi: () => ({ message: { error: vi.fn() } })
 }));
 vi.mock('@/api/music', () => ({ getParsingMusicUrl: mocks.parse }));
-vi.mock('@/api/musicParser', () => ({
-  CacheManager: { clearMusicCache: mocks.clearMusicCache }
+vi.mock('@/services/musicSource/cache', () => ({
+  MusicResolveCache: { clearMusicCache: mocks.clearMusicCache }
 }));
 vi.mock('@/hooks/usePlayerHooks', () => ({
   useSongDetail: () => ({ getSongDetail: mocks.getSongDetail }),

@@ -30,7 +30,6 @@ import { checkLoginStatus } from '@/utils/auth';
 
 import { initAudioListeners, initMusicHook } from './hooks/MusicHook';
 import { audioService } from './services/audioService';
-import { initLxMusicRunner } from './services/LxMusicSourceRunner';
 import { isMobile } from './utils';
 import { useAppShortcuts } from './utils/appShortcuts';
 
@@ -158,19 +157,13 @@ onMounted(async () => {
   // 初始化音频设备变化监听器
   playerCoreStore.initAudioDeviceListener();
 
-  // 初始化落雪音源（如果有激活的音源）
-  const activeLxApiId = settingsStore.setData?.activeLxMusicApiId;
-  if (activeLxApiId) {
-    const lxMusicScripts = settingsStore.setData?.lxMusicScripts || [];
-    const activeScript = lxMusicScripts.find((script: any) => script.id === activeLxApiId);
-    if (activeScript && activeScript.script) {
-      try {
-        console.log('[App] 初始化激活的落雪音源:', activeScript.name);
-        await initLxMusicRunner(activeScript.script);
-      } catch (error) {
-        console.error('[App] 初始化落雪音源失败:', error);
-      }
-    }
+  // 音源体系统一迁移（幂等：LX 脚本入库、旧 key remap、初始化用户排序）
+  // 插件沙箱按需懒加载，无需启动预热
+  try {
+    const { migrateLegacyMusicSources } = await import('@/services/musicSource/migration');
+    migrateLegacyMusicSources();
+  } catch (error) {
+    console.error('[App] 音源迁移失败:', error);
   }
 
   // 如果有正在播放的音乐，则初始化音频监听器

@@ -37,6 +37,8 @@ const api = {
     ipcRenderer.invoke('unblock-music', id, data, enabledSources),
   importCustomApiPlugin: () => ipcRenderer.invoke('import-custom-api-plugin'),
   importLxMusicScript: () => ipcRenderer.invoke('import-lx-music-script'),
+  importMusicSourcePlugin: () => ipcRenderer.invoke('import-music-source-plugin'),
+  fetchMusicSourcePlugin: (url: string) => ipcRenderer.invoke('fetch-music-source-plugin', url),
   // 歌词窗口关闭事件
   onLyricWindowClosed: (callback: () => void) => {
     ipcRenderer.on('lyric-window-closed', () => callback());

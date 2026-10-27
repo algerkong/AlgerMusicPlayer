@@ -48,6 +48,8 @@ export default {
     processing: 'Processing...',
     clear: 'Clear Custom Source',
     customApiFailed: 'Custom API parsing failed, trying built-in sources...',
+    noSourceConfigured:
+      'This song needs a music source, but none is configured. Go to Settings → Playback → Music Sources to enable or import one',
     customApiError: 'Custom API request error, trying built-in sources...'
   },
   playBar: {

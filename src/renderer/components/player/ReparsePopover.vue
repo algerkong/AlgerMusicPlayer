@@ -97,13 +97,10 @@ import { useMessage } from 'naive-ui';
 import { computed, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 
-import { CacheManager } from '@/api/musicParser';
 import { playMusic } from '@/hooks/MusicHook';
-import { initLxMusicRunner, setLxMusicRunner } from '@/services/LxMusicSourceRunner';
+import { MusicResolveCache } from '@/services/musicSource/cache';
 import { reparseCurrentSong } from '@/services/playbackController';
 import { SongSourceConfigManager } from '@/services/SongSourceConfigManager';
-import { useSettingsStore } from '@/store';
-import type { LxMusicScriptConfig } from '@/types/lxMusic';
 import type { Platform } from '@/types/music';
 import { type MusicSourceGroup, useMusicSources } from '@/utils/musicSourceConfig';
 
@@ -116,10 +113,8 @@ type ReparseSourceItem = {
   group: MusicSourceGroup;
   available: boolean;
   configHint?: string;
-  lxScriptId?: string;
 };
 
-const settingsStore = useSettingsStore();
 const { t } = useI18n();
 const message = useMessage();
 const { allSources } = useMusicSources();
@@ -128,60 +123,27 @@ const { allSources } = useMusicSources();
 const isReparsing = ref(false);
 const currentReparsingId = ref<string | null>(null);
 
-// 当前选中的音源条目 id（唯一标识，区分不同 lxMusic 脚本）
+// 当前选中的音源条目 id
 const selectedSourceId = ref<string | null>(null);
 
 const isReparse = computed(() => selectedSourceId.value !== null);
 
-// 构建重解析音源列表：将 lxMusic 展开为每个导入的脚本
-const reparseSourceList = computed<ReparseSourceItem[]>(() => {
-  const result: ReparseSourceItem[] = [];
-  for (const source of allSources.value) {
-    if (source.key === 'lxMusic') {
-      const scripts: LxMusicScriptConfig[] = settingsStore.setData.lxMusicScripts || [];
-      for (const script of scripts) {
-        result.push({
-          id: `lxMusic:${script.id}`,
-          platform: 'lxMusic',
-          label: script.name,
-          icon: source.icon,
-          color: source.color,
-          group: source.group,
-          available: true,
-          lxScriptId: script.id
-        });
-      }
-      // 没有导入任何脚本时显示占位
-      if (scripts.length === 0) {
-        result.push({
-          id: 'lxMusic',
-          platform: 'lxMusic',
-          label: 'lxMusic',
-          icon: source.icon,
-          color: source.color,
-          group: source.group,
-          available: false,
-          configHint: 'settings.playback.lxMusic.scripts.notConfigured'
-        });
-      }
-    } else {
-      result.push({
-        id: source.key,
-        platform: source.key,
-        label: source.key,
-        icon: source.icon,
-        color: source.color,
-        group: source.group,
-        available: source.available,
-        configHint: source.configHint
-      });
-    }
-  }
-  return result;
-});
+// 重解析音源列表：注册表平铺（内置与插件同权，LX 脚本迁移后以插件身份出现）
+const reparseSourceList = computed<ReparseSourceItem[]>(() =>
+  allSources.value.map((source) => ({
+    id: source.key,
+    platform: source.key,
+    label: source.label || source.key,
+    icon: source.icon,
+    color: source.color,
+    group: source.group,
+    available: source.available,
+    configHint: source.configHint
+  }))
+);
 
 // 按分组排列音源
-const GROUP_ORDER: MusicSourceGroup[] = ['unblock', 'extended', 'plugin'];
+const GROUP_ORDER: MusicSourceGroup[] = ['netease', 'builtin', 'unblock', 'plugin'];
 
 const groupedSources = computed(() => {
   return GROUP_ORDER.map((groupKey) => ({
@@ -201,14 +163,7 @@ const initSelectedSources = () => {
   const config = SongSourceConfigManager.getConfig(songId);
 
   if (config && config.sources.length > 0) {
-    const platform = config.sources[0];
-    if (platform === 'lxMusic') {
-      // lxMusic 需要结合当前激活的脚本 id 来定位
-      const activeId = settingsStore.setData.activeLxMusicApiId;
-      selectedSourceId.value = activeId ? `lxMusic:${activeId}` : null;
-    } else {
-      selectedSourceId.value = platform;
-    }
+    selectedSourceId.value = config.sources[0];
   } else {
     selectedSourceId.value = null;
   }
@@ -222,53 +177,10 @@ const clearCustomSource = () => {
 
 // 点击音源条目
 const handleSourceClick = async (source: ReparseSourceItem) => {
-  if (source.lxScriptId) {
-    await reparseWithLxScript(source);
-  } else {
-    await directReparseMusic(source);
-  }
+  await directReparseMusic(source);
 };
 
-// 使用指定 lxMusic 脚本重新解析
-const reparseWithLxScript = async (source: ReparseSourceItem) => {
-  if (isReparsing.value || !source.lxScriptId) return;
-
-  const scripts: LxMusicScriptConfig[] = settingsStore.setData.lxMusicScripts || [];
-  const script = scripts.find((s) => s.id === source.lxScriptId);
-  if (!script) return;
-
-  try {
-    isReparsing.value = true;
-    currentReparsingId.value = source.id;
-
-    // 激活该脚本的 runner
-    setLxMusicRunner(null);
-    await initLxMusicRunner(script.script);
-    settingsStore.setSetData({ activeLxMusicApiId: script.id });
-
-    const songId = Number(playMusic.value.id);
-    await CacheManager.clearMusicCache(songId);
-
-    selectedSourceId.value = source.id;
-    SongSourceConfigManager.setConfig(songId, ['lxMusic'], 'manual');
-
-    const success = await reparseCurrentSong('lxMusic', false);
-
-    if (success) {
-      message.success(t('player.reparse.success'));
-    } else {
-      message.error(t('player.reparse.failed'));
-    }
-  } catch (error) {
-    console.error('解析失败:', error);
-    message.error(t('player.reparse.failed'));
-  } finally {
-    isReparsing.value = false;
-    currentReparsingId.value = null;
-  }
-};
-
-// 直接重新解析当前歌曲（非 lxMusic）
+// 直接重新解析当前歌曲（统一注册表 provider key 作为歌曲级音源覆盖）
 const directReparseMusic = async (source: ReparseSourceItem) => {
   if (isReparsing.value) return;
 
@@ -277,7 +189,7 @@ const directReparseMusic = async (source: ReparseSourceItem) => {
     currentReparsingId.value = source.id;
 
     const songId = Number(playMusic.value.id);
-    await CacheManager.clearMusicCache(songId);
+    await MusicResolveCache.clearMusicCache(songId);
 
     selectedSourceId.value = source.id;
     SongSourceConfigManager.setConfig(songId, [source.platform], 'manual');

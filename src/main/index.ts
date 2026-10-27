@@ -35,6 +35,18 @@ protocol.registerSchemesAsPrivileged([
       bypassCSP: true,
       corsEnabled: true
     }
+  },
+  {
+    // 本地音源插件音频代理协议（带请求头的直链由主进程代理请求）
+    scheme: 'pluginmedia',
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      stream: true,
+      bypassCSP: true,
+      corsEnabled: true
+    }
   }
 ]);
 
@@ -51,6 +63,7 @@ import { initializeLoginWindow } from './modules/loginWindow';
 import { initLxMusicHttp } from './modules/lxMusicHttp';
 import { initializeMpris, updateMprisCurrentSong, updateMprisPlayState } from './modules/mpris';
 import { initializeOtherApi } from './modules/otherApi';
+import { initPluginMediaProxy } from './modules/pluginMediaProxy';
 import { initializeRemoteControl } from './modules/remoteControl';
 import { initializeShortcuts } from './modules/shortcuts';
 import { initializeTray, updateCurrentSong, updatePlayState, updateTrayMenu } from './modules/tray';
@@ -80,6 +93,8 @@ function initialize(configStore: any) {
 
   // 初始化文件管理
   initializeFileManager();
+  // 初始化本地音源插件媒体代理协议
+  initPluginMediaProxy();
   // 初始化下载管理
   initializeDownloadManager();
   // 初始化歌词缓存管理

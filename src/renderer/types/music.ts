@@ -8,10 +8,11 @@ export type Platform =
   | 'joox'
   | 'gdmusic'
   | 'lxMusic'
-  | 'custom';
+  | 'custom'
+  | `plugin:${string}`;
 
 // 默认平台列表
-export const DEFAULT_PLATFORMS: Platform[] = ['lxMusic', 'migu', 'kugou', 'kuwo', 'pyncmd'];
+export const DEFAULT_PLATFORMS: Platform[] = ['pyncmd'];
 
 export interface IRecommendMusic {
   code: number;
