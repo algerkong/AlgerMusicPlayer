@@ -308,7 +308,7 @@ const currentPage = ref(1);
 
 // 获取云端播放记录
 const getCloudRecords = async () => {
-  if (!userStore.user?.userId || userStore.loginType !== 'cookie') {
+  if (!userStore.hasRealAuth) {
     message.warning(t('history.needLogin'));
     return [];
   }
@@ -336,7 +336,7 @@ const getCloudRecords = async () => {
 
 // 获取云端歌单播放记录
 const getCloudPlaylists = async () => {
-  if (!userStore.user?.userId || userStore.loginType !== 'cookie') {
+  if (!userStore.hasRealAuth) {
     message.warning(t('history.needLogin'));
     return [];
   }
@@ -367,7 +367,7 @@ const getCloudPlaylists = async () => {
 
 // 获取云端专辑播放记录
 const getCloudAlbums = async () => {
-  if (!userStore.user?.userId || userStore.loginType !== 'cookie') {
+  if (!userStore.hasRealAuth) {
     message.warning(t('history.needLogin'));
     return [];
   }
