@@ -1,7 +1,6 @@
 import { cloneDeep } from 'lodash';
 import { computed, type ComputedRef, nextTick, onUnmounted, ref, watch } from 'vue';
 
-import useIndexedDB from '@/hooks/IndexDBHook';
 import { audioService } from '@/services/audioService';
 import { playbackRequestManager } from '@/services/playbackRequestManager';
 import type { usePlayerStore } from '@/store';
@@ -61,18 +60,6 @@ let lastIndex = -1;
 
 // 缓存平台信息，避免每次歌词变化时同步 IPC 调用
 const cachedPlatform = isElectron ? window.electron.ipcRenderer.sendSync('get-platform') : 'web';
-
-export const musicDB = await useIndexedDB(
-  'musicDB',
-  [
-    { name: 'music', keyPath: 'id' },
-    { name: 'music_lyric', keyPath: 'id' },
-    { name: 'api_cache', keyPath: 'id' },
-    { name: 'music_url_cache', keyPath: 'id' },
-    { name: 'music_failed_cache', keyPath: 'id' }
-  ],
-  3
-);
 
 // 键盘事件处理器（提取为命名函数，防止重复注册）
 const handleKeyUp = (e: KeyboardEvent) => {

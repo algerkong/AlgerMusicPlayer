@@ -356,6 +356,38 @@ export function hasShortcutAction(action: string): action is ShortcutAction {
   return shortcutActionOrder.includes(action as ShortcutAction);
 }
 
+export type BuiltInMediaKeyBinding = {
+  action: ShortcutAction;
+  accelerator: string;
+};
+
+/**
+ * 内置多媒体键绑定：键盘上的播放/暂停、上一首、下一首硬件键。
+ * 与用户自定义快捷键相互独立，默认始终全局注册（被用户配置或其他程序占用时让位）。
+ */
+export const builtInMediaKeyBindings: readonly BuiltInMediaKeyBinding[] = [
+  { action: 'togglePlay', accelerator: 'MediaPlayPause' },
+  { action: 'prevPlay', accelerator: 'MediaPreviousTrack' },
+  { action: 'nextPlay', accelerator: 'MediaNextTrack' }
+];
+
+/**
+ * 计算需要注册的内置多媒体键：已被任意启用中的用户快捷键（含应用内作用域）
+ * 占用的键名跳过，避免全局热键吞掉用户有意绑定的按键。
+ */
+export function resolveBuiltInMediaKeyAccelerators(shortcuts: ShortcutsConfig): string[] {
+  const occupiedAccelerators = new Set(
+    shortcutActionOrder
+      .filter((action) => shortcuts[action].enabled)
+      .map((action) => normalizeShortcutAccelerator(shortcuts[action].key))
+      .filter((accelerator): accelerator is string => Boolean(accelerator))
+  );
+
+  return builtInMediaKeyBindings
+    .map((binding) => binding.accelerator)
+    .filter((accelerator) => !occupiedAccelerators.has(accelerator));
+}
+
 export function isModifierOnlyShortcut(shortcut: string): boolean {
   const normalized = normalizeShortcutAccelerator(shortcut);
   if (!normalized) {

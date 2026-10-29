@@ -8,7 +8,7 @@
  */
 import { cloneDeep } from 'lodash';
 
-import { musicDB } from '@/hooks/MusicHook';
+import { musicDB } from '@/services/musicDB';
 
 const { saveData, getData, deleteData } = musicDB;
 

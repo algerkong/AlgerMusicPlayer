@@ -33,6 +33,9 @@ const mockSetData: Record<string, any> = {};
 vi.mock('@/hooks/MusicHook', () => ({
   musicDB: { saveData: vi.fn(), getData: vi.fn(), deleteData: vi.fn() }
 }));
+vi.mock('@/services/musicDB', () => ({
+  musicDB: { saveData: vi.fn(), getData: vi.fn(), deleteData: vi.fn() }
+}));
 
 const settingsStoreMock = {
   setData: mockSetData,
