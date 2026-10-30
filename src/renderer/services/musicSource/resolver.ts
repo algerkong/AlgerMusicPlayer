@@ -13,6 +13,7 @@ import { isElectron } from '@/utils';
 import { buildPluginMediaUrl, validatePluginMediaSource } from '../../../shared/musicSourcePlugin';
 import { inferPluginAudioFormat, qualityToBitrate } from '../musicSourcePluginProtocol';
 import { MusicResolveCache } from './cache';
+import { resolveContainerSong } from './container';
 import { useMusicSourceRegistry } from './registry';
 import type { ResolveAttempt, ResolveSongResult } from './types';
 
@@ -111,7 +112,10 @@ export const resolveSong = async (
   song: SongResult,
   options: ResolveSongOptions = {}
 ): Promise<ResolveSongResult | null> => {
-  if (!isElectron) return null;
+  if (!isElectron) {
+    const apiUrl = import.meta.env.VITE_CONTAINER_MUSIC_API?.trim();
+    return apiUrl ? resolveContainerSong(apiUrl, song) : null;
+  }
 
   const settingsStore = useSettingsStore();
   const { orderedProviders } = useMusicSourceRegistry();
