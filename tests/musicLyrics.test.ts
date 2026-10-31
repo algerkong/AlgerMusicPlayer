@@ -24,6 +24,39 @@ describe('lyrics caching during playback', () => {
     mocks.request.mockResolvedValue(response);
   });
 
+  it('defers database access until after cache consumers are initialized', async () => {
+    // Given: the database is not initialized while its consumers are imported.
+    vi.resetModules();
+    let ready = false;
+    const readDatabase = vi.fn(() => {
+      if (!ready) {
+        throw new Error('Database is not initialized');
+      }
+      return { getData: mocks.getData, saveData: mocks.saveData };
+    });
+    vi.doMock('@/hooks/MusicHook', () => ({
+      get musicDB() {
+        return readDatabase();
+      }
+    }));
+
+    try {
+      // When: modules load before the database becomes ready for requests.
+      const music = await import('@/api/music');
+      const { MusicResolveCache } = await import('@/services/musicSource/cache');
+      expect(readDatabase).not.toHaveBeenCalled();
+      ready = true;
+
+      // Then: the initialized database serves both lyrics and URL cache reads.
+      await expect(music.getMusicLrc(1)).resolves.toEqual(response);
+      await expect(MusicResolveCache.getCachedMusicUrl(1)).resolves.toBeNull();
+      expect(readDatabase).toHaveBeenCalled();
+    } finally {
+      vi.doUnmock('@/hooks/MusicHook');
+      vi.resetModules();
+    }
+  });
+
   it('safely saves concurrent responses for the same song', async () => {
     const records = new Map();
     mocks.saveData.mockImplementation(async (_store, record) => {

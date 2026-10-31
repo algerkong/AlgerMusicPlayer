@@ -26,6 +26,7 @@
     "build:mac:x64": "npm run build && electron-builder --mac --x64 --publish never && cp dist/latest-mac.yml dist/latest-mac-x64.yml",
     "build:mac:arm64": "npm run build && electron-builder --mac --arm64 --publish never && cp dist/latest-mac.yml dist/latest-mac-arm64.yml",
     "build:linux": "npm run build && electron-builder --linux --publish never",
+    "build:flatpak": "npm run build && electron-builder --linux flatpak --publish never",
     "test:e2e": "node scripts/e2e/playback-e2e.mjs",
     "test:all": "npm run typecheck && npm test && ALGER_PLUGIN_NETWORK_E2E=1 npm test && npm run test:e2e && npm run test:e2e:vip",
     "test:e2e:vip": "node scripts/e2e/vip-resolve-e2e.mjs",
@@ -95,7 +96,7 @@
     "axios": "^1.13.2",
     "cross-env": "^7.0.3",
     "electron": "^40.1.0",
-    "electron-builder": "^26.0.12",
+    "electron-builder": "^26.18.0",
     "electron-vite": "^5.0.0",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
@@ -134,6 +135,9 @@
   "build": {
     "appId": "com.alger.music",
     "productName": "AlgerMusicPlayer",
+    "files": [
+      "!docs/private{,/**}"
+    ],
     "publish": [
       {
         "provider": "github",
@@ -217,6 +221,30 @@
       "artifactName": "${productName}-${version}-linux-${arch}.${ext}",
       "category": "Audio",
       "maintainer": "Alger <algerkc@qq.com>"
+    },
+    "flatpak": {
+      "category": "AudioVideo;Audio",
+      "executableArgs": [
+        "--ozone-platform=x11"
+      ],
+      "runtimeVersion": "25.08",
+      "baseVersion": "25.08",
+      "branch": "stable",
+      "license": "LICENSE",
+      "finishArgs": [
+        "--socket=x11",
+        "--share=ipc",
+        "--device=dri",
+        "--socket=pulseaudio",
+        "--share=network",
+        "--filesystem=xdg-music:ro",
+        "--filesystem=xdg-download",
+        "--talk-name=org.freedesktop.Notifications",
+        "--talk-name=org.kde.StatusNotifierWatcher",
+        "--talk-name=org.freedesktop.FileManager1",
+        "--own-name=org.mpris.MediaPlayer2.AlgerMusicPlayer",
+        "--talk-name=org.gnome.Shell.TrayLyric"
+      ]
     },
     "nsis": {
       "oneClick": false,

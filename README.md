@@ -70,6 +70,22 @@
 ![设置页面](./docs/image4.png)
 ![音乐远程控制](./docs/image5.png)
 
+## Flatpak 安装（Linux）
+
+在 [Releases](https://github.com/algerkong/AlgerMusicPlayer/releases) 下载与你的 CPU 架构对应的 `.flatpak` 安装包：Intel/AMD 64 位选择 `x86_64`，ARM 64 位选择 `aarch64`。
+
+安装 [Flatpak](https://flatpak.org/setup/) 后，添加 Flathub 以获取运行时，再安装下载的文件（请将最后一个参数替换为实际文件路径）：
+
+```bash
+flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+flatpak install --user ./AlgerMusicPlayer-版本-linux-架构.flatpak
+flatpak run com.alger.music
+```
+
+这是从 GitHub Releases 安装的独立安装包，不是 Flathub 上架应用。更新时下载新版 `.flatpak` 并再次执行安装命令；应用内自动更新不适用于此安装方式。
+
+默认可读取音乐目录、读写下载目录。使用自定义目录或移动磁盘时可能需要额外授权，操作方法和本地构建说明见 [Flatpak 文档](./docs/flatpak.md)。
+
 ## 项目启动
 
 ```bash
@@ -84,8 +100,9 @@ npm run dev
 ## 赞赏☕️
 
 [赞赏列表](http://donate.alger.fun/)
-| 微信赞赏 | 支付宝赞赏 |
-| :--------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------: |
+
+|                                                                     微信赞赏                                                                     |                                                                  支付宝赞赏                                                                   |
+| :----------------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------: |
 | <img src="https://github.com/algerkong/algerkong/blob/main/wechat.jpg?raw=true" alt="WeChat QRcode" width=200> <br><small>喝点咖啡继续干</small> | <img src="https://github.com/algerkong/algerkong/blob/main/alipay.jpg?raw=true" alt="Wechat QRcode" width=200> <br><small>来包辣条吧~</small> |
 
 ## 项目统计

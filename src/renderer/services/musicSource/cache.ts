@@ -10,8 +10,6 @@ import { cloneDeep } from 'lodash';
 
 import { musicDB } from '@/hooks/MusicHook';
 
-const { saveData, getData, deleteData } = musicDB;
-
 export type CachedUrlEntry = {
   url: string;
   format?: string;
@@ -30,7 +28,7 @@ const failedCacheMap = new Map<string, number>();
 export const MusicResolveCache = {
   async getCachedMusicUrl(songId: number, sourceKeys?: string[]): Promise<CachedUrlEntry | null> {
     try {
-      const cached = await getData('music_url_cache', songId);
+      const cached = await musicDB.getData('music_url_cache', songId);
       if (
         cached?.createTime &&
         Date.now() - cached.createTime < CACHE_CONFIG.MUSIC_URL_CACHE_TIME
@@ -38,13 +36,13 @@ export const MusicResolveCache = {
         const cachedKeys: string[] = cached.sourceKeys || [];
         const currentKeys = [...(sourceKeys || [])].sort();
         if (JSON.stringify([...cachedKeys].sort()) !== JSON.stringify(currentKeys)) {
-          await deleteData('music_url_cache', songId);
+          await musicDB.deleteData('music_url_cache', songId);
           return null;
         }
         return cached.entry as CachedUrlEntry;
       }
       if (cached) {
-        await deleteData('music_url_cache', songId);
+        await musicDB.deleteData('music_url_cache', songId);
       }
     } catch (error) {
       console.warn('获取解析缓存失败:', error);
@@ -58,7 +56,7 @@ export const MusicResolveCache = {
     sourceKeys?: string[]
   ): Promise<void> {
     try {
-      await saveData('music_url_cache', {
+      await musicDB.saveData('music_url_cache', {
         id: songId,
         entry: cloneDeep(entry),
         sourceKeys: cloneDeep(sourceKeys || []),
@@ -91,7 +89,7 @@ export const MusicResolveCache = {
 
   async clearMusicCache(songId: number): Promise<void> {
     try {
-      await deleteData('music_url_cache', songId);
+      await musicDB.deleteData('music_url_cache', songId);
     } catch (error) {
       console.error('清除解析缓存失败:', error);
     }

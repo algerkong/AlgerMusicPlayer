@@ -25,6 +25,12 @@ jobs:
           - id: linux
             os: ubuntu-latest
             build_command: npm run build:linux
+          - id: linux-flatpak-x64
+            os: ubuntu-latest
+            build_command: npm run build:flatpak -- --x64
+          - id: linux-flatpak-arm64
+            os: ubuntu-24.04-arm
+            build_command: npm run build:flatpak -- --arm64
 
     steps:
       - name: Check out Git repository
@@ -39,10 +45,21 @@ jobs:
         run: npm install
 
       - name: Install Linux build dependencies
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.id == 'linux'
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Install Flatpak build dependencies
+        if: startsWith(matrix.id, 'linux-flatpak-')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+          flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+          flatpak install --user --noninteractive -y flathub \
+            org.freedesktop.Platform//25.08 \
+            org.freedesktop.Sdk//25.08 \
+            org.electronjs.Electron2.BaseApp//25.08
 
       - name: Build artifacts
         run: ${{ matrix.build_command }}
@@ -65,6 +82,7 @@ jobs:
             dist/*.deb
             dist/*.rpm
             dist/*.AppImage
+            dist/*.flatpak
             dist/latest*.yml
             dist/*.blockmap
 
