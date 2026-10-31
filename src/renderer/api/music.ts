@@ -13,8 +13,6 @@ type MusicParseResult = {
   };
 };
 
-const { saveData, getData } = musicDB;
-
 // 将 FM 歌曲移至垃圾桶（不喜欢）
 export const fmTrash = (id: number) => {
   return request.post('/fm_trash', null, {
@@ -72,7 +70,7 @@ export const getMusicLrc = async (id: number): Promise<{ data: ILyric }> => {
 
   try {
     // 尝试获取缓存的歌词
-    const cachedLyric = await getData('music_lyric', id);
+    const cachedLyric = await musicDB.getData('music_lyric', id);
     if (cachedLyric?.createTime && Date.now() - cachedLyric.createTime < TEN_DAYS_MS) {
       return { ...cachedLyric, data: cachedLyric.data };
     }
@@ -83,7 +81,7 @@ export const getMusicLrc = async (id: number): Promise<{ data: ILyric }> => {
     if (res?.data) {
       try {
         // 歌词面板和预加载可能并发请求同一首歌，使用 put 避免重复主键。
-        await saveData('music_lyric', { id, data: res.data, createTime: Date.now() });
+        await musicDB.saveData('music_lyric', { id, data: res.data, createTime: Date.now() });
       } catch (error) {
         console.warn('保存歌词缓存失败:', error);
       }
