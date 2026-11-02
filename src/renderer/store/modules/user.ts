@@ -26,8 +26,10 @@ export const useUserStore = defineStore('user', () => {
   const user = ref<UserData | null>(getLocalStorageItem('user', null));
   const userDetail = ref<IUserDetail | null>(null);
   const recordList = ref<any[]>([]);
+  // 写入时是裸字符串（setLoginType），这里也必须按裸字符串读，
+  // 用 JSON.parse 会把 'qr' / 'cookie' 判成非法 JSON 而退化成 null
   const loginType = ref<'token' | 'cookie' | 'qr' | 'uid' | null>(
-    getLocalStorageItem('loginType', null)
+    (localStorage.getItem('loginType') as 'token' | 'cookie' | 'qr' | 'uid') || null
   );
   const searchValue = ref('');
   const searchType = ref(1);
@@ -39,9 +41,12 @@ export const useUserStore = defineStore('user', () => {
   const albumList = ref<any[]>([]);
 
   // 是否具有真实登录权限（Cookie/扫码/Token）。UID 登录只填了 uid，没有真实 cookie。
-  // 用 store 的响应式状态而非直接读 localStorage：后者不具备响应性，
-  // 登录/登出后入口和菜单禁用状态不会刷新（#706）
-  const hasRealAuth = computed(() => !!user.value && loginType.value !== 'uid');
+  // user/loginType 取 store 的响应式状态而非直接读 localStorage：后者不具备响应性，
+  // 登录/登出后入口和菜单禁用状态不会刷新（#706）。
+  // token 是云端接口的唯一凭证（请求层把它当 cookie 下发），所以必须一起判
+  const hasRealAuth = computed(
+    () => !!user.value && loginType.value !== 'uid' && !!localStorage.getItem('token')
+  );
 
   // 方法
   const setUser = (userData: UserData) => {

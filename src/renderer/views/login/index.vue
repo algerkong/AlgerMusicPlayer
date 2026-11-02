@@ -141,6 +141,9 @@ const loginPhone = async () => {
       message.success(t('login.message.loginSuccess'));
       userStore.setUser(data.profile);
       localStorage.setItem('token', data.cookie);
+      // 手机登录拿到的是真实 cookie，但 loginType 不写就会残留上一次的值（如 'uid'），
+      // 把云端记录/心动模式等入口一直判成无权限
+      userStore.setLoginType('token');
       setTimeout(() => {
         router.push('/user');
       }, 1000);

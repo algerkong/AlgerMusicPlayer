@@ -55,6 +55,7 @@
             {{ t('history.tabs.local') }}
           </button>
           <button
+            v-if="userStore.hasRealAuth"
             class="px-3 h-7 rounded-full text-xs font-medium transition-all duration-300"
             :class="
               currentTab === 'cloud'

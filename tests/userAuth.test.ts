@@ -25,10 +25,14 @@ beforeEach(() => {
 
 const loginAs = (loginType: 'cookie' | 'qr' | 'token' | 'uid') => {
   entries.set('user', JSON.stringify({ userId: 123, nickname: 'tester' }));
-  entries.set('loginType', JSON.stringify(loginType));
+  // 与生产写入格式保持一致：setLoginType 写的是裸字符串
+  entries.set('loginType', loginType);
+  if (loginType !== 'uid') {
+    entries.set('token', 'MUSIC_U=fake');
+  }
 };
 
-describe('心动模式入口的登录态门槛 (#774)', () => {
+describe('真实登录态门槛 hasRealAuth (#774)', () => {
   it('allows cookie and QR login, both of which store a real cookie', () => {
     for (const type of ['cookie', 'qr', 'token'] as const) {
       loginAs(type);
@@ -43,6 +47,22 @@ describe('心动模式入口的登录态门槛 (#774)', () => {
 
   it('rejects logged-out sessions', () => {
     expect(useUserStore().hasRealAuth).toBe(false);
+  });
+
+  it('rejects a profile left behind after its cookie was dropped', () => {
+    loginAs('cookie');
+    entries.delete('token');
+    expect(useUserStore().hasRealAuth).toBe(false);
+  });
+
+  it('reads back the login type it just persisted', () => {
+    const user = useUserStore();
+    user.setUser({ userId: 123 });
+    user.setLoginType('qr');
+    entries.set('token', 'MUSIC_U=fake');
+
+    setActivePinia(createPinia());
+    expect(useUserStore().hasRealAuth).toBe(true);
   });
 
   it('tracks login type changes reactively', () => {

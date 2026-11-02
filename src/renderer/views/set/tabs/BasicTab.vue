@@ -202,6 +202,7 @@ import CookieSettingsModal from '@/components/settings/CookieSettingsModal.vue';
 import { useSettingsStore } from '@/store/modules/settings';
 import { useUserStore } from '@/store/modules/user';
 import { isElectron, isMobile } from '@/utils';
+import { clearLoginStatus } from '@/utils/auth';
 
 import { SETTINGS_DATA_KEY, SETTINGS_MESSAGE_KEY } from '../keys';
 import SBtn from '../SBtn.vue';
@@ -314,10 +315,11 @@ const handleTokenSave = async (token: string) => {
 };
 
 const clearToken = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('user');
-  currentToken.value = '';
+  // 只删 token/user 会让 loginType/uidLogin 残留，登录态判据跟磁盘不一致
+  clearLoginStatus();
   userStore.user = null;
+  userStore.setLoginType(null);
+  currentToken.value = '';
   message.success(t('settings.basic.clearToken') + '成功');
   setTimeout(() => window.location.reload(), 1000);
 };

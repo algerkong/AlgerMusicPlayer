@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 
 import { getUserDetail } from '@/api/login';
 import { isElectron, setAnimationClass } from '@/utils';
+import { clearLoginStatus } from '@/utils/auth';
 
 defineOptions({
   name: 'CookieLogin'
@@ -44,14 +45,14 @@ const loginByToken = async () => {
       emit('loginSuccess', user.data.profile, 'cookie');
     } else {
       // token无效，清除localStorage
-      localStorage.removeItem('token');
+      clearLoginStatus();
       const errorMsg = t('login.message.tokenInvalid');
       message.error(errorMsg);
       emit('loginError', errorMsg);
     }
   } catch (error) {
     // token无效，清除localStorage
-    localStorage.removeItem('token');
+    clearLoginStatus();
     const errorMsg = t('login.message.tokenInvalid');
     message.error(errorMsg);
     emit('loginError', errorMsg);
@@ -83,13 +84,13 @@ const handleCookieReceived = async (_event: any, cookieValue: string) => {
       message.success(successMsg);
       emit('loginSuccess', user.data.profile, 'cookie');
     } else {
-      localStorage.removeItem('token');
+      clearLoginStatus();
       const errorMsg = t('login.message.autoGetCookieFailed');
       message.error(errorMsg);
       emit('loginError', errorMsg);
     }
   } catch (error) {
-    localStorage.removeItem('token');
+    clearLoginStatus();
     const errorMsg = t('login.message.autoGetCookieFailed');
     message.error(errorMsg);
     emit('loginError', errorMsg);
