@@ -38,7 +38,12 @@ export function checkLoginStatus(): LoginInfo {
   // 判断是否已登录
   let isLoggedIn = false;
 
-  if (loginType === 'uid' || uidLogin === 'true') {
+  // uidLogin 标志只在 loginType 缺失时作为兜底依据；
+  // loginType 存在时以其为准，避免残留的 uidLogin 标志与实际登录方式
+  // 矛盾（如扫码登录却残留 uidLogin=true）被误判为 UID 登录
+  const isUidLogin = loginType === 'uid' || (!loginType && uidLogin === 'true');
+
+  if (isUidLogin) {
     // UID登录：只需要有用户数据即可
     isLoggedIn = hasUser && !!user;
   } else {
