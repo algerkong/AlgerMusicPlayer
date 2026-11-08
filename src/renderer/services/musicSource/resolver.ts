@@ -111,10 +111,8 @@ export const resolveSong = async (
   song: SongResult,
   options: ResolveSongOptions = {}
 ): Promise<ResolveSongResult | null> => {
-  if (!isElectron) return null;
-
   const settingsStore = useSettingsStore();
-  const { orderedProviders } = useMusicSourceRegistry();
+  const { orderedProviders, findProvider } = useMusicSourceRegistry();
 
   const sourceKeys = options.sourceKeys ?? effectiveSourceKeys(song.id as number);
   const quality = options.quality || settingsStore.setData?.musicQuality || 'higher';
@@ -141,7 +139,14 @@ export const resolveSong = async (
     }
   }
 
-  const candidates = orderedProviders(sourceKeys);
+  // Web 端没有主进程桥：插件沙箱、unblock 代理、Range 校验、pluginmedia:// 包装
+  // 都依赖 Electron。原先这里是非 Electron 直接 return null，导致 Web/PWA 解析不出
+  // 任何播放地址（整个播放链路失效）。Web 只能走纯 HTTP 的内置网易云源。
+  let candidates = orderedProviders(sourceKeys);
+  if (!isElectron) {
+    const netease = findProvider('netease');
+    candidates = netease && netease.available !== false ? [netease] : [];
+  }
   const attempts: ResolveAttempt[] = [];
   const chainStart = Date.now();
   const chainDeadline = chainStart + CHAIN_BUDGET_MS;
