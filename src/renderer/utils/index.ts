@@ -112,3 +112,18 @@ export const getSetData = (): any => {
   }
   return setData;
 };
+
+// 网易云 CDN 返回的音频地址是 http://，页面在 https 下会被浏览器按
+// 混合内容拦截（iOS Safari 尤其严格），这些域名都支持 https，统一升级。
+const HTTPS_CAPABLE_MEDIA_HOST = /(^|\.)(126\.net|163\.com)$/i;
+
+export const normalizeMediaUrl = (url?: string): string => {
+  if (!url || !url.startsWith('http://')) return url as string;
+  if (typeof window === 'undefined' || window.location.protocol !== 'https:') return url;
+  try {
+    if (!HTTPS_CAPABLE_MEDIA_HOST.test(new URL(url).hostname)) return url;
+  } catch {
+    return url;
+  }
+  return `https://${url.slice('http://'.length)}`;
+};
