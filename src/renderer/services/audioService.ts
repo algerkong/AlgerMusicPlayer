@@ -1,6 +1,6 @@
 import type { AudioOutputDevice } from '@/types/audio';
 import type { SongResult } from '@/types/music';
-import { getImgUrl, isElectron } from '@/utils';
+import { getImgUrl, isElectron, normalizeMediaUrl } from '@/utils';
 
 class AudioService {
   private audio: HTMLAudioElement;
@@ -571,7 +571,7 @@ class AudioService {
 
         // Change source and load
         try {
-          this.audio.src = url;
+          this.audio.src = normalizeMediaUrl(url);
           this.audio.load();
         } catch (error) {
           failLoad(error as Error);
