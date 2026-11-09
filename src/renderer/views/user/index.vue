@@ -333,7 +333,14 @@ const loadData = async () => {
     }
   } catch (error: any) {
     console.error('加载用户页面失败:', error);
-    if (error.response?.status === 401) {
+    const status = error.response?.status;
+    // /user/detail 或 /user/record 返回 400 说明 uid/cookie 无效，本地登录数据
+    // 已损坏（与 401 同理），重试无意义：清除登录态并引导重新登录，
+    // 避免用户停留在错误提示中无法恢复（如 token 失效、本地数据被篡改）
+    const requestUrl = String(error.config?.url || '');
+    const isAuthDependentRequest =
+      requestUrl.includes('/user/detail') || requestUrl.includes('/user/record');
+    if (status === 401 || (status === 400 && isAuthDependentRequest)) {
       userStore.handleLogout();
       router.push('/login');
     } else {
