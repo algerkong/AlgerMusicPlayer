@@ -13,7 +13,10 @@ type MusicParseResult = {
   };
 };
 
-const { saveData, getData } = musicDB;
+// musicDB 通过顶层 await 初始化，单 chunk 打包下模块作用域直接解构会命中
+// TDZ（Cannot access 'musicDB' before initialization），改为惰性访问。
+const saveData = (...args: any[]) => (musicDB as any).saveData(...args);
+const getData = (...args: any[]) => (musicDB as any).getData(...args);
 
 // 将 FM 歌曲移至垃圾桶（不喜欢）
 export const fmTrash = (id: number) => {
