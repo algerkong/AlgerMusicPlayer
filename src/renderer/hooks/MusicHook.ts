@@ -62,17 +62,105 @@ let lastIndex = -1;
 // 缓存平台信息，避免每次歌词变化时同步 IPC 调用
 const cachedPlatform = isElectron ? window.electron.ipcRenderer.sendSync('get-platform') : 'web';
 
-export const musicDB = await useIndexedDB(
+// musicDB 原是模块级 `await useIndexedDB(...)`。在单 chunk 打包下，该顶层 await
+// 会 gate 整个模块图：一旦 IndexedDB 打开被阻塞（onblocked，见 IndexDBHook）或出错，
+// App 将一直白屏，只有清空站点数据才能恢复。这里改为"惰性 + 内存兜底"：
+// - 模块级不再 await，打开操作在后台进行，绝不阻塞模块求值 / App 挂载；
+// - 成功后 delegate 到真实 IndexedDB；失败（阻塞/超时/出错/存储不可用）则退化为
+//   内存 Map，缓存读写返回未命中等，保证应用始终可用。
+const DB_READY_TIMEOUT = 8000;
+const musicDBStores = [
+  { name: 'music', keyPath: 'id' },
+  { name: 'music_lyric', keyPath: 'id' },
+  { name: 'api_cache', keyPath: 'id' },
+  { name: 'music_url_cache', keyPath: 'id' },
+  { name: 'music_failed_cache', keyPath: 'id' }
+] as const;
+
+// 后台打开真实数据库；无论成功失败都不再 reject，永远 resolve 为一个 handle 或 null。
+const realDBPromise: Promise<any> = useIndexedDB(
   'musicDB',
-  [
-    { name: 'music', keyPath: 'id' },
-    { name: 'music_lyric', keyPath: 'id' },
-    { name: 'api_cache', keyPath: 'id' },
-    { name: 'music_url_cache', keyPath: 'id' },
-    { name: 'music_failed_cache', keyPath: 'id' }
-  ],
-  3
-);
+  musicDBStores as any,
+  3,
+  DB_READY_TIMEOUT
+).catch(() => null);
+
+// 内存兜底存储：storeName -> (key -> value)
+const memoryStores = new Map<string, Map<string | number, unknown>>();
+let memoryIdCounter = 0;
+
+const mem = (storeName: string) => {
+  let m = memoryStores.get(storeName);
+  if (!m) {
+    m = new Map<string | number, unknown>();
+    memoryStores.set(storeName, m);
+  }
+  return m;
+};
+
+// 优先使用真实 DB；真实 DB 就绪后方法调用失败时也回退到内存，保证不抛不挂起。
+const withDB = async <T>(
+  run: (db: any) => Promise<T>,
+  memRun: () => T | Promise<T>
+): Promise<T> => {
+  const db = await realDBPromise;
+  if (db) {
+    try {
+      return await run(db);
+    } catch (error) {
+      console.warn('IndexedDB 操作失败，回退到内存缓存:', error);
+    }
+  }
+  return memRun();
+};
+
+export const musicDB = {
+  initDB: () => realDBPromise,
+  addData: (storeName: string, value: any) =>
+    withDB(
+      (db) => db.addData(storeName, value),
+      () => {
+        const m = mem(storeName);
+        const key = value?.id ?? `__auto_${++memoryIdCounter}`;
+        if (m.has(key)) {
+          throw new Error('ConstraintError: key already exists');
+        }
+        m.set(key, value);
+      }
+    ),
+  saveData: (storeName: string, value: any) =>
+    withDB(
+      (db) => db.saveData(storeName, value),
+      () => {
+        const m = mem(storeName);
+        const key = value?.id ?? `__auto_${++memoryIdCounter}`;
+        m.set(key, value);
+      }
+    ),
+  getData: (storeName: string, key: string | number) =>
+    withDB(
+      (db) => db.getData(storeName, key),
+      () => mem(storeName).get(key)
+    ),
+  deleteData: (storeName: string, key: string | number) =>
+    withDB(
+      (db) => db.deleteData(storeName, key),
+      () => {
+        mem(storeName).delete(key);
+      }
+    ),
+  getAllData: (storeName: string) =>
+    withDB((db) => db.getAllData(storeName), () => Array.from(mem(storeName).values())),
+  getDataWithPagination: (storeName: string, page: number, pageSize: number) =>
+    withDB(
+      (db) => db.getDataWithPagination(storeName, page, pageSize),
+      () => {
+        const values = Array.from(mem(storeName).values());
+        const start = (page - 1) * pageSize;
+        return values.slice(start, start + pageSize);
+      }
+    )
+};
 
 // 键盘事件处理器（提取为命名函数，防止重复注册）
 const handleKeyUp = (e: KeyboardEvent) => {
