@@ -10,7 +10,8 @@ export interface StoreConfig<T extends string> {
 const useIndexedDB = async <T extends string, S extends Record<T, Record<string, any>>>(
   dbName: string,
   stores: StoreConfig<T>[],
-  version: number = 1
+  version: number = 1,
+  timeout: number = 8000
 ) => {
   const db = ref<IDBDatabase | null>(null);
 
@@ -19,8 +20,39 @@ const useIndexedDB = async <T extends string, S extends Record<T, Record<string,
     return new Promise<void>((resolve, reject) => {
       const request = indexedDB.open(dbName, version);
 
+      // 数据库中版本变更导致旧连接需要关闭时触发。浏览器只允许一个连接等待升级，
+      // 若其它同源上下文（如 PWA 窗口 + 普通标签页）仍持有着旧版本的连接，升级会
+      // 一直阻塞，本 open 请求将永远停在 pending 状态。我们无法在此强制关闭其它
+      // 上下文的连接，只能等待其自行关闭；配合下方的事件监听与 open 超时兜底，
+      // 避免让顶层 await 永久挂起导致白屏。
+      request.onblocked = () => {
+        /* 等待其它同源上下文通过 onversionchange 自行关闭 */
+      };
+
+      // 本连接一旦成功建立，就监听版本变更：当其它同源上下文请求更高版本时，
+      // 立即关闭本连接让升级得以继续进行，避免互相阻塞。
+      const onVersionChange = () => {
+        const current = db.value;
+        current && current.close();
+      };
+
+      let timedOut = false;
+      const timer = window.setTimeout(() => {
+        timedOut = true;
+        request.onblocked = null;
+        request.onerror = null;
+        try {
+          request.transaction && request.transaction.abort();
+        } catch {
+          /* noop */
+        }
+        request.result && request.result.close();
+        reject(new Error(`IndexedDB 打开超时: ${dbName}@${version}`));
+      }, timeout);
+
       request.onupgradeneeded = (event: any) => {
         const db = event.target.result;
+        db.onversionchange = onVersionChange;
         stores.forEach((store) => {
           if (!db.objectStoreNames.contains(store.name)) {
             db.createObjectStore(store.name, {
@@ -32,11 +64,16 @@ const useIndexedDB = async <T extends string, S extends Record<T, Record<string,
       };
 
       request.onsuccess = (event: any) => {
+        if (timedOut) return;
+        window.clearTimeout(timer);
         db.value = event.target.result;
+        db.value!.onversionchange = onVersionChange;
         resolve();
       };
 
       request.onerror = (event: any) => {
+        if (timedOut) return;
+        window.clearTimeout(timer);
         reject(event.target.error);
       };
     });
