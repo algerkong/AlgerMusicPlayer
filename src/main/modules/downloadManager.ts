@@ -6,7 +6,6 @@ import { fileTypeFromFile } from 'file-type';
 import { FlacTagMap, writeFlacTags } from 'flac-tagger';
 import * as fs from 'fs';
 import * as mm from 'music-metadata';
-import * as NodeID3 from 'node-id3';
 import * as os from 'os';
 import * as path from 'path';
 
@@ -19,6 +18,11 @@ import type {
 } from '../../shared/download';
 import { parsePluginMediaUrl } from '../../shared/musicSourcePlugin';
 import { getStore } from './config';
+import {
+  buildMp3TagPatch,
+  getDownloadArtistNames,
+  readEmbeddedLyrics
+} from './downloadMetadata';
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 
@@ -412,42 +416,9 @@ class DownloadManager {
   // ─── Embedded lyrics reader ─────────────────────────────────────
 
   private async getEmbeddedLyrics(filePath: string): Promise<string | null> {
-    try {
-      // 不做 access 预检：直接读，缺文件时靠 ENOENT 返回 null，
-      // 省掉慢盘上的一轮 stat。
-      const ext = path.extname(filePath).toLowerCase();
-
-      if (ext === '.mp3') {
-        // Promise API 走异步 IO：读标签需要读入整个文件，同步读会阻塞主进程
-        const tags = await NodeID3.Promise.read(filePath);
-        if (tags && tags.unsynchronisedLyrics) {
-          const uslt = tags.unsynchronisedLyrics as any;
-          return uslt.text || (typeof uslt === 'string' ? uslt : null);
-        }
-        return null;
-      }
-
-      if (ext === '.flac') {
-        const metadata = await mm.parseFile(filePath);
-        const native = metadata.native;
-        // Look for LYRICS in vorbis comments
-        for (const format of Object.keys(native)) {
-          const tags = native[format];
-          const lyricsTag = tags.find(
-            (t) => t.id.toUpperCase() === 'LYRICS' || t.id.toUpperCase() === 'UNSYNCEDLYRICS'
-          );
-          if (lyricsTag) return lyricsTag.value as string;
-        }
-        return null;
-      }
-
-      return null;
-    } catch (error: any) {
-      // 文件已被外部删除是预期情况，静默返回 null
-      if (error?.code === 'ENOENT') return null;
-      console.error('Error reading embedded lyrics:', error);
-      return null;
-    }
+    // 不做 access 预检：直接读，缺文件时靠 ENOENT 返回 null，
+    // 省掉慢盘上的一轮 stat。
+    return readEmbeddedLyrics(filePath);
   }
 
   // ─── Provide URL (re-resolved by renderer) ─────────────────────
@@ -793,36 +764,22 @@ class DownloadManager {
     // songInfo may carry extra fields (song, no, publishTime) beyond DownloadSongInfo
     const info: any = task.songInfo;
     const fileFormat = fileExtension.toLowerCase();
-    const artistNames =
-      (info?.ar || info?.song?.artists)?.map((a: any) => a.name).join('\u3001') || '未知艺术家';
+    const artistNames = getDownloadArtistNames(info);
 
     if (['.mp3'].includes(fileFormat)) {
       try {
-        const tags = {
-          title: info?.name,
-          artist: artistNames,
-          TPE1: artistNames,
-          TPE2: artistNames,
-          album: info?.al?.name || info?.song?.album?.name || info?.name || task.filename,
-          APIC: {
-            imageBuffer: coverImageBuffer,
-            type: { id: 3, name: 'front cover' },
-            description: 'Album cover',
-            mime: 'image/jpeg'
-          },
-          USLT: {
-            language: 'chi',
-            description: 'Lyrics',
-            text: lyricsContent || ''
-          },
-          trackNumber: info?.no || undefined,
-          year: info?.publishTime ? new Date(info.publishTime).getFullYear().toString() : undefined
-        };
+        const tags = buildMp3TagPatch(
+          info,
+          artistNames,
+          task.filename,
+          coverImageBuffer,
+          lyricsContent
+        );
 
-        // 用 Promise API 走异步 IO，避免同步读写阻塞主进程。
-        // write 内部已经会剔除文件里原有的 ID3 帧，不需要额外调用 removeTags，
-        // 少一轮整文件读写。写入失败会 reject，由下面的 catch 统一处理。
-        await NodeID3.Promise.write(tags, task.tempFilePath);
+        // 用异步文件写入，避免整文件读写阻塞主进程。
+        // replaceId3 会移除文件里原有的 ID3v2.2/2.3/2.4 与 ID3v1 标签，
+        // 再写入一个完整的 ID3v2.4 标签，覆盖旧标签写作行为。
+        await mm.updateFile(task.tempFilePath, tags, { replaceId3: true });
       } catch (err) {
         console.error('Error writing ID3 tags:', err);
       }
