@@ -13,6 +13,9 @@
       "electron-vite/node"
     ],
     "moduleResolution": "bundler",
+    "customConditions": [
+      "node"
+    ],
   },
   "paths": {
     "@/*": [

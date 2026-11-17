@@ -20,6 +20,7 @@ import { parsePluginMediaUrl } from '../../shared/musicSourcePlugin';
 import { getStore } from './config';
 import {
   buildMp3TagPatch,
+  getCoverMime,
   getDownloadArtistNames,
   readEmbeddedLyrics
 } from './downloadMetadata';
@@ -145,7 +146,7 @@ class DownloadManager {
     );
     ipcMain.handle('download:clear-completed', () => this.clearCompleted());
     ipcMain.handle('download:get-embedded-lyrics', (_, filePath: string) =>
-      this.getEmbeddedLyrics(filePath)
+      readEmbeddedLyrics(filePath)
     );
     ipcMain.handle('download:provide-url', (_, payload: { taskId: string; url: string }) =>
       this.provideUrl(payload.taskId, payload.url)
@@ -411,14 +412,6 @@ class DownloadManager {
     const configStore = getStore();
     configStore.set('downloadedSongs', {});
     return true;
-  }
-
-  // ─── Embedded lyrics reader ─────────────────────────────────────
-
-  private async getEmbeddedLyrics(filePath: string): Promise<string | null> {
-    // 不做 access 预检：直接读，缺文件时靠 ENOENT 返回 null，
-    // 省掉慢盘上的一轮 stat。
-    return readEmbeddedLyrics(filePath);
   }
 
   // ─── Provide URL (re-resolved by renderer) ─────────────────────
@@ -797,7 +790,9 @@ class DownloadManager {
         await writeFlacTags(
           {
             tagMap,
-            picture: coverImageBuffer ? { buffer: coverImageBuffer, mime: 'image/jpeg' } : undefined
+            picture: coverImageBuffer
+              ? { buffer: coverImageBuffer, mime: getCoverMime(coverImageBuffer) }
+              : undefined
           },
           task.tempFilePath
         );

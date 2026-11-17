@@ -144,7 +144,7 @@ AlgerMusicPlayer/
 
 ### 如何启动？
 
-安装依赖（最好使用node18+）：
+安装依赖（需要 node22+）：
 
 ```
 npm install

@@ -8,6 +8,8 @@ import * as mm from 'music-metadata';
 import * as os from 'os';
 import * as path from 'path';
 
+import { extractLyricsText } from './downloadMetadata';
+
 /** 支持的音频文件格式 */
 const SUPPORTED_AUDIO_FORMATS = ['.mp3', '.flac', '.wav', '.ogg', '.m4a', '.aac'] as const;
 const METADATA_PARSE_CONCURRENCY = Math.min(8, Math.max(2, os.cpus().length));
@@ -121,25 +123,6 @@ async function extractCoverToFile(
     return coverFile;
   } catch (error) {
     console.error('封面落盘失败:', error);
-    return null;
-  }
-}
-
-/**
- * 从 music-metadata 解析结果中提取歌词文本
- * @param lyrics music-metadata 解析出的歌词数组
- * @returns 歌词文本，提取失败返回 null
- */
-function extractLyrics(lyrics: mm.ILyricsTag[] | undefined): string | null {
-  if (!lyrics || lyrics.length === 0) {
-    return null;
-  }
-  try {
-    // 优先取第一条歌词的文本内容
-    const firstLyric = lyrics[0];
-    return firstLyric?.text ?? null;
-  } catch (error) {
-    console.error('歌词提取失败:', error);
     return null;
   }
 }
@@ -289,7 +272,7 @@ async function parseMetadata(filePath: string): Promise<LocalMusicMeta> {
       album: common.album || fallback.album,
       duration: format.duration ? Math.round(format.duration * 1000) : 0,
       coverPath: await extractCoverToFile(common.picture?.[0], filePath),
-      lyrics: extractLyrics(common.lyrics),
+      lyrics: extractLyricsText(common.lyrics),
       fileSize,
       modifiedTime
     };
