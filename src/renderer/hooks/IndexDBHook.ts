@@ -10,20 +10,47 @@ export interface StoreConfig<T extends string> {
 const useIndexedDB = async <T extends string, S extends Record<T, Record<string, any>>>(
   dbName: string,
   stores: StoreConfig<T>[],
-  version: number = 1
+  version: number = 1,
+  timeout: number = 8000
 ) => {
   const db = ref<IDBDatabase | null>(null);
+
+  // 连接关闭时同步清空句柄，避免后续操作命中已关闭的连接
+  const closeDatabase = (database: IDBDatabase) => {
+    try {
+      database.close();
+    } catch {
+      /* 忽略重复关闭 */
+    }
+    if (db.value === database) {
+      db.value = null;
+    }
+  };
 
   // 打开数据库并创建表
   const initDB = () => {
     return new Promise<void>((resolve, reject) => {
       const request = indexedDB.open(dbName, version);
+      let timedOut = false;
+
+      // 版本升级时若同源其它上下文仍持有旧连接，open 会停在 pending 并反复
+      // 触发 onblocked。这里不能依赖 blocked 事件自行恢复，只能超时兜底。
+      const timer = setTimeout(() => {
+        timedOut = true;
+        reject(new Error(`IndexedDB 打开超时: ${dbName}@${version}`));
+      }, timeout);
+
+      request.onblocked = () => {
+        if (timedOut) return;
+        console.warn(`[IndexedDB] ${dbName}@${version} 打开被同源其它页面阻塞，等待旧连接关闭…`);
+      };
 
       request.onupgradeneeded = (event: any) => {
-        const db = event.target.result;
+        const database: IDBDatabase = event.target.result;
+        database.onversionchange = () => closeDatabase(database);
         stores.forEach((store) => {
-          if (!db.objectStoreNames.contains(store.name)) {
-            db.createObjectStore(store.name, {
+          if (!database.objectStoreNames.contains(store.name)) {
+            database.createObjectStore(store.name, {
               keyPath: store.keyPath || 'id',
               autoIncrement: true
             });
@@ -32,11 +59,26 @@ const useIndexedDB = async <T extends string, S extends Record<T, Record<string,
       };
 
       request.onsuccess = (event: any) => {
-        db.value = event.target.result;
+        // 超时后迟到的成功连接也必须关闭，否则会泄漏并阻塞后续版本升级。
+        // 注意：不能访问 pending 请求的 request.result，会抛 InvalidStateError。
+        if (timedOut) {
+          try {
+            event.target.result?.close();
+          } catch {
+            /* noop */
+          }
+          return;
+        }
+        clearTimeout(timer);
+        const database: IDBDatabase = event.target.result;
+        database.onversionchange = () => closeDatabase(database);
+        db.value = database;
         resolve();
       };
 
       request.onerror = (event: any) => {
+        if (timedOut) return;
+        clearTimeout(timer);
         reject(event.target.error);
       };
     });
@@ -181,6 +223,8 @@ const useIndexedDB = async <T extends string, S extends Record<T, Record<string,
 
   return {
     initDB,
+    // 供上层门面判断连接是否仍然可用（versionchange 关闭后为 false）
+    isOpen: () => db.value !== null,
     addData,
     saveData,
     getData,

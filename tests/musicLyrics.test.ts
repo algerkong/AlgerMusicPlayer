@@ -8,7 +8,7 @@ const mocks = vi.hoisted(() => ({
   request: vi.fn()
 }));
 
-vi.mock('@/hooks/MusicHook', () => ({
+vi.mock('@/services/musicDB', () => ({
   musicDB: { getData: mocks.getData, saveData: mocks.saveData }
 }));
 vi.mock('@/store', () => ({ useSettingsStore: vi.fn(), useUserStore: vi.fn() }));
