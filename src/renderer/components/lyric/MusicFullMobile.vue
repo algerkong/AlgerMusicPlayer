@@ -96,8 +96,9 @@
               >
                 <template v-for="(word, wordIndex) in item.words" :key="wordIndex">
                   <span class="lyric-word" :style="getWordStyle(index, wordIndex, word)">
-                    {{ word.text }} </span
-                  ><span class="lyric-word" v-if="word.space">&nbsp;</span></template
+                    {{ word.text }} </span><span class="lyric-word" v-if="word.space"
+                    >&nbsp;</span
+                  ></template
                 >
               </div>
               <!-- 普通歌词显示 -->
@@ -173,8 +174,7 @@
                         class="lyric-word"
                         :style="getWordStyle(line.originalIndex, wordIndex, word)"
                       >
-                        {{ word.text }}</span
-                      ><span v-if="word.space">&nbsp;</span></template
+                        {{ word.text }}</span><span v-if="word.space">&nbsp;</span></template
                     >
                   </div>
                   <!-- 普通歌词显示 -->
@@ -298,8 +298,9 @@
               >
                 <template v-for="(word, wordIndex) in item.words" :key="wordIndex">
                   <span class="lyric-word" :style="getWordStyle(index, wordIndex, word)">
-                    {{ word.text }} </span
-                  ><span class="lyric-word" v-if="word.space">&nbsp;</span></template
+                    {{ word.text }} </span><span class="lyric-word" v-if="word.space"
+                    >&nbsp;</span
+                  ></template
                 >
               </div>
               <!-- 普通歌词显示 -->

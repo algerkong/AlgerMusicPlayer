@@ -125,8 +125,9 @@
                 >
                   <template v-for="(word, wordIndex) in line.words" :key="wordIndex">
                     <span class="lyric-word" :style="getWordStyle(index, wordIndex, word)">
-                      {{ word.text }} </span
-                    ><span v-if="word.space" class="lyric-word">&nbsp;</span>
+                      {{ word.text }} </span><span v-if="word.space" class="lyric-word"
+                      >&nbsp;</span
+                    >
                   </template>
                 </div>
                 <span v-else class="lyric-text-inner" :style="getLyricStyle(index)">
@@ -165,8 +166,7 @@
                   :key="wordIndex"
                 >
                   <span class="lyric-word" :style="getWordStyle(currentIndex, wordIndex, word)">
-                    {{ word.text }} </span
-                  ><span v-if="word.space" class="lyric-word">&nbsp;</span>
+                    {{ word.text }} </span><span v-if="word.space" class="lyric-word">&nbsp;</span>
                 </template>
               </div>
               <span v-else class="lyric-text-inner" :style="getLyricStyle(currentIndex)">
@@ -202,8 +202,7 @@
               >
                 <template v-for="(word, wordIndex) in line.words" :key="wordIndex">
                   <span class="lyric-word" :style="getWordStyle(line.index, wordIndex, word)">
-                    {{ word.text }} </span
-                  ><span v-if="word.space" class="lyric-word">&nbsp;</span>
+                    {{ word.text }} </span><span v-if="word.space" class="lyric-word">&nbsp;</span>
                 </template>
               </div>
               <span v-else class="lyric-text-inner" :style="getLyricStyle(line.index)">
