@@ -1,4 +1,5 @@
 import type { SongResult } from '@/types/music';
+import { normalizeMediaUrl } from '@/utils';
 
 /**
  * 预加载服务
@@ -117,7 +118,7 @@ class PreloadService {
 
       testAudio.addEventListener('loadedmetadata', onLoaded);
       testAudio.addEventListener('error', onError);
-      testAudio.src = url;
+      testAudio.src = normalizeMediaUrl(url);
       testAudio.load();
 
       // 3秒超时（优化预加载速度）
