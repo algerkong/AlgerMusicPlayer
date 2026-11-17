@@ -4,7 +4,6 @@
       <n-dialog-provider>
         <n-message-provider>
           <router-view></router-view>
-          <traffic-warning-drawer v-if="!isElectron"></traffic-warning-drawer>
           <disclaimer-modal></disclaimer-modal>
         </n-message-provider>
       </n-dialog-provider>
@@ -20,7 +19,6 @@ import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 
 import DisclaimerModal from '@/components/common/DisclaimerModal.vue';
-import TrafficWarningDrawer from '@/components/TrafficWarningDrawer.vue';
 import { usePlayerStore } from '@/store/modules/player';
 import { usePlayerCoreStore } from '@/store/modules/playerCore';
 import { useSettingsStore } from '@/store/modules/settings';
