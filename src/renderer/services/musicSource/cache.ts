@@ -8,10 +8,9 @@
  */
 import { cloneDeep } from 'lodash';
 
-import { musicDB } from '@/hooks/MusicHook';
+import { musicDB } from '@/services/musicDB';
 
-// musicDB 通过顶层 await 初始化，单 chunk 打包下模块作用域直接解构会命中
-// TDZ（Cannot access 'musicDB' before initialization），改为惰性访问。
+// 惰性访问 musicDB：门面在 IndexedDB 未就绪时自动回退内存，不会阻塞调用方。
 const saveData = (...args: any[]) => (musicDB as any).saveData(...args);
 const getData = (...args: any[]) => (musicDB as any).getData(...args);
 const deleteData = (...args: any[]) => (musicDB as any).deleteData(...args);

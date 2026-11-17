@@ -15,47 +15,42 @@ const useIndexedDB = async <T extends string, S extends Record<T, Record<string,
 ) => {
   const db = ref<IDBDatabase | null>(null);
 
+  // 连接关闭时同步清空句柄，避免后续操作命中已关闭的连接
+  const closeDatabase = (database: IDBDatabase) => {
+    try {
+      database.close();
+    } catch {
+      /* 忽略重复关闭 */
+    }
+    if (db.value === database) {
+      db.value = null;
+    }
+  };
+
   // 打开数据库并创建表
   const initDB = () => {
     return new Promise<void>((resolve, reject) => {
       const request = indexedDB.open(dbName, version);
-
-      // 数据库中版本变更导致旧连接需要关闭时触发。浏览器只允许一个连接等待升级，
-      // 若其它同源上下文（如 PWA 窗口 + 普通标签页）仍持有着旧版本的连接，升级会
-      // 一直阻塞，本 open 请求将永远停在 pending 状态。我们无法在此强制关闭其它
-      // 上下文的连接，只能等待其自行关闭；配合下方的事件监听与 open 超时兜底，
-      // 避免让顶层 await 永久挂起导致白屏。
-      request.onblocked = () => {
-        /* 等待其它同源上下文通过 onversionchange 自行关闭 */
-      };
-
-      // 本连接一旦成功建立，就监听版本变更：当其它同源上下文请求更高版本时，
-      // 立即关闭本连接让升级得以继续进行，避免互相阻塞。
-      const onVersionChange = () => {
-        const current = db.value;
-        current && current.close();
-      };
-
       let timedOut = false;
-      const timer = window.setTimeout(() => {
+
+      // 版本升级时若同源其它上下文仍持有旧连接，open 会停在 pending 并反复
+      // 触发 onblocked。这里不能依赖 blocked 事件自行恢复，只能超时兜底。
+      const timer = setTimeout(() => {
         timedOut = true;
-        request.onblocked = null;
-        request.onerror = null;
-        try {
-          request.transaction && request.transaction.abort();
-        } catch {
-          /* noop */
-        }
-        request.result && request.result.close();
         reject(new Error(`IndexedDB 打开超时: ${dbName}@${version}`));
       }, timeout);
 
+      request.onblocked = () => {
+        if (timedOut) return;
+        console.warn(`[IndexedDB] ${dbName}@${version} 打开被同源其它页面阻塞，等待旧连接关闭…`);
+      };
+
       request.onupgradeneeded = (event: any) => {
-        const db = event.target.result;
-        db.onversionchange = onVersionChange;
+        const database: IDBDatabase = event.target.result;
+        database.onversionchange = () => closeDatabase(database);
         stores.forEach((store) => {
-          if (!db.objectStoreNames.contains(store.name)) {
-            db.createObjectStore(store.name, {
+          if (!database.objectStoreNames.contains(store.name)) {
+            database.createObjectStore(store.name, {
               keyPath: store.keyPath || 'id',
               autoIncrement: true
             });
@@ -64,16 +59,26 @@ const useIndexedDB = async <T extends string, S extends Record<T, Record<string,
       };
 
       request.onsuccess = (event: any) => {
-        if (timedOut) return;
-        window.clearTimeout(timer);
-        db.value = event.target.result;
-        db.value!.onversionchange = onVersionChange;
+        // 超时后迟到的成功连接也必须关闭，否则会泄漏并阻塞后续版本升级。
+        // 注意：不能访问 pending 请求的 request.result，会抛 InvalidStateError。
+        if (timedOut) {
+          try {
+            event.target.result?.close();
+          } catch {
+            /* noop */
+          }
+          return;
+        }
+        clearTimeout(timer);
+        const database: IDBDatabase = event.target.result;
+        database.onversionchange = () => closeDatabase(database);
+        db.value = database;
         resolve();
       };
 
       request.onerror = (event: any) => {
         if (timedOut) return;
-        window.clearTimeout(timer);
+        clearTimeout(timer);
         reject(event.target.error);
       };
     });
@@ -218,6 +223,8 @@ const useIndexedDB = async <T extends string, S extends Record<T, Record<string,
 
   return {
     initDB,
+    // 供上层门面判断连接是否仍然可用（versionchange 关闭后为 false）
+    isOpen: () => db.value !== null,
     addData,
     saveData,
     getData,

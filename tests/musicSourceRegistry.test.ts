@@ -30,7 +30,7 @@ const localStorageStub = (() => {
 
 const mockSetData: Record<string, any> = {};
 
-vi.mock('@/hooks/MusicHook', () => ({
+vi.mock('@/services/musicDB', () => ({
   musicDB: { saveData: vi.fn(), getData: vi.fn(), deleteData: vi.fn() }
 }));
 
