@@ -62,8 +62,13 @@
       <s-btn @click="showRemoteControlModal = true">{{ t('common.configure') }}</s-btn>
     </setting-item>
 
+    <setting-item :title="t('webdav.title')" :description="t('webdav.entryDesc')">
+      <s-btn @click="showWebdavModal = true">{{ t('common.configure') }}</s-btn>
+    </setting-item>
+
     <shortcut-settings v-model:show="showShortcutModal" @change="handleShortcutsChange" />
     <remote-control-setting v-model:visible="showRemoteControlModal" />
+    <webdav-sync-setting v-model:visible="showWebdavModal" />
   </setting-section>
 </template>
 
@@ -74,6 +79,7 @@ import { useRouter } from 'vue-router';
 
 import RemoteControlSetting from '@/components/settings/ServerSetting.vue';
 import ShortcutSettings from '@/components/settings/ShortcutSettings.vue';
+import WebdavSyncSetting from '@/components/settings/WebdavSyncSetting.vue';
 import { isElectron } from '@/utils';
 import { openDirectory, selectDirectory } from '@/utils/fileOperation';
 
@@ -90,6 +96,7 @@ const message = inject(SETTINGS_MESSAGE_KEY)!;
 
 const showShortcutModal = ref(false);
 const showRemoteControlModal = ref(false);
+const showWebdavModal = ref(false);
 
 const closeActionOptions = computed(() => [
   { label: t('settings.application.closeOptions.ask'), value: 'ask' },

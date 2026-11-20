@@ -185,6 +185,9 @@ onMounted(async () => {
     localMusicStore.scanFolders().catch((error) => {
       console.error('[App] 启动时自动扫描本地音乐失败:', error);
     });
+
+    const { initWebdavAutoSync } = await import('@/services/webdavSync');
+    initWebdavAutoSync();
   }
 });
 </script>

@@ -1,6 +1,7 @@
 import { ElectronAPI } from '@electron-toolkit/preload';
 
 import type { AppUpdateState } from '../shared/appUpdate';
+import type { WebdavConfig, WebdavResult } from '../shared/webdav';
 
 interface API {
   minimize: () => void;
@@ -70,6 +71,12 @@ interface API {
   onDownloadBatchComplete: (cb: (data: any) => void) => void;
   onDownloadRequestUrl: (cb: (data: any) => void) => void;
   removeDownloadListeners: () => void;
+  webdavGetConfig: () => Promise<WebdavConfig>;
+  webdavSaveConfig: (config: WebdavConfig) => Promise<void>;
+  webdavTest: () => Promise<WebdavResult<void>>;
+  webdavUpload: (content: string) => Promise<WebdavResult<void>>;
+  /** 远端还没有同步文件时 data 为 null */
+  webdavDownload: () => Promise<WebdavResult<string | null>>;
 }
 
 // 自定义IPC渲染进程通信接口

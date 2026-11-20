@@ -68,6 +68,7 @@ import { initializeRemoteControl } from './modules/remoteControl';
 import { initializeShortcuts } from './modules/shortcuts';
 import { initializeTray, updateCurrentSong, updatePlayState, updateTrayMenu } from './modules/tray';
 import { setupUpdateHandlers } from './modules/update';
+import { initializeWebdav } from './modules/webdav';
 import { createMainWindow, initializeWindowManager, setAppQuitting } from './modules/window';
 import { initWindowSizeManager } from './modules/window-size';
 import { startMusicApi } from './server';
@@ -133,6 +134,9 @@ function initialize(configStore: any) {
 
   // 初始化远程控制服务
   initializeRemoteControl(mainWindow);
+
+  // 初始化 WebDAV 同步
+  initializeWebdav();
 
   // 初始化 MPRIS 服务 (Linux)
   initializeMpris(mainWindow);

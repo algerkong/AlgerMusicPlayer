@@ -3,6 +3,7 @@ import type { IpcRendererEvent } from 'electron';
 import { contextBridge, ipcRenderer } from 'electron';
 
 import type { AppUpdateState } from '../shared/appUpdate';
+import type { WebdavConfig, WebdavResult } from '../shared/webdav';
 
 // Custom APIs for renderer
 const api = {
@@ -133,7 +134,17 @@ const api = {
     ipcRenderer.removeAllListeners('download:state-change');
     ipcRenderer.removeAllListeners('download:batch-complete');
     ipcRenderer.removeAllListeners('download:request-url');
-  }
+  },
+
+  // WebDAV 同步（请求走主进程，绕过 CORS）
+  webdavGetConfig: () => ipcRenderer.invoke('webdav:get-config') as Promise<WebdavConfig>,
+  webdavSaveConfig: (config: WebdavConfig) =>
+    ipcRenderer.invoke('webdav:save-config', config) as Promise<void>,
+  webdavTest: () => ipcRenderer.invoke('webdav:test') as Promise<WebdavResult<void>>,
+  webdavUpload: (content: string) =>
+    ipcRenderer.invoke('webdav:upload', content) as Promise<WebdavResult<void>>,
+  webdavDownload: () =>
+    ipcRenderer.invoke('webdav:download') as Promise<WebdavResult<string | null>>
 };
 
 // 创建带类型的ipcRenderer对象，暴露给渲染进程
